@@ -109,7 +109,7 @@ exclude_lines = [
 
 [tool.mypy]
 python_version = "3.14"
-files = ["src", "tests"]
+files = ["src", "tests", "scripts"]
 strict = true
 warn_unreachable = true
 plugins = ["pydantic.mypy"]
