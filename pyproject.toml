@@ -1,8 +1,10 @@
 [project]
 name = "trace"
 version = "0.1.0"
-description = "Add your description here"
+description = "Context-aware AI-assisted security architecture analysis"
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [
     { name = "Ethan Turner", email = "ethanpturner@gmail.com" }
 ]
