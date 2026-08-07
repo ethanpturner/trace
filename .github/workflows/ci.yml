@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# A new push to a branch supersedes any run still in flight for it.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# Every uv invocation asserts the lockfile is current instead of silently
+# updating it. Note UV_FROZEN is a different setting and conflicts with --locked.
+env:
+  UV_LOCKED: "1"
+
+jobs:
+  ci:
+    name: lint / typecheck / test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v7
+
+      # Pinned to an exact patch: setup-uv publishes no floating major tag.
+      - name: Install uv
+        uses: astral-sh/setup-uv@v9.0.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      # --locked fails the build if uv.lock is stale relative to pyproject.toml,
+      # so a dependency edit can't land without its lockfile update.
+      - name: Install dependencies
+        id: install
+        run: uv sync --locked --all-groups
+
+      # Each check runs even when an earlier check failed, so one run reports
+      # every problem at once. They are gated on the install rather than on
+      # `!cancelled()` alone, because `uv run` would otherwise happily build its
+      # own environment and report a green check on top of a broken install.
+      - name: ruff check
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: uv run ruff check --output-format=github .
+
+      - name: ruff format
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: uv run ruff format --check --diff .
+
+      - name: mypy
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: uv run mypy
+
+      # Integration and evaluation markers are deselected by the addopts in
+      # pyproject.toml, so this needs no provider API keys.
+      - name: pytest
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: uv run pytest --cov --cov-report=term-missing --cov-report=xml
+
+      - name: Upload coverage
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-xml
+          path: coverage.xml
+          if-no-files-found: error
+          retention-days: 14
