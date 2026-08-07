@@ -17,6 +17,8 @@ dependencies = [
     "langsmith>=0.10.16",
     "openai>=2.53.0",
     "pydantic>=2.13.4",
+    "pydantic-settings>=2.15.0",
+    "python-dotenv>=1.2.2",
 ]
 
 [project.scripts]

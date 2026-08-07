@@ -25,6 +25,13 @@ repos:
     hooks:
       - id: uv-lock
 
+  # Scans staged content for credentials. detect-private-key above only catches
+  # private keys; this catches provider API tokens.
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.1
+    hooks:
+      - id: gitleaks
+
   # mypy and pytest run against the project venv, so they use the same
   # resolved dependency set as `uv run` rather than an isolated hook env.
   - repo: local
