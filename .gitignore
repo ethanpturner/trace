@@ -8,3 +8,16 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Tool caches
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Secrets
+.env
+.env.*
+!.env.example

@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# A new push to a branch supersedes any run still in flight for it.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  UV_FROZEN: "1"
+
+jobs:
+  ci:
+    name: lint / typecheck / test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v9
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      # --locked fails the build if uv.lock is stale relative to pyproject.toml,
+      # so a dependency edit can't land without its lockfile update.
+      - name: Install dependencies
+        run: uv sync --locked --all-groups
+
+      # Every check below runs even if an earlier one fails, so a single run
+      # reports all problems instead of surfacing them one push at a time.
+      - name: ruff check
+        run: uv run ruff check --output-format=github .
+
+      - name: ruff format
+        if: ${{ !cancelled() }}
+        run: uv run ruff format --check --diff .
+
+      - name: mypy
+        if: ${{ !cancelled() }}
+        run: uv run mypy
+
+      # Integration and evaluation markers are deselected by the addopts in
+      # pyproject.toml, so this needs no provider API keys.
+      - name: pytest
+        if: ${{ !cancelled() }}
+        run: uv run pytest --cov --cov-report=term-missing --cov-report=xml
+
+      - name: Upload coverage
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-xml
+          path: coverage.xml
+          if-no-files-found: error
+          retention-days: 14
