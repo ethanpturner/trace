@@ -8,8 +8,13 @@ Neither pandoc nor libreoffice is assumed to be present. The documents use real 
 heading styles, numbered/bulleted list paragraphs, and tables, and contain no bold
 runs, no italics, and no hyperlinks, so a narrow converter covers them completely.
 
+This is a migration tool, retained for provenance rather than for repeated use.
+The .docx originals are deleted once a batch has been converted, so those entries
+become inert and are reported as skipped. An entry is only an error when both the
+source and the destination are missing.
+
 Usage:
-    uv run python scripts/docx_to_md.py            # convert docs/ in place
+    uv run python scripts/docx_to_md.py            # convert in place
     uv run python scripts/docx_to_md.py --check     # report what would change
 """
 
@@ -53,6 +58,33 @@ CONVERSIONS: Final[dict[str, str]] = {
     "docs/architecture/Data_Model.md.docx": "docs/architecture/data-model.md",
     "docs/architecture/Decision_Log.md.docx": "docs/architecture/decision-log.md",
     "docs/architecture/Evaluation_plan.md.docx": "docs/architecture/evaluation-plan.md",
+    # Demo fixtures. The destination names are hyphenated because the scenario's own
+    # structured input declares them that way under documentation.primary_documents,
+    # while the .docx filenames use underscores. Matching the declaration keeps the
+    # fixture internally consistent.
+    "demo/forgeflow/Forgeflow_scenario.md.docx": "demo/forgeflow/forgeflow-scenario.md",
+    "demo/forgeflow/input/product_overview.md.docx": "demo/forgeflow/input/product-overview.md",
+    "demo/forgeflow/input/architecture_overview.md.docx": (
+        "demo/forgeflow/input/architecture-overview.md"
+    ),
+    "demo/forgeflow/input/security_overview.md.docx": "demo/forgeflow/input/security-overview.md",
+    "demo/forgeflow/input/operations_guide.md.docx": "demo/forgeflow/input/operations-guide.md",
+    "demo/forgeflow/input/github_integration.md.docx": (
+        "demo/forgeflow/input/github-integration.md"
+    ),
+    "demo/forgeflow/input/ai_analysis.md.docx": "demo/forgeflow/input/ai-analysis.md",
+    "demo/forgeflow/input/sample_repository_notes.md.docx": (
+        "demo/forgeflow/input/sample-repository-notes.md"
+    ),
+}
+
+# Documents whose whitespace is load-bearing. These are copied out line for line
+# with no Markdown interpretation: in YAML the indentation is the syntax, and the
+# Markdown renderer's whitespace collapsing would destroy the document.
+VERBATIM_CONVERSIONS: Final[dict[str, str]] = {
+    "demo/forgeflow/input/structured_system_input.yaml.docx": (
+        "demo/forgeflow/input/structured-system-input.yaml"
+    ),
 }
 
 
@@ -199,6 +231,28 @@ def _table_to_markdown(table: ET.Element) -> list[str]:
     return lines
 
 
+def convert_verbatim(docx_path: Path) -> str:
+    """Extract paragraph text exactly as written, preserving leading whitespace.
+
+    The Markdown path strips and collapses whitespace, which is correct for prose
+    and fatal for YAML, where indentation carries the structure. Each Word
+    paragraph is one line; only trailing whitespace is removed, because the
+    pre-commit hook would strip it anyway.
+    """
+    with zipfile.ZipFile(docx_path) as archive:
+        document = archive.read("word/document.xml")
+
+    body = ET.fromstring(document).find(f"{W}body")  # noqa: S314 - local, repo-controlled file
+    if body is None:
+        return ""
+
+    lines = [
+        "".join(node.text or "" for node in paragraph.iter(f"{W}t")).rstrip()
+        for paragraph in body.iter(f"{W}p")
+    ]
+    return re.sub(r"\n{3,}", "\n\n", "\n".join(lines)).strip() + "\n"
+
+
 def convert(docx_path: Path) -> str:
     """Convert one .docx into Markdown text."""
     with zipfile.ZipFile(docx_path) as archive:
@@ -294,27 +348,38 @@ def main() -> int:
     )
     args = parser.parse_args()
 
+    jobs = [(source, destination, convert) for source, destination in CONVERSIONS.items()]
+    jobs += [
+        (source, destination, convert_verbatim)
+        for source, destination in VERBATIM_CONVERSIONS.items()
+    ]
+
     exit_code = 0
-    for source, destination in CONVERSIONS.items():
+    for source, destination, renderer in jobs:
         src = REPO_ROOT / source
         dst = REPO_ROOT / destination
         if not src.is_file():
-            print(f"missing source: {source}", file=sys.stderr)
-            exit_code = 1
-            continue
-
-        markdown = convert(src)
-        current = dst.read_text(encoding="utf-8") if dst.is_file() else None
-
-        if args.check:
-            state = "unchanged" if current == markdown else "would write"
-            print(f"{state:>12}  {destination}  ({len(markdown):,} chars)")
-            if current != markdown:
+            # Expected once a batch has landed: the .docx originals are removed after
+            # conversion, so their entries become inert. A missing source is only a
+            # problem if the destination is missing too.
+            state = "skipped" if dst.is_file() else "SOURCE GONE"
+            print(f"{state:>12}  {destination}  (no .docx to convert)", file=sys.stderr)
+            if not dst.is_file():
                 exit_code = 1
             continue
 
-        dst.write_text(markdown, encoding="utf-8")
-        print(f"{'wrote':>12}  {destination}  ({len(markdown):,} chars)")
+        rendered = renderer(src)
+        current = dst.read_text(encoding="utf-8") if dst.is_file() else None
+
+        if args.check:
+            state = "unchanged" if current == rendered else "would write"
+            print(f"{state:>12}  {destination}  ({len(rendered):,} chars)")
+            if current != rendered:
+                exit_code = 1
+            continue
+
+        dst.write_text(rendered, encoding="utf-8")
+        print(f"{'wrote':>12}  {destination}  ({len(rendered):,} chars)")
 
     return exit_code
 

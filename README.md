@@ -294,13 +294,17 @@ Seven input documents plus a structured system input, under `demo/forgeflow/inpu
 
 | Document | Role in the scenario |
 |---|---|
-| `product_overview` | What ForgeFlow does and for whom |
-| `architecture_overview` | Components, data flows, trust boundaries |
-| `security_overview` | Stated controls — some documented, some not |
-| `operations_guide` | Deployment, monitoring, incident handling |
-| `github_integration` | App permissions, webhook handling, token custody |
-| `ai_analysis` | How code is sent to an external model provider |
-| `sample_repository_notes` | An engineer's working notes — and the injection fixture |
+| [`product-overview.md`](demo/forgeflow/input/product-overview.md) | What ForgeFlow does and for whom |
+| [`architecture-overview.md`](demo/forgeflow/input/architecture-overview.md) | Components, data flows, trust boundaries |
+| [`security-overview.md`](demo/forgeflow/input/security-overview.md) | Stated controls — some documented, some not |
+| [`operations-guide.md`](demo/forgeflow/input/operations-guide.md) | Deployment, monitoring, incident handling |
+| [`github-integration.md`](demo/forgeflow/input/github-integration.md) | App permissions, webhook handling, token custody |
+| [`ai-analysis.md`](demo/forgeflow/input/ai-analysis.md) | How code is sent to an external model provider |
+| [`sample-repository-notes.md`](demo/forgeflow/input/sample-repository-notes.md) | An engineer's working notes — and the injection fixture |
+
+Alongside them, [`structured-system-input.yaml`](demo/forgeflow/input/structured-system-input.yaml)
+carries the machine-readable half of the scenario: components, data assets, trust boundaries,
+declared controls, and the evaluation contract below.
 
 ### Adversarial by design
 
