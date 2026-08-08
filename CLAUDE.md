@@ -97,10 +97,41 @@ Two things are commonly assumed and are **not** decided:
   `langgraph`, and `instructor` are declared in `pyproject.toml` and imported nowhere. Their
   presence is not a choice.
 
+## Branching
+
+```
+feature/*   individual work
+   |  squash-merge PR
+   v
+develop     integration branch
+   |  release PR, merge commit
+   v
+main        stable / released history
+```
+
+**Branch from `develop`, never from `main`.** `main` is the default branch on GitHub, so a fresh
+clone lands there — check out `develop` first.
+
+```bash
+git checkout develop && git pull
+git checkout -b feature/<short-slug>
+# ... work, commit ...
+gh pr create --base develop          # --base is required; it would otherwise default to main
+```
+
+Both branches are protected: a pull request and a green CI run are required, direct pushes are
+rejected including for admins, and neither can be force-pushed or deleted.
+
+The two merge types are not interchangeable:
+
+- **`feature/*` into `develop` — squash.** One commit per feature keeps `develop` readable.
+- **`develop` into `main` — merge commit.** This is why merge commits are enabled and why `main`
+  does not require linear history. Squashing or rebasing a release would leave `main` with a commit
+  that is not an ancestor of `develop`, and every later release PR would re-show already-released
+  work and conflict. A long-lived branch has to be merged, not replayed.
+
 ## Working norms
 
-- **`main` is protected.** Branch, open a PR, wait for green CI, squash merge. Direct pushes are
-  rejected, including for admins. Linear history only, so no merge commits.
 - **mypy is strict and covers `scripts/` too.** New utilities are type-checked like product code.
 - **CI must never need a provider API key.** The `integration` and `evaluation` markers are
   deselected by default in `addopts` precisely so a bare `pytest` cannot spend money.
