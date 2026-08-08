@@ -120,7 +120,18 @@ gh pr create --base develop          # --base is required; it would otherwise de
 ```
 
 Both branches are protected: a pull request and a green CI run are required, direct pushes are
-rejected including for admins, and neither can be force-pushed or deleted.
+rejected including for admins, and neither can be force-pushed or deleted. `develop`'s deletion
+block is load-bearing — the repository auto-deletes head branches on merge, so a release PR would
+otherwise delete it.
+
+Two protection settings are deliberately off, and turning either on deadlocks the next release:
+
+- **`main` does not require branches to be up to date.** After a release, `main` holds a merge
+  commit that `develop` lacks. Requiring `develop` to be current would demand a back-merge before
+  every release, which is circular here: `main` only ever receives commits from `develop`, so those
+  merge commits carry no content `develop` is missing.
+- **`develop` does not require linear history.** It has to be able to accept a merge commit from
+  `main` if a hotfix ever lands there directly.
 
 The two merge types are not interchangeable:
 
