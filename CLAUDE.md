@@ -103,14 +103,17 @@ Two things are commonly assumed and are **not** decided:
 feature/*   individual work
    |  squash-merge PR
    v
-develop     integration branch
-   |  release PR, merge commit
-   v
-main        stable / released history
+develop     integration branch                    hotfix/*  cut from main
+   |  release PR, merge commit                       |  merge commit
+   v                                                 v
+main        stable / released history  <-------------+
+                                                     |
+                        back-merge PR, merge commit  |
+                        develop <--------------------+
 ```
 
-**Branch from `develop`, never from `main`.** `main` is the default branch on GitHub, so a fresh
-clone lands there — check out `develop` first.
+**Branch from `develop`.** The single exception is a hotfix, which is cut from `main` — see below.
+`main` is the default branch on GitHub, so a fresh clone lands there; check out `develop` first.
 
 ```bash
 git checkout develop && git pull
@@ -130,16 +133,49 @@ Two protection settings are deliberately off, and turning either on deadlocks th
   commit that `develop` lacks. Requiring `develop` to be current would demand a back-merge before
   every release, which is circular here: `main` only ever receives commits from `develop`, so those
   merge commits carry no content `develop` is missing.
-- **`develop` does not require linear history.** It has to be able to accept a merge commit from
-  `main` if a hotfix ever lands there directly.
+- **`develop` does not require linear history.** It has to accept the merge commit that carries a
+  hotfix back from `main`.
 
-The two merge types are not interchangeable:
+Merge types are not interchangeable. **Only `feature/*` into `develop` is squashed**; everything
+else is a merge commit:
 
 - **`feature/*` into `develop` — squash.** One commit per feature keeps `develop` readable.
 - **`develop` into `main` — merge commit.** This is why merge commits are enabled and why `main`
   does not require linear history. Squashing or rebasing a release would leave `main` with a commit
   that is not an ancestor of `develop`, and every later release PR would re-show already-released
   work and conflict. A long-lived branch has to be merged, not replayed.
+- **Anything into `main`, and any back-merge into `develop` — merge commit,** for the same reason.
+
+### Hotfixes
+
+For a fix that must reach `main` without waiting for everything queued on `develop`. Everything
+else, including work that merely feels urgent, goes through `develop`.
+
+A hotfix is two pull requests. The second is not optional: without it the fix exists only on `main`
+and the next release, which merges `develop` into `main`, will not carry it forward.
+
+```bash
+# 1. cut from main -- the one time you do not branch from develop
+git checkout main && git pull
+git checkout -b hotfix/<short-slug>
+# ... fix, commit ...
+gh pr create --base main            # merge commit
+
+# 2. after it merges, back-merge main into develop
+git checkout develop && git pull
+git checkout -b chore/backmerge-<short-slug>
+git merge origin/main
+gh pr create --base develop         # merge commit
+```
+
+**The back-merge needs its own branch; a `main` into `develop` pull request will not work.**
+`develop` requires branches to be up to date, which means the head must already contain `develop`'s
+tip. Once `develop` has moved on, `main` does not, so the pull request is blocked with no useful
+explanation. A branch cut from `develop` and merged with `main` contains both sides and satisfies
+the rule.
+
+Squashing either pull request breaks the chain: the hotfix commit stops being an ancestor of
+`develop`, and the next back-merge re-proposes it.
 
 ## Working norms
 
