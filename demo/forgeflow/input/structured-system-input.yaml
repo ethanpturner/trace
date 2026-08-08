@@ -1,0 +1,207 @@
+metadata:
+  version: "1.0"
+  generated_by: "ForgeFlow Demo Scenario"
+  classification: "Internal"
+  scenario: "ForgeFlow"
+
+system:
+  name: "ForgeFlow"
+  description: "AI-assisted pull request review platform"
+  business_owner: "Engineering Productivity"
+  engineering_owner: "Platform Engineering"
+  lifecycle: "Production"
+  deployment_model: "SaaS"
+  criticality: "Medium"
+
+business:
+  primary_capability:
+    - "AI-assisted pull request analysis"
+    - "GitHub repository integration"
+    - "Developer review assistance"
+
+  primary_users:
+    - "Software Developers"
+    - "Engineering Managers"
+    - "Repository Administrators"
+
+  supported_repository_provider:
+    - "GitHub"
+
+authentication:
+  primary_identity_provider: "GitHub OAuth"
+
+  local_passwords: false
+
+  administrative_identity:
+    provider: "Corporate Identity Platform"
+    mfa_required: true
+
+deployment:
+  cloud: "Public Cloud"
+
+  regions:
+    - "us-east-1"
+
+  internet_facing:
+    - "CDN"
+    - "Webhook Receiver"
+
+components:
+
+  - id: frontend
+    type: web_application
+    name: "React Web Application"
+
+  - id: api
+    type: service
+    name: "ForgeFlow API"
+
+  - id: webhook
+    type: service
+    name: "Webhook Receiver"
+
+  - id: worker
+    type: service
+    name: "Analysis Worker"
+
+  - id: comments
+    type: service
+    name: "GitHub Comment Service"
+
+  - id: postgres
+    type: managed_database
+    name: "Managed PostgreSQL"
+
+  - id: redis
+    type: managed_cache
+    name: "Managed Redis"
+
+  - id: object_storage
+    type: managed_storage
+    name: "Managed Object Storage"
+
+  - id: secrets
+    type: managed_security_service
+    name: "Managed Secrets Service"
+
+  - id: admin
+    type: internal_application
+    name: "Administrative Interface"
+
+external_services:
+
+  - name: GitHub
+    category: identity_and_repository
+
+  - name: Enterprise AI Provider
+    category: ai_provider
+
+  - name: Email Provider
+    category: notifications
+
+data_assets:
+
+  - name: Customer Source Code
+    classification: Restricted
+
+  - name: Pull Request Metadata
+    classification: Confidential
+
+  - name: Analysis Results
+    classification: Confidential
+
+  - name: GitHub Installation Metadata
+    classification: Confidential
+
+  - name: GitHub App Private Key
+    classification: Restricted
+
+  - name: AI Provider API Key
+    classification: Restricted
+
+trust_boundaries:
+
+  - Public Internet
+  - Customer Authentication
+  - Organization Isolation
+  - GitHub Boundary
+  - AI Provider Boundary
+  - Administrative Boundary
+  - Secret Management Boundary
+
+security_controls:
+
+  delegated_authentication: true
+
+  managed_database: true
+
+  managed_object_storage: true
+
+  managed_secrets: true
+
+  centralized_logging: true
+
+  workload_identity: true
+
+  short_lived_installation_tokens: true
+
+  tls_everywhere: true
+
+known_assumptions:
+
+  - GitHub provides customer authentication.
+  - Repository access uses GitHub App installations.
+  - Customer source code is processed by the external AI provider.
+  - Background processing is asynchronous.
+  - Managed cloud services provide platform protections.
+
+analysis:
+
+  ai_assisted: true
+
+  asynchronous: true
+
+  automatic_pull_request_comments: true
+
+  human_review_required: unknown
+
+  repository_context_used: true
+
+  schema_validation:
+    enabled: true
+
+  semantic_validation:
+    documented: false
+
+documentation:
+
+  primary_documents:
+
+    - product-overview.md
+    - architecture-overview.md
+    - security-overview.md
+    - operations-guide.md
+    - github-integration.md
+    - ai-analysis.md
+    - sample-repository-notes.md
+
+evaluation:
+
+  benchmark_version: "1.0"
+
+  expected_outputs:
+
+    findings: 3
+
+    questions: 5
+
+    documentation_gaps: 3
+
+    contradictions: 2
+
+    prompt_injection_fixture: true
+
+notes:
+  - "Structured metadata is authoritative only for the fields represented here."
+  - "Markdown documents remain the primary source for architectural reasoning."
+  - "Conflicts between structured and unstructured sources should be surfaced rather than silently resolved."
