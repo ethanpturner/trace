@@ -1,0 +1,93 @@
+# Category: webhook_validation
+# Requirements about inbound events that a system accepts from an external
+# platform and treats as a trigger for privileged work.
+#
+# Note on provenance: OWASP ASVS 5.0.0 addresses replay only for authentication
+# tokens. It carries no general inbound-event replay requirement, so
+# req-WEBHOOK-002 is an original requirement and cites NIST only. See
+# requirements/README.md.
+
+requirements:
+
+  - id: req-WEBHOOK-001
+    catalog_version: "0.1"
+    title: Inbound event authenticity is verified before processing
+    statement: >
+      A system that performs privileged work in response to an inbound event
+      from an external platform must verify that the event genuinely originated
+      from that platform before acting on it, and the documentation must state
+      that the verification is cryptographic rather than structural.
+    rationale: >
+      An endpoint that accepts events from a named platform is reachable by
+      anyone who learns its address. Without origin verification, an attacker
+      can cause the system to perform work on data of their choosing. The
+      distinction that matters is between verifying a request is well formed
+      and verifying it is authentic; documentation routinely says "validated"
+      without saying which.
+    category:
+      - webhook_validation
+      - authentication
+      - integrity
+    applicable_conditions:
+      - the system exposes an endpoint that accepts events from an external platform
+      - an inbound event triggers processing or state change
+    non_applicable_conditions:
+      - the endpoint is reachable only from within a trusted network segment and this is documented
+      - inbound events are polled by the system rather than delivered to it
+    acceptable_implementations:
+      - HMAC signature verification using a shared secret
+      - asymmetric signature verification using a platform public key
+      - mutually authenticated transport with sender authorization
+    evidence_expectations:
+      - documentation stating that signature verification is performed
+      - webhook or event receiver configuration
+      - a source-code reference to the verification step
+    common_false_positives:
+      - documentation stating only that requests are validated, where the mechanism is unstated
+      - absent description of secret storage where verification itself is documented
+    default_severity: high
+    source_frameworks:
+      - "NIST SP 800-53 5.2.0: SI-10"
+      - "NIST SP 800-53 5.2.0: SC-8"
+    status: active
+
+  - id: req-WEBHOOK-002
+    catalog_version: "0.1"
+    title: Replay of inbound events is prevented or made harmless
+    statement: >
+      A system that performs privileged or costly work in response to an
+      inbound event must ensure that re-submission of a previously valid event
+      does not cause that work to be repeated, or must document why repetition
+      is harmless.
+    rationale: >
+      Origin verification establishes that an event was genuine when it was
+      issued; it does not establish that it is being delivered for the first
+      time. A captured, still-valid event can therefore be replayed. Where
+      processing is expensive, externally visible, or state-changing, the
+      effects accumulate.
+    category:
+      - webhook_validation
+      - integrity
+      - availability
+    applicable_conditions:
+      - inbound event processing is costly, externally visible, or state-changing
+      - event authenticity is verified but delivery uniqueness is not established
+    non_applicable_conditions:
+      - repeated processing of the same event is idempotent and documented as such
+      - the endpoint accepts no state-changing events
+    acceptable_implementations:
+      - persisting the platform delivery identifier and rejecting repeats
+      - rejecting events whose signed timestamp falls outside a bounded window
+      - idempotency keyed on the event identifier so repeats are absorbed
+    evidence_expectations:
+      - documentation describing duplicate or replay handling
+      - description of event identifier persistence
+      - description of idempotency in downstream processing
+    common_false_positives:
+      - absent replay handling where signature verification is documented and processing is idempotent
+      - absent rate limiting, which addresses volume rather than replay
+    default_severity: medium
+    source_frameworks:
+      - "NIST SP 800-53 5.2.0: SC-23"
+      - "NIST SP 800-53 5.2.0: SI-10"
+    status: active
