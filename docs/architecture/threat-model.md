@@ -146,6 +146,7 @@ unbuilt, because nothing generates yet.
 | An ablated run produces an approved assessment | An assessment completed by a non-authoritative run cannot reach `approved` | `AssessmentService.approve` | **Enforced** — the authority flag is supplied by the caller until `WorkflowRun` exists (#57) |
 | A reviewer edit enters an object without validation | Edited objects are rebuilt through `model_validate`; `model_copy` validates nothing and is documented as the wrong API | `trace_ai.domain.base` docstring, `CLAUDE.md`, four pinning tests | **Enforced** by convention and tests, not by the type system |
 | Report rendering introduces content no model or reviewer produced | Rendering is deterministic and uses no model | `current-architecture.md` section 5.13 | **Designed** (#106) |
+| A citation cannot be checked against the document it claims to come from | Every `EvidenceReference` carries a line range and a hash over its own verbatim quotation, and normalization cannot change line counts, so the recorded location addresses the original (DEC-015) | `trace_ai.services.evidence.indexing`, `trace_ai.services.ingestion.normalize` | **Enforced** |
 
 ## 8. Cross-cutting: what is not covered
 
