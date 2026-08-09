@@ -10,6 +10,7 @@ from trace_ai.services.prompts.registry import (
     PromptNotFoundError,
     PromptRegistry,
     PromptSyntaxError,
+    UnresolvedMarkerError,
     duplicated_shared_blocks,
 )
 
@@ -23,5 +24,6 @@ __all__ = [
     "PromptNotFoundError",
     "PromptRegistry",
     "PromptSyntaxError",
+    "UnresolvedMarkerError",
     "duplicated_shared_blocks",
 ]

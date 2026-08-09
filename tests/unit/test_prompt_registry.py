@@ -14,6 +14,7 @@ untrusted-source boundary without losing the call.
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import pytest
@@ -27,6 +28,7 @@ from trace_ai.services.prompts import (
     PromptNotFoundError,
     PromptRegistry,
     PromptSyntaxError,
+    UnresolvedMarkerError,
     duplicated_shared_blocks,
 )
 
@@ -230,10 +232,46 @@ def test_the_real_prompt_tree_holds_no_copied_block() -> None:
 
 
 def test_every_prompt_in_the_real_tree_composes() -> None:
-    """Also vacuous today, and also the point: a prompt that fails to compose fails here rather
-    than at the first model call, which is the first place anyone would otherwise notice."""
+    """A prompt that fails to compose fails here rather than at the first model call, which is the
+    first place anyone would otherwise notice."""
     registry = PromptRegistry()
     assert registry.root == PROMPT_ROOT
+    assert registry.references(), "the prompt tree is empty"
+
     for reference in registry.references():
         prompt_id, version = reference.rsplit("-", 1)
-        assert registry.compose(prompt_id, version).text
+        markers = registry.markers(prompt_id, version)
+        composed = registry.compose(
+            prompt_id, version, {marker: f"<{marker}>" for marker in markers}
+        )
+        assert composed.text
+
+
+def test_the_extraction_prompt_declares_the_three_shared_blocks() -> None:
+    """Composition is what keeps them single-sourced; declaring them is how a prompt asks."""
+    registry = PromptRegistry()
+    composed = registry.compose(
+        "extract-context",
+        "v1",
+        dict.fromkeys(registry.markers("extract-context", "v1"), "…"),
+    )
+    assert composed.composed_from[:3] == (
+        "shared/source-content-boundary-v1",
+        "shared/evidence-policy-v1",
+        "shared/uncertainty-policy-v1",
+    )
+
+
+def test_the_extraction_prompt_carries_no_shared_block_text_of_its_own() -> None:
+    """A copy keeps working and stops being updated. The registry's own check, run over the real
+    tree rather than a fixture."""
+    assert duplicated_shared_blocks() == {}
+
+
+def test_a_prompt_composed_with_an_unfilled_marker_is_refused() -> None:
+    """A prompt composed with a hole in it still runs and still answers, missing whatever the
+    marker was carrying — here, the schema the agent is supposed to return."""
+    with pytest.raises(
+        UnresolvedMarkerError, match=re.escape("schema.context_extraction_proposal")
+    ):
+        PromptRegistry().compose("extract-context", "v1")
