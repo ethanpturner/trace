@@ -233,6 +233,43 @@ def phase_one(specs: list[dict[str, Any]], project: str | None, *, apply: bool) 
     return ledger
 
 
+def fetch_existing_links() -> dict[int, set[int]]:
+    """Map each issue number to the issue numbers already blocking it.
+
+    Fetched in one paged query rather than per issue, so re-running the link phase costs a
+    handful of requests instead of one per issue.
+    """
+    owner, name = REPO.split("/", 1)
+    links: dict[int, set[int]] = {}
+    cursor = "null"
+    while True:
+        query = f"""
+        {{ repository(owner: "{owner}", name: "{name}") {{
+             issues(first: 100, after: {cursor}, states: [OPEN, CLOSED]) {{
+               pageInfo {{ hasNextPage endCursor }}
+               nodes {{ number blockedBy(first: 20) {{ nodes {{ number }} }} }}
+             }} }} }}
+        """
+        result = subprocess.run(  # noqa: S603
+            [GH, "api", "graphql", "-f", f"query={query}"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if result.returncode != 0:
+            print("warn: could not read existing links; assuming none")
+            return links
+        payload: Any = json.loads(result.stdout)
+        block: Any = payload["data"]["repository"]["issues"]
+        for node in block["nodes"]:
+            blockers = {int(b["number"]) for b in node["blockedBy"]["nodes"]}
+            if blockers:
+                links[int(node["number"])] = blockers
+        if not block["pageInfo"]["hasNextPage"]:
+            return links
+        cursor = f'"{block["pageInfo"]["endCursor"]}"'
+
+
 def phase_two(
     specs: list[dict[str, Any]],
     ledger: dict[str, int],
@@ -246,6 +283,10 @@ def phase_two(
     ``planned`` -- the set of seeds this invocation would create. Without that the dry run
     would silently report nothing for the whole second phase.
     """
+    existing_links = fetch_existing_links() if apply else {}
+    failures: list[str] = []
+    linked = 0
+
     for spec in specs:
         seed = str(spec["seed"])
         number = ledger.get(seed)
@@ -266,17 +307,37 @@ def phase_two(
 
         if number is None:
             continue
+
+        # --add-blocked-by is not idempotent: re-adding an existing link fails the whole
+        # command with "Target issue has already been taken". Subtract what is already
+        # linked so a re-run is a no-op rather than an error.
+        already = existing_links.get(number, set())
         argv = [GH, "issue", "edit", str(number), "--repo", REPO]
+        wanted = 0
         for blocker in blockers:
             target = ledger.get(blocker)
             if target is None:
                 print(f"warn {seed}: blocker '{blocker}' has no issue number yet")
                 continue
+            if target in already:
+                continue
             argv += ["--add-blocked-by", str(target)]
-        if len(argv) > 6:
+            wanted += 1
+        if not wanted:
+            continue
+
+        # One unlinkable issue must not abort the remaining hundreds.
+        try:
             run(argv, apply=apply)
-            if apply:
-                time.sleep(PACE_SECONDS)
+            linked += wanted
+        except SeedError as error:
+            failures.append(f"#{number} ({seed}): {str(error).splitlines()[-1]}")
+        time.sleep(PACE_SECONDS)
+
+    if apply:
+        print(f"phase two: {linked} dependency links added")
+        for failure in failures:
+            print(f"  failed: {failure}")
 
 
 def summarize(specs: list[dict[str, Any]]) -> Iterator[str]:
