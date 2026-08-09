@@ -1555,7 +1555,6 @@ An assessment may have multiple workflow runs due to retries, revisions, or eval
 | started_at | datetime | No | Start time |
 | completed_at | datetime | No | Completion time |
 | current_node | string | No | Current workflow node |
-| checkpoint_reference | string | No | Persistence reference |
 | model_profile | string | Yes | Model configuration used |
 | prompt_versions | map[string, string] | Yes | Prompt versions |
 | total_model_calls | integer | Yes | Model-call count |
@@ -1563,6 +1562,20 @@ An assessment may have multiple workflow runs due to retries, revisions, or eval
 | total_output_tokens | integer | No | Output-token count |
 | estimated_cost | decimal | No | Estimated cost |
 | error_summary | string | No | Final error if failed |
+
+## Note on pausing
+
+A run pauses by persisting itself and letting the process exit (DEC-017). `status` becomes
+`paused`, `current_node` names the checkpoint, and the assessment state's `pending_human_review`
+block names the objects awaiting a decision. Nothing is held in memory across a human review, and
+a paused run waits indefinitely — there is no review timeout.
+
+Resuming is a separate invocation that loads the run and verifies that every object named in
+`pending_human_review` has a `ReviewerDecision`.
+
+Earlier versions carried a `checkpoint_reference` field holding a persistence reference to a
+framework checkpoint. DEC-016 removed the framework and DEC-017 removed the field: `current_node`
+says where the run stopped and `pending_human_review` says what it is waiting for.
 
 # 27. ExecutionRecord
 
@@ -1789,6 +1802,19 @@ errors: []
 ## State-design rule
 
 Do not place full source documents, full prompt transcripts, or every generated object into one continuously growing workflow-state payload.
+
+## Note on `pending_human_review`
+
+This block is what makes a paused run self-describing (DEC-017). `checkpoint_type` names which of
+the two checkpoints the run stopped at, and `object_ids` names every object awaiting a reviewer
+decision.
+
+The checkpoint's completion condition is that every identifier in `object_ids` has a
+`ReviewerDecision`. Partial progress is allowed and persisted; a run with some objects decided
+stays paused.
+
+The review package shown to the reviewer is **derived** from the run rather than stored in it, so
+the pause mechanism does not presuppose an interface.
 
 # 32. Object Lineage
 

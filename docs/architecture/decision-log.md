@@ -234,9 +234,9 @@ Tradeoffs:
 
 Open Questions:
 
-- What information should be displayed at each checkpoint?
+- ~~What information should be displayed at each checkpoint?~~ Answered by DEC-017.
 - Should low-confidence outputs trigger additional mandatory review?
-- How should reviewer edits be captured for evaluation?
+- ~~How should reviewer edits be captured for evaluation?~~ Answered by DEC-017: as `ReviewerDecision` rows written through one interface regardless of origin. How an edit is represented on the object is DX-16 (#34).
 
 ## DEC-006: Use structured workflow state
 
@@ -857,3 +857,67 @@ Open Questions:
 - Does the orchestrator need a dry-run mode that walks the table without executing nodes, for evaluation and for verifying the graph matches the documented phases?
 - At what point does a workflow stop being a list, and is that trigger observable before the orchestrator has already grown?
 - Where do the five execution ceilings live — checked centrally before each step, or by each node?
+
+## DEC-017: Pause by persisting the run and exiting; resume from recorded decisions
+
+Date: 2026-08-09
+
+Status: Accepted
+
+Decision:
+
+A checkpoint pauses by **persisting the run and letting the process exit**. Nothing is held in memory across a human review.
+
+Reaching a checkpoint node sets `WorkflowRun.status` to `paused`, sets `current_node` to the checkpoint, and populates `pending_human_review` with the checkpoint type and the identifiers of the objects awaiting a decision. The invocation then returns. A paused run is a complete, self-describing record on disk.
+
+Resuming is a separate invocation. It loads the run, verifies the checkpoint's completion condition, and continues from the node after the checkpoint. The completion condition is that **every object named in `pending_human_review` has a `ReviewerDecision`**. Partial progress is allowed and persisted; a run with some objects decided stays paused.
+
+**Reviewer decisions reach the workflow through one interface regardless of where they came from.** A decision writer validates a disposition against `ReviewDisposition`, records `prior_value` and `updated_value`, and persists a `ReviewerDecision`. An interactive command, a web form, and an evaluation harness replaying recorded decisions all call the same writer and produce identical rows. Replay is therefore not a test affordance bolted onto an interactive design; it is the same path with a different caller, which is what DEC-012 requires when it says an ablated run and a replayed run are different things.
+
+**`WorkflowRun.checkpoint_reference` is removed.** Its stated purpose was a persistence reference to a framework checkpoint, and DEC-016 removed the framework. `current_node` says where the run stopped and `pending_human_review` says what it is waiting for; a third field pointing at a checkpoint object that no longer exists is vestigial.
+
+**There is no human-review timeout.** `current-architecture.md` section 11 lists one as a failure mode whose response is to pause, preserve state, and resume. Under this decision that is not a failure mode at all — it is the normal state of a paused run, which waits indefinitely because waiting costs nothing when nothing is resident. Section 11's entry is rewritten to say so.
+
+The **review package** is derived from the persisted run rather than stored with it, so it can be rendered by whatever interface DX-17 selects without the pause mechanism presupposing one. Every package carries the objects pending decision, the evidence supporting each with quoted text and source location, the validation results, the human-review triggers that fired, and the open questions with blocking ones first.
+
+Checkpoint 1 additionally carries the extracted architecture — components, actors, assets, data flows, trust boundaries — with each claim's status and confidence, and any contradictions surfaced during extraction. Checkpoint 2 additionally carries, per provisional finding, its severity and confidence, its validation status, both supporting and contradictory evidence, the originating threat and control mapping, its assumptions and limitations, and the critiques raised against it. This closes DEC-005's open question about what is displayed at each checkpoint.
+
+Why:
+
+The alternative that a local single-user application invites is a blocking interactive prompt inside one long-running process. It is the simplest thing that works on a developer's machine and it fails three ways that matter here.
+
+It cannot survive process exit, and DEC-004 makes this a local application a reviewer steps away from. A checkpoint that requires the process to stay alive means reviewing findings is bounded by the terminal staying open.
+
+It is unscriptable, which would force evaluation runs to bypass the checkpoint. DEC-012 draws the distinction between *answering* a checkpoint non-interactively and *removing* it, and holds that only the second is an ablation. A blocking prompt makes them the same thing, because the only way to run unattended is to skip the node. That would quietly undo DEC-012.
+
+And it puts the reviewer's decision in memory rather than in a `ReviewerDecision` row. `data-model.md` section 2.5 requires reviewer actions to be recorded rather than silently overwriting generated content, and the evaluation plan makes reviewer acceptance and edit rates primary metrics. A decision that exists only as a keystroke is not measurable.
+
+Persisting and exiting is also what DEC-016 already implies. Having rejected a framework checkpointer, resume is a database read; a mechanism that resumes from a read is one that can be interrupted arbitrarily, and a process that can exit at a checkpoint is one whose state is genuinely complete on disk. The two decisions want the same shape.
+
+Removing `checkpoint_reference` follows the precedent DEC-012 set with the two configuration booleans: a field whose referent no longer exists is not harmless, because a later implementer will find a use for it and that use will not be the one the schema documents.
+
+Deleting the human-review timeout is the pleasant consequence. A pause that costs nothing to hold does not need a deadline, and the failure mode disappears rather than being handled.
+
+Alternatives Considered:
+
+- A blocking interactive prompt inside a single long-running process
+- A file-based review artifact the reviewer edits, read back on resume
+- A polling loop that keeps the process alive and watches for a decision record
+- Keeping `checkpoint_reference` and redefining it as the review-package identifier
+- Storing the review package with the run rather than deriving it
+
+Tradeoffs:
+
+- **Two invocations where a prompt would be one.** Running an assessment now means running it, reviewing, and running it again — which is more ceremony than a demonstration wants, and the demo script has to account for it.
+- Deriving the review package on demand means it is recomputed on every render, and a package that is expensive to build makes the review step feel slow. Nothing measures that yet.
+- Removing `checkpoint_reference` is a data-model change to a field nothing uses, which is cheap now and would not have been later.
+- The completion condition — every pending object decided — is strict. A reviewer with fifty provisional findings must decide all fifty before the run advances, and there is no supported way to say "approve the rest as-is" without recording fifty decisions. That is deliberate, because those decisions are the evaluation data, but it will feel like friction.
+- A paused run waiting indefinitely means abandoned runs accumulate with no expiry. Nothing cleans them up.
+- The decision assumes the reviewer and the pipeline share a filesystem and a database. That holds under DEC-004 and would not survive the application becoming multi-user.
+
+Open Questions:
+
+- Does a partially-decided checkpoint need to be visible as such, or is "paused with *n* of *m* decided" derivable from the decision rows alone?
+- Should resume verify that the objects pending decision still exist and are unchanged since the pause, and what happens when they are not?
+- Where does the reviewer identity on a `ReviewerDecision` come from under DEC-004, where there is no authentication?
+- Does an abandoned paused run need an expiry, or is accumulation acceptable for a local single-user application?
