@@ -933,37 +933,54 @@ Each model call should have a clear reason.
 
 ## 10. Prompt Management
 
-Prompts should be stored as version-controlled project artifacts rather than embedded across application code.
-
-Example:
+Prompts are stored as version-controlled project artifacts rather than embedded across application
+code. The tree is [agent-design.md](agent-design.md) section 34's, which is authoritative for the
+file names:
 
 prompts/
 
+shared/
+
+source-content-boundary-v1.md
+
+evidence-policy-v1.md
+
+uncertainty-policy-v1.md
+
 context/
 
-extract_context_v1.md
+extract-context-v1.md
 
 threats/
 
-generate_threats_v1.md
+generate-scenario-threats-v1.md
 
 controls/
 
-map_controls_v1.md
+map-requirements-controls-v1.md
 
 evidence/
 
-validate_evidence_v1.md
+validate-evidence-v1.md
 
 critique/
 
-review_findings_v1.md
+challenge-analysis-v1.md
 
 reporting/
 
-executive_summary_v1.md
+generate-report-sections-v1.md
 
-Each prompt should have:
+An earlier version of this section showed underscored names and a different file set. Two documents
+describing one directory differently is a directory nobody can create correctly, and section 34 is
+the one the loader follows.
+
+`shared/` holds the blocks composed into agent prompts by application code rather than copied into
+each one — the source-content boundary, the evidence policy, and the uncertainty policy. A copy is
+the failure the composition exists to prevent, because the copy is what stops being updated.
+`severity/` is absent: DEC-030 excluded the Severity Support Agent, so there is no prompt for it.
+
+Each prompt has:
 
 - A defined purpose
 - Expected input schema
@@ -972,7 +989,9 @@ Each prompt should have:
 - Version identifier
 - Evaluation examples
 
-Prompt versions should be recorded in workflow traces.
+The composed prompt is hashed rather than the file (DEC-019), so an edit to a shared block is
+visible in the hash of every prompt that includes it. Prompt versions are recorded in workflow
+traces.
 
 ## 11. Error Handling
 

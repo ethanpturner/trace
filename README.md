@@ -284,6 +284,10 @@ Against the seven-stage [roadmap](#roadmap) below, Trace is inside Stage 1.
   component types the data model never lists. Unknown transport encryption is the string `unknown`
   rather than `false` or absence, and an undocumented exposure is `None` rather than `False` — the
   DEC-009 discipline expressed at field level.
+- **The prompt registry** — prompts as version-controlled files, with the three shared blocks
+  composed in rather than copied into each one, and the hash taken over the composed text so a
+  change to a shared block is visible in every prompt that includes it. The tree is empty until the
+  prompts are authored; the loader and its guards are not.
 - **The model seam** — one protocol between the application and any provider (DEC-014), a
   deterministic substitute and a replay cache behind the same interface, and `model_profile`
   resolving to a provider, a model, generation settings, and published rates. The Anthropic
@@ -367,7 +371,7 @@ requirements/        the requirements catalog -- version-controlled YAML, read b
 scripts/             repository utilities
 benchmarks/          scenarios two onward, plus scenarios.yaml, the scenario registry
 templates/           report-v1.md -- the report's sixteen sections and their owners
-prompts/             scaffolded, empty
+prompts/             prompt files -- shared/ blocks composed into agent prompts
 ```
 
 The three source subpackages are a boundary, not a filing convention. **Domain** holds the

@@ -1813,8 +1813,6 @@ evidence-validation-v1
 
 critical-review-v1
 
-severity-support-v1
-
 report-generation-v1
 
 An agent version should change when there is a material modification to:
@@ -1861,15 +1859,13 @@ critique/
 
 challenge-analysis-v1.md
 
-severity/
-
-recommend-severity-v1.md
-
 reporting/
 
 generate-report-sections-v1.md
 
-Shared prompt content should be composed into agents through application code rather than copied manually into every prompt.
+~~severity/recommend-severity-v1.md~~ — removed. It was the prompt for the Severity Support Agent, which DEC-030 excluded; the reviewer assigns severity at checkpoint 2 and no node proposes one, so there is nothing for the prompt to instruct.
+
+Shared prompt content should be composed into agents through application code rather than copied manually into every prompt. `src/trace_ai/services/prompts/` does the composing: an agent prompt declares the shared blocks it requires in its front matter, the loader joins them in the declared order, and DEC-019 hashes the composed result so an edit to a shared block is visible in the hash of every prompt that includes it.
 
 # 35. Initial Build Order
 

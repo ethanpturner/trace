@@ -56,7 +56,7 @@ requirements/        the requirements catalog; see Requirements catalog below
 journal/             dated session entries; see Journal below
 benchmarks/          scenarios two onward, same input/ + expected/ layout
 benchmarks/scenarios.yaml  the scenario registry -- the authoritative list
-prompts/             scaffolded, empty -- versioned prompt definitions land here
+prompts/             prompt files; shared/ holds the blocks composed into agent prompts
 templates/           report-v1.md, the report template; see Report shape below
 scripts/             repository utilities
 ```
@@ -310,6 +310,12 @@ Squashing either pull request breaks the chain: the hotfix commit stops being an
   Use `type(obj).model_validate({**obj.model_dump(), **changes})`. This is the only path on which
   a human-supplied value enters a domain object, so it is the one that least tolerates skipping
   the schema. Pinned by `tests/unit/test_domain_base.py`.
+- **A prompt is a file, and shared blocks are composed rather than copied.** `agent-design.md`
+  section 34 is authoritative for the tree; `current-architecture.md` section 10 was corrected to
+  match it. `services/prompts/` reads the tree, joins each declared `shared/` block in order, and
+  hashes the **composed** text (DEC-019) — so an edit to a shared block changes the hash of every
+  prompt including it. A missing declared block raises: a prompt that composes short still runs and
+  still answers, having lost the untrusted-source boundary.
 - **Reach a model through `StructuredModel`, never through a provider SDK** (DEC-014).
   `infrastructure/model/anthropic_adapter.py` is the only module that may import `anthropic`, and
   `tests/unit/test_model_boundary.py` fails if another one does. An adapter makes **exactly one
