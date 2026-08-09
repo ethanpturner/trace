@@ -288,7 +288,8 @@ Against the seven-stage [roadmap](#roadmap) below, Trace is inside Stage 1.
 - **Test discipline** — unit tests run by default; integration and evaluation tests sit behind
   pytest markers that are deselected, so CI never needs a provider API key.
 - **The design corpus** — vision, scope, roadmap, architecture, agent design, data model,
-  evaluation plan, and decision log.
+  evaluation plan, and decision log — plus `templates/report-v1.md`, which fixes the report's
+  sixteen sections, which four of them a model writes, and what an empty section says.
 
 ### What does not exist yet
 
@@ -350,6 +351,7 @@ demo/forgeflow/      the demo scenario and its input fixtures
 requirements/        the requirements catalog -- version-controlled YAML, read by nothing yet
 scripts/             repository utilities
 benchmarks/          scenarios two onward, plus scenarios.yaml, the scenario registry
+templates/           report-v1.md -- the report's sixteen sections and their owners
 prompts/             scaffolded, empty
 ```
 

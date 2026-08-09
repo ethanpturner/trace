@@ -57,6 +57,7 @@ journal/             dated session entries; see Journal below
 benchmarks/          scenarios two onward, same input/ + expected/ layout
 benchmarks/scenarios.yaml  the scenario registry -- the authoritative list
 prompts/             scaffolded, empty -- versioned prompt definitions land here
+templates/           report-v1.md, the report template; see Report shape below
 scripts/             repository utilities
 ```
 
@@ -110,6 +111,14 @@ These are decided. Violating one is a design change requiring an entry in
   is not an ablation and needs no switch.
 - **State is structured and schema-validated**, not a conversational transcript (DEC-006).
 - **Local, single-user MVP** (DEC-004). No cloud deployment, multi-tenancy, or RBAC.
+- **The report has sixteen sections and each has exactly one owner** (DEC-035). Four are prose from
+  the Report Generation agent — `executive_summary`, `system_overview`, `risk_summary`,
+  `limitations` — and twelve are rendered deterministically from approved objects. A section is
+  never both, and the agent never rewrites an approved object's text: a `Finding.description` is
+  what the reviewer approved at checkpoint 2. `templates/report-v1.md` fixes the sections, their
+  numbering, their anchors, and the authored wording for every section that can be empty;
+  `tests/unit/test_report_template.py` holds it, the decision table, and section 5.13 in agreement.
+  Markdown is the only MVP output format.
 - **Quality over finding volume.** A successful assessment may produce no findings. Never optimize
   for finding count.
 

@@ -605,29 +605,44 @@ Human edits are valuable evaluation data because they reveal where the workflow 
 
 The reporting component transforms approved structured assessment data into a readable artifact.
 
-The initial output format will be Markdown.
+The initial output format is Markdown, and it is the only MVP format: `future-features.md` section
+13.5 defers PDF, HTML, JSON, SARIF, and audit packages.
 
-The report should include:
+The report has sixteen numbered sections, fixed by `templates/report-v1.md`. **Each has exactly one
+owner** (DEC-035): four are prose from the Report Generation Agent, and twelve are rendered
+deterministically from approved objects by the Report Rendering node. A section is never both.
 
-1. Executive summary
-2. Scope
-3. System overview
-4. Architecture summary
-5. Assets and trust boundaries
-6. Significant threats
-7. Approved findings
-8. Documentation gaps
-9. Assumptions
-10. Open questions
-11. Existing controls
-12. Recommended actions
-13. Methodology
-14. Evidence appendix
-15. Assessment limitations
+| # | Section | Owner |
+|---|---|---|
+| 1 | Executive summary | Agent |
+| 2 | Scope | Rendered |
+| 3 | System overview | Agent |
+| 4 | Architecture summary | Rendered |
+| 5 | Assets and trust boundaries | Rendered |
+| 6 | Risk summary | Agent |
+| 7 | Significant threats | Rendered |
+| 8 | Approved findings | Rendered |
+| 9 | Documentation gaps | Rendered |
+| 10 | Assumptions | Rendered |
+| 11 | Open questions | Rendered |
+| 12 | Existing controls | Rendered |
+| 13 | Recommended actions | Rendered |
+| 14 | Methodology | Rendered |
+| 15 | Evidence appendix | Rendered |
+| 16 | Assessment limitations | Agent |
+
+Risk summary is the one section this list adds to the fifteen originally proposed here. It exists so
+that section 7 is a rendered list of threats rather than a mixture of prose and table.
 
 The report generator should not invent new findings during prose generation.
 
 It should render approved structured data.
+
+Each report is written to `outputs/report-<workflow_run_id>.md` in the assessment's artifact
+directory, beside a JSON manifest carrying the report's hash, the version pins `evaluation-plan.md`
+section 3 requires, and the counts. Every section is emitted whether or not it has content, using
+wording authored in the template — an assessment with no approved findings is a defined outcome, and
+the section that says so must not read as a failure or as an assertion that the system is secure.
 
 ## 5.14 Evaluation Component
 
@@ -1152,6 +1167,8 @@ tracing/
 filesystem/
 
 prompts/
+
+templates/
 
 requirements/
 
