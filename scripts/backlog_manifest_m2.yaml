@@ -39,6 +39,18 @@ issues:
     size: M
     blocked_by: ["m2-context-objects-01", "m1-assessment-01", "m0-dx-02", "m0-dx-16"]
 
+  # Added after the initial seeding. DEC-021 was recorded the day after this manifest was
+  # written, and SourceObservation arrived with it: fully specified in data-model.md section
+  # 10a, carrying the obs- prefix, graded by its own expected-outputs file, and created by no
+  # issue in the backlog. Found by #45.
+  - seed: m2-context-objects-06
+    title: "Add the SourceObservation model and its validation rules"
+    milestone: "M2 Context"
+    labels: ["comp:context-objects", "type:feature"]
+    body_file: backlog_bodies/m2-context-objects-06.md
+    size: M
+    blocked_by: ["m2-context-objects-02", "m1-evidence-01"]
+
   - seed: m2-runtime-01
     title: "Add the model access abstraction and structured-output seam"
     milestone: "M2 Context"
