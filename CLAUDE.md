@@ -255,6 +255,12 @@ Squashing either pull request breaks the chain: the hotfix commit stops being an
   in `domain/identifiers.py` is for tests: a fresh instance restarts at `001`, so two of them
   collide and a resumed run would re-mint identifiers that already exist. Depend on the
   `IdentifierAllocator` protocol and let the persistence layer supply the implementation.
+- **Reach persisted objects through a scoped `AssessmentRepository`.** `AssessmentStore.repository(
+  assessment_id)` is the only way in; there is no cross-assessment read but `assessment_ids()`,
+  which returns identifiers and no content. Identifiers come from `repository.allocate(prefix)`,
+  never from a caller, and a counter increment commits with the insert that consumes it — wrap
+  both in `repository.transaction()`. Bumping `SCHEMA_VERSION` is for table-layout changes only; a
+  domain-object change is invisible to SQLite by design.
 - **Reach the filesystem through `ArtifactStore`, never through a path you built.** It is bound to
   one assessment, creates `sources/`, `normalized/`, `outputs/`, `traces/`, and `evaluation/` on
   demand, and treats `SourceDocument.filename` as untrusted — a caller-supplied name reaching a

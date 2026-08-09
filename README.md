@@ -216,6 +216,11 @@ Against the seven-stage [roadmap](#roadmap) below, Trace is inside Stage 1.
   a `require()` accessor that fails with a message explaining how to fix it.
 - **Process bootstrap** — ordered `.env` loading, settings cache invalidation, and logging
   configuration, wired to a `trace` console entry point.
+- **The assessment store** — SQLite holding every generated object as a validated JSON payload
+  keyed by `(assessment_id, id)`, per DEC-020, so a schema change is a Pydantic change and not a
+  migration. Repositories are scoped to one assessment, identifier allocation is a store operation
+  that survives the process, and a row that no longer parses raises rather than returning a
+  partial object.
 - **The local artifact store** — the per-assessment directory layout of `current-architecture.md`
   section 5.16, under a gitignored `data/`. A store is bound to one assessment and has no method
   that names another, so the assessment-data boundary is a different object to construct rather
