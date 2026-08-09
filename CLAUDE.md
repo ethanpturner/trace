@@ -241,6 +241,11 @@ Squashing either pull request breaks the chain: the hotfix commit stops being an
   `extra="forbid"`. Do not relax it on a subclass: it is the mechanism by which an agent-proposed
   object carrying an invented field fails validation instead of passing downstream stripped of
   the field and looking valid. Timestamps come from `domain.base.now()`, never `datetime.now()`.
+- **Identifier allocation belongs to the store, not to a caller.** DEC-018 assigns a generated
+  identifier at insert from a monotonic per-`(assessment_id, prefix)` counter. `InMemoryAllocator`
+  in `domain/identifiers.py` is for tests: a fresh instance restarts at `001`, so two of them
+  collide and a resumed run would re-mint identifiers that already exist. Depend on the
+  `IdentifierAllocator` protocol and let the persistence layer supply the implementation.
 - **Build an edited object with `model_validate`, never `model_copy`.** Domain objects are frozen,
   so a DEC-023 reviewer edit constructs a new instance and persists it under the same identifier.
   `model_copy(update=...)` looks like the API for that and validates nothing: an invalid enum
