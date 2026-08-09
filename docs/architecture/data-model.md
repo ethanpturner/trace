@@ -415,8 +415,6 @@ Stores settings that affect an assessment run.
 |---|---|---|---|
 | model_profile | string | Yes | Named model configuration |
 | threat_methodology | string | Yes | Initial threat-analysis methodology |
-| require_context_review | boolean | Yes | Pause for context approval |
-| require_finding_review | boolean | Yes | Pause for finding approval |
 | maximum_model_calls | integer | No | Execution safety limit |
 | maximum_cost | decimal | No | Optional cost limit |
 | maximum_retries_per_node | integer | Yes | Retry limit |
@@ -430,10 +428,6 @@ model_profile: primary-development
 
 threat_methodology: stride-scenario-based
 
-require_context_review: true
-
-require_finding_review: true
-
 maximum_model_calls: 25
 
 maximum_cost: 5.00
@@ -445,6 +439,23 @@ retain_debug_artifacts: true
 enable_external_tracing: false
 
 evidence_threshold: direct-or-confirmed
+
+## Note on the human checkpoints
+
+This object carries no setting that governs the two human checkpoints. Earlier versions
+declared `require_context_review` and `require_finding_review` here; DEC-012 removed them.
+
+The checkpoints are nodes in the workflow graph rather than runtime conditionals, so there
+is no configuration value that advances the pipeline past an unapproved one. A field here
+would be the switch that defeats DEC-005, whatever value it defaulted to.
+
+Running a checkpoint without a human present is not a configuration concern. A checkpoint
+answered from a recorded decision file is still a checkpoint: the node executes, the gate
+holds, and a ReviewerDecision is written. That is the mode repeatable evaluation uses.
+
+Removing a checkpoint altogether is an experiment on the architecture, described in the
+evaluation plan's section 14. It belongs to the evaluation harness, and a run that applies
+it is recorded as non-authoritative.
 
 # 7. SourceDocument
 
