@@ -1109,3 +1109,68 @@ Open Questions:
 - Should the payload column store the object's `data_model_version` alongside it, so a mixed-version database can report precisely which rows are unreadable?
 - Does the evaluation harness get a cross-assessment read interface, and if so what prevents it being used from the pipeline?
 - Does anything need to detect that `data/` and the database have diverged — an artifact referenced by a row but missing from disk?
+
+## DEC-021: Represent contradictions and injection attempts as one SourceObservation object
+
+Date: 2026-08-09
+
+Status: Accepted
+
+Decision:
+
+Add one object, **`SourceObservation`**, prefix `obs-`. It records something observed **about the source material**, as distinct from an assertion about the reviewed system.
+
+It has a `kind` discriminator with two initial values:
+
+- **`contradiction`** — two or more passages that disagree. Requires at least two evidence references.
+- **`injection_attempt`** — a passage that attempts to instruct the reader rather than describe the system. Requires at least one.
+
+Fields: `id`, `assessment_id`, `kind`, `summary`, `evidence_ids`, `subject_claim_ids` (optional, the context claims the observation bears on), `status`, `generated_by`, `reviewer_notes`, `created_at`.
+
+A `SourceObservation` carries **no severity and never becomes a Finding**. A Finding asserts a weakness in the reviewed system; an observation asserts something about a document. Collapsing them would be the DEC-009 failure in a new place.
+
+**A contradiction does not resolve itself.** `forgeflow-scenario.md` section 16.1 states that Trace must not silently choose the safer statement, so the workflow surfaces the disagreement and, where the answer would materially change the assessment, raises a `Question` alongside it. The observation records that the documents disagree; the question asks which is true.
+
+**`ContextClaim` gains no field.** Its `contradicted` status now has a defined meaning: a `SourceObservation` of kind `contradiction` references this claim in `subject_claim_ids`. The reference is one-directional, from observation to claim, so a claim does not need to know what contradicts it and the two cannot disagree about whether they disagree.
+
+`data-model.md` section 2.1 gains the `obs-` prefix. Section 38's deferred-objects list is unchanged; this object is not on it.
+
+Why:
+
+Two open questions asked the same thing twice. `agent-design.md` section 7 lists "contradiction records or flagged claims" as an extractor output and no object represents one. Section 25 says the workflow "may create a ContextClaim or security event indicating that injection-like content was detected" — and no security-event object exists anywhere in the data model, including in section 38's list of things deliberately deferred, which makes it an omission rather than a deferral.
+
+Both are load-bearing rather than hypothetical. The ForgeFlow scenario contains two deliberate contradictions in section 16 and a planted injection payload in section 17, and the benchmark's expected outputs count both. The system is required to surface things it currently cannot represent.
+
+**Neither belongs on `ContextClaim`, and the reason is categorical.** A context claim asserts something about the reviewed system: authentication is delegated, the API is internet-accessible. Its shape — `subject_type`, `subject_id`, `predicate`, `value` — is built for that. A contradiction asserts something about the documentation, and forcing it into that shape leaves no sensible answer to what the subject is or what the value asserts. The `contradicted` status exists precisely because someone noticed the gap and reached for the nearest field.
+
+**One object rather than two** because the two kinds share everything that matters. Both reference source passages, both must reach the reviewer at the context checkpoint, both are counted by the evaluation harness, both are produced by context extraction, and neither is a Finding, a Question, or a DocumentationGap. What differs is the number of evidence references and whether a Question usually accompanies it, which is a validation rule rather than a different object.
+
+Two near-identical objects would also cut against the model's stated instinct. Section 38 defers eighteen object types and section 40 limits the initial implementation set; adding two where one serves is the kind of expansion those sections exist to resist.
+
+The discriminator leaves room for the observations that will follow — a document that appears to describe a different system, a section internally inconsistent with itself — without another object each time.
+
+**One subtlety the ForgeFlow fixture surfaces.** Its injection payload sits in a document that, within the fiction, is a ForgeFlow engineer's repository notes. Detecting it is a Trace behaviour and produces a `SourceObservation`. But the *existence* of injectable content in repository data is also evidence for THR-001, the scenario's own "repository prompt injection manipulates AI output" threat about ForgeFlow. One fixture, two distinct outputs: an observation about the document Trace was given, and evidence for a threat about the system Trace is reviewing. Conflating them would produce a finding about ForgeFlow every time Trace reads a document containing an injection, regardless of whether ForgeFlow is exposed to one.
+
+Alternatives Considered:
+
+- A `ContextClaim` with a dedicated predicate such as `suspicious_instruction_detected`
+- Two separate objects, `Contradiction` and `SecurityObservation`
+- Adding `contradicts_id` or `conflicting_claim_ids` to `ContextClaim`
+- Reusing `Critique` with a `contradictory_analysis` type
+- Representing an injection attempt as a `DocumentationGap`
+- Recording both only in `ExecutionRecord` metadata, with no first-class object
+
+Tradeoffs:
+
+- **One object with a discriminator means validation is conditional on `kind`**, and conditional validation is where schema bugs live. A contradiction with one evidence reference and an injection attempt with two are both structurally valid until a rule checks them.
+- The two kinds may diverge. If contradictions later need a resolution state and injection attempts need a severity, the shared object becomes a union of fields where half are always null — the shape this decision avoided by not creating two objects in the first place.
+- `summary` is free text, so counting contradictions in evaluation depends on the extractor producing one observation per disagreement rather than one per document or one per pair of passages. Nothing enforces the granularity.
+- The observation-to-claim reference being one-directional means finding what contradicts a given claim requires scanning observations. With the volumes involved that is fine and it is still a scan.
+- Adding an object to a model that deliberately limits them needs to stay justified. If neither kind is ever produced outside the demo fixture, this is a schema paying rent for a test.
+
+Open Questions:
+
+- Does a reviewer disposition on a contradiction — confirming which passage is correct — belong on the observation, on the `Question`, or on the `ContextClaim` it resolves?
+- Should an injection attempt observed in a source document ever be admissible as evidence for a threat about the reviewed system, or must that always be a separate reviewer judgment?
+- What granularity counts as one contradiction when three documents disagree pairwise?
+- Does `SourceObservation` need a `status` of its own, given that it records an observation rather than a proposal a reviewer accepts or rejects?

@@ -79,6 +79,8 @@ qst- Question
 
 gap- Documentation gap
 
+obs- Source observation
+
 dec- Reviewer decision
 
 run- Workflow run
@@ -707,6 +709,53 @@ evidence_ids:
 source_origin: uploaded_document
 
 generated_by: context-extraction-v1
+
+# 10a. SourceObservation
+
+## Purpose
+
+Records something observed **about the source material**, as distinct from an assertion about the
+reviewed system (DEC-021).
+
+A `ContextClaim` asserts that authentication is delegated or that the API is internet-accessible. A
+`SourceObservation` asserts that two documents disagree, or that a passage attempts to instruct its
+reader. The distinction is categorical: one describes the system, the other describes the documents.
+
+## Fields
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| id | string | Yes | Stable observation identifier |
+| assessment_id | string | Yes | Parent assessment |
+| kind | string | Yes | `contradiction` or `injection_attempt` |
+| summary | string | Yes | What was observed |
+| evidence_ids | list[string] | Yes | Passages the observation rests on |
+| subject_claim_ids | list[string] | No | Context claims the observation bears on |
+| status | ObjectStatus | Yes | Lifecycle state |
+| generated_by | string | No | Workflow node or reviewer |
+| reviewer_notes | string | No | Reviewer explanation |
+| created_at | datetime | Yes | Creation timestamp |
+
+## Kind values
+
+contradiction
+
+injection_attempt
+
+## Validation rules
+
+- `contradiction` requires at least two evidence references.
+- `injection_attempt` requires at least one.
+- A SourceObservation carries no severity and never becomes a Finding. A Finding asserts a weakness
+  in the reviewed system; an observation asserts something about a document.
+- A contradiction does not resolve itself. Where the answer would materially change the assessment,
+  a `Question` is raised alongside it. Trace must not silently choose the safer statement.
+
+## Note on `ContextClaim.contradicted`
+
+`ContextClaim`'s `contradicted` status means a SourceObservation of kind `contradiction` references
+that claim in `subject_claim_ids`. The reference is one-directional, so a claim does not carry a
+field naming what contradicts it and the two cannot disagree about whether they disagree.
 
 # 11. Component
 
