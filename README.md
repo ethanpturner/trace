@@ -278,6 +278,12 @@ Against the seven-stage [roadmap](#roadmap) below, Trace is inside Stage 1.
   `data-model.md` sections 5 and 6 by the conformance guard. The configuration carries no setting
   that governs the two human checkpoints, and a test asserts that reintroducing one fails
   validation rather than passing quietly.
+- **The five architecture objects** — `Component`, `Actor`, `Asset`, `DataFlow`, and
+  `TrustBoundary`, the context baseline a reviewer approves at checkpoint 1. Type fields are open
+  vocabularies normalized to one spelling (DEC-036), because the project's own benchmark uses six
+  component types the data model never lists. Unknown transport encryption is the string `unknown`
+  rather than `false` or absence, and an undocumented exposure is `None` rather than `False` — the
+  DEC-009 discipline expressed at field level.
 - **Identifiers and content hashing** — the twenty-three prefixes of section 2.1 as a closed
   registry, both identifier forms DEC-018 defines, a typed identifier per object so a threat
   identifier cannot be assigned to a finding's field, and the single SHA-256 utility DEC-019
@@ -295,9 +301,11 @@ Against the seven-stage [roadmap](#roadmap) below, Trace is inside Stage 1.
 
 - No agent. No model call of any kind. Documents are ingested, turned into addressable evidence,
   and retrievable through the interface an agent would sit behind — but nothing sits behind it yet.
-- Six domain objects of roughly twenty-nine: `Assessment`, `AssessmentConfiguration`,
-  `SourceDocument`, `EvidenceReference`, `WorkflowRun`, and `ExecutionRecord`. The context,
-  threat, finding, and review objects are not implemented.
+- Eleven domain objects of roughly twenty-nine: `Assessment`, `AssessmentConfiguration`,
+  `SourceDocument`, `EvidenceReference`, `WorkflowRun`, `ExecutionRecord`, and the five
+  architecture objects of the context baseline — `Component`, `Actor`, `Asset`, `DataFlow`, and
+  `TrustBoundary`. `SystemContext`, `ContextClaim`, and the threat, finding, and review objects are
+  not implemented.
 - No CLI beyond a banner printing the environment and which credentials are configured.
 - No threat analysis, no findings, no report generation, no evaluation harness.
 - The demo scenario is not runnable.

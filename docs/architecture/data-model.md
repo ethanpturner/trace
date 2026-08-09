@@ -717,6 +717,7 @@ Represents the structured architecture baseline used for downstream analysis.
 | context_claim_ids | list[string] | Yes | Context claims |
 | component_ids | list[string] | Yes | Components |
 | asset_ids | list[string] | Yes | Assets |
+| actor_ids | list[string] | Yes | Actors (DEC-037) |
 | data_flow_ids | list[string] | Yes | Data flows |
 | trust_boundary_ids | list[string] | Yes | Trust boundaries |
 | approved_at | datetime | No | Context-approval timestamp |
@@ -2298,7 +2299,7 @@ These can be added later without expanding the initial MVP unnecessarily.
 1. Should context claims use a flexible subject-predicate-value structure or more specific typed models?
 2. ~~Should evidence excerpts be duplicated in the database or loaded from normalized source files?~~ Resolved by DEC-015: `quoted_text` is stored verbatim from the original and is immutable, with `content_hash` covering it. Where the row is stored is a persistence question (DEC-012's successor), not a location one.
 3. ~~How should evidence locations be represented consistently across Markdown, text, JSON, YAML, and future PDF inputs?~~ Resolved by DEC-015.
-4. Should actors be separate first-class objects in the MVP?
+4. ~~Should actors be separate first-class objects in the MVP?~~ Resolved by DEC-037: yes. `SystemContext` gains `actor_ids`, and section 40's list gains `Actor`. An extracted actor that the approved baseline does not reference would be approved by nobody and reachable by nothing.
 5. How should requirement applicability conditions be represented in machine-readable form? Catalog version 0.1 leaves them as free text deliberately, so the vocabulary can be observed before it is fixed. DEC-024 confirms they stay free text for now: with `applicable_technologies` populated on zero requirements there is nothing to filter on deterministically, so the whole catalog is passed and applicability is the agent's judgment.
 6. ~~How should inherited-control scope be modeled?~~ Resolved by DEC-026: with the fields `Control` already has. `inheritance_scope` is removed.
 7. ~~Should confidence scores be generated numerically or only categorically?~~ Resolved by DEC-022: categorically only. `confidence_score` is removed, and `EvidenceStrength` moves onto `EvidenceAssessment` so model confidence and evidence strength stay separate, as design principle 15 requires.
@@ -2330,24 +2331,29 @@ Implement these first:
 7. SourceObservation
 8. Component
 9. Asset
-10. DataFlow
-11. TrustBoundary
-12. Threat
-13. Requirement
-14. Control
-15. ControlMapping
-16. Finding
-17. Question
-18. DocumentationGap
-19. ReviewerDecision
-20. WorkflowRun
-21. ExecutionRecord
+10. Actor
+11. DataFlow
+12. TrustBoundary
+13. Threat
+14. Requirement
+15. Control
+16. ControlMapping
+17. Finding
+18. Question
+19. DocumentationGap
+20. ReviewerDecision
+21. WorkflowRun
+22. ExecutionRecord
 
 `SourceObservation` (section 10a) was added by DEC-021 after this list was written, and the list
 was not updated with it. It is not optional: DEC-021 makes contradictions and detected
 prompt-injection attempts one object of this type, the context extraction step produces them, and
 DEC-027 gives every benchmark scenario an `expected-observations.yaml` to grade them against. It
 sits after `ContextClaim` because `subject_claim_ids` references claims.
+
+`Actor` (section 13) was on neither list, and open question 4 asked whether actors are first-class
+objects at all. DEC-037 answers it: they are, `SystemContext.actor_ids` references them, and the
+entry above places `Actor` after `Asset` and before `DataFlow`.
 
 Add Critique, EvidenceAssessment, PromptDefinition, RequirementsCatalog, and EvaluationResult once the main workflow begins operating.
 

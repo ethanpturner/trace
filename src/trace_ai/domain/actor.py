@@ -1,0 +1,62 @@
+"""`Actor`: a user, system identity, administrator, threat actor, or external party.
+
+`data-model.md` section 13 is authoritative for the fields, and this object is the one the corpus
+was least sure about. Section 40 omitted it from the implementation priority, open question 4 asked
+whether actors are first-class objects at all, and `SystemContext` had no field pointing at one --
+while `agent-design.md` section 7 listed Actor among the extractor's outputs and the roadmap listed
+it in two stages. DEC-037 settles it: Actor is first-class, `SystemContext` gains `actor_ids`, and
+section 40 gains the entry it was missing.
+
+**Actor carries no `status`.** Section 13's table has no such column, and every other object in the
+context baseline has one. That is not an oversight to correct here: adding a field the document does
+not sanction is exactly what `tests/unit/test_data_model_conformance.py` fails on, and changing it
+would be a data-model change rather than an implementation detail.
+
+**`trust_level` here is not `SourceDocument.TrustLevel`.** That enum classifies how a *document*
+should be treated; this field is free text classifying how much privilege an actor holds. The two
+share a name and nothing else, which is why this one is a plain string and stays that way.
+"""
+
+from __future__ import annotations
+
+from typing import Final
+
+from pydantic import Field
+
+from trace_ai.domain.base import DomainModel
+from trace_ai.domain.identifiers import ActorId, AssessmentId, EvidenceReferenceId
+from trace_ai.domain.vocabulary import VocabularyTerm
+
+__all__ = ["KNOWN_ACTOR_TYPES", "Actor"]
+
+# Section 13's examples. Documentation, not a validation rule (DEC-036).
+KNOWN_ACTOR_TYPES: Final[frozenset[str]] = frozenset(
+    {
+        "end_user",
+        "developer",
+        "administrator",
+        "service_identity",
+        "third_party_service",
+        "external_attacker",
+        "malicious_insider",
+        "compromised_dependency",
+    }
+)
+
+
+class Actor(DomainModel):
+    """A party that interacts with the reviewed system (section 13)."""
+
+    id: ActorId
+    assessment_id: AssessmentId
+
+    name: str = Field(min_length=1)
+    actor_type: VocabularyTerm
+    """Open vocabulary; see `KNOWN_ACTOR_TYPES`."""
+
+    trust_level: str | None = None
+    """How much privilege this actor holds. Free text, and unrelated to `SourceDocument`'s enum."""
+
+    capabilities: list[str] = Field(default_factory=list)
+    authentication_method: str | None = None
+    evidence_ids: list[EvidenceReferenceId] = Field(default_factory=list)
