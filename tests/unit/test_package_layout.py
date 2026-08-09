@@ -40,6 +40,9 @@ PACKAGES = (
     "trace_ai.infrastructure",
     "trace_ai.infrastructure.filesystem",
     "trace_ai.infrastructure.database",
+    # The model seam (DEC-014). `tests/unit/test_model_boundary.py` holds the rule this package
+    # exists to enforce: the adapter inside it is the only module that may import a provider SDK.
+    "trace_ai.infrastructure.model",
 )
 
 # What a domain module may not reach for. Named as module prefixes so that

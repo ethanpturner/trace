@@ -284,6 +284,11 @@ Against the seven-stage [roadmap](#roadmap) below, Trace is inside Stage 1.
   component types the data model never lists. Unknown transport encryption is the string `unknown`
   rather than `false` or absence, and an undocumented exposure is `None` rather than `False` — the
   DEC-009 discipline expressed at field level.
+- **The model seam** — one protocol between the application and any provider (DEC-014), a
+  deterministic substitute and a replay cache behind the same interface, and `model_profile`
+  resolving to a provider, a model, generation settings, and published rates. The Anthropic
+  adapter makes exactly one attempt and returns a structured failure carrying the raw output
+  rather than raising; a test asserts no module outside it imports a provider SDK.
 - **Identifiers and content hashing** — the twenty-three prefixes of section 2.1 as a closed
   registry, both identifier forms DEC-018 defines, a typed identifier per object so a threat
   identifier cannot be assigned to a finding's field, and the single SHA-256 utility DEC-019
@@ -299,8 +304,10 @@ Against the seven-stage [roadmap](#roadmap) below, Trace is inside Stage 1.
 
 ### What does not exist yet
 
-- No agent. No model call of any kind. Documents are ingested, turned into addressable evidence,
-  and retrievable through the interface an agent would sit behind — but nothing sits behind it yet.
+- No agent, and no model call anywhere in a code path that runs. The seam an agent would talk
+  through exists and the Anthropic adapter behind it is written; nothing calls either. Documents
+  are ingested, turned into addressable evidence, and retrievable through the interface an agent
+  would sit behind — but nothing sits behind it yet.
 - Eleven domain objects of roughly twenty-nine: `Assessment`, `AssessmentConfiguration`,
   `SourceDocument`, `EvidenceReference`, `WorkflowRun`, `ExecutionRecord`, and the five
   architecture objects of the context baseline — `Component`, `Actor`, `Asset`, `DataFlow`, and
@@ -350,7 +357,7 @@ browser in the MVP.
 src/trace_ai/                    configuration and process bootstrap
 src/trace_ai/domain/             domain objects and shared types
 src/trace_ai/services/           ingestion/ and evidence/ -- operations on those objects
-src/trace_ai/infrastructure/     filesystem/ and database/ -- the artifact and assessment stores
+src/trace_ai/infrastructure/     filesystem/, database/, and model/ -- stores and the model seam
 tests/               unit tests; integration/ and evaluation/ are scaffolded and empty
 docs/product/        vision, design principles, roadmap, future features
 docs/architecture/   scope, current architecture, agent design, data model,
