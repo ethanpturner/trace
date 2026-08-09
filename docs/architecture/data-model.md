@@ -351,7 +351,14 @@ critical
 
 unassigned
 
-The MVP should avoid implementing an overly complex severity algorithm before the core workflow is validated.
+**`unassigned` is the value a finding is created with.** No pipeline node assigns severity:
+the reviewer assigns it at the finding checkpoint (DEC-030), because severity depends on
+business context the source documents do not carry. It is the one required `Finding` field
+that cannot be answered from the material under review.
+
+**`unassigned` may not survive approval.** See the approval rules in section 21.
+
+The MVP should avoid implementing an overly complex severity algorithm before the core workflow is validated. DEC-030 declined a deterministic heuristic on those grounds and on data: the fields a rule would use — `internet_exposed`, `business_criticality`, the impact fields, `data_classification` — are all optional and mostly free text with no controlled vocabulary.
 
 ## 4.6 ReviewDisposition
 
@@ -370,6 +377,12 @@ request_more_analysis
 convert_to_question
 
 convert_to_documentation_gap
+
+There is deliberately no `change_severity` value. A severity change is an `edit`, carrying
+`prior_value` and `updated_value` on `ReviewerDecision` per DEC-023. `current-architecture.md`
+section 5.12 lists changing severity among the reviewer's actions; that list names actions a
+reviewer takes and this one names dispositions the system records, and the two do not
+correspond one to one (DEC-030).
 
 ## 4.7 ValidationStatus
 
@@ -1199,9 +1212,28 @@ Represents an implemented, inherited, claimed, or proposed security safeguard.
 | validation_status | ValidationStatus | Yes | Evidence result |
 | evidence_ids | list[string] | No | Supporting evidence |
 | owner | string | No | Control owner |
-| inheritance_scope | string | No | Scope of inherited protection |
 | limitations | list[string] | No | Known limitations |
 | status | ObjectStatus | Yes | Lifecycle state |
+
+## Note on inherited-control scope
+
+Scope is expressed by the fields above, not by a free-text field (DEC-026): `provider_component_id`
+says who provides the control, `protected_component_ids` and `protected_asset_ids` say what it
+covers, and `limitations` says where the coverage stops.
+
+An earlier `inheritance_scope` string described the same thing in prose, which meant it could
+disagree with the structured fields with nothing to say which was right. It also could not be
+compared against the architecture, and inherited-control recognition is a named evaluation metric.
+
+Two states are distinguished by field combination, and the distinction is what the ForgeFlow
+intentional non-findings turn on:
+
+| Situation | `control_type` | `implementation_status` | Evidence | Outcome |
+|---|---|---|---|---|
+| Platform provides it, documentation says so | `inherited` | `implemented` | present | Requirement satisfied |
+| Platform probably provides it, nothing says so | `inherited` | `claimed` | absent | A `Question` requesting confirmation |
+
+The second never resolves to `absent`, and by DEC-013 never to `unmet`.
 
 ## Control-type values
 
@@ -1248,6 +1280,8 @@ This is one of the most important objects in Trace because it prevents the appli
 | control_ids | list[string] | No | Relevant controls |
 | applicability_status | string | Yes | Applicable, conditional, not applicable |
 | applicability_reason | string | Yes | Explanation |
+| suppressed_conclusion | string | No | A conclusion not drawn because a `common_false_positives` entry applies (DEC-025) |
+| suppressed_by | string | No | The `common_false_positives` entry that applies (DEC-025) |
 | satisfaction_status | string | Yes | Satisfied, partial, unverified, unmet |
 | evidence_ids | list[string] | No | Mapping evidence |
 | assumptions | list[string] | No | Assumptions affecting mapping |
@@ -1383,6 +1417,15 @@ An approved finding should generally require:
 - Supported or partially supported evidence
 - A clear distinction from a documentation gap
 - Actionable remediation or acceptance criteria
+
+An approved finding **must** have:
+
+- A severity other than `unassigned` (DEC-030)
+
+This one is a hard rule rather than a general expectation. Severity is assigned only by the
+reviewer, so without it the field would stay `unassigned` on every finding and the report
+would have no ordering. It is what makes reviewer-assigned severity work instead of
+degrading into nobody assigning severity.
 
 ## Example
 
@@ -2187,8 +2230,8 @@ These can be added later without expanding the initial MVP unnecessarily.
 2. ~~Should evidence excerpts be duplicated in the database or loaded from normalized source files?~~ Resolved by DEC-015: `quoted_text` is stored verbatim from the original and is immutable, with `content_hash` covering it. Where the row is stored is a persistence question (DEC-012's successor), not a location one.
 3. ~~How should evidence locations be represented consistently across Markdown, text, JSON, YAML, and future PDF inputs?~~ Resolved by DEC-015.
 4. Should actors be separate first-class objects in the MVP?
-5. How should requirement applicability conditions be represented in machine-readable form? Catalog version 0.1 leaves them as free text deliberately, so the vocabulary can be observed before it is fixed.
-6. How should inherited-control scope be modeled?
+5. How should requirement applicability conditions be represented in machine-readable form? Catalog version 0.1 leaves them as free text deliberately, so the vocabulary can be observed before it is fixed. DEC-024 confirms they stay free text for now: with `applicable_technologies` populated on zero requirements there is nothing to filter on deterministically, so the whole catalog is passed and applicability is the agent's judgment.
+6. ~~How should inherited-control scope be modeled?~~ Resolved by DEC-026: with the fields `Control` already has. `inheritance_scope` is removed.
 7. ~~Should confidence scores be generated numerically or only categorically?~~ Resolved by DEC-022: categorically only. `confidence_score` is removed, and `EvidenceStrength` moves onto `EvidenceAssessment` so model confidence and evidence strength stay separate, as design principle 15 requires.
 8. How should multiple model outputs proposing the same object be merged?
 9. How should object revisions be stored?
@@ -2196,7 +2239,7 @@ These can be added later without expanding the initial MVP unnecessarily.
 11. How much model-generation metadata belongs on each object?
 12. Should workflow state store objects directly or only identifiers?
 13. ~~Which objects belong in SQLite versus version-controlled YAML or JSON?~~ Resolved by DEC-020: the split is by authorship. Authored artifacts are version-controlled files; generated objects are rows; generated files live under `data/`.
-14. How should severity be calculated?
+14. ~~How should severity be calculated?~~ Resolved by DEC-030: it is not calculated. The reviewer assigns it at the finding checkpoint, findings are created `unassigned`, and an approval carrying `unassigned` is rejected. No agent and no deterministic node proposes a value.
 15. ~~What is the minimum evidence required to approve a finding?~~ Resolved by DEC-013.
 16. How should rejected threats and findings be retained for evaluation?
 17. ~~How should data-model migrations be handled during early development?~~ Resolved by DEC-020: they are not. An incompatible `data_model_version` refuses to load, and the assessment is re-run — which the cost estimate makes cheaper than writing a migration against a schema still under decision.

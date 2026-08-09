@@ -43,11 +43,14 @@ tests/evaluation/    scaffolded, empty
 docs/product/        vision, design principles, roadmap, future features
 docs/architecture/   scope, current architecture, agent design, data model,
                      evaluation plan, decision log
-demo/forgeflow/      the ForgeFlow benchmark fixture (Markdown + YAML)
-demo/forgeflow/expected/   empty -- expected outputs are not yet authored
+demo/forgeflow/      the ForgeFlow scenario: the demo and benchmark scenario one
+demo/forgeflow/input/      material supplied to Trace
+demo/forgeflow/expected/   the truth set; never supplied to Trace. Only the contract is
+                           written; the expected-*.yaml files are not yet authored
 requirements/        the requirements catalog; see Requirements catalog below
 journal/             dated session entries; see Journal below
-benchmarks/          scaffolded, empty -- evaluation fixtures land here
+benchmarks/          scenarios two onward, same input/ + expected/ layout
+benchmarks/scenarios.yaml  the scenario registry -- the authoritative list
 prompts/             scaffolded, empty -- versioned prompt definitions land here
 scripts/             repository utilities
 ```
@@ -73,7 +76,11 @@ These are decided. Violating one is a design change requiring an entry in
 
 - **Six model-assisted agents, capped.** Context Extraction, Threat Analysis, Requirement and
   Control Mapping, Evidence Validation, Critical Review, Report Generation. A seventh requires
-  evidence that it improves results. Report *rendering* uses no model.
+  evidence that it improves results. Report *rendering* uses no model. The corpus specified a
+  seventh — Severity Support — and DEC-030 excluded it rather than deferring it: four of its six
+  outputs already existed as `Finding` fields. **Severity is assigned by the reviewer at
+  checkpoint 2**, no node proposes one, and a finding may not be approved while its severity is
+  `unassigned`. `tests/unit/test_agent_cap.py` pins the inventory.
 - **Agents never write authoritative state.** They return proposed objects; the application
   validates and persists. Agents also get no internet, shell, filesystem, database writes, or cloud
   credentials.

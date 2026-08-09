@@ -472,7 +472,7 @@ Tradeoffs:
 
 Open Questions:
 
-- Should the per-scenario `requirements.json` in the evaluation plan reference catalog identifiers rather than restate requirements?
+- ~~Should the per-scenario `requirements.json` in the evaluation plan reference catalog identifiers rather than restate requirements?~~ Answered by DEC-027 by removing the file. DEC-024 puts the whole catalog in every mapping call, so a per-scenario requirement list could only narrow what the pipeline sees. A scenario pins `catalog_version` and expected control mappings reference catalog identifiers directly.
 - When should catalog version 0.1 become 0.2 rather than being edited in place?
 - ~~What computes and verifies `content_hash`, and at what point in the workflow?~~ Answered by DEC-019: one SHA-256 utility, with a stated input per object type and defined compute and verify points. The catalog's hash is computed by the loader.
 
@@ -1288,3 +1288,405 @@ Open Questions:
 - Does `Finding` need `supersedes_id` for re-consolidation, in the way `ContextClaim` has it for re-extraction?
 - When a reviewer edits an object that a later stage has already consumed, does anything invalidate the downstream work?
 - Is per-field delta granularity sufficient for a nested field, or does an edit inside `metadata` need its own path notation?
+
+## DEC-024: Pass the whole catalog to one mapping agent; there is no deterministic pre-filter
+
+Date: 2026-08-09
+
+Status: Accepted
+
+Decision:
+
+**Requirement and Control Mapping is one model-assisted agent**, as `agent-design.md` section 12 defines it. There is no separate deterministic requirement matcher.
+
+**The whole requirements catalog is passed on every mapping call.** At 23 requirements and roughly 12,600 tokens it fits comfortably, and DEC-014's capability-aware seam makes it a stable cacheable prefix across the ten or so mapping calls in an assessment.
+
+**A requirement is evaluated only through a threat.** `ControlMapping.threat_id` is required and stays required. The consequence is stated rather than left implicit: **a requirement that applies to the system but that no threat reaches is never evaluated and appears nowhere in the assessment.** Coverage is therefore bounded by threat generation, and the evaluation plan's false-negative rate is what detects a systematic miss.
+
+**The discrimination constraint is satisfied at the output, not the input.** `agent-design.md` section 12 prohibits applying every catalog requirement to every component and makes undiscriminated applicability a failure condition. Those constrain what the agent *concludes*, not what it is *shown*. Every mapping carries a non-empty `applicability_reason`, and a mapping run in which no requirement is marked `not_applicable` or `conditionally_applicable` is flagged by the Mapping Validation node.
+
+Why:
+
+The issue that framed this recommended a deterministic requirement pre-filter with the mapping agent behind it. **That recommendation was written before checking whether the filter fields carry data, and they do not.**
+
+`applicable_technologies` is the only structured filter field in the section 17 schema. It is populated on **zero of the twenty-three requirements**. There is nothing to filter on.
+
+The remaining candidates fail for their own reasons. `applicable_conditions` and `non_applicable_conditions` are populated on every requirement — 48 and 46 entries — and are free text, deliberately: `requirements/README.md` records that no controlled vocabulary was introduced so the vocabulary could be observed before being fixed. Free text is model-readable and not filterable. Category is the only structured axis with data, at 17 distinct values, but filtering on it requires deriving a category from a threat, and that derivation is a judgment. Implementing it as a hand-written table from threat type to requirement category would reproduce exactly the mechanical checklist behaviour `current-architecture.md` section 2.2 rejects; implementing it with a model makes it a second model-assisted step, which is the seventh agent the cap exists to prevent.
+
+So a deterministic pre-filter is not merely unnecessary here — it has no input. Recording that plainly matters more than the conclusion, because the recommendation reads plausibly and the data contradicting it is one query away.
+
+Passing the whole catalog is affordable and becomes more so under caching. The catalog is the single largest stable prefix in the pipeline, reused across every mapping call, which is exactly the shape prompt caching serves.
+
+The confusion the section 12 prohibition invites is worth naming. "Apply every catalog requirement to every component" describes an output in which everything is marked applicable. It does not describe an input. Reading it as an instruction to narrow the input is the likely implementation error, and it would produce a system that silently never considers most requirements — a false-negative machine whose failure is invisible because the requirement never appears at all.
+
+How this scales, when it stops:
+
+The escalation path is stated here so the next person is not choosing under pressure.
+
+**First, partition and fan out deterministically.** Split the catalog into a handful of domains and run the mapping agent once per threat *per domain*, so each call sees a fraction of the catalog. Discrimination improves because the input is narrower, and **nothing is excluded**, because every partition runs for every threat. There is no filtering judgment to get wrong, which is what separates this from a pre-filter: an excluded requirement produces no mapping to inspect, and a partitioned one produces the same mappings in more calls.
+
+The cost is not where it appears. Caching makes the input roughly equivalent either way — five partition writes plus forty-five reads comes to about what ten full-catalog calls cost. What multiplies is the call count, and `scripts/estimate_cost.py` found thinking to be roughly 85% of spend. Each partitioned call should think less, having fewer requirements to weigh, so the increase is not proportional to the call count, but it is real and currently unmeasured.
+
+**Then, structured applicability.** Requirements gated by a small set of system-level questions answered once per assessment — whether the system processes customer data, whether it delegates authentication — so whole groups become inapplicable on evidence rather than on a guess. That is `data-model.md` question 5, deliberately left open so the vocabulary could be observed rather than imposed, and the catalog is where the observation happens: the 48 `applicable_conditions` and 46 `non_applicable_conditions` entries written so far are its raw material. Twenty-three requirements are not enough signal to derive it from; somewhere before two hundred there will be.
+
+Populating `applicable_technologies` is the weakest of the three. It is hand-authored, drifts as technologies are renamed, and reintroduces the invisible-exclusion failure this decision avoided.
+
+Alternatives Considered:
+
+- A deterministic pre-filter on `applicable_technologies`, once populated
+- A category filter driven by a hand-written threat-to-category table
+- A model-assisted retrieval step, accepting a seventh agent
+- Semantic retrieval over requirement text, once vector infrastructure exists
+- Batching requirements across several calls per threat
+- Making `threat_id` optional so requirements can be evaluated against the system directly
+
+Tradeoffs:
+
+- **This does not scale with the catalog**, and what breaks first is not what it looks like. Cost and context are not the constraint: at two hundred requirements the catalog is roughly 110,000 tokens, which under DEC-014's caching costs about a dollar per assessment and occupies a tenth of the context window. **Discrimination quality is the constraint.** Section 12's failure condition is undiscriminated applicability, and the wider the input the likelier it becomes. It degrades continuously rather than at a threshold, so the trigger is measured applicability precision — which `evaluation-plan.md` section 7 already tracks as correct and incorrect applicability under Requirement Mapping — not a token count.
+- Passing everything means the agent sees requirements that are obviously irrelevant, and every one is an opportunity to mark something applicable that is not. The discrimination requirement is enforced downstream rather than prevented upstream.
+- **Threat-gating leaves a real coverage gap.** A whole category of requirement can go unevaluated because threat analysis did not produce a threat that reaches it, and nothing in the assessment says so. Populating `applicable_technologies` would not close it either; only a system-level applicability pass would.
+- The output-side enforcement — requiring at least one `not_applicable` mapping — is a heuristic. A threat that genuinely implicates most of a small catalog would trip it.
+- Caching the catalog makes the prefix sensitive to catalog edits: changing one requirement invalidates the cached prefix for every mapping call in every subsequent assessment until it is rewritten.
+
+Open Questions:
+
+- What applicability-precision figure is low enough to trigger partitioning, and over how many assessments must it hold before the trigger fires?
+- Partitioning trades money for discrimination at an unmeasured exchange rate. How much less does a call over a fifth of the catalog think, and is the total increase closer to 2x or 5x?
+- Does the coverage gap from threat-gating need a system-level applicability pass, and would that be a seventh agent?
+
+## DEC-025: Record suppressed conclusions on the mapping that suppressed them
+
+Date: 2026-08-09
+
+Status: Accepted
+
+Decision:
+
+When a mapping declines a negative conclusion because a `common_false_positives` entry applies, the `ControlMapping` records it. Two fields are added:
+
+- **`suppressed_conclusion`** — the conclusion not drawn, in the agent's words.
+- **`suppressed_by`** — the `common_false_positives` entry that applies.
+
+**Suppression is never silent.** DEC-011 records that nothing enforces the field is consulted, and asks whether a suppressed conclusion should be recorded rather than discarded. It should. `evaluation-plan.md` section 8 makes false-negative rate a primary metric and DEC-011 names over-suppression as the field's principal risk; a suppression that leaves no trace is invisible to exactly the measurement meant to catch it.
+
+**Enforcement is a deterministic check that does not require semantic matching.** The Mapping Validation node rejects a mapping that proposes `unmet` against a requirement carrying `common_false_positives` entries unless the mapping states why those entries do not apply. The check is structural — does the mapping address the field — rather than an attempt to decide whether an entry matches, which free text cannot support.
+
+The distinction DEC-011 draws stays load-bearing and is restated where an implementer will meet it: **`common_false_positives` is not `non_applicable_conditions`.** The latter says the requirement does not apply at all. The former says the requirement *does* apply, the documentation is silent, and a particular conclusion is still wrong.
+
+Why:
+
+The field was added by DEC-011 and its own Tradeoffs section states the problem: "Nothing yet enforces that the field is consulted." It is populated on all 23 requirements with 51 entries and read by nothing.
+
+Recording rather than discarding is the answer to DEC-011's first open question, and the argument is a measurement one. The catalog encodes fifty-one specific wrong conclusions that should not be drawn. If suppressing one leaves no record, then a catalog entry that is too aggressive — suppressing a conclusion that was actually correct — produces a false negative that no metric can attribute. The false-negative rate would move and nothing would say why.
+
+Putting the record on the `ControlMapping` rather than in a new object keeps it where the decision happened. A suppressed conclusion is not a free-standing thing; it is a property of one requirement-threat-control evaluation, and it is meaningless detached from that. DEC-021 added an object for observations about *source material*, and this is deliberately not that — it is an observation about the analysis.
+
+The structural enforcement is the part that can actually be built. Deciding whether a free-text `common_false_positives` entry matches a proposed conclusion is a semantic judgment, and a validation node that attempted it would be a model call in a deterministic node. Requiring the mapping to *address* the field is checkable without judgment, and it converts the failure mode from "the agent never looked" to "the agent looked and said why" — which is the difference DEC-011 was reaching for.
+
+Alternatives Considered:
+
+- A separate `SuppressedConclusion` object
+- Recording suppressions only in `ExecutionRecord` metadata
+- Extending `SourceObservation` with a third kind
+- Semantic matching in the validation node, deciding whether an entry applies
+- Leaving suppression silent and relying on the false-negative rate alone
+
+Tradeoffs:
+
+- **Two more fields on an object that is already the most complex in the model.** `ControlMapping` carries the threat, requirement, control, both status vocabularies, and the applicability reason; this adds to that.
+- The structural check verifies that the mapping addressed `common_false_positives`, not that it addressed them *correctly*. An agent can satisfy it with a plausible sentence about why the entries do not apply while being wrong.
+- `suppressed_by` referencing a free-text entry means the reference is by content rather than by identifier, so an edit to the catalog breaks the link in stored mappings.
+- Requiring the check only for `unmet` leaves `partially_satisfied` unguarded, and a partial satisfaction is a negative conclusion too.
+- Recording suppressions makes them countable, which invites optimizing for the count. A low suppression rate is not obviously better than a high one.
+
+Open Questions:
+
+- Should `common_false_positives` entries carry identifiers so `suppressed_by` can reference them stably?
+- Does `partially_satisfied` need the same check as `unmet`?
+- Is a suppression the reviewer disagrees with a reviewer decision on the mapping, or something that should feed back into the catalog?
+
+## DEC-026: Express inherited-control scope with the fields Control already has
+
+Date: 2026-08-09
+
+Status: Accepted
+
+Decision:
+
+**`Control.inheritance_scope` is removed.** Scope is expressed by fields the object already carries:
+
+- **`provider_component_id`** — who provides the control.
+- **`protected_component_ids` and `protected_asset_ids`** — what it covers.
+- **`limitations`** — where the coverage stops.
+
+Together those say what a free-text scope string was trying to say, in a form that can be validated, queried, and compared against the architecture.
+
+**Two states are distinguished by existing field combinations**, and the distinction is the one the ForgeFlow scenario turns on:
+
+| Situation | `control_type` | `implementation_status` | Evidence | Outcome |
+|---|---|---|---|---|
+| The platform provides it and the documentation says so | `inherited` | `implemented` | present | Control is satisfied |
+| The platform probably provides it and nothing says so | `inherited` | `claimed` | absent | A `Question` requesting confirmation |
+
+The second **never resolves to `absent`**, and by DEC-013 never to `unmet`. That is `forgeflow-scenario.md` section 14.2 — managed database encryption, which the application documentation does not describe — and it is one of the scenario's named intentional non-findings.
+
+Why:
+
+`inheritance_scope` was a free string, and `data-model.md` question 6 and `current-architecture.md` question 5 both asked how inherited-control scope should be modelled. The answer is that it already is.
+
+`provider_component_id` names the provider. The protected component and asset lists name the coverage. `limitations` names the boundary. A free-text scope field sits alongside those describing the same thing in prose, which means it can disagree with them, and when it does nothing says which is right. Removing it is the third field removed for this reason — after `checkpoint_reference`, whose referent had gone, and `confidence_score`, which nothing consumed.
+
+The structured form is also the only one the metric can use. "Inherited-control recognition" is a named evaluation criterion in `agent-design.md` sections 12 and 32 and `evaluation-plan.md` section 7. Measuring it means comparing what the assessment concluded against what the scenario says is true, and a free-text scope string cannot be compared to anything. Structured provider and coverage references can.
+
+The two-state distinction matters more than the field removal. ForgeFlow contains six inherited or shared controls, and the scenario's intentional non-findings turn on treating undocumented-but-inherited correctly. The failure mode is not concluding the wrong scope; it is collapsing "inherited and documented" into "inherited, therefore fine" or collapsing "undocumented" into "absent." Expressing both as combinations of `control_type` and `implementation_status` makes the difference checkable rather than a matter of the agent's phrasing.
+
+Alternatives Considered:
+
+- Keep `inheritance_scope` as free text and let the agent populate it
+- Give `inheritance_scope` a controlled vocabulary
+- Add a structured `inheritance` sub-object carrying provider, coverage, and limits together
+- Add an `inheritance_confidence` field distinct from `validation_status`
+- Model inherited controls as a separate object type
+
+Tradeoffs:
+
+- **Removing a documented field is a schema change**, and an implementer who expected somewhere to put "the platform encrypts data at rest in this region only" now puts it in `limitations`, which is a list of strings and is a slightly worse fit than a dedicated field would be.
+- Expressing scope through references means an inherited control cannot describe coverage the architecture does not model. If the platform protects something Trace never extracted as a component or asset, there is nowhere to say so.
+- The two-state table is a convention over two independent enums rather than a single state. Nothing structurally prevents `inherited` with `implementation_status: absent`, which is a combination that should not occur.
+- `limitations` now carries two kinds of thing: where an inherited control's coverage stops, and known weaknesses of an implemented one. Those read differently and share a field.
+- Six inherited controls in one scenario is a small sample to design a representation against.
+
+Open Questions:
+
+- Should the `inherited` and `absent` combination be rejected by validation, or is there a case for it?
+- When an inherited control's provider is a component Trace did not extract — a platform outside the reviewed system — what does `provider_component_id` reference?
+- Does distinguishing inheritance from a compensating control need more than `control_type`, given that both reduce a requirement's applicability by pointing elsewhere?
+
+## DEC-027: Derive the benchmark scenario layout from the object model; ForgeFlow keeps its location
+
+Date: 2026-08-09
+
+Status: Accepted
+
+Decision:
+
+**The two layout specifications were never competing.** `evaluation-plan.md` section 5 describes a whole scenario directory and `forgeflow-scenario.md` section 25 describes only its expected subdirectory. They overlap on three files — `expected-context.yaml`, `expected-threats.yaml`, `expected-findings.yaml` — and agree on all three. What looked like a conflict is one list of inputs and one list of outputs, written in different documents without either naming which half it covered.
+
+**A scenario directory has two subdirectories:**
+
+```
+<scenario>/
+  input/                     the material supplied to Trace
+  expected/                  the truth set, never supplied to Trace
+    expected-*.yaml
+    reviewer-notes.md
+    evaluation-contract.yaml
+```
+
+**The expected file list is derived, not enumerated.** There is one `expected-*.yaml` per domain object type the pipeline produces and the benchmark grades, plus `expected-rejections.yaml` for the negative set. Enumerating the list in prose is what produced this issue: DEC-021 added `SourceObservation` and no document was updated, so the contract counts contradictions and an injection fixture that section 25's seven files have nowhere to hold.
+
+Under the current object model that is: `expected-context.yaml`, `expected-threats.yaml`, `expected-control-mappings.yaml`, `expected-findings.yaml`, `expected-questions.yaml`, `expected-documentation-gaps.yaml`, `expected-observations.yaml`, `expected-rejections.yaml`. **`expected-observations.yaml` is new here** and covers both `kind` values DEC-021 defined, because they are one object type and get one file.
+
+**The filename is `reviewer-notes.md`.** `evaluation-plan.md` section 5's `review-notes.md` is corrected. The corpus uses "reviewer" as the actor noun throughout — reviewer acceptance rate, reviewer edit rate, reviewer notes on the domain objects — and consistency with that is the only thing distinguishing the two spellings.
+
+**`requirements.json` is dissolved rather than resolved.** It predates the requirements catalog, and DEC-024 removed the role it would have had: the whole catalog is passed on every mapping call, so a per-scenario requirement file could only narrow what the pipeline sees, which is the pre-filter DEC-024 rejected. What it was reaching for is a version pin, so the scenario records `catalog_version` in `evaluation-contract.yaml` and expected control mappings reference catalog identifiers directly. **This answers DEC-010's first open question** — not by making the file reference identifiers, but by removing the file.
+
+**ForgeFlow stays at `demo/forgeflow/`; `benchmarks/<slug>/` holds scenarios two onward.** The split is by role and it is real. ForgeFlow is the demo *and* benchmark scenario one, and the demo half is `forgeflow-scenario.md` — a 40,000-character narrative that exists to be read by a person and feeds roadmap Stage 6. Scenarios two through twelve have no such document and exist only to be measured. Both use the layout above.
+
+**The harness discovers scenarios from `benchmarks/scenarios.yaml`, never by globbing a directory.** This is the part that makes two locations safe. A registry naming each scenario and its path makes the benchmark set a stated fact; directory discovery would make it a fact about the filesystem, and two discoverable homes would reproduce the specified-twice failure this entry exists to remove.
+
+`CLAUDE.md`'s repository layout records the split.
+
+Why:
+
+Reconciling the two lists by picking a winner would have discarded correct information from whichever lost. Section 5 is the only place that says a scenario carries its own inputs; section 25 is the only place that says the expected files must never be supplied to Trace. Both are right about the half they describe.
+
+The derivation rule matters more than the list it currently produces. An enumerated list is a second source of truth about the object model, and it drifts the moment the model changes — which is not hypothetical here, it is the state the corpus was found in. Deriving the list means a new object type produces a new expected file by construction, and the layout cannot silently fall behind `data-model.md`.
+
+Keeping ForgeFlow in place is also the cheap answer, and that is worth stating plainly rather than dressing up: the path appears 153 times across 46 files outside `demo/`, and in 29 open issue bodies that cannot be rewritten as easily as a document can. But the role split is what makes it correct rather than merely convenient. If ForgeFlow were only a benchmark, it would move.
+
+Alternatives Considered:
+
+- Pick section 5 or section 25 as authoritative and correct the other
+- Move ForgeFlow to `benchmarks/forgeflow/` and leave `demo/` holding only the narrative
+- Keep everything in `demo/` and delete `benchmarks/`
+- Enumerate the expected files in `evaluation-plan.md` and update it when the object model changes
+- Keep `requirements.json` as a per-scenario catalog subset
+- Discover scenarios by globbing `benchmarks/*/` and `demo/*/`
+
+Tradeoffs:
+
+- **Two homes for one kind of artifact is a smell.** The registry makes the set stated rather than discovered, and `tests/unit/test_benchmark_layout.py` asserts that every directory under `benchmarks/` is registered and that every registry entry resolves to a directory holding `input/` and `expected/`. What remains a convention is the layout rule itself: nothing prevents a scenario whose expected files are named something else, because the expected files do not exist yet to be checked against.
+- The derivation rule means adding a domain object type adds a benchmark file, including for object types the benchmark has no useful expectation about. `expected-observations.yaml` is well motivated; a future object may not be.
+- Dissolving `requirements.json` ties the scenario to `catalog_version` as its only requirement-side pin. If a scenario ever needs a requirement the catalog does not contain, there is now nowhere to put it, and the answer would be to add it to the catalog.
+- `evaluation-contract.yaml` sits inside `expected/`, so the whole directory is what must never be supplied to Trace. That is a simpler rule than a per-file one, and it means the contract cannot be read by anything that legitimately reads inputs.
+- Correcting `review-notes.md` to `reviewer-notes.md` is a coin flip dressed in a consistency argument. It is recorded so it is only decided once.
+
+Open Questions:
+
+- Does the demo-versus-benchmark split survive scenario two, or does ForgeFlow's narrative turn out to be something every scenario wants?
+- `architecture-overview.md` section 26 lists source-artifact retention as a known documentation gap while `operations-guide.md` states a 30-day period affirmatively. Is that a third intentional contradiction, or an authoring slip in the fixture?
+
+## DEC-028: The expected set is enumerated; the contract declares no counts
+
+Date: 2026-08-09
+
+Status: Accepted
+
+Decision:
+
+**`evaluation-contract.yaml` declares no expected-output counts.** The `expected_outputs` block and the `disputed` block are both removed. The contract keeps `benchmark_version`, gains `catalog_version` per DEC-027, and otherwise holds grading policy rather than grading targets.
+
+**The expected set is the enumerated content of the `expected-*.yaml` files.** A count is `len()` of a file, derived when a report needs one, and stored nowhere.
+
+**This resolves the count conflict by removing the thing that could conflict.** Three findings against four, and five questions against ten, were disagreements between a declared number and an enumerated list. A declared count that can disagree with its own enumeration is a second source of truth, which is the same defect DEC-027 removes from the layout.
+
+**Matching is semantic, not numeric.** Expected-to-actual matching is on requirement and affected component, as established when the identifier scheme was settled in DEC-018; it was never a count comparison.
+
+Why:
+
+A declared count is a finding quota with a different name. `design-principles.md` section 9 and `evaluation-plan.md` section 20 both state that Trace must not optimize for finding volume, and `CLAUDE.md` lists it as a binding constraint. Issue #18 removed exactly this data from the input fixture because holding it there handed the pipeline its own target. Moving it out of the input made it unable to reach the pipeline; removing it makes it unable to become the metric.
+
+The counts were also wrong, which is a weaker argument but a real one. DEC-029 finds three findings rather than four, and four documentation gaps rather than three, and both numbers move again the first time a fixture document is edited. A number that has to be maintained in parallel with the thing it describes will fall behind it.
+
+Section 20's selection rule — questions prioritized by their ability to change findings — is a better specification of the expected question set than any count, because it states what makes a question expected. Ten candidates and a target of five never said which five, and the rule does.
+
+Alternatives Considered:
+
+- Correct the counts to 3 findings and 6 questions and keep them declared
+- Keep counts as an assertion checked against the enumeration by a test
+- Keep counts only in the scenario document, not in the contract
+- Declare ranges rather than exact counts
+
+Tradeoffs:
+
+- **A count is a cheap smoke test and it is gone.** An assessment producing thirty findings against an expected three is obviously broken, and a declared number would catch that before any semantic matching runs. The enumerated set still catches it, but only after the matcher runs.
+- The enumerated files do not exist yet, so the contract currently declares less than it did and the expected set is nowhere. That is a real regression in what is written down, held until the M3 and M4 authoring issues land.
+- Removing the `disputed` block removes a record of the conflict. It is preserved here and in the journal instead, which is the right place, but the fixture no longer carries its own warning.
+- Deriving counts on demand means two reports can disagree about how many findings a scenario expects if the files change between them. Version control makes that answerable rather than preventing it.
+
+Open Questions:
+
+- Should a scenario declare an expected *order of magnitude* — a handful, not thirty — as a cheap guard that is not a quota?
+- `evaluation-plan.md` section 19 question 1 asks how expected findings are established. This entry says how they are stored and matched, not how they are decided. Who authors a truth set, and does a second reviewer confirm it?
+
+## DEC-029: ForgeFlow expects three findings; FND-001 is a documentation gap and FND-004 is its own finding
+
+Date: 2026-08-09
+
+Status: Accepted
+
+Decision:
+
+**FND-001, webhook replay protection, is not a finding.** It is a `DocumentationGap` and a `Question`. `forgeflow-scenario.md` section 19 is corrected and section 21 gains **GAP-004**.
+
+DEC-013 forces this. Section 19 requires evidence establishing that "delivery identifiers are not tracked", and no document establishes it: `github-integration.md` section 6 says only that webhook requests are validated, `operations-guide.md` section 3 shows a delivery identifier in the job payload without mentioning deduplication, and `architecture-overview.md` section 26 lists **"Webhook replay handling"** under Known Documentation Gaps. The only direct evidence is a document stating the topic is undocumented, and treating that as evidence of absence is the DEC-009 failure exactly.
+
+**FND-003 survives the same test, and the contrast is the point.** Retention is also listed as a section 26 gap, but `operations-guide.md` states a 30-day period affirmatively. FND-003 rests on a positive statement; FND-001 rests on silence. Two neighbouring subjects falling on opposite sides of the DEC-009 line is worth more as a benchmark than either alone.
+
+**FND-004 is a separate finding from FND-002, resolving `forgeflow-scenario.md` open question 8.** Section 19's own consolidation test is whether "the remediation and impact are substantially related". They are related and not the same: FND-002 needs a human approval gate before external publication, FND-004 needs isolation of untrusted repository content from model instructions. Either can be fixed without the other, and fixing only one leaves a real exposure. Trace consolidating them at runtime remains defensible behaviour; the truth set does not pre-consolidate them.
+
+**The expected findings are FND-002, FND-003, FND-004 — three.** The number the contract recorded was right and the scenario document's four was right about the candidates. What drops out is FND-001, not FND-004, so both documents were partly correct and the disagreement was never about the number.
+
+Per DEC-028 the count is not declared anywhere; it is what the enumerated file will contain.
+
+Why:
+
+The webhook case is the most valuable single item in this benchmark. A generic security review reports an undocumented control as a missing control, and section 26 is a document *volunteering* that a topic is not covered here. A system that concludes "no replay protection" from that sentence has committed the failure this project exists to avoid, and it will do so confidently, because the sentence is about the right subject.
+
+Keeping FND-001 as an expected finding would have graded that failure as correct.
+
+Splitting FND-002 and FND-004 is the less certain call. Section 19 explicitly permits consolidation, so a truth set that expects two must not penalize a system that produces one well-reasoned combined finding. That is a matching-policy consequence rather than a reason to expect one: the expected set records the finer decomposition because it can be collapsed by a matcher, and a coarser one cannot be split.
+
+Alternatives Considered:
+
+- Add a passage to the input fixture affirmatively establishing that delivery identifiers are not tracked
+- Keep FND-001 as a low-confidence finding rather than a gap
+- Consolidate FND-004 into FND-002 and expect two findings
+- Expect four findings and let the matcher accept three
+
+Tradeoffs:
+
+- **Removing FND-001 makes the scenario slightly easier to score well on and harder to score correctly on.** A system that reports nothing at all about webhook replay now scores the same on findings as one that correctly raises a gap and a question — the distinction only appears in the gap and question metrics.
+- Expecting three findings where the scenario document promised four invites the reading that Trace under-reports. The scenario document has to say why, at the point where the finding was.
+- The FND-002 and FND-004 split depends on a matcher that can accept one combined finding against two expected. That matcher does not exist and this entry assumes it will.
+- GAP-004 makes four documentation gaps where the contract recorded three. Under DEC-028 no count needs correcting, but any prose quoting "three gaps" does.
+- Section 20's candidate question 2 — whether delivery identifiers are stored and checked — becomes load-bearing rather than optional, since it is the question GAP-004 must raise.
+
+Open Questions:
+
+- Does GAP-004 need its own entry in section 21, or is a documentation gap that a source document self-declares a different category worth naming?
+- How does the matcher score one combined finding against two expected ones — full credit, partial, or a separate consolidation metric?
+- Section 22 lists ten rejected findings. Should "ForgeFlow lacks webhook replay protection" join them, given that it is now the most likely wrong conclusion in the scenario?
+
+## DEC-030: The reviewer assigns severity; there is no Severity Support Agent
+
+Date: 2026-08-09
+
+Status: Accepted
+
+Decision:
+
+**The MVP has six model-assisted agents. The Severity Support Agent is not built.** It is not deferred pending evidence; it is excluded because four of its six specified outputs already exist as required `Finding` fields produced by other agents.
+
+`agent-design.md` section 17 lists the agent's outputs as recommended severity, impact rationale, likelihood rationale, confidence, factors that could increase or decrease severity, and missing information. Against the `Finding` schema:
+
+| Section 17 output | Already exists as |
+|---|---|
+| Impact rationale | `Finding.impact`, required |
+| Likelihood rationale | `Finding.likelihood` |
+| Confidence | `Finding.confidence`, required |
+| Missing information | `Finding.limitations` and `Finding.assumptions` |
+| Factors that raise or lower severity | nothing |
+| Recommended severity | `Finding.severity` |
+
+**The pipeline already produces the reasoning severity rests on.** A seventh agent would re-derive it from the same inputs and add one enum value. That is not the specific quality gap section 36 requires before an agent is added; it is a second pass over work already done.
+
+**The reviewer assigns severity at checkpoint 2.** `current-architecture.md` section 5.12 already lists changing severity as a reviewer action, so this makes an existing authority the origin rather than a correction. Findings are created with `severity: unassigned`.
+
+**Finding Consolidation does not assign preliminary severity.** The bullet is removed from `current-architecture.md` section 5.11. A deterministic node has the same problem the agent has and less judgment to apply.
+
+**`unassigned` cannot survive approval.** A validation rule at checkpoint 2 rejects an approval whose finding still carries `unassigned`. This is the load-bearing half of the decision: without it, reviewer-assigned severity degrades into nobody assigning severity, and the report is a list of findings with no ordering.
+
+**A severity change is recorded as `edit`, with `prior_value` and `updated_value` on `ReviewerDecision`.** No `change_severity` disposition is added. DEC-023 settled the mechanism, and a second way to express an edit would be a second source of truth about what the reviewer did.
+
+`current-architecture.md` section 5.12 lists "Change severity" alongside "Edit a finding", which reads like a conflict and is not one. **Section 5.12 lists actions a reviewer takes; `ReviewDisposition` lists dispositions the system records.** Those are different lists and do not need to correspond one to one. The section is annotated to say so, because the next reader will otherwise resolve the apparent mismatch by adding an enum value.
+
+**Benchmark expected severities are reviewer guidance, not graded output.** `forgeflow-scenario.md` section 19 states an expected severity per finding. Severity is not a pipeline output, so it is not scored; the value exists so that whoever plays the reviewer in a benchmark run does not introduce variance between runs. `evaluation-plan.md` never measured severity and gains no metric here.
+
+Why:
+
+**Severity is the one required `Finding` field that the source documents cannot answer.** Every other judgment in the pipeline is an evidence judgment — does the documentation support this conclusion — and DEC-009, DEC-013 and DEC-022 all draw that line deliberately. Severity is a risk judgment in business context: what an outage costs, what the data is worth, what this organization tolerates. Architecture documents do not contain it.
+
+An agent asked for severity would therefore produce a fluent answer from documents that do not contain the answer. That is the DEC-009 failure relocated into a different field, and it would be harder to detect there, because a severity label carries no evidence reference and nothing in the schema would show it was unsupported.
+
+The reviewer is already at checkpoint 2 examining each finding, and already holds the context severity depends on. Assigning it is not additional work imposed on them; it is the judgment they are there to make.
+
+The cap argument reaches the same conclusion and is weaker, so it is recorded second. Section 36 requires a specific quality gap identified by evaluation before an agent is added, and the evidence cannot exist before the agent does. Left undecided, the agent would have been built because it is the most completely specified component in the corpus — ten evaluation factors, six outputs, five prohibited operations — and specification completeness is not evidence of need.
+
+A deterministic heuristic was the other real candidate, and design principle 7 favours it. It fails on data. The fields a rule would use — `internet_exposed`, `business_criticality`, the confidentiality, integrity and availability impact fields, `data_classification` — are all optional, and most are free-text strings with no controlled vocabulary. `data-model.md` section 4.5 warns against a complex severity algorithm before the core workflow is validated, and a simple one over optional free text would be arbitrary rather than simple.
+
+Alternatives Considered:
+
+- Build the Severity Support Agent and record a cap change to seven
+- Build it behind a flag, off by default, and evaluate it later
+- A deterministic heuristic in Finding Consolidation from asset and exposure fields
+- A deterministic floor only — a rule that constrains the range without picking a value
+- Leave `severity` at `unassigned` through approval and let the report omit ordering
+- Add `change_severity` to `ReviewDisposition`
+
+Tradeoffs:
+
+- **This makes the reviewer's job at checkpoint 2 strictly larger**, and checkpoint 2 is already the heaviest step in the workflow. Every approved finding now requires a severity decision that was previously going to arrive pre-filled. For an assessment with many findings that is real friction, and it is the most likely reason this decision gets revisited.
+- **A blank field is a worse prompt than a wrong one.** A proposed severity gives the reviewer something to disagree with, and disagreement is faster than origination. That is the strongest argument for the agent and it is not answered here, only outweighed.
+- Excluding the agent removes `agent-design.md` section 17's evaluation criteria — reviewer severity agreement, overstatement rate, understatement rate — which cannot be measured without a proposal to compare against. Those were among the more concrete metrics in the corpus.
+- **Nothing now measures severity at all.** `evaluation-plan.md` mentions it zero times, and this entry does not add a metric. Severity quality is unobserved, so a reviewer assigning severity badly would leave no trace.
+- The "factors that could increase or decrease severity" output has no home in the schema and is simply lost. It was the one genuinely new thing section 17 offered.
+- `current-architecture.md` section 5.13 notes that additional checkpoints may later be added for high-severity findings. A workflow gate keyed on severity would then depend on a field assigned by hand at the checkpoint before it, which is workable but not obviously the right ordering.
+
+Open Questions:
+
+- Should severity carry a rationale field of its own, or is `Finding.impact` sufficient given the reviewer wrote the severity?
+- If checkpoint 2 becomes the workflow's bottleneck, is the answer a severity proposal, a smaller finding set, or a different checkpoint shape?
+- Is there a metric for reviewer-assigned severity that does not require a second reviewer — consistency across similar findings within one assessment, perhaps?
+- Section 17 stays in `agent-design.md` as a specification of something not built. Should deferred-agent specifications live in section 37's list instead, so the document describes only what exists?

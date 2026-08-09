@@ -558,12 +558,15 @@ Responsibilities include:
 - Link related threats
 - Separate risks from documentation gaps
 - Normalize titles
-- Assign preliminary severity
 - Preserve evidence references
 - Preserve criticism history
 - Identify unresolved questions
 
 The output remains provisional until human review.
+
+Consolidation does **not** assign severity. Findings leave this node with
+`severity: unassigned`, and the reviewer assigns it at the finding checkpoint (DEC-030).
+Neither this node nor an agent has the business context severity depends on.
 
 ## 5.12 Human Finding Review
 
@@ -572,11 +575,21 @@ The reviewer can:
 - Approve a finding
 - Reject a finding
 - Edit a finding
-- Change severity
+- Assign or change severity
 - Request additional analysis
 - Convert a finding to a question
 - Convert a finding to a documentation gap
 - Add reviewer notes
+
+**Assigning severity is not optional.** Findings arrive carrying `unassigned`, and an
+approval whose finding still carries it is rejected by validation (DEC-030). The reviewer
+holds the business context that severity depends on; no earlier node does.
+
+This list names actions a reviewer takes. `ReviewDisposition` in `data-model.md` section 4.6
+names dispositions the system records, and **the two lists do not correspond one to one**. A
+severity change is recorded as `edit` with `prior_value` and `updated_value` on
+`ReviewerDecision`, per DEC-023. There is no `change_severity` disposition and adding one
+would be a second way to express the same edit.
 
 Trace should record these actions for evaluation and auditability.
 
@@ -1263,7 +1276,7 @@ The following questions require decisions or implementation experiments:
 2. ~~Which model provider and model should be used initially?~~ Resolved by DEC-014: Anthropic as the default adapter, `claude-opus-5` as the primary model, behind a provider-agnostic seam.
 3. ~~Is a separate model abstraction library needed for the MVP?~~ Resolved by DEC-014: no. The seam is the project's own; provider SDKs sit behind it in adapters.
 4. ~~How should evidence chunks and source locations be represented?~~ Resolved by DEC-015.
-5. How should inherited controls be modeled?
+5. ~~How should inherited controls be modeled?~~ Resolved by DEC-026.
 6. How should confidence be calculated and communicated?
 7. ~~What minimum evidence threshold should be required for a finding?~~ Resolved by DEC-013.
 8. Which parts of the workflow require separate agents versus deterministic functions?
@@ -1271,7 +1284,7 @@ The following questions require decisions or implementation experiments:
 10. Should LangSmith be used in the public demonstration?
 11. How much reasoning information should be exposed to users?
 12. How should prompt injection in source documentation be tested?
-13. How should requirement applicability be determined?
+13. ~~How should requirement applicability be determined?~~ Resolved by DEC-024: by the mapping agent's judgment over the whole catalog. There is no deterministic pre-filter, because `applicable_technologies` — the only structured filter field — is populated on zero requirements.
 14. What data should be retained after an assessment?
 15. Which evaluation dataset should be used to compare workflow versions?
 
