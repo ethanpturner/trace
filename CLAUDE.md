@@ -96,13 +96,18 @@ These are decided. Violating one is a design change requiring an entry in
 
 Two things are commonly assumed and are **not** decided:
 
-- **LangGraph is Proposed, not accepted** (DEC-007) — the only decision in the log not marked
-  Accepted. Do not describe the project as built on it.
+- **There is no orchestration framework** (DEC-016). LangGraph was proposed in DEC-007 and
+  rejected: the pipeline is fourteen ordered phases with two pause points and no analytical
+  branching, and a framework checkpointer would be a second authoritative store alongside the
+  domain objects DEC-006 makes authoritative. Orchestration is a node protocol, an explicit
+  transition table, and a persisted `WorkflowRun` row. Every entry in the decision log is now
+  Accepted or Rejected; none is Proposed.
 - **The model interface is provider-agnostic; Anthropic is the default** (DEC-014). The
   application talks to a seam and provider code lives in an adapter behind it. `claude-opus-5` is
   the primary model, and `model_profile` names a provider-model-settings bundle rather than a bare
   model identifier. Nothing behind the seam is built yet, and a seam with one implementation is not
-  proven agnostic. `langchain` and `langgraph` remain declared and unused pending DEC-007.
+  proven agnostic. `anthropic` is now the only provider SDK declared; DEC-016 removed the
+  orchestration and model-framework dependencies.
 - **`agent-design.md` section 29's creativity column is provider-neutral intent, not a sampling
   parameter.** Each adapter maps it to its own controls; the Anthropic adapter maps it to effort
   and adaptive thinking, because `temperature`, `top_p`, and `top_k` are rejected on the current

@@ -172,7 +172,7 @@ collapsing them is precisely the failure this project is built to avoid.
 | Area | Choice | Decision status |
 |---|---|---|
 | Language | Python | Accepted |
-| Orchestration | LangGraph | **Proposed — not yet decided** |
+| Orchestration | Plain Python: node protocol, transition table, persisted run | Decided (DEC-016) |
 | Data modelling and validation | Pydantic | Proposed |
 | API layer | FastAPI | Proposed |
 | Persistence | SQLite, local and single-user | Proposed |
@@ -182,8 +182,9 @@ collapsing them is precisely the failure this project is built to avoid.
 | Model interface | Provider-agnostic seam, provider code in adapters | Decided (DEC-014) |
 | Model provider and model | Anthropic adapter, `claude-opus-5` | Decided (DEC-014), default |
 
-These are proposed choices except where marked decided. LangGraph is the only orchestration
-candidate on the table and it has not been accepted.
+These are proposed choices except where marked decided. LangGraph was proposed and rejected
+(DEC-016): the pipeline is fourteen ordered phases with two pause points and no analytical
+branching, which is the case a graph framework helps least with.
 
 The model interface is designed to be provider-agnostic: the application talks to a seam, and
 provider-specific code lives in an adapter behind it. Anthropic is the default and the only
