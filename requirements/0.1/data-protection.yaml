@@ -1,0 +1,160 @@
+# Category: data_protection
+# Requirements about sensitive data at rest and in transit, how long it is
+# kept, how tenants are separated in storage, and whether it can be removed.
+
+requirements:
+
+  - id: req-DATA-001
+    catalog_version: "0.1"
+    title: Sensitive data is encrypted in transit and at rest
+    statement: >
+      Sensitive data must be encrypted in transit and at rest, and the
+      documentation must identify which party provides that protection where it
+      is inherited from a managed platform.
+    rationale: >
+      Encryption of this kind is very often inherited from a managed database,
+      object store, or load balancer rather than implemented by the
+      application. Documentation that omits it is therefore weak evidence of
+      absence, and the correct response to silence is to seek confirmation
+      rather than to conclude the data is unprotected.
+    category:
+      - data_protection
+      - cryptography
+    applicable_conditions:
+      - the system stores or transmits confidential or restricted data
+      - data crosses a network boundary the system does not control
+    non_applicable_conditions:
+      - all data handled is public
+      - the component neither stores nor transmits sensitive data
+    acceptable_implementations:
+      - encryption at rest inherited from a managed database or object store
+      - platform-managed transport encryption terminated at a managed edge
+      - application-level encryption for specific fields
+      - a cloud key management service holding the keys
+    evidence_expectations:
+      - architecture documentation stating the protection and its provider
+      - managed platform configuration
+      - a statement that encryption is inherited from the hosting platform
+    common_false_positives:
+      - absent description of cipher suites or key lengths
+      - absent application-implemented cryptography where managed services provide it
+      - absent encryption detail for a managed service that encrypts by default
+    default_severity: high
+    source_frameworks:
+      - "OWASP ASVS 5.0.0: 14.1.2"
+      - "NIST SP 800-53 5.2.0: SC-8"
+      - "NIST SP 800-53 5.2.0: SC-28"
+    status: active
+
+  - id: req-DATA-002
+    catalog_version: "0.1"
+    title: Retention of sensitive working data is defined and matches what customers are told
+    statement: >
+      Where a system retains customer data as a by-product of processing, the
+      retention period must be defined, enforced, and consistent with what the
+      product documentation tells customers.
+    rationale: >
+      Working copies of customer data created for processing or debugging tend
+      to outlive the operation that produced them. The security question is not
+      only how long they are kept but whether the stated period and the actual
+      period agree, because a discrepancy is both an exposure and a disclosure
+      problem.
+    category:
+      - data_protection
+    applicable_conditions:
+      - the system retains a copy of customer data after processing completes
+      - intermediate artifacts are written to persistent storage
+    non_applicable_conditions:
+      - customer data is processed only in memory and never persisted
+      - the retained data is public
+    acceptable_implementations:
+      - a storage lifecycle policy that expires objects after a defined period
+      - a scheduled deletion job with a documented period
+      - deletion immediately on completion of processing
+    evidence_expectations:
+      - operations documentation stating the retention period
+      - storage lifecycle configuration
+      - customer-facing documentation describing data handling
+    common_false_positives:
+      - absent retention period for data that is genuinely not persisted
+      - absent deletion evidence where a platform lifecycle policy is documented
+    default_severity: medium
+    source_frameworks:
+      - "OWASP ASVS 5.0.0: 14.1.1"
+      - "NIST SP 800-53 5.2.0: SI-12"
+    status: active
+
+  - id: req-DATA-003
+    catalog_version: "0.1"
+    title: Stored artifacts are separated by tenant
+    statement: >
+      Where artifacts belonging to different customers share a storage system,
+      the documentation must describe how they are separated and how that
+      separation is enforced on access.
+    rationale: >
+      A storage naming convention that includes a tenant identifier separates
+      artifacts for the purposes of organization, not for the purposes of
+      access control. Whether the separation is enforced on read is a different
+      fact, and the one that matters.
+    category:
+      - data_protection
+      - tenancy
+    applicable_conditions:
+      - artifacts from multiple customers share a storage system
+      - stored objects are addressable by a predictable path
+    non_applicable_conditions:
+      - the system serves a single tenant
+      - no customer artifacts are stored
+    acceptable_implementations:
+      - per-tenant path prefixes combined with a server-side authorization check on access
+      - per-tenant buckets or containers with distinct access policies
+      - per-tenant encryption keys
+    evidence_expectations:
+      - architecture documentation describing the storage layout
+      - description of the access path to stored artifacts
+      - storage access policy configuration
+    common_false_positives:
+      - absent description of a physical separation mechanism where logical separation is enforced and documented
+      - absent per-tenant encryption keys, which are one implementation among several
+    default_severity: high
+    source_frameworks:
+      - "OWASP ASVS 5.0.0: 14.1.2"
+      - "NIST SP 800-53 5.2.0: SC-4"
+      - "NIST SP 800-53 5.2.0: AC-3"
+    status: active
+
+  - id: req-DATA-004
+    catalog_version: "0.1"
+    title: Customer data can be deleted on request
+    statement: >
+      A system holding customer data must document how that data can be removed
+      when a customer or the operator requires it, including data held in
+      derived or secondary stores.
+    rationale: >
+      Deletion tends to be implemented for the primary record and overlooked
+      for the derived copies, caches, and artifacts that accumulate around it.
+      Recording the full set of stores that hold customer data is what makes a
+      deletion claim verifiable.
+    category:
+      - data_protection
+    applicable_conditions:
+      - the system stores customer data
+      - customer data exists in more than one store
+    non_applicable_conditions:
+      - no customer data is retained
+      - retention is bound by a legal obligation that is documented
+    acceptable_implementations:
+      - an operator-initiated deletion procedure covering primary and derived stores
+      - a customer-initiated deletion request path
+      - lifecycle expiry that bounds retention without an explicit request
+    evidence_expectations:
+      - operations documentation describing deletion
+      - an inventory of stores holding customer data
+    common_false_positives:
+      - absent self-service deletion interface where an operator procedure exists
+      - absent deletion path for data that is already lifecycle-expired
+    default_severity: low
+    source_frameworks:
+      - "OWASP ASVS 5.0.0: 14.1.1"
+      - "NIST SP 800-53 5.2.0: SI-12"
+    status: active

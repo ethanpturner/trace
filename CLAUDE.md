@@ -45,6 +45,7 @@ docs/architecture/   scope, current architecture, agent design, data model,
                      evaluation plan, decision log
 demo/forgeflow/      the ForgeFlow benchmark fixture (Markdown + YAML)
 demo/forgeflow/expected/   empty -- expected outputs are not yet authored
+requirements/        the requirements catalog; see Requirements catalog below
 journal/             dated session entries; see Journal below
 benchmarks/          scaffolded, empty -- evaluation fixtures land here
 prompts/             scaffolded, empty -- versioned prompt definitions land here
@@ -96,6 +97,31 @@ Two things are commonly assumed and are **not** decided:
 - **No model provider or model has been selected.** `anthropic`, `openai`, `langchain`,
   `langgraph`, and `instructor` are declared in `pyproject.toml` and imported nowhere. Their
   presence is not a choice.
+
+## Requirements catalog
+
+`requirements/` holds version-controlled YAML requirements, one file per primary category under a
+directory named for the catalog version (DEC-010). It is data; no product code reads it, and
+`tests/unit/test_requirements_catalog.py` checks that it is well-formed. `requirements/README.md` is
+the full guide — read it before editing the catalog.
+
+Four things are easy to get wrong:
+
+- **`docs/architecture/data-model.md` section 17 is authoritative** for field names and types. The
+  catalog conforms to it; it does not define its own shape.
+- **`acceptable_implementations` is non-exhaustive by construction.** It lists mechanism classes, not
+  approved products. Treating an example as the only valid control is an explicit failure condition
+  for the mapping step (`agent-design.md`, sections 12 and 13).
+- **`common_false_positives` is not `non_applicable_conditions`** (DEC-011). The latter says the
+  requirement does not apply; the former says what not to conclude when it *does* apply and the
+  documentation is silent.
+- **`source_frameworks` is provenance, not compliance mapping.** Broad compliance-framework mapping is
+  deferred. Requirement text is written originally — ASVS is CC BY-SA, so its wording is cited by
+  identifier and never reproduced.
+
+Requirements are phrased so that absence of evidence resolves to `unverified`, never `unmet`. A
+requirement written so that silence proves absence is a DEC-009 violation regardless of how it is
+worded elsewhere.
 
 ## Branching
 
