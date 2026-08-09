@@ -98,9 +98,15 @@ Two things are commonly assumed and are **not** decided:
 
 - **LangGraph is Proposed, not accepted** (DEC-007) — the only decision in the log not marked
   Accepted. Do not describe the project as built on it.
-- **No model provider or model has been selected.** `anthropic`, `openai`, `langchain`,
-  `langgraph`, and `instructor` are declared in `pyproject.toml` and imported nowhere. Their
-  presence is not a choice.
+- **The model interface is provider-agnostic; Anthropic is the default** (DEC-014). The
+  application talks to a seam and provider code lives in an adapter behind it. `claude-opus-5` is
+  the primary model, and `model_profile` names a provider-model-settings bundle rather than a bare
+  model identifier. Nothing behind the seam is built yet, and a seam with one implementation is not
+  proven agnostic. `langchain` and `langgraph` remain declared and unused pending DEC-007.
+- **`agent-design.md` section 29's creativity column is provider-neutral intent, not a sampling
+  parameter.** Each adapter maps it to its own controls; the Anthropic adapter maps it to effort
+  and adaptive thinking, because `temperature`, `top_p`, and `top_k` are rejected on the current
+  Anthropic models. Do not read the column as naming a knob.
 
 ## Requirements catalog
 

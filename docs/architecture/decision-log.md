@@ -665,3 +665,63 @@ Open Questions:
 - Where is evidence strength recorded, given that `EvidenceStrength` is defined but carried by no object and EvidenceAssessment holds only a list of evidence identifiers?
 - Should the downgrade from `unmet` to `unverified` be visible to the reviewer as a distinct event, rather than only as a recorded reason on the mapping?
 - Does `permissive` belong on the assessment configuration at all, or should it be a harness parameter like the checkpoint ablation in DEC-012?
+
+## DEC-014: Keep the model interface provider-agnostic, with Anthropic as the default
+
+Date: 2026-08-08
+
+Status: Accepted
+
+Decision:
+
+The application talks to a model through a provider-agnostic seam. Provider-specific code lives in an adapter behind that seam and nowhere else.
+
+Anthropic is the default adapter and the only one implemented. The primary model is `claude-opus-5`.
+
+`AssessmentConfiguration.model_profile` names a bundle of provider, model, and generation settings rather than a bare model identifier. `primary-development` resolves to the Anthropic adapter, `claude-opus-5`, and the generation settings the agent's declared intent maps to. This is what the field means; it was previously an example string pointing at nothing.
+
+The seam is **capability-aware rather than lowest-common-denominator**. An adapter declares which optional capabilities it supports — prompt caching, adaptive thinking, effort levels — and the application uses a capability where it is available and proceeds without it where it is not. Which capabilities were used on a given call is recorded on the `ExecutionRecord`, so an evaluation result is interpretable against the conditions that produced it.
+
+`agent-design.md` section 29's per-agent creativity table stays as written and is reinterpreted as **provider-neutral intent**. Each adapter maps an intent to its own controls. The Anthropic adapter maps intent to `effort` and adaptive thinking, because `temperature`, `top_p`, and `top_k` are rejected on the current Anthropic models. An OpenAI adapter would map the same intent to `temperature`. Section 29 gains a note recording that the column is an intent, not a sampling parameter.
+
+Structured output is expressed at the seam as a target Pydantic model. The Anthropic adapter satisfies it with the SDK's schema-validated parse path. This is the same contract DEC-006 states from the data side: agents propose schema-validated objects and the application validates and persists them.
+
+The retry budget belongs to the orchestrator, not to the adapter. An adapter makes exactly one attempt per call and returns either a validated object or a structured failure carrying the raw output, which `data-model.md` section 33 requires be preserved for debugging. No adapter may run a retry loop of its own, because a hidden loop would break the `ExecutionRecord` retry count and the cost ceiling.
+
+Two test substitutes sit behind the same seam: a deterministic fake that returns fixed objects, and a replay transport that serves recorded responses. Neither requires a provider key, so a bare `uv run pytest` exercises every agent's prompt assembly, schema handling, and retry routing with no network call.
+
+`instructor`, `openai`, and `langchain-openai` are removed from `pyproject.toml`. `instructor` is redundant: the Anthropic SDK validates against a Pydantic model natively, and a third layer between the application and the provider would own a retry loop this decision assigns to the orchestrator. `openai` and `langchain-openai` support an adapter that does not exist; being provider-agnostic is a property of the seam, not of the dependency list, and a declared unused SDK is the same "presence is not a choice" problem the corpus already called out. They return when an adapter is written. `langchain`, `langchain-anthropic`, and `langgraph` stay, unused, pending DEC-007.
+
+Why:
+
+`current-architecture.md` section 9 already required a model abstraction rather than provider calls scattered through the codebase. What was open was which provider sits behind it, and the corpus was explicit that the declared dependencies were not a choice.
+
+Selecting a provider and selecting an architecture are separable, and conflating them is what made the question feel larger than it is. The architecture question has a clear answer: the pipeline reasons over structured objects and never over provider-shaped responses, so the provider belongs behind a seam regardless of which one is chosen. The provider question is then a default that can change without touching agent code.
+
+A capability-aware seam rather than an intersection seam is the load-bearing part of this decision. Prompt caching is a prefix match served at a small fraction of input cost, and Trace's shape fits it unusually well: the requirements catalog and the approved context are a large stable prefix reused across every mapping call, and the evaluation plan re-runs the benchmark suite on every prompt change. A seam restricted to what every provider offers would discard that, and would do so silently, in the name of a portability that no second adapter yet exercises.
+
+Section 29's table survives intact under this reading, which is the better outcome. The column was always an expression of how much latitude an agent should have; that it was implementable as `temperature` on the models available when it was written is incidental. Rewriting it to name one provider's control would have made the corpus less portable, not more.
+
+Alternatives Considered:
+
+- Select Anthropic and call the provider API directly, without a seam
+- Build the seam and defer the provider, keeping only the fake
+- Adopt a third-party abstraction layer such as LangChain's chat-model interface
+- Restrict the seam to the intersection of provider capabilities, so every adapter is interchangeable by construction
+- Rewrite section 29 to name `effort` directly
+
+Tradeoffs:
+
+- **A seam with one implementation is not proven agnostic.** Every abstraction written against a single provider encodes that provider's assumptions, and the shape of this one will not be tested until a second adapter exists. The claim is an intention, and the entry should not be read as evidence.
+- Capability-awareness means behaviour differs by adapter, so an evaluation result is comparable only against runs with the same capabilities. Recording capabilities on `ExecutionRecord` makes that visible but does not make the results comparable.
+- The seam costs indirection on every call for a portability the project does not currently need.
+- Provider-neutral intent in section 29 is one more mapping to keep correct, and a wrong mapping is invisible: an agent given the wrong latitude produces plausible output, not an error.
+- `claude-opus-5` is the most capable tier and the most expensive of the reasonable options. The benchmark suite re-runs on every prompt change, so cost scales with iteration speed. Prompt caching offsets this and is the reason the capability-aware seam matters, but the offset is unmeasured.
+- Naming a default model dates the decision. Model identifiers change faster than architecture, and `model_profile` exists so that this is a configuration edit rather than a code change.
+
+Open Questions:
+
+- What is the actual cost of one ForgeFlow assessment and one full benchmark sweep at this model and effort level, and does it change the model tier?
+- Does the effort level belong in `model_profile`, or per agent alongside the section 29 intent?
+- Should a second adapter be written before the seam is trusted, or is that premature for a local single-user MVP?
+- Which capabilities must an adapter declare for an evaluation run to be considered comparable to another?

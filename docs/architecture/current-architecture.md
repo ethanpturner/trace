@@ -1211,8 +1211,8 @@ These limitations should be discussed openly in presentations and interviews.
 The following questions require decisions or implementation experiments:
 
 1. Which local web-interface framework should be used?
-2. Which model provider and model should be used initially?
-3. Is a separate model abstraction library needed for the MVP?
+2. ~~Which model provider and model should be used initially?~~ Resolved by DEC-014: Anthropic as the default adapter, `claude-opus-5` as the primary model, behind a provider-agnostic seam.
+3. ~~Is a separate model abstraction library needed for the MVP?~~ Resolved by DEC-014: no. The seam is the project's own; provider SDKs sit behind it in adapters.
 4. How should evidence chunks and source locations be represented?
 5. How should inherited controls be modeled?
 6. How should confidence be calculated and communicated?
