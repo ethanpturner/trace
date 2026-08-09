@@ -172,17 +172,24 @@ collapsing them is precisely the failure this project is built to avoid.
 | Area | Choice | Decision status |
 |---|---|---|
 | Language | Python | Accepted |
-| Orchestration | LangGraph | **Proposed — not yet decided** |
+| Orchestration | Plain Python: node protocol, transition table, persisted run | Decided (DEC-016) |
 | Data modelling and validation | Pydantic | Proposed |
 | API layer | FastAPI | Proposed |
 | Persistence | SQLite, local and single-user | Proposed |
 | Tooling | uv, Ruff, Pytest, strict type checking | In use today |
 | Report format | Markdown | Proposed |
 | Tracing | LangSmith, subject to a data-handling review | Proposed |
-| Model provider and model | **Not chosen** | Open question |
+| Model interface | Provider-agnostic seam, provider code in adapters | Decided (DEC-014) |
+| Model provider and model | Anthropic adapter, `claude-opus-5` | Decided (DEC-014), default |
 
-These are proposed choices, not final decisions. LangGraph is the only orchestration candidate on
-the table and it has not been accepted. No model provider or model has been selected.
+These are proposed choices except where marked decided. LangGraph was proposed and rejected
+(DEC-016): the pipeline is fourteen ordered phases with two pause points and no analytical
+branching, which is the case a graph framework helps least with.
+
+The model interface is designed to be provider-agnostic: the application talks to a seam, and
+provider-specific code lives in an adapter behind it. Anthropic is the default and the only
+adapter specified. A seam with one implementation is not proven agnostic, and nothing behind it
+is built yet.
 
 ## Status
 
@@ -305,28 +312,26 @@ Seven input documents plus a structured system input, under `demo/forgeflow/inpu
 
 Alongside them, [`structured-system-input.yaml`](demo/forgeflow/input/structured-system-input.yaml)
 carries the machine-readable half of the scenario: components, data assets, trust boundaries,
-declared controls, and the evaluation contract below.
+and declared controls.
 
 ### Adversarial by design
 
-The scenario declares, up front, what a correct assessment should find:
+The scenario declares, separately from the material under review, what a correct assessment
+should find. That contract lives in
+[`demo/forgeflow/expected/`](demo/forgeflow/expected/evaluation-contract.yaml) and is designed
+never to be supplied to Trace during an assessment — a benchmark that hands the system under
+test its own answer key measures nothing.
 
-```yaml
-evaluation:
-  benchmark_version: "1.0"
-  expected_outputs:
-    findings: 3
-    questions: 5
-    documentation_gaps: 3
-    contradictions: 2
-    prompt_injection_fixture: true
-```
+The shape of the expected output is the point, more than any individual number. **Questions**
+and **documentation gaps** are outputs a generic security review does not produce at all — it
+reports missing documentation as missing controls. The **contradictions** are places where the
+documents disagree with each other, which a reviewer must surface rather than silently resolve.
+And the finding count is deliberately small: a handful, not thirty.
 
-Three of those numbers are the point. **Five questions** and **three documentation gaps** are
-outputs a generic security review does not produce at all — it reports missing documentation as
-missing controls. The **two contradictions** are places where the documents disagree with each
-other, which a reviewer must surface rather than silently resolve. And the finding count is
-deliberately small: three, not thirty.
+The exact counts are currently disputed between the contract and
+[`forgeflow-scenario.md`](demo/forgeflow/forgeflow-scenario.md), and are being reconciled.
+They are a ceiling on defensible conclusions rather than a target to reach; nothing in the
+pipeline is designed to read them.
 
 ### Prompt-injection fixture
 

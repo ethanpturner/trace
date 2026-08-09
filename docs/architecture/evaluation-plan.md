@@ -537,6 +537,24 @@ No checkpoint
 
 This helps determine whether architectural complexity actually improves outcomes.
 
+## How these comparisons are run
+
+Each comparison is an experiment on the architecture, not a setting on an assessment. The
+ablation is applied by the evaluation harness. No assessment configuration disables a
+component, and DEC-012 removed the two fields that previously appeared to.
+
+A run that ablates a component is recorded as non-authoritative and names the ablation it
+applied. This matters most for the checkpoint comparison: ablating a human checkpoint
+produces findings that no reviewer approved, which is precisely the output DEC-005 exists
+to keep out of an assessment. Marking it at the point of production is more reliable than
+inferring it afterwards.
+
+The checkpoint comparison is the only one of these that removes human review, and it should
+not be confused with running an evaluation unattended. Ordinary evaluation replays recorded
+reviewer decisions: the checkpoint node executes, the gate holds, and a ReviewerDecision is
+written, so reviewer acceptance and edit rates remain measurable. Replay is not an ablation
+and needs no switch.
+
 # 15. Success Criteria
 
 The MVP is considered successful if it can consistently demonstrate:

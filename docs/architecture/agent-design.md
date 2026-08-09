@@ -1614,6 +1614,20 @@ General guidance:
 
 Threat generation benefits from some breadth, but creativity must not override architectural grounding.
 
+## Note on the creativity column
+
+The creativity need is **provider-neutral intent**, not a sampling parameter. It states how much
+latitude an agent should have; it does not name a control.
+
+Each model adapter maps an intent to whatever its provider exposes (DEC-014). The Anthropic
+adapter maps it to effort and adaptive thinking, because `temperature`, `top_p`, and `top_k` are
+rejected on the current Anthropic models. A provider that exposes `temperature` would map the same
+intent to that instead.
+
+A wrong mapping is invisible: an agent given the wrong latitude produces plausible output rather
+than an error. The mapping belongs in the adapter, is recorded on the `ExecutionRecord`, and is
+covered by the adapter's own tests.
+
 # 30. Caching
 
 Model responses may be cached for development and evaluation when:
@@ -1925,7 +1939,9 @@ These agents would expand project scope without proving the MVP thesis.
 9. Should reviewers see agent rationales directly or only concise evidence-based explanations?
 10. Which agent outputs should be editable before the next stage?
 11. How should prompt-injection detection be implemented and evaluated?
-12. Should LangGraph nodes correspond one-to-one with agents?
+12. ~~Should LangGraph nodes correspond one-to-one with agents?~~ Moot: DEC-016 rejected
+    LangGraph. Workflow nodes are plain functions, and a model-assisted agent is one kind of
+    node among deterministic ones.
 13. Which model should be used for each agent?
 14. How should agent performance be compared across prompt versions?
 15. When should a low-confidence threat be discarded rather than retained?

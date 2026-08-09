@@ -415,24 +415,18 @@ Stores settings that affect an assessment run.
 |---|---|---|---|
 | model_profile | string | Yes | Named model configuration |
 | threat_methodology | string | Yes | Initial threat-analysis methodology |
-| require_context_review | boolean | Yes | Pause for context approval |
-| require_finding_review | boolean | Yes | Pause for finding approval |
 | maximum_model_calls | integer | No | Execution safety limit |
 | maximum_cost | decimal | No | Optional cost limit |
 | maximum_retries_per_node | integer | Yes | Retry limit |
 | retain_debug_artifacts | boolean | Yes | Preserve debugging output |
 | enable_external_tracing | boolean | Yes | Allow configured external tracing |
-| evidence_threshold | string | Yes | Minimum evidence policy for findings |
+| evidence_threshold | string | Yes | Minimum evidence policy for findings. `direct-or-confirmed` or `permissive` (DEC-013) |
 
 ## Example
 
 model_profile: primary-development
 
 threat_methodology: stride-scenario-based
-
-require_context_review: true
-
-require_finding_review: true
 
 maximum_model_calls: 25
 
@@ -445,6 +439,23 @@ retain_debug_artifacts: true
 enable_external_tracing: false
 
 evidence_threshold: direct-or-confirmed
+
+## Note on the human checkpoints
+
+This object carries no setting that governs the two human checkpoints. Earlier versions
+declared `require_context_review` and `require_finding_review` here; DEC-012 removed them.
+
+The checkpoints are nodes in the workflow graph rather than runtime conditionals, so there
+is no configuration value that advances the pipeline past an unapproved one. A field here
+would be the switch that defeats DEC-005, whatever value it defaulted to.
+
+Running a checkpoint without a human present is not a configuration concern. A checkpoint
+answered from a recorded decision file is still a checkpoint: the node executes, the gate
+holds, and a ReviewerDecision is written. That is the mode repeatable evaluation uses.
+
+Removing a checkpoint altogether is an experiment on the architecture, described in the
+evaluation plan's section 14. It belongs to the evaluation harness, and a run that applies
+it is recorded as non-authoritative.
 
 # 7. SourceDocument
 
@@ -514,6 +525,27 @@ Represents an addressable piece of evidence from a source.
 - At least one usable source-location field should be present when available.
 - Evidence references must point to a valid source document.
 - Evidence text should not be modified after creation; corrections create a new evidence reference.
+
+## Note on locations
+
+Every location field addresses the **original** document, never the normalized artifact
+(DEC-015). `start_line`, `end_line`, and `quoted_text` are all taken from the file as supplied.
+Normalization is line-count preserving, so the two addressings cannot diverge.
+
+`quoted_text` is verbatim from the original and is what a reviewer sees and what the report
+quotes. `normalized_text` is the derived form and exists for machine comparison. `content_hash`
+covers `quoted_text`.
+
+For Markdown and plain text, `chunk_index` counts sections segmented at the shallowest heading
+level present in that document, and `section_title` is the chunk's own heading, flattened rather
+than nested.
+
+For JSON and YAML the address is a JSON Pointer carried in `metadata` under the reserved key
+`json_pointer`, with `section_title` holding the readable dotted-path equivalent. Line numbers are
+still populated so a reviewer can find the passage, but a line range is not an address in a
+structured document — two sequence elements can be textually identical.
+
+`page_number` is unpopulated until PDF ingestion arrives.
 
 ## Example
 
@@ -1151,6 +1183,20 @@ It may instead produce:
 - A documentation gap
 - A request for evidence
 - A low-confidence candidate finding
+
+DEC-013 defines when each satisfaction status may be used and narrows this list at the
+default evidence threshold. Under `direct-or-confirmed`, an unverified requirement produces
+a clarifying question or a documentation gap and never a finding; the low-confidence
+candidate finding is reachable only under the evaluation-only `permissive` threshold.
+
+`unmet` requires evidence that describes the absence or inadequacy of the control, or that
+contradicts a claim that it exists. Because an EvidenceReference must quote real source
+text, silence cannot be cited, so this rule is enforced by the schema rather than by
+instruction. The Mapping Validation node downgrades an unsupported `unmet` to `unverified`
+and records the downgrade.
+
+A high proportion of `unverified` mappings is the expected result of assessing ordinary
+architecture documentation. It is not a defect and must not be treated as one in evaluation.
 
 # 20. EvidenceAssessment
 
@@ -1950,8 +1996,8 @@ These can be added later without expanding the initial MVP unnecessarily.
 # 39. Open Data-Model Questions
 
 1. Should context claims use a flexible subject-predicate-value structure or more specific typed models?
-2. Should evidence excerpts be duplicated in the database or loaded from normalized source files?
-3. How should evidence locations be represented consistently across Markdown, text, JSON, YAML, and future PDF inputs?
+2. ~~Should evidence excerpts be duplicated in the database or loaded from normalized source files?~~ Resolved by DEC-015: `quoted_text` is stored verbatim from the original and is immutable, with `content_hash` covering it. Where the row is stored is a persistence question (DEC-012's successor), not a location one.
+3. ~~How should evidence locations be represented consistently across Markdown, text, JSON, YAML, and future PDF inputs?~~ Resolved by DEC-015.
 4. Should actors be separate first-class objects in the MVP?
 5. How should requirement applicability conditions be represented in machine-readable form? Catalog version 0.1 leaves them as free text deliberately, so the vocabulary can be observed before it is fixed.
 6. How should inherited-control scope be modeled?
@@ -1963,7 +2009,7 @@ These can be added later without expanding the initial MVP unnecessarily.
 12. Should workflow state store objects directly or only identifiers?
 13. Which objects belong in SQLite versus version-controlled YAML or JSON?
 14. How should severity be calculated?
-15. What is the minimum evidence required to approve a finding?
+15. ~~What is the minimum evidence required to approve a finding?~~ Resolved by DEC-013.
 16. How should rejected threats and findings be retained for evaluation?
 17. How should data-model migrations be handled during early development?
 

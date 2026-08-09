@@ -7,29 +7,30 @@ carry an `assessment_id` — so the loader and the evidence model both wait on i
 `docs/architecture/current-architecture.md` section 12 names the assessment-data boundary:
 data from one assessment must not contaminate another.
 
-**Blocked on DX-01** (checkpoint configurability) and **DX-05** (model provider and
-abstraction). DX-01 resolves the conflict between DEC-005, which makes the two human
-checkpoints structural rather than configurable, and section 6, which types
-`require_context_review` and `require_finding_review` as required booleans on the
-configuration object. DX-05 determines what `model_profile` may contain before a provider is
-selected. Both fields are required, so neither can be implemented by guessing.
+**DX-01 is resolved.** DEC-012 removed `require_context_review` and `require_finding_review`
+from AssessmentConfiguration. The checkpoints are workflow-graph nodes, not runtime
+conditionals, so this object carries no setting that governs them and must not acquire one.
+
+**Still blocked on DX-05** (model provider and abstraction), which determines what
+`model_profile` may contain before a provider is selected. It is a required field, so it
+cannot be implemented by guessing.
 
 ## Scope
 
 - Add `src/trace_ai/domain/assessment.py` with `Assessment` and `AssessmentConfiguration`,
   both deriving from `DomainModel`.
 - `AssessmentConfiguration`, exactly as data-model.md section 6 types it: `model_profile`
-  (required), `threat_methodology` (required), `require_context_review` (required),
-  `require_finding_review` (required), `maximum_model_calls` (optional), `maximum_cost`
-  (optional, `Decimal`), `maximum_retries_per_node` (required), `retain_debug_artifacts`
-  (required), `enable_external_tracing` (required), `evidence_threshold` (required).
+  (required), `threat_methodology` (required), `maximum_model_calls` (optional),
+  `maximum_cost` (optional, `Decimal`), `maximum_retries_per_node` (required),
+  `retain_debug_artifacts` (required), `enable_external_tracing` (required),
+  `evidence_threshold` (required).
 - `Assessment`, exactly as section 5 types it: `id`, `name`, `description`, `status`
   (`ObjectStatus`), `created_at`, `updated_at`, `created_by`, `architecture_version`,
   `data_model_version`, `workflow_version`, `requirements_catalog_version`, `configuration`,
   `active_workflow_run_id`, `final_report_path`, `tags`.
-- Implement the checkpoint fields as DX-01 decides, and cite DX-01 in the validator or the
-  field docstring, so a later reader finds the reasoning rather than re-deriving it from
-  DEC-005.
+- Record in the class docstring that this object deliberately carries no checkpoint setting,
+  citing DEC-012, so a later reader adding one finds the reasoning first. `extra="forbid"`
+  makes a reintroduced field fail validation rather than pass silently.
 - Use `Decimal` for `maximum_cost`, not `float`. Section 6 types it `decimal`, section 27
   types `estimated_cost` the same way, and a cost limit compared through binary floating point
   is wrong exactly at the boundary where it matters.
@@ -47,8 +48,10 @@ selected. Both fields are required, so neither can be implemented by guessing.
       required/optional status. The data-model conformance guard covers this; a failure there
       is a failure here.
 - [ ] A field not listed in sections 5 or 6 is rejected.
-- [ ] The checkpoint fields behave as DX-01 specifies, and a test asserts that behavior with a
-      docstring naming DEC-005 and DX-01.
+- [ ] `AssessmentConfiguration` has no `require_context_review` or `require_finding_review`
+      field, and a test asserts that constructing one with either is rejected, with a
+      docstring naming DEC-005 and DEC-012. The checkpoints are not configurable, so the
+      absence is the behaviour under test.
 - [ ] `maximum_cost` accepts `Decimal("5.00")` and preserves it exactly; a test asserts the
       value does not pass through `float`.
 - [ ] `status` accepts only `ObjectStatus` members.

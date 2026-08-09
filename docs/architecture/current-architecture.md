@@ -290,7 +290,14 @@ The application service should not contain agent prompts or substantial security
 
 The workflow orchestrator manages the assessment lifecycle.
 
-The current proposed orchestration framework is LangGraph.
+Orchestration is ordinary Python: a node protocol, an explicit table of permitted transitions, and
+a persisted `WorkflowRun` row (DEC-016). There is no orchestration framework. The pipeline is a
+fixed sequence of fourteen phases with two pause points and no analytical branching, which is the
+case a graph framework helps least with, and a framework checkpointer would be a second
+authoritative store alongside the domain objects DEC-006 makes authoritative.
+
+A transition not named in the table is an error rather than an undefined behaviour. Resume is a
+read of the persisted run, not a framework checkpoint restore.
 
 Responsibilities include:
 
@@ -348,6 +355,30 @@ PDF, Microsoft Office, repository, and web-page ingestion are deferred unless im
 - Preserve source locations
 - Generate content hashes
 - Record ingestion metadata
+
+### What normalization does
+
+Normalization is **line-count preserving** (DEC-015). Line *n* of the normalized artifact is line
+*n* of the original.
+
+It may convert line endings to LF, strip trailing whitespace within a line, and normalize Unicode
+to NFC. It may not remove blank lines, collapse consecutive blank lines, unwrap or rewrap
+paragraphs, or strip front matter.
+
+This is what makes evidence locations unambiguous: every location field addresses the original
+document, and because normalization cannot change line counts, addressing the original and
+addressing the normalized artifact are the same address.
+
+### How documents are divided
+
+Markdown and plain text are segmented at the **shallowest heading level that occurs more than
+once in that document**, determined per document rather than fixed. The corpus is inconsistent
+about heading depth, so a fixed level fails in both directions: segmenting on `#` would give a
+734-line document one chunk, and segmenting on `##` would give five of the seven demo documents
+none. The "more than once" qualifier matters — a `#` that appears once is a title, not a section
+boundary, so the shallowest level merely *present* collapses those same documents to one chunk.
+
+JSON and YAML are addressed by JSON Pointer, carried in the evidence reference's `metadata`.
 
 ### Output
 
@@ -991,7 +1022,7 @@ Proposed services:
 
 - Local web application
 - Python application service
-- LangGraph workflow
+- Workflow orchestration (plain Python; DEC-016)
 - SQLite database
 - Local artifact directory
 - External model API
@@ -1017,7 +1048,7 @@ These are proposed choices, not all final decisions.
 | Area | Proposed technology |
 |---|---|
 | Primary language | Python |
-| Workflow orchestration | LangGraph |
+| Workflow orchestration | Plain Python: node protocol, transition table, persisted run (DEC-016) |
 | Data validation | Pydantic |
 | API layer | FastAPI |
 | Local web interface | Lightweight Python-compatible UI or small web frontend |
@@ -1211,12 +1242,12 @@ These limitations should be discussed openly in presentations and interviews.
 The following questions require decisions or implementation experiments:
 
 1. Which local web-interface framework should be used?
-2. Which model provider and model should be used initially?
-3. Is a separate model abstraction library needed for the MVP?
-4. How should evidence chunks and source locations be represented?
+2. ~~Which model provider and model should be used initially?~~ Resolved by DEC-014: Anthropic as the default adapter, `claude-opus-5` as the primary model, behind a provider-agnostic seam.
+3. ~~Is a separate model abstraction library needed for the MVP?~~ Resolved by DEC-014: no. The seam is the project's own; provider SDKs sit behind it in adapters.
+4. ~~How should evidence chunks and source locations be represented?~~ Resolved by DEC-015.
 5. How should inherited controls be modeled?
 6. How should confidence be calculated and communicated?
-7. What minimum evidence threshold should be required for a finding?
+7. ~~What minimum evidence threshold should be required for a finding?~~ Resolved by DEC-013.
 8. Which parts of the workflow require separate agents versus deterministic functions?
 9. How should semantic duplicate detection work?
 10. Should LangSmith be used in the public demonstration?
