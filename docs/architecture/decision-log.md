@@ -427,3 +427,93 @@ Open Questions:
 - When should a documentation gap itself be considered a security finding?
 - How should inherited controls be represented and validated?
 - How should Trace prioritize clarifying questions?
+
+## DEC-010: Store the requirements catalog as version-controlled YAML, one file per category
+
+Date: 2026-08-08
+
+Status: Accepted
+
+Decision:
+
+Store the requirements catalog in `requirements/` as version-controlled YAML, separate from application code.
+
+Requirements are grouped one file per primary security category, under a directory named for the catalog version.
+
+A `catalog.yaml` manifest lists the requirement identifiers the version contains.
+
+`content_hash`, which DEC-006's structured-state model requires on RequirementsCatalog, is deliberately omitted until a loader exists to compute it.
+
+Why:
+
+The architecture already requires the catalog to be stored separately from application code and to use version-controlled structured data.
+
+YAML matches every requirement example in the data model and the only existing domain-data file in the repository.
+
+Category files keep a reviewable diff granularity between a single large file and one file per requirement, and they make the category taxonomy visible in the directory listing rather than only inside the data.
+
+A hand-maintained content hash would be stale after the first edit and could not be verified against anything, because RequirementsCatalog is deferred in the data model's initial implementation priority.
+
+Alternatives Considered:
+
+- A single catalog file containing all requirements
+- One file per requirement with a manifest
+- JSON, matching the per-scenario `requirements.json` named in the evaluation plan
+- Storing requirements in SQLite rather than in version control
+
+Tradeoffs:
+
+- Category files make the taxonomy legible but require a judgment call when a requirement spans categories, resolved by filing on primary category only.
+- Splitting the catalog across a manifest and category files means the two can disagree. `tests/unit/test_requirements_catalog.py` enforces agreement, which is a test rather than a schema, so it constrains the catalog only while the catalog has no other reader.
+- Omitting `content_hash` leaves the catalog without an integrity marker until the loader is built.
+- YAML tolerates structural mistakes that a schema would reject. The test checks structure and citation format against the data model, but it cannot check that a cited control identifier exists in the framework it names, because the frameworks are not vendored.
+
+Open Questions:
+
+- Should the per-scenario `requirements.json` in the evaluation plan reference catalog identifiers rather than restate requirements?
+- When should catalog version 0.1 become 0.2 rather than being edited in place?
+- What computes and verifies `content_hash`, and at what point in the workflow?
+
+## DEC-011: Record common false positives on each requirement
+
+Date: 2026-08-08
+
+Status: Accepted
+
+Decision:
+
+Add an optional `common_false_positives` field to the Requirement object.
+
+The field records the conclusions that are wrongly drawn when a requirement is applicable but the documentation does not evidence it.
+
+It is distinct from `non_applicable_conditions`, which states when a requirement does not apply at all.
+
+Why:
+
+DEC-009 establishes that missing documentation is not proof that a control is absent, but nothing in the schema carried which wrong conclusions a given requirement invites.
+
+That knowledge existed only as prose in the demo scenario's intentional non-findings, where the application cannot reach it.
+
+The distinction the field draws is the one the project exists to defend. A requirement about delegated authentication does not apply where a local credential store exists, which is a non-applicability condition. Where it does apply and the documentation is silent, the wrong conclusion is specifically that password policy is missing, which is a different statement and belongs in a different field.
+
+Recording it per requirement keeps the knowledge next to the expectation it qualifies, and makes it available to the mapping step rather than depending on model judgment.
+
+Alternatives Considered:
+
+- Express the knowledge in `rationale` as prose
+- Express it through `non_applicable_conditions`
+- Defer the field until the mapping step exists and the need is demonstrated
+- Hold the knowledge in the mapping prompt rather than in the catalog
+
+Tradeoffs:
+
+- The field is populated by hand and reflects the author's judgment, so it can encode a wrong belief as durably as a right one.
+- Suppressing named false positives risks suppressing a genuine finding that resembles one, which the evaluation plan's false-negative measurement should detect.
+- It adds a field to an object that is otherwise a faithful expression of a security expectation, mixing the expectation with knowledge about how it is misread.
+- Nothing yet enforces that the field is consulted.
+
+Open Questions:
+
+- Should a suppressed conclusion be recorded as a rejected candidate for evaluation, rather than discarded silently?
+- Should entries reference the context claim that makes them false, rather than being free text?
+- Does this field belong on Requirement, or on a separate object relating a requirement to a known misreading?

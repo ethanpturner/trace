@@ -248,6 +248,7 @@ docs/product/        vision, design principles, roadmap, future features
 docs/architecture/   scope, current architecture, agent design, data model,
                      evaluation plan, decision log
 demo/forgeflow/      the demo scenario and its input fixtures
+requirements/        the requirements catalog -- version-controlled YAML, read by nothing yet
 scripts/             repository utilities
 benchmarks/          scaffolded, empty -- evaluation fixtures land here
 prompts/             scaffolded, empty

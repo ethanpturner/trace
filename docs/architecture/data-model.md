@@ -969,6 +969,7 @@ Requirements should be reusable across assessments.
 | non_applicable_conditions | list[string] | No | Conditions that exclude applicability |
 | acceptable_implementations | list[string] | No | Example ways to satisfy requirement |
 | evidence_expectations | list[string] | No | Expected evidence |
+| common_false_positives | list[string] | No | Conclusions wrongly drawn when this requirement is not evidenced |
 | default_severity | Severity | No | Default severity if unmet |
 | source_frameworks | list[string] | No | Related standards or frameworks |
 | status | string | Yes | Draft, active, retired |
@@ -1018,9 +1019,27 @@ evidence_expectations:
 
 - source-code reference
 
+common_false_positives:
+
+- documentation stating only that requests are validated, where the mechanism is unstated
+
+- absent description of secret storage where verification itself is documented
+
 default_severity: high
 
 status: active
+
+## Note on common_false_positives
+
+This field records the conclusions that are wrongly drawn when a requirement is not evidenced.
+
+It is distinct from non_applicable_conditions.
+
+non_applicable_conditions states when the requirement does not apply at all.
+
+common_false_positives states what should not be concluded when the requirement does apply but the documentation is silent.
+
+The field exists to carry accumulated knowledge of which absences are normal, in support of DEC-009.
 
 # 18. Control
 
@@ -1934,7 +1953,7 @@ These can be added later without expanding the initial MVP unnecessarily.
 2. Should evidence excerpts be duplicated in the database or loaded from normalized source files?
 3. How should evidence locations be represented consistently across Markdown, text, JSON, YAML, and future PDF inputs?
 4. Should actors be separate first-class objects in the MVP?
-5. How should requirement applicability conditions be represented in machine-readable form?
+5. How should requirement applicability conditions be represented in machine-readable form? Catalog version 0.1 leaves them as free text deliberately, so the vocabulary can be observed before it is fixed.
 6. How should inherited-control scope be modeled?
 7. Should confidence scores be generated numerically or only categorically?
 8. How should multiple model outputs proposing the same object be merged?

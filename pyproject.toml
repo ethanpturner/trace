@@ -43,6 +43,12 @@ dev = [
     "pytest-asyncio>=1.4.0",
     "pytest-cov>=7.1.0",
     "ruff>=0.16.2",
+    # Only the requirements-catalog test reads YAML. PyYAML is already present
+    # transitively; it is declared here so the test does not depend on another
+    # package's dependency, and types-pyyaml because PyYAML ships no stubs and
+    # mypy runs strict over tests.
+    "pyyaml>=6.0.3",
+    "types-pyyaml>=6.0.12",
 ]
 
 [tool.ruff]
