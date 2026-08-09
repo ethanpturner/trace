@@ -34,6 +34,7 @@ from trace_ai.services.assessment import (
     AssessmentNotFoundError,
     AssessmentService,
     InvalidStatusTransitionError,
+    NonAuthoritativeRunError,
 )
 
 
@@ -320,91 +321,177 @@ def test_status_raises_for_an_unknown_assessment(service: AssessmentService) -> 
 
 
 # ------------------------------------------------------------------------------------------
-# Status transitions
+# Status transitions (DEC-031)
 # ------------------------------------------------------------------------------------------
 
 
 def test_the_expected_lifecycle_is_allowed(service: AssessmentService) -> None:
+    """Create, pause at a checkpoint, resume, complete, archive."""
     created = service.create("Review", a_configuration())
-    service.update_status(created.id, ObjectStatus.PENDING_REVIEW)
-    service.update_status(created.id, ObjectStatus.APPROVED)
-    final = service.update_status(created.id, ObjectStatus.ARCHIVED)
+    service.begin_review(created.id)
+    service.resume_from_review(created.id)
+    service.approve(created.id, run_is_authoritative=True)
+    final = service.archive(created.id)
     assert final.status is ObjectStatus.ARCHIVED
 
 
-def test_update_status_refreshes_updated_at(service: AssessmentService) -> None:
+def test_a_transition_refreshes_updated_at(service: AssessmentService) -> None:
     created = service.create("Review", a_configuration())
-    updated = service.update_status(created.id, ObjectStatus.PENDING_REVIEW)
+    updated = service.begin_review(created.id)
 
     assert updated.updated_at > created.updated_at
     assert updated.created_at == created.created_at, "creation time is not a mutable field"
 
 
-def test_update_status_persists(service: AssessmentService) -> None:
+def test_a_transition_persists(service: AssessmentService) -> None:
     created = service.create("Review", a_configuration())
-    service.update_status(created.id, ObjectStatus.PENDING_REVIEW)
+    service.begin_review(created.id)
     assert service.get(created.id).status is ObjectStatus.PENDING_REVIEW
 
 
-def test_a_disallowed_transition_is_refused(service: AssessmentService) -> None:
-    """Draft to approved skips the review the workflow exists to require."""
+def test_pending_review_returns_to_draft_not_to_approved(service: AssessmentService) -> None:
+    """There is no pending_review to approved edge.
+
+    Resuming from checkpoint 2 returns the run to `running`, and report generation and evaluation
+    still follow, so the assessment reaches `approved` when the pipeline finishes rather than when
+    the reviewer answers.
+    """
     created = service.create("Review", a_configuration())
+    service.begin_review(created.id)
+
+    assert ObjectStatus.APPROVED not in ASSESSMENT_TRANSITIONS[ObjectStatus.PENDING_REVIEW]
+    assert service.resume_from_review(created.id).status is ObjectStatus.DRAFT
+
+
+def test_a_disallowed_transition_is_refused(service: AssessmentService) -> None:
+    created = service.create("Review", a_configuration())
+    service.begin_review(created.id)
     with pytest.raises(InvalidStatusTransitionError, match="may not move to"):
-        service.update_status(created.id, ObjectStatus.APPROVED)
+        service.begin_review(created.id)
 
 
 def test_archived_is_terminal(service: AssessmentService) -> None:
     created = service.create("Review", a_configuration())
-    service.update_status(created.id, ObjectStatus.ARCHIVED)
+    service.archive(created.id)
     with pytest.raises(InvalidStatusTransitionError, match="terminal"):
-        service.update_status(created.id, ObjectStatus.DRAFT)
+        service.resume_from_review(created.id)
+
+
+def test_an_assessment_can_be_archived_from_any_live_status(service: AssessmentService) -> None:
+    """An assessment may be abandoned at any point, including while it waits for a human."""
+    waiting = service.create("Waiting", a_configuration())
+    service.begin_review(waiting.id)
+    assert service.archive(waiting.id).status is ObjectStatus.ARCHIVED
+
+    finished = service.create("Finished", a_configuration())
+    service.approve(finished.id, run_is_authoritative=True)
+    assert service.archive(finished.id).status is ObjectStatus.ARCHIVED
+
+
+def test_a_new_run_returns_an_approved_assessment_to_draft(service: AssessmentService) -> None:
+    """Its conclusions no longer describe the current state."""
+    created = service.create("Review", a_configuration())
+    service.approve(created.id, run_is_authoritative=True)
+    assert service.begin_revision(created.id).status is ObjectStatus.DRAFT
+
+
+def test_a_non_authoritative_run_cannot_approve(service: AssessmentService) -> None:
+    """DEC-012 marks an ablated run non-authoritative; DEC-005 is what that protects.
+
+    Findings no human approved must not become an approved assessment, and the gate belongs here
+    rather than in the harness that produced the run.
+    """
+    created = service.create("Review", a_configuration())
+    with pytest.raises(NonAuthoritativeRunError, match="non-authoritative"):
+        service.approve(created.id, run_is_authoritative=False)
+
+    assert service.get(created.id).status is ObjectStatus.DRAFT
+
+
+def test_run_authority_must_be_stated_explicitly(service: AssessmentService) -> None:
+    """Keyword-only and no default: approving is never something that happens by omission."""
+    import inspect
+
+    parameter = inspect.signature(AssessmentService.approve).parameters["run_is_authoritative"]
+    assert parameter.kind is inspect.Parameter.KEYWORD_ONLY
+    assert parameter.default is inspect.Parameter.empty
+
+
+def test_there_is_no_generic_status_setter(service: AssessmentService) -> None:
+    """The transitions are named verbs, one per edge.
+
+    A setter taking an arbitrary `ObjectStatus` is what let #50's version mean "at a checkpoint"
+    without anyone deciding it should, and it would let a caller reach a status the table excludes
+    by passing it.
+    """
+    public = {name for name in vars(AssessmentService) if not name.startswith("_")}
+    assert "update_status" not in public
+    assert {"archive", "begin_review", "resume_from_review", "approve", "begin_revision"} <= public
 
 
 @pytest.mark.parametrize(
     "status", [ObjectStatus.CANDIDATE, ObjectStatus.REJECTED, ObjectStatus.SUPERSEDED]
 )
-def test_a_status_that_does_not_apply_to_an_assessment_is_refused(
-    service: AssessmentService, status: ObjectStatus
-) -> None:
+def test_an_excluded_status_is_unreachable(status: ObjectStatus) -> None:
     """Section 4.1: not every object needs every status.
 
-    `candidate` describes a proposal awaiting validation, `rejected` and `superseded` describe an
-    object replaced within an assessment. The assessment itself is none of those.
+    `candidate` describes an agent proposal awaiting validation, which an assessment never is.
+    `rejected` would report a completed assessment with zero findings as a failure, and
+    design-principles.md treats that as a success. `superseded` belongs to re-generated objects,
+    which DEC-023 limits to the two carrying `supersedes_id`.
     """
-    created = service.create("Review", a_configuration())
-    with pytest.raises(InvalidStatusTransitionError):
-        service.update_status(created.id, status)
+    assert status not in ASSESSMENT_TRANSITIONS
+    reachable = {target for targets in ASSESSMENT_TRANSITIONS.values() for target in targets}
+    assert status not in reachable
 
 
-def test_a_value_outside_object_status_is_refused(service: AssessmentService) -> None:
-    created = service.create("Review", a_configuration())
-    with pytest.raises((InvalidStatusTransitionError, ValueError)):
-        service.update_status(created.id, "in_progress")  # type: ignore[arg-type]
+def test_there_is_no_failed_assessment_status(service: AssessmentService) -> None:
+    """A failed run does not fail its assessment (DEC-031).
+
+    `WorkflowRun.status` becomes `failed` and the assessment stays `draft`, because an assessment
+    with a failed run is one somebody may run again. Nothing in the table can express failure, and
+    that is deliberate rather than an omission.
+    """
+    reachable = {target for targets in ASSESSMENT_TRANSITIONS.values() for target in targets}
+    assert not [status for status in reachable if "fail" in status.value]
+    assert not [name for name in vars(AssessmentService) if "fail" in name]
 
 
-def test_the_transition_table_only_names_applicable_statuses() -> None:
-    """A status reachable but not listed as a source would be a one-way trap."""
-    reachable = {status for targets in ASSESSMENT_TRANSITIONS.values() for status in targets}
-    assert reachable <= set(ASSESSMENT_TRANSITIONS), (
-        "a status can be entered but has no row saying where it may go"
-    )
+def test_the_transition_table_only_names_reachable_statuses() -> None:
+    """A status that can be entered but has no row saying where it may go is a one-way trap."""
+    reachable = {target for targets in ASSESSMENT_TRANSITIONS.values() for target in targets}
+    assert reachable <= set(ASSESSMENT_TRANSITIONS)
 
 
 def test_every_status_can_reach_archived() -> None:
-    """An assessment must always be closable, whatever state it got stuck in."""
     for status, targets in ASSESSMENT_TRANSITIONS.items():
         if status is not ObjectStatus.ARCHIVED:
             assert ObjectStatus.ARCHIVED in targets, status
 
 
-def test_update_status_does_not_use_model_copy(service: AssessmentService) -> None:
-    """The edited object is rebuilt through the schema.
+def test_a_transition_can_join_an_enclosing_transaction(service: AssessmentService) -> None:
+    """DEC-031 requires the assessment status and the run status to be written together.
 
-    `model_copy(update=...)` validates nothing, and the status edit is exactly the kind of change
-    that would slip an invalid value into a DEC-020 JSON payload.
+    The store holds transaction depth, so a caller wrapping both writes in one
+    `repository.transaction()` gets one commit. This proves the inner write defers rather than
+    landing early, which is what makes the pair atomic once `WorkflowRun` exists.
     """
     created = service.create("Review", a_configuration())
-    updated = service.update_status(created.id, ObjectStatus.PENDING_REVIEW)
+    repository = service.handle(created.id).objects
+
+    with pytest.raises(RuntimeError, match="run write failed"), repository.transaction():
+        service.begin_review(created.id)
+        raise RuntimeError("run write failed")
+
+    assert service.get(created.id).status is ObjectStatus.DRAFT, (
+        "the status committed on its own instead of deferring to the enclosing transaction"
+    )
+
+
+def test_a_transition_does_not_use_model_copy(service: AssessmentService) -> None:
+    """The edited object is rebuilt through the schema; `model_copy` validates nothing."""
+    created = service.create("Review", a_configuration())
+    updated = service.begin_review(created.id)
     assert isinstance(updated.status, ObjectStatus)
     assert Assessment.model_validate_json(updated.model_dump_json()) == updated
 
@@ -414,7 +501,7 @@ def test_the_artifact_directory_survives_a_status_change(
 ) -> None:
     created = service.create("Review", a_configuration())
     service.handle(created.id).artifacts.store_source("overview.md", b"content\n")
-    service.update_status(created.id, ObjectStatus.PENDING_REVIEW)
+    service.begin_review(created.id)
 
     assert service.handle(created.id).artifacts.read("sources", "overview.md") == b"content\n"
 

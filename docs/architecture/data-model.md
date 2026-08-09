@@ -426,6 +426,34 @@ Represents one complete security architecture analysis.
 | final_report_path | string | No | Generated report location |
 | tags | list[string] | No | User-defined labels |
 
+## Note on `status`
+
+`status` describes the assessment **as a deliverable** — whether its conclusions may be used and
+whether work may continue — and never where the pipeline has reached. Workflow progress lives on
+`WorkflowRun.status` (section 26), and an assessment may have several runs, so it cannot mirror one.
+
+Four `ObjectStatus` members are used (DEC-031):
+
+| Status | Meaning |
+|---|---|
+| `draft` | Work in progress. The conclusions are not authoritative. |
+| `pending_review` | Blocked on a human. No automated progress is possible. |
+| `approved` | The pipeline completed and the reviewer approved the findings at checkpoint 2. |
+| `archived` | Retired. Read-only, and terminal. |
+
+`pending_review` says that a human is required, never which checkpoint; `WorkflowRun.current_node`
+says which. It is set in the same transaction that sets `WorkflowRun.status` to `paused` and
+cleared in the one that resumes, so the two cannot disagree.
+
+`candidate`, `rejected`, and `superseded` are not used. An assessment is never proposed by an agent;
+an assessment whose findings were all rejected is a completed assessment with zero findings, which
+is a success rather than a rejection; and supersession belongs to re-generated objects, which
+DEC-023 limits to the two carrying `supersedes_id`.
+
+**A person may only archive.** Every other transition is written by a workflow node, and an
+assessment completed by a non-authoritative run — one that applied an ablation, per DEC-012 — may
+not reach `approved`.
+
 ## Example
 
 id: asm-001
@@ -1725,6 +1753,13 @@ An assessment may have multiple workflow runs due to retries, revisions, or eval
 | total_output_tokens | integer | No | Output-token count |
 | estimated_cost | decimal | No | Estimated cost |
 | error_summary | string | No | Final error if failed |
+
+## Note on failure
+
+A failed run does not fail its assessment. `status` becomes `failed` and the assessment stays
+`draft`, because an assessment with a failed run is one somebody may run again — this object
+already permits several runs per assessment. There is deliberately no failed-shaped
+`Assessment.status` (DEC-031).
 
 ## Note on pausing
 
