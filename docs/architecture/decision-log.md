@@ -216,6 +216,8 @@ Final security findings also require professional judgment regarding:
 
 Human review supports Trace’s role as a security-review assistant rather than an autonomous authority.
 
+DEC-012 states how this is enforced: the checkpoints are workflow-graph nodes and no assessment configuration can skip one.
+
 Alternatives Considered:
 
 - Fully autonomous assessment
@@ -517,3 +519,49 @@ Open Questions:
 - Should a suppressed conclusion be recorded as a rejected candidate for evaluation, rather than discarded silently?
 - Should entries reference the context claim that makes them false, rather than being free text?
 - Does this field belong on Requirement, or on a separate object relating a requirement to a known misreading?
+
+## DEC-012: Keep checkpoint ablation out of assessment configuration
+
+Date: 2026-08-08
+
+Status: Accepted
+
+Decision:
+
+Remove `require_context_review` and `require_finding_review` from AssessmentConfiguration.
+
+The two human checkpoints are nodes in the workflow graph, not runtime conditionals. No configuration value, environment variable, or function argument advances the pipeline past an unapproved checkpoint.
+
+The workflow comparison in the evaluation plan's section 14 is an experiment parameter belonging to the evaluation harness, not a setting on an assessment. A run that ablates a checkpoint is recorded as non-authoritative and names the ablation it applied.
+
+Repeatable evaluation does not require the ablation. A checkpoint answered from a recorded decision file is still a checkpoint: the node executes, the gate holds, and a ReviewerDecision is written. Replay is the mode ordinary evaluation uses, and it needs no flag.
+
+Why:
+
+DEC-005 states that human approval is required at two checkpoints, and both `CLAUDE.md` and `README.md` describe them as structural rather than configurable. A required boolean on the assessment's own configuration object is the definition of configurable, so the corpus asserted a constraint and supplied the switch that defeats it.
+
+Two different things were being expressed through one field. Answering a checkpoint without a human present is a scheduling concern and is what evaluation actually needs. Removing the checkpoint is an architectural experiment about whether human review improves outcomes. Only the second changes the pipeline, and it is the one that must never be reachable from an ordinary run.
+
+Section 14 supports this reading. The checkpoint comparison appears there alongside single agent against multi-agent, critic enabled against critic disabled, and evidence validation against no evidence validation, and the section closes by stating that the purpose is to determine whether architectural complexity improves outcomes. Those are experiments on the architecture. None of them is a per-assessment setting, and the checkpoint comparison is not one either.
+
+Placing the ablation in the harness also makes its result legible. An ablated run produces findings that no human approved, which is exactly the output DEC-005 exists to prevent from being treated as an assessment. Marking it non-authoritative at the point of production is cheaper than inferring it later from a configuration value.
+
+Alternatives Considered:
+
+- Retain the fields and constrain them to true, honouring false only under an explicit evaluation mode
+- Retain the fields as free configuration and amend DEC-005 accordingly
+- Retain the fields and rely on documentation to discourage setting them false
+- Express the ablation as a separate workflow definition rather than a harness parameter
+
+Tradeoffs:
+
+- Removing two documented fields is a data-model change, and section 6 was authoritative for them.
+- The ablation is now further from the code that implements the checkpoint, so a future change to the checkpoint could leave the harness path stale.
+- An operator who genuinely wants to skip a checkpoint has no supported way to do so and must edit the workflow, which is the intended cost but is still a cost.
+- Two mechanisms now answer a checkpoint, replay and interactive review, and both must produce identical ReviewerDecision records or the reviewer metrics will disagree between evaluation and ordinary use.
+
+Open Questions:
+
+- Where does the non-authoritative marking live: on the assessment, on the workflow run, or on the evaluation result?
+- Should an ablated run be prevented from producing a report at all, rather than producing one that is marked?
+- Does the replay decision file belong with the benchmark scenario, or with the run that produced it?

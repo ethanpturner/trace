@@ -85,6 +85,10 @@ These are decided. Violating one is a design change requiring an entry in
   supports a weakness; a **DocumentationGap** means it cannot be determined whether a control
   exists. Collapsing the two is the exact failure this project exists to avoid.
 - **Two human checkpoints are structural** (DEC-005): context approval, then finding approval.
+  They are workflow-graph nodes, not runtime conditionals, and `AssessmentConfiguration`
+  carries no setting that governs them (DEC-012). Removing a checkpoint is an evaluation
+  ablation that marks the run non-authoritative; answering one from a recorded decision file
+  is not an ablation and needs no switch.
 - **State is structured and schema-validated**, not a conversational transcript (DEC-006).
 - **Local, single-user MVP** (DEC-004). No cloud deployment, multi-tenancy, or RBAC.
 - **Quality over finding volume.** A successful assessment may produce no findings. Never optimize
