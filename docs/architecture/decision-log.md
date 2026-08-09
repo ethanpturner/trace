@@ -2228,3 +2228,170 @@ Open Questions:
   and one of them stop earning its section?
 - When a reviewer edits a finding after rendering, is the report re-rendered under a new run, or
   amended in place with the manifest updated?
+
+## DEC-036: Type fields are open vocabularies, normalized; `direction` is closed
+
+Date: 2026-08-09
+
+Status: Accepted
+
+Decision:
+
+`data-model.md` lists values under four headings ending in "examples" — component types, asset
+types, actor types, boundary types — and types every one of those fields `string`. Those fields are
+**open vocabularies**: any term is accepted, and the corpus's lists are documentation.
+
+**A term is normalized before it is stored.** `Web Application`, `web-application`, and
+`WEB_APPLICATION` all become `web_application`: whitespace, hyphens, slashes, and dots collapse to
+single underscores and the result is lowercased. A value that does not reduce to lowercase words
+joined by underscores is refused, because normalization exists to remove incidental variation rather
+than to accept anything at all.
+
+**A field is closed when the document enumerates rather than illustrates.** The signal is in the
+description: "Service, datastore, external system, etc." names examples, and "One-way or
+bidirectional" names the values. `DataFlow.direction` is therefore a closed enum, and it gains a
+third member, `unknown`, alongside the document's two.
+
+The `KNOWN_*` constants in each object module record the terms the corpus already uses. They
+validate nothing.
+
+Two `DataFlow` fields carry the `unknown` rule explicitly. `encryption_in_transit` and
+`authentication` default to the string `unknown` rather than to absence, and a boolean in either is
+refused by name.
+
+Why:
+
+A closed `component_type` enum would reject Trace's own benchmark.
+`demo/forgeflow/input/structured-system-input.yaml` uses seven component types and section 11 lists
+one of them; the other six — `web_application`, `managed_database`, `managed_cache`,
+`managed_storage`, `managed_security_service`, `internal_application` — appear nowhere in the
+document. The scenario was written to be assessed, so a schema that refuses it is wrong about
+itself rather than strict.
+
+The deeper reason is what these fields are for. The extractor reads architecture documents written
+by people who did not know Trace's vocabulary, and DEC-009's discipline is that Trace records what
+the documentation supports. A closed enum makes the model's list an authority over the document, and
+the failure is quiet: the nearest allowed value gets chosen, and a managed database becomes a
+`data_store` with the "managed" part — the part that decides whether encryption at rest is inherited
+— silently discarded. That is the same argument `requirements/README.md` makes about
+`acceptable_implementations`, which is non-exhaustive by construction for the same reason.
+
+What genuinely goes wrong with free text is drift, and drift is a spelling problem rather than a
+vocabulary problem. Three spellings of one type make the report's counts wrong, make two components
+of the same kind look different, and make a benchmark comparison meaningless. Normalizing fixes all
+three without deciding what a type may be.
+
+`direction` is the counter-example that keeps the rule honest. If every string field were open, an
+extractor could write `inbound`, `outbound`, `duplex`, and `two-way` for two states, and nothing
+downstream could ask "does this flow cross the boundary in both directions". The document names both
+values, so the enum is a reading of the document rather than an addition to it. `unknown` is an
+addition, and it is the same one section 14 already makes for encryption: `direction` is required,
+and a required field with no honest value is one that gets guessed. A guessed `one_way` removes a
+threat nobody ruled out.
+
+Alternatives Considered:
+
+- A closed enum per type field, extended with the six types the ForgeFlow fixture uses
+- Free strings with no normalization, leaving spelling to whatever produced the value
+- An open vocabulary with a warning logged for an unknown term
+- A registry file of permitted types, versioned like the requirements catalog
+- Making `direction` open too, for one uniform rule across every vocabulary field
+- Omitting `unknown` from `FlowDirection`, since the document names two values
+
+Tradeoffs:
+
+- **Nothing catches a typo.** `manged_database` normalizes cleanly and is stored as a new type. The
+  drift this decision prevents is between spellings of the same intent; it does nothing about a
+  misspelling, and the first place it will show is a report counting two kinds of database.
+- The `KNOWN_*` constants will be read as authoritative by someone, because a list of values in code
+  looks like a validation rule whatever its docstring says.
+- Normalization is lossy in one direction: `data-store` and `data_store` become one term, and if a
+  document ever meant them differently, that distinction is gone with no record it existed.
+- The open/closed rule depends on how a field's description is worded. `etc.` is a reliable signal in
+  the current document and is not a property anyone was maintaining deliberately, so a future field
+  can land on the wrong side of the rule by accident.
+- Defaulting `encryption_in_transit` to `unknown` means a caller who forgets the field gets a valid
+  object that asserts nothing. That is the safe direction, and it is still a default doing work a
+  required field would have made explicit.
+- Evaluation across catalog or scenario versions has no way to tell that `managed_database` and
+  `data_store` refer to the same component if a later extraction spells it differently.
+
+Open Questions:
+
+- Should an unknown term be recorded somewhere a reviewer sees, so a vocabulary growing by accident
+  is visible rather than silent?
+- Does `Actor.trust_level` want the same treatment? It is free text today and describes a small,
+  repeating set of levels in practice.
+- Is there a case for normalizing at the seam that receives agent output instead, so the raw term the
+  model produced is preserved alongside the canonical one?
+
+## DEC-037: Actor is a first-class context object; `SystemContext` gains `actor_ids`
+
+Date: 2026-08-09
+
+Status: Accepted
+
+Decision:
+
+`Actor` is a first-class object in the context baseline, and `SystemContext` gains an `actor_ids`
+field pointing at the actors an assessment extracted. Section 40's implementation-priority list
+gains `Actor`, after `Asset` and before `DataFlow`.
+
+`data-model.md` section 39's open question 4 — whether actors should be first-class objects in the
+MVP — is answered by this entry rather than left open.
+
+`Actor` still carries no `status` field, because section 13's table has none. Every other object in
+the context baseline has one, and adding it here would be a data-model change; this entry does not
+make it.
+
+Why:
+
+The corpus was split, and it was split lopsidedly. `agent-design.md` section 7 lists Actor objects
+among the Context Extraction Agent's outputs, `docs/product/roadmap.md` lists Actor in Stage 1 and
+again in Stage 2, and section 2.1 assigns actors a prefix. Against that: section 40 omitted Actor
+from a list written before several of those, and section 39 asked a question nobody had answered.
+An omission and an open question are not an argument for removal; they are the absence of one.
+
+The deciding consideration is the one the issue phrased: an extracted actor that nothing references
+is worse than an absent one. `SystemContext` is the versioned baseline a reviewer approves, and it
+holds identifier lists for claims, components, assets, data flows, and trust boundaries. An actor
+outside that list would be extracted, persisted, and invisible to the approval — approved by nobody
+and reachable by nothing — which is the worst of both designs. So either the field exists or the
+object does not, and three documents say the object exists.
+
+Threat analysis is the downstream reason to keep it. Threats are proposed against the approved
+context, and a threat needs someone to be the adversary and someone to be harmed. Deferring Actor
+would push that into free text on `Threat`, where nothing can check it against the architecture and
+nothing can ask whether an actor's documented capabilities support the threat.
+
+DEC-034 is the smaller consistency argument. It registered `act` as a prefix on the grounds that
+Actor is an assessment-scoped object carrying an `id`, and recorded as a tradeoff that a prefix
+naming nothing would be the cost of getting that wrong. Deferring Actor now would realize exactly
+that cost.
+
+Alternatives Considered:
+
+- Defer `Actor` out of M2 and let threat analysis carry actors as free text
+- Keep `Actor` without adding `actor_ids`, leaving actors outside the approved baseline
+- Fold actors into `Component` with a component type of `actor`, as some threat-modeling tools do
+- Add `status` to `Actor` for symmetry with the other four context objects
+
+Tradeoffs:
+
+- **`SystemContext` grows a sixth identifier list**, and every one of them is a place where the
+  baseline can reference an object that was later rejected. The Context Validation node has one more
+  list to check.
+- Actor without `status` is asymmetric, and the asymmetry is now permanent until someone changes the
+  document. Code that iterates the context objects generically has to special-case it.
+- Actors are the context object a design document says least about. Most of what an assessment knows
+  about them will be inferred, which means `ContextClaim` rationales and low confidence rather than
+  quoted evidence — and an object that is mostly inference is one a reviewer has to check hardest.
+- Adversarial actors (`external_attacker`, `malicious_insider`) sit in the same object as legitimate
+  ones, so any consumer counting "the system's users" has to filter by type.
+
+Open Questions:
+
+- Does an adversarial actor belong in the *approved context* at all, or is it a threat-analysis
+  object that happens to share a shape with a legitimate actor?
+- Should `SystemContext.actor_ids` be required-but-possibly-empty, like the other lists, or optional?
+  The other five are required in section 9, and this entry follows them.

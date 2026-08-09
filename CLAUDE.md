@@ -268,6 +268,13 @@ Squashing either pull request breaks the chain: the hotfix commit stops being an
   `RequirementsCatalog`, `PromptDefinition` — is outside it and carries a *name*: a lowercase slug
   with no prefix, identified by `(id, version)`. Do not give one a prefix; `cat-core` was that
   mistake.
+- **A type field the document illustrates is an open vocabulary** (DEC-036). `component_type`,
+  `asset_type`, `actor_type`, and `boundary_type` accept any term and normalize it to one spelling
+  through `domain/vocabulary.py`; the `KNOWN_*` constants are documentation and validate nothing. A
+  closed enum would reject `demo/forgeflow/input/structured-system-input.yaml`, which uses six
+  component types `data-model.md` never lists. `DataFlow.direction` is the counter-example: section
+  14 names the values rather than illustrating them, so it is a closed enum. Where absence would
+  read as a negative answer, say `unknown` explicitly — never `False`, never `None`.
 - **Go through `AssessmentService` for anything assessment-shaped**, and hold the
   `AssessmentHandle` it returns rather than an identifier: it carries the scoped repository
   and the scoped artifact store together, so one assessment's code cannot reach another's.

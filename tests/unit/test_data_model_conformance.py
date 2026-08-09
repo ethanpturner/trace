@@ -24,10 +24,12 @@ fail. That is the evidence the acceptance criteria ask for, obtained without wai
 Two things the parser found on the way, handled differently because they are different problems.
 `SourceObservation` is documented as section `10a` and was on neither of section 40's lists, which
 predate DEC-021; that was an omission with a settled answer, so section 40 gained the entry in the
-same change. `Actor` is on neither list either, but open question 4 asks whether it is a
-first-class object at all, so it stays `UNRESOLVED` and nothing here decides it. "The plan forgot
+same change. `Actor` was on neither list either, and open question 4 asked whether it was a
+first-class object at all, so it stayed `UNRESOLVED` and nothing here decided it. "The plan forgot
 it" and "nobody has decided" call for different fixes, which is why the registry keeps them
-apart.
+apart. DEC-037 has since answered the second one, and `Actor` moved to `IMPLEMENTED` with the
+section 40 entry and `SystemContext.actor_ids` in the same change — which is what `UNRESOLVED` was
+holding the place for.
 
 Section 4's enum conformance moved here from `test_domain_enums.py`, so that every
 document-versus-code comparison lives in one file and shares one parser. Issue #45.
@@ -43,8 +45,12 @@ import pytest
 from pydantic import BaseModel, create_model
 
 from trace_ai.config import PROJECT_ROOT
+from trace_ai.domain.actor import Actor
 from trace_ai.domain.assessment import Assessment, AssessmentConfiguration
+from trace_ai.domain.asset import Asset
 from trace_ai.domain.base import DomainModel
+from trace_ai.domain.component import Component
+from trace_ai.domain.data_flow import DataFlow
 from trace_ai.domain.enums import (
     ConfidenceLevel,
     EvidenceStrength,
@@ -57,6 +63,7 @@ from trace_ai.domain.enums import (
 from trace_ai.domain.evidence import EvidenceReference
 from trace_ai.domain.execution import ExecutionRecord, WorkflowRun
 from trace_ai.domain.source_document import SourceDocument
+from trace_ai.domain.trust_boundary import TrustBoundary
 
 DATA_MODEL = PROJECT_ROOT / "docs" / "architecture" / "data-model.md"
 
@@ -199,13 +206,14 @@ REGISTRY: dict[str, Registration] = {
     # the rest were numbered. This guard found it absent from section 40's priority list as well;
     # that was repaired in the same change, and it is `PLANNED` because the list now says so.
     "10a": Registration("SourceObservation", Status.PLANNED),
-    "11": Registration("Component", Status.PLANNED),
-    "12": Registration("Asset", Status.PLANNED),
-    # Section 40 lists neither Actor nor a replacement for it, and open data-model question 4
-    # asks whether actors are first-class objects in the MVP at all. Unresolved, not forgotten.
-    "13": Registration("Actor", Status.UNRESOLVED),
-    "14": Registration("DataFlow", Status.PLANNED),
-    "15": Registration("TrustBoundary", Status.PLANNED),
+    "11": Registration("Component", Status.IMPLEMENTED, Component),
+    "12": Registration("Asset", Status.IMPLEMENTED, Asset),
+    # Was UNRESOLVED: section 40 listed neither Actor nor a replacement, and open question 4
+    # asked whether actors are first-class objects at all. DEC-037 answers both, so the section 40
+    # entry and `SystemContext.actor_ids` arrived with the model.
+    "13": Registration("Actor", Status.IMPLEMENTED, Actor),
+    "14": Registration("DataFlow", Status.IMPLEMENTED, DataFlow),
+    "15": Registration("TrustBoundary", Status.IMPLEMENTED, TrustBoundary),
     "16": Registration("Threat", Status.PLANNED),
     "17": Registration("Requirement", Status.PLANNED),
     "18": Registration("Control", Status.PLANNED),
@@ -294,7 +302,7 @@ def test_every_field_row_has_a_description() -> None:
 
 def test_section_forty_parses_into_two_lists() -> None:
     first, later = implementation_priority()
-    assert len(first) == 21, first
+    assert len(first) == 22, first
     assert later == [
         "Critique",
         "EvidenceAssessment",
