@@ -216,6 +216,12 @@ Against the seven-stage [roadmap](#roadmap) below, Trace is inside Stage 1.
   a `require()` accessor that fails with a message explaining how to fix it.
 - **Process bootstrap** — ordered `.env` loading, settings cache invalidation, and logging
   configuration, wired to a `trace` console entry point.
+- **The local artifact store** — the per-assessment directory layout of `current-architecture.md`
+  section 5.16, under a gitignored `data/`. A store is bound to one assessment and has no method
+  that names another, so the assessment-data boundary is a different object to construct rather
+  than an argument to pass wrong. Original filenames are treated as untrusted input: traversal is
+  refused by shape and again by resolution, because a clean name still lands wherever a symlinked
+  directory points. Content is stored byte-identical.
 - **Structured logging with redaction** — JSON records carrying scoped context, and a filter on
   the handler that strips two things: provider credentials, by value type and by field name, and
   source-document content, which is replaced by a length and the identifier of the object it came
