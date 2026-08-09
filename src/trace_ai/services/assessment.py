@@ -54,9 +54,15 @@ __all__ = [
 # is -- it is created, worked on, reviewed, and finished. `rejected` and `superseded` describe an
 # object replaced or refused within an assessment, which the assessment itself cannot be.
 #
-# The corpus does not state this table. It is the narrowest reading that supports the workflow the
-# rest of the corpus describes: work, then review, then approval, with `archived` terminal and
-# reachable from anywhere. Widening it is cheap; a wrong transition allowed early is not.
+# The corpus does not state this table, and #148 decides what replaces it. This is the narrowest
+# reading that supports the workflow the rest of the corpus describes: work, then review, then
+# approval, with `archived` terminal and reachable from anywhere.
+#
+# Two things here are known to be wrong and are kept only until #148 lands, because changing them
+# without the decision would move the guess rather than settle it. `pending_review` means "at a
+# checkpoint", which is ambiguous between the two checkpoints and duplicates
+# `WorkflowRun.status == paused` -- a second authoritative answer to a question DEC-017 already
+# answers. And `approved -> pending_review` implies a re-review that no node produces.
 ASSESSMENT_TRANSITIONS: Final[dict[ObjectStatus, frozenset[ObjectStatus]]] = {
     ObjectStatus.DRAFT: frozenset({ObjectStatus.PENDING_REVIEW, ObjectStatus.ARCHIVED}),
     ObjectStatus.PENDING_REVIEW: frozenset(
