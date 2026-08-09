@@ -426,6 +426,34 @@ Represents one complete security architecture analysis.
 | final_report_path | string | No | Generated report location |
 | tags | list[string] | No | User-defined labels |
 
+## Note on `status`
+
+`status` describes the assessment **as a deliverable** — whether its conclusions may be used and
+whether work may continue — and never where the pipeline has reached. Workflow progress lives on
+`WorkflowRun.status` (section 26), and an assessment may have several runs, so it cannot mirror one.
+
+Four `ObjectStatus` members are used (DEC-031):
+
+| Status | Meaning |
+|---|---|
+| `draft` | Work in progress. The conclusions are not authoritative. |
+| `pending_review` | Blocked on a human. No automated progress is possible. |
+| `approved` | The pipeline completed and the reviewer approved the findings at checkpoint 2. |
+| `archived` | Retired. Read-only, and terminal. |
+
+`pending_review` says that a human is required, never which checkpoint; `WorkflowRun.current_node`
+says which. It is set in the same transaction that sets `WorkflowRun.status` to `paused` and
+cleared in the one that resumes, so the two cannot disagree.
+
+`candidate`, `rejected`, and `superseded` are not used. An assessment is never proposed by an agent;
+an assessment whose findings were all rejected is a completed assessment with zero findings, which
+is a success rather than a rejection; and supersession belongs to re-generated objects, which
+DEC-023 limits to the two carrying `supersedes_id`.
+
+**A person may only archive.** Every other transition is written by a workflow node, and an
+assessment completed by a non-authoritative run — one that applied an ablation, per DEC-012 — may
+not reach `approved`.
+
 ## Example
 
 id: asm-001
@@ -1726,6 +1754,13 @@ An assessment may have multiple workflow runs due to retries, revisions, or eval
 | estimated_cost | decimal | No | Estimated cost |
 | error_summary | string | No | Final error if failed |
 
+## Note on failure
+
+A failed run does not fail its assessment. `status` becomes `failed` and the assessment stays
+`draft`, because an assessment with a failed run is one somebody may run again — this object
+already permits several runs per assessment. There is deliberately no failed-shaped
+`Assessment.status` (DEC-031).
+
 ## Note on pausing
 
 A run pauses by persisting itself and letting the process exit (DEC-017). `status` becomes
@@ -2258,20 +2293,27 @@ Implement these first:
 4. EvidenceReference
 5. SystemContext
 6. ContextClaim
-7. Component
-8. Asset
-9. DataFlow
-10. TrustBoundary
-11. Threat
-12. Requirement
-13. Control
-14. ControlMapping
-15. Finding
-16. Question
-17. DocumentationGap
-18. ReviewerDecision
-19. WorkflowRun
-20. ExecutionRecord
+7. SourceObservation
+8. Component
+9. Asset
+10. DataFlow
+11. TrustBoundary
+12. Threat
+13. Requirement
+14. Control
+15. ControlMapping
+16. Finding
+17. Question
+18. DocumentationGap
+19. ReviewerDecision
+20. WorkflowRun
+21. ExecutionRecord
+
+`SourceObservation` (section 10a) was added by DEC-021 after this list was written, and the list
+was not updated with it. It is not optional: DEC-021 makes contradictions and detected
+prompt-injection attempts one object of this type, the context extraction step produces them, and
+DEC-027 gives every benchmark scenario an `expected-observations.yaml` to grade them against. It
+sits after `ContextClaim` because `subject_claim_ids` references claims.
 
 Add Critique, EvidenceAssessment, PromptDefinition, RequirementsCatalog, and EvaluationResult once the main workflow begins operating.
 

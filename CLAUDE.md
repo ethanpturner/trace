@@ -36,7 +36,12 @@ uv run pre-commit run gitleaks --all-files   # a single hook
 ## Repository layout
 
 ```
-src/trace_ai/        configuration and process bootstrap -- the only product code
+src/trace_ai/        configuration and process bootstrap -- the only product code that runs
+src/trace_ai/domain/           enums.py and base.py; no concrete domain object yet
+src/trace_ai/services/         ingestion/ and evidence/ -- empty
+src/trace_ai/infrastructure/   filesystem/ and database/ -- empty
+                     Dependencies point inward. domain/ imports neither of the other two and
+                     no provider SDK; tests/unit/test_package_layout.py asserts both.
 tests/unit/          the only tests that exist
 tests/integration/   scaffolded, empty
 tests/evaluation/    scaffolded, empty
@@ -57,6 +62,13 @@ scripts/             repository utilities
 
 The import package is `trace_ai`, not `trace` — `trace` shadows a stdlib module, and importing it
 silently resolves to the standard library. The distribution and CLI are still named `trace`.
+
+**The same rule applies to modules inside the package.** Structured logging lives in
+`observability.py` because `logging.py` broke on the first import, and the reasoning that a
+namespaced module cannot shadow anything is exactly backwards: importing a submodule binds it as
+an attribute of its package, so `from trace_ai.logging import install` in `__init__.py` would set
+`trace_ai.logging` to that module and shadow the same file's `import logging`. Do not name a
+module after a standard-library one it or its package imports.
 
 ## Architecture in brief
 
@@ -228,6 +240,56 @@ Squashing either pull request breaks the chain: the hotfix commit stops being an
 ## Working norms
 
 - **mypy is strict and covers `scripts/` too.** New utilities are type-checked like product code.
+- **`data-model.md` is authoritative, and `tests/unit/test_data_model_conformance.py` enforces
+  it.** It parses the field tables and the section 4 enums and compares them to the code, in both
+  directions — a rename in the document alone fails, and so does a field the document never
+  sanctioned. **When you implement a domain object, flip its registry entry in that file to
+  `IMPLEMENTED` and name the model in the same change**, or the object ships unguarded. Every
+  section from 5 to 31 is classified there; a new one fails until it is added.
+- **Every domain object subclasses `DomainModel`** (`src/trace_ai/domain/base.py`) and inherits
+  `extra="forbid"`. Do not relax it on a subclass: it is the mechanism by which an agent-proposed
+  object carrying an invented field fails validation instead of passing downstream stripped of
+  the field and looking valid. Timestamps come from `domain.base.now()`, never `datetime.now()`.
+- **Identifier allocation belongs to the store, not to a caller.** DEC-018 assigns a generated
+  identifier at insert from a monotonic per-`(assessment_id, prefix)` counter. `InMemoryAllocator`
+  in `domain/identifiers.py` is for tests: a fresh instance restarts at `001`, so two of them
+  collide and a resumed run would re-mint identifiers that already exist. Depend on the
+  `IdentifierAllocator` protocol and let the persistence layer supply the implementation.
+- **Go through `AssessmentService` for anything assessment-shaped**, and hold the
+  `AssessmentHandle` it returns rather than an identifier: it carries the scoped repository
+  and the scoped artifact store together, so one assessment's code cannot reach another's.
+- **`Assessment.status` is the deliverable's lifecycle, never the pipeline's position** (DEC-031).
+  Workflow progress is `WorkflowRun.status`; an assessment may have several runs. Four values only
+  — `draft`, `pending_review`, `approved`, `archived` — reached through named verbs
+  (`begin_review`, `resume_from_review`, `approve`, `begin_revision`, `archive`) rather than a
+  status setter, because a setter is what let the pre-DEC-031 version mean "at a checkpoint"
+  without anyone deciding it should. A person may only `archive`. A failed run leaves its
+  assessment in `draft`.
+- **Reach persisted objects through a scoped `AssessmentRepository`.** `AssessmentStore.repository(
+  assessment_id)` is the only way in; there is no cross-assessment read but `assessment_ids()`,
+  which returns identifiers and no content. Identifiers come from `repository.allocate(prefix)`,
+  never from a caller, and a counter increment commits with the insert that consumes it — wrap
+  both in `repository.transaction()`. Bumping `SCHEMA_VERSION` is for table-layout changes only; a
+  domain-object change is invisible to SQLite by design.
+- **Reach the filesystem through `ArtifactStore`, never through a path you built.** It is bound to
+  one assessment, creates `sources/`, `normalized/`, `outputs/`, `traces/`, and `evaluation/` on
+  demand, and treats `SourceDocument.filename` as untrusted — a caller-supplied name reaching a
+  path expression. It also refuses to overwrite a stored file with different content, because
+  every `EvidenceReference` into the original would keep a hash that no longer verifies.
+- **Never quote source-document content into a log record.** Source documents are untrusted input
+  and may carry anything. Reference them by `SourceDocument.id` or `EvidenceReference.id`; the
+  redaction filter in `trace_ai.observability` replaces a field whose name marks it as
+  source-derived with a length and that identifier. Pass values as structured context
+  (`extra={...}` or `bind(...)`), never pre-formatted into the message — a secret interpolated
+  into the message string before `logging` sees it is indistinguishable from prose, and the filter
+  says so rather than pretending otherwise.
+- **Build an edited object with `model_validate`, never `model_copy`.** Domain objects are frozen,
+  so a DEC-023 reviewer edit constructs a new instance and persists it under the same identifier.
+  `model_copy(update=...)` looks like the API for that and validates nothing: an invalid enum
+  value survives and serializes into the DEC-020 JSON payload, and `extra="forbid"` is bypassed.
+  Use `type(obj).model_validate({**obj.model_dump(), **changes})`. This is the only path on which
+  a human-supplied value enters a domain object, so it is the one that least tolerates skipping
+  the schema. Pinned by `tests/unit/test_domain_base.py`.
 - **CI must never need a provider API key.** The `integration` and `evaluation` markers are
   deselected by default in `addopts` precisely so a bare `pytest` cannot spend money.
 - **Secrets go through `trace_ai.config.Settings`** as `SecretStr`. `.env` is gitignored;

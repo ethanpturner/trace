@@ -24,3 +24,13 @@ htmlcov/
 
 # Staged issue bodies produced by scripts/seed_backlog.py
 scripts/.staged/
+
+# The local artifact store. Nothing writes it yet. The loader is designed to put ingested
+# source documents, normalized text, generated reports, and traces here, and those are
+# copies of material under review -- including the deliberate prompt-injection fixture.
+# The rule lands before the writer so the first run cannot offer them to a commit.
+#
+# Anchored to the repository root. demo/, benchmarks/, and requirements/ hold
+# version-controlled fixtures; an unanchored rule would silently swallow a data/
+# directory under any of them.
+/data/

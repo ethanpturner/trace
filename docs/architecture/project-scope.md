@@ -143,7 +143,7 @@ Initial metrics will include:
 
 - Which threat-analysis methodology should the MVP use?
 - Which model provider or providers should be supported initially?
-- Should the first interface be a CLI, local web application, or both?
+- ~~Should the first interface be a CLI, local web application, or both?~~ Resolved by DEC-032: a CLI through M4.
 - How should inherited controls be represented?
 - What confidence model should be used?
 - How should duplicate or overlapping threats be consolidated?

@@ -184,7 +184,7 @@ Tradeoffs:
 
 Open Questions:
 
-- Should the MVP lead with a local web interface or command-line interface?
+- ~~Should the MVP lead with a local web interface or command-line interface?~~ Resolved by DEC-032: a command-line interface through M4, with a read-only view permitted in Stage 5.
 - Should the application be containerized for repeatable setup?
 - What is the minimum supported operating environment?
 
@@ -562,7 +562,7 @@ Tradeoffs:
 
 Open Questions:
 
-- Where does the non-authoritative marking live: on the assessment, on the workflow run, or on the evaluation result?
+- ~~Where does the non-authoritative marking live: on the assessment, on the workflow run, or on the evaluation result?~~ Resolved by DEC-031: on the workflow run. The assessment needs no marking because it simply cannot reach `approved`, and the evaluation result measures a run that already carries it.
 - Should an ablated run be prevented from producing a report at all, rather than producing one that is marked?
 - Does the replay decision file belong with the benchmark scenario, or with the run that produced it?
 
@@ -1690,3 +1690,235 @@ Open Questions:
 - If checkpoint 2 becomes the workflow's bottleneck, is the answer a severity proposal, a smaller finding set, or a different checkpoint shape?
 - Is there a metric for reviewer-assigned severity that does not require a second reviewer — consistency across similar findings within one assessment, perhaps?
 - Section 17 stays in `agent-design.md` as a specification of something not built. Should deferred-agent specifications live in section 37's list instead, so the document describes only what exists?
+
+## DEC-031: `Assessment.status` is the deliverable lifecycle; workflow progress stays on the run
+
+Date: 2026-08-09
+
+Status: Accepted
+
+Decision:
+
+**One axis per object.** `WorkflowRun.status` answers *where is the pipeline*. `Assessment.status` answers *may these conclusions be used, and may work continue*. The two never describe the same thing, and neither is derived from the other.
+
+`Assessment.status` uses **four of the seven `ObjectStatus` members**. Section 4.1 already permits a subset: "not every object needs every status."
+
+| Status | Meaning |
+|---|---|
+| `draft` | Work in progress. The conclusions are not authoritative. Any number of runs, at any stage. |
+| `pending_review` | Blocked on a human. No automated progress is possible. |
+| `approved` | The pipeline completed and the reviewer approved the findings at checkpoint 2. The conclusions are the reviewer's. |
+| `archived` | Retired. Read-only. |
+
+`pending_review` says *that* a human is required, never *which* checkpoint. `WorkflowRun.current_node` says which, and DEC-017 already makes a paused run self-describing.
+
+**Five transitions, each with exactly one writer.**
+
+| From | To | Written by | On |
+|---|---|---|---|
+| `draft` | `pending_review` | the checkpoint node | reaching either checkpoint |
+| `pending_review` | `draft` | the resume invocation | every pending object having a `ReviewerDecision` |
+| `draft` | `approved` | the terminal node | the run completing |
+| `approved` | `draft` | the run initiator | a new run beginning against an approved assessment |
+| any of the three | `archived` | a person | retiring the assessment |
+
+`archived` is terminal. There is no `pending_review` to `approved` edge: resuming from checkpoint 2 returns the run to `running`, and report generation and evaluation still follow, so the assessment returns to `draft` and reaches `approved` when the pipeline finishes.
+
+**Four rules that are not transitions, and matter more than the edges.**
+
+**The status and the run status are written in one transaction.** `pending_review` is set in the same transaction that sets `WorkflowRun.status` to `paused`, and cleared in the same transaction that resumes. Two independent writes are what would let them disagree; one transaction removes the failure mode rather than documenting it.
+
+**A failed run does not fail its assessment.** `WorkflowRun.status` becomes `failed` and the assessment stays `draft`. There is no failed-shaped assessment status, because an assessment with a failed run is an assessment someone may run again. `data-model.md` section 26 already permits multiple runs per assessment; this states what that means for the parent.
+
+**An assessment completed by a non-authoritative run may not reach `approved`.** DEC-012 records an ablated run as non-authoritative and `evaluation-plan.md` section 14 ablates checkpoints. Findings that no human approved becoming an approved assessment is precisely what DEC-005 exists to prevent.
+
+**A person may perform only the transition to `archived`.** Every other edge is written by a workflow node. A user-settable `approved` is a checkpoint bypass with extra steps.
+
+**This answers DEC-012's first open question.** The non-authoritative marking lives on the **workflow run**. It is not needed on the assessment, because the assessment's inability to reach `approved` is the consequence that matters, and it is not needed on the evaluation result, which measures a run that already carries it. One marking, one place, with its effect expressed as a rule rather than as a second field.
+
+**Three members are excluded**, and the reasons differ:
+
+- `candidate` describes an object proposed by an agent and awaiting validation. An assessment is created by a person and is never proposed.
+- `rejected` conflates two different things. An assessment whose findings were all rejected is a *completed* assessment with zero findings, and "a successful assessment may produce no significant findings" is a binding constraint. An abandoned assessment is `archived`.
+- `superseded` belongs to re-generation. DEC-023 puts `supersedes_id` on exactly two objects and reserves it for a generated object replaced by a later generated one. A re-assessment is a new run or a new assessment, not a supersession.
+
+Why:
+
+The field was required by section 5 and defined nowhere. Section 5's example shows `pending_review` and that is the only statement about it in the corpus, while both neighbouring status fields — `WorkflowRun.status` and `ExecutionRecord.status` — carry explicit vocabularies and explicit scopes.
+
+Issue #50 needed a table to build the service and shipped one, recorded in the code as invented. It was wrong in a way worth keeping in the record, because the same mistake is available to anyone filling this gap: it made `pending_review` mean "at a checkpoint". There are two checkpoints, so that value is ambiguous between them, and it duplicates `WorkflowRun.status == paused` plus `current_node`, which DEC-017 already establishes as the record of a pause.
+
+Duplication is the actual problem rather than ambiguity. A stored status that can disagree with the runs it summarizes is a second authoritative answer to one question — the failure DEC-016 cites when rejecting a framework checkpointer whose state would sit alongside the domain objects, and the one DEC-028 cites when refusing a declared count that can disagree with its own enumeration. Three decisions now reject the same shape.
+
+Section 26 is what forces the axis apart: an assessment may have multiple workflow runs, for retries, revisions, or evaluations. A status that mirrored a run would have to choose which run, and every answer to that is wrong for some case.
+
+The four rules carry the weight because the edges alone permit a correct-looking implementation that still diverges. Writing the pair in one transaction is what makes divergence structurally impossible; DEC-017 already has the checkpoint node persisting the run, so there is a transaction to join and the rule costs nothing.
+
+Excluding `rejected` is the one exclusion with a real argument against it, since a reviewer who rejects every finding has plainly not produced a useful assessment. The design principle settles it: a run that surfaces no defensible findings has done its job, and a status meaning "the answer was no" would be read as failure by everything that displays it.
+
+Alternatives Considered:
+
+- Three values, dropping `pending_review`, leaving a pure deliverable lifecycle with nothing that can diverge
+- Deriving the status from the assessment's runs rather than storing it
+- Mirroring the run, adding `running`, `paused`, and `failed` to `ObjectStatus`
+- Keeping #50's table, which additionally allowed `approved` to `pending_review`
+- A separate `blocked_on_human` boolean beside the status, rather than a status value
+
+Tradeoffs:
+
+- **`pending_review` is denormalized and can still be wrong** if a node sets it outside the transaction that pauses the run. The rule makes that a defect rather than a race, but nothing in the schema enforces it; the enforcement lives in the checkpoint node's implementation, which is not built.
+- Dropping `pending_review` entirely would have removed that risk. It was kept because "which of my assessments are waiting on me" is the question a local single-user tool is most often asked, and answering it otherwise means loading every run.
+- **The `approved` gate depends on information the assessment does not hold.** Whether the completing run was authoritative is a property of the run, so the service takes it as an argument until `WorkflowRun` exists. An argument is weaker than a lookup and will be replaced by one.
+- Five named transitions rather than one status setter is more surface, and a sixth event will want a sixth verb. That is the intended cost: a generic setter re-admits the ambiguity this decision removes.
+- `approved` to `draft` means an approved assessment silently stops being approved when someone starts a new run. That is correct — the conclusions no longer describe the current state — but it discards the record that it *was* approved, which only the `ReviewerDecision` rows retain.
+- Nothing detects an assessment stuck in `pending_review` whose run was deleted or whose decisions were never recorded. DEC-017 makes a paused run wait indefinitely by design, and this inherits that.
+
+Open Questions:
+
+- Should reaching `approved` be recorded as an event as well as a state, so a revision does not erase the fact that an earlier run was approved?
+- Does `archived` need to prevent writes to the assessment's objects, or is it a label until retention (section 36) gives it teeth?
+- When a run is ablated, should the assessment be prevented from *starting* it rather than only from reaching `approved`?
+- Is `pending_review` worth the denormalization once a run listing exists, or should it be reconsidered when the CLI is built?
+
+## DEC-032: The command line is the interface through M4; `argparse`, no dependency
+
+Date: 2026-08-09
+
+Status: Accepted
+
+Decision:
+
+**The reviewer's interface is a command-line interface through M4.** `current-architecture.md` section 5.1 is corrected: it was the document that was wrong.
+
+Stage 5 may add a **read-only local view** for the demonstration — the lineage view that section 5.1 and the roadmap both want to show. It is a rendering of persisted state and not a second way to drive the pipeline. **No review interaction moves to a browser in the MVP.** Approving context, approving findings, assigning severity, and answering questions are command-line operations backed by the decision writer DEC-017 defines.
+
+**The CLI uses `argparse` from the standard library.** No dependency is declared.
+
+The Stage 1 command surface is confirmed, with two additions that decisions since the roadmap require: `trace assessment list`, because a reviewer needs to find an identifier the store allocated, and `trace assessment archive`, because DEC-031 makes archiving the one status transition a person performs.
+
+Why:
+
+The corpus contradicted itself and the contradiction was lopsided. Section 5.1 states a preference for a local web application once. The roadmap states the opposite four times — Stage 1 delivers "a simple CLI before building the full interface", Stage 1's non-goals forbid a polished web interface, Stage 5 says to "build only the interface necessary to support the demonstration", and section 9 says flatly "do not begin with the web interface." A single sentence against four is a stale sentence, not a live disagreement.
+
+**DEC-017 removed the strongest argument for leading with a web interface.** The open question this decision inherited asked whether the checkpoint mechanism needs an interactive interface. It does not. A checkpoint pauses by persisting the run and letting the process exit, and reviewer decisions reach the workflow through one writer regardless of caller — an interactive command, a web form, and an evaluation harness replaying a decision file all produce identical `ReviewerDecision` rows. Review is therefore not a thing a browser is needed for; it is a thing a browser would be one caller of.
+
+**Repeatable evaluation wants a scriptable interface.** `evaluation-plan.md` section 3 requires repeatability, and DEC-012 requires that answering a checkpoint non-interactively is not an ablation. A web-first interface would leave evaluation either driving a browser or bypassing the interface entirely — and bypassing it means the measured path is not the path a reviewer uses, which is the thing evaluation exists to avoid.
+
+**Section 5.1 names the CLI as the demo-recovery path if the web interface fails.** A recovery path that has not been built is not a recovery path. If exactly one interface exists, it should be the one that is also the fallback.
+
+**Choosing the CLI removes a trust boundary rather than mitigating one.** DEC-004 makes this a local single-user application with no authentication and no RBAC. A local web application introduces a browser-to-application boundary — a listening port, a server process holding assessment data, and request forgery from any page the reviewer has open — for a single user on their own machine. The threat model issue lists that boundary as conditional on this decision; it is now conditional on nothing, because it does not exist.
+
+**The cost of getting the order wrong is asymmetric.** Section 5.1 already requires the web interface to call application services rather than contain analysis logic. Building the services first, which M1 is doing, makes a later interface additive. Building the interface first shapes the service layer around a rendering concern, and that shaping is not visible until something else needs the same services.
+
+`argparse` rather than a declared dependency, for three reasons. The command surface is seven commands, which is within what `argparse` expresses without strain. Every declared dependency is a supply-chain surface on a project whose subject is architectural risk, and five commands do not pay for one. And the claim that `typer` was already available transitively — which the issue recorded — is no longer true: DEC-016 removed the orchestration packages that carried it, and the declared runtime dependencies are down to five. Adopting it now would be adding a dependency, not using one already present.
+
+This is the kind of choice worth revisiting rather than defending. The trigger is command count or help quality: when subcommand help, completion, or argument validation start being hand-written in ways a framework provides, the framework has become cheaper than the code avoiding it.
+
+Alternatives Considered:
+
+- A local web application first, following section 5.1
+- A CLI plus a read-only local web view built in parallel through M1 to M4
+- Both interfaces over a shared application service, built together
+- `typer` or `click` as a declared dependency
+- A text user interface, avoiding both a browser and bare `argparse`
+
+Tradeoffs:
+
+- **The review experience is worse.** Checkpoint 2 asks a reviewer to read findings with their evidence, and a terminal is a poor medium for that. The review package DEC-017 derives is rendered as text, and a reviewer will read some of it in a pager.
+- Section 5.1's capability list — view workflow progress, view evidence and reasoning traces — is genuinely better served by a browser, and this decision defers all of it to Stage 5 rather than answering it.
+- **Deferring the web interface risks it never being built**, and with it the lineage view that is a Stage 5 deliverable and part of the portfolio argument.
+- `argparse` produces help text that is adequate rather than good, and no shell completion. That is a visible quality gap in a project whose demonstration is a deliverable.
+- Choosing the standard library now means a later migration to a framework rewrites the command layer rather than extending it. The layer is thin by design, which is what makes that acceptable.
+- A read-only Stage 5 view still needs a way to render persisted state, so the work is deferred rather than avoided; only the review interaction is settled here.
+
+Open Questions:
+
+- Does the Stage 5 read-only view render from the database directly, or through the same application services the CLI uses?
+- Is the checkpoint review package rendered as text, as a file the reviewer opens in an editor, or as both?
+- At what command count or help-quality threshold is a CLI framework worth the dependency?
+- Does a text user interface become attractive for checkpoint 2 specifically, without becoming a second interface for everything else?
+
+## DEC-033: `IngestionStatus` has three values; the failure reason lives on the ExecutionRecord
+
+Date: 2026-08-09
+
+Status: Accepted
+
+Decision:
+
+`data-model.md` section 7 requires `ingestion_status` and enumerates nothing. The vocabulary is
+**three values**:
+
+| Value | Meaning | Requires |
+|---|---|---|
+| `registered` | Recorded and preserved. Its bytes are stored and hashed; nothing has read them. | `ingested_at` and `normalized_path` unset |
+| `ingested` | Normalized, segmented, and indexed. | both set |
+| `failed` | Ingestion was attempted and did not complete. | `normalized_path` unset |
+
+`registered` is the default. A document exists before anything reads it, which is why section 7
+makes `ingested_at` optional, and that optionality is exactly what would otherwise let a document
+claim it was ingested while carrying nothing an evidence reference could point at. The consistency
+rule is enforced on the model.
+
+**The success value is `ingested`, not `normalized`.** Section 7's field is `ingested_at`, described
+as the successful-ingestion timestamp, and `current-architecture.md` section 5.4 calls the whole
+component ingestion, of which normalization is one of nine responsibilities. Naming the state
+`normalized` would give one event two vocabularies.
+
+**There is no separate `indexed` state.** Section 5.4 lists normalizing, dividing into addressable
+sections, preserving locations, and generating hashes as responsibilities of one component, and the
+milestone builds them as one node. A state between them would describe a moment no code can be
+interrupted at.
+
+**A failed ingestion says that it failed and not why.** The reason belongs on the `ExecutionRecord`
+for the ingestion node, which section 27 already gives `error_type` and a safe `error_message`.
+Recording it on `SourceDocument` as well would be two records of one event, and they would disagree
+the first time one was written and the other was not.
+
+Why:
+
+Section 7 leaves the field required and undefined, which is the shape that produces a vocabulary
+invented separately at each call site — three spellings of "ok" and no agreement on what failure
+looks like. Settling it with the object costs one entry and removes that.
+
+The distinction that has to exist is registration from ingestion, and the corpus already implies it
+twice: `ingested_at` is optional while `created_at` is required, and the artifact store's `sources/`
+and `normalized/` directories are separate places written at separate times. A document whose bytes
+are stored but not yet read is a real state, not an edge case — it is what exists between
+`trace source add` and the ingestion node running.
+
+Adding states was the temptation and the corpus argues against it. Every additional value has to
+correspond to a moment the system can actually be observed in, and a status the code never writes
+is worse than absent: someone will eventually branch on it.
+
+Alternatives Considered:
+
+- `pending`, `processing`, `complete`, `failed`, mirroring a generic job lifecycle
+- Separate `normalized` and `indexed` states, following section 5.4's responsibility list literally
+- A `partially_ingested` state for a document that normalized but failed segmentation
+- A boolean `ingested` flag with the failure recorded only on the `ExecutionRecord`
+- An `error_message` field on `SourceDocument`, alongside the status
+
+Tradeoffs:
+
+- **A failed document requires a join to explain itself.** Reading why ingestion failed means
+  finding the `ExecutionRecord` for that node, which is more work than reading a field. That is the
+  intended cost of one record per event, and it is only payable once the execution ledger exists
+  (#57) — until then, a failed document is a state with no accessible reason.
+- `processing` is absent, so a document being ingested is indistinguishable from one that was never
+  attempted. DEC-017 makes runs pause by exiting rather than holding state, so nothing is
+  concurrently in flight, but a crashed run leaves documents at `registered` that were mid-ingest.
+- Three values will not survive PDF ingestion unchanged if page extraction becomes a separate,
+  separately-failing step.
+- Enforcing the consistency rule on the model means a caller must set `ingested_at`,
+  `normalized_path`, and the status together. That is correct and it is three things to remember at
+  one call site.
+
+Open Questions:
+
+- Does a crashed run need a way to distinguish "never attempted" from "attempted and interrupted",
+  or is re-ingesting a `registered` document always safe?
+- When re-ingestion produces different normalized output, does the document keep its identity, or
+  does DEC-023's supersession apply?
+- Should `failed` carry the identifier of the `ExecutionRecord` that explains it, which is a
+  reference rather than a duplicate?

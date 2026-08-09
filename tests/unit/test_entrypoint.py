@@ -12,7 +12,8 @@ from pathlib import Path
 
 import pytest
 
-from trace_ai import bootstrap, configure_logging, main
+from trace_ai import bootstrap, configure_logging
+from trace_ai.cli import run
 from trace_ai.config import Settings, get_settings
 
 
@@ -28,7 +29,7 @@ def test_main_reports_environment_without_leaking_secrets(
     monkeypatch.setattr("trace_ai.config.ENV_FILE", tmp_path / "absent.env")
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-do-not-print-me")
 
-    main()
+    run([])
 
     out = capsys.readouterr().out
     assert "Hello from trace!" in out
@@ -43,7 +44,7 @@ def test_main_reports_none_when_no_credentials_configured(
     for var in ("ANTHROPIC_API_KEY", "OPENAI_API_KEY", "LANGSMITH_API_KEY"):
         monkeypatch.delenv(var, raising=False)
 
-    main()
+    run([])
 
     assert "credentials configured: none" in capsys.readouterr().out
 

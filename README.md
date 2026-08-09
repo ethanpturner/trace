@@ -216,10 +216,73 @@ Against the seven-stage [roadmap](#roadmap) below, Trace is inside Stage 1.
   a `require()` accessor that fails with a message explaining how to fix it.
 - **Process bootstrap** — ordered `.env` loading, settings cache invalidation, and logging
   configuration, wired to a `trace` console entry point.
+- **The assessment store** — SQLite holding every generated object as a validated JSON payload
+  keyed by `(assessment_id, id)`, per DEC-020, so a schema change is a Pydantic change and not a
+  migration. Repositories are scoped to one assessment, identifier allocation is a store operation
+  that survives the process, and a row that no longer parses raises rather than returning a
+  partial object.
+- **The local artifact store** — the per-assessment directory layout of `current-architecture.md`
+  section 5.16, under a gitignored `data/`. A store is bound to one assessment and has no method
+  that names another, so the assessment-data boundary is a different object to construct rather
+  than an argument to pass wrong. Original filenames are treated as untrusted input: traversal is
+  refused by shape and again by resolution, because a clean name still lands wherever a symlinked
+  directory points. Content is stored byte-identical.
+- **The command line** — `trace assessment create`, `trace assessment list`,
+  `trace assessment status`, `trace assessment archive`, `trace source add`, `trace source list`,
+  `trace evidence list`, `trace evidence show`, and `trace evidence verify`. Every command calls a
+  service and contains no pipeline logic. `trace context extract` and `trace context show` are absent rather than stubbed,
+  because they need an agent that does not exist and `--help` is a promise.
+- **Structured logging with redaction** — JSON records carrying scoped context, and a filter on
+  the handler that strips two things: provider credentials, by value type and by field name, and
+  source-document content, which is replaced by a length and the identifier of the object it came
+  from. Source text is referenced in a log line, never quoted into one.
 - **CI** — ruff, ruff format, mypy in strict mode, and pytest with coverage, on every pull request.
   Each check runs even when an earlier one fails, so one run reports every problem.
 - **Repository hygiene** — pre-commit and pre-push hooks including gitleaks secret scanning, a
   lockfile freshness gate, and branch protection on `main`.
+- **The shared domain vocabulary** — the seven enumerated types `data-model.md` section 4 defines,
+  and `DomainModel`, the Pydantic base every domain object inherits. `extra="forbid"` is the
+  setting that matters: an agent-proposed object carrying an invented field fails validation at
+  the boundary instead of being silently reduced to the fields anyone reads.
+- **Assessment creation, lookup, and lifecycle** — one operation that allocates the identifier,
+  writes the row, and creates the artifact directory, cleaning up rather than leaving half of an
+  assessment behind. Status describes the assessment as a deliverable, never where the pipeline
+  has reached, and moves through named transitions of which only archiving is a person's to make. Callers receive a handle carrying both stores scoped to one assessment, so code holding
+  one cannot address another by passing a different string.
+- **The execution ledger** — `WorkflowRun` and `ExecutionRecord`, with a context manager that
+  records a node execution whether it succeeds or raises. The two deterministic nodes are
+  instrumented, so the first model-assisted node will find a ledger rather than invent one.
+  `total_model_calls` is zero, which is the correct value: nothing calls a model.
+- **Evidence retrieval and verification** — the application-controlled interface `agent-design.md`
+  section 22 requires agents to sit behind, built before any agent so it has no exceptions. It
+  re-reads the artifact and distinguishes three outcomes rather than two: a matching quotation, a
+  changed one, and a missing file. The prompt-facing shape carries a quotation and a location and
+  no filesystem path at all.
+- **Normalization and evidence indexing** — line-count-preserving normalization, segmentation at
+  the shallowest heading level that occurs more than once, JSON Pointer addressing for structured
+  documents, and one `EvidenceReference` per addressable unit. The eight ForgeFlow inputs produce
+  over a hundred references whose quoted text is verifiable against the original file.
+- **The document loader** — reads the four MVP input formats, decides the format from the
+  extension and never from content, refuses anything it has no branch for, and preserves the
+  original bytes. It forms no opinion about what a document says: the prompt-injection fixture
+  loads like any other file, because detecting it belongs to a step that knows it is reading
+  untrusted text.
+- **`SourceDocument`** — one original source, with the four MVP input formats enforced at the
+  schema and the trust level required rather than defaulted, so a call site that does not state one
+  fails rather than inheriting `untrusted` quietly.
+- **`EvidenceReference`** — the object every conclusion is defended through. It can only cite text
+  that exists: `quoted_text` is required and non-empty, and there is no field by which a reference
+  says a document is silent. That belongs to a documentation gap or a question, which are separate
+  objects. Locations address the original document, never the normalized artifact.
+- **`Assessment` and `AssessmentConfiguration`** — the first two domain objects, held to
+  `data-model.md` sections 5 and 6 by the conformance guard. The configuration carries no setting
+  that governs the two human checkpoints, and a test asserts that reintroducing one fails
+  validation rather than passing quietly.
+- **Identifiers and content hashing** — the twenty prefixes of section 2.1 as a closed registry,
+  both identifier forms DEC-018 defines, a typed identifier per object so a threat identifier
+  cannot be assigned to a finding's field, and the single SHA-256 utility DEC-019 requires.
+  Identifier allocation is a store operation, so what exists is the protocol and an in-memory
+  implementation for tests; the store-backed one arrives with the persistence layer.
 - **Test discipline** — unit tests run by default; integration and evaluation tests sit behind
   pytest markers that are deselected, so CI never needs a provider API key.
 - **The design corpus** — vision, scope, roadmap, architecture, agent design, data model,
@@ -227,9 +290,11 @@ Against the seven-stage [roadmap](#roadmap) below, Trace is inside Stage 1.
 
 ### What does not exist yet
 
-- No document ingestion. No agent. No model call of any kind.
-- No domain models. The data model specifies roughly twenty-nine objects; none are implemented.
-- No persistence layer.
+- No agent. No model call of any kind. Documents are ingested, turned into addressable evidence,
+  and retrievable through the interface an agent would sit behind — but nothing sits behind it yet.
+- Six domain objects of roughly twenty-nine: `Assessment`, `AssessmentConfiguration`,
+  `SourceDocument`, `EvidenceReference`, `WorkflowRun`, and `ExecutionRecord`. The context,
+  threat, finding, and review objects are not implemented.
 - No CLI beyond a banner printing the environment and which credentials are configured.
 - No threat analysis, no findings, no report generation, no evaluation harness.
 - The demo scenario is not runnable.
@@ -242,21 +307,39 @@ Against the seven-stage [roadmap](#roadmap) below, Trace is inside Stage 1.
 git clone https://github.com/ethanpturner/trace.git
 cd trace
 uv sync
-cp .env.example .env    # optional; no key is required for what runs today
-uv run trace
+
+uv run trace assessment create --name "ForgeFlow Security Review"
+uv run trace source add asm-001 demo/forgeflow/input
+uv run trace assessment status asm-001
+uv run trace evidence show evd-001 --assessment asm-001
+uv run trace evidence verify asm-001
 ```
 
-That prints the resolved environment, the log level, and which provider credentials are configured
-— booleans only, never key material. That is the entire current runtime surface, and stating it
-plainly is more useful than implying more.
+That ingests the eight ForgeFlow documents, normalizes them, and produces the evidence references
+every later conclusion would have to cite — 153 of them, each verifiable against the original file.
+No API key is required, because nothing in this path calls a model.
 
-The command surface planned for Stage 1 — `trace assessment create`, `trace source add`,
-`trace context extract`, `trace context show`, `trace assessment status` — is not implemented.
+`uv run trace` with no arguments still prints the resolved environment, the log level, and which
+provider credentials are configured — names only, never key material.
+
+What it cannot do is analyse anything. There is no context extraction, no threat analysis, and no
+report: those need agents, and there are none.
+
+Of the Stage 1 command surface, everything except `trace context extract` and `trace context show`
+is implemented. Those two are the only ones missing. Those two need the Context Extraction agent, and a stub that prints "not
+implemented" would be worse than a command that is not there.
+
+The command line is the interface through M4 (DEC-032), including both human checkpoints. A
+read-only local view may follow in Stage 5 for the demonstration; no review interaction moves to a
+browser in the MVP.
 
 ### Repository layout
 
 ```
-src/trace_ai/        configuration and process bootstrap
+src/trace_ai/                    configuration and process bootstrap
+src/trace_ai/domain/             domain objects and shared types
+src/trace_ai/services/           ingestion/ and evidence/ -- operations on those objects
+src/trace_ai/infrastructure/     filesystem/ and database/ -- the artifact and assessment stores
 tests/               unit tests; integration/ and evaluation/ are scaffolded and empty
 docs/product/        vision, design principles, roadmap, future features
 docs/architecture/   scope, current architecture, agent design, data model,
@@ -264,9 +347,20 @@ docs/architecture/   scope, current architecture, agent design, data model,
 demo/forgeflow/      the demo scenario and its input fixtures
 requirements/        the requirements catalog -- version-controlled YAML, read by nothing yet
 scripts/             repository utilities
-benchmarks/          scaffolded, empty -- evaluation fixtures land here
+benchmarks/          scenarios two onward, plus scenarios.yaml, the scenario registry
 prompts/             scaffolded, empty
 ```
+
+The three source subpackages are a boundary, not a filing convention. **Domain** holds the
+schema-validated objects that are the authoritative state; **services** operate on them;
+**infrastructure** stores them. Dependencies point inward — a domain object never imports a
+service or a store, and a test asserts that direction, because it is the one that erodes without
+anyone deciding to erode it.
+
+The layout is narrower than
+[`current-architecture.md`](docs/architecture/current-architecture.md) section 15 proposes.
+`api/`, `application/`, `workflow/`, `reporting/`, and `evaluation/` are absent until something
+belongs in them; an empty package reads as a commitment that has not been made.
 
 ## Roadmap
 
@@ -382,8 +476,11 @@ version 0.1.
 | [Data Model](docs/architecture/data-model.md) | Domain objects and the lineage chain |
 | [Evaluation Plan](docs/architecture/evaluation-plan.md) | Benchmarks, baseline comparison, metrics |
 | [Decision Log](docs/architecture/decision-log.md) | The accepted and proposed decisions |
+| [Threat Model](docs/architecture/threat-model.md) | Trace's own security boundaries, and where each mitigation is enforced |
 
-A threat model is listed among the Stage 0 deliverables and has not yet been written.
+The threat model analyses Trace itself rather than any system it reviews. Every mitigation names
+the component that enforces it or is marked unimplemented, because a threat model listing controls
+without naming their enforcement point commits the failure this project exists to criticize.
 
 ## License
 

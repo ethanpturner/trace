@@ -241,13 +241,21 @@ Initial commands may include:
 
 trace assessment create
 
+trace assessment list
+
+trace assessment status
+
+trace assessment archive
+
 trace source add
 
 trace context extract
 
 trace context show
 
-trace assessment status
+`list` and `archive` were added after this stage was first written. A reviewer needs `list` because
+identifiers are allocated by the store rather than chosen (DEC-018), and `archive` because DEC-031
+makes archiving the one assessment status transition a person performs.
 
 ### Test foundation
 
