@@ -96,8 +96,21 @@ fi
 
 NUMBER=$(gh project list --owner "@me" --format json \
   --jq ".projects[] | select(.title==\"${PROJECT_TITLE}\") | .number")
-gh project link "$NUMBER" --owner "@me" --repo "$(basename "$REPO")" >/dev/null 2>&1 \
-  && echo "  linked to $REPO" || echo "  already linked, or link failed"
+
+# gh project link rejects "@me" here: it compares the literal string against the repo
+# owner and reports "different owner". Pass the resolved login instead.
+OWNER="${REPO%%/*}"
+REPO_NAME="${REPO##*/}"
+
+if gh api graphql -f query="{ repository(owner:\"${OWNER}\", name:\"${REPO_NAME}\") {
+      projectsV2(first:20){ nodes { number } } } }" \
+    --jq '.data.repository.projectsV2.nodes[].number' 2>/dev/null | grep -qx "$NUMBER"; then
+  echo "  already linked to $REPO"
+else
+  # Deliberately not silenced. A failed link is worth seeing, not swallowing.
+  gh project link "$NUMBER" --owner "$OWNER" --repo "$REPO_NAME" >/dev/null
+  echo "  linked project #$NUMBER to $REPO"
+fi
 
 echo
 echo "Done. Next:"

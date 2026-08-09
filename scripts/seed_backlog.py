@@ -233,13 +233,38 @@ def phase_one(specs: list[dict[str, Any]], project: str | None, *, apply: bool) 
     return ledger
 
 
-def phase_two(specs: list[dict[str, Any]], ledger: dict[str, int], *, apply: bool) -> None:
-    """Apply blocked-by relationships once every issue exists."""
+def phase_two(
+    specs: list[dict[str, Any]],
+    ledger: dict[str, int],
+    *,
+    apply: bool,
+    planned: set[str] | None = None,
+) -> None:
+    """Apply blocked-by relationships once every issue exists.
+
+    On a dry run no issue numbers exist yet, so links are previewed by seed key against
+    ``planned`` -- the set of seeds this invocation would create. Without that the dry run
+    would silently report nothing for the whole second phase.
+    """
     for spec in specs:
         seed = str(spec["seed"])
         number = ledger.get(seed)
         blockers = [str(b) for b in (spec.get("blocked_by") or [])]
-        if number is None or not blockers:
+        if not blockers:
+            continue
+
+        if not apply:
+            if planned is not None and seed not in planned:
+                continue
+            resolvable = [b for b in blockers if planned is None or b in planned or b in ledger]
+            deferred = [b for b in blockers if b not in resolvable]
+            if resolvable:
+                print(f"DRY RUN: link {seed} blocked-by {', '.join(resolvable)}")
+            for blocker in deferred:
+                print(f"  defer {seed}: blocker '{blocker}' is not in this batch")
+            continue
+
+        if number is None:
             continue
         argv = [GH, "issue", "edit", str(number), "--repo", REPO]
         for blocker in blockers:
@@ -268,6 +293,15 @@ def main() -> int:
     parser.add_argument("--check", action="store_true", help="Validate the manifest and exit.")
     parser.add_argument("--apply", action="store_true", help="Perform writes. Off by default.")
     parser.add_argument("--project", default=None, help="Project title to add each issue to.")
+    parser.add_argument(
+        "--milestone",
+        action="append",
+        default=None,
+        help=(
+            "Create only issues in this milestone. Repeatable. Validation still runs over "
+            "the whole manifest, so cross-milestone dependencies are checked either way."
+        ),
+    )
     args = parser.parse_args()
 
     try:
@@ -291,9 +325,26 @@ def main() -> int:
         print("manifest is well formed")
         return 0
 
+    selected = specs
+    if args.milestone:
+        wanted = set(args.milestone)
+        unknown = wanted - {str(spec.get("milestone", "")) for spec in specs}
+        if unknown:
+            print(f"error: unknown milestone(s): {', '.join(sorted(unknown))}", file=sys.stderr)
+            return 1
+        selected = [spec for spec in specs if str(spec.get("milestone", "")) in wanted]
+        print(f"\nselecting {len(selected)} of {len(specs)} issues: {', '.join(sorted(wanted))}")
+
     try:
-        ledger = phase_one(specs, args.project, apply=args.apply)
-        phase_two(specs, ledger, apply=args.apply)
+        ledger = phase_one(selected, args.project, apply=args.apply)
+        # Pass the full manifest so a later batch can still link back to this one. A
+        # blocker that has no issue number yet is reported and skipped, not failed.
+        phase_two(
+            specs,
+            ledger,
+            apply=args.apply,
+            planned={str(spec["seed"]) for spec in selected},
+        )
     except SeedError as error:
         print(f"error: {error}", file=sys.stderr)
         return 1
