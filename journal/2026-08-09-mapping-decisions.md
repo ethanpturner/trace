@@ -89,11 +89,59 @@ The removal is the small part. What matters is the two-state distinction — `in
 intentional non-findings turn on it. The failure mode is not getting the scope wrong; it is
 collapsing "undocumented" into "absent."
 
+## The expiry trigger I wrote was the wrong quantity
+
+I closed DEC-024 saying it works at 23 requirements, will not at 200, and expires when the catalog
+stops being comfortably cacheable. Asked how I would make it scale, I ran the arithmetic I should
+have run before writing the trigger.
+
+At 200 requirements the catalog is about 110,000 tokens. Under DEC-014's caching — one write, nine
+reads — that is roughly a dollar per assessment against a total of $2.25 to $5.97, in a tenth of a
+1M context window. **Cost and context are not the constraint and are not close to being it.** The
+quantity I named as the expiry trigger is the one that does not bind.
+
+What binds is discrimination. Section 12's own failure condition is undiscriminated applicability,
+and it gets likelier as the input widens. That is a quality that degrades continuously, not a
+threshold that trips, which means the trigger is a measurement rather than a number — and
+`evaluation-plan.md` section 7 already tracks it as correct and incorrect applicability.
+
+This is the second time this week the cost estimate has corrected something I asserted. It caught
+DEC-014 overweighting prompt caching, and now it catches me picking a scaling trigger by intuition
+about token counts. Both errors have the same shape: reasoning about input size in a pipeline whose
+cost and whose risk are both dominated by other terms. Having built the model does not
+automatically mean consulting it.
+
+## What replaces it
+
+I wrote the escalation path into the entry rather than leaving it as a question, because a decision
+with a stated expiry and no stated successor tends to just persist — the same failure DEC-020's
+entry worries about.
+
+**Partition and fan out deterministically** is the step that does not reintroduce what DEC-024
+avoided. Split the catalog into domains, run mapping per threat per domain. Each call sees less, so
+discrimination improves, but nothing is excluded, because every partition runs for every threat.
+There is no filtering judgment to get wrong.
+
+The cost of that is not where it looks. Caching makes the input roughly a wash — five partition
+writes plus forty-five reads comes to about what ten full-catalog calls cost. What multiplies is
+the call count, against output being ~85% of spend. Each partitioned call should think less, having
+less to weigh, so it is not proportional; it is also not free, and I do not know the exchange rate.
+That is now the open question, stated as a quantity someone can measure.
+
+**Structured applicability** is the real answer and cannot be written yet. It is `data-model.md`
+question 5, left open deliberately so the vocabulary could be observed rather than imposed, and the
+94 free-text conditions in the catalog are the observation accumulating. Twenty-three requirements
+are not enough to derive it from.
+
+Populating `applicable_technologies` — the thing the original issue recommended and the thing that
+looks most like an answer — is the weakest of the three, and for the reason DEC-024 already
+established: it excludes invisibly.
+
 ## Open next
 
 Five M0 decisions remain: #35 (CLI versus web), #37 (severity), #38 (report template), #39
 (benchmark layout), and #19 (the threat model, which needs no decision at all).
 
-DEC-024 has the shortest expected life of anything decided so far. It works at 23 requirements and
-will not at two hundred, and the trigger — a catalog whose token count stops being comfortably
-cacheable — is stated but not measured.
+DEC-024 still has the shortest expected life of anything decided so far. It now has a trigger
+pointed at the right quantity and a successor written down, which is the difference between a
+decision that expires and one that quietly outlives its reasoning.

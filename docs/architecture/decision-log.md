@@ -1319,6 +1319,18 @@ Passing the whole catalog is affordable and becomes more so under caching. The c
 
 The confusion the section 12 prohibition invites is worth naming. "Apply every catalog requirement to every component" describes an output in which everything is marked applicable. It does not describe an input. Reading it as an instruction to narrow the input is the likely implementation error, and it would produce a system that silently never considers most requirements — a false-negative machine whose failure is invisible because the requirement never appears at all.
 
+How this scales, when it stops:
+
+The escalation path is stated here so the next person is not choosing under pressure.
+
+**First, partition and fan out deterministically.** Split the catalog into a handful of domains and run the mapping agent once per threat *per domain*, so each call sees a fraction of the catalog. Discrimination improves because the input is narrower, and **nothing is excluded**, because every partition runs for every threat. There is no filtering judgment to get wrong, which is what separates this from a pre-filter: an excluded requirement produces no mapping to inspect, and a partitioned one produces the same mappings in more calls.
+
+The cost is not where it appears. Caching makes the input roughly equivalent either way — five partition writes plus forty-five reads comes to about what ten full-catalog calls cost. What multiplies is the call count, and `scripts/estimate_cost.py` found thinking to be roughly 85% of spend. Each partitioned call should think less, having fewer requirements to weigh, so the increase is not proportional to the call count, but it is real and currently unmeasured.
+
+**Then, structured applicability.** Requirements gated by a small set of system-level questions answered once per assessment — whether the system processes customer data, whether it delegates authentication — so whole groups become inapplicable on evidence rather than on a guess. That is `data-model.md` question 5, deliberately left open so the vocabulary could be observed rather than imposed, and the catalog is where the observation happens: the 48 `applicable_conditions` and 46 `non_applicable_conditions` entries written so far are its raw material. Twenty-three requirements are not enough signal to derive it from; somewhere before two hundred there will be.
+
+Populating `applicable_technologies` is the weakest of the three. It is hand-authored, drifts as technologies are renamed, and reintroduces the invisible-exclusion failure this decision avoided.
+
 Alternatives Considered:
 
 - A deterministic pre-filter on `applicable_technologies`, once populated
@@ -1330,7 +1342,7 @@ Alternatives Considered:
 
 Tradeoffs:
 
-- **This does not scale with the catalog.** Twenty-three requirements fit; two hundred will not, and the decision has to be revisited before the catalog grows past what one prompt holds. The trigger is a catalog whose token count stops being comfortably cacheable, not a fixed count.
+- **This does not scale with the catalog**, and what breaks first is not what it looks like. Cost and context are not the constraint: at two hundred requirements the catalog is roughly 110,000 tokens, which under DEC-014's caching costs about a dollar per assessment and occupies a tenth of the context window. **Discrimination quality is the constraint.** Section 12's failure condition is undiscriminated applicability, and the wider the input the likelier it becomes. It degrades continuously rather than at a threshold, so the trigger is measured applicability precision — which `evaluation-plan.md` section 7 already tracks as correct and incorrect applicability under Requirement Mapping — not a token count.
 - Passing everything means the agent sees requirements that are obviously irrelevant, and every one is an opportunity to mark something applicable that is not. The discrimination requirement is enforced downstream rather than prevented upstream.
 - **Threat-gating leaves a real coverage gap.** A whole category of requirement can go unevaluated because threat analysis did not produce a threat that reaches it, and nothing in the assessment says so. Populating `applicable_technologies` would not close it either; only a system-level applicability pass would.
 - The output-side enforcement — requiring at least one `not_applicable` mapping — is a heuristic. A threat that genuinely implicates most of a small catalog would trip it.
@@ -1338,8 +1350,8 @@ Tradeoffs:
 
 Open Questions:
 
-- At what catalog size does this stop working, and what measures it — token count, cache economics, or observed applicability precision?
-- Should `applicable_technologies` be populated anyway, so a future filter has an input, or does populating an unused field invite premature filtering?
+- What applicability-precision figure is low enough to trigger partitioning, and over how many assessments must it hold before the trigger fires?
+- Partitioning trades money for discrimination at an unmeasured exchange rate. How much less does a call over a fifth of the catalog think, and is the total increase closer to 2x or 5x?
 - Does the coverage gap from threat-gating need a system-level applicability pass, and would that be a seventh agent?
 
 ## DEC-025: Record suppressed conclusions on the mapping that suppressed them
