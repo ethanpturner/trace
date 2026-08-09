@@ -133,6 +133,14 @@ one. It is a derived value; there is no loader to compute or verify it, and a ha
 would be stale after the first edit. `RequirementsCatalog` is itself deferred in the data model's
 initial implementation priority. The hash is designed to be computed when a loader exists.
 
+DEC-019 states what that loader computes: `sha256:` followed by 64 lowercase hexadecimal characters,
+over a **canonical re-serialization** of the parsed catalog with keys sorted and formatting
+discarded — not over the file bytes. Reformatting, reordering keys, and editing comments therefore
+do not change the hash.
+
+That has a consequence worth knowing when editing this catalog: the hash covers what the parser
+sees. Prose carried in a YAML comment is invisible to it, even where that prose is doing real work.
+
 ## Version 0.1
 
 Twenty-three requirements across eleven category files, scoped to the ForgeFlow demo scenario so that

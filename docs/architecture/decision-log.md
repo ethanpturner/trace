@@ -474,7 +474,7 @@ Open Questions:
 
 - Should the per-scenario `requirements.json` in the evaluation plan reference catalog identifiers rather than restate requirements?
 - When should catalog version 0.1 become 0.2 rather than being edited in place?
-- What computes and verifies `content_hash`, and at what point in the workflow?
+- ~~What computes and verifies `content_hash`, and at what point in the workflow?~~ Answered by DEC-019: one SHA-256 utility, with a stated input per object type and defined compute and verify points. The catalog's hash is computed by the loader.
 
 ## DEC-011: Record common false positives on each requirement
 
@@ -921,3 +921,117 @@ Open Questions:
 - Should resume verify that the objects pending decision still exist and are unchanged since the pause, and what happens when they are not?
 - Where does the reviewer identity on a `ReviewerDecision` come from under DEC-004, where there is no authentication?
 - Does an abandoned paused run need an expiry, or is accumulation acceptable for a local single-user application?
+
+## DEC-018: Assign prefixed sequential identifiers at persistence, scoped per assessment
+
+Date: 2026-08-09
+
+Status: Accepted
+
+Decision:
+
+There are **two classes of identifier**, and they follow different rules.
+
+**Authored identifiers** are written by hand and carry meaning. The requirements catalog's `req-AUTH-001` is the only class currently in use: the prefix names the object type, the middle segment names the category, and the number is assigned by the author. They are globally unique, stable across catalog versions, and are the only identifiers a benchmark expected-output file may reference.
+
+**Generated identifiers** are minted during an assessment. They take the form `<prefix>-<NNN>` — `thr-007`, `evd-014`, `fnd-003` — using the prefixes listed in `data-model.md` section 2.1, zero-padded to three digits and widening beyond three when a sequence exceeds 999. They are **unique within their assessment**, not globally; `thr-007` in one assessment and `thr-007` in another are different objects, and an identifier is fully qualified only by `(assessment_id, id)`.
+
+**A generated identifier is assigned by the persistence layer at insert**, from a counter kept per `(assessment_id, prefix)`. It is not assigned at construction. Counters are monotonic: a deleted object's number is never reused.
+
+Identifier generation is therefore a store operation rather than a pure function. That is not a cost this decision introduces — it is already required. Agents return proposal objects that structurally cannot carry an identifier, because `agent-design.md` section 22 forbids an agent minting one and the proposal models omit the field. The application assigns the identifier when it takes ownership of a proposed object, which is a write. Making that assignment sequential costs nothing beyond a counter read in a transaction that was happening regardless.
+
+**No generated identifier appears in a benchmark expected-output file.** Expected outputs reference authored catalog identifiers and match on content — the requirement, the affected components — not on generated identity. This is what frees the scheme from reproducibility pressure: a re-run may number the same logical threat differently, and nothing downstream cares.
+
+`data-model.md` section 2.1's statement that "UUIDs may be used internally, with readable prefixes added for debugging and demonstration" is removed. It described a second scheme alongside the first and the two are not compatible.
+
+Why:
+
+Section 2.1 offered two incompatible schemes in adjacent sentences and every example in the document used the sequential one. The apparent conflict was between readability and reproducibility: sequential identifiers are order-dependent, so a re-run that produces objects in a different order renumbers them, which would break anything holding a stored identifier across runs.
+
+Separating the two classes dissolves it. The thing that would have needed stable identifiers is the benchmark truth set, and it does not use generated identifiers at all — it references catalog identifiers, which are authored and stable, and matches produced objects on requirement and affected component rather than on identity. Once that is stated, order-dependence costs nothing, and the readability argument wins uncontested.
+
+Readability is worth more here than it usually is. Section 2.1 says the prefixes exist "for debugging and demonstration," and this is a project whose output a reviewer reads and whose demonstration is a deliverable. `thr-007` in a report, a log line, or a validation error is legible; `thr-9f2c8a1e-4b21-...` is not, and a reader cannot hold it in mind long enough to match two mentions of it.
+
+The counter objection — that sequential identifiers need per-assessment state and therefore a persistence dependency — is real but already paid. The proposal pattern means the application assigns identifiers during a write no matter which scheme is chosen. A UUID would avoid the counter read and nothing else.
+
+Per-assessment rather than global uniqueness follows the assessment-data boundary in `current-architecture.md` section 12. An identifier that means nothing outside its assessment is one that cannot accidentally address another assessment's object, and every object already carries `assessment_id`.
+
+Alternatives Considered:
+
+- Prefixed UUIDs, as section 2.1's second sentence allowed
+- A prefixed short random suffix, avoiding the counter while staying readable
+- Content-derived identifiers, stable across re-runs for identical content
+- Globally unique sequential identifiers, with one counter per prefix across all assessments
+- Assigning identifiers at construction, with the counter held in workflow state
+
+Tradeoffs:
+
+- **Identifier generation cannot be tested as a pure function.** It needs a store, so the unit tests for anything that mints an identifier need one too, in-memory or otherwise.
+- Order-dependence means two runs over identical input produce different numbering for the same logical objects. That is harmless under this decision and would stop being harmless the moment something outside the assessment stores a generated identifier — a saved reviewer bookmark, an external tracker reference, a cached report link.
+- Per-assessment uniqueness means a bare identifier in a log line is ambiguous without its assessment. Logs and error messages have to carry both.
+- Zero-padding to three digits is a guess at scale. Widening past 999 is defined but produces mixed-width identifiers within one assessment, which sorts badly in a lexical sort.
+- Monotonic counters mean the numbering has gaps wherever an object was rejected or deleted, and a reader may read a gap as a missing object rather than a discarded one.
+
+Open Questions:
+
+- Does the counter live in its own table, or is it derived from the maximum existing identifier per prefix at insert time?
+- Should a rejected proposal consume a number, or should numbers be assigned only to objects that survive validation?
+- Do authored identifiers need a validation rule beyond the prefix, given that the catalog's `req-CATEGORY-NNN` shape is currently convention rather than schema?
+
+## DEC-019: Compute content hashes with SHA-256 over a stated input per object type
+
+Date: 2026-08-09
+
+Status: Accepted
+
+Decision:
+
+`content_hash` is **SHA-256**, rendered as `sha256:` followed by 64 lowercase hexadecimal characters. One utility computes and verifies every hash in the system.
+
+The input differs by object type, deliberately, and each is stated:
+
+| Object | Hashed input | Computed | Verified |
+|---|---|---|---|
+| `SourceDocument` | The original file's **raw bytes**, before any normalization | At ingestion | On re-read, to detect an edited source |
+| `EvidenceReference` | The UTF-8 bytes of `quoted_text` | At evidence indexing | By the evidence resolver, before evidence reaches an agent |
+| `PromptDefinition` | The UTF-8 bytes of the **composed** prompt, after shared blocks are merged in | At prompt load | At prompt load |
+| `RequirementsCatalog` | A canonical re-serialization of the parsed catalog: keys sorted, comments and formatting discarded | At catalog load | At catalog load |
+
+A source document is hashed over raw bytes rather than normalized text because its hash exists to detect that the file changed, and normalization would mask exactly the changes it is meant to catch. Evidence is hashed over `quoted_text` because DEC-015 makes that field the verbatim excerpt from the original and forbids modifying it after creation. A prompt is hashed after composition because the composed text is what the model receives; hashing the file alone would miss a change to a shared block, which is the change most likely to alter behaviour without anyone noticing.
+
+The catalog is hashed over a canonical re-serialization rather than file bytes so that reformatting, comment edits, and key reordering do not change it. A catalog hash that churns on whitespace reports change where there is none, and a hash that reports change constantly is one nobody reads.
+
+`requirements/catalog.yaml` gains its `content_hash` once the loader exists. DEC-010 omitted it deliberately, on the grounds that no loader existed to compute it; this decision states what the loader computes.
+
+Why:
+
+`content_hash` is required on four objects and DEC-010 left open what computes it and when. A hash over an unstated input is not verifiable: two implementations can both be correct and disagree, and a mismatch cannot be distinguished from a bug.
+
+The single utility matters more than the algorithm choice. Four call sites hashing four kinds of content will drift if each is written where it is needed, and the drift is silent — a hash computed slightly differently still looks like a hash.
+
+Per-object inputs rather than one uniform rule follow from what each hash is for. They are not four conventions but one principle applied four times: hash the thing whose change you want to detect. That is raw bytes for a file, the excerpt for an evidence reference, the composed text for a prompt, and the meaning rather than the formatting for a catalog.
+
+The `sha256:` prefix comes from `data-model.md` section 8's own example, which reads `content_hash: sha256:example`. Fixing it as the format makes it one thing rather than a convention, and leaves room for a second algorithm without ambiguity.
+
+Alternatives Considered:
+
+- One uniform input rule — hash the file bytes — for every object type
+- Hashing normalized text for source documents, for consistency with evidence
+- Hashing the prompt file rather than the composed prompt
+- Hashing the catalog's file bytes, accepting churn on formatting
+- A bare hex digest with no algorithm prefix
+- Deferring the catalog hash indefinitely, as DEC-010 did
+
+Tradeoffs:
+
+- **Four different inputs is four things to get right**, and the failure mode is quiet: a hash computed over the wrong input verifies against itself forever and only fails when something else changes.
+- Canonical re-serialization of the catalog means the hash covers the parsed meaning, so a change that YAML parses identically — a comment carrying real guidance, for instance — does not register. `requirements/README.md` treats prose in the catalog as meaningful, and this hash does not see it.
+- Hashing composed prompts means the hash changes when a shared block changes, which is correct and will look alarming: one edit to `evidence-policy-v1.md` changes the hash of every prompt that composes it.
+- A source document's hash detects that the file changed but says nothing about where, so a one-character edit invalidates the document's hash while every evidence reference into it still verifies individually. Reconciling those two signals is not specified here.
+- As DEC-015 noted, an evidence hash detects a changed passage but not a moved one: an edit above a passage shifts its line numbers while the hash still matches.
+
+Open Questions:
+
+- When a source document's hash no longer matches, are its evidence references invalidated, re-anchored, or left with their own hashes still passing?
+- Should the catalog hash cover comments, given that the catalog carries authored prose the parser discards?
+- Does anything need to verify a hash on a schedule, or only on read?
