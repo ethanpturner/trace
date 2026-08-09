@@ -65,6 +65,7 @@ from trace_ai.domain.evidence import EvidenceReference
 from trace_ai.domain.execution import ExecutionRecord, WorkflowRun
 from trace_ai.domain.question import Question
 from trace_ai.domain.source_document import SourceDocument
+from trace_ai.domain.source_observation import SourceObservation
 from trace_ai.domain.trust_boundary import TrustBoundary
 
 DATA_MODEL = PROJECT_ROOT / "docs" / "architecture" / "data-model.md"
@@ -207,7 +208,7 @@ REGISTRY: dict[str, Registration] = {
     # Documented as `10a` rather than as its own numbered section, because DEC-021 added it after
     # the rest were numbered. This guard found it absent from section 40's priority list as well;
     # that was repaired in the same change, and it is `PLANNED` because the list now says so.
-    "10a": Registration("SourceObservation", Status.PLANNED),
+    "10a": Registration("SourceObservation", Status.IMPLEMENTED, SourceObservation),
     "11": Registration("Component", Status.IMPLEMENTED, Component),
     "12": Registration("Asset", Status.IMPLEMENTED, Asset),
     # Was UNRESOLVED: section 40 listed neither Actor nor a replacement, and open question 4
