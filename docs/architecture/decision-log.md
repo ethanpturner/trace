@@ -290,7 +290,7 @@ Open Questions:
 
 Date: 2026-08-05
 
-Status: Proposed
+Status: Rejected — superseded by DEC-016, which orchestrates with plain Python and an explicit transition table.
 
 Decision:
 
@@ -329,10 +329,10 @@ Tradeoffs:
 
 Open Questions:
 
-- Does LangGraph materially improve the MVP over a simple Python workflow?
-- Which activities should be graph nodes?
-- How should workflow checkpoints be persisted?
-- Should LangGraph remain an internal implementation detail?
+- ~~Does LangGraph materially improve the MVP over a simple Python workflow?~~ Answered by DEC-016: no, not for a fixed linear pipeline with two pause points.
+- ~~Which activities should be graph nodes?~~ Moot. Every phase is a node; there is no graph framework.
+- ~~How should workflow checkpoints be persisted?~~ Answered by DEC-016: as a `WorkflowRun` row. The mechanism is DX-07 (#28).
+- ~~Should LangGraph remain an internal implementation detail?~~ Moot.
 
 ## DEC-008: Use Python as the primary implementation language
 
@@ -798,3 +798,62 @@ Open Questions:
 - Should a chunk that greatly exceeds a size threshold be subdivided, and if so does the subdivision get its own `chunk_index` or a suffix?
 - When a source document is re-ingested after an edit, are existing evidence references invalidated, re-anchored, or left stale with a failing hash?
 - Does `normalized_text` earn its place on every evidence reference, or only where normalization actually changed something?
+
+## DEC-016: Orchestrate with plain Python and an explicit transition table
+
+Date: 2026-08-09
+
+Status: Accepted
+
+Decision:
+
+Reject LangGraph. The assessment workflow is orchestrated by ordinary Python: a node protocol, an explicit table of permitted transitions, and a persisted `WorkflowRun` row.
+
+A node is a function taking typed input and returning typed output, with a name and a version. The transition table names, for each phase, the phases that may follow it. A transition not in the table is an error rather than an undefined behaviour. Resume is a read of the persisted `WorkflowRun` and its `pending_human_review` block, not a framework checkpoint restore.
+
+The five execution ceilings in `agent-design.md` section 27 — node executions, model calls, retries, cost, duration — are enforced by the orchestrator before each step, against values on `AssessmentConfiguration`.
+
+`langgraph`, `langchain`, and `langchain-anthropic` are removed from `pyproject.toml`. No orchestration or model-framework dependency remains; `anthropic` is the only provider SDK, behind the seam DEC-014 established.
+
+This closes the last Proposed entry in the decision log.
+
+Why:
+
+DEC-007 proposed LangGraph before the workflow's shape was known. The shape is now specified, and it is the case a framework helps least with.
+
+**The pipeline is fixed and linear.** `current-architecture.md` section 5.3 lists fourteen phases in order, with two pause points at phases 5 and 11. There is no analytical branching — the conditional routing that exists is local error handling, where a validation node routes to retry or to human review. Fourteen ordered phases and two pauses is a transition table of about twenty lines. A graph framework earns its cost on graphs whose shape is not known until runtime, and this graph is a list.
+
+**The state design already describes a database row.** `data-model.md` section 31 states that workflow state "should primarily contain identifiers and concise routing information" and that large objects belong in the persistence layer. That is a `WorkflowRun` row. Adopting a framework whose value is managing a state object, for a state deliberately designed to hold no objects, is paying for the part that was designed out.
+
+**A checkpointer would be a second authoritative store.** DEC-006 makes structured, schema-validated domain objects the authoritative workflow state, and the application owns them. A framework checkpointer persists its own serialized copy of whatever it is holding, on its own schedule, in its own format. Two stores of truth that can disagree is precisely the condition DEC-006 exists to prevent, and reconciling them would be ongoing work in service of a dependency rather than of the assessment.
+
+**The limits that matter are application-domain and the framework cannot see them.** Section 27 requires ceilings on model calls, cost, and duration, and `AssessmentConfiguration` carries `maximum_model_calls`, `maximum_cost`, and `maximum_retries_per_node`. A cost ceiling is meaningless to an orchestration framework: it does not know what a model call costs, and after DEC-014 the cost metadata arrives through the seam. Those checks are written either way. What the framework would supply is the part that is already trivial.
+
+The one capability genuinely lost is graph visualization. The README already renders the pipeline as a hand-written Mermaid diagram that is more legible than a generated one, because it distinguishes model-assisted steps, deterministic nodes, and the two human checkpoints — a distinction the framework has no concept of.
+
+Two prior decisions point the same way. DEC-012 made the human checkpoints workflow-graph nodes rather than runtime conditionals and moved the ablation out to the evaluation harness. DEC-014 put the model behind a seam the application owns. Both moved control into the application, and a framework that wants to own the loop cuts against them.
+
+The portfolio consideration favours this as well, and `roadmap.md` Stage 6 asks for the answer either way. "We evaluated the obvious framework, established that a fixed linear pipeline with two pause points does not need it, and removed three dependencies" is a stronger account of engineering judgment than adopting it because it is what these systems usually use.
+
+Alternatives Considered:
+
+- Accept LangGraph as DEC-007 proposed
+- Adopt LangGraph only for the human-checkpoint interrupt mechanism, hand-rolling the rest
+- A durable-execution engine such as Temporal or Prefect
+- A general-purpose state-machine library rather than a hand-written transition table
+- Defer again until the first checkpoint is implemented
+
+Tradeoffs:
+
+- **Retries, limits, resume, and visualization are now hand-written.** Each is small individually and the total is not large for this pipeline, but it is code the project owns and must test rather than inherit.
+- **The decision is right for the pipeline as specified and could become wrong.** If analysis later needs genuine branching, iterative refinement loops, or parallel node execution, a hand-written orchestrator will grow toward being a worse version of a framework. The trigger to revisit is a workflow that is no longer a list.
+- Rejecting the widely used framework means the project cannot lean on its documentation, examples, or the reader's familiarity, and an interviewer expecting it will need the explanation this entry provides.
+- Resume across process exit is now entirely the application's problem. That mechanism is still open as DX-07 and this decision constrains it: it must work from a persisted row.
+- A hand-written transition table can drift from the phases documented in `current-architecture.md` section 5.3. Nothing currently checks that they agree, and they should be checked once both exist.
+
+Open Questions:
+
+- Should the transition table be data or code, and if data, is it checked against `current-architecture.md` section 5.3 by a test?
+- Does the orchestrator need a dry-run mode that walks the table without executing nodes, for evaluation and for verifying the graph matches the documented phases?
+- At what point does a workflow stop being a list, and is that trigger observable before the orchestrator has already grown?
+- Where do the five execution ceilings live — checked centrally before each step, or by each node?

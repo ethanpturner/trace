@@ -290,7 +290,14 @@ The application service should not contain agent prompts or substantial security
 
 The workflow orchestrator manages the assessment lifecycle.
 
-The current proposed orchestration framework is LangGraph.
+Orchestration is ordinary Python: a node protocol, an explicit table of permitted transitions, and
+a persisted `WorkflowRun` row (DEC-016). There is no orchestration framework. The pipeline is a
+fixed sequence of fourteen phases with two pause points and no analytical branching, which is the
+case a graph framework helps least with, and a framework checkpointer would be a second
+authoritative store alongside the domain objects DEC-006 makes authoritative.
+
+A transition not named in the table is an error rather than an undefined behaviour. Resume is a
+read of the persisted run, not a framework checkpoint restore.
 
 Responsibilities include:
 
@@ -1015,7 +1022,7 @@ Proposed services:
 
 - Local web application
 - Python application service
-- LangGraph workflow
+- Workflow orchestration (plain Python; DEC-016)
 - SQLite database
 - Local artifact directory
 - External model API
@@ -1041,7 +1048,7 @@ These are proposed choices, not all final decisions.
 | Area | Proposed technology |
 |---|---|
 | Primary language | Python |
-| Workflow orchestration | LangGraph |
+| Workflow orchestration | Plain Python: node protocol, transition table, persisted run (DEC-016) |
 | Data validation | Pydantic |
 | API layer | FastAPI |
 | Local web interface | Lightweight Python-compatible UI or small web frontend |

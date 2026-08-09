@@ -758,7 +758,7 @@ Prepare:
 Prepare stories covering:
 
 - Why Trace exists
-- Why LangGraph was or was not retained
+- Why LangGraph was evaluated and rejected (DEC-016)
 - Why structured state matters
 - How prompt injection is handled
 - How inherited controls reduce false positives

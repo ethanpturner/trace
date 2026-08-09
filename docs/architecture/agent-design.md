@@ -1939,7 +1939,9 @@ These agents would expand project scope without proving the MVP thesis.
 9. Should reviewers see agent rationales directly or only concise evidence-based explanations?
 10. Which agent outputs should be editable before the next stage?
 11. How should prompt-injection detection be implemented and evaluated?
-12. Should LangGraph nodes correspond one-to-one with agents?
+12. ~~Should LangGraph nodes correspond one-to-one with agents?~~ Moot: DEC-016 rejected
+    LangGraph. Workflow nodes are plain functions, and a model-assisted agent is one kind of
+    node among deterministic ones.
 13. Which model should be used for each agent?
 14. How should agent performance be compared across prompt versions?
 15. When should a low-confidence threat be discarded rather than retained?
