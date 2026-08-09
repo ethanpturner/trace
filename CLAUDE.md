@@ -37,12 +37,11 @@ uv run pre-commit run gitleaks --all-files   # a single hook
 
 ```
 src/trace_ai/        configuration and process bootstrap -- the only product code that runs
-src/trace_ai/domain/           domain objects and shared types
-src/trace_ai/services/         ingestion/ and evidence/
-src/trace_ai/infrastructure/   filesystem/ and database/
-                     The three subpackages are a skeleton: directories and docstrings, no
-                     implementation yet. Dependencies point inward -- domain imports neither
-                     of the other two, and tests/unit/test_package_layout.py asserts it.
+src/trace_ai/domain/           enums.py and base.py; no concrete domain object yet
+src/trace_ai/services/         ingestion/ and evidence/ -- empty
+src/trace_ai/infrastructure/   filesystem/ and database/ -- empty
+                     Dependencies point inward. domain/ imports neither of the other two and
+                     no provider SDK; tests/unit/test_package_layout.py asserts both.
 tests/unit/          the only tests that exist
 tests/integration/   scaffolded, empty
 tests/evaluation/    scaffolded, empty
@@ -234,6 +233,21 @@ Squashing either pull request breaks the chain: the hotfix commit stops being an
 ## Working norms
 
 - **mypy is strict and covers `scripts/` too.** New utilities are type-checked like product code.
+- **`data-model.md` section 4 is authoritative for the shared enums**, and
+  `tests/unit/test_domain_enums.py` parses it to prove it. Changing a member in the document
+  without changing `src/trace_ai/domain/enums.py` fails the suite; so does the reverse. Edit both
+  in one change.
+- **Every domain object subclasses `DomainModel`** (`src/trace_ai/domain/base.py`) and inherits
+  `extra="forbid"`. Do not relax it on a subclass: it is the mechanism by which an agent-proposed
+  object carrying an invented field fails validation instead of passing downstream stripped of
+  the field and looking valid. Timestamps come from `domain.base.now()`, never `datetime.now()`.
+- **Build an edited object with `model_validate`, never `model_copy`.** Domain objects are frozen,
+  so a DEC-023 reviewer edit constructs a new instance and persists it under the same identifier.
+  `model_copy(update=...)` looks like the API for that and validates nothing: an invalid enum
+  value survives and serializes into the DEC-020 JSON payload, and `extra="forbid"` is bypassed.
+  Use `type(obj).model_validate({**obj.model_dump(), **changes})`. This is the only path on which
+  a human-supplied value enters a domain object, so it is the one that least tolerates skipping
+  the schema. Pinned by `tests/unit/test_domain_base.py`.
 - **CI must never need a provider API key.** The `integration` and `evaluation` markers are
   deselected by default in `addopts` precisely so a bare `pytest` cannot spend money.
 - **Secrets go through `trace_ai.config.Settings`** as `SecretStr`. `.env` is gitignored;

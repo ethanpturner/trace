@@ -46,6 +46,25 @@ PACKAGES = (
 # `trace_ai.infrastructure.database.session` is caught by `trace_ai.infrastructure`.
 FORBIDDEN_IN_DOMAIN = ("trace_ai.services", "trace_ai.infrastructure")
 
+# Provider and orchestration SDKs. `anthropic` and `langsmith` are declared in pyproject.toml
+# and imported nowhere; `openai`, `langchain`, `langgraph`, and `instructor` were declared and
+# removed by DEC-014 and DEC-016. All six are listed anyway, because the guard is about where an
+# import may appear rather than about which packages happen to be installed this week -- a
+# dependency that comes back should not find `domain/` already open to it.
+#
+# The direction is the same one the layering test asserts. Domain objects are validated data:
+# they are constructed from a model response by a service and persisted by infrastructure, and a
+# domain module that talks to a provider directly has made the objects depend on the thing that
+# proposes them. `pydantic` is not on this list -- the objects are Pydantic models.
+FORBIDDEN_SDKS_IN_DOMAIN = (
+    "anthropic",
+    "openai",
+    "langchain",
+    "langgraph",
+    "langsmith",
+    "instructor",
+)
+
 
 def package_of(source: Path) -> str:
     """The dotted package a source file lives in, e.g. `trace_ai.domain`."""
@@ -89,28 +108,71 @@ def test_package_states_what_belongs_in_it(module: str) -> None:
     assert doc.strip(), f"{module} has an empty docstring"
 
 
-def test_domain_does_not_import_services_or_infrastructure() -> None:
-    """The direction section 15 names, and the one that erodes quietly.
+def domain_imports_under(prefixes: tuple[str, ...]) -> dict[str, set[str]]:
+    """Every domain module that imports one of `prefixes`, and what it reached for.
 
-    Domain objects are validated data. They are constructed by services and persisted by
-    infrastructure, and they must not know either exists.
+    Matching is by module prefix, so `trace_ai.infrastructure.database.session` is caught by
+    `trace_ai.infrastructure` and `anthropic.types` by `anthropic`.
     """
     offenders: dict[str, set[str]] = {}
     for source in sorted(DOMAIN_ROOT.rglob("*.py")):
         reached = {
             name
             for name in imported_modules(source, package_of(source))
-            if any(
-                name == prefix or name.startswith(f"{prefix}.") for prefix in FORBIDDEN_IN_DOMAIN
-            )
+            if any(name == prefix or name.startswith(f"{prefix}.") for prefix in prefixes)
         }
         if reached:
             offenders[str(source.relative_to(PROJECT_ROOT))] = reached
+    return offenders
 
+
+def test_domain_does_not_import_services_or_infrastructure() -> None:
+    """The direction section 15 names, and the one that erodes quietly.
+
+    Domain objects are validated data. They are constructed by services and persisted by
+    infrastructure, and they must not know either exists.
+    """
+    offenders = domain_imports_under(FORBIDDEN_IN_DOMAIN)
     assert not offenders, (
         f"domain modules must not import services or infrastructure: {offenders}. "
         f"Move the dependency to the caller; domain objects are constructed by services, "
         f"not the other way round."
+    )
+
+
+def test_domain_does_not_import_a_provider_or_orchestration_sdk() -> None:
+    """The same direction, one layer further out.
+
+    An agent proposes an object and the application validates it. A domain module that imports a
+    provider SDK has inverted that: the schema would depend on the thing it exists to check.
+    """
+    offenders = domain_imports_under(FORBIDDEN_SDKS_IN_DOMAIN)
+    assert not offenders, (
+        f"domain modules must not import a provider or orchestration SDK: {offenders}. "
+        f"Model access belongs behind the adapter seam DEC-014 describes, and the objects on "
+        f"either side of it are plain validated data."
+    )
+
+
+def test_the_sdk_guard_covers_the_declared_dependencies() -> None:
+    """A declared runtime dependency that the guard does not name is a gap in it.
+
+    `pydantic`, `pydantic-settings`, and `python-dotenv` are excluded deliberately: the domain
+    objects are Pydantic models, and configuration is not a domain concern but is not a provider
+    either. Anything else declared should be on the list or explicitly waived here.
+    """
+    pyproject = (PROJECT_ROOT / "pyproject.toml").read_text(encoding="utf-8")
+    block = pyproject.split("dependencies = [", 1)[1].split("]", 1)[0]
+    declared = {
+        line.strip().strip('",').split(">=")[0].split("[")[0].strip('"')
+        for line in block.splitlines()
+        if line.strip().startswith('"')
+    }
+    waived = {"pydantic", "pydantic-settings", "python-dotenv"}
+    uncovered = declared - waived - set(FORBIDDEN_SDKS_IN_DOMAIN)
+    assert not uncovered, (
+        f"{sorted(uncovered)} is a declared dependency that domain/ is not guarded against. "
+        f"Add it to FORBIDDEN_SDKS_IN_DOMAIN, or to the waived set with a reason."
     )
 
 
