@@ -1216,7 +1216,7 @@ The following questions require decisions or implementation experiments:
 4. How should evidence chunks and source locations be represented?
 5. How should inherited controls be modeled?
 6. How should confidence be calculated and communicated?
-7. What minimum evidence threshold should be required for a finding?
+7. ~~What minimum evidence threshold should be required for a finding?~~ Resolved by DEC-013.
 8. Which parts of the workflow require separate agents versus deterministic functions?
 9. How should semantic duplicate detection work?
 10. Should LangSmith be used in the public demonstration?

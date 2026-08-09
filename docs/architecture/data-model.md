@@ -420,7 +420,7 @@ Stores settings that affect an assessment run.
 | maximum_retries_per_node | integer | Yes | Retry limit |
 | retain_debug_artifacts | boolean | Yes | Preserve debugging output |
 | enable_external_tracing | boolean | Yes | Allow configured external tracing |
-| evidence_threshold | string | Yes | Minimum evidence policy for findings |
+| evidence_threshold | string | Yes | Minimum evidence policy for findings. `direct-or-confirmed` or `permissive` (DEC-013) |
 
 ## Example
 
@@ -1162,6 +1162,20 @@ It may instead produce:
 - A documentation gap
 - A request for evidence
 - A low-confidence candidate finding
+
+DEC-013 defines when each satisfaction status may be used and narrows this list at the
+default evidence threshold. Under `direct-or-confirmed`, an unverified requirement produces
+a clarifying question or a documentation gap and never a finding; the low-confidence
+candidate finding is reachable only under the evaluation-only `permissive` threshold.
+
+`unmet` requires evidence that describes the absence or inadequacy of the control, or that
+contradicts a claim that it exists. Because an EvidenceReference must quote real source
+text, silence cannot be cited, so this rule is enforced by the schema rather than by
+instruction. The Mapping Validation node downgrades an unsupported `unmet` to `unverified`
+and records the downgrade.
+
+A high proportion of `unverified` mappings is the expected result of assessing ordinary
+architecture documentation. It is not a defect and must not be treated as one in evaluation.
 
 # 20. EvidenceAssessment
 
@@ -1974,7 +1988,7 @@ These can be added later without expanding the initial MVP unnecessarily.
 12. Should workflow state store objects directly or only identifiers?
 13. Which objects belong in SQLite versus version-controlled YAML or JSON?
 14. How should severity be calculated?
-15. What is the minimum evidence required to approve a finding?
+15. ~~What is the minimum evidence required to approve a finding?~~ Resolved by DEC-013.
 16. How should rejected threats and findings be retained for evaluation?
 17. How should data-model migrations be handled during early development?
 

@@ -425,8 +425,8 @@ Tradeoffs:
 
 Open Questions:
 
-- What evidence threshold converts an unverified control into a finding?
-- When should a documentation gap itself be considered a security finding?
+- ~~What evidence threshold converts an unverified control into a finding?~~ Resolved by DEC-013. Under the default threshold, nothing converts an unverified control into a finding; `unmet` requires evidence that describes absence or inadequacy.
+- When should a documentation gap itself be considered a security finding? DEC-013 deliberately leaves this open.
 - How should inherited controls be represented and validated?
 - How should Trace prioritize clarifying questions?
 
@@ -565,3 +565,103 @@ Open Questions:
 - Where does the non-authoritative marking live: on the assessment, on the workflow run, or on the evaluation result?
 - Should an ablated run be prevented from producing a report at all, rather than producing one that is marked?
 - Does the replay decision file belong with the benchmark scenario, or with the run that produced it?
+
+## DEC-013: Define the evidence threshold for satisfaction and findings
+
+Date: 2026-08-08
+
+Status: Accepted
+
+Decision:
+
+`AssessmentConfiguration.evidence_threshold` takes one of two values.
+
+`direct-or-confirmed` is the default and the only value permitted for an authoritative assessment.
+
+`permissive` is reachable only from the evaluation harness. A run using it is recorded as non-authoritative, in the same way as the checkpoint ablation in DEC-012. Its purpose is to measure what a review without an evidence threshold would report, which is the baseline the evaluation plan's sections 13 and 14 compare against.
+
+Under `direct-or-confirmed`, a `ControlMapping` may take `unmet` only when all of the following hold:
+
+1. It cites at least one EvidenceReference.
+2. At least one cited reference either describes the absence or inadequacy of the control directly, or contradicts a claim that the control exists.
+3. The corresponding EvidenceAssessment carries `validation_status` of `supported` or `partially_supported`.
+4. No unresolved contradiction bears on the conclusion.
+
+Reviewer confirmation satisfies conditions 1 through 3 on its own. It is the top of the evidence hierarchy in `agent-design.md` section 14, and a reviewer stating that a control is absent is direct evidence of absence.
+
+`satisfied` and `partially_satisfied` carry the same evidence floor. A control is not marked implemented on the strength of a requirement being applicable and nothing contradicting it. `partially_satisfied` additionally requires that the shortfall be described, since a partial satisfaction that names no gap is indistinguishable from a satisfied one.
+
+`unverified` never produces a finding under `direct-or-confirmed`. It produces a DocumentationGap or a Question, chosen by the reclassification rules in `agent-design.md` section 16: a Question where the answer is obtainable and could materially change the assessment, a DocumentationGap where the primary issue is inability to verify.
+
+DEC-009 lists a low-confidence candidate finding among the classifications available when documentation is missing. This decision narrows that menu at the default threshold: the classification remains defined, and is reachable only under `permissive`. A low-confidence finding built on absence is the output DEC-009 exists to suppress, and making it unreachable by default is the stronger reading of that decision.
+
+An explicit low-confidence justification, which `data-model.md` section 21 accepts in place of evidence, is a written rationale naming what evidence would raise confidence and why the conclusion is worth surfacing before that evidence exists. It does not substitute for the `unmet` evidence rule above. It qualifies a finding that already meets the rule but whose confidence is low.
+
+The outcome table is complete over the satisfaction and validation vocabularies:
+
+| satisfaction_status | validation_status | Outcome |
+|---|---|---|
+| not_applicable | any | No output |
+| satisfied | supported, partially_supported | No output |
+| satisfied | unsupported, contradicted, requires_confirmation | Downgrade to unverified, then Question |
+| partially_satisfied | supported, partially_supported | Provisional finding |
+| partially_satisfied | unsupported, contradicted, requires_confirmation | Downgrade to unverified, then Question |
+| unverified | any | DocumentationGap or Question. Never a finding |
+| unmet | supported, partially_supported | Provisional finding |
+| unmet | unsupported, contradicted, requires_confirmation | Downgrade to unverified, and record the downgrade |
+| any | not_evaluated | No output. The mapping is incomplete, not negative |
+
+No cell produces a finding from the absence of documentation.
+
+Confidence does not gate the table. It is carried onto the resulting object, and a low-confidence finding requires the justification described above. Confidence is not multiplied against evidence strength; `docs/product/design-principles.md` section 15 requires the two to remain separate.
+
+Enforcement is deterministic and happens twice. The Mapping Validation node applies the `unmet` rule and performs the downgrade, which is how `agent-design.md` section 13's requirement to prevent unverified from silently becoming unmet is met. Finding Consolidation applies the outcome table. Neither depends on a model having read a prompt instruction.
+
+Why:
+
+The threshold was required by `AssessmentConfiguration` and defined nowhere, and the same question was recorded as open in three places: `data-model.md` question 15, `current-architecture.md` question 7, and DEC-009's own open questions. Until it was answered, the distinction between a Finding and a DocumentationGap was enforced only by prompt wording, and `docs/product/design-principles.md` section 7 states that a rule whose violation makes the system behave incorrectly does not belong in a prompt.
+
+The rule is expressible in the schema rather than in prose because of a property the data model already has. An EvidenceReference requires non-empty `quoted_text` drawn from a real source location, and `data-model.md` section 8 forbids modifying it after creation. There is therefore no way to construct an evidence reference that expresses the absence of a passage. Requiring evidence for `unmet` is consequently sufficient to prevent concluding absence from silence, mechanically, without any agent needing to understand DEC-009.
+
+This also gives `EvidenceStrength` its first consumer. `data-model.md` section 4.3 defines `direct`, `indirect`, `contextual`, and `contradictory` and no object carried the type. Condition 2 above is the judgment it expresses, and the Evidence Validation agent is where it is applied.
+
+Two values rather than a graduated scale keeps the rule explainable. `data-model.md` section 4.5 warns against an overly complex severity algorithm before the core workflow is validated, and the same argument applies here with more force, because this threshold decides whether the project's central claim holds.
+
+Worked examples, using the ForgeFlow scenario:
+
+**14.1, missing local password policy.** ForgeFlow uses delegated authentication and stores no local passwords, so the requirement does not apply. `not_applicable`, no output. The requirement's `non_applicable_conditions` carries the condition, and `common_false_positives` names the wrong conclusion. This never reaches the threshold rule.
+
+**15.1, webhook authenticity language.** One document says webhook requests are validated before processing; another says the receiver validates that the request is well formed. Neither establishes whether cryptographic signature verification occurs. No evidence describes absence, so `unmet` is unavailable. The mapping is `unverified`, the answer is obtainable, and it would materially change the assessment. Outcome: a Question.
+
+**13.1, webhook replay protection.** This case does not resolve as the scenario expects, and the disagreement is recorded rather than resolved here.
+
+The scenario's section 19 lists FND-001 as an expected finding requiring evidence that delivery identifiers are not tracked. The input documents do not establish that. `github-integration.md` section 6 says only that incoming requests are validated before processing. `operations-guide.md` section 3 shows a delivery identifier carried in the job payload and says nothing about deduplication. `architecture-overview.md` section 26 lists webhook replay handling under Known Documentation Gaps, and states that those details are maintained elsewhere or require further clarification.
+
+The only direct evidence available is a document stating that the topic is undocumented. Treating that as evidence of absence is the exact failure DEC-009 names, and section 26's own wording describes the inherited-or-elsewhere case that DEC-009 exists to protect. Under this threshold FND-001 is `unverified`, and resolves to a DocumentationGap together with a Question about replay handling.
+
+Either the scenario's expected-findings list is wrong, or the input documents are missing a passage that establishes non-tracking. That is a benchmark question and belongs to the issue reconciling the expected outputs. Note that removing FND-001 from the expected findings leaves three, which is the count `structured-system-input.yaml` declared before it was relocated, so the disputed count may not be an error.
+
+A high proportion of `unverified` mappings is the expected outcome of an assessment against ordinary architecture documentation, not a defect. `requirements/README.md` states that requirements are phrased so that absence of evidence resolves to `unverified` rather than `unmet`. Evaluation must not treat the ratio as a quality signal, and no metric should reward moving mappings out of `unverified`.
+
+Alternatives Considered:
+
+- A graduated numeric threshold over evidence strength and confidence
+- Permitting `unmet` where documentation describes a control area specifically and omits the control, on the argument that silence within a described scope is informative
+- Treating an explicit Known Documentation Gaps entry as evidence supporting `unmet`
+- Keeping DEC-009's full classification menu available at the default threshold
+- Leaving `evidence_threshold` as free text and encoding the rule only in the mapping prompt
+
+Tradeoffs:
+
+- Recall is reduced. A control that is genuinely absent and simply undocumented resolves to a documentation gap, and the assessment does not report it as a weakness. That is the intended exchange, and the false-negative rate in the evaluation plan's section 8 is the measurement that should detect it going too far.
+- The rule depends on the Evidence Validation agent classifying evidence strength correctly. A model that labels a vague passage `direct` defeats condition 2, and nothing deterministic can catch that.
+- Reviewer confirmation satisfying the rule on its own means a reviewer can create an `unmet` mapping the documents do not support. That is deliberate, since the reviewer may know the system, but it makes reviewer decisions load-bearing for correctness and not only for approval.
+- Two threshold values give no room to tune recall against precision on a per-assessment basis, which some reviewers will want.
+- The decision leaves the ForgeFlow benchmark internally inconsistent until the expected outputs are reconciled.
+
+Open Questions:
+
+- Should a DocumentationGap on a high-impact requirement itself be reportable as a finding of a different kind, which is DEC-009's second open question and is deliberately not answered here?
+- Where is evidence strength recorded, given that `EvidenceStrength` is defined but carried by no object and EvidenceAssessment holds only a list of evidence identifiers?
+- Should the downgrade from `unmet` to `unverified` be visible to the reviewer as a distinct event, rather than only as a recorded reason on the mapping?
+- Does `permissive` belong on the assessment configuration at all, or should it be a harness parameter like the checkpoint ablation in DEC-012?
