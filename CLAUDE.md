@@ -39,7 +39,7 @@ uv run pre-commit run gitleaks --all-files   # a single hook
 src/trace_ai/        configuration and process bootstrap -- the only product code that runs
 src/trace_ai/domain/           enums.py and base.py; no concrete domain object yet
 src/trace_ai/services/         ingestion/ and evidence/ -- empty
-src/trace_ai/infrastructure/   filesystem/ and database/ -- empty
+src/trace_ai/infrastructure/   filesystem/, database/, and model/ -- stores and the model seam
                      Dependencies point inward. domain/ imports neither of the other two and
                      no provider SDK; tests/unit/test_package_layout.py asserts both.
 tests/unit/          the only tests that exist
@@ -310,6 +310,14 @@ Squashing either pull request breaks the chain: the hotfix commit stops being an
   Use `type(obj).model_validate({**obj.model_dump(), **changes})`. This is the only path on which
   a human-supplied value enters a domain object, so it is the one that least tolerates skipping
   the schema. Pinned by `tests/unit/test_domain_base.py`.
+- **Reach a model through `StructuredModel`, never through a provider SDK** (DEC-014).
+  `infrastructure/model/anthropic_adapter.py` is the only module that may import `anthropic`, and
+  `tests/unit/test_model_boundary.py` fails if another one does. An adapter makes **exactly one
+  attempt** and returns a `ModelFailure` rather than raising — the retry budget is the
+  orchestrator's, and a hidden loop would break the `ExecutionRecord` retry count and the cost
+  ceiling. A schema failure keeps the raw output (`data-model.md` section 33). `model_profile`
+  resolves through `infrastructure/model/profiles.py`; `Creativity` is provider-neutral intent and
+  names no knob.
 - **CI must never need a provider API key.** The `integration` and `evaluation` markers are
   deselected by default in `addopts` precisely so a bare `pytest` cannot spend money.
 - **Secrets go through `trace_ai.config.Settings`** as `SecretStr`. `.env` is gitignored;
