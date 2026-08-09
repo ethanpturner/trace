@@ -224,6 +224,11 @@ Against the seven-stage [roadmap](#roadmap) below, Trace is inside Stage 1.
   and `DomainModel`, the Pydantic base every domain object inherits. `extra="forbid"` is the
   setting that matters: an agent-proposed object carrying an invented field fails validation at
   the boundary instead of being silently reduced to the fields anyone reads.
+- **Identifiers and content hashing** — the twenty prefixes of section 2.1 as a closed registry,
+  both identifier forms DEC-018 defines, a typed identifier per object so a threat identifier
+  cannot be assigned to a finding's field, and the single SHA-256 utility DEC-019 requires.
+  Identifier allocation is a store operation, so what exists is the protocol and an in-memory
+  implementation for tests; the store-backed one arrives with the persistence layer.
 - **Test discipline** — unit tests run by default; integration and evaluation tests sit behind
   pytest markers that are deselected, so CI never needs a provider API key.
 - **The design corpus** — vision, scope, roadmap, architecture, agent design, data model,
