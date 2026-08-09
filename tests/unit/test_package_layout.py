@@ -1,0 +1,148 @@
+"""Tests holding the package skeleton and the one dependency direction that matters.
+
+`docs/architecture/current-architecture.md` section 15 proposes a repository organization and
+says the important property is that domain models, workflow logic, prompts, infrastructure, and
+user-interface code stay reasonably separated. The tree itself is cheap to create and cheap to
+erode: nothing stops a later module putting a database import into a domain object, and once one
+does, every object after it inherits the coupling.
+
+So the layering is asserted rather than described. `trace_ai.domain` holds the objects DEC-006
+makes authoritative, and it must remain importable without dragging SQLite, the filesystem, or a
+model provider along with it -- the objects are the thing every other layer depends on, and a
+domain package that depends back on its callers cannot be reasoned about in isolation.
+
+The check reads the source rather than the imported module, so an import buried inside a function
+body counts the same as one at the top of the file. Issue #41.
+"""
+
+from __future__ import annotations
+
+import ast
+from importlib import import_module
+from pathlib import Path
+
+import pytest
+
+from trace_ai.config import PROJECT_ROOT
+
+PACKAGE_ROOT = PROJECT_ROOT / "src" / "trace_ai"
+DOMAIN_ROOT = PACKAGE_ROOT / "domain"
+
+# The skeleton section 15 calls for, adapted to the real package name. `api/`, `application/`,
+# `workflow/`, `reporting/`, and `evaluation/` are deliberately absent: section 15 proposes them,
+# nothing in this milestone puts a file in them, and an empty package reads as a commitment that
+# has not been made.
+PACKAGES = (
+    "trace_ai.domain",
+    "trace_ai.services",
+    "trace_ai.services.ingestion",
+    "trace_ai.services.evidence",
+    "trace_ai.infrastructure",
+    "trace_ai.infrastructure.filesystem",
+    "trace_ai.infrastructure.database",
+)
+
+# What a domain module may not reach for. Named as module prefixes so that
+# `trace_ai.infrastructure.database.session` is caught by `trace_ai.infrastructure`.
+FORBIDDEN_IN_DOMAIN = ("trace_ai.services", "trace_ai.infrastructure")
+
+
+def package_of(source: Path) -> str:
+    """The dotted package a source file lives in, e.g. `trace_ai.domain`."""
+    return ".".join(source.relative_to(PACKAGE_ROOT.parent).with_suffix("").parts[:-1])
+
+
+def imported_modules(source: Path, package: str) -> set[str]:
+    """Every absolute module name a source file imports, relative imports resolved.
+
+    A relative import is resolved against the file's own package, so `from ..services import x`
+    inside `trace_ai/domain/` yields `trace_ai.services.x` and is caught like any other.
+    """
+    tree = ast.parse(source.read_text(encoding="utf-8"), filename=str(source))
+
+    names: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            names.update(alias.name for alias in node.names)
+        elif isinstance(node, ast.ImportFrom):
+            if node.level == 0:
+                base = node.module or ""
+            else:
+                parts = package.split(".")
+                anchor = parts[: len(parts) - (node.level - 1)]
+                base = ".".join([*anchor, node.module] if node.module else anchor)
+            names.add(base)
+            names.update(f"{base}.{alias.name}" for alias in node.names)
+    return names
+
+
+@pytest.mark.parametrize("module", PACKAGES)
+def test_package_is_importable(module: str) -> None:
+    assert import_module(module) is not None
+
+
+@pytest.mark.parametrize("module", PACKAGES)
+def test_package_states_what_belongs_in_it(module: str) -> None:
+    """An `__init__.py` without a docstring leaves the next author guessing."""
+    doc = import_module(module).__doc__
+    assert doc is not None, f"{module} has no docstring saying what belongs in it"
+    assert doc.strip(), f"{module} has an empty docstring"
+
+
+def test_domain_does_not_import_services_or_infrastructure() -> None:
+    """The direction section 15 names, and the one that erodes quietly.
+
+    Domain objects are validated data. They are constructed by services and persisted by
+    infrastructure, and they must not know either exists.
+    """
+    offenders: dict[str, set[str]] = {}
+    for source in sorted(DOMAIN_ROOT.rglob("*.py")):
+        reached = {
+            name
+            for name in imported_modules(source, package_of(source))
+            if any(
+                name == prefix or name.startswith(f"{prefix}.") for prefix in FORBIDDEN_IN_DOMAIN
+            )
+        }
+        if reached:
+            offenders[str(source.relative_to(PROJECT_ROOT))] = reached
+
+    assert not offenders, (
+        f"domain modules must not import services or infrastructure: {offenders}. "
+        f"Move the dependency to the caller; domain objects are constructed by services, "
+        f"not the other way round."
+    )
+
+
+def test_the_layering_check_can_fail(tmp_path: Path) -> None:
+    """The guard above is worthless if the parser silently finds nothing.
+
+    Both forms are checked because they resolve differently: an absolute import carries its
+    full name, a relative one has to be resolved against the file's package first.
+    """
+    probe = tmp_path / "probe.py"
+    probe.write_text(
+        "from trace_ai.infrastructure.database import session\n"
+        "\n"
+        "def load():\n"
+        "    from ..services.ingestion import loader\n"
+        "    return session, loader\n",
+        encoding="utf-8",
+    )
+    reached = imported_modules(probe, package="trace_ai.domain")
+
+    assert "trace_ai.infrastructure.database" in reached
+    assert "trace_ai.services.ingestion" in reached
+
+
+def test_no_unlisted_package_appeared() -> None:
+    """A new subpackage is a structural decision; it should not arrive as a side effect."""
+    found = {
+        "trace_ai." + ".".join(path.parent.relative_to(PACKAGE_ROOT).parts)
+        for path in PACKAGE_ROOT.rglob("__init__.py")
+        if path.parent != PACKAGE_ROOT
+    }
+    assert found == set(PACKAGES), (
+        f"unexpected packages {sorted(found - set(PACKAGES))}, "
+        f"missing {sorted(set(PACKAGES) - found)}"
+    )

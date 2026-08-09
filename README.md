@@ -256,7 +256,10 @@ The command surface planned for Stage 1 — `trace assessment create`, `trace so
 ### Repository layout
 
 ```
-src/trace_ai/        configuration and process bootstrap
+src/trace_ai/                    configuration and process bootstrap
+src/trace_ai/domain/             domain objects and shared types
+src/trace_ai/services/           ingestion/ and evidence/ -- operations on those objects
+src/trace_ai/infrastructure/     filesystem/ and database/ -- the artifact and assessment stores
 tests/               unit tests; integration/ and evaluation/ are scaffolded and empty
 docs/product/        vision, design principles, roadmap, future features
 docs/architecture/   scope, current architecture, agent design, data model,
@@ -264,9 +267,20 @@ docs/architecture/   scope, current architecture, agent design, data model,
 demo/forgeflow/      the demo scenario and its input fixtures
 requirements/        the requirements catalog -- version-controlled YAML, read by nothing yet
 scripts/             repository utilities
-benchmarks/          scaffolded, empty -- evaluation fixtures land here
+benchmarks/          scenarios two onward, plus scenarios.yaml, the scenario registry
 prompts/             scaffolded, empty
 ```
+
+The three source subpackages are a boundary, not a filing convention. **Domain** holds the
+schema-validated objects that are the authoritative state; **services** operate on them;
+**infrastructure** stores them. Dependencies point inward — a domain object never imports a
+service or a store, and a test asserts that direction, because it is the one that erodes without
+anyone deciding to erode it.
+
+The layout is narrower than
+[`current-architecture.md`](docs/architecture/current-architecture.md) section 15 proposes.
+`api/`, `application/`, `workflow/`, `reporting/`, and `evaluation/` are absent until something
+belongs in them; an empty package reads as a commitment that has not been made.
 
 ## Roadmap
 
