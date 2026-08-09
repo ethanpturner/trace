@@ -1296,19 +1296,27 @@ This threat may be included only if the fictional frontend accepts rich output.
 
 # 19. Expected Findings
 
-The initial benchmark truth set should contain approximately three to five findings.
+The initial benchmark truth set contains **three** findings: FND-002, FND-003, and FND-004.
 
-Recommended initial findings:
+The count is not declared anywhere (DEC-028); it is what `expected-findings.yaml` enumerates.
 
-## FND-001: Webhook Events Lack Replay Protection
+**FND-001 was removed. It is now GAP-004 in section 21.**
 
-Expected severity: Medium
+An earlier version of this section listed "Webhook Events Lack Replay Protection" as an expected
+finding, requiring evidence that "delivery identifiers are not tracked". No document establishes
+that. `github-integration.md` section 6 says only that webhook requests are validated,
+`operations-guide.md` section 3 shows a delivery identifier in the job payload without mentioning
+deduplication, and `architecture-overview.md` section 26 lists "Webhook replay handling" under
+*Known Documentation Gaps*.
 
-Evidence should establish that:
+The only direct evidence available is a document stating that the topic is undocumented. Concluding
+absence from it is the DEC-009 failure, and DEC-013 resolves it to `unverified` — a documentation
+gap and a question, not a finding. Expecting it as a finding would have graded that failure as
+correct. See DEC-029.
 
-- Signatures are verified
-- Delivery identifiers are not tracked
-- Duplicate events create duplicate model work
+Contrast FND-003 below, whose subject is also listed in section 26 but which rests on an
+affirmative statement of a 30-day retention period. Silence and a positive statement fall on
+opposite sides of the DEC-009 line, and having both in one scenario is deliberate.
 
 ## FND-002: AI-Generated Pull-Request Comments Are Published Without Adequate Review
 
@@ -1335,9 +1343,15 @@ Evidence should establish:
 
 Expected severity: Medium
 
-This may overlap with FND-002.
+**This is a separate finding from FND-002**, resolving open question 8 in section 30. Section 19's
+own consolidation test is whether the remediation and impact are substantially related. They are
+related and not the same: FND-002 needs a human approval gate before external publication, FND-004
+needs isolation of untrusted repository content from model instructions. Either can be fixed
+without the other, and fixing only one leaves a real exposure.
 
-During consolidation, Trace may reasonably combine the two into one broader finding if the remediation and impact are substantially related.
+Trace combining the two at runtime into one well-reasoned finding remains defensible and is not
+scored as an error. The truth set records the finer decomposition because a matcher can collapse it
+and cannot split a coarser one. See DEC-029.
 
 # 20. Expected Questions
 
@@ -1358,7 +1372,7 @@ Questions should be prioritized by their ability to change findings.
 
 # 21. Expected Documentation Gaps
 
-Possible documentation gaps include:
+Expected documentation gaps:
 
 ## GAP-001: AI Provider Data-Handling Details Are Incomplete
 
@@ -1382,6 +1396,28 @@ Missing:
 
 The documents describe tenant-prefixed storage paths but not the enforcement mechanism.
 
+## GAP-004: Webhook Replay Handling Is Undocumented
+
+`architecture-overview.md` section 26 lists "Webhook replay handling" under *Known Documentation
+Gaps*. `github-integration.md` section 6 states that incoming webhook requests are validated
+without saying what validation covers, and `operations-guide.md` section 3 shows a delivery
+identifier carried in the job payload without stating whether it is checked for duplicates.
+
+Missing:
+
+- Whether delivery identifiers are stored
+- Whether duplicate deliveries are rejected or deduplicated
+- What a replayed event would cost in duplicate model work
+
+This was FND-001 until DEC-029. **It is the most valuable single item in this scenario.** A generic
+security review reports an undocumented control as a missing control, and section 26 is a document
+volunteering that a topic is not covered. A system that concludes "no replay protection" from that
+sentence has committed the failure Trace exists to avoid, and it will do so confidently, because
+the sentence is about the right subject.
+
+Candidate question 2 in section 20 — whether delivery identifiers are stored and checked — is the
+question this gap must raise, and is therefore load-bearing rather than optional.
+
 # 22. Expected Rejected Findings
 
 Trace should reject or avoid findings such as:
@@ -1396,8 +1432,13 @@ Trace should reject or avoid findings such as:
 - Customer source code is used to train public models.
 - Administrators can definitely read all customer source code.
 - Every repository contributor can configure ForgeFlow.
+- ForgeFlow lacks webhook replay protection.
 
 These claims are unsupported or contradicted by scenario facts.
+
+The last is the one this scenario most expects a generic review to get wrong. Nothing states that
+replay protection is absent; `architecture-overview.md` section 26 states that the topic is
+undocumented. That is GAP-004, not a finding. See DEC-029.
 
 # 23. Initial Security Requirements
 
@@ -1521,9 +1562,11 @@ Contains selected confirmed metadata such as:
 
 # 25. Benchmark Truth Files
 
-Create the following under:
+The layout is fixed by DEC-027 and specified in `docs/architecture/evaluation-plan.md` section 5.
+This section states where ForgeFlow's copy lives and what is specific to this scenario; it is not a
+second specification of the layout.
 
-demo/forgeflow/expected/
+Create the following under `demo/forgeflow/expected/`:
 
 expected-context.yaml
 
@@ -1537,13 +1580,26 @@ expected-questions.yaml
 
 expected-documentation-gaps.yaml
 
+expected-observations.yaml
+
 expected-rejections.yaml
 
 reviewer-notes.md
 
-The expected files should not be supplied to Trace during the assessment.
+evaluation-contract.yaml
 
-They are used for evaluation.
+`expected-observations.yaml` holds the two intentional contradictions in section 16 and the
+prompt-injection fixture in section 17, which DEC-021 makes one object type with two `kind` values.
+An earlier version of this list omitted it, and the contract counted contradictions that had
+nowhere to live.
+
+**None of these files is supplied to Trace during an assessment.** The whole `expected/` directory
+is withheld, which is a simpler rule than a per-file one. `evaluation-contract.yaml` declares no
+expected-output counts (DEC-028); the expected set is the enumerated content of the files above.
+
+ForgeFlow keeps this location because it is the demo as well as benchmark scenario one. Scenarios
+two onward live under `benchmarks/<slug>/` with the same layout, and all of them are registered in
+`benchmarks/scenarios.yaml`.
 
 # 26. Demo Narrative
 
@@ -1666,7 +1722,7 @@ The ForgeFlow scenario is ready for implementation when:
 5. Should the AI provider support regional processing?
 6. Should source artifacts be encrypted with tenant-specific keys?
 7. Should replayed webhooks be the clearest demo finding?
-8. Should prompt injection and automatic publishing be one combined finding or two?
+8. ~~Should prompt injection and automatic publishing be one combined finding or two?~~ Resolved by DEC-029: **two.** FND-004 and FND-002 have different remediations and either can be fixed without the other. Trace consolidating them at runtime is still defensible and is not scored as an error.
 9. Should the administrative interface be included in the first live walkthrough?
 10. How much of the expected truth set should appear in public repository documentation?
 

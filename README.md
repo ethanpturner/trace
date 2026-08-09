@@ -322,16 +322,22 @@ should find. That contract lives in
 never to be supplied to Trace during an assessment — a benchmark that hands the system under
 test its own answer key measures nothing.
 
-The shape of the expected output is the point, more than any individual number. **Questions**
-and **documentation gaps** are outputs a generic security review does not produce at all — it
-reports missing documentation as missing controls. The **contradictions** are places where the
-documents disagree with each other, which a reviewer must surface rather than silently resolve.
-And the finding count is deliberately small: a handful, not thirty.
+The shape of the expected output is the point, and the contract declares no counts at all. **The
+expected set is enumerated, never totalled** — a declared number that can disagree with its own
+enumeration is a second source of truth, and a number used as a target is a finding quota, which
+the design rejects outright. Counts are derived from the enumerated files when a report needs one.
 
-The exact counts are currently disputed between the contract and
-[`forgeflow-scenario.md`](demo/forgeflow/forgeflow-scenario.md), and are being reconciled.
-They are a ceiling on defensible conclusions rather than a target to reach; nothing in the
-pipeline is designed to read them.
+**Questions** and **documentation gaps** are outputs a generic security review does not produce at
+all — it reports missing documentation as missing controls. The **contradictions** are places where
+the documents disagree with each other, which a reviewer must surface rather than silently resolve.
+And the expected findings are deliberately few: a handful, not thirty.
+
+The sharpest item in the set is one that is *not* a finding. `architecture-overview.md` lists
+webhook replay handling under its own *Known Documentation Gaps*, and nothing anywhere states that
+replay protection is absent. A review that concludes "no replay protection" from a document
+volunteering that a topic is undocumented has committed the exact failure Trace exists to avoid —
+confidently, because the sentence is about the right subject. The truth set expects a documentation
+gap and a question there, and lists the finding among the conclusions to reject.
 
 ### Prompt-injection fixture
 
