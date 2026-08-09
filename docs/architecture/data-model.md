@@ -87,7 +87,25 @@ exe- Execution record
 
 eval- Evaluation result
 
-UUIDs may be used internally, with readable prefixes added for debugging and demonstration.
+## Two classes of identifier
+
+**Authored identifiers** are written by hand and carry meaning. The requirements catalog's
+`req-AUTH-001` is the only class currently in use. They are globally unique, stable across catalog
+versions, and are the only identifiers a benchmark expected-output file may reference.
+
+**Generated identifiers** are minted during an assessment, in the form `<prefix>-<NNN>` using the
+prefixes above. They are unique **within their assessment**, not globally — `thr-007` in two
+assessments is two different objects, and an identifier is fully qualified only by
+`(assessment_id, id)`.
+
+A generated identifier is assigned by the persistence layer at insert, from a monotonic counter per
+`(assessment_id, prefix)`. It is not assigned at construction: agents return proposal objects that
+structurally cannot carry an identifier, so the application assigns one when it takes ownership
+(DEC-018).
+
+No generated identifier appears in a benchmark expected-output file. Expected outputs reference
+authored catalog identifiers and match on content — the requirement, the affected components — not
+on generated identity.
 
 ### 2.2 Evidence must be addressable
 
@@ -489,7 +507,7 @@ Represents an original source supplied to the assessment.
 | origin | SourceOrigin | Yes | Source origin |
 | original_path | string | No | Local artifact location |
 | normalized_path | string | No | Normalized content location |
-| content_hash | string | Yes | Hash of original content |
+| content_hash | string | Yes | `sha256:<hex>` over the original file's raw bytes (DEC-019) |
 | title | string | No | Document title |
 | created_at | datetime | Yes | Registration timestamp |
 | ingested_at | datetime | No | Successful ingestion timestamp |
@@ -529,7 +547,7 @@ Represents an addressable piece of evidence from a source.
 | page_number | integer | No | Page number when applicable |
 | quoted_text | string | Yes | Relevant source excerpt |
 | normalized_text | string | No | Cleaned text |
-| content_hash | string | Yes | Evidence content hash |
+| content_hash | string | Yes | `sha256:<hex>` over the UTF-8 bytes of `quoted_text` (DEC-019) |
 | source_origin | SourceOrigin | Yes | Evidence origin |
 | created_at | datetime | Yes | Creation timestamp |
 | metadata | map[string, any] | No | Additional location details |
@@ -1695,7 +1713,7 @@ The prompt body may remain stored in a file, while metadata is available to the 
 | expected_output_schema | string | Yes | Output model name or schema |
 | model_constraints | list[string] | No | Required model capabilities |
 | status | string | Yes | Draft, active, retired |
-| content_hash | string | Yes | Prompt content hash |
+| content_hash | string | Yes | `sha256:<hex>` over the **composed** prompt text (DEC-019) |
 
 # 30. RequirementsCatalog
 
@@ -1714,7 +1732,7 @@ Represents a versioned collection of reusable requirements.
 | requirement_ids | list[string] | Yes | Included requirements |
 | created_at | datetime | Yes | Creation timestamp |
 | status | string | Yes | Draft, active, retired |
-| content_hash | string | Yes | Catalog hash |
+| content_hash | string | Yes | `sha256:<hex>` over a canonical re-serialization (DEC-019) |
 
 # 31. Assessment State
 
