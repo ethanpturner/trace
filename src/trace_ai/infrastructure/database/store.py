@@ -153,6 +153,11 @@ def _scope_of(obj: DomainModel) -> str:
     """
     identifier = getattr(obj, "id", None)
     if not isinstance(identifier, str):
+        # `SystemContext` is the one object with no identifier: DEC-034 keys it by
+        # `(assessment_id, version)`, so its scope is read directly rather than from a prefix.
+        scope = getattr(obj, "assessment_id", None)
+        if isinstance(scope, str):
+            return scope
         raise StoreError(f"{type(obj).__name__} has no string `id`; it cannot be persisted")
 
     if parse_id(identifier).prefix == "asm":
@@ -165,6 +170,23 @@ def _scope_of(obj: DomainModel) -> str:
             f"except the Assessment itself is scoped to one, per DEC-018."
         )
     return scope
+
+
+def _row_key(obj: DomainModel) -> str:
+    """The key an object is stored under: its identifier, or the pair that identifies it.
+
+    Only `SystemContext` takes the second branch. `data-model.md` section 9 gives it no `id` and
+    DEC-034 states why -- it is addressed by its position in a sequence rather than by a name -- so
+    the row key renders that position instead of inventing one.
+    """
+    identifier = getattr(obj, "id", None)
+    if isinstance(identifier, str):
+        return identifier
+    version = getattr(obj, "version", None)
+    scope = getattr(obj, "assessment_id", None)
+    if isinstance(version, int) and isinstance(scope, str):
+        return f"{scope}@v{version}"
+    raise StoreError(f"{type(obj).__name__} has neither an `id` nor an (assessment_id, version)")
 
 
 class AssessmentStore:
@@ -332,10 +354,16 @@ class AssessmentRepository:
         Replacement is what DEC-023's in-place mutation means at this layer: the object keeps its
         identifier, its fields change, and the delta is recorded on a `ReviewerDecision`. Nothing
         here writes that decision -- the caller does, in the same transaction.
+
+        `SystemContext` is stored under `<assessment_id>@v<version>`, because DEC-034 keys it by
+        `(assessment_id, version)` and it carries no identifier of its own. The row key is that
+        pair rendered rather than a new identifier: minting one would put a second name on an
+        object the corpus deliberately leaves unnamed, and every revision would then have two.
         """
         scope = _scope_of(obj)
+        row_key = _row_key(obj)
         if scope != self.assessment_id:
-            raise WrongAssessmentError(str(obj.id), scope, self.assessment_id)  # type: ignore[attr-defined]
+            raise WrongAssessmentError(row_key, scope, self.assessment_id)
 
         payload = obj.model_dump_json()
         self._connection.execute(
@@ -346,7 +374,7 @@ class AssessmentRepository:
             "created_at = excluded.created_at, payload = excluded.payload",
             (
                 self.assessment_id,
-                obj.id,  # type: ignore[attr-defined]
+                row_key,
                 type(obj).__name__,
                 _column(obj, "status"),
                 _column(obj, "created_at"),

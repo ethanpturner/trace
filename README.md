@@ -284,6 +284,10 @@ Against the seven-stage [roadmap](#roadmap) below, Trace is inside Stage 1.
   component types the data model never lists. Unknown transport encryption is the string `unknown`
   rather than `false` or absence, and an undocumented exposure is `None` rather than `False` — the
   DEC-009 discipline expressed at field level.
+- **The Context Extraction node** — the first model-assisted step: assemble the fenced input,
+  compose the prompt, ask the seam for a proposal, convert it into objects with
+  application-allocated identifiers, and record what the call cost. It produces `SystemContext`
+  version 1, unapproved, and stops. Every test runs against the deterministic substitute.
 - **The Context Validation node** — `agent-design.md` section 8's ten responsibilities, each with
   its own test, and the constraint that shapes them: the node reports and routes, and never
   reinterprets or corrects. It also computes section 7's six human-review triggers.
@@ -331,8 +335,9 @@ Against the seven-stage [roadmap](#roadmap) below, Trace is inside Stage 1.
 
 ### What does not exist yet
 
-- No agent, and no model call anywhere in a code path that runs. The seam an agent would talk
-  through exists and the Anthropic adapter behind it is written; nothing calls either. Documents
+- No model call has ever been made. The Context Extraction node calls the seam, and every test
+  drives it through the deterministic substitute; the Anthropic adapter has never run against a
+  provider outside an opt-in integration test. Documents
   are ingested, turned into addressable evidence, and retrievable through the interface an agent
   would sit behind — but nothing sits behind it yet.
 - Eleven domain objects of roughly twenty-nine: `Assessment`, `AssessmentConfiguration`,
