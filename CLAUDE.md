@@ -43,11 +43,14 @@ tests/evaluation/    scaffolded, empty
 docs/product/        vision, design principles, roadmap, future features
 docs/architecture/   scope, current architecture, agent design, data model,
                      evaluation plan, decision log
-demo/forgeflow/      the ForgeFlow benchmark fixture (Markdown + YAML)
-demo/forgeflow/expected/   empty -- expected outputs are not yet authored
+demo/forgeflow/      the ForgeFlow scenario: the demo and benchmark scenario one
+demo/forgeflow/input/      material supplied to Trace
+demo/forgeflow/expected/   the truth set; never supplied to Trace. Only the contract is
+                           written; the expected-*.yaml files are not yet authored
 requirements/        the requirements catalog; see Requirements catalog below
 journal/             dated session entries; see Journal below
-benchmarks/          scaffolded, empty -- evaluation fixtures land here
+benchmarks/          scenarios two onward, same input/ + expected/ layout
+benchmarks/scenarios.yaml  the scenario registry -- the authoritative list
 prompts/             scaffolded, empty -- versioned prompt definitions land here
 scripts/             repository utilities
 ```

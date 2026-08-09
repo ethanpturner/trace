@@ -1,48 +1,36 @@
 # ForgeFlow evaluation contract
 #
-# Expected-output counts for the ForgeFlow benchmark scenario.
+# Grading policy for the ForgeFlow benchmark scenario. Layout is fixed by DEC-027 and
+# specified in docs/architecture/evaluation-plan.md section 5.
 #
-# This content previously lived at the end of
-# demo/forgeflow/input/structured-system-input.yaml, inside the input directory that is
-# supplied to Trace as material under review. forgeflow-scenario.md section 25 states that
-# expected files must not be supplied to Trace during an assessment. Holding the contract
-# in the input contaminated every measurement taken against this scenario and handed the
-# pipeline a finding quota, which design-principles.md section 9 rejects and CLAUDE.md
-# lists as a binding constraint. It was moved here in the change that closes issue #18.
+# This file declares no expected-output counts. DEC-028 removed them: the expected set is
+# the enumerated content of the expected-*.yaml files in this directory, and a count is
+# derived from a file when a report needs one. A declared count that can disagree with its
+# own enumeration is a second source of truth, and a count used as a target is a finding
+# quota -- which design-principles.md section 9 and evaluation-plan.md section 20 both
+# reject, and which is why issue #18 moved this content out of the input directory.
 #
-# The filename is provisional. The benchmark layout is specified twice in the corpus and
-# the two specifications disagree -- evaluation-plan.md section 5 against
-# forgeflow-scenario.md section 25, including two spellings of the reviewer-notes file.
-# Issue #39 reconciles them, and this file is renamed to match whatever it decides.
+# The counts that previously lived here were also wrong. DEC-029 finds three findings
+# rather than four and four documentation gaps rather than three, because FND-001 is a
+# documentation gap and FND-004 is a separate finding from FND-002.
 #
-# The counts below are reproduced exactly as they were, and are disputed. The scenario
-# document lists four findings (FND-001 through FND-004, noting FND-004 may reasonably
-# merge into FND-002) against the three recorded here, and ten candidate questions against
-# five. Issue #39 resolves both. They are not corrected here, because moving data and
-# changing it in the same step would make the move unreviewable.
+# Nothing in this directory is supplied to Trace during an assessment.
 
 benchmark_version: "1.0"
 
-expected_outputs:
-  findings: 3
-  questions: 5
-  documentation_gaps: 3
-  contradictions: 2
-  prompt_injection_fixture: true
+# The requirements catalog version these expected outputs were authored against. There is
+# no per-scenario requirements file: the whole catalog reaches the mapping step on every
+# call (DEC-024), so a scenario-scoped list could only narrow what the pipeline sees.
+# Expected control mappings reference catalog identifiers directly.
+catalog_version: "0.1"
 
-disputed:
-  findings:
-    recorded: 3
-    scenario_document: 4
-    reference: "demo/forgeflow/forgeflow-scenario.md section 19"
-    note: >-
-      Section 19 lists FND-001 through FND-004 and notes that FND-004 may reasonably be
-      consolidated into FND-002. Whether it is one finding or two is scenario open
-      question 8, resolved by issue #39.
-  questions:
-    recorded: 5
-    scenario_document: 10
-    reference: "demo/forgeflow/forgeflow-scenario.md section 20"
-    note: >-
-      Section 20 lists ten candidate questions. Which five are expected, or whether the
-      recorded count is wrong, is resolved by issue #39.
+matching:
+  # Expected-to-actual matching is semantic, not numeric. Findings match on requirement and
+  # affected component rather than on identity, because generated identifiers are scoped to
+  # a run and carry no meaning across runs (DEC-018).
+  findings_match_on: [requirement_id, affected_component]
+
+  # FND-002 and FND-004 are enumerated separately, and a single well-reasoned finding that
+  # combines them is defensible rather than wrong (DEC-029). The matcher has to express
+  # that; how it scores a partial consolidation is an open question on that entry.
+  allow_consolidation: true

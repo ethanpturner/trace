@@ -472,7 +472,7 @@ Tradeoffs:
 
 Open Questions:
 
-- Should the per-scenario `requirements.json` in the evaluation plan reference catalog identifiers rather than restate requirements?
+- ~~Should the per-scenario `requirements.json` in the evaluation plan reference catalog identifiers rather than restate requirements?~~ Answered by DEC-027 by removing the file. DEC-024 puts the whole catalog in every mapping call, so a per-scenario requirement list could only narrow what the pipeline sees. A scenario pins `catalog_version` and expected control mappings reference catalog identifiers directly.
 - When should catalog version 0.1 become 0.2 rather than being edited in place?
 - ~~What computes and verifies `content_hash`, and at what point in the workflow?~~ Answered by DEC-019: one SHA-256 utility, with a stated input per object type and defined compute and verify points. The catalog's hash is computed by the loader.
 
@@ -1461,3 +1461,160 @@ Open Questions:
 - Should the `inherited` and `absent` combination be rejected by validation, or is there a case for it?
 - When an inherited control's provider is a component Trace did not extract — a platform outside the reviewed system — what does `provider_component_id` reference?
 - Does distinguishing inheritance from a compensating control need more than `control_type`, given that both reduce a requirement's applicability by pointing elsewhere?
+
+## DEC-027: Derive the benchmark scenario layout from the object model; ForgeFlow keeps its location
+
+Date: 2026-08-09
+
+Status: Accepted
+
+Decision:
+
+**The two layout specifications were never competing.** `evaluation-plan.md` section 5 describes a whole scenario directory and `forgeflow-scenario.md` section 25 describes only its expected subdirectory. They overlap on three files — `expected-context.yaml`, `expected-threats.yaml`, `expected-findings.yaml` — and agree on all three. What looked like a conflict is one list of inputs and one list of outputs, written in different documents without either naming which half it covered.
+
+**A scenario directory has two subdirectories:**
+
+```
+<scenario>/
+  input/                     the material supplied to Trace
+  expected/                  the truth set, never supplied to Trace
+    expected-*.yaml
+    reviewer-notes.md
+    evaluation-contract.yaml
+```
+
+**The expected file list is derived, not enumerated.** There is one `expected-*.yaml` per domain object type the pipeline produces and the benchmark grades, plus `expected-rejections.yaml` for the negative set. Enumerating the list in prose is what produced this issue: DEC-021 added `SourceObservation` and no document was updated, so the contract counts contradictions and an injection fixture that section 25's seven files have nowhere to hold.
+
+Under the current object model that is: `expected-context.yaml`, `expected-threats.yaml`, `expected-control-mappings.yaml`, `expected-findings.yaml`, `expected-questions.yaml`, `expected-documentation-gaps.yaml`, `expected-observations.yaml`, `expected-rejections.yaml`. **`expected-observations.yaml` is new here** and covers both `kind` values DEC-021 defined, because they are one object type and get one file.
+
+**The filename is `reviewer-notes.md`.** `evaluation-plan.md` section 5's `review-notes.md` is corrected. The corpus uses "reviewer" as the actor noun throughout — reviewer acceptance rate, reviewer edit rate, reviewer notes on the domain objects — and consistency with that is the only thing distinguishing the two spellings.
+
+**`requirements.json` is dissolved rather than resolved.** It predates the requirements catalog, and DEC-024 removed the role it would have had: the whole catalog is passed on every mapping call, so a per-scenario requirement file could only narrow what the pipeline sees, which is the pre-filter DEC-024 rejected. What it was reaching for is a version pin, so the scenario records `catalog_version` in `evaluation-contract.yaml` and expected control mappings reference catalog identifiers directly. **This answers DEC-010's first open question** — not by making the file reference identifiers, but by removing the file.
+
+**ForgeFlow stays at `demo/forgeflow/`; `benchmarks/<slug>/` holds scenarios two onward.** The split is by role and it is real. ForgeFlow is the demo *and* benchmark scenario one, and the demo half is `forgeflow-scenario.md` — a 40,000-character narrative that exists to be read by a person and feeds roadmap Stage 6. Scenarios two through twelve have no such document and exist only to be measured. Both use the layout above.
+
+**The harness discovers scenarios from `benchmarks/scenarios.yaml`, never by globbing a directory.** This is the part that makes two locations safe. A registry naming each scenario and its path makes the benchmark set a stated fact; directory discovery would make it a fact about the filesystem, and two discoverable homes would reproduce the specified-twice failure this entry exists to remove.
+
+`CLAUDE.md`'s repository layout records the split.
+
+Why:
+
+Reconciling the two lists by picking a winner would have discarded correct information from whichever lost. Section 5 is the only place that says a scenario carries its own inputs; section 25 is the only place that says the expected files must never be supplied to Trace. Both are right about the half they describe.
+
+The derivation rule matters more than the list it currently produces. An enumerated list is a second source of truth about the object model, and it drifts the moment the model changes — which is not hypothetical here, it is the state the corpus was found in. Deriving the list means a new object type produces a new expected file by construction, and the layout cannot silently fall behind `data-model.md`.
+
+Keeping ForgeFlow in place is also the cheap answer, and that is worth stating plainly rather than dressing up: the path appears 153 times across 46 files outside `demo/`, and in 29 open issue bodies that cannot be rewritten as easily as a document can. But the role split is what makes it correct rather than merely convenient. If ForgeFlow were only a benchmark, it would move.
+
+Alternatives Considered:
+
+- Pick section 5 or section 25 as authoritative and correct the other
+- Move ForgeFlow to `benchmarks/forgeflow/` and leave `demo/` holding only the narrative
+- Keep everything in `demo/` and delete `benchmarks/`
+- Enumerate the expected files in `evaluation-plan.md` and update it when the object model changes
+- Keep `requirements.json` as a per-scenario catalog subset
+- Discover scenarios by globbing `benchmarks/*/` and `demo/*/`
+
+Tradeoffs:
+
+- **Two homes for one kind of artifact is a smell.** The registry makes the set stated rather than discovered, and `tests/unit/test_benchmark_layout.py` asserts that every directory under `benchmarks/` is registered and that every registry entry resolves to a directory holding `input/` and `expected/`. What remains a convention is the layout rule itself: nothing prevents a scenario whose expected files are named something else, because the expected files do not exist yet to be checked against.
+- The derivation rule means adding a domain object type adds a benchmark file, including for object types the benchmark has no useful expectation about. `expected-observations.yaml` is well motivated; a future object may not be.
+- Dissolving `requirements.json` ties the scenario to `catalog_version` as its only requirement-side pin. If a scenario ever needs a requirement the catalog does not contain, there is now nowhere to put it, and the answer would be to add it to the catalog.
+- `evaluation-contract.yaml` sits inside `expected/`, so the whole directory is what must never be supplied to Trace. That is a simpler rule than a per-file one, and it means the contract cannot be read by anything that legitimately reads inputs.
+- Correcting `review-notes.md` to `reviewer-notes.md` is a coin flip dressed in a consistency argument. It is recorded so it is only decided once.
+
+Open Questions:
+
+- Does the demo-versus-benchmark split survive scenario two, or does ForgeFlow's narrative turn out to be something every scenario wants?
+- `architecture-overview.md` section 26 lists source-artifact retention as a known documentation gap while `operations-guide.md` states a 30-day period affirmatively. Is that a third intentional contradiction, or an authoring slip in the fixture?
+
+## DEC-028: The expected set is enumerated; the contract declares no counts
+
+Date: 2026-08-09
+
+Status: Accepted
+
+Decision:
+
+**`evaluation-contract.yaml` declares no expected-output counts.** The `expected_outputs` block and the `disputed` block are both removed. The contract keeps `benchmark_version`, gains `catalog_version` per DEC-027, and otherwise holds grading policy rather than grading targets.
+
+**The expected set is the enumerated content of the `expected-*.yaml` files.** A count is `len()` of a file, derived when a report needs one, and stored nowhere.
+
+**This resolves the count conflict by removing the thing that could conflict.** Three findings against four, and five questions against ten, were disagreements between a declared number and an enumerated list. A declared count that can disagree with its own enumeration is a second source of truth, which is the same defect DEC-027 removes from the layout.
+
+**Matching is semantic, not numeric.** Expected-to-actual matching is on requirement and affected component, as established when the identifier scheme was settled in DEC-018; it was never a count comparison.
+
+Why:
+
+A declared count is a finding quota with a different name. `design-principles.md` section 9 and `evaluation-plan.md` section 20 both state that Trace must not optimize for finding volume, and `CLAUDE.md` lists it as a binding constraint. Issue #18 removed exactly this data from the input fixture because holding it there handed the pipeline its own target. Moving it out of the input made it unable to reach the pipeline; removing it makes it unable to become the metric.
+
+The counts were also wrong, which is a weaker argument but a real one. DEC-029 finds three findings rather than four, and four documentation gaps rather than three, and both numbers move again the first time a fixture document is edited. A number that has to be maintained in parallel with the thing it describes will fall behind it.
+
+Section 20's selection rule — questions prioritized by their ability to change findings — is a better specification of the expected question set than any count, because it states what makes a question expected. Ten candidates and a target of five never said which five, and the rule does.
+
+Alternatives Considered:
+
+- Correct the counts to 3 findings and 6 questions and keep them declared
+- Keep counts as an assertion checked against the enumeration by a test
+- Keep counts only in the scenario document, not in the contract
+- Declare ranges rather than exact counts
+
+Tradeoffs:
+
+- **A count is a cheap smoke test and it is gone.** An assessment producing thirty findings against an expected three is obviously broken, and a declared number would catch that before any semantic matching runs. The enumerated set still catches it, but only after the matcher runs.
+- The enumerated files do not exist yet, so the contract currently declares less than it did and the expected set is nowhere. That is a real regression in what is written down, held until the M3 and M4 authoring issues land.
+- Removing the `disputed` block removes a record of the conflict. It is preserved here and in the journal instead, which is the right place, but the fixture no longer carries its own warning.
+- Deriving counts on demand means two reports can disagree about how many findings a scenario expects if the files change between them. Version control makes that answerable rather than preventing it.
+
+Open Questions:
+
+- Should a scenario declare an expected *order of magnitude* — a handful, not thirty — as a cheap guard that is not a quota?
+- `evaluation-plan.md` section 19 question 1 asks how expected findings are established. This entry says how they are stored and matched, not how they are decided. Who authors a truth set, and does a second reviewer confirm it?
+
+## DEC-029: ForgeFlow expects three findings; FND-001 is a documentation gap and FND-004 is its own finding
+
+Date: 2026-08-09
+
+Status: Accepted
+
+Decision:
+
+**FND-001, webhook replay protection, is not a finding.** It is a `DocumentationGap` and a `Question`. `forgeflow-scenario.md` section 19 is corrected and section 21 gains **GAP-004**.
+
+DEC-013 forces this. Section 19 requires evidence establishing that "delivery identifiers are not tracked", and no document establishes it: `github-integration.md` section 6 says only that webhook requests are validated, `operations-guide.md` section 3 shows a delivery identifier in the job payload without mentioning deduplication, and `architecture-overview.md` section 26 lists **"Webhook replay handling"** under Known Documentation Gaps. The only direct evidence is a document stating the topic is undocumented, and treating that as evidence of absence is the DEC-009 failure exactly.
+
+**FND-003 survives the same test, and the contrast is the point.** Retention is also listed as a section 26 gap, but `operations-guide.md` states a 30-day period affirmatively. FND-003 rests on a positive statement; FND-001 rests on silence. Two neighbouring subjects falling on opposite sides of the DEC-009 line is worth more as a benchmark than either alone.
+
+**FND-004 is a separate finding from FND-002, resolving `forgeflow-scenario.md` open question 8.** Section 19's own consolidation test is whether "the remediation and impact are substantially related". They are related and not the same: FND-002 needs a human approval gate before external publication, FND-004 needs isolation of untrusted repository content from model instructions. Either can be fixed without the other, and fixing only one leaves a real exposure. Trace consolidating them at runtime remains defensible behaviour; the truth set does not pre-consolidate them.
+
+**The expected findings are FND-002, FND-003, FND-004 — three.** The number the contract recorded was right and the scenario document's four was right about the candidates. What drops out is FND-001, not FND-004, so both documents were partly correct and the disagreement was never about the number.
+
+Per DEC-028 the count is not declared anywhere; it is what the enumerated file will contain.
+
+Why:
+
+The webhook case is the most valuable single item in this benchmark. A generic security review reports an undocumented control as a missing control, and section 26 is a document *volunteering* that a topic is not covered here. A system that concludes "no replay protection" from that sentence has committed the failure this project exists to avoid, and it will do so confidently, because the sentence is about the right subject.
+
+Keeping FND-001 as an expected finding would have graded that failure as correct.
+
+Splitting FND-002 and FND-004 is the less certain call. Section 19 explicitly permits consolidation, so a truth set that expects two must not penalize a system that produces one well-reasoned combined finding. That is a matching-policy consequence rather than a reason to expect one: the expected set records the finer decomposition because it can be collapsed by a matcher, and a coarser one cannot be split.
+
+Alternatives Considered:
+
+- Add a passage to the input fixture affirmatively establishing that delivery identifiers are not tracked
+- Keep FND-001 as a low-confidence finding rather than a gap
+- Consolidate FND-004 into FND-002 and expect two findings
+- Expect four findings and let the matcher accept three
+
+Tradeoffs:
+
+- **Removing FND-001 makes the scenario slightly easier to score well on and harder to score correctly on.** A system that reports nothing at all about webhook replay now scores the same on findings as one that correctly raises a gap and a question — the distinction only appears in the gap and question metrics.
+- Expecting three findings where the scenario document promised four invites the reading that Trace under-reports. The scenario document has to say why, at the point where the finding was.
+- The FND-002 and FND-004 split depends on a matcher that can accept one combined finding against two expected. That matcher does not exist and this entry assumes it will.
+- GAP-004 makes four documentation gaps where the contract recorded three. Under DEC-028 no count needs correcting, but any prose quoting "three gaps" does.
+- Section 20's candidate question 2 — whether delivery identifiers are stored and checked — becomes load-bearing rather than optional, since it is the question GAP-004 must raise.
+
+Open Questions:
+
+- Does GAP-004 need its own entry in section 21, or is a documentation gap that a source document self-declares a different category worth naming?
+- How does the matcher score one combined finding against two expected ones — full credit, partial, or a separate consolidation metric?
+- Section 22 lists ten rejected findings. Should "ForgeFlow lacks webhook replay protection" join them, given that it is now the most likely wrong conclusion in the scenario?

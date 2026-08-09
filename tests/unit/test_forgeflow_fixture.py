@@ -131,16 +131,43 @@ def test_evaluation_contract_exists_outside_the_input_directory() -> None:
 def test_evaluation_contract_is_well_formed() -> None:
     loaded: Any = yaml.safe_load(CONTRACT.read_text())
     assert isinstance(loaded, dict)
-    expected: Any = loaded["expected_outputs"]
-    for key in (
-        "findings",
-        "questions",
-        "documentation_gaps",
-        "contradictions",
-        "prompt_injection_fixture",
-    ):
-        assert key in expected, f"the contract lost its '{key}' entry in the move"
     assert loaded["benchmark_version"] == "1.0"
+    assert loaded["catalog_version"] == "0.1", (
+        "the contract pins the requirements catalog version its expected outputs were "
+        "authored against (DEC-027). There is no per-scenario requirements file."
+    )
+
+
+COUNT_KEYS = ("findings", "questions", "documentation_gaps", "contradictions")
+
+
+def test_evaluation_contract_declares_no_counts() -> None:
+    """DEC-028: the expected set is enumerated, never totalled.
+
+    This test inverted when DEC-028 landed. It used to require an `expected_outputs` block
+    carrying declared counts, because issue #18's concern was only *where* that block
+    lived -- moving it out of the input directory stopped it contaminating measurements.
+
+    DEC-028 went further. A declared count that can disagree with its own enumeration is a
+    second source of truth, and it did disagree: the contract said three findings and five
+    questions, the scenario document said four and ten. A count used as a grading target is
+    also a finding quota by another name, which is the thing moving the file was meant to
+    prevent and did not.
+
+    So the count must not come back anywhere in the contract, at any nesting depth.
+    """
+    loaded: Any = yaml.safe_load(CONTRACT.read_text())
+    assert "expected_outputs" not in loaded
+    assert "disputed" not in loaded, (
+        "the disputed-counts block records a conflict DEC-028 and DEC-029 resolved"
+    )
+    keys = set(walk_keys(loaded))
+    offenders = sorted(keys & set(COUNT_KEYS))
+    assert not offenders, (
+        f"{offenders} reintroduce declared expected-output counts. The expected set is "
+        f"the enumerated content of the expected-*.yaml files (DEC-028); a count is "
+        f"derived from a file when a report needs one and is stored nowhere."
+    )
 
 
 def test_no_source_code_reads_the_expected_directory() -> None:

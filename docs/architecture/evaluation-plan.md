@@ -102,25 +102,54 @@ Historical Comparison
 
 # 5. Evaluation Dataset
 
-Every benchmark scenario should be stored in version control.
+Every benchmark scenario should be stored in version control. The layout is fixed by DEC-027.
 
-Each scenario should contain:
+Each scenario directory has two subdirectories: `input/` holds the material supplied to Trace, and
+`expected/` holds the truth set. **Nothing under `expected/` is ever supplied to Trace during an
+assessment.** A benchmark that hands the system under test its own answer key measures nothing.
 
-scenario/
+```
+<scenario>/
+  input/                            documents and structured system input
+  expected/
+    expected-context.yaml
+    expected-threats.yaml
+    expected-control-mappings.yaml
+    expected-findings.yaml
+    expected-questions.yaml
+    expected-documentation-gaps.yaml
+    expected-observations.yaml
+    expected-rejections.yaml
+    reviewer-notes.md
+    evaluation-contract.yaml
+```
 
-README.md
+**The expected file list is derived, not enumerated.** There is one `expected-*.yaml` per domain
+object type the pipeline produces and the benchmark grades, plus `expected-rejections.yaml` for the
+negative set — claims a correct assessment should decline to make. Adding an object type to
+`data-model.md` adds a file here by construction. The list above is what that rule produces under
+the current object model, not an independent specification of it; where the two disagree, the rule
+governs and the list is stale.
 
-architecture.md
+`expected-observations.yaml` covers both `SourceObservation` kinds defined in DEC-021 —
+contradictions and injection attempts — because they are one object type.
 
-requirements.json
+`evaluation-contract.yaml` holds the scenario's `benchmark_version` and the `catalog_version` its
+expected outputs were authored against. **It declares no expected-output counts** (DEC-028). The
+expected set is the enumerated content of the files above; a count is derived from a file when a
+report needs one and is stored nowhere. A declared count that can disagree with its own enumeration
+is a second source of truth, and a count used as a target is a finding quota, which section 20
+rejects.
 
-expected-context.yaml
+There is no per-scenario requirements file. The whole requirements catalog reaches the mapping step
+on every call (DEC-024), so a scenario-scoped requirement list could only narrow what the pipeline
+sees. A scenario pins `catalog_version` instead, and expected control mappings reference catalog
+identifiers directly.
 
-expected-threats.yaml
-
-expected-findings.yaml
-
-review-notes.md
+Scenarios are discovered from `benchmarks/scenarios.yaml`, never by scanning directories. ForgeFlow
+lives at `demo/forgeflow/` because it is the demo as well as the first benchmark scenario;
+scenarios two onward live under `benchmarks/`. Both use the layout above, and the registry is what
+makes two locations safe.
 
 The expected outputs should evolve as understanding improves.
 

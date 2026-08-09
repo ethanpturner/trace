@@ -1,0 +1,30 @@
+# Benchmark scenario registry
+#
+# The authoritative list of benchmark scenarios and where each lives. Required by DEC-027.
+#
+# The evaluation harness reads scenarios from this file and never discovers them by scanning
+# directories. Two locations exist -- ForgeFlow at demo/forgeflow/ because it is the demo as
+# well as benchmark scenario one, and benchmarks/<slug>/ for scenarios that exist only to be
+# measured -- and directory discovery across both would reproduce the specified-twice failure
+# DEC-027 removed from the layout. A registry makes the benchmark set a stated fact rather
+# than a fact about the filesystem.
+#
+# Each scenario directory holds input/ and expected/, per evaluation-plan.md section 5.
+# Nothing under expected/ is supplied to Trace during an assessment.
+#
+# Nothing reads this file yet. The evaluation harness is not built.
+
+registry_version: "1.0"
+
+scenarios:
+  - slug: forgeflow
+    name: ForgeFlow
+    path: demo/forgeflow
+    # The only scenario that is also the demo. forgeflow-scenario.md is a narrative written
+    # to be read by a person and feeds roadmap Stage 6; scenarios two onward have no
+    # equivalent. That role split is why this one is not under benchmarks/.
+    narrative: demo/forgeflow/forgeflow-scenario.md
+    status: expected-outputs-not-authored
+
+# Roadmap Stage 5 calls for 8 to 12 scenarios. The remainder are unwritten; each will be
+# added here as benchmarks/<slug>/ with the same input/ and expected/ layout.
