@@ -54,6 +54,7 @@ from trace_ai.domain.enums import (
     SourceOrigin,
     ValidationStatus,
 )
+from trace_ai.domain.evidence import EvidenceReference
 
 DATA_MODEL = PROJECT_ROOT / "docs" / "architecture" / "data-model.md"
 
@@ -189,7 +190,7 @@ REGISTRY: dict[str, Registration] = {
     "5": Registration("Assessment", Status.IMPLEMENTED, Assessment),
     "6": Registration("AssessmentConfiguration", Status.IMPLEMENTED, AssessmentConfiguration),
     "7": Registration("SourceDocument", Status.PLANNED),
-    "8": Registration("EvidenceReference", Status.PLANNED),
+    "8": Registration("EvidenceReference", Status.IMPLEMENTED, EvidenceReference),
     "9": Registration("SystemContext", Status.PLANNED),
     "10": Registration("ContextClaim", Status.PLANNED),
     # Documented as `10a` rather than as its own numbered section, because DEC-021 added it after

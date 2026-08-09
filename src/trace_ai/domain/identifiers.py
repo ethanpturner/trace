@@ -176,15 +176,22 @@ def format_id(prefix: str, number: int) -> str:
     return f"{prefix}-{number:0{NUMBER_WIDTH}d}"
 
 
+def _article(word: str) -> str:
+    """`a` or `an`, so an error message about an Assessment does not read "a Assessment"."""
+    return "an" if word[:1].upper() in "AEIOU" else "a"
+
+
 def _validator(prefix: str) -> AfterValidator:
     """Build the field validator for one prefix's annotated type."""
+    expected = PREFIXES[prefix]
 
     def check(value: str) -> str:
         parsed = parse_id(value)
         if parsed.prefix != prefix:
             raise ValueError(
-                f"expected a {PREFIXES[prefix]} identifier ('{prefix}-...'), got {value!r}, "
-                f"which names a {parsed.object_type}"
+                f"expected {_article(expected)} {expected} identifier ('{prefix}-...'), "
+                f"got {value!r}, which names "
+                f"{_article(parsed.object_type)} {parsed.object_type}"
             )
         return value
 
