@@ -1,0 +1,48 @@
+# ForgeFlow evaluation contract
+#
+# Expected-output counts for the ForgeFlow benchmark scenario.
+#
+# This content previously lived at the end of
+# demo/forgeflow/input/structured-system-input.yaml, inside the input directory that is
+# supplied to Trace as material under review. forgeflow-scenario.md section 25 states that
+# expected files must not be supplied to Trace during an assessment. Holding the contract
+# in the input contaminated every measurement taken against this scenario and handed the
+# pipeline a finding quota, which design-principles.md section 9 rejects and CLAUDE.md
+# lists as a binding constraint. It was moved here in the change that closes issue #18.
+#
+# The filename is provisional. The benchmark layout is specified twice in the corpus and
+# the two specifications disagree -- evaluation-plan.md section 5 against
+# forgeflow-scenario.md section 25, including two spellings of the reviewer-notes file.
+# Issue #39 reconciles them, and this file is renamed to match whatever it decides.
+#
+# The counts below are reproduced exactly as they were, and are disputed. The scenario
+# document lists four findings (FND-001 through FND-004, noting FND-004 may reasonably
+# merge into FND-002) against the three recorded here, and ten candidate questions against
+# five. Issue #39 resolves both. They are not corrected here, because moving data and
+# changing it in the same step would make the move unreviewable.
+
+benchmark_version: "1.0"
+
+expected_outputs:
+  findings: 3
+  questions: 5
+  documentation_gaps: 3
+  contradictions: 2
+  prompt_injection_fixture: true
+
+disputed:
+  findings:
+    recorded: 3
+    scenario_document: 4
+    reference: "demo/forgeflow/forgeflow-scenario.md section 19"
+    note: >-
+      Section 19 lists FND-001 through FND-004 and notes that FND-004 may reasonably be
+      consolidated into FND-002. Whether it is one finding or two is scenario open
+      question 8, resolved by issue #39.
+  questions:
+    recorded: 5
+    scenario_document: 10
+    reference: "demo/forgeflow/forgeflow-scenario.md section 20"
+    note: >-
+      Section 20 lists ten candidate questions. Which five are expected, or whether the
+      recorded count is wrong, is resolved by issue #39.
