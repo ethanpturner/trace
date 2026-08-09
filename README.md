@@ -244,6 +244,10 @@ Against the seven-stage [roadmap](#roadmap) below, Trace is inside Stage 1.
   assessment behind. Status describes the assessment as a deliverable, never where the pipeline
   has reached, and moves through named transitions of which only archiving is a person's to make. Callers receive a handle carrying both stores scoped to one assessment, so code holding
   one cannot address another by passing a different string.
+- **The execution ledger** — `WorkflowRun` and `ExecutionRecord`, with a context manager that
+  records a node execution whether it succeeds or raises. The two deterministic nodes are
+  instrumented, so the first model-assisted node will find a ledger rather than invent one.
+  `total_model_calls` is zero, which is the correct value: nothing calls a model.
 - **Evidence retrieval and verification** — the application-controlled interface `agent-design.md`
   section 22 requires agents to sit behind, built before any agent so it has no exceptions. It
   re-reads the artifact and distinguishes three outcomes rather than two: a matching quotation, a
@@ -283,9 +287,9 @@ Against the seven-stage [roadmap](#roadmap) below, Trace is inside Stage 1.
 
 - No agent. No model call of any kind. Documents are ingested, turned into addressable evidence,
   and retrievable through the interface an agent would sit behind — but nothing sits behind it yet.
-- Almost no domain objects. The data model specifies roughly twenty-nine; `Assessment`,
-  `AssessmentConfiguration`, `SourceDocument`, and `EvidenceReference` are implemented and the rest
-  are not.
+- Six domain objects of roughly twenty-nine: `Assessment`, `AssessmentConfiguration`,
+  `SourceDocument`, `EvidenceReference`, `WorkflowRun`, and `ExecutionRecord`. The context,
+  threat, finding, and review objects are not implemented.
 - No CLI beyond a banner printing the environment and which credentials are configured.
 - No threat analysis, no findings, no report generation, no evaluation harness.
 - The demo scenario is not runnable.
