@@ -63,6 +63,13 @@ scripts/             repository utilities
 The import package is `trace_ai`, not `trace` — `trace` shadows a stdlib module, and importing it
 silently resolves to the standard library. The distribution and CLI are still named `trace`.
 
+**The same rule applies to modules inside the package.** Structured logging lives in
+`observability.py` because `logging.py` broke on the first import, and the reasoning that a
+namespaced module cannot shadow anything is exactly backwards: importing a submodule binds it as
+an attribute of its package, so `from trace_ai.logging import install` in `__init__.py` would set
+`trace_ai.logging` to that module and shadow the same file's `import logging`. Do not name a
+module after a standard-library one it or its package imports.
+
 ## Architecture in brief
 
 Trace is designed as a **fixed pipeline, not a free-form agent conversation**. Model-assisted steps
@@ -248,6 +255,13 @@ Squashing either pull request breaks the chain: the hotfix commit stops being an
   in `domain/identifiers.py` is for tests: a fresh instance restarts at `001`, so two of them
   collide and a resumed run would re-mint identifiers that already exist. Depend on the
   `IdentifierAllocator` protocol and let the persistence layer supply the implementation.
+- **Never quote source-document content into a log record.** Source documents are untrusted input
+  and may carry anything. Reference them by `SourceDocument.id` or `EvidenceReference.id`; the
+  redaction filter in `trace_ai.observability` replaces a field whose name marks it as
+  source-derived with a length and that identifier. Pass values as structured context
+  (`extra={...}` or `bind(...)`), never pre-formatted into the message — a secret interpolated
+  into the message string before `logging` sees it is indistinguishable from prose, and the filter
+  says so rather than pretending otherwise.
 - **Build an edited object with `model_validate`, never `model_copy`.** Domain objects are frozen,
   so a DEC-023 reviewer edit constructs a new instance and persists it under the same identifier.
   `model_copy(update=...)` looks like the API for that and validates nothing: an invalid enum

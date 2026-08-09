@@ -216,6 +216,10 @@ Against the seven-stage [roadmap](#roadmap) below, Trace is inside Stage 1.
   a `require()` accessor that fails with a message explaining how to fix it.
 - **Process bootstrap** — ordered `.env` loading, settings cache invalidation, and logging
   configuration, wired to a `trace` console entry point.
+- **Structured logging with redaction** — JSON records carrying scoped context, and a filter on
+  the handler that strips two things: provider credentials, by value type and by field name, and
+  source-document content, which is replaced by a length and the identifier of the object it came
+  from. Source text is referenced in a log line, never quoted into one.
 - **CI** — ruff, ruff format, mypy in strict mode, and pytest with coverage, on every pull request.
   Each check runs even when an earlier one fails, so one run reports every problem.
 - **Repository hygiene** — pre-commit and pre-push hooks including gitleaks secret scanning, a
