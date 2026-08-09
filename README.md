@@ -244,6 +244,9 @@ Against the seven-stage [roadmap](#roadmap) below, Trace is inside Stage 1.
   assessment behind. Status describes the assessment as a deliverable, never where the pipeline
   has reached, and moves through named transitions of which only archiving is a person's to make. Callers receive a handle carrying both stores scoped to one assessment, so code holding
   one cannot address another by passing a different string.
+- **`SourceDocument`** — one original source, with the four MVP input formats enforced at the
+  schema and the trust level required rather than defaulted, so a call site that does not state one
+  fails rather than inheriting `untrusted` quietly.
 - **`EvidenceReference`** — the object every conclusion is defended through. It can only cite text
   that exists: `quoted_text` is required and non-empty, and there is no field by which a reference
   says a document is silent. That belongs to a documentation gap or a question, which are separate
@@ -266,7 +269,8 @@ Against the seven-stage [roadmap](#roadmap) below, Trace is inside Stage 1.
 
 - No document ingestion. No agent. No model call of any kind.
 - Almost no domain objects. The data model specifies roughly twenty-nine; `Assessment`,
-  `AssessmentConfiguration`, and `EvidenceReference` are implemented and the rest are not.
+  `AssessmentConfiguration`, `SourceDocument`, and `EvidenceReference` are implemented and the rest
+  are not.
 - No CLI beyond a banner printing the environment and which credentials are configured.
 - No threat analysis, no findings, no report generation, no evaluation harness.
 - The demo scenario is not runnable.

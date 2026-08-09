@@ -1837,3 +1837,88 @@ Open Questions:
 - Is the checkpoint review package rendered as text, as a file the reviewer opens in an editor, or as both?
 - At what command count or help-quality threshold is a CLI framework worth the dependency?
 - Does a text user interface become attractive for checkpoint 2 specifically, without becoming a second interface for everything else?
+
+## DEC-033: `IngestionStatus` has three values; the failure reason lives on the ExecutionRecord
+
+Date: 2026-08-09
+
+Status: Accepted
+
+Decision:
+
+`data-model.md` section 7 requires `ingestion_status` and enumerates nothing. The vocabulary is
+**three values**:
+
+| Value | Meaning | Requires |
+|---|---|---|
+| `registered` | Recorded and preserved. Its bytes are stored and hashed; nothing has read them. | `ingested_at` and `normalized_path` unset |
+| `ingested` | Normalized, segmented, and indexed. | both set |
+| `failed` | Ingestion was attempted and did not complete. | `normalized_path` unset |
+
+`registered` is the default. A document exists before anything reads it, which is why section 7
+makes `ingested_at` optional, and that optionality is exactly what would otherwise let a document
+claim it was ingested while carrying nothing an evidence reference could point at. The consistency
+rule is enforced on the model.
+
+**The success value is `ingested`, not `normalized`.** Section 7's field is `ingested_at`, described
+as the successful-ingestion timestamp, and `current-architecture.md` section 5.4 calls the whole
+component ingestion, of which normalization is one of nine responsibilities. Naming the state
+`normalized` would give one event two vocabularies.
+
+**There is no separate `indexed` state.** Section 5.4 lists normalizing, dividing into addressable
+sections, preserving locations, and generating hashes as responsibilities of one component, and the
+milestone builds them as one node. A state between them would describe a moment no code can be
+interrupted at.
+
+**A failed ingestion says that it failed and not why.** The reason belongs on the `ExecutionRecord`
+for the ingestion node, which section 27 already gives `error_type` and a safe `error_message`.
+Recording it on `SourceDocument` as well would be two records of one event, and they would disagree
+the first time one was written and the other was not.
+
+Why:
+
+Section 7 leaves the field required and undefined, which is the shape that produces a vocabulary
+invented separately at each call site — three spellings of "ok" and no agreement on what failure
+looks like. Settling it with the object costs one entry and removes that.
+
+The distinction that has to exist is registration from ingestion, and the corpus already implies it
+twice: `ingested_at` is optional while `created_at` is required, and the artifact store's `sources/`
+and `normalized/` directories are separate places written at separate times. A document whose bytes
+are stored but not yet read is a real state, not an edge case — it is what exists between
+`trace source add` and the ingestion node running.
+
+Adding states was the temptation and the corpus argues against it. Every additional value has to
+correspond to a moment the system can actually be observed in, and a status the code never writes
+is worse than absent: someone will eventually branch on it.
+
+Alternatives Considered:
+
+- `pending`, `processing`, `complete`, `failed`, mirroring a generic job lifecycle
+- Separate `normalized` and `indexed` states, following section 5.4's responsibility list literally
+- A `partially_ingested` state for a document that normalized but failed segmentation
+- A boolean `ingested` flag with the failure recorded only on the `ExecutionRecord`
+- An `error_message` field on `SourceDocument`, alongside the status
+
+Tradeoffs:
+
+- **A failed document requires a join to explain itself.** Reading why ingestion failed means
+  finding the `ExecutionRecord` for that node, which is more work than reading a field. That is the
+  intended cost of one record per event, and it is only payable once the execution ledger exists
+  (#57) — until then, a failed document is a state with no accessible reason.
+- `processing` is absent, so a document being ingested is indistinguishable from one that was never
+  attempted. DEC-017 makes runs pause by exiting rather than holding state, so nothing is
+  concurrently in flight, but a crashed run leaves documents at `registered` that were mid-ingest.
+- Three values will not survive PDF ingestion unchanged if page extraction becomes a separate,
+  separately-failing step.
+- Enforcing the consistency rule on the model means a caller must set `ingested_at`,
+  `normalized_path`, and the status together. That is correct and it is three things to remember at
+  one call site.
+
+Open Questions:
+
+- Does a crashed run need a way to distinguish "never attempted" from "attempted and interrupted",
+  or is re-ingesting a `registered` document always safe?
+- When re-ingestion produces different normalized output, does the document keep its identity, or
+  does DEC-023's supersession apply?
+- Should `failed` carry the identifier of the `ExecutionRecord` that explains it, which is a
+  reference rather than a duplicate?
