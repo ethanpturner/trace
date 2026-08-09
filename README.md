@@ -300,10 +300,10 @@ Against the seven-stage [roadmap](#roadmap) below, Trace is inside Stage 1.
   to parse apart from an analysis that cannot be concluded, bounded exponential backoff, validation
   feedback carried into the next attempt, and the failed output preserved in the assessment's debug
   area rather than in an error message.
-- **The prompt registry** — prompts as version-controlled files, with the three shared blocks
-  composed in rather than copied into each one, and the hash taken over the composed text so a
-  change to a shared block is visible in every prompt that includes it. The tree is empty until the
-  prompts are authored; the loader and its guards are not.
+- **The prompt registry and the first prompts** — `extract-context-v1` and the three shared blocks
+  (source-content boundary, evidence policy, uncertainty policy), composed rather than copied, with
+  the hash taken over the composed text. The proposal schema is *substituted* into the prompt from
+  the application's own export, so the prompt cannot describe a shape the application would reject.
 - **The model seam** — one protocol between the application and any provider (DEC-014), a
   deterministic substitute and a replay cache behind the same interface, and `model_profile`
   resolving to a provider, a model, generation settings, and published rates. The Anthropic

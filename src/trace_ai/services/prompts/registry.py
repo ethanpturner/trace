@@ -20,6 +20,12 @@ the error names what was missing.
 the hash of every prompt that includes it, which is exactly the change most likely to alter
 behaviour without anyone noticing.
 
+**A prompt substitutes rather than restates.** `{{ schema.context_extraction_proposal }}` in a
+prompt is filled at composition from the application's own exported schema, so the two cannot drift
+-- a copy pasted into the file drifts until a test notices, and this cannot drift at all. An
+unresolved marker is refused for the same reason a missing shared block is: a prompt that composes
+with a hole in it still runs and still answers.
+
 **`PromptMetadata` is a dataclass rather than a domain object.** `data-model.md` section 40 defers
 persisting `PromptDefinition` until the workflow operates, and `tests/unit/test_data_model_conformance.py`
 holds that deferral. The fields match section 29 and a test compares them to the document; what is
@@ -32,6 +38,7 @@ one directory differently is a directory nobody can create correctly.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from pathlib import Path  # noqa: TC003 -- a runtime default, not only an annotation
 from typing import TYPE_CHECKING, Any, Final
@@ -54,6 +61,7 @@ __all__ = [
     "PromptNotFoundError",
     "PromptRegistry",
     "PromptSyntaxError",
+    "UnresolvedMarkerError",
     "duplicated_shared_blocks",
 ]
 
@@ -69,6 +77,9 @@ _FENCE: Final = "---"
 # What separates one composed part from the next. Fixed, so composing the same parts twice produces
 # byte-identical text and the hash is a property of the content rather than of the run.
 _JOIN: Final = "\n\n"
+
+# `{{ schema.context_extraction_proposal }}` -- a value the application supplies at composition.
+_MARKER = re.compile(r"\{\{\s*([a-z][a-z0-9_]*\.[a-z][a-z0-9_]*)\s*\}\}")
 
 
 class PromptError(RuntimeError):
@@ -100,6 +111,21 @@ class MissingSharedBlockError(PromptError):
         )
         self.prompt = prompt
         self.block = block
+
+
+class UnresolvedMarkerError(PromptError):
+    """A composed prompt still carries a substitution marker nobody filled.
+
+    Named separately because the consequence matches a missing shared block rather than a missing
+    file: the prompt exists, composes, and is missing the part that told the agent what to return.
+    """
+
+    def __init__(self, prompt: str, markers: list[str]) -> None:
+        super().__init__(
+            f"prompt {prompt!r} still contains {', '.join(sorted(markers))} after composition. "
+            f"Supply a substitution for each; a prompt composed with a hole in it still runs."
+        )
+        self.markers = markers
 
 
 class PromptSyntaxError(PromptError):
@@ -258,12 +284,28 @@ class PromptRegistry:
     def __iter__(self) -> Iterator[str]:
         return iter(self.references())
 
-    def compose(self, prompt_id: str, version: str) -> ComposedPrompt:
-        """Assemble one prompt from its declared shared blocks and its own body.
+    def markers(self, prompt_id: str, version: str) -> list[str]:
+        """The substitution markers a prompt declares, sorted."""
+        found = self._prompts.get((prompt_id, version))
+        if found is None:
+            raise PromptNotFoundError(prompt_id, version, self.references())
+        return sorted(set(_MARKER.findall(found.body)))
+
+    def compose(
+        self,
+        prompt_id: str,
+        version: str,
+        substitutions: dict[str, str] | None = None,
+    ) -> ComposedPrompt:
+        """Assemble one prompt from its declared shared blocks, its own text, and its substitutions.
 
         Shared blocks come first, in the order the prompt declares them, then the prompt's own
         text. The order is fixed and recorded: composing the same parts twice produces byte-
         identical output, which is what makes the hash a property of the content.
+
+        Substitutions fill `{{ namespace.name }}` markers. Every marker must be supplied: a prompt
+        composed with an unfilled one still runs and still answers, missing the part the marker was
+        carrying.
         """
         found = self._prompts.get((prompt_id, version))
         if found is None:
@@ -283,7 +325,20 @@ class PromptRegistry:
             parts.append(block)
             composed_from.append(f"{SHARED_DIRECTORY}/{name}")
 
-        parts.append(found.body)
+        body = found.body
+        for name, value in (substitutions or {}).items():
+            body = _MARKER.sub(
+                lambda match, name=name, value=value: (  # type: ignore[misc]
+                    value if match.group(1) == name else match.group(0)
+                ),
+                body,
+            )
+
+        remaining = sorted(set(_MARKER.findall(body)))
+        if remaining:
+            raise UnresolvedMarkerError(f"{prompt_id}-{version}", remaining)
+
+        parts.append(body)
         composed_from.append(str(found.path.relative_to(self.root)))
         text = _JOIN.join(parts)
 
