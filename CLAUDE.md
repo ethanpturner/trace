@@ -255,6 +255,11 @@ Squashing either pull request breaks the chain: the hotfix commit stops being an
   in `domain/identifiers.py` is for tests: a fresh instance restarts at `001`, so two of them
   collide and a resumed run would re-mint identifiers that already exist. Depend on the
   `IdentifierAllocator` protocol and let the persistence layer supply the implementation.
+- **Reach the filesystem through `ArtifactStore`, never through a path you built.** It is bound to
+  one assessment, creates `sources/`, `normalized/`, `outputs/`, `traces/`, and `evaluation/` on
+  demand, and treats `SourceDocument.filename` as untrusted — a caller-supplied name reaching a
+  path expression. It also refuses to overwrite a stored file with different content, because
+  every `EvidenceReference` into the original would keep a hash that no longer verifies.
 - **Never quote source-document content into a log record.** Source documents are untrusted input
   and may carry anything. Reference them by `SourceDocument.id` or `EvidenceReference.id`; the
   redaction filter in `trace_ai.observability` replaces a field whose name marks it as
