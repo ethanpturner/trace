@@ -919,7 +919,7 @@ Open Questions:
 
 - Does a partially-decided checkpoint need to be visible as such, or is "paused with *n* of *m* decided" derivable from the decision rows alone?
 - Should resume verify that the objects pending decision still exist and are unchanged since the pause, and what happens when they are not?
-- Where does the reviewer identity on a `ReviewerDecision` come from under DEC-004, where there is no authentication?
+- ~~Where does the reviewer identity on a `ReviewerDecision` come from under DEC-004, where there is no authentication?~~ Answered by DEC-023: a configured local string defaulting to the OS username, recorded for evaluation attribution and explicitly not authentication.
 - Does an abandoned paused run need an expiry, or is accumulation acceptable for a local single-user application?
 
 ## DEC-018: Assign prefixed sequential identifiers at persistence, scoped per assessment
@@ -1229,3 +1229,62 @@ Open Questions:
 - Does `Threat`, `ControlMapping`, or `Finding` need per-evidence strength too, or is recording it once at evidence validation sufficient for everything downstream?
 - Is `rationale` required for `unknown` and `contradicted` claims as well, or only where the claim asserts something?
 - Does removing the numeric score leave the evaluation plan's reviewer-agreement metrics with enough resolution to be meaningful?
+
+## DEC-023: Mutate objects in place, record the delta on ReviewerDecision, version only SystemContext
+
+Date: 2026-08-09
+
+Status: Accepted
+
+Decision:
+
+**Three mechanisms, for three distinct causes.** The corpus already contained all three; they had never been distinguished.
+
+**A reviewer edit mutates the object in place and writes a `ReviewerDecision`.** The decision carries `prior_value` and `updated_value` holding **only the fields that changed**, before and after — not the whole object. `data-model.md` section 25 calls these "relevant prior state," and keeping them to the delta is what makes reviewer edit rate computable per field rather than per object.
+
+**`supersedes_id` records a generated object replacing a prior generated object**, not a human edit. Its case is re-extraction: DEC-017 lists "request re-extraction" as a reviewer action, and the claims that come back supersede the ones they replace. The reviewer's decision to request re-extraction is a `ReviewerDecision`; the claims that result carry `supersedes_id`.
+
+**`SystemContext` is the only versioned object.** Its integer `version` increments on approval, alongside `approved_at` and `approved_by`. It is versioned because it is the approved baseline that every later stage reasons from, and because `current-architecture.md` section 5.6 requires threat analysis to work from that baseline rather than reinterpreting source documents.
+
+History is reconstructed by **replaying decisions in order** against an object's generated state. That satisfies section 2.6's requirement that significant changes remain traceable without the machinery it declines.
+
+`reviewer_id` is a **configured local string**, defaulting to the operating-system username, recorded so evaluation can attribute decisions when more than one person reviews the same benchmark. It is not authentication and must not be treated as such; DEC-004 has no authentication to draw from. This closes DEC-017's open question about where reviewer identity comes from.
+
+Why:
+
+Open question 10 asked whether reviewer edits create new object versions or update the current object with decision history. The corpus answers it in two places that had not been read together.
+
+**Section 2.6 states that "the MVP does not need full event sourcing."** Immutable objects with `supersedes_id` chains on everything is event sourcing in effect, whatever it is called — every read resolves a chain to a head, and every write appends. That option is ruled out by a sentence already in the model.
+
+**`supersedes_id` exists on exactly two objects**, `ContextClaim` and `Requirement`, and `Requirement`'s serves catalog versioning across published catalog versions, which is authored rather than reviewed. If the model intended immutable-with-supersedes as its edit mechanism, the field would be on every object that a reviewer can touch. It is on one.
+
+Meanwhile `ReviewerDecision` carries `prior_value` and `updated_value` — fields whose only purpose is recording what an edit changed. They exist for precisely the mechanism this decision adopts, and would be dead weight under an immutable scheme, where the prior value is simply the superseded object.
+
+Section 2.5's wording is the third confirmation. It says reviewer actions should be recorded "rather than silently overwriting generated content." The load-bearing word is *silently*. Overwriting is acceptable when it is recorded; what is forbidden is losing the fact that a human changed something.
+
+`SystemContext` earns its exception because it is the only object whose *whole* state is approved as a unit. Everything else is approved or edited individually, so a per-object version number would count edits rather than mark a baseline. A context version is meaningful — analysis was performed against version 2 — in a way that a claim version would not be.
+
+Making the delta rather than the whole object the recorded value matters for evaluation. Reviewer edit rate is a primary metric, and "the reviewer changed this finding" is much less useful than "the reviewer changed its severity and left everything else." A whole-object snapshot pair makes that a diff computed after the fact, over objects whose schema may since have changed.
+
+Alternatives Considered:
+
+- Immutable objects with `supersedes_id` chains on every reviewable object
+- Whole-object snapshots in `prior_value` and `updated_value`
+- Versioning every object with an integer, as `SystemContext` does
+- A separate revision table, decoupled from `ReviewerDecision`
+- Deriving history from `ExecutionRecord` alone, with no per-object trail
+
+Tradeoffs:
+
+- **Reconstructing an object's history means replaying decisions**, so there is no single query that returns its state at a past moment. For a local single-user MVP with tens of objects that is fine, and it stops being fine at a scale this project is not designed for.
+- Recording only the changed fields means a decision is only interpretable against the schema in force when it was written. DEC-020 already refuses to load assessments across incompatible model versions, so the two decisions fail together — but it does mean an old decision cannot be read even in isolation.
+- The reviewer sees current state, not generated state, so "what did the model originally say" requires walking back. That is the intended trade for a simple read path, and it makes the lineage view — a Stage 5 deliverable — do real work rather than a straight read.
+- Three mechanisms for three causes is more to explain than one uniform rule, and a future implementer may reach for `supersedes_id` when editing, or write a decision when superseding. The distinction is by cause, which is a judgment, not a type.
+- `reviewer_id` defaulting to an OS username is trivially forgeable and looks like identity in a data model that also records approvals. Nothing enforces that it is not read as authentication.
+
+Open Questions:
+
+- Should a reviewer edit that reverts an earlier edit be recorded as a new decision or as a retraction of the prior one?
+- Does `Finding` need `supersedes_id` for re-consolidation, in the way `ContextClaim` has it for re-extraction?
+- When a reviewer edits an object that a later stage has already consumed, does anything invalidate the downstream work?
+- Is per-field delta granularity sufficient for a nested field, or does an edit inside `metadata` need its own path notation?

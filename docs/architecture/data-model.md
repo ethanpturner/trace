@@ -181,6 +181,18 @@ Trace should preserve:
 
 The MVP does not need full event sourcing, but significant changes should remain traceable.
 
+Three mechanisms, for three distinct causes (DEC-023):
+
+| Cause | Mechanism |
+|---|---|
+| A reviewer edits an object | Mutate in place; write a `ReviewerDecision` carrying the changed fields before and after |
+| A workflow node regenerates an object | The new object carries `supersedes_id` |
+| The approved context baseline advances | `SystemContext.version` increments on approval |
+
+`SystemContext` is the only versioned object, because it is the only one whose whole state is
+approved as a unit and the only one later stages reason from as a baseline. A per-object version
+number elsewhere would count edits rather than mark anything.
+
 ## 3. Core Entity Relationships
 
 erDiagram
@@ -676,7 +688,7 @@ Examples:
 | reviewer_notes | string | No | Reviewer explanation |
 | created_at | datetime | Yes | Creation timestamp |
 | updated_at | datetime | Yes | Last update |
-| supersedes_id | string | No | Prior claim replaced by this claim |
+| supersedes_id | string | No | Prior claim this one replaces, on **re-extraction**. Not used for reviewer edits (DEC-023) |
 
 ## Status values
 
@@ -1607,6 +1619,21 @@ Records a human decision affecting an assessment object.
 | created_at | datetime | Yes | Decision timestamp |
 | workflow_run_id | string | No | Related workflow run |
 
+## Note on prior_value and updated_value
+
+These hold **only the fields that changed**, before and after — not a whole-object snapshot
+(DEC-023). Reviewer edit rate is a primary evaluation metric, and "the reviewer changed the
+severity and left everything else" is more useful than "the reviewer changed this finding."
+
+A reviewer edit **mutates the object in place** and writes one of these records. Section 2.5 forbids
+overwriting generated content *silently*; recording the delta is what makes the overwrite
+non-silent. History is reconstructed by replaying decisions in order against the object's generated
+state, which satisfies section 2.6 without the event sourcing it declines.
+
+`reviewer_id` is a configured local string defaulting to the operating-system username. It exists so
+evaluation can attribute decisions when more than one person reviews the same benchmark. It is not
+authentication and must not be treated as such — DEC-004 has none to draw from.
+
 ## Example
 
 id: dec-019
@@ -2165,7 +2192,7 @@ These can be added later without expanding the initial MVP unnecessarily.
 7. ~~Should confidence scores be generated numerically or only categorically?~~ Resolved by DEC-022: categorically only. `confidence_score` is removed, and `EvidenceStrength` moves onto `EvidenceAssessment` so model confidence and evidence strength stay separate, as design principle 15 requires.
 8. How should multiple model outputs proposing the same object be merged?
 9. How should object revisions be stored?
-10. Should reviewer edits create new object versions or update the current object with decision history?
+10. ~~Should reviewer edits create new object versions or update the current object with decision history?~~ Resolved by DEC-023: update in place with decision history. Section 2.6 already declined full event sourcing, and `ReviewerDecision`'s `prior_value` and `updated_value` exist for exactly this.
 11. How much model-generation metadata belongs on each object?
 12. Should workflow state store objects directly or only identifiers?
 13. ~~Which objects belong in SQLite versus version-controlled YAML or JSON?~~ Resolved by DEC-020: the split is by authorship. Authored artifacts are version-controlled files; generated objects are rows; generated files live under `data/`.
