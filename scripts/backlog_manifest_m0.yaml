@@ -204,3 +204,13 @@ issues:
     body_file: backlog_bodies/m0-dx-21.md
     size: S
     blocked_by: []
+
+  # Added after the initial seeding. Found while implementing m1-assessment-02, which needed a
+  # transition table the corpus does not state and shipped an invented one, stated as invented.
+  - seed: m0-dx-22
+    title: "Decide what Assessment.status means and which values it uses"
+    milestone: "M0 Decisions"
+    labels: ["comp:assessment", "type:decision", "needs-decision", "design-change"]
+    body_file: backlog_bodies/m0-dx-22.md
+    size: S
+    blocked_by: []
