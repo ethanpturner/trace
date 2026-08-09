@@ -5,6 +5,14 @@ protocol, an explicit table of permitted transitions, and the ceilings `agent-de
 requires the orchestrator to enforce.
 """
 
+from trace_ai.workflow.errors import (
+    NON_RETRYABLE,
+    RETRYABLE,
+    SECTION_11_FAILURE_CLASSES,
+    ErrorClass,
+    WorkflowError,
+    classify_model_failure,
+)
 from trace_ai.workflow.limits import Budget, LimitExceededError, LimitKind
 from trace_ai.workflow.nodes import Node, NodeContext, NodeResult
 from trace_ai.workflow.orchestrator import Orchestrator, RunOutcome
@@ -17,6 +25,13 @@ from trace_ai.workflow.phases import (
     check_transition,
     successor,
 )
+from trace_ai.workflow.retry import (
+    AttemptContext,
+    AttemptFailedError,
+    RetryPolicy,
+    preserve_failed_output,
+    run_with_retries,
+)
 from trace_ai.workflow.state import (
     AssessmentState,
     NextAction,
@@ -26,10 +41,16 @@ from trace_ai.workflow.state import (
 
 __all__ = [
     "NODES_BY_PHASE",
+    "NON_RETRYABLE",
     "PAUSE_PHASES",
+    "RETRYABLE",
+    "SECTION_11_FAILURE_CLASSES",
     "TRANSITIONS",
     "AssessmentState",
+    "AttemptContext",
+    "AttemptFailedError",
     "Budget",
+    "ErrorClass",
     "LimitExceededError",
     "LimitKind",
     "NextAction",
@@ -40,8 +61,13 @@ __all__ = [
     "PendingHumanReview",
     "Phase",
     "RemainingLimits",
+    "RetryPolicy",
     "RunOutcome",
     "TransitionError",
+    "WorkflowError",
     "check_transition",
+    "classify_model_failure",
+    "preserve_failed_output",
+    "run_with_retries",
     "successor",
 ]

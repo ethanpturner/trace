@@ -288,6 +288,10 @@ Against the seven-stage [roadmap](#roadmap) below, Trace is inside Stage 1.
   protocol covering all three execution types, and the five ceilings `agent-design.md` section 27
   requires, checked before a step rather than after it. There is no orchestration framework
   (DEC-016). No pipeline node exists yet to register against it.
+- **The error taxonomy and retry policy** — a closed vocabulary that keeps an output which failed
+  to parse apart from an analysis that cannot be concluded, bounded exponential backoff, validation
+  feedback carried into the next attempt, and the failed output preserved in the assessment's debug
+  area rather than in an error message.
 - **The prompt registry** — prompts as version-controlled files, with the three shared blocks
   composed in rather than copied into each one, and the hash taken over the composed text so a
   change to a shared block is visible in every prompt that includes it. The tree is empty until the

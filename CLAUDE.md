@@ -319,6 +319,13 @@ Squashing either pull request breaks the chain: the hotfix commit stops being an
   **stops** the run with a classified error; it never skips a node or shrinks a request.
   `AssessmentState` holds identifiers and routing only (`data-model.md` section 31's state-design
   rule), because a state carrying content is a second copy of the authoritative data.
+- **Retry the attempt, never the conclusion** (`agent-design.md` section 26). `workflow/errors.py`
+  holds a closed taxonomy: schema failures, provider failures, and missing relationships are
+  retryable; insufficient evidence, an unresolved contradiction, and required reviewer input are
+  not, whatever the retry budget says. Retrying an analysis condition invites an agent to fabricate
+  an answer on the third attempt, because producing one is the only way to stop being retried. A
+  retry carries **validation feedback** forward or it is a repetition, and a failed attempt's raw
+  output goes to `traces/` — never into `error_message`, which section 27 requires to be safe.
 - **A prompt is a file, and shared blocks are composed rather than copied.** `agent-design.md`
   section 34 is authoritative for the tree; `current-architecture.md` section 10 was corrected to
   match it. `services/prompts/` reads the tree, joins each declared `shared/` block in order, and
