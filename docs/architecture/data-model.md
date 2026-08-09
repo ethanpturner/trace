@@ -79,6 +79,8 @@ qst- Question
 
 gap- Documentation gap
 
+obs- Source observation
+
 dec- Reviewer decision
 
 run- Workflow run
@@ -87,7 +89,25 @@ exe- Execution record
 
 eval- Evaluation result
 
-UUIDs may be used internally, with readable prefixes added for debugging and demonstration.
+## Two classes of identifier
+
+**Authored identifiers** are written by hand and carry meaning. The requirements catalog's
+`req-AUTH-001` is the only class currently in use. They are globally unique, stable across catalog
+versions, and are the only identifiers a benchmark expected-output file may reference.
+
+**Generated identifiers** are minted during an assessment, in the form `<prefix>-<NNN>` using the
+prefixes above. They are unique **within their assessment**, not globally — `thr-007` in two
+assessments is two different objects, and an identifier is fully qualified only by
+`(assessment_id, id)`.
+
+A generated identifier is assigned by the persistence layer at insert, from a monotonic counter per
+`(assessment_id, prefix)`. It is not assigned at construction: agents return proposal objects that
+structurally cannot carry an identifier, so the application assigns one when it takes ownership
+(DEC-018).
+
+No generated identifier appears in a benchmark expected-output file. Expected outputs reference
+authored catalog identifiers and match on content — the requirement, the affected components — not
+on generated identity.
 
 ### 2.2 Evidence must be addressable
 
@@ -160,6 +180,18 @@ Trace should preserve:
 - Workflow execution history
 
 The MVP does not need full event sourcing, but significant changes should remain traceable.
+
+Three mechanisms, for three distinct causes (DEC-023):
+
+| Cause | Mechanism |
+|---|---|
+| A reviewer edits an object | Mutate in place; write a `ReviewerDecision` carrying the changed fields before and after |
+| A workflow node regenerates an object | The new object carries `supersedes_id` |
+| The approved context baseline advances | `SystemContext.version` increments on approval |
+
+`SystemContext` is the only versioned object, because it is the only one whose whole state is
+approved as a unit and the only one later stages reason from as a baseline. A per-object version
+number elsewhere would count edits rather than mark anything.
 
 ## 3. Core Entity Relationships
 
@@ -247,7 +279,12 @@ medium
 
 high
 
-A numeric confidence score may also be stored, but it should not create false precision.
+Confidence is **categorical only**. No numeric score is stored (DEC-022): a decimal alongside a
+three-value enum invites reading confidence as probability, which design principle 15 warns
+against, and conflates model confidence with evidence strength, which the same principle requires
+be kept separate.
+
+Model confidence lives here. Evidence strength lives on `EvidenceAssessment.evidence_strengths`.
 
 Suggested interpretation:
 
@@ -260,6 +297,11 @@ Suggested interpretation:
 ## 4.3 EvidenceStrength
 
 Describes how strongly an evidence reference supports a claim.
+
+Carried by `EvidenceAssessment.evidence_strengths`, a map from evidence identifier to strength
+(DEC-022). It sits on the assessment rather than on the `EvidenceReference` because **strength is
+relational, not intrinsic**: the same passage can be direct evidence for one claim and merely
+contextual for another.
 
 Possible values:
 
@@ -428,9 +470,9 @@ model_profile: primary-development
 
 threat_methodology: stride-scenario-based
 
-maximum_model_calls: 25
+maximum_model_calls: 40
 
-maximum_cost: 5.00
+maximum_cost: 8.00
 
 maximum_retries_per_node: 2
 
@@ -439,6 +481,21 @@ retain_debug_artifacts: true
 enable_external_tracing: false
 
 evidence_threshold: direct-or-confirmed
+
+## Note on the example limits
+
+`maximum_model_calls` and `maximum_cost` above were originally 25 and 5.00. `scripts/estimate_cost.py`
+models the pipeline against the ForgeFlow corpus and predicts **28 model calls**, which the original
+limit would have halted, and **$2.25 to $5.97** per assessment on `claude-opus-5` depending on how
+much adaptive thinking the effort level produces — so the original cost limit held at low effort and
+was exceeded at high effort.
+
+The values are raised to leave headroom rather than to describe a target. They remain examples; a
+real assessment sets its own.
+
+The estimate's dominant finding is that **thinking tokens, billed as output, are roughly 85% of the
+cost**. Effort level is therefore the cost lever, ahead of model tier and well ahead of prompt
+caching, which saves about 12%.
 
 ## Note on the human checkpoints
 
@@ -474,7 +531,7 @@ Represents an original source supplied to the assessment.
 | origin | SourceOrigin | Yes | Source origin |
 | original_path | string | No | Local artifact location |
 | normalized_path | string | No | Normalized content location |
-| content_hash | string | Yes | Hash of original content |
+| content_hash | string | Yes | `sha256:<hex>` over the original file's raw bytes (DEC-019) |
 | title | string | No | Document title |
 | created_at | datetime | Yes | Registration timestamp |
 | ingested_at | datetime | No | Successful ingestion timestamp |
@@ -514,7 +571,7 @@ Represents an addressable piece of evidence from a source.
 | page_number | integer | No | Page number when applicable |
 | quoted_text | string | Yes | Relevant source excerpt |
 | normalized_text | string | No | Cleaned text |
-| content_hash | string | Yes | Evidence content hash |
+| content_hash | string | Yes | `sha256:<hex>` over the UTF-8 bytes of `quoted_text` (DEC-019) |
 | source_origin | SourceOrigin | Yes | Evidence origin |
 | created_at | datetime | Yes | Creation timestamp |
 | metadata | map[string, any] | No | Additional location details |
@@ -624,14 +681,14 @@ Examples:
 | value | any | Yes | Asserted value |
 | status | string | Yes | Documented, inferred, confirmed, etc. |
 | confidence | ConfidenceLevel | Yes | Confidence classification |
-| confidence_score | decimal | No | Optional score from 0 to 1 |
+| rationale | string | No | Why the claim holds. **Required when `status` is `inferred` or `assumed`** (DEC-022) |
 | evidence_ids | list[string] | No | Supporting evidence |
 | source_origin | SourceOrigin | Yes | Claim origin |
 | generated_by | string | No | Workflow node or reviewer |
 | reviewer_notes | string | No | Reviewer explanation |
 | created_at | datetime | Yes | Creation timestamp |
 | updated_at | datetime | Yes | Last update |
-| supersedes_id | string | No | Prior claim replaced by this claim |
+| supersedes_id | string | No | Prior claim this one replaces, on **re-extraction**. Not used for reviewer edits (DEC-023) |
 
 ## Status values
 
@@ -674,6 +731,53 @@ evidence_ids:
 source_origin: uploaded_document
 
 generated_by: context-extraction-v1
+
+# 10a. SourceObservation
+
+## Purpose
+
+Records something observed **about the source material**, as distinct from an assertion about the
+reviewed system (DEC-021).
+
+A `ContextClaim` asserts that authentication is delegated or that the API is internet-accessible. A
+`SourceObservation` asserts that two documents disagree, or that a passage attempts to instruct its
+reader. The distinction is categorical: one describes the system, the other describes the documents.
+
+## Fields
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| id | string | Yes | Stable observation identifier |
+| assessment_id | string | Yes | Parent assessment |
+| kind | string | Yes | `contradiction` or `injection_attempt` |
+| summary | string | Yes | What was observed |
+| evidence_ids | list[string] | Yes | Passages the observation rests on |
+| subject_claim_ids | list[string] | No | Context claims the observation bears on |
+| status | ObjectStatus | Yes | Lifecycle state |
+| generated_by | string | No | Workflow node or reviewer |
+| reviewer_notes | string | No | Reviewer explanation |
+| created_at | datetime | Yes | Creation timestamp |
+
+## Kind values
+
+contradiction
+
+injection_attempt
+
+## Validation rules
+
+- `contradiction` requires at least two evidence references.
+- `injection_attempt` requires at least one.
+- A SourceObservation carries no severity and never becomes a Finding. A Finding asserts a weakness
+  in the reviewed system; an observation asserts something about a document.
+- A contradiction does not resolve itself. Where the answer would materially change the assessment,
+  a `Question` is raised alongside it. Trace must not silently choose the safer statement.
+
+## Note on `ContextClaim.contradicted`
+
+`ContextClaim`'s `contradicted` status means a SourceObservation of kind `contradiction` references
+that claim in `subject_claim_ids`. The reference is one-directional, so a claim does not carry a
+field naming what contradicts it and the two cannot disagree about whether they disagree.
 
 # 11. Component
 
@@ -1213,6 +1317,7 @@ Represents an explicit evaluation of whether evidence supports a claim, control,
 | subject_type | string | Yes | Object type being evaluated |
 | subject_id | string | Yes | Object being evaluated |
 | evidence_ids | list[string] | Yes | Evidence evaluated |
+| evidence_strengths | map[string, EvidenceStrength] | Yes | Per-evidence strength, keyed by identifier in `evidence_ids` (DEC-022) |
 | validation_status | ValidationStatus | Yes | Result |
 | rationale | string | Yes | Explanation |
 | missing_evidence | list[string] | No | Evidence still needed |
@@ -1514,6 +1619,21 @@ Records a human decision affecting an assessment object.
 | created_at | datetime | Yes | Decision timestamp |
 | workflow_run_id | string | No | Related workflow run |
 
+## Note on prior_value and updated_value
+
+These hold **only the fields that changed**, before and after — not a whole-object snapshot
+(DEC-023). Reviewer edit rate is a primary evaluation metric, and "the reviewer changed the
+severity and left everything else" is more useful than "the reviewer changed this finding."
+
+A reviewer edit **mutates the object in place** and writes one of these records. Section 2.5 forbids
+overwriting generated content *silently*; recording the delta is what makes the overwrite
+non-silent. History is reconstructed by replaying decisions in order against the object's generated
+state, which satisfies section 2.6 without the event sourcing it declines.
+
+`reviewer_id` is a configured local string defaulting to the operating-system username. It exists so
+evaluation can attribute decisions when more than one person reviews the same benchmark. It is not
+authentication and must not be treated as such — DEC-004 has none to draw from.
+
 ## Example
 
 id: dec-019
@@ -1555,7 +1675,6 @@ An assessment may have multiple workflow runs due to retries, revisions, or eval
 | started_at | datetime | No | Start time |
 | completed_at | datetime | No | Completion time |
 | current_node | string | No | Current workflow node |
-| checkpoint_reference | string | No | Persistence reference |
 | model_profile | string | Yes | Model configuration used |
 | prompt_versions | map[string, string] | Yes | Prompt versions |
 | total_model_calls | integer | Yes | Model-call count |
@@ -1563,6 +1682,20 @@ An assessment may have multiple workflow runs due to retries, revisions, or eval
 | total_output_tokens | integer | No | Output-token count |
 | estimated_cost | decimal | No | Estimated cost |
 | error_summary | string | No | Final error if failed |
+
+## Note on pausing
+
+A run pauses by persisting itself and letting the process exit (DEC-017). `status` becomes
+`paused`, `current_node` names the checkpoint, and the assessment state's `pending_human_review`
+block names the objects awaiting a decision. Nothing is held in memory across a human review, and
+a paused run waits indefinitely — there is no review timeout.
+
+Resuming is a separate invocation that loads the run and verifies that every object named in
+`pending_human_review` has a `ReviewerDecision`.
+
+Earlier versions carried a `checkpoint_reference` field holding a persistence reference to a
+framework checkpoint. DEC-016 removed the framework and DEC-017 removed the field: `current_node`
+says where the run stopped and `pending_human_review` says what it is waiting for.
 
 # 27. ExecutionRecord
 
@@ -1667,7 +1800,7 @@ The prompt body may remain stored in a file, while metadata is available to the 
 | expected_output_schema | string | Yes | Output model name or schema |
 | model_constraints | list[string] | No | Required model capabilities |
 | status | string | Yes | Draft, active, retired |
-| content_hash | string | Yes | Prompt content hash |
+| content_hash | string | Yes | `sha256:<hex>` over the **composed** prompt text (DEC-019) |
 
 # 30. RequirementsCatalog
 
@@ -1686,7 +1819,7 @@ Represents a versioned collection of reusable requirements.
 | requirement_ids | list[string] | Yes | Included requirements |
 | created_at | datetime | Yes | Creation timestamp |
 | status | string | Yes | Draft, active, retired |
-| content_hash | string | Yes | Catalog hash |
+| content_hash | string | Yes | `sha256:<hex>` over a canonical re-serialization (DEC-019) |
 
 # 31. Assessment State
 
@@ -1789,6 +1922,19 @@ errors: []
 ## State-design rule
 
 Do not place full source documents, full prompt transcripts, or every generated object into one continuously growing workflow-state payload.
+
+## Note on `pending_human_review`
+
+This block is what makes a paused run self-describing (DEC-017). `checkpoint_type` names which of
+the two checkpoints the run stopped at, and `object_ids` names every object awaiting a reviewer
+decision.
+
+The checkpoint's completion condition is that every identifier in `object_ids` has a
+`ReviewerDecision`. Partial progress is allowed and persisted; a run with some objects decided
+stays paused.
+
+The review package shown to the reviewer is **derived** from the run rather than stored in it, so
+the pause mechanism does not presuppose an interface.
 
 # 32. Object Lineage
 
@@ -1920,6 +2066,48 @@ Store:
 
 The database should store references and content hashes for filesystem artifacts.
 
+## The split is by authorship, not size
+
+Three stores, divided by whether a person wrote the artifact or a run produced it (DEC-020):
+
+- **Version-controlled files** — the requirements catalog, prompt files, and benchmark expected
+  outputs. Inputs to an assessment, edited in pull requests, reviewed in diffs.
+- **SQLite** — everything an assessment generates.
+- **`data/`, not version-controlled** — generated files too large or too binary for a row, in the
+  per-assessment layout of `current-architecture.md` section 5.16.
+
+A requirement is a file because a person wrote it; a threat is a row because a run produced it.
+
+## How objects are stored
+
+Generated objects are stored as **JSON payloads with identity and routing lifted into columns**:
+one table keyed by `(assessment_id, id)`, with `object_type`, `status`, and `created_at` as columns
+and the validated object serialized into a payload column.
+
+Pydantic is the only schema. SQLite stores no field definitions, so adding, removing, or retyping a
+field is a Pydantic change rather than a database migration — which matters while section 39's open
+questions are still producing schema changes.
+
+Referential integrity lives in application code, where the validation nodes already perform it. A
+foreign key would express only half of each check: a mapping must reference a threat *in the same
+assessment*, and a documented claim must carry evidence.
+
+Identifier counters have their own table keyed by `(assessment_id, prefix)`, incremented in the
+same transaction as the insert that consumes the number (DEC-018).
+
+A repository is scoped to one assessment, so the assessment-data boundary is structural rather than
+a rule each query must remember.
+
+## Schema versioning
+
+Every assessment records `data_model_version`. Loading one written by an incompatible version fails
+with a message naming both versions; there is no migration machinery during early development
+(DEC-020).
+
+Re-running is cheaper than migrating and measurably so — `scripts/estimate_cost.py` puts an
+assessment at $2.25 to $5.97. The trigger to add migrations is an assessment becoming expensive or
+irreplaceable.
+
 # 36. Data Retention
 
 The MVP uses fictional or public demo data, but retention should still be explicit.
@@ -2001,17 +2189,17 @@ These can be added later without expanding the initial MVP unnecessarily.
 4. Should actors be separate first-class objects in the MVP?
 5. How should requirement applicability conditions be represented in machine-readable form? Catalog version 0.1 leaves them as free text deliberately, so the vocabulary can be observed before it is fixed.
 6. How should inherited-control scope be modeled?
-7. Should confidence scores be generated numerically or only categorically?
+7. ~~Should confidence scores be generated numerically or only categorically?~~ Resolved by DEC-022: categorically only. `confidence_score` is removed, and `EvidenceStrength` moves onto `EvidenceAssessment` so model confidence and evidence strength stay separate, as design principle 15 requires.
 8. How should multiple model outputs proposing the same object be merged?
 9. How should object revisions be stored?
-10. Should reviewer edits create new object versions or update the current object with decision history?
+10. ~~Should reviewer edits create new object versions or update the current object with decision history?~~ Resolved by DEC-023: update in place with decision history. Section 2.6 already declined full event sourcing, and `ReviewerDecision`'s `prior_value` and `updated_value` exist for exactly this.
 11. How much model-generation metadata belongs on each object?
 12. Should workflow state store objects directly or only identifiers?
-13. Which objects belong in SQLite versus version-controlled YAML or JSON?
+13. ~~Which objects belong in SQLite versus version-controlled YAML or JSON?~~ Resolved by DEC-020: the split is by authorship. Authored artifacts are version-controlled files; generated objects are rows; generated files live under `data/`.
 14. How should severity be calculated?
 15. ~~What is the minimum evidence required to approve a finding?~~ Resolved by DEC-013.
 16. How should rejected threats and findings be retained for evaluation?
-17. How should data-model migrations be handled during early development?
+17. ~~How should data-model migrations be handled during early development?~~ Resolved by DEC-020: they are not. An incompatible `data_model_version` refuses to load, and the assessment is re-run — which the cost estimate makes cheaper than writing a migration against a schema still under decision.
 
 Consequential answers should be recorded in decision log.md.
 

@@ -234,9 +234,9 @@ Tradeoffs:
 
 Open Questions:
 
-- What information should be displayed at each checkpoint?
+- ~~What information should be displayed at each checkpoint?~~ Answered by DEC-017.
 - Should low-confidence outputs trigger additional mandatory review?
-- How should reviewer edits be captured for evaluation?
+- ~~How should reviewer edits be captured for evaluation?~~ Answered by DEC-017: as `ReviewerDecision` rows written through one interface regardless of origin. How an edit is represented on the object is DX-16 (#34).
 
 ## DEC-006: Use structured workflow state
 
@@ -474,7 +474,7 @@ Open Questions:
 
 - Should the per-scenario `requirements.json` in the evaluation plan reference catalog identifiers rather than restate requirements?
 - When should catalog version 0.1 become 0.2 rather than being edited in place?
-- What computes and verifies `content_hash`, and at what point in the workflow?
+- ~~What computes and verifies `content_hash`, and at what point in the workflow?~~ Answered by DEC-019: one SHA-256 utility, with a stated input per object type and defined compute and verify points. The catalog's hash is computed by the loader.
 
 ## DEC-011: Record common false positives on each requirement
 
@@ -721,7 +721,7 @@ Tradeoffs:
 
 Open Questions:
 
-- What is the actual cost of one ForgeFlow assessment and one full benchmark sweep at this model and effort level, and does it change the model tier?
+- ~~What is the actual cost of one ForgeFlow assessment and one full benchmark sweep at this model and effort level, and does it change the model tier?~~ Estimated in `scripts/estimate_cost.py`: **$2.25 to $5.97** per assessment on `claude-opus-5` and **$27 to $72** for a twelve-scenario sweep, the range driven almost entirely by adaptive thinking depth. **It does not change the tier.** Two corrections to the reasoning above follow from it: thinking tokens billed as output are about 85% of the cost, so prompt caching saves roughly 12% rather than being the dominant lever this entry implies; and effort level, not caching or model tier, is what actually controls spend. The estimate is unmeasured — no product code exists and no `count_tokens` call was available — and should be re-run against real `ExecutionRecord` data once the pipeline runs.
 - Does the effort level belong in `model_profile`, or per agent alongside the section 29 intent?
 - Should a second adapter be written before the seam is trusted, or is that premature for a local single-user MVP?
 - Which capabilities must an adapter declare for an evaluation run to be considered comparable to another?
@@ -857,3 +857,434 @@ Open Questions:
 - Does the orchestrator need a dry-run mode that walks the table without executing nodes, for evaluation and for verifying the graph matches the documented phases?
 - At what point does a workflow stop being a list, and is that trigger observable before the orchestrator has already grown?
 - Where do the five execution ceilings live — checked centrally before each step, or by each node?
+
+## DEC-017: Pause by persisting the run and exiting; resume from recorded decisions
+
+Date: 2026-08-09
+
+Status: Accepted
+
+Decision:
+
+A checkpoint pauses by **persisting the run and letting the process exit**. Nothing is held in memory across a human review.
+
+Reaching a checkpoint node sets `WorkflowRun.status` to `paused`, sets `current_node` to the checkpoint, and populates `pending_human_review` with the checkpoint type and the identifiers of the objects awaiting a decision. The invocation then returns. A paused run is a complete, self-describing record on disk.
+
+Resuming is a separate invocation. It loads the run, verifies the checkpoint's completion condition, and continues from the node after the checkpoint. The completion condition is that **every object named in `pending_human_review` has a `ReviewerDecision`**. Partial progress is allowed and persisted; a run with some objects decided stays paused.
+
+**Reviewer decisions reach the workflow through one interface regardless of where they came from.** A decision writer validates a disposition against `ReviewDisposition`, records `prior_value` and `updated_value`, and persists a `ReviewerDecision`. An interactive command, a web form, and an evaluation harness replaying recorded decisions all call the same writer and produce identical rows. Replay is therefore not a test affordance bolted onto an interactive design; it is the same path with a different caller, which is what DEC-012 requires when it says an ablated run and a replayed run are different things.
+
+**`WorkflowRun.checkpoint_reference` is removed.** Its stated purpose was a persistence reference to a framework checkpoint, and DEC-016 removed the framework. `current_node` says where the run stopped and `pending_human_review` says what it is waiting for; a third field pointing at a checkpoint object that no longer exists is vestigial.
+
+**There is no human-review timeout.** `current-architecture.md` section 11 lists one as a failure mode whose response is to pause, preserve state, and resume. Under this decision that is not a failure mode at all — it is the normal state of a paused run, which waits indefinitely because waiting costs nothing when nothing is resident. Section 11's entry is rewritten to say so.
+
+The **review package** is derived from the persisted run rather than stored with it, so it can be rendered by whatever interface DX-17 selects without the pause mechanism presupposing one. Every package carries the objects pending decision, the evidence supporting each with quoted text and source location, the validation results, the human-review triggers that fired, and the open questions with blocking ones first.
+
+Checkpoint 1 additionally carries the extracted architecture — components, actors, assets, data flows, trust boundaries — with each claim's status and confidence, and any contradictions surfaced during extraction. Checkpoint 2 additionally carries, per provisional finding, its severity and confidence, its validation status, both supporting and contradictory evidence, the originating threat and control mapping, its assumptions and limitations, and the critiques raised against it. This closes DEC-005's open question about what is displayed at each checkpoint.
+
+Why:
+
+The alternative that a local single-user application invites is a blocking interactive prompt inside one long-running process. It is the simplest thing that works on a developer's machine and it fails three ways that matter here.
+
+It cannot survive process exit, and DEC-004 makes this a local application a reviewer steps away from. A checkpoint that requires the process to stay alive means reviewing findings is bounded by the terminal staying open.
+
+It is unscriptable, which would force evaluation runs to bypass the checkpoint. DEC-012 draws the distinction between *answering* a checkpoint non-interactively and *removing* it, and holds that only the second is an ablation. A blocking prompt makes them the same thing, because the only way to run unattended is to skip the node. That would quietly undo DEC-012.
+
+And it puts the reviewer's decision in memory rather than in a `ReviewerDecision` row. `data-model.md` section 2.5 requires reviewer actions to be recorded rather than silently overwriting generated content, and the evaluation plan makes reviewer acceptance and edit rates primary metrics. A decision that exists only as a keystroke is not measurable.
+
+Persisting and exiting is also what DEC-016 already implies. Having rejected a framework checkpointer, resume is a database read; a mechanism that resumes from a read is one that can be interrupted arbitrarily, and a process that can exit at a checkpoint is one whose state is genuinely complete on disk. The two decisions want the same shape.
+
+Removing `checkpoint_reference` follows the precedent DEC-012 set with the two configuration booleans: a field whose referent no longer exists is not harmless, because a later implementer will find a use for it and that use will not be the one the schema documents.
+
+Deleting the human-review timeout is the pleasant consequence. A pause that costs nothing to hold does not need a deadline, and the failure mode disappears rather than being handled.
+
+Alternatives Considered:
+
+- A blocking interactive prompt inside a single long-running process
+- A file-based review artifact the reviewer edits, read back on resume
+- A polling loop that keeps the process alive and watches for a decision record
+- Keeping `checkpoint_reference` and redefining it as the review-package identifier
+- Storing the review package with the run rather than deriving it
+
+Tradeoffs:
+
+- **Two invocations where a prompt would be one.** Running an assessment now means running it, reviewing, and running it again — which is more ceremony than a demonstration wants, and the demo script has to account for it.
+- Deriving the review package on demand means it is recomputed on every render, and a package that is expensive to build makes the review step feel slow. Nothing measures that yet.
+- Removing `checkpoint_reference` is a data-model change to a field nothing uses, which is cheap now and would not have been later.
+- The completion condition — every pending object decided — is strict. A reviewer with fifty provisional findings must decide all fifty before the run advances, and there is no supported way to say "approve the rest as-is" without recording fifty decisions. That is deliberate, because those decisions are the evaluation data, but it will feel like friction.
+- A paused run waiting indefinitely means abandoned runs accumulate with no expiry. Nothing cleans them up.
+- The decision assumes the reviewer and the pipeline share a filesystem and a database. That holds under DEC-004 and would not survive the application becoming multi-user.
+
+Open Questions:
+
+- Does a partially-decided checkpoint need to be visible as such, or is "paused with *n* of *m* decided" derivable from the decision rows alone?
+- Should resume verify that the objects pending decision still exist and are unchanged since the pause, and what happens when they are not?
+- ~~Where does the reviewer identity on a `ReviewerDecision` come from under DEC-004, where there is no authentication?~~ Answered by DEC-023: a configured local string defaulting to the OS username, recorded for evaluation attribution and explicitly not authentication.
+- Does an abandoned paused run need an expiry, or is accumulation acceptable for a local single-user application?
+
+## DEC-018: Assign prefixed sequential identifiers at persistence, scoped per assessment
+
+Date: 2026-08-09
+
+Status: Accepted
+
+Decision:
+
+There are **two classes of identifier**, and they follow different rules.
+
+**Authored identifiers** are written by hand and carry meaning. The requirements catalog's `req-AUTH-001` is the only class currently in use: the prefix names the object type, the middle segment names the category, and the number is assigned by the author. They are globally unique, stable across catalog versions, and are the only identifiers a benchmark expected-output file may reference.
+
+**Generated identifiers** are minted during an assessment. They take the form `<prefix>-<NNN>` — `thr-007`, `evd-014`, `fnd-003` — using the prefixes listed in `data-model.md` section 2.1, zero-padded to three digits and widening beyond three when a sequence exceeds 999. They are **unique within their assessment**, not globally; `thr-007` in one assessment and `thr-007` in another are different objects, and an identifier is fully qualified only by `(assessment_id, id)`.
+
+**A generated identifier is assigned by the persistence layer at insert**, from a counter kept per `(assessment_id, prefix)`. It is not assigned at construction. Counters are monotonic: a deleted object's number is never reused.
+
+Identifier generation is therefore a store operation rather than a pure function. That is not a cost this decision introduces — it is already required. Agents return proposal objects that structurally cannot carry an identifier, because `agent-design.md` section 22 forbids an agent minting one and the proposal models omit the field. The application assigns the identifier when it takes ownership of a proposed object, which is a write. Making that assignment sequential costs nothing beyond a counter read in a transaction that was happening regardless.
+
+**No generated identifier appears in a benchmark expected-output file.** Expected outputs reference authored catalog identifiers and match on content — the requirement, the affected components — not on generated identity. This is what frees the scheme from reproducibility pressure: a re-run may number the same logical threat differently, and nothing downstream cares.
+
+`data-model.md` section 2.1's statement that "UUIDs may be used internally, with readable prefixes added for debugging and demonstration" is removed. It described a second scheme alongside the first and the two are not compatible.
+
+Why:
+
+Section 2.1 offered two incompatible schemes in adjacent sentences and every example in the document used the sequential one. The apparent conflict was between readability and reproducibility: sequential identifiers are order-dependent, so a re-run that produces objects in a different order renumbers them, which would break anything holding a stored identifier across runs.
+
+Separating the two classes dissolves it. The thing that would have needed stable identifiers is the benchmark truth set, and it does not use generated identifiers at all — it references catalog identifiers, which are authored and stable, and matches produced objects on requirement and affected component rather than on identity. Once that is stated, order-dependence costs nothing, and the readability argument wins uncontested.
+
+Readability is worth more here than it usually is. Section 2.1 says the prefixes exist "for debugging and demonstration," and this is a project whose output a reviewer reads and whose demonstration is a deliverable. `thr-007` in a report, a log line, or a validation error is legible; `thr-9f2c8a1e-4b21-...` is not, and a reader cannot hold it in mind long enough to match two mentions of it.
+
+The counter objection — that sequential identifiers need per-assessment state and therefore a persistence dependency — is real but already paid. The proposal pattern means the application assigns identifiers during a write no matter which scheme is chosen. A UUID would avoid the counter read and nothing else.
+
+Per-assessment rather than global uniqueness follows the assessment-data boundary in `current-architecture.md` section 12. An identifier that means nothing outside its assessment is one that cannot accidentally address another assessment's object, and every object already carries `assessment_id`.
+
+Alternatives Considered:
+
+- Prefixed UUIDs, as section 2.1's second sentence allowed
+- A prefixed short random suffix, avoiding the counter while staying readable
+- Content-derived identifiers, stable across re-runs for identical content
+- Globally unique sequential identifiers, with one counter per prefix across all assessments
+- Assigning identifiers at construction, with the counter held in workflow state
+
+Tradeoffs:
+
+- **Identifier generation cannot be tested as a pure function.** It needs a store, so the unit tests for anything that mints an identifier need one too, in-memory or otherwise.
+- Order-dependence means two runs over identical input produce different numbering for the same logical objects. That is harmless under this decision and would stop being harmless the moment something outside the assessment stores a generated identifier — a saved reviewer bookmark, an external tracker reference, a cached report link.
+- Per-assessment uniqueness means a bare identifier in a log line is ambiguous without its assessment. Logs and error messages have to carry both.
+- Zero-padding to three digits is a guess at scale. Widening past 999 is defined but produces mixed-width identifiers within one assessment, which sorts badly in a lexical sort.
+- Monotonic counters mean the numbering has gaps wherever an object was rejected or deleted, and a reader may read a gap as a missing object rather than a discarded one.
+
+Open Questions:
+
+- Does the counter live in its own table, or is it derived from the maximum existing identifier per prefix at insert time?
+- Should a rejected proposal consume a number, or should numbers be assigned only to objects that survive validation?
+- Do authored identifiers need a validation rule beyond the prefix, given that the catalog's `req-CATEGORY-NNN` shape is currently convention rather than schema?
+
+## DEC-019: Compute content hashes with SHA-256 over a stated input per object type
+
+Date: 2026-08-09
+
+Status: Accepted
+
+Decision:
+
+`content_hash` is **SHA-256**, rendered as `sha256:` followed by 64 lowercase hexadecimal characters. One utility computes and verifies every hash in the system.
+
+The input differs by object type, deliberately, and each is stated:
+
+| Object | Hashed input | Computed | Verified |
+|---|---|---|---|
+| `SourceDocument` | The original file's **raw bytes**, before any normalization | At ingestion | On re-read, to detect an edited source |
+| `EvidenceReference` | The UTF-8 bytes of `quoted_text` | At evidence indexing | By the evidence resolver, before evidence reaches an agent |
+| `PromptDefinition` | The UTF-8 bytes of the **composed** prompt, after shared blocks are merged in | At prompt load | At prompt load |
+| `RequirementsCatalog` | A canonical re-serialization of the parsed catalog: keys sorted, comments and formatting discarded | At catalog load | At catalog load |
+
+A source document is hashed over raw bytes rather than normalized text because its hash exists to detect that the file changed, and normalization would mask exactly the changes it is meant to catch. Evidence is hashed over `quoted_text` because DEC-015 makes that field the verbatim excerpt from the original and forbids modifying it after creation. A prompt is hashed after composition because the composed text is what the model receives; hashing the file alone would miss a change to a shared block, which is the change most likely to alter behaviour without anyone noticing.
+
+The catalog is hashed over a canonical re-serialization rather than file bytes so that reformatting, comment edits, and key reordering do not change it. A catalog hash that churns on whitespace reports change where there is none, and a hash that reports change constantly is one nobody reads.
+
+`requirements/catalog.yaml` gains its `content_hash` once the loader exists. DEC-010 omitted it deliberately, on the grounds that no loader existed to compute it; this decision states what the loader computes.
+
+Why:
+
+`content_hash` is required on four objects and DEC-010 left open what computes it and when. A hash over an unstated input is not verifiable: two implementations can both be correct and disagree, and a mismatch cannot be distinguished from a bug.
+
+The single utility matters more than the algorithm choice. Four call sites hashing four kinds of content will drift if each is written where it is needed, and the drift is silent — a hash computed slightly differently still looks like a hash.
+
+Per-object inputs rather than one uniform rule follow from what each hash is for. They are not four conventions but one principle applied four times: hash the thing whose change you want to detect. That is raw bytes for a file, the excerpt for an evidence reference, the composed text for a prompt, and the meaning rather than the formatting for a catalog.
+
+The `sha256:` prefix comes from `data-model.md` section 8's own example, which reads `content_hash: sha256:example`. Fixing it as the format makes it one thing rather than a convention, and leaves room for a second algorithm without ambiguity.
+
+Alternatives Considered:
+
+- One uniform input rule — hash the file bytes — for every object type
+- Hashing normalized text for source documents, for consistency with evidence
+- Hashing the prompt file rather than the composed prompt
+- Hashing the catalog's file bytes, accepting churn on formatting
+- A bare hex digest with no algorithm prefix
+- Deferring the catalog hash indefinitely, as DEC-010 did
+
+Tradeoffs:
+
+- **Four different inputs is four things to get right**, and the failure mode is quiet: a hash computed over the wrong input verifies against itself forever and only fails when something else changes.
+- Canonical re-serialization of the catalog means the hash covers the parsed meaning, so a change that YAML parses identically — a comment carrying real guidance, for instance — does not register. `requirements/README.md` treats prose in the catalog as meaningful, and this hash does not see it.
+- Hashing composed prompts means the hash changes when a shared block changes, which is correct and will look alarming: one edit to `evidence-policy-v1.md` changes the hash of every prompt that composes it.
+- A source document's hash detects that the file changed but says nothing about where, so a one-character edit invalidates the document's hash while every evidence reference into it still verifies individually. Reconciling those two signals is not specified here.
+- As DEC-015 noted, an evidence hash detects a changed passage but not a moved one: an edit above a passage shifts its line numbers while the hash still matches.
+
+Open Questions:
+
+- When a source document's hash no longer matches, are its evidence references invalidated, re-anchored, or left with their own hashes still passing?
+- Should the catalog hash cover comments, given that the catalog carries authored prose the parser discards?
+- Does anything need to verify a hash on a schedule, or only on read?
+
+## DEC-020: Persist generated objects as JSON payloads in SQLite, keyed by identity and routing columns
+
+Date: 2026-08-09
+
+Status: Accepted
+
+Decision:
+
+**Three stores, split on whether an artifact is authored or generated**, not on whether it is large or small.
+
+**Version-controlled files** hold what a person writes and a reviewer reads in a diff: the requirements catalog, prompt files, and benchmark expected outputs. These are inputs to an assessment, edited in pull requests, and their history belongs in git.
+
+**SQLite** holds everything an assessment generates: assessments, context objects, threats, controls, mappings, findings, questions, documentation gaps, reviewer decisions, workflow runs, execution records, and evaluation results.
+
+**The local filesystem under `data/`** holds generated files too large or too binary for a row: original documents, normalized artifacts, reports, debug artifacts, and traces, in the per-assessment layout of `current-architecture.md` section 5.16, with references and content hashes in the database. `data/` is not version-controlled.
+
+That answers `data-model.md` open question 13. The axis is authorship, not size: a requirement is a file because a person wrote it and a reviewer reviews it, and a threat is a row because a run produced it.
+
+**Objects are stored as JSON payloads with identity and routing lifted into columns.** One table holds every generated object type, keyed by `(assessment_id, id)`, with `object_type`, `status`, and `created_at` as columns and the validated object serialized into a payload column. Pydantic is the only schema; SQLite stores no field definitions.
+
+Adding, removing, or retyping a field is therefore a Pydantic change and not a database migration. That matters because the schema is still moving: DEC-012 removed two fields, DEC-015 constrained three, DEC-017 removed one, DEC-018 rewrote the identifier scheme, and DEC-019 redefined four field descriptions — five schema-affecting decisions in two days, with `data-model.md` section 39 still carrying open questions that will produce more.
+
+**Referential integrity lives in application code**, which is where the corpus already put it. The Context, Threat, and Mapping validation nodes each confirm that referenced objects exist; a foreign-key constraint would duplicate that check in a second place and in a second vocabulary, and the two would disagree the first time a validation rule changed.
+
+**Identifier counters get their own table**, keyed by `(assessment_id, prefix)`, incremented in the same transaction as the insert that consumes the number. DEC-018 requires assignment at persistence, so the counter is a store concern.
+
+**A repository is scoped to one assessment.** Every read is qualified by `assessment_id`, and there is no interface for a cross-assessment query outside the evaluation harness. The assessment-data boundary in `current-architecture.md` section 12 is thereby structural rather than a rule each query must remember.
+
+**Schema versioning refuses rather than migrates.** Every assessment records `data_model_version`. Loading one written by an incompatible version fails with a message naming both versions; there is no migration machinery. That answers open question 17 for early development.
+
+Re-running is cheaper than migrating, and now measurably so: `scripts/estimate_cost.py` puts a ForgeFlow assessment at $2.25 to $5.97. Regenerating an assessment costs a few dollars and no engineering time; writing a migration for a schema still under active decision costs hours and produces code that will itself need maintaining. The trigger to add migrations is the point at which an assessment becomes expensive or irreplaceable — real rather than fictional source material, or a benchmark run whose provenance matters.
+
+**Evaluation results and the longitudinal record are additionally written as version-controlled artifacts.** `evaluation-plan.md` section 17 requires every release to record its evaluation summary and known regressions, and section 16 wants metrics compared across versions. If assessments become unloadable after a schema change, a database-only evaluation history would break exactly when the comparison is most interesting. Writing the summary to a file keeps the history readable independent of whether the assessments behind it still load.
+
+Why:
+
+The corpus had already made most of this decision. Section 35 lists what goes in SQLite and what goes on the filesystem, and section 5.15 says the same. What was open was the mapping between Pydantic objects and rows, and the two questions section 39 records.
+
+The mapping question turns on one observation: **the schema is the least stable thing in the project right now.** Five decisions in two days changed it, and the ones still open — severity, contradictions, reviewer edits, confidence — will change it further. An ORM that mirrors the object model in table definitions converts each of those into a migration, and migrations written against a model that is still being decided are work that is thrown away.
+
+A JSON payload keyed by identity and routing columns costs almost nothing to change and serves every query the corpus actually asks for: by identifier, by assessment, by type, by status, and the identifier-following walks that section 32's lineage chain requires. Nothing in the MVP needs to query inside an object.
+
+The corpus also already declined the main argument for a relational schema. Referential integrity is checked by validation nodes in application code, deliberately, because the checks are semantic — a mapping must reference a threat *in the same assessment*, a documented claim must carry evidence — and a foreign key expresses only the first half. Adding constraints would not replace those nodes; it would duplicate part of them.
+
+DEC-004 removes the other argument. A local single-user application, whose process exits at every checkpoint under DEC-017, has no concurrency for a relational engine to arbitrate.
+
+Refusing to load rather than migrating is the same trade in a different place, and the cost estimate is what makes it defensible rather than merely convenient. Before that estimate this would have been an assertion that regeneration is cheap; now it is a figure.
+
+Alternatives Considered:
+
+- SQLAlchemy Core with a hand-written relational schema and Pydantic as a separate domain layer
+- SQLModel, fusing the domain object and the table definition
+- Filesystem only, one JSON or YAML document per assessment
+- One SQLite database per assessment rather than one database with `assessment_id` on every row
+- Relational tables for the few objects with stable shapes, JSON payloads for the rest
+- Alembic migrations from the first schema
+
+Tradeoffs:
+
+- **The database will accept anything the application writes.** With no column types and no constraints, a bug that writes a malformed object produces a row that loads back as a validation error rather than failing at write time. Pydantic validates on the way in, so this depends entirely on nothing bypassing the repository.
+- **A new query axis needs a new indexed column**, which is a migration after all — a cheap one, but the claim that schema changes are free holds only for changes to object *shape*, not to how objects are searched.
+- Objects of every type share one table, so a corrupt or oversized payload of one type sits alongside every other. Nothing partitions blast radius.
+- **Refusing to load old assessments discards evaluation history at every schema change.** Writing summaries to version-controlled files mitigates this and does not remove it: the underlying assessments are gone, so a result cannot be re-examined, only re-read.
+- One database for all assessments makes the assessment-data boundary a property of the repository rather than of the storage. A query written outside the repository can cross it.
+- JSON payloads are opaque to database tooling. Inspecting state means loading it through the application, which is a real loss when debugging.
+- The decision is shaped by the schema being unstable, and that is temporary. Once `data-model.md`'s open questions close, the reasoning weakens, and this should be revisited rather than assumed.
+
+Open Questions:
+
+- At what point does the schema count as stable enough to revisit this — a closed section 39, a shipped MVP, or the first assessment worth keeping?
+- Should the payload column store the object's `data_model_version` alongside it, so a mixed-version database can report precisely which rows are unreadable?
+- Does the evaluation harness get a cross-assessment read interface, and if so what prevents it being used from the pipeline?
+- Does anything need to detect that `data/` and the database have diverged — an artifact referenced by a row but missing from disk?
+
+## DEC-021: Represent contradictions and injection attempts as one SourceObservation object
+
+Date: 2026-08-09
+
+Status: Accepted
+
+Decision:
+
+Add one object, **`SourceObservation`**, prefix `obs-`. It records something observed **about the source material**, as distinct from an assertion about the reviewed system.
+
+It has a `kind` discriminator with two initial values:
+
+- **`contradiction`** — two or more passages that disagree. Requires at least two evidence references.
+- **`injection_attempt`** — a passage that attempts to instruct the reader rather than describe the system. Requires at least one.
+
+Fields: `id`, `assessment_id`, `kind`, `summary`, `evidence_ids`, `subject_claim_ids` (optional, the context claims the observation bears on), `status`, `generated_by`, `reviewer_notes`, `created_at`.
+
+A `SourceObservation` carries **no severity and never becomes a Finding**. A Finding asserts a weakness in the reviewed system; an observation asserts something about a document. Collapsing them would be the DEC-009 failure in a new place.
+
+**A contradiction does not resolve itself.** `forgeflow-scenario.md` section 16.1 states that Trace must not silently choose the safer statement, so the workflow surfaces the disagreement and, where the answer would materially change the assessment, raises a `Question` alongside it. The observation records that the documents disagree; the question asks which is true.
+
+**`ContextClaim` gains no field.** Its `contradicted` status now has a defined meaning: a `SourceObservation` of kind `contradiction` references this claim in `subject_claim_ids`. The reference is one-directional, from observation to claim, so a claim does not need to know what contradicts it and the two cannot disagree about whether they disagree.
+
+`data-model.md` section 2.1 gains the `obs-` prefix. Section 38's deferred-objects list is unchanged; this object is not on it.
+
+Why:
+
+Two open questions asked the same thing twice. `agent-design.md` section 7 lists "contradiction records or flagged claims" as an extractor output and no object represents one. Section 25 says the workflow "may create a ContextClaim or security event indicating that injection-like content was detected" — and no security-event object exists anywhere in the data model, including in section 38's list of things deliberately deferred, which makes it an omission rather than a deferral.
+
+Both are load-bearing rather than hypothetical. The ForgeFlow scenario contains two deliberate contradictions in section 16 and a planted injection payload in section 17, and the benchmark's expected outputs count both. The system is required to surface things it currently cannot represent.
+
+**Neither belongs on `ContextClaim`, and the reason is categorical.** A context claim asserts something about the reviewed system: authentication is delegated, the API is internet-accessible. Its shape — `subject_type`, `subject_id`, `predicate`, `value` — is built for that. A contradiction asserts something about the documentation, and forcing it into that shape leaves no sensible answer to what the subject is or what the value asserts. The `contradicted` status exists precisely because someone noticed the gap and reached for the nearest field.
+
+**One object rather than two** because the two kinds share everything that matters. Both reference source passages, both must reach the reviewer at the context checkpoint, both are counted by the evaluation harness, both are produced by context extraction, and neither is a Finding, a Question, or a DocumentationGap. What differs is the number of evidence references and whether a Question usually accompanies it, which is a validation rule rather than a different object.
+
+Two near-identical objects would also cut against the model's stated instinct. Section 38 defers eighteen object types and section 40 limits the initial implementation set; adding two where one serves is the kind of expansion those sections exist to resist.
+
+The discriminator leaves room for the observations that will follow — a document that appears to describe a different system, a section internally inconsistent with itself — without another object each time.
+
+**One subtlety the ForgeFlow fixture surfaces.** Its injection payload sits in a document that, within the fiction, is a ForgeFlow engineer's repository notes. Detecting it is a Trace behaviour and produces a `SourceObservation`. But the *existence* of injectable content in repository data is also evidence for THR-001, the scenario's own "repository prompt injection manipulates AI output" threat about ForgeFlow. One fixture, two distinct outputs: an observation about the document Trace was given, and evidence for a threat about the system Trace is reviewing. Conflating them would produce a finding about ForgeFlow every time Trace reads a document containing an injection, regardless of whether ForgeFlow is exposed to one.
+
+Alternatives Considered:
+
+- A `ContextClaim` with a dedicated predicate such as `suspicious_instruction_detected`
+- Two separate objects, `Contradiction` and `SecurityObservation`
+- Adding `contradicts_id` or `conflicting_claim_ids` to `ContextClaim`
+- Reusing `Critique` with a `contradictory_analysis` type
+- Representing an injection attempt as a `DocumentationGap`
+- Recording both only in `ExecutionRecord` metadata, with no first-class object
+
+Tradeoffs:
+
+- **One object with a discriminator means validation is conditional on `kind`**, and conditional validation is where schema bugs live. A contradiction with one evidence reference and an injection attempt with two are both structurally valid until a rule checks them.
+- The two kinds may diverge. If contradictions later need a resolution state and injection attempts need a severity, the shared object becomes a union of fields where half are always null — the shape this decision avoided by not creating two objects in the first place.
+- `summary` is free text, so counting contradictions in evaluation depends on the extractor producing one observation per disagreement rather than one per document or one per pair of passages. Nothing enforces the granularity.
+- The observation-to-claim reference being one-directional means finding what contradicts a given claim requires scanning observations. With the volumes involved that is fine and it is still a scan.
+- Adding an object to a model that deliberately limits them needs to stay justified. If neither kind is ever produced outside the demo fixture, this is a schema paying rent for a test.
+
+Open Questions:
+
+- Does a reviewer disposition on a contradiction — confirming which passage is correct — belong on the observation, on the `Question`, or on the `ContextClaim` it resolves?
+- Should an injection attempt observed in a source document ever be admissible as evidence for a threat about the reviewed system, or must that always be a separate reviewer judgment?
+- What granularity counts as one contradiction when three documents disagree pairwise?
+- Does `SourceObservation` need a `status` of its own, given that it records an observation rather than a proposal a reviewer accepts or rejects?
+
+## DEC-022: Confidence is categorical; evidence strength is relational; inferred claims carry a rationale
+
+Date: 2026-08-09
+
+Status: Accepted
+
+Decision:
+
+**`confidence_score` is removed from `ContextClaim`.** Confidence is categorical — `low`, `medium`, `high` — and nothing numeric is stored alongside it. Section 4.2's sentence permitting a numeric score is removed with it.
+
+**`EvidenceStrength` gains a home.** `EvidenceAssessment` gains `evidence_strengths`, a map from evidence identifier to `EvidenceStrength`, covering the references in `evidence_ids`. The type has been defined since the model was written and carried by no field; this is where it belongs.
+
+It belongs there rather than on `EvidenceReference` because **strength is relational, not intrinsic**. The same passage can be direct evidence for one claim and merely contextual for another; a sentence describing an identity provider is direct evidence about authentication and contextual evidence about session handling. A field on the reference would have to pick one.
+
+**`ContextClaim` gains a required-when-inferred `rationale`.** `agent-design.md` section 7 requires inferred claims to carry "a concise rationale" and the object had nowhere to put one — `reviewer_notes` is the reviewer's field, not the agent's. The field is required when `status` is `inferred` or `assumed`, and optional otherwise.
+
+**"Enforce confidence ranges" now means one thing.** `agent-design.md` section 8 gives the Context Validation node that responsibility without saying what it checks. With no numeric score, it checks that `confidence` is a member of `ConfidenceLevel` — nothing more. There is no range, no consistency check between two representations, and no arithmetic.
+
+Why:
+
+Design principle 15 supplies its own decision test: "Does this score help the reviewer make a decision, or merely make the output look precise? Remove metrics that do not improve judgment." Applied to `confidence_score`, the answer is available rather than debatable.
+
+The field appears **exactly once in the entire corpus** — `ContextClaim`'s field table — and is consumed by nothing. No threshold reads it, and after DEC-013 none will: that decision made every threshold a deterministic rule over `satisfaction_status` and `validation_status`, categorical values compared by membership rather than by magnitude. A number that no rule can consume and no reviewer can calibrate is precision with no referent.
+
+Keeping it would also violate the principle it sits under twice over. Principle 15 says to avoid treating confidence as probability, and a decimal from 0 to 1 alongside a three-value enum invites exactly that reading. It says to separate evidence strength from model confidence, and a single score conflates them — a claim can be confidently inferred from weak evidence, or tentatively drawn from strong evidence, and one number cannot say which.
+
+**That separation is what wires up `EvidenceStrength`.** The corpus has both halves of the distinction principle 15 demands and neither was connected: categorical `confidence` sits on objects and means model confidence, while `EvidenceStrength` was defined in section 4.3 and carried nowhere. DEC-013 already relies on the judgment it expresses — its second condition for `unmet` requires knowing whether a cited reference describes absence *directly* or merely *contradicts* a claim of existence — and had to describe that in prose because no field held it.
+
+The rationale field closes the third orphan in the same area. Principle 15's engineering implications list five things, and "require rationales for high-impact uncertain conclusions" is one of them; `agent-design.md` section 7 states the requirement for inferred claims specifically. The object simply lacked the field, which is why the M2 backlog research flagged it.
+
+Alternatives Considered:
+
+- Keep `confidence_score` as optional and never read it
+- Keep it but forbid thresholds from consuming it, enforced by review
+- Put `EvidenceStrength` on `EvidenceReference` as an intrinsic property
+- Change `EvidenceAssessment.evidence_ids` to a list of objects carrying identifier and strength
+- Remove `EvidenceStrength` entirely as vestigial
+- Reuse `reviewer_notes` on `ContextClaim` for the agent's rationale
+
+Tradeoffs:
+
+- **Removing a documented field is a schema change**, and any reader who had planned on a numeric score loses it. That is the intent, but the field had been in the model since it was written and its absence will surprise someone.
+- Three categories is coarse. A reviewer sorting forty claims by confidence gets three buckets, and within `medium` there is no ordering. That is the honest position and it is less useful than a score would *appear* to be.
+- `evidence_strengths` as a map keyed by identifier can drift from `evidence_ids` — an entry for an identifier not in the list, or a listed identifier with no strength. Nothing structural prevents it; a validation rule must.
+- Making strength relational means the same evidence reference carries a different strength in each assessment that cites it, so "how strong is this passage" has no answer outside a context. That is correct and it complicates any future evidence-quality metric.
+- A rationale required only for `inferred` and `assumed` claims means a `documented` claim gets no explanation of why the evidence supports it. The evidence is supposed to speak for itself there, and sometimes it will not.
+- Nothing yet consumes `evidence_strengths` either. It is wired to DEC-013's rule, which is written but unimplemented, so this replaces one unused field with another until the mapping validation node exists.
+
+Open Questions:
+
+- Should `EvidenceAssessment.confidence` and the per-evidence strengths be checked for coherence — a `supported` status resting entirely on `contextual` evidence, for instance — or is that the agent's judgment to make?
+- Does `Threat`, `ControlMapping`, or `Finding` need per-evidence strength too, or is recording it once at evidence validation sufficient for everything downstream?
+- Is `rationale` required for `unknown` and `contradicted` claims as well, or only where the claim asserts something?
+- Does removing the numeric score leave the evaluation plan's reviewer-agreement metrics with enough resolution to be meaningful?
+
+## DEC-023: Mutate objects in place, record the delta on ReviewerDecision, version only SystemContext
+
+Date: 2026-08-09
+
+Status: Accepted
+
+Decision:
+
+**Three mechanisms, for three distinct causes.** The corpus already contained all three; they had never been distinguished.
+
+**A reviewer edit mutates the object in place and writes a `ReviewerDecision`.** The decision carries `prior_value` and `updated_value` holding **only the fields that changed**, before and after — not the whole object. `data-model.md` section 25 calls these "relevant prior state," and keeping them to the delta is what makes reviewer edit rate computable per field rather than per object.
+
+**`supersedes_id` records a generated object replacing a prior generated object**, not a human edit. Its case is re-extraction: DEC-017 lists "request re-extraction" as a reviewer action, and the claims that come back supersede the ones they replace. The reviewer's decision to request re-extraction is a `ReviewerDecision`; the claims that result carry `supersedes_id`.
+
+**`SystemContext` is the only versioned object.** Its integer `version` increments on approval, alongside `approved_at` and `approved_by`. It is versioned because it is the approved baseline that every later stage reasons from, and because `current-architecture.md` section 5.6 requires threat analysis to work from that baseline rather than reinterpreting source documents.
+
+History is reconstructed by **replaying decisions in order** against an object's generated state. That satisfies section 2.6's requirement that significant changes remain traceable without the machinery it declines.
+
+`reviewer_id` is a **configured local string**, defaulting to the operating-system username, recorded so evaluation can attribute decisions when more than one person reviews the same benchmark. It is not authentication and must not be treated as such; DEC-004 has no authentication to draw from. This closes DEC-017's open question about where reviewer identity comes from.
+
+Why:
+
+Open question 10 asked whether reviewer edits create new object versions or update the current object with decision history. The corpus answers it in two places that had not been read together.
+
+**Section 2.6 states that "the MVP does not need full event sourcing."** Immutable objects with `supersedes_id` chains on everything is event sourcing in effect, whatever it is called — every read resolves a chain to a head, and every write appends. That option is ruled out by a sentence already in the model.
+
+**`supersedes_id` exists on exactly two objects**, `ContextClaim` and `Requirement`, and `Requirement`'s serves catalog versioning across published catalog versions, which is authored rather than reviewed. If the model intended immutable-with-supersedes as its edit mechanism, the field would be on every object that a reviewer can touch. It is on one.
+
+Meanwhile `ReviewerDecision` carries `prior_value` and `updated_value` — fields whose only purpose is recording what an edit changed. They exist for precisely the mechanism this decision adopts, and would be dead weight under an immutable scheme, where the prior value is simply the superseded object.
+
+Section 2.5's wording is the third confirmation. It says reviewer actions should be recorded "rather than silently overwriting generated content." The load-bearing word is *silently*. Overwriting is acceptable when it is recorded; what is forbidden is losing the fact that a human changed something.
+
+`SystemContext` earns its exception because it is the only object whose *whole* state is approved as a unit. Everything else is approved or edited individually, so a per-object version number would count edits rather than mark a baseline. A context version is meaningful — analysis was performed against version 2 — in a way that a claim version would not be.
+
+Making the delta rather than the whole object the recorded value matters for evaluation. Reviewer edit rate is a primary metric, and "the reviewer changed this finding" is much less useful than "the reviewer changed its severity and left everything else." A whole-object snapshot pair makes that a diff computed after the fact, over objects whose schema may since have changed.
+
+Alternatives Considered:
+
+- Immutable objects with `supersedes_id` chains on every reviewable object
+- Whole-object snapshots in `prior_value` and `updated_value`
+- Versioning every object with an integer, as `SystemContext` does
+- A separate revision table, decoupled from `ReviewerDecision`
+- Deriving history from `ExecutionRecord` alone, with no per-object trail
+
+Tradeoffs:
+
+- **Reconstructing an object's history means replaying decisions**, so there is no single query that returns its state at a past moment. For a local single-user MVP with tens of objects that is fine, and it stops being fine at a scale this project is not designed for.
+- Recording only the changed fields means a decision is only interpretable against the schema in force when it was written. DEC-020 already refuses to load assessments across incompatible model versions, so the two decisions fail together — but it does mean an old decision cannot be read even in isolation.
+- The reviewer sees current state, not generated state, so "what did the model originally say" requires walking back. That is the intended trade for a simple read path, and it makes the lineage view — a Stage 5 deliverable — do real work rather than a straight read.
+- Three mechanisms for three causes is more to explain than one uniform rule, and a future implementer may reach for `supersedes_id` when editing, or write a decision when superseding. The distinction is by cause, which is a judgment, not a type.
+- `reviewer_id` defaulting to an OS username is trivially forgeable and looks like identity in a data model that also records approvals. Nothing enforces that it is not read as authentication.
+
+Open Questions:
+
+- Should a reviewer edit that reverts an earlier edit be recorded as a new decision or as a retraction of the prior one?
+- Does `Finding` need `supersedes_id` for re-consolidation, in the way `ContextClaim` has it for re-extraction?
+- When a reviewer edits an object that a later stage has already consumed, does anything invalidate the downstream work?
+- Is per-field delta granularity sufficient for a nested field, or does an edit inside `metadata` need its own path notation?
