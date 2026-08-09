@@ -312,6 +312,11 @@ Squashing either pull request breaks the chain: the hotfix commit stops being an
   Use `type(obj).model_validate({**obj.model_dump(), **changes})`. This is the only path on which
   a human-supplied value enters a domain object, so it is the one that least tolerates skipping
   the schema. Pinned by `tests/unit/test_domain_base.py`.
+- **The Context Validation node reports and routes; it never corrects** (`agent-design.md` section
+  8). It does not merge duplicates, fill in fields, or re-label a `documented` claim with no
+  evidence as `assumed` to make it pass — that last one would turn a claim the agent asserted into
+  one nobody asserted, with a clean validation record. Errors are returned with an `ErrorClass` so
+  the extraction node routes on a class rather than a message.
 - **The fence is the security boundary, and a document that can close it escapes it.**
   `services/context/input_package.py` wraps every excerpt in a marker carrying its evidence
   identifier and neutralises any delimiter found *inside* an excerpt. The ForgeFlow injection
