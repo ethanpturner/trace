@@ -80,6 +80,16 @@ ignore = [
     "TC",    # pytest is needed at runtime for markers/fixtures, not just types
 ]
 
+[tool.ruff.lint.flake8-type-checking]
+# Pydantic resolves annotations at runtime, so a type only imported under TYPE_CHECKING leaves the
+# model undefined -- `Assessment` with `datetime` behind the guard raises PydanticUserError on the
+# first validate. Naming the base classes here stops TC00x moving those imports.
+runtime-evaluated-base-classes = [
+    "pydantic.BaseModel",
+    "pydantic_settings.BaseSettings",
+    "trace_ai.domain.base.DomainModel",
+]
+
 [tool.ruff.format]
 docstring-code-format = true
 
