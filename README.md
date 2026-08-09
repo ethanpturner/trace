@@ -244,6 +244,10 @@ Against the seven-stage [roadmap](#roadmap) below, Trace is inside Stage 1.
   assessment behind. Status describes the assessment as a deliverable, never where the pipeline
   has reached, and moves through named transitions of which only archiving is a person's to make. Callers receive a handle carrying both stores scoped to one assessment, so code holding
   one cannot address another by passing a different string.
+- **`EvidenceReference`** — the object every conclusion is defended through. It can only cite text
+  that exists: `quoted_text` is required and non-empty, and there is no field by which a reference
+  says a document is silent. That belongs to a documentation gap or a question, which are separate
+  objects. Locations address the original document, never the normalized artifact.
 - **`Assessment` and `AssessmentConfiguration`** — the first two domain objects, held to
   `data-model.md` sections 5 and 6 by the conformance guard. The configuration carries no setting
   that governs the two human checkpoints, and a test asserts that reintroducing one fails
@@ -261,8 +265,8 @@ Against the seven-stage [roadmap](#roadmap) below, Trace is inside Stage 1.
 ### What does not exist yet
 
 - No document ingestion. No agent. No model call of any kind.
-- Almost no domain objects. The data model specifies roughly twenty-nine; `Assessment` and
-  `AssessmentConfiguration` are implemented and the rest are not.
+- Almost no domain objects. The data model specifies roughly twenty-nine; `Assessment`,
+  `AssessmentConfiguration`, and `EvidenceReference` are implemented and the rest are not.
 - No CLI beyond a banner printing the environment and which credentials are configured.
 - No threat analysis, no findings, no report generation, no evaluation harness.
 - The demo scenario is not runnable.
