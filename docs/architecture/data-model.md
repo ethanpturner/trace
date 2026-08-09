@@ -428,9 +428,9 @@ model_profile: primary-development
 
 threat_methodology: stride-scenario-based
 
-maximum_model_calls: 25
+maximum_model_calls: 40
 
-maximum_cost: 5.00
+maximum_cost: 8.00
 
 maximum_retries_per_node: 2
 
@@ -439,6 +439,21 @@ retain_debug_artifacts: true
 enable_external_tracing: false
 
 evidence_threshold: direct-or-confirmed
+
+## Note on the example limits
+
+`maximum_model_calls` and `maximum_cost` above were originally 25 and 5.00. `scripts/estimate_cost.py`
+models the pipeline against the ForgeFlow corpus and predicts **28 model calls**, which the original
+limit would have halted, and **$2.25 to $5.97** per assessment on `claude-opus-5` depending on how
+much adaptive thinking the effort level produces — so the original cost limit held at low effort and
+was exceeded at high effort.
+
+The values are raised to leave headroom rather than to describe a target. They remain examples; a
+real assessment sets its own.
+
+The estimate's dominant finding is that **thinking tokens, billed as output, are roughly 85% of the
+cost**. Effort level is therefore the cost lever, ahead of model tier and well ahead of prompt
+caching, which saves about 12%.
 
 ## Note on the human checkpoints
 
