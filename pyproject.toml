@@ -15,6 +15,10 @@ dependencies = [
     "pydantic>=2.13.4",
     "pydantic-settings>=2.15.0",
     "python-dotenv>=1.2.2",
+    # The document loader parses YAML input, so this is a runtime dependency rather than a test
+    # one. It is used through `safe_load` only: the default loader constructs arbitrary Python
+    # objects from document content, which is code execution chosen by an untrusted input file.
+    "pyyaml>=6.0.3",
 ]
 
 [project.scripts]
@@ -37,11 +41,8 @@ dev = [
     "pytest-asyncio>=1.4.0",
     "pytest-cov>=7.1.0",
     "ruff>=0.16.2",
-    # Only the requirements-catalog test reads YAML. PyYAML is already present
-    # transitively; it is declared here so the test does not depend on another
-    # package's dependency, and types-pyyaml because PyYAML ships no stubs and
-    # mypy runs strict over tests.
-    "pyyaml>=6.0.3",
+    # types-pyyaml because PyYAML ships no stubs and mypy runs strict. PyYAML itself moved to
+    # the runtime dependencies when the document loader began parsing YAML input.
     "types-pyyaml>=6.0.12",
 ]
 

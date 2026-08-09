@@ -46,6 +46,8 @@ PACKAGES = (
 # `trace_ai.infrastructure.database.session` is caught by `trace_ai.infrastructure`.
 FORBIDDEN_IN_DOMAIN = ("trace_ai.services", "trace_ai.infrastructure")
 
+# Third-party packages a domain object must not reach for.
+#
 # Provider and orchestration SDKs. `anthropic` and `langsmith` are declared in pyproject.toml
 # and imported nowhere; `openai`, `langchain`, `langgraph`, and `instructor` were declared and
 # removed by DEC-014 and DEC-016. All six are listed anyway, because the guard is about where an
@@ -63,6 +65,10 @@ FORBIDDEN_SDKS_IN_DOMAIN = (
     "langgraph",
     "langsmith",
     "instructor",
+    # Not an SDK, and forbidden for a different reason. Domain objects are validated data; parsing
+    # a serialization format is ingestion, which is a service. A domain module importing `yaml`
+    # would be a domain object that knows how documents are stored on disk.
+    "yaml",
 )
 
 
@@ -161,6 +167,11 @@ def test_the_sdk_guard_covers_the_declared_dependencies() -> None:
     objects are Pydantic models, and configuration is not a domain concern but is not a provider
     either. Anything else declared should be on the list or explicitly waived here.
     """
+    # A distribution name is not an import name, and the guard matches imports. Mapping the two
+    # that differ is more honest than putting `pyyaml` in a list the AST walk compares against
+    # `import yaml` and never matches.
+    import_names = {"pyyaml": "yaml", "python-dotenv": "dotenv", "pydantic-settings": "pydantic"}
+
     pyproject = (PROJECT_ROOT / "pyproject.toml").read_text(encoding="utf-8")
     block = pyproject.split("dependencies = [", 1)[1].split("]", 1)[0]
     declared = {
@@ -168,7 +179,8 @@ def test_the_sdk_guard_covers_the_declared_dependencies() -> None:
         for line in block.splitlines()
         if line.strip().startswith('"')
     }
-    waived = {"pydantic", "pydantic-settings", "python-dotenv"}
+    declared = {import_names.get(name, name) for name in declared}
+    waived = {"pydantic", "dotenv"}
     uncovered = declared - waived - set(FORBIDDEN_SDKS_IN_DOMAIN)
     assert not uncovered, (
         f"{sorted(uncovered)} is a declared dependency that domain/ is not guarded against. "

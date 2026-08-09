@@ -244,6 +244,11 @@ Against the seven-stage [roadmap](#roadmap) below, Trace is inside Stage 1.
   assessment behind. Status describes the assessment as a deliverable, never where the pipeline
   has reached, and moves through named transitions of which only archiving is a person's to make. Callers receive a handle carrying both stores scoped to one assessment, so code holding
   one cannot address another by passing a different string.
+- **The document loader** — reads the four MVP input formats, decides the format from the
+  extension and never from content, refuses anything it has no branch for, and preserves the
+  original bytes. It forms no opinion about what a document says: the prompt-injection fixture
+  loads like any other file, because detecting it belongs to a step that knows it is reading
+  untrusted text.
 - **`SourceDocument`** — one original source, with the four MVP input formats enforced at the
   schema and the trust level required rather than defaulted, so a call site that does not state one
   fails rather than inheriting `untrusted` quietly.
@@ -267,7 +272,9 @@ Against the seven-stage [roadmap](#roadmap) below, Trace is inside Stage 1.
 
 ### What does not exist yet
 
-- No document ingestion. No agent. No model call of any kind.
+- No normalization, segmentation, or evidence indexing. Documents can be registered — read,
+  format-validated, hashed, and preserved byte-identically — but nothing turns them into
+  addressable evidence yet. No agent. No model call of any kind.
 - Almost no domain objects. The data model specifies roughly twenty-nine; `Assessment`,
   `AssessmentConfiguration`, `SourceDocument`, and `EvidenceReference` are implemented and the rest
   are not.
