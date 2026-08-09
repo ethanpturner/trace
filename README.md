@@ -239,9 +239,10 @@ Against the seven-stage [roadmap](#roadmap) below, Trace is inside Stage 1.
   and `DomainModel`, the Pydantic base every domain object inherits. `extra="forbid"` is the
   setting that matters: an agent-proposed object carrying an invented field fails validation at
   the boundary instead of being silently reduced to the fields anyone reads.
-- **Assessment creation and lookup** — one operation that allocates the identifier, writes the
-  row, and creates the artifact directory, cleaning up rather than leaving half of an assessment
-  behind. Callers receive a handle carrying both stores scoped to one assessment, so code holding
+- **Assessment creation, lookup, and lifecycle** — one operation that allocates the identifier,
+  writes the row, and creates the artifact directory, cleaning up rather than leaving half of an
+  assessment behind. Status describes the assessment as a deliverable, never where the pipeline
+  has reached, and moves through named transitions of which only archiving is a person's to make. Callers receive a handle carrying both stores scoped to one assessment, so code holding
   one cannot address another by passing a different string.
 - **`Assessment` and `AssessmentConfiguration`** — the first two domain objects, held to
   `data-model.md` sections 5 and 6 by the conformance guard. The configuration carries no setting

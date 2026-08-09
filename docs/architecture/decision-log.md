@@ -562,7 +562,7 @@ Tradeoffs:
 
 Open Questions:
 
-- Where does the non-authoritative marking live: on the assessment, on the workflow run, or on the evaluation result?
+- ~~Where does the non-authoritative marking live: on the assessment, on the workflow run, or on the evaluation result?~~ Resolved by DEC-031: on the workflow run. The assessment needs no marking because it simply cannot reach `approved`, and the evaluation result measures a run that already carries it.
 - Should an ablated run be prevented from producing a report at all, rather than producing one that is marked?
 - Does the replay decision file belong with the benchmark scenario, or with the run that produced it?
 
@@ -1690,3 +1690,92 @@ Open Questions:
 - If checkpoint 2 becomes the workflow's bottleneck, is the answer a severity proposal, a smaller finding set, or a different checkpoint shape?
 - Is there a metric for reviewer-assigned severity that does not require a second reviewer — consistency across similar findings within one assessment, perhaps?
 - Section 17 stays in `agent-design.md` as a specification of something not built. Should deferred-agent specifications live in section 37's list instead, so the document describes only what exists?
+
+## DEC-031: `Assessment.status` is the deliverable lifecycle; workflow progress stays on the run
+
+Date: 2026-08-09
+
+Status: Accepted
+
+Decision:
+
+**One axis per object.** `WorkflowRun.status` answers *where is the pipeline*. `Assessment.status` answers *may these conclusions be used, and may work continue*. The two never describe the same thing, and neither is derived from the other.
+
+`Assessment.status` uses **four of the seven `ObjectStatus` members**. Section 4.1 already permits a subset: "not every object needs every status."
+
+| Status | Meaning |
+|---|---|
+| `draft` | Work in progress. The conclusions are not authoritative. Any number of runs, at any stage. |
+| `pending_review` | Blocked on a human. No automated progress is possible. |
+| `approved` | The pipeline completed and the reviewer approved the findings at checkpoint 2. The conclusions are the reviewer's. |
+| `archived` | Retired. Read-only. |
+
+`pending_review` says *that* a human is required, never *which* checkpoint. `WorkflowRun.current_node` says which, and DEC-017 already makes a paused run self-describing.
+
+**Five transitions, each with exactly one writer.**
+
+| From | To | Written by | On |
+|---|---|---|---|
+| `draft` | `pending_review` | the checkpoint node | reaching either checkpoint |
+| `pending_review` | `draft` | the resume invocation | every pending object having a `ReviewerDecision` |
+| `draft` | `approved` | the terminal node | the run completing |
+| `approved` | `draft` | the run initiator | a new run beginning against an approved assessment |
+| any of the three | `archived` | a person | retiring the assessment |
+
+`archived` is terminal. There is no `pending_review` to `approved` edge: resuming from checkpoint 2 returns the run to `running`, and report generation and evaluation still follow, so the assessment returns to `draft` and reaches `approved` when the pipeline finishes.
+
+**Four rules that are not transitions, and matter more than the edges.**
+
+**The status and the run status are written in one transaction.** `pending_review` is set in the same transaction that sets `WorkflowRun.status` to `paused`, and cleared in the same transaction that resumes. Two independent writes are what would let them disagree; one transaction removes the failure mode rather than documenting it.
+
+**A failed run does not fail its assessment.** `WorkflowRun.status` becomes `failed` and the assessment stays `draft`. There is no failed-shaped assessment status, because an assessment with a failed run is an assessment someone may run again. `data-model.md` section 26 already permits multiple runs per assessment; this states what that means for the parent.
+
+**An assessment completed by a non-authoritative run may not reach `approved`.** DEC-012 records an ablated run as non-authoritative and `evaluation-plan.md` section 14 ablates checkpoints. Findings that no human approved becoming an approved assessment is precisely what DEC-005 exists to prevent.
+
+**A person may perform only the transition to `archived`.** Every other edge is written by a workflow node. A user-settable `approved` is a checkpoint bypass with extra steps.
+
+**This answers DEC-012's first open question.** The non-authoritative marking lives on the **workflow run**. It is not needed on the assessment, because the assessment's inability to reach `approved` is the consequence that matters, and it is not needed on the evaluation result, which measures a run that already carries it. One marking, one place, with its effect expressed as a rule rather than as a second field.
+
+**Three members are excluded**, and the reasons differ:
+
+- `candidate` describes an object proposed by an agent and awaiting validation. An assessment is created by a person and is never proposed.
+- `rejected` conflates two different things. An assessment whose findings were all rejected is a *completed* assessment with zero findings, and "a successful assessment may produce no significant findings" is a binding constraint. An abandoned assessment is `archived`.
+- `superseded` belongs to re-generation. DEC-023 puts `supersedes_id` on exactly two objects and reserves it for a generated object replaced by a later generated one. A re-assessment is a new run or a new assessment, not a supersession.
+
+Why:
+
+The field was required by section 5 and defined nowhere. Section 5's example shows `pending_review` and that is the only statement about it in the corpus, while both neighbouring status fields — `WorkflowRun.status` and `ExecutionRecord.status` — carry explicit vocabularies and explicit scopes.
+
+Issue #50 needed a table to build the service and shipped one, recorded in the code as invented. It was wrong in a way worth keeping in the record, because the same mistake is available to anyone filling this gap: it made `pending_review` mean "at a checkpoint". There are two checkpoints, so that value is ambiguous between them, and it duplicates `WorkflowRun.status == paused` plus `current_node`, which DEC-017 already establishes as the record of a pause.
+
+Duplication is the actual problem rather than ambiguity. A stored status that can disagree with the runs it summarizes is a second authoritative answer to one question — the failure DEC-016 cites when rejecting a framework checkpointer whose state would sit alongside the domain objects, and the one DEC-028 cites when refusing a declared count that can disagree with its own enumeration. Three decisions now reject the same shape.
+
+Section 26 is what forces the axis apart: an assessment may have multiple workflow runs, for retries, revisions, or evaluations. A status that mirrored a run would have to choose which run, and every answer to that is wrong for some case.
+
+The four rules carry the weight because the edges alone permit a correct-looking implementation that still diverges. Writing the pair in one transaction is what makes divergence structurally impossible; DEC-017 already has the checkpoint node persisting the run, so there is a transaction to join and the rule costs nothing.
+
+Excluding `rejected` is the one exclusion with a real argument against it, since a reviewer who rejects every finding has plainly not produced a useful assessment. The design principle settles it: a run that surfaces no defensible findings has done its job, and a status meaning "the answer was no" would be read as failure by everything that displays it.
+
+Alternatives Considered:
+
+- Three values, dropping `pending_review`, leaving a pure deliverable lifecycle with nothing that can diverge
+- Deriving the status from the assessment's runs rather than storing it
+- Mirroring the run, adding `running`, `paused`, and `failed` to `ObjectStatus`
+- Keeping #50's table, which additionally allowed `approved` to `pending_review`
+- A separate `blocked_on_human` boolean beside the status, rather than a status value
+
+Tradeoffs:
+
+- **`pending_review` is denormalized and can still be wrong** if a node sets it outside the transaction that pauses the run. The rule makes that a defect rather than a race, but nothing in the schema enforces it; the enforcement lives in the checkpoint node's implementation, which is not built.
+- Dropping `pending_review` entirely would have removed that risk. It was kept because "which of my assessments are waiting on me" is the question a local single-user tool is most often asked, and answering it otherwise means loading every run.
+- **The `approved` gate depends on information the assessment does not hold.** Whether the completing run was authoritative is a property of the run, so the service takes it as an argument until `WorkflowRun` exists. An argument is weaker than a lookup and will be replaced by one.
+- Five named transitions rather than one status setter is more surface, and a sixth event will want a sixth verb. That is the intended cost: a generic setter re-admits the ambiguity this decision removes.
+- `approved` to `draft` means an approved assessment silently stops being approved when someone starts a new run. That is correct — the conclusions no longer describe the current state — but it discards the record that it *was* approved, which only the `ReviewerDecision` rows retain.
+- Nothing detects an assessment stuck in `pending_review` whose run was deleted or whose decisions were never recorded. DEC-017 makes a paused run wait indefinitely by design, and this inherits that.
+
+Open Questions:
+
+- Should reaching `approved` be recorded as an event as well as a state, so a revision does not erase the fact that an earlier run was approved?
+- Does `archived` need to prevent writes to the assessment's objects, or is it a label until retention (section 36) gives it teeth?
+- When a run is ablated, should the assessment be prevented from *starting* it rather than only from reaching `approved`?
+- Is `pending_review` worth the denormalization once a run listing exists, or should it be reconsidered when the CLI is built?

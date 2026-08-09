@@ -258,6 +258,13 @@ Squashing either pull request breaks the chain: the hotfix commit stops being an
 - **Go through `AssessmentService` for anything assessment-shaped**, and hold the
   `AssessmentHandle` it returns rather than an identifier: it carries the scoped repository
   and the scoped artifact store together, so one assessment's code cannot reach another's.
+- **`Assessment.status` is the deliverable's lifecycle, never the pipeline's position** (DEC-031).
+  Workflow progress is `WorkflowRun.status`; an assessment may have several runs. Four values only
+  — `draft`, `pending_review`, `approved`, `archived` — reached through named verbs
+  (`begin_review`, `resume_from_review`, `approve`, `begin_revision`, `archive`) rather than a
+  status setter, because a setter is what let the pre-DEC-031 version mean "at a checkpoint"
+  without anyone deciding it should. A person may only `archive`. A failed run leaves its
+  assessment in `draft`.
 - **Reach persisted objects through a scoped `AssessmentRepository`.** `AssessmentStore.repository(
   assessment_id)` is the only way in; there is no cross-assessment read but `assessment_ids()`,
   which returns identifiers and no content. Identifiers come from `repository.allocate(prefix)`,

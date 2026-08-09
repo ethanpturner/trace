@@ -45,30 +45,30 @@ __all__ = [
     "AssessmentService",
     "AssessmentStatus",
     "InvalidStatusTransitionError",
+    "NonAuthoritativeRunError",
 ]
 
-# The `ObjectStatus` members an assessment may occupy, and where each may go next.
+# The `ObjectStatus` members an assessment may occupy, and where each may go next (DEC-031).
 #
-# Section 4.1 says "not every object needs every status", and this is one of the objects that
-# does not. `candidate` describes a proposed object awaiting validation, which an assessment never
-# is -- it is created, worked on, reviewed, and finished. `rejected` and `superseded` describe an
-# object replaced or refused within an assessment, which the assessment itself cannot be.
+# `Assessment.status` is the deliverable's lifecycle -- may these conclusions be used, may work
+# continue -- and never where the pipeline has reached. That belongs to `WorkflowRun.status`, and
+# an assessment may have several runs, so it cannot mirror one.
 #
-# The corpus does not state this table, and #148 decides what replaces it. This is the narrowest
-# reading that supports the workflow the rest of the corpus describes: work, then review, then
-# approval, with `archived` terminal and reachable from anywhere.
+# `pending_review` says that a human is required, never which of the two checkpoints;
+# `WorkflowRun.current_node` says which. There is no `pending_review` to `approved` edge: resuming
+# from checkpoint 2 returns the run to `running` and report generation still follows, so the
+# assessment returns to `draft` and reaches `approved` when the pipeline finishes.
 #
-# Two things here are known to be wrong and are kept only until #148 lands, because changing them
-# without the decision would move the guess rather than settle it. `pending_review` means "at a
-# checkpoint", which is ambiguous between the two checkpoints and duplicates
-# `WorkflowRun.status == paused` -- a second authoritative answer to a question DEC-017 already
-# answers. And `approved -> pending_review` implies a re-review that no node produces.
+# `candidate`, `rejected`, and `superseded` are excluded. An assessment is never proposed by an
+# agent; an assessment whose findings were all rejected is a completed assessment with zero
+# findings, which design-principles.md treats as a success; and supersession belongs to
+# re-generated objects, which DEC-023 limits to the two carrying `supersedes_id`.
 ASSESSMENT_TRANSITIONS: Final[dict[ObjectStatus, frozenset[ObjectStatus]]] = {
-    ObjectStatus.DRAFT: frozenset({ObjectStatus.PENDING_REVIEW, ObjectStatus.ARCHIVED}),
-    ObjectStatus.PENDING_REVIEW: frozenset(
-        {ObjectStatus.APPROVED, ObjectStatus.DRAFT, ObjectStatus.ARCHIVED}
+    ObjectStatus.DRAFT: frozenset(
+        {ObjectStatus.PENDING_REVIEW, ObjectStatus.APPROVED, ObjectStatus.ARCHIVED}
     ),
-    ObjectStatus.APPROVED: frozenset({ObjectStatus.PENDING_REVIEW, ObjectStatus.ARCHIVED}),
+    ObjectStatus.PENDING_REVIEW: frozenset({ObjectStatus.DRAFT, ObjectStatus.ARCHIVED}),
+    ObjectStatus.APPROVED: frozenset({ObjectStatus.DRAFT, ObjectStatus.ARCHIVED}),
     ObjectStatus.ARCHIVED: frozenset(),
 }
 
@@ -96,6 +96,22 @@ class AssessmentExistsError(AssessmentServiceError):
         super().__init__(
             f"assessment {assessment_id!r} already exists. Identifiers come from the store's "
             f"counter and are never reused, so this means two stores were mixed."
+        )
+
+
+class NonAuthoritativeRunError(AssessmentServiceError):
+    """An ablated run may not produce an approved assessment.
+
+    DEC-012 records a run that ablates a component as non-authoritative, and evaluation-plan.md
+    section 14 ablates the human checkpoints. Findings that no human approved becoming an approved
+    assessment is exactly what DEC-005 exists to prevent, so the gate is here rather than in the
+    harness that produced the run.
+    """
+
+    def __init__(self, assessment_id: str) -> None:
+        super().__init__(
+            f"{assessment_id} cannot be approved: the completing run is non-authoritative. "
+            f"An ablated run produces findings no human approved (DEC-012, DEC-031)."
         )
 
 
@@ -234,12 +250,52 @@ class AssessmentService:
             object_counts=self._store.repository(assessment_id).counts_by_type(),
         )
 
-    def update_status(self, assessment_id: str, status: ObjectStatus) -> Assessment:
-        """Move an assessment to a new status, refreshing `updated_at`.
+    def archive(self, assessment_id: str) -> Assessment:
+        """Retire an assessment. The only transition a person performs (DEC-031).
+
+        Reachable from every non-terminal status, because an assessment may be abandoned at any
+        point -- including while it waits for a human who is not coming back.
+        """
+        return self._transition(assessment_id, ObjectStatus.ARCHIVED)
+
+    def begin_review(self, assessment_id: str) -> Assessment:
+        """A checkpoint has paused the run and is waiting for a human.
+
+        DEC-031 requires this to be written in the same transaction that sets
+        `WorkflowRun.status` to `paused`. The store's transaction depth lives on the store, so a
+        caller that wraps both in one `repository.transaction()` gets exactly that -- the commit
+        here defers to the enclosing one rather than landing early.
+        """
+        return self._transition(assessment_id, ObjectStatus.PENDING_REVIEW)
+
+    def resume_from_review(self, assessment_id: str) -> Assessment:
+        """Every pending object has a `ReviewerDecision`; the run continues (DEC-017)."""
+        return self._transition(assessment_id, ObjectStatus.DRAFT)
+
+    def approve(self, assessment_id: str, *, run_is_authoritative: bool) -> Assessment:
+        """The pipeline completed and the reviewer approved the findings at checkpoint 2.
+
+        `run_is_authoritative` is a property of the `WorkflowRun`, which does not exist yet, so it
+        is supplied by the caller. When #57 lands this reads the run instead; the rule does not
+        change, only where its input comes from.
+        """
+        if not run_is_authoritative:
+            raise NonAuthoritativeRunError(assessment_id)
+        return self._transition(assessment_id, ObjectStatus.APPROVED)
+
+    def begin_revision(self, assessment_id: str) -> Assessment:
+        """A new run begins against an approved assessment, so its conclusions are stale again."""
+        return self._transition(assessment_id, ObjectStatus.DRAFT)
+
+    def _transition(self, assessment_id: str, status: ObjectStatus) -> Assessment:
+        """Apply a transition, refreshing `updated_at`.
+
+        Private, and reached only through the named verbs above, so no caller can set an arbitrary
+        status. A generic setter would re-admit the ambiguity DEC-031 removes -- it is what let
+        #50's version mean "at a checkpoint" without anyone deciding it should.
 
         The object is rebuilt through `model_validate` rather than `model_copy`, because
-        `model_copy` validates nothing -- the edit path is the one place a value that did not come
-        from the schema enters an object, and it is the worst place to skip it.
+        `model_copy` validates nothing and this is the edit path.
         """
         current = self.get(assessment_id)
         if status not in ASSESSMENT_TRANSITIONS.get(current.status, frozenset()):
