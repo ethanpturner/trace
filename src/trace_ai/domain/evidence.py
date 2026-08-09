@@ -36,9 +36,9 @@ line range is not an address there: two sequence elements can be textually ident
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Final, Self
+from typing import Annotated, Any, Final, Self
 
-from pydantic import Field, model_validator
+from pydantic import Field, StringConstraints, field_validator, model_validator
 
 from trace_ai.domain.base import DomainModel
 from trace_ai.domain.enums import SourceOrigin
@@ -82,12 +82,18 @@ class EvidenceReference(DomainModel):
     end_line: int | None = Field(default=None, ge=1)
     page_number: int | None = Field(default=None, ge=1)
 
-    quoted_text: str = Field(min_length=1)
+    quoted_text: Annotated[str, StringConstraints(strip_whitespace=False)]
     """The verbatim excerpt from the original: what a reviewer sees and what the report quotes.
 
-    Required and non-empty. `DomainModel` strips surrounding whitespace before this constraint
-    applies, so a whitespace-only quotation is rejected rather than stored as a citation of blank
-    space.
+    **Whitespace stripping is disabled for this field alone.** `DomainModel` sets
+    `str_strip_whitespace=True`, which is right for text extracted from a document and wrong here:
+    DEC-015 makes this the verbatim excerpt, DEC-019 hashes it, and the indexer records the line
+    range it came from. Stripping would leave the stored text disagreeing with both its own hash
+    and its own line numbers, and the disagreement would surface as an unverifiable citation rather
+    than as a bug in this class.
+
+    Emptiness is still refused, by `_must_quote_something` rather than by `min_length`: with
+    stripping off, a whitespace-only quotation has a length and would otherwise pass.
     """
 
     normalized_text: str | None = None
@@ -98,6 +104,19 @@ class EvidenceReference(DomainModel):
     created_at: datetime
     metadata: dict[str, Any] = Field(default_factory=dict)
     """Additional location details, including `json_pointer` for a structured source (DEC-015)."""
+
+    @field_validator("quoted_text")
+    @classmethod
+    def _must_quote_something(cls, value: str) -> str:
+        """Evidence cites text that exists.
+
+        A citation of blank space is the DEC-009 failure in miniature: it looks like evidence,
+        carries a location, and supports nothing. "The document does not say" is a
+        `DocumentationGap` or a `Question`.
+        """
+        if not value.strip():
+            raise ValueError("quoted_text must not be empty or whitespace only")
+        return value
 
     @model_validator(mode="after")
     def _must_address_a_passage(self) -> Self:

@@ -244,6 +244,10 @@ Against the seven-stage [roadmap](#roadmap) below, Trace is inside Stage 1.
   assessment behind. Status describes the assessment as a deliverable, never where the pipeline
   has reached, and moves through named transitions of which only archiving is a person's to make. Callers receive a handle carrying both stores scoped to one assessment, so code holding
   one cannot address another by passing a different string.
+- **Normalization and evidence indexing** — line-count-preserving normalization, segmentation at
+  the shallowest heading level that occurs more than once, JSON Pointer addressing for structured
+  documents, and one `EvidenceReference` per addressable unit. The eight ForgeFlow inputs produce
+  over a hundred references whose quoted text is verifiable against the original file.
 - **The document loader** — reads the four MVP input formats, decides the format from the
   extension and never from content, refuses anything it has no branch for, and preserves the
   original bytes. It forms no opinion about what a document says: the prompt-injection fixture
@@ -272,9 +276,8 @@ Against the seven-stage [roadmap](#roadmap) below, Trace is inside Stage 1.
 
 ### What does not exist yet
 
-- No normalization, segmentation, or evidence indexing. Documents can be registered — read,
-  format-validated, hashed, and preserved byte-identically — but nothing turns them into
-  addressable evidence yet. No agent. No model call of any kind.
+- No agent. No model call of any kind. Documents are ingested and turned into addressable
+  evidence, and nothing yet reads that evidence.
 - Almost no domain objects. The data model specifies roughly twenty-nine; `Assessment`,
   `AssessmentConfiguration`, `SourceDocument`, and `EvidenceReference` are implemented and the rest
   are not.
