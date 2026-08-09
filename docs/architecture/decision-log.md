@@ -725,3 +725,76 @@ Open Questions:
 - Does the effort level belong in `model_profile`, or per agent alongside the section 29 intent?
 - Should a second adapter be written before the seam is trusted, or is that premature for a local single-user MVP?
 - Which capabilities must an adapter declare for an evaluation run to be considered comparable to another?
+
+## DEC-015: Address evidence against the original document, with line-preserving normalization
+
+Date: 2026-08-09
+
+Status: Accepted
+
+Decision:
+
+**Every location field on an EvidenceReference addresses the original document, never the normalized artifact.** `start_line`, `end_line`, and `quoted_text` are all taken from the file as supplied.
+
+**Normalization is line-count preserving by construction.** It may convert line endings to LF, strip trailing whitespace within a line, and normalize Unicode to NFC. It may not remove blank lines, collapse consecutive blank lines, unwrap or rewrap paragraphs, or strip front matter. Line *n* of the normalized artifact is line *n* of the original, always.
+
+These two rules together are the substance of this decision. The first says which document a location means. The second makes the question unable to reappear: if normalization cannot change line counts, then addressing the original and addressing the normalized artifact are the same address, and no later reader can reintroduce the ambiguity by choosing differently. A test asserts the line counts of the original and normalized artifacts are equal for every ingested document.
+
+`quoted_text` is verbatim from the original and is what a reviewer sees and what the report quotes. `normalized_text` is the derived form and exists for machine comparison. `content_hash` covers `quoted_text`.
+
+**Markdown and plain text are segmented at the shallowest heading level that occurs more than once**, determined per document rather than fixed.
+
+The qualifier is load-bearing and was arrived at by getting it wrong first. "Shallowest level present" is the intuitive statement and it fails on the corpus: two documents use `#` once as a title and `##` for every section, so the shallowest level present is `#`, which segments a 734-line document into one chunk — the exact failure this rule exists to prevent. A heading level that appears once partitions nothing. The corrected rule reads: take the shallowest level that appears at least twice.
+
+Headings deeper than the segmenting level sit inside their chunk and do not create sub-chunks. A document with no repeated heading level is one chunk with `section_title` unset.
+
+`section_title` is the chunk's own heading text, flattened rather than nested. `chunk_index` is contiguous from zero in document order.
+
+**JSON and YAML are addressed by JSON Pointer** (RFC 6901), stored in `metadata` under the reserved key `json_pointer`. `section_title` carries the readable dotted-path equivalent. `start_line` and `end_line` are still populated from the parser's location information so a reviewer can find the passage in the file, but the pointer is the address. An addressable node is each top-level mapping key, and each element of a top-level sequence.
+
+**No field is added to EvidenceReference.** `metadata` is already typed `map[string, any]` and described as "additional location details" in `data-model.md` section 8, which is exactly this. The schema is unchanged.
+
+`page_number` remains in the schema, unpopulated, until PDF ingestion arrives. No validation rule requires it.
+
+Why:
+
+The question was recorded as open in three places — `data-model.md` questions 2 and 3, and `current-architecture.md` question 4 — and underneath them sat a question nobody had asked: `SourceDocument` carries both `original_path` and `normalized_path`, `EvidenceReference` carries both `quoted_text` and `normalized_text`, and nothing stated which document `start_line` indexes. If normalization changed line counts, every evidence reference in the system would be wrong by an unknown offset, silently, in the object the project's central traceability claim runs through.
+
+Addressing the original is the right half of the choice because the original is what the reviewer opens. "Every finding is walkable back to the sentence that produced it" means a sentence in the document they supplied, not in an artifact the pipeline derived. The original is also immutable, whereas normalization rules are implementation and will change; locations bound to the original survive a normalization change, and locations bound to the normalized artifact would be invalidated by one.
+
+Making normalization line-preserving is what turns a decision into a property. A rule that says "index the original" can be violated by a later implementer who normalizes aggressively and adjusts offsets; a normalization that cannot change line counts leaves nothing to adjust. It is also cheap here: the demo corpus contains no CRLF line endings, no trailing whitespace, no front matter, and no tabs, so the constraint currently costs nothing at all.
+
+The per-document heading rule comes from the corpus rather than from taste, and the corpus also corrected the first version of it.
+
+A fixed rule fails badly in both directions on the material the project already has. Segmenting on `#` gives `architecture-overview.md`, a 734-line document, exactly one chunk, because its only `#` is the document title. Segmenting on `##` gives zero chunks for five of the seven Markdown documents, which use `#` for every section. The corpus is internally inconsistent about heading depth, and any fixed rule encodes that inconsistency as a defect.
+
+The obvious per-document rule — the shallowest heading level *present* — has the same failure for the same reason, which is easy to miss because it sounds like it addresses the problem. A `#` that appears once is a title, not a section boundary, so a document with one `#` and thirty-five `##` still collapses to one chunk under it. Requiring the level to occur more than once is what actually distinguishes a title from a partition. That correction came from running the rule against the corpus in a test rather than from reasoning about it; the wrong version was written into this entry first.
+
+The corrected rule yields 19, 35, 17, 19, 14, 13, and 20 chunks across the seven documents, which is the intended granularity in every case.
+
+A line range is not an address in a structured document. `- name: web` tells a reader nothing without knowing it is `components[0]`, and two list elements can be textually identical. JSON Pointer is a standard, is stable under reformatting that does not change structure, and expresses containment, which is what makes a YAML location meaningful. Keeping the line range alongside it costs nothing and preserves the reviewer's ability to open the file at the right place.
+
+Alternatives Considered:
+
+- Line ranges as the universal locator across all formats, with structured formats treated as text
+- Chunk index as the primary address, with line ranges derived
+- Addressing the normalized artifact, with a stored offset map back to the original
+- Permitting normalization to change line counts and storing both sets of line numbers
+- Adding a `locator` field to EvidenceReference rather than using `metadata`
+- A fixed heading level for segmentation, with the corpus corrected to match
+
+Tradeoffs:
+
+- **Line-preserving normalization forecloses normalizations someone will eventually want.** Stripping YAML front matter, collapsing runs of blank lines, and reflowing wrapped paragraphs are all now prohibited. If one of them becomes necessary, this decision has to be revisited rather than worked around, which is the intended cost but is still a cost.
+- The per-document heading rule means chunk granularity is not comparable across documents. A chunk in `architecture-overview.md` is an `##` section; a chunk in `security-overview.md` is a `#` section. They are both "one section" in their own document's terms, but nothing enforces that they are similar in size.
+- A document that uses headings inconsistently within itself — a few `#` sections and then a run of `##` ones — gets segmented at `#`, and the `##` sections disappear into their parents. The corpus does not currently contain such a document.
+- JSON Pointer in `metadata` is unvalidated by the schema, since `metadata` is untyped. The pointer's correctness rests on the indexing code and its tests rather than on the model.
+- Storing `quoted_text` from the original means the stored evidence can contain the artifacts normalization exists to remove. That is deliberate — the reviewer should see what the document says — but it means comparison must use `normalized_text`.
+- `content_hash` over `quoted_text` detects a changed passage but not a moved one. A document edited above a passage shifts its line numbers while the hash still matches.
+
+Open Questions:
+
+- What is the addressable-node granularity for deeply nested structured input? This decision defines it for the two-level shapes the corpus contains and does not generalize.
+- Should a chunk that greatly exceeds a size threshold be subdivided, and if so does the subdivision get its own `chunk_index` or a suffix?
+- When a source document is re-ingested after an edit, are existing evidence references invalidated, re-anchored, or left stale with a failing hash?
+- Does `normalized_text` earn its place on every evidence reference, or only where normalization actually changed something?

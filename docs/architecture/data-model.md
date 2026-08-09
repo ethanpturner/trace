@@ -526,6 +526,27 @@ Represents an addressable piece of evidence from a source.
 - Evidence references must point to a valid source document.
 - Evidence text should not be modified after creation; corrections create a new evidence reference.
 
+## Note on locations
+
+Every location field addresses the **original** document, never the normalized artifact
+(DEC-015). `start_line`, `end_line`, and `quoted_text` are all taken from the file as supplied.
+Normalization is line-count preserving, so the two addressings cannot diverge.
+
+`quoted_text` is verbatim from the original and is what a reviewer sees and what the report
+quotes. `normalized_text` is the derived form and exists for machine comparison. `content_hash`
+covers `quoted_text`.
+
+For Markdown and plain text, `chunk_index` counts sections segmented at the shallowest heading
+level present in that document, and `section_title` is the chunk's own heading, flattened rather
+than nested.
+
+For JSON and YAML the address is a JSON Pointer carried in `metadata` under the reserved key
+`json_pointer`, with `section_title` holding the readable dotted-path equivalent. Line numbers are
+still populated so a reviewer can find the passage, but a line range is not an address in a
+structured document — two sequence elements can be textually identical.
+
+`page_number` is unpopulated until PDF ingestion arrives.
+
 ## Example
 
 id: evd-014
@@ -1975,8 +1996,8 @@ These can be added later without expanding the initial MVP unnecessarily.
 # 39. Open Data-Model Questions
 
 1. Should context claims use a flexible subject-predicate-value structure or more specific typed models?
-2. Should evidence excerpts be duplicated in the database or loaded from normalized source files?
-3. How should evidence locations be represented consistently across Markdown, text, JSON, YAML, and future PDF inputs?
+2. ~~Should evidence excerpts be duplicated in the database or loaded from normalized source files?~~ Resolved by DEC-015: `quoted_text` is stored verbatim from the original and is immutable, with `content_hash` covering it. Where the row is stored is a persistence question (DEC-012's successor), not a location one.
+3. ~~How should evidence locations be represented consistently across Markdown, text, JSON, YAML, and future PDF inputs?~~ Resolved by DEC-015.
 4. Should actors be separate first-class objects in the MVP?
 5. How should requirement applicability conditions be represented in machine-readable form? Catalog version 0.1 leaves them as free text deliberately, so the vocabulary can be observed before it is fixed.
 6. How should inherited-control scope be modeled?
