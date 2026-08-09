@@ -1174,3 +1174,58 @@ Open Questions:
 - Should an injection attempt observed in a source document ever be admissible as evidence for a threat about the reviewed system, or must that always be a separate reviewer judgment?
 - What granularity counts as one contradiction when three documents disagree pairwise?
 - Does `SourceObservation` need a `status` of its own, given that it records an observation rather than a proposal a reviewer accepts or rejects?
+
+## DEC-022: Confidence is categorical; evidence strength is relational; inferred claims carry a rationale
+
+Date: 2026-08-09
+
+Status: Accepted
+
+Decision:
+
+**`confidence_score` is removed from `ContextClaim`.** Confidence is categorical — `low`, `medium`, `high` — and nothing numeric is stored alongside it. Section 4.2's sentence permitting a numeric score is removed with it.
+
+**`EvidenceStrength` gains a home.** `EvidenceAssessment` gains `evidence_strengths`, a map from evidence identifier to `EvidenceStrength`, covering the references in `evidence_ids`. The type has been defined since the model was written and carried by no field; this is where it belongs.
+
+It belongs there rather than on `EvidenceReference` because **strength is relational, not intrinsic**. The same passage can be direct evidence for one claim and merely contextual for another; a sentence describing an identity provider is direct evidence about authentication and contextual evidence about session handling. A field on the reference would have to pick one.
+
+**`ContextClaim` gains a required-when-inferred `rationale`.** `agent-design.md` section 7 requires inferred claims to carry "a concise rationale" and the object had nowhere to put one — `reviewer_notes` is the reviewer's field, not the agent's. The field is required when `status` is `inferred` or `assumed`, and optional otherwise.
+
+**"Enforce confidence ranges" now means one thing.** `agent-design.md` section 8 gives the Context Validation node that responsibility without saying what it checks. With no numeric score, it checks that `confidence` is a member of `ConfidenceLevel` — nothing more. There is no range, no consistency check between two representations, and no arithmetic.
+
+Why:
+
+Design principle 15 supplies its own decision test: "Does this score help the reviewer make a decision, or merely make the output look precise? Remove metrics that do not improve judgment." Applied to `confidence_score`, the answer is available rather than debatable.
+
+The field appears **exactly once in the entire corpus** — `ContextClaim`'s field table — and is consumed by nothing. No threshold reads it, and after DEC-013 none will: that decision made every threshold a deterministic rule over `satisfaction_status` and `validation_status`, categorical values compared by membership rather than by magnitude. A number that no rule can consume and no reviewer can calibrate is precision with no referent.
+
+Keeping it would also violate the principle it sits under twice over. Principle 15 says to avoid treating confidence as probability, and a decimal from 0 to 1 alongside a three-value enum invites exactly that reading. It says to separate evidence strength from model confidence, and a single score conflates them — a claim can be confidently inferred from weak evidence, or tentatively drawn from strong evidence, and one number cannot say which.
+
+**That separation is what wires up `EvidenceStrength`.** The corpus has both halves of the distinction principle 15 demands and neither was connected: categorical `confidence` sits on objects and means model confidence, while `EvidenceStrength` was defined in section 4.3 and carried nowhere. DEC-013 already relies on the judgment it expresses — its second condition for `unmet` requires knowing whether a cited reference describes absence *directly* or merely *contradicts* a claim of existence — and had to describe that in prose because no field held it.
+
+The rationale field closes the third orphan in the same area. Principle 15's engineering implications list five things, and "require rationales for high-impact uncertain conclusions" is one of them; `agent-design.md` section 7 states the requirement for inferred claims specifically. The object simply lacked the field, which is why the M2 backlog research flagged it.
+
+Alternatives Considered:
+
+- Keep `confidence_score` as optional and never read it
+- Keep it but forbid thresholds from consuming it, enforced by review
+- Put `EvidenceStrength` on `EvidenceReference` as an intrinsic property
+- Change `EvidenceAssessment.evidence_ids` to a list of objects carrying identifier and strength
+- Remove `EvidenceStrength` entirely as vestigial
+- Reuse `reviewer_notes` on `ContextClaim` for the agent's rationale
+
+Tradeoffs:
+
+- **Removing a documented field is a schema change**, and any reader who had planned on a numeric score loses it. That is the intent, but the field had been in the model since it was written and its absence will surprise someone.
+- Three categories is coarse. A reviewer sorting forty claims by confidence gets three buckets, and within `medium` there is no ordering. That is the honest position and it is less useful than a score would *appear* to be.
+- `evidence_strengths` as a map keyed by identifier can drift from `evidence_ids` — an entry for an identifier not in the list, or a listed identifier with no strength. Nothing structural prevents it; a validation rule must.
+- Making strength relational means the same evidence reference carries a different strength in each assessment that cites it, so "how strong is this passage" has no answer outside a context. That is correct and it complicates any future evidence-quality metric.
+- A rationale required only for `inferred` and `assumed` claims means a `documented` claim gets no explanation of why the evidence supports it. The evidence is supposed to speak for itself there, and sometimes it will not.
+- Nothing yet consumes `evidence_strengths` either. It is wired to DEC-013's rule, which is written but unimplemented, so this replaces one unused field with another until the mapping validation node exists.
+
+Open Questions:
+
+- Should `EvidenceAssessment.confidence` and the per-evidence strengths be checked for coherence — a `supported` status resting entirely on `contextual` evidence, for instance — or is that the agent's judgment to make?
+- Does `Threat`, `ControlMapping`, or `Finding` need per-evidence strength too, or is recording it once at evidence validation sufficient for everything downstream?
+- Is `rationale` required for `unknown` and `contradicted` claims as well, or only where the claim asserts something?
+- Does removing the numeric score leave the evaluation plan's reviewer-agreement metrics with enough resolution to be meaningful?

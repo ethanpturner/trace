@@ -267,7 +267,12 @@ medium
 
 high
 
-A numeric confidence score may also be stored, but it should not create false precision.
+Confidence is **categorical only**. No numeric score is stored (DEC-022): a decimal alongside a
+three-value enum invites reading confidence as probability, which design principle 15 warns
+against, and conflates model confidence with evidence strength, which the same principle requires
+be kept separate.
+
+Model confidence lives here. Evidence strength lives on `EvidenceAssessment.evidence_strengths`.
 
 Suggested interpretation:
 
@@ -280,6 +285,11 @@ Suggested interpretation:
 ## 4.3 EvidenceStrength
 
 Describes how strongly an evidence reference supports a claim.
+
+Carried by `EvidenceAssessment.evidence_strengths`, a map from evidence identifier to strength
+(DEC-022). It sits on the assessment rather than on the `EvidenceReference` because **strength is
+relational, not intrinsic**: the same passage can be direct evidence for one claim and merely
+contextual for another.
 
 Possible values:
 
@@ -659,7 +669,7 @@ Examples:
 | value | any | Yes | Asserted value |
 | status | string | Yes | Documented, inferred, confirmed, etc. |
 | confidence | ConfidenceLevel | Yes | Confidence classification |
-| confidence_score | decimal | No | Optional score from 0 to 1 |
+| rationale | string | No | Why the claim holds. **Required when `status` is `inferred` or `assumed`** (DEC-022) |
 | evidence_ids | list[string] | No | Supporting evidence |
 | source_origin | SourceOrigin | Yes | Claim origin |
 | generated_by | string | No | Workflow node or reviewer |
@@ -1295,6 +1305,7 @@ Represents an explicit evaluation of whether evidence supports a claim, control,
 | subject_type | string | Yes | Object type being evaluated |
 | subject_id | string | Yes | Object being evaluated |
 | evidence_ids | list[string] | Yes | Evidence evaluated |
+| evidence_strengths | map[string, EvidenceStrength] | Yes | Per-evidence strength, keyed by identifier in `evidence_ids` (DEC-022) |
 | validation_status | ValidationStatus | Yes | Result |
 | rationale | string | Yes | Explanation |
 | missing_evidence | list[string] | No | Evidence still needed |
@@ -2151,7 +2162,7 @@ These can be added later without expanding the initial MVP unnecessarily.
 4. Should actors be separate first-class objects in the MVP?
 5. How should requirement applicability conditions be represented in machine-readable form? Catalog version 0.1 leaves them as free text deliberately, so the vocabulary can be observed before it is fixed.
 6. How should inherited-control scope be modeled?
-7. Should confidence scores be generated numerically or only categorically?
+7. ~~Should confidence scores be generated numerically or only categorically?~~ Resolved by DEC-022: categorically only. `confidence_score` is removed, and `EvidenceStrength` moves onto `EvidenceAssessment` so model confidence and evidence strength stay separate, as design principle 15 requires.
 8. How should multiple model outputs proposing the same object be merged?
 9. How should object revisions be stored?
 10. Should reviewer edits create new object versions or update the current object with decision history?
