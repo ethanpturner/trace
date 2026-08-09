@@ -468,7 +468,7 @@ Validate and normalize the output of the Context Extraction Agent before human r
 - Enforce evidence requirements
 - Normalize enumerated values
 - Identify missing required fields
-- Enforce confidence ranges
+- Confirm `confidence` is a valid `ConfidenceLevel` member. There is no numeric score and no range to check (DEC-022).
 - Prevent invalid workflow transitions
 
 ## Outputs
