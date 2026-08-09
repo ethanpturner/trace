@@ -36,7 +36,13 @@ uv run pre-commit run gitleaks --all-files   # a single hook
 ## Repository layout
 
 ```
-src/trace_ai/        configuration and process bootstrap -- the only product code
+src/trace_ai/        configuration and process bootstrap -- the only product code that runs
+src/trace_ai/domain/           domain objects and shared types
+src/trace_ai/services/         ingestion/ and evidence/
+src/trace_ai/infrastructure/   filesystem/ and database/
+                     The three subpackages are a skeleton: directories and docstrings, no
+                     implementation yet. Dependencies point inward -- domain imports neither
+                     of the other two, and tests/unit/test_package_layout.py asserts it.
 tests/unit/          the only tests that exist
 tests/integration/   scaffolded, empty
 tests/evaluation/    scaffolded, empty
