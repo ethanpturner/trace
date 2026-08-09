@@ -193,3 +193,14 @@ issues:
     body_file: backlog_bodies/m0-dx-18.md
     size: M
     blocked_by: []
+
+  # Added after the initial seeding. Found while implementing m1-foundations-03: the
+  # requirements catalog identifies itself with a prefix no document defines, in a form
+  # DEC-018 does not have, and DEC-018 states that no such identifier exists.
+  - seed: m0-dx-21
+    title: "Decide the catalog's identifier and which objects the scheme governs"
+    milestone: "M0 Decisions"
+    labels: ["comp:foundations", "type:decision", "needs-decision", "design-change"]
+    body_file: backlog_bodies/m0-dx-21.md
+    size: S
+    blocked_by: []
