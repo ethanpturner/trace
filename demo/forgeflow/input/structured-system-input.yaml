@@ -185,22 +185,6 @@ documentation:
     - ai-analysis.md
     - sample-repository-notes.md
 
-evaluation:
-
-  benchmark_version: "1.0"
-
-  expected_outputs:
-
-    findings: 3
-
-    questions: 5
-
-    documentation_gaps: 3
-
-    contradictions: 2
-
-    prompt_injection_fixture: true
-
 notes:
   - "Structured metadata is authoritative only for the fields represented here."
   - "Markdown documents remain the primary source for architectural reasoning."

@@ -305,28 +305,26 @@ Seven input documents plus a structured system input, under `demo/forgeflow/inpu
 
 Alongside them, [`structured-system-input.yaml`](demo/forgeflow/input/structured-system-input.yaml)
 carries the machine-readable half of the scenario: components, data assets, trust boundaries,
-declared controls, and the evaluation contract below.
+and declared controls.
 
 ### Adversarial by design
 
-The scenario declares, up front, what a correct assessment should find:
+The scenario declares, separately from the material under review, what a correct assessment
+should find. That contract lives in
+[`demo/forgeflow/expected/`](demo/forgeflow/expected/evaluation-contract.yaml) and is designed
+never to be supplied to Trace during an assessment — a benchmark that hands the system under
+test its own answer key measures nothing.
 
-```yaml
-evaluation:
-  benchmark_version: "1.0"
-  expected_outputs:
-    findings: 3
-    questions: 5
-    documentation_gaps: 3
-    contradictions: 2
-    prompt_injection_fixture: true
-```
+The shape of the expected output is the point, more than any individual number. **Questions**
+and **documentation gaps** are outputs a generic security review does not produce at all — it
+reports missing documentation as missing controls. The **contradictions** are places where the
+documents disagree with each other, which a reviewer must surface rather than silently resolve.
+And the finding count is deliberately small: a handful, not thirty.
 
-Three of those numbers are the point. **Five questions** and **three documentation gaps** are
-outputs a generic security review does not produce at all — it reports missing documentation as
-missing controls. The **two contradictions** are places where the documents disagree with each
-other, which a reviewer must surface rather than silently resolve. And the finding count is
-deliberately small: three, not thirty.
+The exact counts are currently disputed between the contract and
+[`forgeflow-scenario.md`](demo/forgeflow/forgeflow-scenario.md), and are being reconciled.
+They are a ceiling on defensible conclusions rather than a target to reach; nothing in the
+pipeline is designed to read them.
 
 ### Prompt-injection fixture
 
