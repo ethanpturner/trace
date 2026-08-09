@@ -178,8 +178,6 @@ CRITIC[Critical Review Agent]
 
 CONSOLIDATE[Finding Consolidation Node]
 
-SEVERITY[Severity Support Agent]
-
 REVIEW_FINDINGS[Human Finding Review]
 
 REPORT[Report Generation Agent]
@@ -212,9 +210,7 @@ EVIDENCE --> CRITIC
 
 CRITIC --> CONSOLIDATE
 
-CONSOLIDATE --> SEVERITY
-
-SEVERITY --> REVIEW_FINDINGS
+CONSOLIDATE --> REVIEW_FINDINGS
 
 REVIEW_FINDINGS --> REPORT
 
@@ -239,7 +235,6 @@ RENDER --> EVALUATE
 | Evidence Validation | Reasoning agent | Yes | No |
 | Critical Review | Reasoning agent | Yes | No |
 | Finding Consolidation | Primarily deterministic node | Optional | No |
-| Severity Support | Reasoning agent | Yes | No |
 | Finding Review | Human checkpoint | No | Yes |
 | Report Generation | Constrained generation agent | Yes | No |
 | Report Rendering | Deterministic node | No | No |
@@ -1100,7 +1095,27 @@ Use no output when:
 - The issue is a duplicate
 - The issue has no meaningful impact
 
-# 17. Severity Support Agent
+# 17. Severity Support Agent — not built
+
+**This agent is excluded from the MVP by DEC-030, and not merely deferred.** The section is
+retained because the reasoning for excluding it depends on reading what it would have done.
+
+Four of the six outputs below already exist as required `Finding` fields produced by other
+agents: impact rationale is `Finding.impact`, likelihood rationale is `Finding.likelihood`,
+confidence is `Finding.confidence`, and missing information is `Finding.limitations` and
+`Finding.assumptions`. The pipeline already produces the reasoning severity rests on, so a
+seventh agent would re-derive it from the same inputs and add one enum value.
+
+**Severity is assigned by the reviewer at the finding checkpoint.** It is the one required
+`Finding` field the source documents cannot answer: it depends on what an outage costs and
+what the data is worth, which architecture documents do not state. An agent asked for it
+would produce a fluent answer from documents that do not contain one — the DEC-009 failure
+relocated into a field that carries no evidence reference, where nothing in the schema would
+show the answer was unsupported.
+
+The evaluation criteria at the end of this section — reviewer severity agreement,
+overstatement rate, understatement rate — cannot be measured without a proposal to compare
+against, and are not in use.
 
 ## Purpose
 
@@ -1615,7 +1630,6 @@ General guidance:
 | Requirement Mapping | Low |
 | Evidence Validation | Low |
 | Critical Review | Low to moderate |
-| Severity Support | Low |
 | Report Generation | Low to moderate |
 
 Threat generation benefits from some breadth, but creativity must not override architectural grounding.
@@ -1875,7 +1889,10 @@ Trace distinguishes among satisfied, unverified, and unmet requirements without 
 
 1. Critical Review Agent
 2. Finding Consolidation Node
-3. Severity Support Agent
+
+The Severity Support Agent was listed here and is not built (DEC-030). Findings leave
+consolidation carrying `severity: unassigned`, and the reviewer assigns severity at the
+finding checkpoint.
 
 Success condition:
 
@@ -1903,7 +1920,11 @@ The first complete MVP should contain no more than these six model-assisted agen
 5. Critical Review Agent
 6. Report Generation Agent
 
-The Severity Support Agent is optional for the first demonstration. Severity may initially be assigned by the reviewer.
+The Severity Support Agent is **not built** (DEC-030). Severity is assigned by the reviewer
+at the finding checkpoint, and a finding may not be approved while its severity is
+`unassigned`. Section 17 records why the agent was excluded rather than deferred: most of
+what it would output already exists as `Finding` fields, and the part that does not —
+severity itself — depends on business context the documents do not carry.
 
 This limitation is intentional.
 
@@ -1936,10 +1957,10 @@ These agents would expand project scope without proving the MVP thesis.
 
 1. Does Context Extraction require one agent or separate extraction and architecture-normalization stages?
 2. Should threat generation run once for the system or separately by trust boundary?
-3. How many requirements should the Mapping Agent receive per call?
-4. Should requirement retrieval use deterministic metadata filters before semantic retrieval?
+3. ~~How many requirements should the Mapping Agent receive per call?~~ Resolved by DEC-024: all of them. The whole catalog is a stable cacheable prefix on every mapping call.
+4. ~~Should requirement retrieval use deterministic metadata filters before semantic retrieval?~~ Resolved by DEC-024: no. `applicable_technologies` is populated on zero of 23 requirements, so a metadata filter has no input, and semantic retrieval has no substrate while vector infrastructure is deferred.
 5. Should the Critical Review Agent review individual findings or small groups?
-6. Is the Severity Support Agent necessary for the first demo?
+6. ~~Is the Severity Support Agent necessary for the first demo?~~ Resolved by DEC-030: it is not built at all. Four of its six outputs already exist as `Finding` fields, and severity depends on business context the documents do not carry. The reviewer assigns it.
 7. Should duplicate detection use embeddings, a model, deterministic features, or a combination?
 8. How should contradictory evidence be represented to agents?
 9. Should reviewers see agent rationales directly or only concise evidence-based explanations?

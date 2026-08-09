@@ -1618,3 +1618,75 @@ Open Questions:
 - Does GAP-004 need its own entry in section 21, or is a documentation gap that a source document self-declares a different category worth naming?
 - How does the matcher score one combined finding against two expected ones — full credit, partial, or a separate consolidation metric?
 - Section 22 lists ten rejected findings. Should "ForgeFlow lacks webhook replay protection" join them, given that it is now the most likely wrong conclusion in the scenario?
+
+## DEC-030: The reviewer assigns severity; there is no Severity Support Agent
+
+Date: 2026-08-09
+
+Status: Accepted
+
+Decision:
+
+**The MVP has six model-assisted agents. The Severity Support Agent is not built.** It is not deferred pending evidence; it is excluded because four of its six specified outputs already exist as required `Finding` fields produced by other agents.
+
+`agent-design.md` section 17 lists the agent's outputs as recommended severity, impact rationale, likelihood rationale, confidence, factors that could increase or decrease severity, and missing information. Against the `Finding` schema:
+
+| Section 17 output | Already exists as |
+|---|---|
+| Impact rationale | `Finding.impact`, required |
+| Likelihood rationale | `Finding.likelihood` |
+| Confidence | `Finding.confidence`, required |
+| Missing information | `Finding.limitations` and `Finding.assumptions` |
+| Factors that raise or lower severity | nothing |
+| Recommended severity | `Finding.severity` |
+
+**The pipeline already produces the reasoning severity rests on.** A seventh agent would re-derive it from the same inputs and add one enum value. That is not the specific quality gap section 36 requires before an agent is added; it is a second pass over work already done.
+
+**The reviewer assigns severity at checkpoint 2.** `current-architecture.md` section 5.12 already lists changing severity as a reviewer action, so this makes an existing authority the origin rather than a correction. Findings are created with `severity: unassigned`.
+
+**Finding Consolidation does not assign preliminary severity.** The bullet is removed from `current-architecture.md` section 5.11. A deterministic node has the same problem the agent has and less judgment to apply.
+
+**`unassigned` cannot survive approval.** A validation rule at checkpoint 2 rejects an approval whose finding still carries `unassigned`. This is the load-bearing half of the decision: without it, reviewer-assigned severity degrades into nobody assigning severity, and the report is a list of findings with no ordering.
+
+**A severity change is recorded as `edit`, with `prior_value` and `updated_value` on `ReviewerDecision`.** No `change_severity` disposition is added. DEC-023 settled the mechanism, and a second way to express an edit would be a second source of truth about what the reviewer did.
+
+`current-architecture.md` section 5.12 lists "Change severity" alongside "Edit a finding", which reads like a conflict and is not one. **Section 5.12 lists actions a reviewer takes; `ReviewDisposition` lists dispositions the system records.** Those are different lists and do not need to correspond one to one. The section is annotated to say so, because the next reader will otherwise resolve the apparent mismatch by adding an enum value.
+
+**Benchmark expected severities are reviewer guidance, not graded output.** `forgeflow-scenario.md` section 19 states an expected severity per finding. Severity is not a pipeline output, so it is not scored; the value exists so that whoever plays the reviewer in a benchmark run does not introduce variance between runs. `evaluation-plan.md` never measured severity and gains no metric here.
+
+Why:
+
+**Severity is the one required `Finding` field that the source documents cannot answer.** Every other judgment in the pipeline is an evidence judgment — does the documentation support this conclusion — and DEC-009, DEC-013 and DEC-022 all draw that line deliberately. Severity is a risk judgment in business context: what an outage costs, what the data is worth, what this organization tolerates. Architecture documents do not contain it.
+
+An agent asked for severity would therefore produce a fluent answer from documents that do not contain the answer. That is the DEC-009 failure relocated into a different field, and it would be harder to detect there, because a severity label carries no evidence reference and nothing in the schema would show it was unsupported.
+
+The reviewer is already at checkpoint 2 examining each finding, and already holds the context severity depends on. Assigning it is not additional work imposed on them; it is the judgment they are there to make.
+
+The cap argument reaches the same conclusion and is weaker, so it is recorded second. Section 36 requires a specific quality gap identified by evaluation before an agent is added, and the evidence cannot exist before the agent does. Left undecided, the agent would have been built because it is the most completely specified component in the corpus — ten evaluation factors, six outputs, five prohibited operations — and specification completeness is not evidence of need.
+
+A deterministic heuristic was the other real candidate, and design principle 7 favours it. It fails on data. The fields a rule would use — `internet_exposed`, `business_criticality`, the confidentiality, integrity and availability impact fields, `data_classification` — are all optional, and most are free-text strings with no controlled vocabulary. `data-model.md` section 4.5 warns against a complex severity algorithm before the core workflow is validated, and a simple one over optional free text would be arbitrary rather than simple.
+
+Alternatives Considered:
+
+- Build the Severity Support Agent and record a cap change to seven
+- Build it behind a flag, off by default, and evaluate it later
+- A deterministic heuristic in Finding Consolidation from asset and exposure fields
+- A deterministic floor only — a rule that constrains the range without picking a value
+- Leave `severity` at `unassigned` through approval and let the report omit ordering
+- Add `change_severity` to `ReviewDisposition`
+
+Tradeoffs:
+
+- **This makes the reviewer's job at checkpoint 2 strictly larger**, and checkpoint 2 is already the heaviest step in the workflow. Every approved finding now requires a severity decision that was previously going to arrive pre-filled. For an assessment with many findings that is real friction, and it is the most likely reason this decision gets revisited.
+- **A blank field is a worse prompt than a wrong one.** A proposed severity gives the reviewer something to disagree with, and disagreement is faster than origination. That is the strongest argument for the agent and it is not answered here, only outweighed.
+- Excluding the agent removes `agent-design.md` section 17's evaluation criteria — reviewer severity agreement, overstatement rate, understatement rate — which cannot be measured without a proposal to compare against. Those were among the more concrete metrics in the corpus.
+- **Nothing now measures severity at all.** `evaluation-plan.md` mentions it zero times, and this entry does not add a metric. Severity quality is unobserved, so a reviewer assigning severity badly would leave no trace.
+- The "factors that could increase or decrease severity" output has no home in the schema and is simply lost. It was the one genuinely new thing section 17 offered.
+- `current-architecture.md` section 5.13 notes that additional checkpoints may later be added for high-severity findings. A workflow gate keyed on severity would then depend on a field assigned by hand at the checkpoint before it, which is workable but not obviously the right ordering.
+
+Open Questions:
+
+- Should severity carry a rationale field of its own, or is `Finding.impact` sufficient given the reviewer wrote the severity?
+- If checkpoint 2 becomes the workflow's bottleneck, is the answer a severity proposal, a smaller finding set, or a different checkpoint shape?
+- Is there a metric for reviewer-assigned severity that does not require a second reviewer — consistency across similar findings within one assessment, perhaps?
+- Section 17 stays in `agent-design.md` as a specification of something not built. Should deferred-agent specifications live in section 37's list instead, so the document describes only what exists?

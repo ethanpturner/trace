@@ -76,7 +76,11 @@ These are decided. Violating one is a design change requiring an entry in
 
 - **Six model-assisted agents, capped.** Context Extraction, Threat Analysis, Requirement and
   Control Mapping, Evidence Validation, Critical Review, Report Generation. A seventh requires
-  evidence that it improves results. Report *rendering* uses no model.
+  evidence that it improves results. Report *rendering* uses no model. The corpus specified a
+  seventh — Severity Support — and DEC-030 excluded it rather than deferring it: four of its six
+  outputs already existed as `Finding` fields. **Severity is assigned by the reviewer at
+  checkpoint 2**, no node proposes one, and a finding may not be approved while its severity is
+  `unassigned`. `tests/unit/test_agent_cap.py` pins the inventory.
 - **Agents never write authoritative state.** They return proposed objects; the application
   validates and persists. Agents also get no internet, shell, filesystem, database writes, or cloud
   credentials.

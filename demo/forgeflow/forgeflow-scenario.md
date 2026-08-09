@@ -1300,6 +1300,11 @@ The initial benchmark truth set contains **three** findings: FND-002, FND-003, a
 
 The count is not declared anywhere (DEC-028); it is what `expected-findings.yaml` enumerates.
 
+**The expected severities below are reviewer guidance, not graded output.** Severity is assigned by
+the reviewer at checkpoint 2 and is not produced by the pipeline (DEC-030), so there is nothing to
+score it against. They are stated so that whoever plays the reviewer in a benchmark run does not
+introduce variance between runs.
+
 **FND-001 was removed. It is now GAP-004 in section 21.**
 
 An earlier version of this section listed "Webhook Events Lack Replay Protection" as an expected

@@ -97,8 +97,7 @@ flowchart TD
     J --> K(["Evidence Validation Agent"]):::ai
     K --> L(["Critical Review Agent"]):::ai
     L --> M["Finding Consolidation"]:::det
-    M --> N(["Severity Support Agent - optional"]):::ai
-    N --> H2{{"HUMAN CHECKPOINT 2<br/>reviewer approves findings"}}:::human
+    M --> H2{{"HUMAN CHECKPOINT 2<br/>reviewer approves findings<br/>and assigns severity"}}:::human
     H2 --> O(["Report Generation Agent"]):::ai
     O --> P["Report Rendering<br/>deterministic, no model"]:::det
     P --> Q["Evaluation"]:::det
@@ -117,6 +116,14 @@ property rather than a configuration option.
 
 The count is capped at six deliberately. Adding a seventh is a decision requiring evidence that it
 improves results, not a default.
+
+The corpus specified a seventh — a Severity Support Agent — and it is not built. Four of its six
+outputs already existed as required `Finding` fields, so it would have re-derived them from the
+same inputs and added one enum value. **Severity is assigned by the reviewer at checkpoint 2**,
+because it is the one required field the source documents cannot answer: it depends on what an
+outage costs and what the data is worth, and architecture documents do not say. An agent asked for
+it would answer fluently from documents that contain no answer, in a field that carries no evidence
+reference to check it against.
 
 | Agent | Responsibility |
 |---|---|
