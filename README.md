@@ -239,6 +239,10 @@ Against the seven-stage [roadmap](#roadmap) below, Trace is inside Stage 1.
   and `DomainModel`, the Pydantic base every domain object inherits. `extra="forbid"` is the
   setting that matters: an agent-proposed object carrying an invented field fails validation at
   the boundary instead of being silently reduced to the fields anyone reads.
+- **`Assessment` and `AssessmentConfiguration`** — the first two domain objects, held to
+  `data-model.md` sections 5 and 6 by the conformance guard. The configuration carries no setting
+  that governs the two human checkpoints, and a test asserts that reintroducing one fails
+  validation rather than passing quietly.
 - **Identifiers and content hashing** — the twenty prefixes of section 2.1 as a closed registry,
   both identifier forms DEC-018 defines, a typed identifier per object so a threat identifier
   cannot be assigned to a finding's field, and the single SHA-256 utility DEC-019 requires.
@@ -252,10 +256,8 @@ Against the seven-stage [roadmap](#roadmap) below, Trace is inside Stage 1.
 ### What does not exist yet
 
 - No document ingestion. No agent. No model call of any kind.
-- No domain objects. The data model specifies roughly twenty-nine; none are implemented. What
-  exists is the layer beneath them — the seven shared enumerated types of section 4 and the
-  strict Pydantic base they will inherit.
-- No persistence layer.
+- Almost no domain objects. The data model specifies roughly twenty-nine; `Assessment` and
+  `AssessmentConfiguration` are implemented and the rest are not.
 - No CLI beyond a banner printing the environment and which credentials are configured.
 - No threat analysis, no findings, no report generation, no evaluation harness.
 - The demo scenario is not runnable.

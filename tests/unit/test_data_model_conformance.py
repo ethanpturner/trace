@@ -43,6 +43,7 @@ import pytest
 from pydantic import BaseModel, create_model
 
 from trace_ai.config import PROJECT_ROOT
+from trace_ai.domain.assessment import Assessment, AssessmentConfiguration
 from trace_ai.domain.base import DomainModel
 from trace_ai.domain.enums import (
     ConfidenceLevel,
@@ -185,8 +186,8 @@ class Registration:
 #
 # To switch the guard on for an object, change its status to IMPLEMENTED and name the model.
 REGISTRY: dict[str, Registration] = {
-    "5": Registration("Assessment", Status.PLANNED),
-    "6": Registration("AssessmentConfiguration", Status.PLANNED),
+    "5": Registration("Assessment", Status.IMPLEMENTED, Assessment),
+    "6": Registration("AssessmentConfiguration", Status.IMPLEMENTED, AssessmentConfiguration),
     "7": Registration("SourceDocument", Status.PLANNED),
     "8": Registration("EvidenceReference", Status.PLANNED),
     "9": Registration("SystemContext", Status.PLANNED),
@@ -390,15 +391,15 @@ def test_an_implemented_registration_carries_a_model() -> None:
             )
 
 
-def test_no_object_is_implemented_yet() -> None:
-    """Stated so its inversion is deliberate.
+def test_the_guard_is_switched_on_for_something() -> None:
+    """The inverse of the test this replaces.
 
-    When the first model lands this test is deleted in the same change that flips its registry
-    entry. Leaving it passing after a model exists means the guard was never switched on.
+    Until #49 there was no implemented object, and a test asserted that so the switch could not be
+    forgotten. Now that one exists, the risk runs the other way: an implemented object left at
+    `PLANNED` is unguarded, and the file goes quiet about it.
     """
-    assert not [s for s, r in REGISTRY.items() if r.status is Status.IMPLEMENTED], (
-        "a model is registered; delete this test and let the conformance tests do the work"
-    )
+    implemented = [s for s, r in REGISTRY.items() if r.status is Status.IMPLEMENTED]
+    assert implemented, "nothing is registered; the conformance comparison runs zero times"
 
 
 # --------------------------------------------------------------------------------------------
