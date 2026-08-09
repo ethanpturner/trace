@@ -1,0 +1,75 @@
+name: Decision or spike
+description: Resolve an open design question, or time-box an investigation.
+labels: ["type:decision", "needs-decision"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This issue records the question. `docs/architecture/decision-log.md` records the
+        answer. The issue closes when the entry exists.
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Question
+      description: The decision to be made, stated as a question.
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: >-
+        Why the question is open, what depends on the answer, and where the corpus is
+        silent or contradicts itself. Cite the documents that disagree.
+    validations:
+      required: true
+
+  - type: textarea
+    id: options
+    attributes:
+      label: Options
+      description: >-
+        One paragraph per option, with the real trade-off for this project. State the
+        cost, not only the benefit.
+    validations:
+      required: true
+
+  - type: textarea
+    id: criteria
+    attributes:
+      label: Decision criteria
+      description: What would make one option better than another here.
+    validations:
+      required: true
+
+  - type: input
+    id: timebox
+    attributes:
+      label: Time box
+      description: Applies to spikes. Leave blank for a decision needing no investigation.
+      placeholder: 4 hours
+    validations:
+      required: false
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      value: |
+        - [ ] An entry is added to `docs/architecture/decision-log.md` in the established
+              format: Decision, Why, Alternatives Considered, Tradeoffs, Open Questions.
+        - [ ] Every design document the decision contradicts is corrected in the same
+              pull request, so the corpus states one thing.
+        - [ ] Any open question this closes is marked resolved where it was raised.
+    validations:
+      required: true
+
+  - type: textarea
+    id: references
+    attributes:
+      label: References
+      description: Exact file paths with section numbers, including the open questions this closes.
+    validations:
+      required: true

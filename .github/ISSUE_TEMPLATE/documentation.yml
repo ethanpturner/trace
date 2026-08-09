@@ -1,0 +1,41 @@
+name: Documentation
+description: Change the design corpus, the README, or the journal.
+labels: ["type:docs"]
+body:
+  - type: input
+    id: files
+    attributes:
+      label: Files
+      description: The documents this issue changes.
+      placeholder: docs/architecture/agent-design.md
+    validations:
+      required: true
+
+  - type: textarea
+    id: change
+    attributes:
+      label: Change
+      description: What the document says now and what it should say.
+    validations:
+      required: true
+
+  - type: textarea
+    id: rationale
+    attributes:
+      label: Rationale
+      description: >-
+        Why the current text is wrong or incomplete. If this documents a decision already
+        made, link the decision-log entry.
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: register
+    attributes:
+      label: Register
+      options:
+        - label: >-
+            Present indicative only for what runs today. "Is designed to" for anything
+            specified but unbuilt.
+        - label: Flat declarative. No marketing language, no emoji.
+        - label: Version and status markers left consistent with the rest of the corpus.

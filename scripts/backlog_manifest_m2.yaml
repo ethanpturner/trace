@@ -1,0 +1,152 @@
+issues:
+  - seed: m2-context-objects-01
+    title: "Add the architecture object models for the context baseline"
+    milestone: "M2 Context"
+    labels: ["comp:context-objects", "type:feature", "design-change", "needs-decision"]
+    body_file: backlog_bodies/m2-context-objects-01.md
+    size: L
+    blocked_by: ["m1-foundations-01", "m0-dx-02"]
+
+  - seed: m2-context-objects-02
+    title: "Add the ContextClaim model with explicit status and evidence rules"
+    milestone: "M2 Context"
+    labels: ["comp:context-objects", "type:feature", "needs-decision"]
+    body_file: backlog_bodies/m2-context-objects-02.md
+    size: M
+    blocked_by: ["m2-context-objects-01", "m1-evidence-01", "m0-dx-02", "m0-dx-14", "m0-dx-19"]
+
+  - seed: m2-context-objects-03
+    title: "Add the Question model and blocking-question semantics"
+    milestone: "M2 Context"
+    labels: ["comp:context-objects", "type:feature"]
+    body_file: backlog_bodies/m2-context-objects-03.md
+    size: S
+    blocked_by: ["m2-context-objects-01", "m0-dx-02"]
+
+  - seed: m2-context-objects-04
+    title: "Add SystemContext as the versioned architecture baseline"
+    milestone: "M2 Context"
+    labels: ["comp:context-objects", "type:feature"]
+    body_file: backlog_bodies/m2-context-objects-04.md
+    size: M
+    blocked_by: ["m2-context-objects-01", "m2-context-objects-02", "m0-dx-01", "m0-dx-04"]
+
+  - seed: m2-context-objects-05
+    title: "Add the ReviewerDecision model and disposition vocabulary"
+    milestone: "M2 Context"
+    labels: ["comp:context-objects", "type:feature", "needs-decision"]
+    body_file: backlog_bodies/m2-context-objects-05.md
+    size: M
+    blocked_by: ["m2-context-objects-01", "m1-assessment-01", "m0-dx-02", "m0-dx-16"]
+
+  - seed: m2-runtime-01
+    title: "Add the model access abstraction and structured-output seam"
+    milestone: "M2 Context"
+    labels: ["comp:runtime", "type:feature"]
+    body_file: backlog_bodies/m2-runtime-01.md
+    size: L
+    blocked_by: ["m1-foundations-01", "m1-runtime-01", "m0-dx-05"]
+
+  - seed: m2-runtime-02
+    title: "Add the versioned prompt registry and composition loader"
+    milestone: "M2 Context"
+    labels: ["comp:runtime", "type:feature", "type:docs"]
+    body_file: backlog_bodies/m2-runtime-02.md
+    size: M
+    blocked_by: ["m1-foundations-01", "m0-dx-20"]
+
+  - seed: m2-runtime-03
+    title: "Add the node protocol, transition table, and execution limits"
+    milestone: "M2 Context"
+    labels: ["comp:runtime", "type:feature"]
+    body_file: backlog_bodies/m2-runtime-03.md
+    size: L
+    blocked_by: ["m1-assessment-01", "m1-runtime-01", "m0-dx-04", "m0-dx-06"]
+
+  - seed: m2-runtime-04
+    title: "Add the workflow error taxonomy and bounded retry policy"
+    milestone: "M2 Context"
+    labels: ["comp:runtime", "type:feature"]
+    body_file: backlog_bodies/m2-runtime-04.md
+    size: M
+    blocked_by: ["m1-runtime-01", "m2-runtime-01", "m2-runtime-03"]
+
+  - seed: m2-runtime-05
+    title: "Add checkpoint pause, resume, and the shared review package"
+    milestone: "M2 Context"
+    labels: ["comp:runtime", "type:feature"]
+    body_file: backlog_bodies/m2-runtime-05.md
+    size: L
+    blocked_by: ["m2-context-objects-05", "m2-runtime-03", "m2-runtime-04", "m0-dx-01", "m0-dx-07"]
+
+  - seed: m2-context-extractor-01
+    title: "Define the context-extraction proposal schema and metadata"
+    milestone: "M2 Context"
+    labels: ["comp:context-extractor", "type:feature"]
+    body_file: backlog_bodies/m2-context-extractor-01.md
+    size: M
+    blocked_by: ["m2-context-objects-01", "m2-context-objects-02", "m2-context-objects-03", "m2-context-objects-04", "m0-dx-02", "m0-dx-13", "m0-dx-14"]
+
+  - seed: m2-context-extractor-02
+    title: "Author extract-context-v1 and the shared prompt blocks"
+    milestone: "M2 Context"
+    labels: ["comp:context-extractor", "type:feature", "type:docs"]
+    body_file: backlog_bodies/m2-context-extractor-02.md
+    size: M
+    blocked_by: ["m2-runtime-02", "m2-context-extractor-01"]
+
+  - seed: m2-context-extractor-03
+    title: "Assemble extractor input and fence untrusted source content"
+    milestone: "M2 Context"
+    labels: ["comp:context-extractor", "type:feature"]
+    body_file: backlog_bodies/m2-context-extractor-03.md
+    size: M
+    blocked_by: ["m1-doc-loader-01", "m1-evidence-01", "m2-runtime-01", "m0-dx-03"]
+
+  - seed: m2-context-extractor-04
+    title: "Implement the Context Validation node"
+    milestone: "M2 Context"
+    labels: ["comp:context-extractor", "type:feature"]
+    body_file: backlog_bodies/m2-context-extractor-04.md
+    size: M
+    blocked_by: ["m2-context-objects-04", "m2-runtime-04", "m2-runtime-05", "m2-context-extractor-01", "m0-dx-19"]
+
+  - seed: m2-context-extractor-05
+    title: "Implement the Context Extraction node"
+    milestone: "M2 Context"
+    labels: ["comp:context-extractor", "type:feature"]
+    body_file: backlog_bodies/m2-context-extractor-05.md
+    size: L
+    blocked_by: ["m2-runtime-01", "m2-runtime-02", "m2-runtime-03", "m2-runtime-04", "m2-context-extractor-01", "m2-context-extractor-02", "m2-context-extractor-03", "m2-context-extractor-04"]
+
+  - seed: m2-context-extractor-06
+    title: "Add context fixture and prompt-injection regression tests"
+    milestone: "M2 Context"
+    labels: ["comp:context-extractor", "type:test"]
+    body_file: backlog_bodies/m2-context-extractor-06.md
+    size: M
+    blocked_by: ["m2-context-extractor-03", "m2-context-extractor-04", "m2-context-extractor-05", "m0-dx-13", "m0-dx-18"]
+
+  - seed: m2-context-review-01
+    title: "Implement the structural context approval checkpoint"
+    milestone: "M2 Context"
+    labels: ["comp:context-review", "type:feature"]
+    body_file: backlog_bodies/m2-context-review-01.md
+    size: L
+    blocked_by: ["m2-context-objects-04", "m2-context-objects-05", "m2-runtime-05", "m2-context-extractor-04", "m0-dx-01"]
+
+  - seed: m2-context-review-02
+    title: "Apply reviewer edits and produce an approved context revision"
+    milestone: "M2 Context"
+    labels: ["comp:context-review", "type:feature"]
+    body_file: backlog_bodies/m2-context-review-02.md
+    size: M
+    blocked_by: ["m2-context-extractor-05", "m2-context-review-01", "m0-dx-14", "m0-dx-16"]
+
+  - seed: m2-context-review-03
+    title: "Add CLI commands for the context slice"
+    milestone: "M2 Context"
+    labels: ["comp:context-review", "type:feature"]
+    body_file: backlog_bodies/m2-context-review-03.md
+    size: M
+    blocked_by: ["m2-context-extractor-05", "m2-context-review-01", "m2-context-review-02", "m0-dx-17"]

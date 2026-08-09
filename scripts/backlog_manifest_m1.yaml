@@ -1,0 +1,150 @@
+issues:
+  - seed: m1-foundations-01
+    title: "Establish the package layout for domain, services, and infrastructure"
+    milestone: "M1 Foundation"
+    labels: ["comp:foundations", "type:chore"]
+    body_file: backlog_bodies/m1-foundations-01.md
+    size: S
+    blocked_by: []
+
+  - seed: m1-foundations-05
+    title: "Ignore the local data directory"
+    milestone: "M1 Foundation"
+    labels: ["comp:foundations", "type:chore"]
+    body_file: backlog_bodies/m1-foundations-05.md
+    size: S
+    blocked_by: []
+
+  - seed: m1-foundations-02
+    title: "Add shared domain enums and the domain model base class"
+    milestone: "M1 Foundation"
+    labels: ["comp:foundations", "type:feature"]
+    body_file: backlog_bodies/m1-foundations-02.md
+    size: M
+    blocked_by: ["m1-foundations-01"]
+
+  - seed: m1-foundations-03
+    title: "Add identifier generation and content hashing"
+    milestone: "M1 Foundation"
+    labels: ["comp:foundations", "type:feature", "needs-decision"]
+    body_file: backlog_bodies/m1-foundations-03.md
+    size: M
+    blocked_by: ["m1-foundations-01", "m0-dx-02", "m0-dx-20"]
+
+  - seed: m1-foundations-04
+    title: "Add a data-model conformance guard for the domain objects"
+    milestone: "M1 Foundation"
+    labels: ["comp:foundations", "type:test"]
+    body_file: backlog_bodies/m1-foundations-04.md
+    size: M
+    blocked_by: ["m1-foundations-02"]
+
+  - seed: m1-foundations-06
+    title: "Add the local artifact store and assessment directory layout"
+    milestone: "M1 Foundation"
+    labels: ["comp:foundations", "type:feature"]
+    body_file: backlog_bodies/m1-foundations-06.md
+    size: M
+    blocked_by: ["m1-foundations-01", "m1-foundations-03", "m1-foundations-05"]
+
+  - seed: m1-foundations-07
+    title: "Add the local persistence layer for assessment data"
+    milestone: "M1 Foundation"
+    labels: ["comp:foundations", "type:feature", "needs-decision"]
+    body_file: backlog_bodies/m1-foundations-07.md
+    size: L
+    blocked_by: ["m1-foundations-02", "m1-foundations-03", "m0-dx-04"]
+
+  - seed: m1-runtime-01
+    title: "Add structured logging with secret and source-content redaction"
+    milestone: "M1 Foundation"
+    labels: ["comp:runtime", "type:feature"]
+    body_file: backlog_bodies/m1-runtime-01.md
+    size: M
+    blocked_by: ["m1-foundations-01"]
+
+  - seed: m1-assessment-01
+    title: "Add the Assessment and AssessmentConfiguration models"
+    milestone: "M1 Foundation"
+    labels: ["comp:assessment", "type:feature", "needs-decision", "design-change"]
+    body_file: backlog_bodies/m1-assessment-01.md
+    size: M
+    blocked_by: ["m1-foundations-02", "m1-foundations-03", "m0-dx-01", "m0-dx-05"]
+
+  - seed: m1-assessment-02
+    title: "Add assessment creation and lookup with per-assessment isolation"
+    milestone: "M1 Foundation"
+    labels: ["comp:assessment", "type:feature"]
+    body_file: backlog_bodies/m1-assessment-02.md
+    size: M
+    blocked_by: ["m1-assessment-01", "m1-foundations-06", "m1-foundations-07"]
+
+  - seed: m1-evidence-01
+    title: "Add the EvidenceReference model"
+    milestone: "M1 Foundation"
+    labels: ["comp:evidence", "type:feature", "needs-decision"]
+    body_file: backlog_bodies/m1-evidence-01.md
+    size: M
+    blocked_by: ["m1-foundations-02", "m1-foundations-03", "m0-dx-03"]
+
+  - seed: m1-doc-loader-01
+    title: "Add the SourceDocument model"
+    milestone: "M1 Foundation"
+    labels: ["comp:doc-loader", "type:feature"]
+    body_file: backlog_bodies/m1-doc-loader-01.md
+    size: M
+    blocked_by: ["m1-foundations-02", "m1-foundations-03"]
+
+  - seed: m1-doc-loader-02
+    title: "Add the document loader for Markdown, text, JSON, and YAML"
+    milestone: "M1 Foundation"
+    labels: ["comp:doc-loader", "type:feature"]
+    body_file: backlog_bodies/m1-doc-loader-02.md
+    size: L
+    blocked_by: ["m1-doc-loader-01", "m1-foundations-06", "m1-assessment-02"]
+
+  - seed: m1-doc-loader-03
+    title: "Enforce the untrusted-source boundary at ingestion"
+    milestone: "M1 Foundation"
+    labels: ["comp:doc-loader", "type:test"]
+    body_file: backlog_bodies/m1-doc-loader-03.md
+    size: M
+    blocked_by: ["m1-doc-loader-02"]
+
+  - seed: m1-evidence-02
+    title: "Add the normalization and evidence indexing node"
+    milestone: "M1 Foundation"
+    labels: ["comp:evidence", "type:feature", "needs-decision"]
+    body_file: backlog_bodies/m1-evidence-02.md
+    size: L
+    blocked_by: ["m1-doc-loader-02", "m1-evidence-01", "m0-dx-03"]
+
+  - seed: m1-evidence-03
+    title: "Add evidence retrieval and integrity verification"
+    milestone: "M1 Foundation"
+    labels: ["comp:evidence", "type:feature"]
+    body_file: backlog_bodies/m1-evidence-03.md
+    size: M
+    blocked_by: ["m1-evidence-02"]
+
+  - seed: m1-runtime-02
+    title: "Add the execution ledger for workflow runs and node executions"
+    milestone: "M1 Foundation"
+    labels: ["comp:runtime", "type:feature", "needs-decision"]
+    body_file: backlog_bodies/m1-runtime-02.md
+    size: L
+    blocked_by:
+      - "m1-foundations-02"
+      - "m1-foundations-03"
+      - "m1-foundations-07"
+      - "m1-evidence-02"
+      - "m0-dx-06"
+      - "m0-dx-07"
+
+  - seed: m1-runtime-03
+    title: "Add the CLI surface for assessments, sources, and evidence"
+    milestone: "M1 Foundation"
+    labels: ["comp:runtime", "type:feature", "needs-decision"]
+    body_file: backlog_bodies/m1-runtime-03.md
+    size: M
+    blocked_by: ["m1-assessment-02", "m1-doc-loader-02", "m1-evidence-02", "m0-dx-17"]

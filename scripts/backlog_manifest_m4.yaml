@@ -1,0 +1,149 @@
+issues:
+  - seed: m4-findings-01
+    title: "Add the Finding model with the DEC-009 separation invariants"
+    milestone: "M4 Results"
+    labels: ["comp:findings", "type:feature"]
+    body_file: backlog_bodies/m4-findings-01.md
+    size: M
+    blocked_by: ["m0-dx-02", "m0-dx-04", "m0-dx-08", "m0-dx-11", "m3-control-mapper-02"]
+
+  - seed: m4-findings-02
+    title: "Add finding reclassification and conversion with preserved lineage"
+    milestone: "M4 Results"
+    labels: ["comp:findings", "type:feature"]
+    body_file: backlog_bodies/m4-findings-02.md
+    size: S
+    blocked_by: ["m4-findings-01", "m3-control-mapper-02"]
+
+  - seed: m4-findings-03
+    title: "Implement the finding consolidation node and outcome routing"
+    milestone: "M4 Results"
+    labels: ["comp:findings", "type:feature"]
+    body_file: backlog_bodies/m4-findings-03.md
+    size: L
+    blocked_by:
+      - m4-findings-01
+      - m4-findings-02
+      - m0-dx-06
+      - m0-dx-14
+      - m3-control-mapper-01
+      - m3-evidence-validation-01
+
+  - seed: m4-findings-04
+    title: "Add deterministic duplicate detection and traceable merge records"
+    milestone: "M4 Results"
+    labels: ["comp:findings", "type:feature"]
+    body_file: backlog_bodies/m4-findings-04.md
+    size: M
+    blocked_by: ["m4-findings-03"]
+
+  - seed: m4-findings-05
+    title: "Apply critique recommendations and preserve finding lineage"
+    milestone: "M4 Results"
+    labels: ["comp:findings", "type:feature"]
+    body_file: backlog_bodies/m4-findings-05.md
+    size: M
+    blocked_by: ["m4-findings-03", "m3-critic-01"]
+
+  - seed: m4-findings-06
+    title: "Assemble the finding review package for the second checkpoint"
+    milestone: "M4 Results"
+    labels: ["comp:findings", "type:feature"]
+    body_file: backlog_bodies/m4-findings-06.md
+    size: M
+    blocked_by: ["m4-findings-04", "m4-findings-05", "m0-dx-03", "m0-dx-17"]
+
+  - seed: m4-findings-07
+    title: "Implement the finding-approval checkpoint and reviewer dispositions"
+    milestone: "M4 Results"
+    labels: ["comp:findings", "type:feature", "design-change"]
+    body_file: backlog_bodies/m4-findings-07.md
+    size: L
+    blocked_by:
+      - m4-findings-06
+      - m0-dx-01
+      - m0-dx-07
+      - m0-dx-16
+      - m0-dx-17
+      - m2-context-review-01
+      - m2-context-review-02
+
+  - seed: m4-findings-08
+    title: "Enforce the approved-finding gate and retain rejected candidates"
+    milestone: "M4 Results"
+    labels: ["comp:findings", "type:feature"]
+    body_file: backlog_bodies/m4-findings-08.md
+    size: M
+    blocked_by: ["m4-findings-07", "m0-dx-08"]
+
+  - seed: m4-report-01
+    title: "Add the ReportSections model and approved-input assembly"
+    milestone: "M4 Results"
+    labels: ["comp:report", "type:feature"]
+    body_file: backlog_bodies/m4-report-01.md
+    size: M
+    blocked_by: ["m4-findings-08", "m0-dx-12"]
+
+  - seed: m4-report-02
+    title: "Implement the Report Generation agent and its prompt artifact"
+    milestone: "M4 Results"
+    labels: ["comp:report", "type:feature"]
+    body_file: backlog_bodies/m4-report-02.md
+    size: L
+    blocked_by: ["m4-report-01", "m0-dx-05", "m0-dx-12"]
+
+  - seed: m4-report-03
+    title: "Implement the deterministic report rendering node"
+    milestone: "M4 Results"
+    labels: ["comp:report", "type:feature"]
+    body_file: backlog_bodies/m4-report-03.md
+    size: L
+    blocked_by: ["m4-report-01", "m0-dx-03", "m0-dx-12"]
+
+  - seed: m4-report-04
+    title: "Implement the report consistency validator"
+    milestone: "M4 Results"
+    labels: ["comp:report", "type:feature"]
+    body_file: backlog_bodies/m4-report-04.md
+    size: M
+    blocked_by: ["m4-report-02", "m4-report-03"]
+
+  - seed: m4-report-05
+    title: "Write the report output manifest and record the artifact"
+    milestone: "M4 Results"
+    labels: ["comp:report", "type:feature"]
+    body_file: backlog_bodies/m4-report-05.md
+    size: S
+    blocked_by: ["m4-report-03", "m4-report-04", "m0-dx-12", "m0-dx-20"]
+
+  - seed: m4-evaluation-01
+    title: "Author the ForgeFlow expected findings, gaps, and questions"
+    milestone: "M4 Results"
+    labels: ["comp:evaluation", "type:test"]
+    body_file: backlog_bodies/m4-evaluation-01.md
+    size: M
+    blocked_by: ["m0-dx-18", "m0-fixture-leak", "m4-findings-01"]
+
+  - seed: m4-evaluation-02
+    title: "Add EvaluationResult and the finding-quality metrics"
+    milestone: "M4 Results"
+    labels: ["comp:evaluation", "type:feature", "design-change"]
+    body_file: backlog_bodies/m4-evaluation-02.md
+    size: M
+    blocked_by: ["m4-evaluation-01", "m4-findings-08"]
+
+  - seed: m4-evaluation-03
+    title: "Add report-quality metrics and reviewer rubric capture"
+    milestone: "M4 Results"
+    labels: ["comp:evaluation", "type:feature"]
+    body_file: backlog_bodies/m4-evaluation-03.md
+    size: M
+    blocked_by: ["m4-evaluation-02", "m4-report-04", "m4-report-05"]
+
+  - seed: m4-evaluation-04
+    title: "Add regression fixtures for the known false positives"
+    milestone: "M4 Results"
+    labels: ["comp:evaluation", "type:test"]
+    body_file: backlog_bodies/m4-evaluation-04.md
+    size: M
+    blocked_by: ["m4-evaluation-01", "m4-findings-03", "m0-dx-15", "m0-dx-18"]

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Design corpus
+    url: https://github.com/ethanpturner/trace/tree/main/docs/architecture
+    about: The authoritative architecture, data model, agent design, and decision log.
+  - name: Decision log
+    url: https://github.com/ethanpturner/trace/blob/main/docs/architecture/decision-log.md
+    about: Decided constraints. Changing one requires an entry here, not an implementation detail.
