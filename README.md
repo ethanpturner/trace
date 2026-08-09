@@ -179,10 +179,16 @@ collapsing them is precisely the failure this project is built to avoid.
 | Tooling | uv, Ruff, Pytest, strict type checking | In use today |
 | Report format | Markdown | Proposed |
 | Tracing | LangSmith, subject to a data-handling review | Proposed |
-| Model provider and model | **Not chosen** | Open question |
+| Model interface | Provider-agnostic seam, provider code in adapters | Decided (DEC-014) |
+| Model provider and model | Anthropic adapter, `claude-opus-5` | Decided (DEC-014), default |
 
-These are proposed choices, not final decisions. LangGraph is the only orchestration candidate on
-the table and it has not been accepted. No model provider or model has been selected.
+These are proposed choices except where marked decided. LangGraph is the only orchestration
+candidate on the table and it has not been accepted.
+
+The model interface is designed to be provider-agnostic: the application talks to a seam, and
+provider-specific code lives in an adapter behind it. Anthropic is the default and the only
+adapter specified. A seam with one implementation is not proven agnostic, and nothing behind it
+is built yet.
 
 ## Status
 
