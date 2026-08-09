@@ -191,9 +191,13 @@ def test_the_catalog_object_identifier_is_outside_the_registry() -> None:
 
     Recorded rather than accommodated. It is a third identifier shape -- neither `<prefix>-<NNN>`
     nor `<prefix>-<CATEGORY>-<NNN>` -- using a prefix the corpus defines nowhere, and DEC-018
-    states that `req-` is "the only class currently in use", which this contradicts. Resolving it
-    means either adding `cat` to section 2.1 or renaming the catalog's identifier, and both are
-    data-model changes rather than something this module may decide.
+    states that `req-` is "the only class currently in use", which this contradicts.
+
+    Issue #137 decides it. The real question there is wider than the one value: section 2.1 never
+    says which objects the scheme governs, and `RequirementsCatalog` is authored configuration
+    rather than assessment data -- not scoped to an assessment, not minted by the persistence
+    layer, referenced by no generated object. Whichever way that resolves is a data-model change,
+    not something this module may decide.
 
     This test fails the day it is fixed, which is the point: it is a marker, not an endorsement.
     """
