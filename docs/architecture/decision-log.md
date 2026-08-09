@@ -1288,3 +1288,176 @@ Open Questions:
 - Does `Finding` need `supersedes_id` for re-consolidation, in the way `ContextClaim` has it for re-extraction?
 - When a reviewer edits an object that a later stage has already consumed, does anything invalidate the downstream work?
 - Is per-field delta granularity sufficient for a nested field, or does an edit inside `metadata` need its own path notation?
+
+## DEC-024: Pass the whole catalog to one mapping agent; there is no deterministic pre-filter
+
+Date: 2026-08-09
+
+Status: Accepted
+
+Decision:
+
+**Requirement and Control Mapping is one model-assisted agent**, as `agent-design.md` section 12 defines it. There is no separate deterministic requirement matcher.
+
+**The whole requirements catalog is passed on every mapping call.** At 23 requirements and roughly 12,600 tokens it fits comfortably, and DEC-014's capability-aware seam makes it a stable cacheable prefix across the ten or so mapping calls in an assessment.
+
+**A requirement is evaluated only through a threat.** `ControlMapping.threat_id` is required and stays required. The consequence is stated rather than left implicit: **a requirement that applies to the system but that no threat reaches is never evaluated and appears nowhere in the assessment.** Coverage is therefore bounded by threat generation, and the evaluation plan's false-negative rate is what detects a systematic miss.
+
+**The discrimination constraint is satisfied at the output, not the input.** `agent-design.md` section 12 prohibits applying every catalog requirement to every component and makes undiscriminated applicability a failure condition. Those constrain what the agent *concludes*, not what it is *shown*. Every mapping carries a non-empty `applicability_reason`, and a mapping run in which no requirement is marked `not_applicable` or `conditionally_applicable` is flagged by the Mapping Validation node.
+
+Why:
+
+The issue that framed this recommended a deterministic requirement pre-filter with the mapping agent behind it. **That recommendation was written before checking whether the filter fields carry data, and they do not.**
+
+`applicable_technologies` is the only structured filter field in the section 17 schema. It is populated on **zero of the twenty-three requirements**. There is nothing to filter on.
+
+The remaining candidates fail for their own reasons. `applicable_conditions` and `non_applicable_conditions` are populated on every requirement — 48 and 46 entries — and are free text, deliberately: `requirements/README.md` records that no controlled vocabulary was introduced so the vocabulary could be observed before being fixed. Free text is model-readable and not filterable. Category is the only structured axis with data, at 17 distinct values, but filtering on it requires deriving a category from a threat, and that derivation is a judgment. Implementing it as a hand-written table from threat type to requirement category would reproduce exactly the mechanical checklist behaviour `current-architecture.md` section 2.2 rejects; implementing it with a model makes it a second model-assisted step, which is the seventh agent the cap exists to prevent.
+
+So a deterministic pre-filter is not merely unnecessary here — it has no input. Recording that plainly matters more than the conclusion, because the recommendation reads plausibly and the data contradicting it is one query away.
+
+Passing the whole catalog is affordable and becomes more so under caching. The catalog is the single largest stable prefix in the pipeline, reused across every mapping call, which is exactly the shape prompt caching serves.
+
+The confusion the section 12 prohibition invites is worth naming. "Apply every catalog requirement to every component" describes an output in which everything is marked applicable. It does not describe an input. Reading it as an instruction to narrow the input is the likely implementation error, and it would produce a system that silently never considers most requirements — a false-negative machine whose failure is invisible because the requirement never appears at all.
+
+How this scales, when it stops:
+
+The escalation path is stated here so the next person is not choosing under pressure.
+
+**First, partition and fan out deterministically.** Split the catalog into a handful of domains and run the mapping agent once per threat *per domain*, so each call sees a fraction of the catalog. Discrimination improves because the input is narrower, and **nothing is excluded**, because every partition runs for every threat. There is no filtering judgment to get wrong, which is what separates this from a pre-filter: an excluded requirement produces no mapping to inspect, and a partitioned one produces the same mappings in more calls.
+
+The cost is not where it appears. Caching makes the input roughly equivalent either way — five partition writes plus forty-five reads comes to about what ten full-catalog calls cost. What multiplies is the call count, and `scripts/estimate_cost.py` found thinking to be roughly 85% of spend. Each partitioned call should think less, having fewer requirements to weigh, so the increase is not proportional to the call count, but it is real and currently unmeasured.
+
+**Then, structured applicability.** Requirements gated by a small set of system-level questions answered once per assessment — whether the system processes customer data, whether it delegates authentication — so whole groups become inapplicable on evidence rather than on a guess. That is `data-model.md` question 5, deliberately left open so the vocabulary could be observed rather than imposed, and the catalog is where the observation happens: the 48 `applicable_conditions` and 46 `non_applicable_conditions` entries written so far are its raw material. Twenty-three requirements are not enough signal to derive it from; somewhere before two hundred there will be.
+
+Populating `applicable_technologies` is the weakest of the three. It is hand-authored, drifts as technologies are renamed, and reintroduces the invisible-exclusion failure this decision avoided.
+
+Alternatives Considered:
+
+- A deterministic pre-filter on `applicable_technologies`, once populated
+- A category filter driven by a hand-written threat-to-category table
+- A model-assisted retrieval step, accepting a seventh agent
+- Semantic retrieval over requirement text, once vector infrastructure exists
+- Batching requirements across several calls per threat
+- Making `threat_id` optional so requirements can be evaluated against the system directly
+
+Tradeoffs:
+
+- **This does not scale with the catalog**, and what breaks first is not what it looks like. Cost and context are not the constraint: at two hundred requirements the catalog is roughly 110,000 tokens, which under DEC-014's caching costs about a dollar per assessment and occupies a tenth of the context window. **Discrimination quality is the constraint.** Section 12's failure condition is undiscriminated applicability, and the wider the input the likelier it becomes. It degrades continuously rather than at a threshold, so the trigger is measured applicability precision — which `evaluation-plan.md` section 7 already tracks as correct and incorrect applicability under Requirement Mapping — not a token count.
+- Passing everything means the agent sees requirements that are obviously irrelevant, and every one is an opportunity to mark something applicable that is not. The discrimination requirement is enforced downstream rather than prevented upstream.
+- **Threat-gating leaves a real coverage gap.** A whole category of requirement can go unevaluated because threat analysis did not produce a threat that reaches it, and nothing in the assessment says so. Populating `applicable_technologies` would not close it either; only a system-level applicability pass would.
+- The output-side enforcement — requiring at least one `not_applicable` mapping — is a heuristic. A threat that genuinely implicates most of a small catalog would trip it.
+- Caching the catalog makes the prefix sensitive to catalog edits: changing one requirement invalidates the cached prefix for every mapping call in every subsequent assessment until it is rewritten.
+
+Open Questions:
+
+- What applicability-precision figure is low enough to trigger partitioning, and over how many assessments must it hold before the trigger fires?
+- Partitioning trades money for discrimination at an unmeasured exchange rate. How much less does a call over a fifth of the catalog think, and is the total increase closer to 2x or 5x?
+- Does the coverage gap from threat-gating need a system-level applicability pass, and would that be a seventh agent?
+
+## DEC-025: Record suppressed conclusions on the mapping that suppressed them
+
+Date: 2026-08-09
+
+Status: Accepted
+
+Decision:
+
+When a mapping declines a negative conclusion because a `common_false_positives` entry applies, the `ControlMapping` records it. Two fields are added:
+
+- **`suppressed_conclusion`** — the conclusion not drawn, in the agent's words.
+- **`suppressed_by`** — the `common_false_positives` entry that applies.
+
+**Suppression is never silent.** DEC-011 records that nothing enforces the field is consulted, and asks whether a suppressed conclusion should be recorded rather than discarded. It should. `evaluation-plan.md` section 8 makes false-negative rate a primary metric and DEC-011 names over-suppression as the field's principal risk; a suppression that leaves no trace is invisible to exactly the measurement meant to catch it.
+
+**Enforcement is a deterministic check that does not require semantic matching.** The Mapping Validation node rejects a mapping that proposes `unmet` against a requirement carrying `common_false_positives` entries unless the mapping states why those entries do not apply. The check is structural — does the mapping address the field — rather than an attempt to decide whether an entry matches, which free text cannot support.
+
+The distinction DEC-011 draws stays load-bearing and is restated where an implementer will meet it: **`common_false_positives` is not `non_applicable_conditions`.** The latter says the requirement does not apply at all. The former says the requirement *does* apply, the documentation is silent, and a particular conclusion is still wrong.
+
+Why:
+
+The field was added by DEC-011 and its own Tradeoffs section states the problem: "Nothing yet enforces that the field is consulted." It is populated on all 23 requirements with 51 entries and read by nothing.
+
+Recording rather than discarding is the answer to DEC-011's first open question, and the argument is a measurement one. The catalog encodes fifty-one specific wrong conclusions that should not be drawn. If suppressing one leaves no record, then a catalog entry that is too aggressive — suppressing a conclusion that was actually correct — produces a false negative that no metric can attribute. The false-negative rate would move and nothing would say why.
+
+Putting the record on the `ControlMapping` rather than in a new object keeps it where the decision happened. A suppressed conclusion is not a free-standing thing; it is a property of one requirement-threat-control evaluation, and it is meaningless detached from that. DEC-021 added an object for observations about *source material*, and this is deliberately not that — it is an observation about the analysis.
+
+The structural enforcement is the part that can actually be built. Deciding whether a free-text `common_false_positives` entry matches a proposed conclusion is a semantic judgment, and a validation node that attempted it would be a model call in a deterministic node. Requiring the mapping to *address* the field is checkable without judgment, and it converts the failure mode from "the agent never looked" to "the agent looked and said why" — which is the difference DEC-011 was reaching for.
+
+Alternatives Considered:
+
+- A separate `SuppressedConclusion` object
+- Recording suppressions only in `ExecutionRecord` metadata
+- Extending `SourceObservation` with a third kind
+- Semantic matching in the validation node, deciding whether an entry applies
+- Leaving suppression silent and relying on the false-negative rate alone
+
+Tradeoffs:
+
+- **Two more fields on an object that is already the most complex in the model.** `ControlMapping` carries the threat, requirement, control, both status vocabularies, and the applicability reason; this adds to that.
+- The structural check verifies that the mapping addressed `common_false_positives`, not that it addressed them *correctly*. An agent can satisfy it with a plausible sentence about why the entries do not apply while being wrong.
+- `suppressed_by` referencing a free-text entry means the reference is by content rather than by identifier, so an edit to the catalog breaks the link in stored mappings.
+- Requiring the check only for `unmet` leaves `partially_satisfied` unguarded, and a partial satisfaction is a negative conclusion too.
+- Recording suppressions makes them countable, which invites optimizing for the count. A low suppression rate is not obviously better than a high one.
+
+Open Questions:
+
+- Should `common_false_positives` entries carry identifiers so `suppressed_by` can reference them stably?
+- Does `partially_satisfied` need the same check as `unmet`?
+- Is a suppression the reviewer disagrees with a reviewer decision on the mapping, or something that should feed back into the catalog?
+
+## DEC-026: Express inherited-control scope with the fields Control already has
+
+Date: 2026-08-09
+
+Status: Accepted
+
+Decision:
+
+**`Control.inheritance_scope` is removed.** Scope is expressed by fields the object already carries:
+
+- **`provider_component_id`** — who provides the control.
+- **`protected_component_ids` and `protected_asset_ids`** — what it covers.
+- **`limitations`** — where the coverage stops.
+
+Together those say what a free-text scope string was trying to say, in a form that can be validated, queried, and compared against the architecture.
+
+**Two states are distinguished by existing field combinations**, and the distinction is the one the ForgeFlow scenario turns on:
+
+| Situation | `control_type` | `implementation_status` | Evidence | Outcome |
+|---|---|---|---|---|
+| The platform provides it and the documentation says so | `inherited` | `implemented` | present | Control is satisfied |
+| The platform probably provides it and nothing says so | `inherited` | `claimed` | absent | A `Question` requesting confirmation |
+
+The second **never resolves to `absent`**, and by DEC-013 never to `unmet`. That is `forgeflow-scenario.md` section 14.2 — managed database encryption, which the application documentation does not describe — and it is one of the scenario's named intentional non-findings.
+
+Why:
+
+`inheritance_scope` was a free string, and `data-model.md` question 6 and `current-architecture.md` question 5 both asked how inherited-control scope should be modelled. The answer is that it already is.
+
+`provider_component_id` names the provider. The protected component and asset lists name the coverage. `limitations` names the boundary. A free-text scope field sits alongside those describing the same thing in prose, which means it can disagree with them, and when it does nothing says which is right. Removing it is the third field removed for this reason — after `checkpoint_reference`, whose referent had gone, and `confidence_score`, which nothing consumed.
+
+The structured form is also the only one the metric can use. "Inherited-control recognition" is a named evaluation criterion in `agent-design.md` sections 12 and 32 and `evaluation-plan.md` section 7. Measuring it means comparing what the assessment concluded against what the scenario says is true, and a free-text scope string cannot be compared to anything. Structured provider and coverage references can.
+
+The two-state distinction matters more than the field removal. ForgeFlow contains six inherited or shared controls, and the scenario's intentional non-findings turn on treating undocumented-but-inherited correctly. The failure mode is not concluding the wrong scope; it is collapsing "inherited and documented" into "inherited, therefore fine" or collapsing "undocumented" into "absent." Expressing both as combinations of `control_type` and `implementation_status` makes the difference checkable rather than a matter of the agent's phrasing.
+
+Alternatives Considered:
+
+- Keep `inheritance_scope` as free text and let the agent populate it
+- Give `inheritance_scope` a controlled vocabulary
+- Add a structured `inheritance` sub-object carrying provider, coverage, and limits together
+- Add an `inheritance_confidence` field distinct from `validation_status`
+- Model inherited controls as a separate object type
+
+Tradeoffs:
+
+- **Removing a documented field is a schema change**, and an implementer who expected somewhere to put "the platform encrypts data at rest in this region only" now puts it in `limitations`, which is a list of strings and is a slightly worse fit than a dedicated field would be.
+- Expressing scope through references means an inherited control cannot describe coverage the architecture does not model. If the platform protects something Trace never extracted as a component or asset, there is nowhere to say so.
+- The two-state table is a convention over two independent enums rather than a single state. Nothing structurally prevents `inherited` with `implementation_status: absent`, which is a combination that should not occur.
+- `limitations` now carries two kinds of thing: where an inherited control's coverage stops, and known weaknesses of an implemented one. Those read differently and share a field.
+- Six inherited controls in one scenario is a small sample to design a representation against.
+
+Open Questions:
+
+- Should the `inherited` and `absent` combination be rejected by validation, or is there a case for it?
+- When an inherited control's provider is a component Trace did not extract — a platform outside the reviewed system — what does `provider_component_id` reference?
+- Does distinguishing inheritance from a compensating control need more than `control_type`, given that both reduce a requirement's applicability by pointing elsewhere?

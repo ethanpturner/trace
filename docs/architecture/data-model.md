@@ -1199,9 +1199,28 @@ Represents an implemented, inherited, claimed, or proposed security safeguard.
 | validation_status | ValidationStatus | Yes | Evidence result |
 | evidence_ids | list[string] | No | Supporting evidence |
 | owner | string | No | Control owner |
-| inheritance_scope | string | No | Scope of inherited protection |
 | limitations | list[string] | No | Known limitations |
 | status | ObjectStatus | Yes | Lifecycle state |
+
+## Note on inherited-control scope
+
+Scope is expressed by the fields above, not by a free-text field (DEC-026): `provider_component_id`
+says who provides the control, `protected_component_ids` and `protected_asset_ids` say what it
+covers, and `limitations` says where the coverage stops.
+
+An earlier `inheritance_scope` string described the same thing in prose, which meant it could
+disagree with the structured fields with nothing to say which was right. It also could not be
+compared against the architecture, and inherited-control recognition is a named evaluation metric.
+
+Two states are distinguished by field combination, and the distinction is what the ForgeFlow
+intentional non-findings turn on:
+
+| Situation | `control_type` | `implementation_status` | Evidence | Outcome |
+|---|---|---|---|---|
+| Platform provides it, documentation says so | `inherited` | `implemented` | present | Requirement satisfied |
+| Platform probably provides it, nothing says so | `inherited` | `claimed` | absent | A `Question` requesting confirmation |
+
+The second never resolves to `absent`, and by DEC-013 never to `unmet`.
 
 ## Control-type values
 
@@ -1248,6 +1267,8 @@ This is one of the most important objects in Trace because it prevents the appli
 | control_ids | list[string] | No | Relevant controls |
 | applicability_status | string | Yes | Applicable, conditional, not applicable |
 | applicability_reason | string | Yes | Explanation |
+| suppressed_conclusion | string | No | A conclusion not drawn because a `common_false_positives` entry applies (DEC-025) |
+| suppressed_by | string | No | The `common_false_positives` entry that applies (DEC-025) |
 | satisfaction_status | string | Yes | Satisfied, partial, unverified, unmet |
 | evidence_ids | list[string] | No | Mapping evidence |
 | assumptions | list[string] | No | Assumptions affecting mapping |
@@ -2187,8 +2208,8 @@ These can be added later without expanding the initial MVP unnecessarily.
 2. ~~Should evidence excerpts be duplicated in the database or loaded from normalized source files?~~ Resolved by DEC-015: `quoted_text` is stored verbatim from the original and is immutable, with `content_hash` covering it. Where the row is stored is a persistence question (DEC-012's successor), not a location one.
 3. ~~How should evidence locations be represented consistently across Markdown, text, JSON, YAML, and future PDF inputs?~~ Resolved by DEC-015.
 4. Should actors be separate first-class objects in the MVP?
-5. How should requirement applicability conditions be represented in machine-readable form? Catalog version 0.1 leaves them as free text deliberately, so the vocabulary can be observed before it is fixed.
-6. How should inherited-control scope be modeled?
+5. How should requirement applicability conditions be represented in machine-readable form? Catalog version 0.1 leaves them as free text deliberately, so the vocabulary can be observed before it is fixed. DEC-024 confirms they stay free text for now: with `applicable_technologies` populated on zero requirements there is nothing to filter on deterministically, so the whole catalog is passed and applicability is the agent's judgment.
+6. ~~How should inherited-control scope be modeled?~~ Resolved by DEC-026: with the fields `Control` already has. `inheritance_scope` is removed.
 7. ~~Should confidence scores be generated numerically or only categorically?~~ Resolved by DEC-022: categorically only. `confidence_score` is removed, and `EvidenceStrength` moves onto `EvidenceAssessment` so model confidence and evidence strength stay separate, as design principle 15 requires.
 8. How should multiple model outputs proposing the same object be merged?
 9. How should object revisions be stored?
