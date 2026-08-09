@@ -21,3 +21,6 @@ htmlcov/
 .env
 .env.*
 !.env.example
+
+# Staged issue bodies produced by scripts/seed_backlog.py
+scripts/.staged/

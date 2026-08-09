@@ -1,0 +1,98 @@
+name: Implementation
+description: Build or change behaviour in a named component.
+labels: ["type:feature"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe the change in terms of the design corpus. Cite the section that governs
+        the behaviour rather than restating it. `docs/architecture/data-model.md` is
+        authoritative for field names and types.
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      description: The component this issue belongs to.
+      options:
+        - Foundations
+        - Assessment object
+        - Evidence model
+        - Document loader
+        - Context objects
+        - Context extractor
+        - Context review
+        - Runtime (model abstraction, prompts, orchestrator, execution ledger)
+        - Threat engine
+        - Requirement matcher
+        - Control mapper
+        - Evidence validation
+        - Critic
+        - Findings
+        - Report
+        - Evaluation
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Why this work exists, and which design document specifies it.
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: >-
+        Concrete: which modules, which fields, which prompt artifacts. Name things.
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: A checkbox list. Each item must be testable.
+      value: |
+        - [ ]
+    validations:
+      required: true
+
+  - type: textarea
+    id: out-of-scope
+    attributes:
+      label: Out of scope
+      description: What this issue deliberately does not do, and where that work lives.
+    validations:
+      required: false
+
+  - type: textarea
+    id: references
+    attributes:
+      label: References
+      description: Exact file paths with section numbers or headings.
+      placeholder: docs/architecture/data-model.md section 17
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: constraints
+    attributes:
+      label: Binding constraints
+      description: >-
+        Confirm this work does not silently change a decided constraint. A box that
+        cannot be checked requires an entry in docs/architecture/decision-log.md and
+        the design-change label.
+      options:
+        - label: Stays within the six model-assisted agents. Report rendering uses no model.
+        - label: Agents propose objects; the application validates and persists them.
+        - label: Source documents are treated as untrusted data and cannot redefine an agent.
+        - label: >-
+            Missing documentation never resolves to a Finding. It becomes a Question, an
+            assumption, a DocumentationGap, or a low-confidence finding (DEC-009).
+        - label: The two human checkpoints remain structural, not configurable (DEC-005).
+        - label: Nothing assumes cloud deployment, multi-tenancy, or RBAC (DEC-004).
+        - label: Nothing optimizes for finding count. A successful assessment may produce none.
