@@ -14,6 +14,13 @@ identifiers a benchmark expected-output file may reference.
 assessment**, not globally: `thr-007` in two assessments is two different objects, and an
 identifier is fully qualified only by `(assessment_id, id)`.
 
+**The scheme governs objects an assessment produces** (DEC-034): scoped to one assessment,
+persisted by the assessment store, and referred to by identifier from somewhere else. `Requirement`
+is the one authored member, because assessment objects cite `req-AUTH-001` by identifier. Authored
+configuration -- `RequirementsCatalog`, `PromptDefinition` -- is outside it and carries a name
+rather than an identifier: `core`, `extract-context`, referenced by version. Nothing here validates
+those, and a prefixed value in one of them would be a name imitating an identifier.
+
 **Allocation is a store operation, not a pure function.** DEC-018 assigns a generated identifier
 at insert, from a monotonic counter per `(assessment_id, prefix)`. That is why this module defines
 `IdentifierAllocator` as a protocol rather than exposing a module-level `new_id()`: a
@@ -34,15 +41,19 @@ from pydantic import AfterValidator
 
 __all__ = [
     "PREFIXES",
+    "PREFIX_BY_TERM",
+    "ActorId",
     "AssessmentId",
     "AssetId",
     "ComponentId",
     "ContextClaimId",
     "ControlId",
     "ControlMappingId",
+    "CritiqueId",
     "DataFlowId",
     "DocumentationGapId",
     "EvaluationResultId",
+    "EvidenceAssessmentId",
     "EvidenceReferenceId",
     "ExecutionRecordId",
     "FindingId",
@@ -66,9 +77,11 @@ __all__ = [
 # is carried rather than a bare set so that a validation error can name the object type, which is
 # the thing a reader of the error actually needs.
 #
-# There are twenty. The issue that asked for this module said nineteen and omitted `obs`, which
-# DEC-021 added along with SourceObservation after the backlog was written. Section 2.1 is
-# authoritative and lists it.
+# There are twenty-three. The issue that asked for this module said nineteen and omitted `obs`,
+# which DEC-021 added along with SourceObservation after the backlog was written. DEC-034 added
+# `act`, `eas`, and `crq`: all three name assessment-scoped objects that carry an `id` and had no
+# prefix, which a rule saying what the scheme governs made visible. Section 2.1 is authoritative
+# and lists them.
 PREFIXES: dict[str, str] = {
     "asm": "Assessment",
     "src": "SourceDocument",
@@ -86,11 +99,30 @@ PREFIXES: dict[str, str] = {
     "qst": "Question",
     "gap": "DocumentationGap",
     "obs": "SourceObservation",
+    "act": "Actor",
+    "eas": "EvidenceAssessment",
+    "crq": "Critique",
     "dec": "ReviewerDecision",
     "run": "WorkflowRun",
     "exe": "ExecutionRecord",
     "eval": "EvaluationResult",
 }
+
+
+def _term(object_type: str) -> str:
+    """`ContextClaim` -> `context_claim`: the object type as a vocabulary term.
+
+    Several objects name the type of another object in a free-text field -- `ContextClaim.
+    subject_type`, `Question.related_object_type`, `ReviewerDecision.subject_type` -- and every one
+    of them has to agree with the accompanying identifier about what kind of thing is being talked
+    about. One conversion, so the three cannot disagree about how `ContextClaim` is spelled.
+    """
+    return re.sub(r"(?<!^)(?=[A-Z])", "_", object_type).casefold()
+
+
+# Vocabulary term to prefix: `component` -> `cmp`, `context_claim` -> `ctx`. Derived from the
+# registry so a prefix added to section 2.1 is covered without a second list to maintain.
+PREFIX_BY_TERM: dict[str, str] = {_term(name): prefix for prefix, name in PREFIXES.items()}
 
 # DEC-018's zero-padding. Three digits, widening rather than wrapping past 999.
 NUMBER_WIDTH = 3
@@ -121,6 +153,15 @@ class ParsedIdentifier:
     def object_type(self) -> str:
         """The domain object this identifier names, per section 2.1."""
         return PREFIXES[self.prefix]
+
+    @property
+    def object_term(self) -> str:
+        """The same object type as a vocabulary term: `context_claim` rather than `ContextClaim`.
+
+        What a `subject_type` or `related_object_type` field holds, so a coherence check compares
+        one spelling rather than two.
+        """
+        return _term(self.object_type)
 
 
 def _registry_hint(prefix: str) -> str:
@@ -218,6 +259,9 @@ FindingId = Annotated[str, _validator("fnd")]
 QuestionId = Annotated[str, _validator("qst")]
 DocumentationGapId = Annotated[str, _validator("gap")]
 SourceObservationId = Annotated[str, _validator("obs")]
+ActorId = Annotated[str, _validator("act")]
+EvidenceAssessmentId = Annotated[str, _validator("eas")]
+CritiqueId = Annotated[str, _validator("crq")]
 ReviewerDecisionId = Annotated[str, _validator("dec")]
 WorkflowRunId = Annotated[str, _validator("run")]
 ExecutionRecordId = Annotated[str, _validator("exe")]

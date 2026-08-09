@@ -26,6 +26,7 @@ from pydantic import ValidationError
 from trace_ai.config import PROJECT_ROOT
 from trace_ai.domain.base import DomainModel
 from trace_ai.domain.identifiers import (
+    PREFIX_BY_TERM,
     PREFIXES,
     AssessmentId,
     FindingId,
@@ -43,6 +44,9 @@ CATALOG = PROJECT_ROOT / "requirements" / "catalog.yaml"
 # Section 2.1 lists prefixes as `asm- Assessment`. Parsed rather than retyped, so a prefix added
 # to the document without being added here fails.
 DOCUMENTED_PREFIX = re.compile(r"^([a-z]+)-\s+([A-Z][A-Za-z ]+)$")
+
+# The name form DEC-034 gives authored configuration: a lowercase slug, no number, no prefix.
+SLUG = re.compile(r"^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$")
 
 
 def documented_prefixes() -> dict[str, str]:
@@ -63,14 +67,16 @@ def documented_prefixes() -> dict[str, str]:
 
 def test_the_prefix_list_was_found() -> None:
     """Guard the parser: an empty parse would make the comparison below vacuous."""
-    assert len(documented_prefixes()) == 20
+    assert len(documented_prefixes()) == 23
 
 
 def test_the_registry_matches_section_two_point_one() -> None:
     """The document is authoritative for which prefixes exist.
 
-    There are twenty. The issue asking for this module said nineteen and omitted `obs`, which
-    DEC-021 added with SourceObservation after the backlog was written.
+    There are twenty-three. The issue asking for this module said nineteen and omitted `obs`, which
+    DEC-021 added with SourceObservation after the backlog was written. DEC-034 added `act`, `eas`,
+    and `crq` — three assessment-scoped objects that carry an `id` and had no prefix, which only
+    became visible once section 2.1 stated what the scheme governs.
     """
     documented = documented_prefixes()
     assert set(PREFIXES) == set(documented), (
@@ -186,25 +192,35 @@ def test_every_catalog_requirement_identifier_validates(identifier: str) -> None
     assert parsed.kind is IdentifierKind.AUTHORED
 
 
-def test_the_catalog_object_identifier_is_outside_the_registry() -> None:
-    """`requirements/catalog.yaml` calls itself `cat-core`, and `cat` is not a section 2.1 prefix.
+def test_section_two_point_one_states_what_the_scheme_governs() -> None:
+    """The omission DEC-034 closed, and the one that produced `cat-core` in the first place.
 
-    Recorded rather than accommodated. It is a third identifier shape -- neither `<prefix>-<NNN>`
-    nor `<prefix>-<CATEGORY>-<NNN>` -- using a prefix the corpus defines nowhere, and DEC-018
-    states that `req-` is "the only class currently in use", which this contradicts.
+    A prefix list with no statement of its scope invites every object with an `id` field to acquire
+    a prefix by resemblance. The sentence is what stops the next authored object doing it, so its
+    absence is worth a test even though prose is what is being asserted.
+    """
+    text = DATA_MODEL.read_text(encoding="utf-8")
+    assert "## What the scheme governs" in text
+    governs = text.split("## What the scheme governs", 1)[1].split("## Two classes", 1)[0]
+    assert "RequirementsCatalog" in governs
+    assert "PromptDefinition" in governs
 
-    Issue #137 decides it. The real question there is wider than the one value: section 2.1 never
-    says which objects the scheme governs, and `RequirementsCatalog` is authored configuration
-    rather than assessment data -- not scoped to an assessment, not minted by the persistence
-    layer, referenced by no generated object. Whichever way that resolves is a data-model change,
-    not something this module may decide.
 
-    This test fails the day it is fixed, which is the point: it is a marker, not an endorsement.
+def test_the_catalog_is_named_rather_than_identified() -> None:
+    """`requirements/catalog.yaml` calls itself `core`, and that is a name, not an identifier.
+
+    DEC-034 puts authored configuration outside the scheme: a catalog is not scoped to an
+    assessment, is not minted by the persistence layer, and is referenced by version rather than by
+    identifier. `(id, version)` is its identity.
+
+    The assertion that matters is the second one. The value was `cat-core` until DEC-034, which read
+    as an identifier from a registry that does not contain `cat`; a name that does not parse cannot
+    be mistaken for one.
     """
     loaded = yaml.safe_load(CATALOG.read_text(encoding="utf-8"))
     catalog_id = loaded["catalog"]["id"]
-    assert catalog_id == "cat-core"
-    assert catalog_id.split("-")[0] not in PREFIXES
+    assert catalog_id == "core"
+    assert SLUG.match(catalog_id), f"a catalog name is a lowercase slug, got {catalog_id!r}"
 
     with pytest.raises(ValueError, match=re.escape("data-model.md section 2.1")):
         parse_id(catalog_id)
@@ -307,3 +323,18 @@ def test_a_typed_field_is_still_a_string() -> None:
     assert isinstance(sample.id, str)
     assert sample.model_dump() == {"id": "fnd-003", "assessment_id": "asm-001"}
     assert ThreatId is not FindingId
+
+
+def test_an_object_type_has_one_vocabulary_spelling() -> None:
+    """Three objects name another object's type in a free-text field — `ContextClaim.subject_type`,
+    `Question.related_object_type`, `ReviewerDecision.subject_type` — and each has to agree with an
+    accompanying identifier about what kind of thing is meant. One conversion, so they cannot
+    disagree about how `ContextClaim` is spelled."""
+    assert parse_id("ctx-001").object_term == "context_claim"
+    assert parse_id("cmp-001").object_term == "component"
+    assert parse_id("src-001").object_term == "source_document"
+
+
+def test_every_prefix_is_reachable_by_its_term() -> None:
+    assert set(PREFIX_BY_TERM.values()) == set(PREFIXES)
+    assert PREFIX_BY_TERM["evidence_reference"] == "evd"

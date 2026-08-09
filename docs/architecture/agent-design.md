@@ -1225,18 +1225,20 @@ Generate clear reviewer-facing prose from approved structured assessment data.
 
 ## Responsibilities
 
-The Report Generation Agent may write:
+The Report Generation Agent writes **four sections of the sixteen** in `templates/report-v1.md`.
+DEC-035 assigns each section exactly one owner, and the twelve not listed here are rendered
+deterministically from approved objects by the Report Rendering node:
 
-- Executive summary
-- System overview
-- Architecture narrative
-- Threat summaries
-- Finding descriptions
-- Documentation-gap summaries
-- Assumption summaries
-- Recommended-priority narrative
-- Methodology explanation
-- Limitations
+- Executive summary — section 1
+- System overview — section 3
+- Risk summary — section 6
+- Assessment limitations — section 16
+
+**Per-object prose is not this agent's work.** Finding descriptions, threat summaries,
+documentation-gap summaries, assumption summaries, and the recommended-action list are rendered from
+the objects themselves. A `Finding.description` is text the reviewer approved, and often edited, at
+checkpoint 2; regenerating it would place model prose where reviewer-approved text belongs. The
+methodology section is fixed template text and version pins, so nothing generates it either.
 
 ## Inputs
 
@@ -1249,29 +1251,30 @@ Only approved or explicitly reportable objects:
 - Confirmed controls
 - Reviewer notes
 - Assessment scope
-- Report template
+- The required-limitation list: one `limitation_id` and its supporting facts per limitation the
+  run's own state implies
+
+The report template is **not** an input. The agent does not produce a document, so it has no use for
+the document's shape; the template belongs to the rendering node (section 20).
 
 ## Outputs
 
-Structured report sections, not an unconstrained full document blob when possible.
+One `ReportSections` object, carrying the shared response metadata of section 6. It is a named
+structure of sections, never a document blob.
 
-Example:
+| Field | Type | Constraint |
+|---|---|---|
+| `executive_summary` | string | Prose only: no headings, tables, links, or anchors |
+| `system_overview` | string | Same |
+| `risk_summary` | string | Same |
+| `limitations` | list of `{limitation_id, text}` | Exactly one entry per required limitation, by identifier |
 
-executive_summary: |
+Prose fields carry no Markdown structure because structure is the renderer's, and an identifier
+appearing in prose must be one the input carried.
 
-...
-
-system_overview: |
-
-...
-
-risk_summary: |
-
-...
-
-limitations: |
-
-...
+The `limitations` list is checked **by identifier**, not by reading. The assembler states which
+limitations the report must carry and the agent writes each one, so an omission is a schema failure
+rather than a judgment about whether the prose covered enough.
 
 Finding facts should remain sourced from approved Finding objects.
 
@@ -1298,6 +1301,8 @@ The agent must not:
 - Invent remediation requirements
 - Alter quoted evidence
 - Override reviewer decisions
+- Rewrite the text of an approved object
+- Emit Markdown headings, tables, links, anchors, or section numbers
 
 ## Failure conditions
 
@@ -1309,6 +1314,9 @@ The output is invalid when:
 - Unsupported facts are introduced
 - Important limitations are omitted
 - Questions are presented as vulnerabilities
+- A `limitation_id` is missing, duplicated, or was not in the input
+- An identifier is cited that the input did not carry
+- A prose field contains Markdown structure
 
 ## Retry behavior
 
@@ -1318,6 +1326,7 @@ Retry when:
 - Report schemas fail
 - The report invents conclusions
 - The report contradicts approved objects
+- The limitation set does not match the required list
 
 ## Evaluation criteria
 
@@ -1337,22 +1346,34 @@ Deterministic workflow node.
 
 ## Purpose
 
-Render approved report sections and structured objects into Markdown.
+Render approved report sections and structured objects into Markdown. The node owns the document:
+its sections, their order, their numbering, and everything in the twelve sections the agent does not
+write (DEC-035).
 
 ## Responsibilities
 
-- Apply the report template
-- Render approved findings
-- Render evidence references
-- Render tables
-- Number sections
-- Generate anchors
-- Include methodology and limitations
-- Write output files
-- Validate that only approved findings appear
-- Generate an output manifest
+- Apply `templates/report-v1.md`, which fixes the sixteen sections, their titles, their numbers, and
+  their anchors
+- Place each agent-written section under its own heading, unchanged
+- Render findings, threats, documentation gaps, assumptions, questions, controls, recommended
+  actions, and the architecture tables from approved objects
+- Render the evidence appendix from every `EvidenceReference` cited above it
+- Emit the template's authored empty-section wording wherever a block has no rows, and emit every
+  section whether or not it has content
+- Emit explicit `<a id="...">` anchors: `sNN-<slug>` per section from the template, and the object's
+  own lowercased identifier per rendered object
+- Write `outputs/report-<workflow_run_id>.md` through the artifact store and set
+  `Assessment.final_report_path` to that path, relative to the assessment root
+- Validate that only approved findings appear, and that the agent's sections carry no heading,
+  table, link, or identifier the input did not carry
+- Write `outputs/report-<workflow_run_id>.manifest.json`: the report's path and hash, the assessment
+  and run identifiers, the six version pins `evaluation-plan.md` section 3 requires, and the counts
 
 The renderer should not use an AI model.
+
+Section numbers are literal rather than computed, so "section 12" means the same thing in every
+report, and anchors are explicit elements rather than heading-derived ones, which differ between
+Markdown renderers and change when a title is reworded.
 
 # 21. Evaluation Node
 
@@ -1792,8 +1813,6 @@ evidence-validation-v1
 
 critical-review-v1
 
-severity-support-v1
-
 report-generation-v1
 
 An agent version should change when there is a material modification to:
@@ -1840,15 +1859,13 @@ critique/
 
 challenge-analysis-v1.md
 
-severity/
-
-recommend-severity-v1.md
-
 reporting/
 
 generate-report-sections-v1.md
 
-Shared prompt content should be composed into agents through application code rather than copied manually into every prompt.
+~~severity/recommend-severity-v1.md~~ — removed. It was the prompt for the Severity Support Agent, which DEC-030 excluded; the reviewer assigns severity at checkpoint 2 and no node proposes one, so there is nothing for the prompt to instruct.
+
+Shared prompt content should be composed into agents through application code rather than copied manually into every prompt. `src/trace_ai/services/prompts/` does the composing: an agent prompt declares the shared blocks it requires in its front matter, the loader joins them in the declared order, and DEC-019 hashes the composed result so an edit to a shared block is visible in the hash of every prompt that includes it.
 
 # 35. Initial Build Order
 

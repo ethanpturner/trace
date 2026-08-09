@@ -126,6 +126,20 @@ Adding a field to a requirement fails the unknown-field test by design. The Requ
 defined in the data model, so extending it is a design change and belongs in the decision log
 (DEC-011 is the worked example) rather than in a YAML file.
 
+## The catalog's name
+
+`catalog.yaml` calls itself `core`, and that is a **name rather than an identifier**. DEC-034 puts
+authored configuration outside the identifier scheme in
+[`data-model.md`](../docs/architecture/data-model.md) section 2.1: a catalog is not scoped to an
+assessment, is not minted by the persistence layer, and is referenced by version rather than by
+identifier. Its identity is `(id, version)` — the slug names the family, the version names the
+edition, and everything that refers to a catalog refers to the version.
+
+The value was `cat-core` until DEC-034. `cat` is not a prefix in section 2.1 and never was, so the
+value read as an identifier from a registry that does not contain it. **Do not give a catalog name a
+prefix.** Requirement identifiers inside the catalog are a different thing entirely: `req-AUTH-001`
+is authored, globally unique, and inside the scheme, because assessment objects cite it.
+
 ## `content_hash`
 
 Section 30 lists `content_hash` as required on `RequirementsCatalog`, and `catalog.yaml` does not carry

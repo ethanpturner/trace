@@ -37,9 +37,11 @@ uv run pre-commit run gitleaks --all-files   # a single hook
 
 ```
 src/trace_ai/        configuration and process bootstrap -- the only product code that runs
-src/trace_ai/domain/           enums.py and base.py; no concrete domain object yet
+src/trace_ai/domain/           domain objects, identifiers, hashing, and proposals/
+src/trace_ai/domain/proposals/ what an agent returns: local keys, nothing authoritative
 src/trace_ai/services/         ingestion/ and evidence/ -- empty
-src/trace_ai/infrastructure/   filesystem/ and database/ -- empty
+src/trace_ai/infrastructure/   filesystem/, database/, and model/ -- stores and the model seam
+src/trace_ai/workflow/         phases, the transition table, execution limits, the node protocol
                      Dependencies point inward. domain/ imports neither of the other two and
                      no provider SDK; tests/unit/test_package_layout.py asserts both.
 tests/unit/          the only tests that exist
@@ -56,7 +58,8 @@ requirements/        the requirements catalog; see Requirements catalog below
 journal/             dated session entries; see Journal below
 benchmarks/          scenarios two onward, same input/ + expected/ layout
 benchmarks/scenarios.yaml  the scenario registry -- the authoritative list
-prompts/             scaffolded, empty -- versioned prompt definitions land here
+prompts/             prompt files; shared/ holds the blocks composed into agent prompts
+templates/           report-v1.md, the report template; see Report shape below
 scripts/             repository utilities
 ```
 
@@ -110,6 +113,14 @@ These are decided. Violating one is a design change requiring an entry in
   is not an ablation and needs no switch.
 - **State is structured and schema-validated**, not a conversational transcript (DEC-006).
 - **Local, single-user MVP** (DEC-004). No cloud deployment, multi-tenancy, or RBAC.
+- **The report has sixteen sections and each has exactly one owner** (DEC-035). Four are prose from
+  the Report Generation agent — `executive_summary`, `system_overview`, `risk_summary`,
+  `limitations` — and twelve are rendered deterministically from approved objects. A section is
+  never both, and the agent never rewrites an approved object's text: a `Finding.description` is
+  what the reviewer approved at checkpoint 2. `templates/report-v1.md` fixes the sections, their
+  numbering, their anchors, and the authored wording for every section that can be empty;
+  `tests/unit/test_report_template.py` holds it, the decision table, and section 5.13 in agreement.
+  Markdown is the only MVP output format.
 - **Quality over finding volume.** A successful assessment may produce no findings. Never optimize
   for finding count.
 
@@ -255,6 +266,17 @@ Squashing either pull request breaks the chain: the hotfix commit stops being an
   in `domain/identifiers.py` is for tests: a fresh instance restarts at `001`, so two of them
   collide and a resumed run would re-mint identifiers that already exist. Depend on the
   `IdentifierAllocator` protocol and let the persistence layer supply the implementation.
+  **The scheme governs objects an assessment produces** (DEC-034). Authored configuration —
+  `RequirementsCatalog`, `PromptDefinition` — is outside it and carries a *name*: a lowercase slug
+  with no prefix, identified by `(id, version)`. Do not give one a prefix; `cat-core` was that
+  mistake.
+- **A type field the document illustrates is an open vocabulary** (DEC-036). `component_type`,
+  `asset_type`, `actor_type`, and `boundary_type` accept any term and normalize it to one spelling
+  through `domain/vocabulary.py`; the `KNOWN_*` constants are documentation and validate nothing. A
+  closed enum would reject `demo/forgeflow/input/structured-system-input.yaml`, which uses six
+  component types `data-model.md` never lists. `DataFlow.direction` is the counter-example: section
+  14 names the values rather than illustrating them, so it is a closed enum. Where absence would
+  read as a negative answer, say `unknown` explicitly — never `False`, never `None`.
 - **Go through `AssessmentService` for anything assessment-shaped**, and hold the
   `AssessmentHandle` it returns rather than an identifier: it carries the scoped repository
   and the scoped artifact store together, so one assessment's code cannot reach another's.
@@ -290,6 +312,58 @@ Squashing either pull request breaks the chain: the hotfix commit stops being an
   Use `type(obj).model_validate({**obj.model_dump(), **changes})`. This is the only path on which
   a human-supplied value enters a domain object, so it is the one that least tolerates skipping
   the schema. Pinned by `tests/unit/test_domain_base.py`.
+- **The Context Validation node reports and routes; it never corrects** (`agent-design.md` section
+  8). It does not merge duplicates, fill in fields, or re-label a `documented` claim with no
+  evidence as `assumed` to make it pass — that last one would turn a claim the agent asserted into
+  one nobody asserted, with a clean validation record. Errors are returned with an `ErrorClass` so
+  the extraction node routes on a class rather than a message.
+- **The fence is the security boundary, and a document that can close it escapes it.**
+  `services/context/input_package.py` wraps every excerpt in a marker carrying its evidence
+  identifier and neutralises any delimiter found *inside* an excerpt. The ForgeFlow injection
+  fixture is the live test: the block is **present** — it is evidence — and appears only inside the
+  fence. The package carries no path, credential, environment value, or configuration object, and
+  a budget overrun **names** the excluded evidence rather than truncating.
+- **A proposal carries local keys and nothing the application owns** (`agent-design.md` section
+  22, DEC-006). `domain/proposals/` has no `id`, no `status`, no approval field, and no severity;
+  `extra="forbid"` makes an invented one a validation failure. A key shaped like an identifier is
+  refused too, because DEC-018 allocates at insert and an agent-chosen number could collide.
+  `convert_proposal` resolves keys to allocated identifiers, sets everything `candidate`, and
+  refuses before allocating anything if a key is unresolved.
+- **Routing is the orchestrator's; ceilings are the orchestrator's** (DEC-016, `agent-design.md`
+  section 27). A node declares a phase, takes a `NodeContext`, and returns a `NodeResult`; it is
+  given no registry, no orchestrator, and no peer, because a node that could reach one could build
+  the loop section 27 prevents. The fourteen phases are `current-architecture.md` section 5.3's and
+  transitions are declared data — anything the table does not name is refused. Exceeding a ceiling
+  **stops** the run with a classified error; it never skips a node or shrinks a request.
+  `AssessmentState` holds identifiers and routing only (`data-model.md` section 31's state-design
+  rule), because a state carrying content is a second copy of the authoritative data.
+- **A checkpoint cannot be skipped, and the mechanism is that skipping is unrepresentable**
+  (DEC-005, DEC-012). `CheckpointNode` takes no flag, consults no configuration, and advances only
+  when every subject has a `ReviewerDecision`; `AssessmentConfiguration` carries no field that
+  governs one. Pausing is stopping (DEC-017): the state is written to `traces/`, the process exits,
+  and resuming is a read in a new process. The review package is **derived** from the run, never
+  stored in it.
+- **Retry the attempt, never the conclusion** (`agent-design.md` section 26). `workflow/errors.py`
+  holds a closed taxonomy: schema failures, provider failures, and missing relationships are
+  retryable; insufficient evidence, an unresolved contradiction, and required reviewer input are
+  not, whatever the retry budget says. Retrying an analysis condition invites an agent to fabricate
+  an answer on the third attempt, because producing one is the only way to stop being retried. A
+  retry carries **validation feedback** forward or it is a repetition, and a failed attempt's raw
+  output goes to `traces/` — never into `error_message`, which section 27 requires to be safe.
+- **A prompt is a file, and shared blocks are composed rather than copied.** `agent-design.md`
+  section 34 is authoritative for the tree; `current-architecture.md` section 10 was corrected to
+  match it. `services/prompts/` reads the tree, joins each declared `shared/` block in order, and
+  hashes the **composed** text (DEC-019) — so an edit to a shared block changes the hash of every
+  prompt including it. A missing declared block raises: a prompt that composes short still runs and
+  still answers, having lost the untrusted-source boundary.
+- **Reach a model through `StructuredModel`, never through a provider SDK** (DEC-014).
+  `infrastructure/model/anthropic_adapter.py` is the only module that may import `anthropic`, and
+  `tests/unit/test_model_boundary.py` fails if another one does. An adapter makes **exactly one
+  attempt** and returns a `ModelFailure` rather than raising — the retry budget is the
+  orchestrator's, and a hidden loop would break the `ExecutionRecord` retry count and the cost
+  ceiling. A schema failure keeps the raw output (`data-model.md` section 33). `model_profile`
+  resolves through `infrastructure/model/profiles.py`; `Creativity` is provider-neutral intent and
+  names no knob.
 - **CI must never need a provider API key.** The `integration` and `evaluation` markers are
   deselected by default in `addopts` precisely so a bare `pytest` cannot spend money.
 - **Secrets go through `trace_ai.config.Settings`** as `SecretStr`. `.env` is gitignored;

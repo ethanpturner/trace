@@ -29,17 +29,31 @@ PACKAGE_ROOT = PROJECT_ROOT / "src" / "trace_ai"
 DOMAIN_ROOT = PACKAGE_ROOT / "domain"
 
 # The skeleton section 15 calls for, adapted to the real package name. `api/`, `application/`,
-# `workflow/`, `reporting/`, and `evaluation/` are deliberately absent: section 15 proposes them,
+# `reporting/` and `evaluation/` are deliberately absent: section 15 proposes them,
 # nothing in this milestone puts a file in them, and an empty package reads as a commitment that
 # has not been made.
 PACKAGES = (
     "trace_ai.domain",
+    # What an agent returns (agent-design.md section 22): proposed objects carrying local keys and
+    # nothing the application owns. Inside `domain/` because a proposal is validated data, and it
+    # imports no service and no store.
+    "trace_ai.domain.proposals",
+    # Orchestration (DEC-016): phases, the transition table, execution limits, and the node
+    # protocol. There is no framework; this is what the decision names instead.
+    "trace_ai.workflow",
     "trace_ai.services",
     "trace_ai.services.ingestion",
+    "trace_ai.services.context",
     "trace_ai.services.evidence",
+    # Prompts are version-controlled files (current-architecture.md section 10); this package
+    # reads and composes them, and holds no prompt text of its own.
+    "trace_ai.services.prompts",
     "trace_ai.infrastructure",
     "trace_ai.infrastructure.filesystem",
     "trace_ai.infrastructure.database",
+    # The model seam (DEC-014). `tests/unit/test_model_boundary.py` holds the rule this package
+    # exists to enforce: the adapter inside it is the only module that may import a provider SDK.
+    "trace_ai.infrastructure.model",
 )
 
 # What a domain module may not reach for. Named as module prefixes so that

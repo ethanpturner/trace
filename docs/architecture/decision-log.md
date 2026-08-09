@@ -932,7 +932,7 @@ Decision:
 
 There are **two classes of identifier**, and they follow different rules.
 
-**Authored identifiers** are written by hand and carry meaning. The requirements catalog's `req-AUTH-001` is the only class currently in use: the prefix names the object type, the middle segment names the category, and the number is assigned by the author. They are globally unique, stable across catalog versions, and are the only identifiers a benchmark expected-output file may reference.
+**Authored identifiers** are written by hand and carry meaning. `req-` is the only authored prefix currently in use, in the requirements catalog's `req-AUTH-001`: the prefix names the object type, the middle segment names the category, and the number is assigned by the author. (This sentence originally read "the only class currently in use", which was inaccurate when written: `requirements/catalog.yaml` already called itself `cat-core`. DEC-034 settles that value and states which objects the scheme governs.) They are globally unique, stable across catalog versions, and are the only identifiers a benchmark expected-output file may reference.
 
 **Generated identifiers** are minted during an assessment. They take the form `<prefix>-<NNN>` — `thr-007`, `evd-014`, `fnd-003` — using the prefixes listed in `data-model.md` section 2.1, zero-padded to three digits and widening beyond three when a sequence exceeds 999. They are **unique within their assessment**, not globally; `thr-007` in one assessment and `thr-007` in another are different objects, and an identifier is fully qualified only by `(assessment_id, id)`.
 
@@ -1922,3 +1922,476 @@ Open Questions:
   does DEC-023's supersession apply?
 - Should `failed` carry the identifier of the `ExecutionRecord` that explains it, which is a
   reference rather than a duplicate?
+
+## DEC-034: The identifier scheme governs assessment data; configuration objects are named, not identified
+
+Date: 2026-08-09
+
+Status: Accepted
+
+Decision:
+
+`data-model.md` section 2.1 never said which objects the identifier scheme governs. It governs
+**objects an assessment produces**, and nothing else.
+
+An object is inside the scheme when all three hold: it is scoped to one assessment, it is persisted
+by the assessment store, and something else refers to it by identifier. Those objects carry an `id`
+of one of DEC-018's two forms, drawn from the prefix registry in section 2.1. The one authored
+exception is `Requirement`: it is written by hand rather than produced by a run, but assessment
+objects reference it by identifier — a `ControlMapping` names `req-AUTH-001` — so it is inside the
+scheme and keeps its `req-` prefix.
+
+**`RequirementsCatalog` and `PromptDefinition` are outside it.** They are authored configuration:
+not scoped to an assessment, not minted by the persistence layer, and referenced by *version* rather
+than by identifier. `Assessment.requirements_catalog_version` records a version, `PromptDefinition`
+is cited in generation metadata as `extract-context-v1`, and DEC-027 pins `catalog_version` in a
+benchmark scenario. Nothing anywhere joins on either object's `id`.
+
+Their `id` is therefore a **name**: a lowercase slug, stable across versions, unique among objects of
+its kind, carrying no prefix and no number. Identity is `(id, version)` — the slug names the family,
+the version names the edition.
+
+`requirements/catalog.yaml` changes from `cat-core` to `core`. The `cat-` prefix was imitation: it
+made a name look like an identifier from a registry that does not contain it, which is the reading
+that has to be prevented rather than the value that has to be preserved.
+
+Section 2.1's prefix list was also incomplete against the rule this entry states. Three
+assessment-scoped objects carry an `id` and had no prefix, and this entry adds them:
+
+| Prefix | Object | Defined in |
+|---|---|---|
+| `act` | Actor | `data-model.md` section 13 |
+| `eas` | EvidenceAssessment | section 20 |
+| `crq` | Critique | section 24 |
+
+The registry is now twenty-three. `SystemContext` (section 9) has no `id` field and needs no prefix:
+it is keyed by `(assessment_id, version)`, which DEC-023 makes the versioned object it is.
+
+DEC-018's "the requirements catalog's `req-AUTH-001` is the only class currently in use" is
+corrected. It was inaccurate when written — `cat-core` was already in the same directory — and the
+sentence is replaced with one that says `req-` is the only authored *prefix*, which is what was
+meant and is true.
+
+Why:
+
+The question the issue asks — what to do about one value in one file — is not the question worth
+answering. `cat-core` is a symptom of the omission in section 2.1: a document that lists prefixes
+without saying what the list is for invites every object with an `id` field to acquire one by
+resemblance. That is exactly how the value was produced, and fixing the value alone would leave the
+next authored object to make the same mistake.
+
+Stating the boundary answers the issue's own decision criteria in one move. Does anything join on
+`RequirementsCatalog.id`? No — `catalog_version` is the real key, in the evaluation contract, in
+`Assessment`, and in every requirement file's `catalog_version` field. Would a benchmark expected
+file reference a catalog identifier? It references the version, which DEC-027 settled. Is a third
+identifier form worth explaining? Not when the object needing it turns out not to need an identifier
+at all.
+
+`PromptDefinition` is the evidence that this is a class rather than one stray value. It has an `id`,
+it has no prefix, it is cited everywhere as `extract-context-v1`, and nobody has ever proposed
+`prm-`. The catalog and the prompt behave the same way, and a rule covering one covers both. That is
+the difference between a rule and an exception.
+
+Adding the three missing prefixes is part of the same decision rather than a separate cleanup.
+`Actor`, `EvidenceAssessment`, and `Critique` are inside the scheme under the rule stated here, so
+leaving them unlisted would publish a rule the registry contradicts, and would leave three
+in-progress issues each free to invent a prefix. A closed registry only works if it is complete.
+
+Alternatives Considered:
+
+- Add `cat` to section 2.1 and admit a third identifier form, `<prefix>-<name>`
+- Rename the catalog's identifier to a registered prefix, in one of the two existing forms
+- Drop `RequirementsCatalog.id` entirely, since `version` is the real key
+- State the boundary but leave the catalog's value as `cat-core`, treating the shape as harmless
+- State the boundary and defer the three missing prefixes to the issues implementing those objects
+
+Tradeoffs:
+
+- **Two kinds of `id` field now exist in one data model**, and the type does not distinguish them.
+  `RequirementsCatalog.id` and `Finding.id` are both `string` and only the section tells a reader
+  which rules apply. A `CatalogName` annotated type would say so in the schema; there is no loader
+  to put it on yet.
+- The rule is stated in prose and enforced by nothing for configuration objects. A future authored
+  object can still acquire a prefix by imitation, and the only thing standing in the way is a reader
+  of section 2.1.
+- Renaming `cat-core` to `core` changes a value in a version-controlled catalog. Nothing reads it,
+  so the change is free today and would not have been once a loader existed.
+- Three prefixes are now registered for objects that do not exist. If `Critique` is built and turns
+  out not to need an identifier — it is always reached through the object it critiques — `crq` is a
+  registered prefix naming nothing.
+- `eas` and `eval` are close enough to misread at a glance, and they name unrelated objects.
+- Requiring authored configuration to be unique "among objects of its kind" is unenforced: two
+  catalogs both named `core` at the same version would collide, and nothing checks.
+
+Open Questions:
+
+- When a catalog loader exists, should `RequirementsCatalog.id` become an annotated slug type, so
+  the schema rejects a prefixed value rather than a convention doing it?
+- Does `PromptDefinition.id` hold the slug (`extract-context`) with `version` separate, or the
+  composed `extract-context-v1` the corpus writes in metadata? The corpus shows the composed form
+  and section 29 requires both fields.
+- Is `Requirement` the only authored object that will ever be inside the scheme, or does a future
+  shared threat-pattern library create a second?
+
+## DEC-035: Sixteen report sections, four written by the agent; the renderer owns the document
+
+Date: 2026-08-09
+
+Status: Accepted
+
+Decision:
+
+The MVP report has **sixteen numbered sections**, fixed by `templates/report-v1.md`, and every one
+of them has exactly one owner. Markdown is the only output format, as `future-features.md` section
+13.5 defers PDF, HTML, JSON, SARIF, and audit packages.
+
+| # | Section | Anchor | Owner | Content |
+|---|---|---|---|---|
+| 1 | Executive summary | `s01-executive-summary` | Agent — `executive_summary` | What was assessed, what was concluded, what was not determined |
+| 2 | Scope | `s02-scope` | Rendered | `Assessment`, `AssessmentConfiguration`, and the source documents ingested |
+| 3 | System overview | `s03-system-overview` | Agent — `system_overview` | Narrative of the approved `SystemContext` |
+| 4 | Architecture summary | `s04-architecture-summary` | Rendered | `Component`, `Actor`, and `DataFlow` tables |
+| 5 | Assets and trust boundaries | `s05-assets-and-trust-boundaries` | Rendered | `Asset` and `TrustBoundary` tables |
+| 6 | Risk summary | `s06-risk-summary` | Agent — `risk_summary` | What the approved findings amount to together |
+| 7 | Significant threats | `s07-significant-threats` | Rendered | Validated `Threat` objects |
+| 8 | Approved findings | `s08-approved-findings` | Rendered | `Finding` objects approved at checkpoint 2 |
+| 9 | Documentation gaps | `s09-documentation-gaps` | Rendered | Approved `DocumentationGap` objects |
+| 10 | Assumptions | `s10-assumptions` | Rendered | `ContextClaim` with status `assumed` or `inferred`, with the DEC-022 rationale |
+| 11 | Open questions | `s11-open-questions` | Rendered | `Question` objects with status `open` |
+| 12 | Existing controls | `s12-existing-controls` | Rendered | `Control` objects whose `validation_status` is `supported` |
+| 13 | Recommended actions | `s13-recommended-actions` | Rendered | `Finding.recommendation` and `acceptance_criteria`, by severity then identifier |
+| 14 | Methodology | `s14-methodology` | Rendered | Fixed template text and the version pins |
+| 15 | Evidence appendix | `s15-evidence-appendix` | Rendered | Every `EvidenceReference` cited above, with `quoted_text` and location |
+| 16 | Assessment limitations | `s16-assessment-limitations` | Agent — `limitations` | One entry per limitation the assembler requires |
+
+The list is `current-architecture.md` section 5.13's fifteen with one addition. **Risk summary** is
+new, and it exists so that section 7 does not have to be half prose and half table: the model's
+synthesis of what the findings mean together is a section of its own rather than a paragraph
+interleaved into a rendered one.
+
+**Four sections are model-written and twelve are rendered.** The rule that produced that split is:
+*anything that restates an approved object is rendered; only prose that adds no fact is written by
+a model.* A section is never both.
+
+**The agent's output is a named structure of sections, not a document.** `ReportSections` carries
+four fields and the shared response metadata of `agent-design.md` section 6:
+
+| Field | Type | Constraint |
+|---|---|---|
+| `executive_summary` | string | Prose only. No headings, no Markdown tables, no links, no anchors |
+| `system_overview` | string | Same |
+| `risk_summary` | string | Same |
+| `limitations` | list of `{limitation_id, text}` | Exactly one entry per `required_limitation` in the input; no more, no fewer, no invented identifier |
+
+The agent no longer writes per-object prose. Section 19's responsibility list included finding
+descriptions, threat summaries, gap summaries, assumption summaries, and a recommended-priority
+narrative; all five are rendered from the objects instead. A `Finding.description` is text a
+reviewer approved, and often edited, at checkpoint 2. Regenerating it would put model prose where
+reviewer-approved text belongs and make "only approved content appears in the report" unverifiable.
+
+**Limitations are the exception that proves the split, and they are handled structurally.** The
+assembler computes a `required_limitations` list — one entry per limitation the run's own state
+implies, such as documents that failed ingestion, unanswered blocking questions, findings resting on
+inferred claims, a non-authoritative run under DEC-012, or an empty finding set — and hands the
+agent the identifier and the facts for each. The agent writes the words; the validator checks the
+set by identifier. That is why omission is a schema failure rather than a judgment call, and it is
+the only place a required-by-identifier list is used.
+
+**Numbering and anchors are fixed by the template.** Section numbers are literal, not computed from
+how many sections have content, and every section is emitted even when empty. Anchors are written as
+explicit `<a id="...">` elements rather than left to heading-derived anchors, which differ between
+Markdown renderers and change whenever a title is reworded. Object anchors are the object's own
+identifier lowercased — `fnd-003` — which is stable within its assessment, the scope a report is
+read in.
+
+**Output location and naming.** The report is written through the `ArtifactStore` to the assessment's
+`outputs/` area, named for the run that produced it:
+
+```
+data/assessments/<assessment_id>/outputs/report-<workflow_run_id>.md
+data/assessments/<assessment_id>/outputs/report-<workflow_run_id>.manifest.json
+```
+
+Naming per run rather than `report.md` is required rather than tidy: the artifact store refuses to
+overwrite a stored file with different content, so a second run over the same assessment would fail
+on a fixed name. `Assessment.final_report_path` holds the path **relative to the assessment root** —
+`outputs/report-run-003.md` — and names the report of the run whose findings were approved. A
+relative path keeps the value valid when the data directory moves, which an absolute one would not.
+
+**The output manifest is JSON**, one per report, carrying what a later reader needs to know that two
+reports are comparable:
+
+| Field | Content |
+|---|---|
+| `manifest_version` | Version of this manifest's own shape |
+| `assessment_id`, `workflow_run_id` | What produced the report |
+| `generated_at` | Render timestamp |
+| `report.path`, `report.content_hash`, `report.format`, `report.template_version` | The artifact, hashed per DEC-019, and the template it was rendered from |
+| `versions.architecture`, `versions.data_model`, `versions.workflow` | From `Assessment` |
+| `versions.requirements_catalog` | Catalog version, per DEC-034 the way a catalog is referenced |
+| `versions.prompts` | Every prompt version used in the run, by name |
+| `versions.model`, `versions.model_profile`, `versions.model_configuration` | DEC-014's bundle |
+| `counts.*` | Approved findings, findings by severity, documentation gaps, open questions, assumptions, confirmed controls, threats, evidence references |
+| `authoritative`, `ablations` | Whether the run applied a DEC-012 ablation, and which |
+
+The six version fields `evaluation-plan.md` section 3 requires are all present. JSON rather than
+YAML because nothing authors this file by hand and DEC-020 already makes JSON the machine format;
+the manifest sits beside the report so a report cannot be found without it.
+
+**No machine-readable sidecar is emitted.** `data-model.md` section 37's export package —
+`findings.json`, `report.md`, `evidence/` — stays deferred. The manifest describes the report; it
+does not contain the assessment's objects, and adding a second serialization of objects that already
+live in the assessment store would be a second authoritative copy for no MVP consumer.
+
+**Zero approved findings is a defined outcome with authored wording.** The template's
+`empty.findings` text states that no candidate weakness reached the assessment's bar, that this is
+not a statement that the system is secure, and where to read what could not be determined. Every
+rendered section that can be empty has wording of its own, written the same way, and no empty
+section is omitted: a section that disappears reads as one that was never considered.
+
+Why:
+
+Two documents disagreed about how many sections the report has — fifteen in `current-architecture.md`
+section 5.13, four in `agent-design.md` section 19 — and the disagreement was never about counting.
+Section 5.13 lists sections of a document; section 19 lists keys of an agent's output. They can both
+be right only once someone says which sections the agent writes, and nobody had.
+
+That question is the one that matters, because it decides what the agent can get wrong. A model that
+returns a document can put a fabricated fact anywhere in it, and validating that requires reading
+every sentence against every object. A model that returns four prose fields, none of which is
+allowed to contain a heading, a table, a link, or an identifier the input did not carry, can be
+checked. The renderer owns the document; the model owns four passages inside it.
+
+Rendering per-object text rather than having the model rewrite it is the same argument applied to
+the checkpoint. The reviewer approves finding text at checkpoint 2 under DEC-023, editing it where
+needed. If the report regenerates that text, the reviewer approved one thing and the report says
+another, and the guarantee that only approved content appears becomes unverifiable in the exact
+place it is most load-bearing. Rendering also makes the empty case free: a table with no rows is a
+defined state, while prose about nothing is a prompt for invention.
+
+The template being a specification rather than an engine template follows the same reasoning as
+DEC-032. A templating library is a dependency, a syntax, and a second place for logic to hide, in
+exchange for string substitution that Python does natively. What the artifact is actually needed for
+is to make the report's shape editable and reviewable in one file, and comparable against what the
+renderer emits — which a test can do against a specification just as well as against a live
+template.
+
+The fixed section numbering exists for the same reason the anchors do. This is a document a reviewer
+reads, quotes in a ticket, and links a colleague to. If section numbers shift because one assessment
+had no findings, then "section 12" means different things in two reports of the same system, and
+every link into the previous one silently points somewhere else.
+
+Alternatives Considered:
+
+- Have the agent return one Markdown document, with the renderer only writing files and the manifest
+- Keep section 19's four keys as the whole prose surface and drop Risk summary, folding it into the
+  executive summary
+- Let the agent write per-object prose — finding descriptions, threat summaries — as section 19
+  originally specified
+- Render the limitations section deterministically from structured facts, with no model involved
+- Number sections dynamically, skipping empty ones
+- Rely on heading-derived Markdown anchors rather than explicit anchor elements
+- Adopt Jinja2 and make `report-v1.md` a real engine template
+- Emit `findings.json` beside the report, bringing section 37's export forward into the MVP
+- Name the report `report.md` and overwrite it on each run
+
+Tradeoffs:
+
+- **Twelve rendered sections is a lot of rendering code**, and every one of them is a place where a
+  table can be built wrong. The failure is at least visible: a broken table looks broken, where a
+  fabricated sentence does not.
+- The report will read as two registers — synthesized prose in four places, structured output
+  everywhere else. That is honest about what wrote what, and it is not what a human-written
+  assessment reads like.
+- `required_limitations` is a mechanism that exists for one section. It is a real cost: the
+  assembler has to derive the list, the schema has to carry the identifiers, and the validator has to
+  check them, all to protect one section from omission.
+- Fixed section numbering means a report about a system with no data flows still contains a section
+  saying so. Some readers will read that as padding.
+- Naming the report per run means an assessment with several runs accumulates several reports in
+  `outputs/`, and only `final_report_path` says which one is current.
+- The manifest duplicates counts that can be derived from the assessment store. If a reviewer edits
+  an approved finding after the report is rendered, the manifest is stale and nothing detects it.
+- A sixteen-section report is long for a system with three findings. Nothing in this decision
+  shortens it, and the MVP has no reduced or summary variant.
+- Explicit anchor elements are inline HTML in a Markdown document. Renderers that strip HTML lose
+  every anchor, and the report degrades to unlinkable.
+
+Open Questions:
+
+- Does the evidence appendix quote every cited `EvidenceReference` in full, or excerpt long ones?
+  DEC-015 forbids modifying `quoted_text`, so excerpting would have to render a truncation rather
+  than a shortened quote.
+- Should the manifest carry the report's section-by-section ownership, so a reader can tell which
+  passages a model wrote without consulting the template?
+- Is `risk_summary` distinguishable from `executive_summary` in practice, or will the two converge
+  and one of them stop earning its section?
+- When a reviewer edits a finding after rendering, is the report re-rendered under a new run, or
+  amended in place with the manifest updated?
+
+## DEC-036: Type fields are open vocabularies, normalized; `direction` is closed
+
+Date: 2026-08-09
+
+Status: Accepted
+
+Decision:
+
+`data-model.md` lists values under four headings ending in "examples" — component types, asset
+types, actor types, boundary types — and types every one of those fields `string`. Those fields are
+**open vocabularies**: any term is accepted, and the corpus's lists are documentation.
+
+**A term is normalized before it is stored.** `Web Application`, `web-application`, and
+`WEB_APPLICATION` all become `web_application`: whitespace, hyphens, slashes, and dots collapse to
+single underscores and the result is lowercased. A value that does not reduce to lowercase words
+joined by underscores is refused, because normalization exists to remove incidental variation rather
+than to accept anything at all.
+
+**A field is closed when the document enumerates rather than illustrates.** The signal is in the
+description: "Service, datastore, external system, etc." names examples, and "One-way or
+bidirectional" names the values. `DataFlow.direction` is therefore a closed enum, and it gains a
+third member, `unknown`, alongside the document's two.
+
+The `KNOWN_*` constants in each object module record the terms the corpus already uses. They
+validate nothing.
+
+Two `DataFlow` fields carry the `unknown` rule explicitly. `encryption_in_transit` and
+`authentication` default to the string `unknown` rather than to absence, and a boolean in either is
+refused by name.
+
+Why:
+
+A closed `component_type` enum would reject Trace's own benchmark.
+`demo/forgeflow/input/structured-system-input.yaml` uses seven component types and section 11 lists
+one of them; the other six — `web_application`, `managed_database`, `managed_cache`,
+`managed_storage`, `managed_security_service`, `internal_application` — appear nowhere in the
+document. The scenario was written to be assessed, so a schema that refuses it is wrong about
+itself rather than strict.
+
+The deeper reason is what these fields are for. The extractor reads architecture documents written
+by people who did not know Trace's vocabulary, and DEC-009's discipline is that Trace records what
+the documentation supports. A closed enum makes the model's list an authority over the document, and
+the failure is quiet: the nearest allowed value gets chosen, and a managed database becomes a
+`data_store` with the "managed" part — the part that decides whether encryption at rest is inherited
+— silently discarded. That is the same argument `requirements/README.md` makes about
+`acceptable_implementations`, which is non-exhaustive by construction for the same reason.
+
+What genuinely goes wrong with free text is drift, and drift is a spelling problem rather than a
+vocabulary problem. Three spellings of one type make the report's counts wrong, make two components
+of the same kind look different, and make a benchmark comparison meaningless. Normalizing fixes all
+three without deciding what a type may be.
+
+`direction` is the counter-example that keeps the rule honest. If every string field were open, an
+extractor could write `inbound`, `outbound`, `duplex`, and `two-way` for two states, and nothing
+downstream could ask "does this flow cross the boundary in both directions". The document names both
+values, so the enum is a reading of the document rather than an addition to it. `unknown` is an
+addition, and it is the same one section 14 already makes for encryption: `direction` is required,
+and a required field with no honest value is one that gets guessed. A guessed `one_way` removes a
+threat nobody ruled out.
+
+Alternatives Considered:
+
+- A closed enum per type field, extended with the six types the ForgeFlow fixture uses
+- Free strings with no normalization, leaving spelling to whatever produced the value
+- An open vocabulary with a warning logged for an unknown term
+- A registry file of permitted types, versioned like the requirements catalog
+- Making `direction` open too, for one uniform rule across every vocabulary field
+- Omitting `unknown` from `FlowDirection`, since the document names two values
+
+Tradeoffs:
+
+- **Nothing catches a typo.** `manged_database` normalizes cleanly and is stored as a new type. The
+  drift this decision prevents is between spellings of the same intent; it does nothing about a
+  misspelling, and the first place it will show is a report counting two kinds of database.
+- The `KNOWN_*` constants will be read as authoritative by someone, because a list of values in code
+  looks like a validation rule whatever its docstring says.
+- Normalization is lossy in one direction: `data-store` and `data_store` become one term, and if a
+  document ever meant them differently, that distinction is gone with no record it existed.
+- The open/closed rule depends on how a field's description is worded. `etc.` is a reliable signal in
+  the current document and is not a property anyone was maintaining deliberately, so a future field
+  can land on the wrong side of the rule by accident.
+- Defaulting `encryption_in_transit` to `unknown` means a caller who forgets the field gets a valid
+  object that asserts nothing. That is the safe direction, and it is still a default doing work a
+  required field would have made explicit.
+- Evaluation across catalog or scenario versions has no way to tell that `managed_database` and
+  `data_store` refer to the same component if a later extraction spells it differently.
+
+Open Questions:
+
+- Should an unknown term be recorded somewhere a reviewer sees, so a vocabulary growing by accident
+  is visible rather than silent?
+- Does `Actor.trust_level` want the same treatment? It is free text today and describes a small,
+  repeating set of levels in practice.
+- Is there a case for normalizing at the seam that receives agent output instead, so the raw term the
+  model produced is preserved alongside the canonical one?
+
+## DEC-037: Actor is a first-class context object; `SystemContext` gains `actor_ids`
+
+Date: 2026-08-09
+
+Status: Accepted
+
+Decision:
+
+`Actor` is a first-class object in the context baseline, and `SystemContext` gains an `actor_ids`
+field pointing at the actors an assessment extracted. Section 40's implementation-priority list
+gains `Actor`, after `Asset` and before `DataFlow`.
+
+`data-model.md` section 39's open question 4 — whether actors should be first-class objects in the
+MVP — is answered by this entry rather than left open.
+
+`Actor` still carries no `status` field, because section 13's table has none. Every other object in
+the context baseline has one, and adding it here would be a data-model change; this entry does not
+make it.
+
+Why:
+
+The corpus was split, and it was split lopsidedly. `agent-design.md` section 7 lists Actor objects
+among the Context Extraction Agent's outputs, `docs/product/roadmap.md` lists Actor in Stage 1 and
+again in Stage 2, and section 2.1 assigns actors a prefix. Against that: section 40 omitted Actor
+from a list written before several of those, and section 39 asked a question nobody had answered.
+An omission and an open question are not an argument for removal; they are the absence of one.
+
+The deciding consideration is the one the issue phrased: an extracted actor that nothing references
+is worse than an absent one. `SystemContext` is the versioned baseline a reviewer approves, and it
+holds identifier lists for claims, components, assets, data flows, and trust boundaries. An actor
+outside that list would be extracted, persisted, and invisible to the approval — approved by nobody
+and reachable by nothing — which is the worst of both designs. So either the field exists or the
+object does not, and three documents say the object exists.
+
+Threat analysis is the downstream reason to keep it. Threats are proposed against the approved
+context, and a threat needs someone to be the adversary and someone to be harmed. Deferring Actor
+would push that into free text on `Threat`, where nothing can check it against the architecture and
+nothing can ask whether an actor's documented capabilities support the threat.
+
+DEC-034 is the smaller consistency argument. It registered `act` as a prefix on the grounds that
+Actor is an assessment-scoped object carrying an `id`, and recorded as a tradeoff that a prefix
+naming nothing would be the cost of getting that wrong. Deferring Actor now would realize exactly
+that cost.
+
+Alternatives Considered:
+
+- Defer `Actor` out of M2 and let threat analysis carry actors as free text
+- Keep `Actor` without adding `actor_ids`, leaving actors outside the approved baseline
+- Fold actors into `Component` with a component type of `actor`, as some threat-modeling tools do
+- Add `status` to `Actor` for symmetry with the other four context objects
+
+Tradeoffs:
+
+- **`SystemContext` grows a sixth identifier list**, and every one of them is a place where the
+  baseline can reference an object that was later rejected. The Context Validation node has one more
+  list to check.
+- Actor without `status` is asymmetric, and the asymmetry is now permanent until someone changes the
+  document. Code that iterates the context objects generically has to special-case it.
+- Actors are the context object a design document says least about. Most of what an assessment knows
+  about them will be inferred, which means `ContextClaim` rationales and low confidence rather than
+  quoted evidence — and an object that is mostly inference is one a reviewer has to check hardest.
+- Adversarial actors (`external_attacker`, `malicious_insider`) sit in the same object as legitimate
+  ones, so any consumer counting "the system's users" has to filter by type.
+
+Open Questions:
+
+- Does an adversarial actor belong in the *approved context* at all, or is it a threat-analysis
+  object that happens to share a shape with a legitimate actor?
+- Should `SystemContext.actor_ids` be required-but-possibly-empty, like the other lists, or optional?
+  The other five are required in section 9, and this entry follows them.

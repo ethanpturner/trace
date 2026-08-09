@@ -278,23 +278,68 @@ Against the seven-stage [roadmap](#roadmap) below, Trace is inside Stage 1.
   `data-model.md` sections 5 and 6 by the conformance guard. The configuration carries no setting
   that governs the two human checkpoints, and a test asserts that reintroducing one fails
   validation rather than passing quietly.
-- **Identifiers and content hashing** — the twenty prefixes of section 2.1 as a closed registry,
-  both identifier forms DEC-018 defines, a typed identifier per object so a threat identifier
-  cannot be assigned to a finding's field, and the single SHA-256 utility DEC-019 requires.
+- **The five architecture objects** — `Component`, `Actor`, `Asset`, `DataFlow`, and
+  `TrustBoundary`, the context baseline a reviewer approves at checkpoint 1. Type fields are open
+  vocabularies normalized to one spelling (DEC-036), because the project's own benchmark uses six
+  component types the data model never lists. Unknown transport encryption is the string `unknown`
+  rather than `false` or absence, and an undocumented exposure is `None` rather than `False` — the
+  DEC-009 discipline expressed at field level.
+- **The Context Validation node** — `agent-design.md` section 8's ten responsibilities, each with
+  its own test, and the constraint that shapes them: the node reports and routes, and never
+  reinterprets or corrects. It also computes section 7's six human-review triggers.
+- **The extractor's input package** — evidence reaching the agent through an application-controlled
+  interface rather than a filesystem, every excerpt fenced and carrying its identifier, fence
+  delimiters inside source text neutralised, and a budget overrun naming what it dropped. Assembly
+  is deterministic, which is what makes the replay cache usable.
+- **The context-extraction proposal schema** — one object the extractor is asked to return,
+  structurally incapable of carrying an identifier, a status, an approval, a severity, or a
+  finding. Proposed objects reference each other by local key; the application allocates the
+  identifiers at conversion.
+- **The workflow runtime** — the fourteen phases as an explicit transition table, the node
+  protocol covering all three execution types, and the five ceilings `agent-design.md` section 27
+  requires, checked before a step rather than after it. There is no orchestration framework
+  (DEC-016). No pipeline node exists yet to register against it.
+- **The checkpoint machinery** — both structural checkpoints share it: pause by persisting and
+  exiting, resume by reading in a new process, and a review package derived from the run rather
+  than stored in it. There is no way to express skipping a checkpoint, which is the property
+  DEC-005 asks for.
+- **The error taxonomy and retry policy** — a closed vocabulary that keeps an output which failed
+  to parse apart from an analysis that cannot be concluded, bounded exponential backoff, validation
+  feedback carried into the next attempt, and the failed output preserved in the assessment's debug
+  area rather than in an error message.
+- **The prompt registry and the first prompts** — `extract-context-v1` and the three shared blocks
+  (source-content boundary, evidence policy, uncertainty policy), composed rather than copied, with
+  the hash taken over the composed text. The proposal schema is *substituted* into the prompt from
+  the application's own export, so the prompt cannot describe a shape the application would reject.
+- **The model seam** — one protocol between the application and any provider (DEC-014), a
+  deterministic substitute and a replay cache behind the same interface, and `model_profile`
+  resolving to a provider, a model, generation settings, and published rates. The Anthropic
+  adapter makes exactly one attempt and returns a structured failure carrying the raw output
+  rather than raising; a test asserts no module outside it imports a provider SDK.
+- **Identifiers and content hashing** — the twenty-three prefixes of section 2.1 as a closed
+  registry, both identifier forms DEC-018 defines, a typed identifier per object so a threat
+  identifier cannot be assigned to a finding's field, and the single SHA-256 utility DEC-019
+  requires. The scheme governs objects an assessment produces (DEC-034); authored configuration —
+  the requirements catalog, a prompt definition — carries a name rather than an identifier.
   Identifier allocation is a store operation, so what exists is the protocol and an in-memory
   implementation for tests; the store-backed one arrives with the persistence layer.
 - **Test discipline** — unit tests run by default; integration and evaluation tests sit behind
   pytest markers that are deselected, so CI never needs a provider API key.
 - **The design corpus** — vision, scope, roadmap, architecture, agent design, data model,
-  evaluation plan, and decision log.
+  evaluation plan, and decision log — plus `templates/report-v1.md`, which fixes the report's
+  sixteen sections, which four of them a model writes, and what an empty section says.
 
 ### What does not exist yet
 
-- No agent. No model call of any kind. Documents are ingested, turned into addressable evidence,
-  and retrievable through the interface an agent would sit behind — but nothing sits behind it yet.
-- Six domain objects of roughly twenty-nine: `Assessment`, `AssessmentConfiguration`,
-  `SourceDocument`, `EvidenceReference`, `WorkflowRun`, and `ExecutionRecord`. The context,
-  threat, finding, and review objects are not implemented.
+- No agent, and no model call anywhere in a code path that runs. The seam an agent would talk
+  through exists and the Anthropic adapter behind it is written; nothing calls either. Documents
+  are ingested, turned into addressable evidence, and retrievable through the interface an agent
+  would sit behind — but nothing sits behind it yet.
+- Eleven domain objects of roughly twenty-nine: `Assessment`, `AssessmentConfiguration`,
+  `SourceDocument`, `EvidenceReference`, `WorkflowRun`, `ExecutionRecord`, and the five
+  architecture objects of the context baseline — `Component`, `Actor`, `Asset`, `DataFlow`, and
+  `TrustBoundary`. `SystemContext`, `ContextClaim`, and the threat, finding, and review objects are
+  not implemented.
 - No CLI beyond a banner printing the environment and which credentials are configured.
 - No threat analysis, no findings, no report generation, no evaluation harness.
 - The demo scenario is not runnable.
@@ -339,7 +384,8 @@ browser in the MVP.
 src/trace_ai/                    configuration and process bootstrap
 src/trace_ai/domain/             domain objects and shared types
 src/trace_ai/services/           ingestion/ and evidence/ -- operations on those objects
-src/trace_ai/infrastructure/     filesystem/ and database/ -- the artifact and assessment stores
+src/trace_ai/infrastructure/     filesystem/, database/, and model/ -- stores and the model seam
+src/trace_ai/workflow/           phases, transitions, limits, and the node protocol
 tests/               unit tests; integration/ and evaluation/ are scaffolded and empty
 docs/product/        vision, design principles, roadmap, future features
 docs/architecture/   scope, current architecture, agent design, data model,
@@ -348,7 +394,8 @@ demo/forgeflow/      the demo scenario and its input fixtures
 requirements/        the requirements catalog -- version-controlled YAML, read by nothing yet
 scripts/             repository utilities
 benchmarks/          scenarios two onward, plus scenarios.yaml, the scenario registry
-prompts/             scaffolded, empty
+templates/           report-v1.md -- the report's sixteen sections and their owners
+prompts/             prompt files -- shared/ blocks composed into agent prompts
 ```
 
 The three source subpackages are a boundary, not a filing convention. **Domain** holds the
