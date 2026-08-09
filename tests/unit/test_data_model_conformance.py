@@ -50,6 +50,7 @@ from trace_ai.domain.assessment import Assessment, AssessmentConfiguration
 from trace_ai.domain.asset import Asset
 from trace_ai.domain.base import DomainModel
 from trace_ai.domain.component import Component
+from trace_ai.domain.context_claim import ContextClaim
 from trace_ai.domain.data_flow import DataFlow
 from trace_ai.domain.enums import (
     ConfidenceLevel,
@@ -201,7 +202,7 @@ REGISTRY: dict[str, Registration] = {
     "7": Registration("SourceDocument", Status.IMPLEMENTED, SourceDocument),
     "8": Registration("EvidenceReference", Status.IMPLEMENTED, EvidenceReference),
     "9": Registration("SystemContext", Status.PLANNED),
-    "10": Registration("ContextClaim", Status.PLANNED),
+    "10": Registration("ContextClaim", Status.IMPLEMENTED, ContextClaim),
     # Documented as `10a` rather than as its own numbered section, because DEC-021 added it after
     # the rest were numbered. This guard found it absent from section 40's priority list as well;
     # that was repaired in the same change, and it is `PLANNED` because the list now says so.
