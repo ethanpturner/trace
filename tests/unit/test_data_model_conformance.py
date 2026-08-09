@@ -55,6 +55,7 @@ from trace_ai.domain.enums import (
     ValidationStatus,
 )
 from trace_ai.domain.evidence import EvidenceReference
+from trace_ai.domain.source_document import SourceDocument
 
 DATA_MODEL = PROJECT_ROOT / "docs" / "architecture" / "data-model.md"
 
@@ -189,7 +190,7 @@ class Registration:
 REGISTRY: dict[str, Registration] = {
     "5": Registration("Assessment", Status.IMPLEMENTED, Assessment),
     "6": Registration("AssessmentConfiguration", Status.IMPLEMENTED, AssessmentConfiguration),
-    "7": Registration("SourceDocument", Status.PLANNED),
+    "7": Registration("SourceDocument", Status.IMPLEMENTED, SourceDocument),
     "8": Registration("EvidenceReference", Status.IMPLEMENTED, EvidenceReference),
     "9": Registration("SystemContext", Status.PLANNED),
     "10": Registration("ContextClaim", Status.PLANNED),
