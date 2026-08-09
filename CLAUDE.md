@@ -233,10 +233,12 @@ Squashing either pull request breaks the chain: the hotfix commit stops being an
 ## Working norms
 
 - **mypy is strict and covers `scripts/` too.** New utilities are type-checked like product code.
-- **`data-model.md` section 4 is authoritative for the shared enums**, and
-  `tests/unit/test_domain_enums.py` parses it to prove it. Changing a member in the document
-  without changing `src/trace_ai/domain/enums.py` fails the suite; so does the reverse. Edit both
-  in one change.
+- **`data-model.md` is authoritative, and `tests/unit/test_data_model_conformance.py` enforces
+  it.** It parses the field tables and the section 4 enums and compares them to the code, in both
+  directions — a rename in the document alone fails, and so does a field the document never
+  sanctioned. **When you implement a domain object, flip its registry entry in that file to
+  `IMPLEMENTED` and name the model in the same change**, or the object ships unguarded. Every
+  section from 5 to 31 is classified there; a new one fails until it is added.
 - **Every domain object subclasses `DomainModel`** (`src/trace_ai/domain/base.py`) and inherits
   `extra="forbid"`. Do not relax it on a subclass: it is the mechanism by which an agent-proposed
   object carrying an invented field fails validation instead of passing downstream stripped of
