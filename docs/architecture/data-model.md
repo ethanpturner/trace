@@ -1979,6 +1979,48 @@ Store:
 
 The database should store references and content hashes for filesystem artifacts.
 
+## The split is by authorship, not size
+
+Three stores, divided by whether a person wrote the artifact or a run produced it (DEC-020):
+
+- **Version-controlled files** — the requirements catalog, prompt files, and benchmark expected
+  outputs. Inputs to an assessment, edited in pull requests, reviewed in diffs.
+- **SQLite** — everything an assessment generates.
+- **`data/`, not version-controlled** — generated files too large or too binary for a row, in the
+  per-assessment layout of `current-architecture.md` section 5.16.
+
+A requirement is a file because a person wrote it; a threat is a row because a run produced it.
+
+## How objects are stored
+
+Generated objects are stored as **JSON payloads with identity and routing lifted into columns**:
+one table keyed by `(assessment_id, id)`, with `object_type`, `status`, and `created_at` as columns
+and the validated object serialized into a payload column.
+
+Pydantic is the only schema. SQLite stores no field definitions, so adding, removing, or retyping a
+field is a Pydantic change rather than a database migration — which matters while section 39's open
+questions are still producing schema changes.
+
+Referential integrity lives in application code, where the validation nodes already perform it. A
+foreign key would express only half of each check: a mapping must reference a threat *in the same
+assessment*, and a documented claim must carry evidence.
+
+Identifier counters have their own table keyed by `(assessment_id, prefix)`, incremented in the
+same transaction as the insert that consumes the number (DEC-018).
+
+A repository is scoped to one assessment, so the assessment-data boundary is structural rather than
+a rule each query must remember.
+
+## Schema versioning
+
+Every assessment records `data_model_version`. Loading one written by an incompatible version fails
+with a message naming both versions; there is no migration machinery during early development
+(DEC-020).
+
+Re-running is cheaper than migrating and measurably so — `scripts/estimate_cost.py` puts an
+assessment at $2.25 to $5.97. The trigger to add migrations is an assessment becoming expensive or
+irreplaceable.
+
 # 36. Data Retention
 
 The MVP uses fictional or public demo data, but retention should still be explicit.
@@ -2066,11 +2108,11 @@ These can be added later without expanding the initial MVP unnecessarily.
 10. Should reviewer edits create new object versions or update the current object with decision history?
 11. How much model-generation metadata belongs on each object?
 12. Should workflow state store objects directly or only identifiers?
-13. Which objects belong in SQLite versus version-controlled YAML or JSON?
+13. ~~Which objects belong in SQLite versus version-controlled YAML or JSON?~~ Resolved by DEC-020: the split is by authorship. Authored artifacts are version-controlled files; generated objects are rows; generated files live under `data/`.
 14. How should severity be calculated?
 15. ~~What is the minimum evidence required to approve a finding?~~ Resolved by DEC-013.
 16. How should rejected threats and findings be retained for evaluation?
-17. How should data-model migrations be handled during early development?
+17. ~~How should data-model migrations be handled during early development?~~ Resolved by DEC-020: they are not. An incompatible `data_model_version` refuses to load, and the assessment is re-run — which the cost estimate makes cheaper than writing a migration against a schema still under decision.
 
 Consequential answers should be recorded in decision log.md.
 
