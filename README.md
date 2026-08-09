@@ -220,6 +220,10 @@ Against the seven-stage [roadmap](#roadmap) below, Trace is inside Stage 1.
   Each check runs even when an earlier one fails, so one run reports every problem.
 - **Repository hygiene** — pre-commit and pre-push hooks including gitleaks secret scanning, a
   lockfile freshness gate, and branch protection on `main`.
+- **The shared domain vocabulary** — the seven enumerated types `data-model.md` section 4 defines,
+  and `DomainModel`, the Pydantic base every domain object inherits. `extra="forbid"` is the
+  setting that matters: an agent-proposed object carrying an invented field fails validation at
+  the boundary instead of being silently reduced to the fields anyone reads.
 - **Test discipline** — unit tests run by default; integration and evaluation tests sit behind
   pytest markers that are deselected, so CI never needs a provider API key.
 - **The design corpus** — vision, scope, roadmap, architecture, agent design, data model,
@@ -228,7 +232,9 @@ Against the seven-stage [roadmap](#roadmap) below, Trace is inside Stage 1.
 ### What does not exist yet
 
 - No document ingestion. No agent. No model call of any kind.
-- No domain models. The data model specifies roughly twenty-nine objects; none are implemented.
+- No domain objects. The data model specifies roughly twenty-nine; none are implemented. What
+  exists is the layer beneath them — the seven shared enumerated types of section 4 and the
+  strict Pydantic base they will inherit.
 - No persistence layer.
 - No CLI beyond a banner printing the environment and which credentials are configured.
 - No threat analysis, no findings, no report generation, no evaluation harness.
