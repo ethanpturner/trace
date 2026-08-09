@@ -258,16 +258,22 @@ Initial capabilities should include:
 
 ### Initial implementation choice
 
-The preferred MVP interface is a small local web application.
+**The MVP interface is a command-line interface** (DEC-032). Earlier versions of this section
+preferred a small local web application; the roadmap said the opposite in four places, and this
+section was the one that was wrong.
 
-A command-line interface may also be created for:
+The capability list above is the eventual interface, not the Stage 1 one. Through M4 every item is
+a command: creating an assessment, adding sources, approving context, approving findings, and
+assigning severity all run at the command line and write the same `ReviewerDecision` rows an
+interface of any other shape would (DEC-017).
 
-- Development
-- Automated testing
-- Repeatable evaluation
-- Demo recovery if the web interface fails
+Stage 5 may add a **read-only local view** for the demonstration, rendering persisted state —
+notably the lineage view. It is not a second way to drive the pipeline, and no review interaction
+moves to a browser in the MVP.
 
-The web interface should call application services rather than containing core analysis logic.
+Any interface, present or future, calls application services rather than containing core analysis
+logic. That constraint is what makes the ordering safe: the services are built first, so a later
+view is additive rather than reshaping them.
 
 ## 5.2 Application Service
 
