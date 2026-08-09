@@ -14,6 +14,13 @@ from trace_ai.workflow.checkpoint import (
     resume,
     save_state,
 )
+from trace_ai.workflow.context_validation import (
+    SECTION_7_TRIGGERS,
+    ContextValidationOutcome,
+    ReviewTrigger,
+    ValidationError,
+    validate_context,
+)
 from trace_ai.workflow.errors import (
     NON_RETRYABLE,
     RETRYABLE,
@@ -53,6 +60,7 @@ __all__ = [
     "NON_RETRYABLE",
     "PAUSE_PHASES",
     "RETRYABLE",
+    "SECTION_7_TRIGGERS",
     "SECTION_11_FAILURE_CLASSES",
     "TRANSITIONS",
     "AssessmentState",
@@ -60,6 +68,7 @@ __all__ = [
     "AttemptFailedError",
     "Budget",
     "CheckpointNode",
+    "ContextValidationOutcome",
     "ErrorClass",
     "LimitExceededError",
     "LimitKind",
@@ -73,8 +82,10 @@ __all__ = [
     "RemainingLimits",
     "RetryPolicy",
     "ReviewPackage",
+    "ReviewTrigger",
     "RunOutcome",
     "TransitionError",
+    "ValidationError",
     "WorkflowError",
     "build_review_package",
     "check_transition",
@@ -86,4 +97,5 @@ __all__ = [
     "run_with_retries",
     "save_state",
     "successor",
+    "validate_context",
 ]

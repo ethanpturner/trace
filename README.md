@@ -284,6 +284,9 @@ Against the seven-stage [roadmap](#roadmap) below, Trace is inside Stage 1.
   component types the data model never lists. Unknown transport encryption is the string `unknown`
   rather than `false` or absence, and an undocumented exposure is `None` rather than `False` — the
   DEC-009 discipline expressed at field level.
+- **The Context Validation node** — `agent-design.md` section 8's ten responsibilities, each with
+  its own test, and the constraint that shapes them: the node reports and routes, and never
+  reinterprets or corrects. It also computes section 7's six human-review triggers.
 - **The extractor's input package** — evidence reaching the agent through an application-controlled
   interface rather than a filesystem, every excerpt fenced and carrying its identifier, fence
   delimiters inside source text neutralised, and a budget overrun naming what it dropped. Assembly
