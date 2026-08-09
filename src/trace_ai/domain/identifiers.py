@@ -23,7 +23,7 @@ those, and a prefixed value in one of them would be a name imitating an identifi
 
 **Allocation is a store operation, not a pure function.** DEC-018 assigns a generated identifier
 at insert, from a monotonic counter per `(assessment_id, prefix)`. That is why this module defines
-`IdentifierAllocator` as a protocol rather than exposing a module-level `new_id()`: a
+`IdentifierAllocator` as a protocol rather than exposing a module-level allocator function: a
 process-global counter would be a second source of numbers that works in every test and silently
 collides with the store in the one place it matters. `InMemoryAllocator` implements the protocol
 for tests and for code that has no store yet; the store-backed implementation belongs with the
@@ -276,7 +276,7 @@ class IdentifierAllocator(Protocol):
     depends on; the store-backed implementation lives behind it.
     """
 
-    def new_id(self, prefix: str) -> str:
+    def allocate(self, prefix: str) -> str:
         """The next identifier for `prefix`. Monotonic: a number is never handed out twice."""
         ...
 
@@ -297,7 +297,7 @@ class InMemoryAllocator:
     def __init__(self) -> None:
         self._counters: dict[str, int] = {}
 
-    def new_id(self, prefix: str) -> str:
+    def allocate(self, prefix: str) -> str:
         if prefix not in PREFIXES:
             raise ValueError(_registry_hint(prefix))
         self._counters[prefix] = self._counters.get(prefix, 0) + 1

@@ -95,7 +95,7 @@ def convert_proposal(
     identifiers: dict[str, str] = {}
 
     def allocate(key: str, prefix: str) -> str:
-        identifier = allocator.new_id(prefix)
+        identifier = allocator.allocate(prefix)
         identifiers[key] = identifier
         return identifier
 
