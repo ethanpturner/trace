@@ -255,6 +255,9 @@ Squashing either pull request breaks the chain: the hotfix commit stops being an
   in `domain/identifiers.py` is for tests: a fresh instance restarts at `001`, so two of them
   collide and a resumed run would re-mint identifiers that already exist. Depend on the
   `IdentifierAllocator` protocol and let the persistence layer supply the implementation.
+- **Go through `AssessmentService` for anything assessment-shaped**, and hold the
+  `AssessmentHandle` it returns rather than an identifier: it carries the scoped repository
+  and the scoped artifact store together, so one assessment's code cannot reach another's.
 - **Reach persisted objects through a scoped `AssessmentRepository`.** `AssessmentStore.repository(
   assessment_id)` is the only way in; there is no cross-assessment read but `assessment_ids()`,
   which returns identifiers and no content. Identifiers come from `repository.allocate(prefix)`,
