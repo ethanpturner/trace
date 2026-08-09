@@ -5,6 +5,15 @@ protocol, an explicit table of permitted transitions, and the ceilings `agent-de
 requires the orchestrator to enforce.
 """
 
+from trace_ai.workflow.checkpoint import (
+    CheckpointNode,
+    ReviewPackage,
+    build_review_package,
+    load_state,
+    pending_object_ids,
+    resume,
+    save_state,
+)
 from trace_ai.workflow.errors import (
     NON_RETRYABLE,
     RETRYABLE,
@@ -50,6 +59,7 @@ __all__ = [
     "AttemptContext",
     "AttemptFailedError",
     "Budget",
+    "CheckpointNode",
     "ErrorClass",
     "LimitExceededError",
     "LimitKind",
@@ -62,12 +72,18 @@ __all__ = [
     "Phase",
     "RemainingLimits",
     "RetryPolicy",
+    "ReviewPackage",
     "RunOutcome",
     "TransitionError",
     "WorkflowError",
+    "build_review_package",
     "check_transition",
     "classify_model_failure",
+    "load_state",
+    "pending_object_ids",
     "preserve_failed_output",
+    "resume",
     "run_with_retries",
+    "save_state",
     "successor",
 ]

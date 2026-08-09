@@ -288,6 +288,10 @@ Against the seven-stage [roadmap](#roadmap) below, Trace is inside Stage 1.
   protocol covering all three execution types, and the five ceilings `agent-design.md` section 27
   requires, checked before a step rather than after it. There is no orchestration framework
   (DEC-016). No pipeline node exists yet to register against it.
+- **The checkpoint machinery** — both structural checkpoints share it: pause by persisting and
+  exiting, resume by reading in a new process, and a review package derived from the run rather
+  than stored in it. There is no way to express skipping a checkpoint, which is the property
+  DEC-005 asks for.
 - **The error taxonomy and retry policy** — a closed vocabulary that keeps an output which failed
   to parse apart from an analysis that cannot be concluded, bounded exponential backoff, validation
   feedback carried into the next attempt, and the failed output preserved in the assessment's debug

@@ -319,6 +319,12 @@ Squashing either pull request breaks the chain: the hotfix commit stops being an
   **stops** the run with a classified error; it never skips a node or shrinks a request.
   `AssessmentState` holds identifiers and routing only (`data-model.md` section 31's state-design
   rule), because a state carrying content is a second copy of the authoritative data.
+- **A checkpoint cannot be skipped, and the mechanism is that skipping is unrepresentable**
+  (DEC-005, DEC-012). `CheckpointNode` takes no flag, consults no configuration, and advances only
+  when every subject has a `ReviewerDecision`; `AssessmentConfiguration` carries no field that
+  governs one. Pausing is stopping (DEC-017): the state is written to `traces/`, the process exits,
+  and resuming is a read in a new process. The review package is **derived** from the run, never
+  stored in it.
 - **Retry the attempt, never the conclusion** (`agent-design.md` section 26). `workflow/errors.py`
   holds a closed taxonomy: schema failures, provider failures, and missing relationships are
   retryable; insufficient evidence, an unresolved contradiction, and required reviewer input are
