@@ -287,8 +287,13 @@ That prints the resolved environment, the log level, and which provider credenti
 — booleans only, never key material. That is the entire current runtime surface, and stating it
 plainly is more useful than implying more.
 
-The command surface planned for Stage 1 — `trace assessment create`, `trace source add`,
-`trace context extract`, `trace context show`, `trace assessment status` — is not implemented.
+The command surface planned for Stage 1 — `trace assessment create`, `trace assessment list`,
+`trace assessment status`, `trace assessment archive`, `trace source add`, `trace context extract`,
+`trace context show` — is not implemented.
+
+The command line is the interface through M4 (DEC-032), including both human checkpoints. A
+read-only local view may follow in Stage 5 for the demonstration; no review interaction moves to a
+browser in the MVP.
 
 ### Repository layout
 

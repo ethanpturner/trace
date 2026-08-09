@@ -184,7 +184,7 @@ Tradeoffs:
 
 Open Questions:
 
-- Should the MVP lead with a local web interface or command-line interface?
+- ~~Should the MVP lead with a local web interface or command-line interface?~~ Resolved by DEC-032: a command-line interface through M4, with a read-only view permitted in Stage 5.
 - Should the application be containerized for repeatable setup?
 - What is the minimum supported operating environment?
 
@@ -1779,3 +1779,61 @@ Open Questions:
 - Does `archived` need to prevent writes to the assessment's objects, or is it a label until retention (section 36) gives it teeth?
 - When a run is ablated, should the assessment be prevented from *starting* it rather than only from reaching `approved`?
 - Is `pending_review` worth the denormalization once a run listing exists, or should it be reconsidered when the CLI is built?
+
+## DEC-032: The command line is the interface through M4; `argparse`, no dependency
+
+Date: 2026-08-09
+
+Status: Accepted
+
+Decision:
+
+**The reviewer's interface is a command-line interface through M4.** `current-architecture.md` section 5.1 is corrected: it was the document that was wrong.
+
+Stage 5 may add a **read-only local view** for the demonstration — the lineage view that section 5.1 and the roadmap both want to show. It is a rendering of persisted state and not a second way to drive the pipeline. **No review interaction moves to a browser in the MVP.** Approving context, approving findings, assigning severity, and answering questions are command-line operations backed by the decision writer DEC-017 defines.
+
+**The CLI uses `argparse` from the standard library.** No dependency is declared.
+
+The Stage 1 command surface is confirmed, with two additions that decisions since the roadmap require: `trace assessment list`, because a reviewer needs to find an identifier the store allocated, and `trace assessment archive`, because DEC-031 makes archiving the one status transition a person performs.
+
+Why:
+
+The corpus contradicted itself and the contradiction was lopsided. Section 5.1 states a preference for a local web application once. The roadmap states the opposite four times — Stage 1 delivers "a simple CLI before building the full interface", Stage 1's non-goals forbid a polished web interface, Stage 5 says to "build only the interface necessary to support the demonstration", and section 9 says flatly "do not begin with the web interface." A single sentence against four is a stale sentence, not a live disagreement.
+
+**DEC-017 removed the strongest argument for leading with a web interface.** The open question this decision inherited asked whether the checkpoint mechanism needs an interactive interface. It does not. A checkpoint pauses by persisting the run and letting the process exit, and reviewer decisions reach the workflow through one writer regardless of caller — an interactive command, a web form, and an evaluation harness replaying a decision file all produce identical `ReviewerDecision` rows. Review is therefore not a thing a browser is needed for; it is a thing a browser would be one caller of.
+
+**Repeatable evaluation wants a scriptable interface.** `evaluation-plan.md` section 3 requires repeatability, and DEC-012 requires that answering a checkpoint non-interactively is not an ablation. A web-first interface would leave evaluation either driving a browser or bypassing the interface entirely — and bypassing it means the measured path is not the path a reviewer uses, which is the thing evaluation exists to avoid.
+
+**Section 5.1 names the CLI as the demo-recovery path if the web interface fails.** A recovery path that has not been built is not a recovery path. If exactly one interface exists, it should be the one that is also the fallback.
+
+**Choosing the CLI removes a trust boundary rather than mitigating one.** DEC-004 makes this a local single-user application with no authentication and no RBAC. A local web application introduces a browser-to-application boundary — a listening port, a server process holding assessment data, and request forgery from any page the reviewer has open — for a single user on their own machine. The threat model issue lists that boundary as conditional on this decision; it is now conditional on nothing, because it does not exist.
+
+**The cost of getting the order wrong is asymmetric.** Section 5.1 already requires the web interface to call application services rather than contain analysis logic. Building the services first, which M1 is doing, makes a later interface additive. Building the interface first shapes the service layer around a rendering concern, and that shaping is not visible until something else needs the same services.
+
+`argparse` rather than a declared dependency, for three reasons. The command surface is seven commands, which is within what `argparse` expresses without strain. Every declared dependency is a supply-chain surface on a project whose subject is architectural risk, and five commands do not pay for one. And the claim that `typer` was already available transitively — which the issue recorded — is no longer true: DEC-016 removed the orchestration packages that carried it, and the declared runtime dependencies are down to five. Adopting it now would be adding a dependency, not using one already present.
+
+This is the kind of choice worth revisiting rather than defending. The trigger is command count or help quality: when subcommand help, completion, or argument validation start being hand-written in ways a framework provides, the framework has become cheaper than the code avoiding it.
+
+Alternatives Considered:
+
+- A local web application first, following section 5.1
+- A CLI plus a read-only local web view built in parallel through M1 to M4
+- Both interfaces over a shared application service, built together
+- `typer` or `click` as a declared dependency
+- A text user interface, avoiding both a browser and bare `argparse`
+
+Tradeoffs:
+
+- **The review experience is worse.** Checkpoint 2 asks a reviewer to read findings with their evidence, and a terminal is a poor medium for that. The review package DEC-017 derives is rendered as text, and a reviewer will read some of it in a pager.
+- Section 5.1's capability list — view workflow progress, view evidence and reasoning traces — is genuinely better served by a browser, and this decision defers all of it to Stage 5 rather than answering it.
+- **Deferring the web interface risks it never being built**, and with it the lineage view that is a Stage 5 deliverable and part of the portfolio argument.
+- `argparse` produces help text that is adequate rather than good, and no shell completion. That is a visible quality gap in a project whose demonstration is a deliverable.
+- Choosing the standard library now means a later migration to a framework rewrites the command layer rather than extending it. The layer is thin by design, which is what makes that acceptable.
+- A read-only Stage 5 view still needs a way to render persisted state, so the work is deferred rather than avoided; only the review interaction is settled here.
+
+Open Questions:
+
+- Does the Stage 5 read-only view render from the database directly, or through the same application services the CLI uses?
+- Is the checkpoint review package rendered as text, as a file the reviewer opens in an editor, or as both?
+- At what command count or help-quality threshold is a CLI framework worth the dependency?
+- Does a text user interface become attractive for checkpoint 2 specifically, without becoming a second interface for everything else?
