@@ -860,6 +860,21 @@ Additional checkpoints may be added later for:
 - Conflicting evidence
 - Unexpected cost or execution limits
 
+### How a checkpoint pauses
+
+The run persists itself and the process exits (DEC-017). `WorkflowRun.status` becomes `paused`,
+`current_node` names the checkpoint, and `pending_human_review` names the objects awaiting a
+decision. Resuming is a separate invocation that loads the run and continues once every pending
+object has a `ReviewerDecision`.
+
+Reviewer decisions reach the workflow through one interface regardless of origin. An interactive
+command, a web form, and an evaluation harness replaying recorded decisions all write the same
+`ReviewerDecision` rows. This is what keeps answering a checkpoint non-interactively distinct from
+removing it, which DEC-012 requires.
+
+The review package is derived from the persisted run rather than stored with it, so the mechanism
+does not presuppose which interface renders it.
+
 ## 9. Model Interaction Architecture
 
 Trace should use a model abstraction layer rather than calling one provider directly throughout the codebase.
@@ -958,15 +973,18 @@ Response:
 - Create a question, assumption, or documentation gap
 - Do not treat this as a technical execution failure
 
-### Human-review timeout
+### Awaiting a reviewer decision
 
-No reviewer decision is available.
+Not a failure mode (DEC-017).
+
+A checkpoint pauses by persisting the run and letting the process exit. A paused run holds nothing
+in memory, so waiting costs nothing and there is no timeout — a run may sit paused indefinitely.
 
 Response:
 
-- Pause the workflow
-- Preserve state
-- Resume when the reviewer responds
+- Persist the run with `status: paused` and the pending review block populated
+- Return; the process may exit
+- Resume on a later invocation, once every pending object has a reviewer decision
 
 ### Unexpected application failure
 
