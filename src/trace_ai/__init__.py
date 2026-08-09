@@ -40,17 +40,13 @@ def bootstrap() -> Settings:
     return settings
 
 
-def main() -> None:
-    settings = bootstrap()
-    logger.debug("Bootstrapped in %s environment", settings.app_env)
+def main() -> int:
+    """The `trace` console entry point, routed through the command surface.
 
-    # Booleans only -- never the key material itself.
-    configured = [
-        name.removesuffix("_api_key")
-        for name in ("anthropic_api_key", "openai_api_key", "langsmith_api_key")
-        if getattr(settings, name) is not None
-    ]
+    The import is deferred rather than done at module scope: `trace_ai.cli` imports from
+    `trace_ai.config` and the domain packages, all of which import `trace_ai` first, so a
+    top-level import here would be circular.
+    """
+    from trace_ai.cli import run
 
-    print("Hello from trace!")
-    print(f"env: {settings.app_env}  log level: {settings.log_level}")
-    print(f"credentials configured: {', '.join(configured) if configured else 'none'}")
+    return run()

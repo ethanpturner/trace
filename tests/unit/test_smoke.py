@@ -2,9 +2,11 @@
 
 import pytest
 
-from trace_ai import main
+from trace_ai.cli import run
 
 
 def test_main_runs(capsys: pytest.CaptureFixture[str]) -> None:
-    main()
+    """`run([])` rather than `main()`: the entry point now reads `sys.argv`, which under pytest is
+    pytest's own arguments. The behaviour asserted is unchanged."""
+    assert run([]) == 0
     assert "Hello from trace!" in capsys.readouterr().out

@@ -227,6 +227,11 @@ Against the seven-stage [roadmap](#roadmap) below, Trace is inside Stage 1.
   than an argument to pass wrong. Original filenames are treated as untrusted input: traversal is
   refused by shape and again by resolution, because a clean name still lands wherever a symlinked
   directory points. Content is stored byte-identical.
+- **The command line** — `trace assessment create`, `trace assessment list`,
+  `trace assessment status`, `trace assessment archive`, `trace source add`, `trace source list`,
+  `trace evidence list`, `trace evidence show`, and `trace evidence verify`. Every command calls a
+  service and contains no pipeline logic. `trace context extract` and `trace context show` are absent rather than stubbed,
+  because they need an agent that does not exist and `--help` is a promise.
 - **Structured logging with redaction** — JSON records carrying scoped context, and a filter on
   the handler that strips two things: provider credentials, by value type and by field name, and
   source-document content, which is replaced by a length and the identifier of the object it came
@@ -302,17 +307,27 @@ Against the seven-stage [roadmap](#roadmap) below, Trace is inside Stage 1.
 git clone https://github.com/ethanpturner/trace.git
 cd trace
 uv sync
-cp .env.example .env    # optional; no key is required for what runs today
-uv run trace
+
+uv run trace assessment create --name "ForgeFlow Security Review"
+uv run trace source add asm-001 demo/forgeflow/input
+uv run trace assessment status asm-001
+uv run trace evidence show evd-001 --assessment asm-001
+uv run trace evidence verify asm-001
 ```
 
-That prints the resolved environment, the log level, and which provider credentials are configured
-— booleans only, never key material. That is the entire current runtime surface, and stating it
-plainly is more useful than implying more.
+That ingests the eight ForgeFlow documents, normalizes them, and produces the evidence references
+every later conclusion would have to cite — 153 of them, each verifiable against the original file.
+No API key is required, because nothing in this path calls a model.
 
-The command surface planned for Stage 1 — `trace assessment create`, `trace assessment list`,
-`trace assessment status`, `trace assessment archive`, `trace source add`, `trace context extract`,
-`trace context show` — is not implemented.
+`uv run trace` with no arguments still prints the resolved environment, the log level, and which
+provider credentials are configured — names only, never key material.
+
+What it cannot do is analyse anything. There is no context extraction, no threat analysis, and no
+report: those need agents, and there are none.
+
+Of the Stage 1 command surface, everything except `trace context extract` and `trace context show`
+is implemented. Those two are the only ones missing. Those two need the Context Extraction agent, and a stub that prints "not
+implemented" would be worse than a command that is not there.
 
 The command line is the interface through M4 (DEC-032), including both human checkpoints. A
 read-only local view may follow in Stage 5 for the demonstration; no review interaction moves to a
