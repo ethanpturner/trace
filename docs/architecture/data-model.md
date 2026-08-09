@@ -2258,20 +2258,27 @@ Implement these first:
 4. EvidenceReference
 5. SystemContext
 6. ContextClaim
-7. Component
-8. Asset
-9. DataFlow
-10. TrustBoundary
-11. Threat
-12. Requirement
-13. Control
-14. ControlMapping
-15. Finding
-16. Question
-17. DocumentationGap
-18. ReviewerDecision
-19. WorkflowRun
-20. ExecutionRecord
+7. SourceObservation
+8. Component
+9. Asset
+10. DataFlow
+11. TrustBoundary
+12. Threat
+13. Requirement
+14. Control
+15. ControlMapping
+16. Finding
+17. Question
+18. DocumentationGap
+19. ReviewerDecision
+20. WorkflowRun
+21. ExecutionRecord
+
+`SourceObservation` (section 10a) was added by DEC-021 after this list was written, and the list
+was not updated with it. It is not optional: DEC-021 makes contradictions and detected
+prompt-injection attempts one object of this type, the context extraction step produces them, and
+DEC-027 gives every benchmark scenario an `expected-observations.yaml` to grade them against. It
+sits after `ContextClaim` because `subject_claim_ids` references claims.
 
 Add Critique, EvidenceAssessment, PromptDefinition, RequirementsCatalog, and EvaluationResult once the main workflow begins operating.
 

@@ -21,11 +21,13 @@ added field, a removed one, a rename, and a required flag flipped each way -- ar
 fail. That is the evidence the acceptance criteria ask for, obtained without waiting for
 `Assessment` to exist.
 
-Two things the parser found on the way, both recorded rather than repaired. `SourceObservation`
-is documented as section `10a` and appears on neither of section 40's lists, which predate
-DEC-021. `Actor` is on neither list either, but for a different reason -- open question 4 asks
-whether it is a first-class object at all. The registry keeps those apart, because "the plan
-forgot it" and "nobody has decided" call for different fixes.
+Two things the parser found on the way, handled differently because they are different problems.
+`SourceObservation` is documented as section `10a` and was on neither of section 40's lists, which
+predate DEC-021; that was an omission with a settled answer, so section 40 gained the entry in the
+same change. `Actor` is on neither list either, but open question 4 asks whether it is a
+first-class object at all, so it stays `UNRESOLVED` and nothing here decides it. "The plan forgot
+it" and "nobody has decided" call for different fixes, which is why the registry keeps them
+apart.
 
 Section 4's enum conformance moved here from `test_domain_enums.py`, so that every
 document-versus-code comparison lives in one file and shares one parser. Issue #45.
@@ -190,13 +192,9 @@ REGISTRY: dict[str, Registration] = {
     "9": Registration("SystemContext", Status.PLANNED),
     "10": Registration("ContextClaim", Status.PLANNED),
     # Documented as `10a` rather than as its own numbered section, because DEC-021 added it after
-    # the rest were numbered. Section 40's priority list was written before that and never gained
-    # an entry, so the object the context step is required to produce is on neither of its lists.
-    # That is a gap in the document, not a decision about the object: DEC-021 settles that
-    # contradictions and injection attempts are SourceObservations, and the context step produces
-    # them. Recorded here rather than repaired, because section 40 is authoritative and editing it
-    # is not this file's business.
-    "10a": Registration("SourceObservation", Status.UNLISTED),
+    # the rest were numbered. This guard found it absent from section 40's priority list as well;
+    # that was repaired in the same change, and it is `PLANNED` because the list now says so.
+    "10a": Registration("SourceObservation", Status.PLANNED),
     "11": Registration("Component", Status.PLANNED),
     "12": Registration("Asset", Status.PLANNED),
     # Section 40 lists neither Actor nor a replacement for it, and open data-model question 4
@@ -292,7 +290,7 @@ def test_every_field_row_has_a_description() -> None:
 
 def test_section_forty_parses_into_two_lists() -> None:
     first, later = implementation_priority()
-    assert len(first) == 20, first
+    assert len(first) == 21, first
     assert later == [
         "Critique",
         "EvidenceAssessment",
@@ -351,31 +349,35 @@ def test_unresolved_objects_appear_on_neither_list() -> None:
             assert registration.name not in later
 
 
-def test_the_unlisted_set_is_exactly_source_observation() -> None:
-    """A documented object that section 40 does not plan is a gap in the document.
+def test_nothing_is_unlisted() -> None:
+    """`UNLISTED` is the escape hatch for a documented object section 40 does not plan.
 
-    `SourceObservation` is required by the context extraction step: DEC-021 makes contradictions
-    and detected injection attempts one object of this type, and DEC-027 gives it its own
-    `expected-observations.yaml` in every benchmark scenario. Section 40 predates DEC-021 and
-    never gained an entry, so the object appears on neither its build-first list nor its deferred
-    one -- while `obs-` sits in the section 2.1 prefix list and `10a` carries a full field table.
+    It had exactly one occupant when this guard was written. `SourceObservation` carries a full
+    field table at section `10a` and the `obs-` prefix in section 2.1, DEC-021 makes contradictions
+    and detected injection attempts one object of this type, the context step produces them, and
+    DEC-027 grades them from `expected-observations.yaml` -- and section 40, written before
+    DEC-021, listed neither it nor a reason for its absence. Adding it to the list was part of the
+    same change as this test.
 
-    Pinned to exactly one name rather than left as a category, so a second object drifting into
-    this state is a failure rather than a shrug. Resolving it means adding a line to section 40,
-    which is a document edit and not this file's business.
+    The status stays because the state can recur: the next object added to the document after a
+    decision will arrive the same way. An empty set is the assertion, so a recurrence has to be
+    classified deliberately rather than absorbed.
     """
-    first, later = implementation_priority()
-    unlisted = {r.name for r in REGISTRY.values() if r.status is Status.UNLISTED}
-
-    assert unlisted == {"SourceObservation"}
-    assert "SourceObservation" not in first
-    assert "SourceObservation" not in later
+    assert not [r.name for r in REGISTRY.values() if r.status is Status.UNLISTED]
 
 
-def test_an_unlisted_object_still_has_a_field_table() -> None:
-    """The evidence that `UNLISTED` means "the plan forgot it", not "it is not an object"."""
+def test_source_observation_is_planned_and_ordered_after_the_claims_it_references() -> None:
+    """The placement is a claim about the object, so it is asserted rather than left to the eye.
+
+    `subject_claim_ids` references `ContextClaim`, so building observations first would mean
+    building a reference to something that does not exist.
+    """
+    first, _ = implementation_priority()
+    assert "SourceObservation" in first
+    assert first.index("SourceObservation") > first.index("ContextClaim")
+
     fields = {field.name for field in documented_fields()["10a"]}
-    assert {"id", "assessment_id", "kind", "summary"} <= fields
+    assert {"id", "assessment_id", "kind", "summary", "subject_claim_ids"} <= fields
 
 
 def test_an_implemented_registration_carries_a_model() -> None:
