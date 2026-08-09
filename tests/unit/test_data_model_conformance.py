@@ -66,6 +66,7 @@ from trace_ai.domain.execution import ExecutionRecord, WorkflowRun
 from trace_ai.domain.question import Question
 from trace_ai.domain.source_document import SourceDocument
 from trace_ai.domain.source_observation import SourceObservation
+from trace_ai.domain.system_context import SystemContext
 from trace_ai.domain.trust_boundary import TrustBoundary
 
 DATA_MODEL = PROJECT_ROOT / "docs" / "architecture" / "data-model.md"
@@ -203,7 +204,7 @@ REGISTRY: dict[str, Registration] = {
     "6": Registration("AssessmentConfiguration", Status.IMPLEMENTED, AssessmentConfiguration),
     "7": Registration("SourceDocument", Status.IMPLEMENTED, SourceDocument),
     "8": Registration("EvidenceReference", Status.IMPLEMENTED, EvidenceReference),
-    "9": Registration("SystemContext", Status.PLANNED),
+    "9": Registration("SystemContext", Status.IMPLEMENTED, SystemContext),
     "10": Registration("ContextClaim", Status.IMPLEMENTED, ContextClaim),
     # Documented as `10a` rather than as its own numbered section, because DEC-021 added it after
     # the rest were numbered. This guard found it absent from section 40's priority list as well;
