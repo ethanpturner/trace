@@ -34,6 +34,10 @@ DOMAIN_ROOT = PACKAGE_ROOT / "domain"
 # has not been made.
 PACKAGES = (
     "trace_ai.domain",
+    # What an agent returns (agent-design.md section 22): proposed objects carrying local keys and
+    # nothing the application owns. Inside `domain/` because a proposal is validated data, and it
+    # imports no service and no store.
+    "trace_ai.domain.proposals",
     # Orchestration (DEC-016): phases, the transition table, execution limits, and the node
     # protocol. There is no framework; this is what the decision names instead.
     "trace_ai.workflow",

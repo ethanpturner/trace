@@ -37,7 +37,8 @@ uv run pre-commit run gitleaks --all-files   # a single hook
 
 ```
 src/trace_ai/        configuration and process bootstrap -- the only product code that runs
-src/trace_ai/domain/           enums.py and base.py; no concrete domain object yet
+src/trace_ai/domain/           domain objects, identifiers, hashing, and proposals/
+src/trace_ai/domain/proposals/ what an agent returns: local keys, nothing authoritative
 src/trace_ai/services/         ingestion/ and evidence/ -- empty
 src/trace_ai/infrastructure/   filesystem/, database/, and model/ -- stores and the model seam
 src/trace_ai/workflow/         phases, the transition table, execution limits, the node protocol
@@ -311,6 +312,12 @@ Squashing either pull request breaks the chain: the hotfix commit stops being an
   Use `type(obj).model_validate({**obj.model_dump(), **changes})`. This is the only path on which
   a human-supplied value enters a domain object, so it is the one that least tolerates skipping
   the schema. Pinned by `tests/unit/test_domain_base.py`.
+- **A proposal carries local keys and nothing the application owns** (`agent-design.md` section
+  22, DEC-006). `domain/proposals/` has no `id`, no `status`, no approval field, and no severity;
+  `extra="forbid"` makes an invented one a validation failure. A key shaped like an identifier is
+  refused too, because DEC-018 allocates at insert and an agent-chosen number could collide.
+  `convert_proposal` resolves keys to allocated identifiers, sets everything `candidate`, and
+  refuses before allocating anything if a key is unresolved.
 - **Routing is the orchestrator's; ceilings are the orchestrator's** (DEC-016, `agent-design.md`
   section 27). A node declares a phase, takes a `NodeContext`, and returns a `NodeResult`; it is
   given no registry, no orchestrator, and no peer, because a node that could reach one could build

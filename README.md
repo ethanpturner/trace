@@ -284,6 +284,10 @@ Against the seven-stage [roadmap](#roadmap) below, Trace is inside Stage 1.
   component types the data model never lists. Unknown transport encryption is the string `unknown`
   rather than `false` or absence, and an undocumented exposure is `None` rather than `False` — the
   DEC-009 discipline expressed at field level.
+- **The context-extraction proposal schema** — one object the extractor is asked to return,
+  structurally incapable of carrying an identifier, a status, an approval, a severity, or a
+  finding. Proposed objects reference each other by local key; the application allocates the
+  identifiers at conversion.
 - **The workflow runtime** — the fourteen phases as an explicit transition table, the node
   protocol covering all three execution types, and the five ceilings `agent-design.md` section 27
   requires, checked before a step rather than after it. There is no orchestration framework
