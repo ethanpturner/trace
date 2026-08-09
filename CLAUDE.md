@@ -312,6 +312,12 @@ Squashing either pull request breaks the chain: the hotfix commit stops being an
   Use `type(obj).model_validate({**obj.model_dump(), **changes})`. This is the only path on which
   a human-supplied value enters a domain object, so it is the one that least tolerates skipping
   the schema. Pinned by `tests/unit/test_domain_base.py`.
+- **The fence is the security boundary, and a document that can close it escapes it.**
+  `services/context/input_package.py` wraps every excerpt in a marker carrying its evidence
+  identifier and neutralises any delimiter found *inside* an excerpt. The ForgeFlow injection
+  fixture is the live test: the block is **present** — it is evidence — and appears only inside the
+  fence. The package carries no path, credential, environment value, or configuration object, and
+  a budget overrun **names** the excluded evidence rather than truncating.
 - **A proposal carries local keys and nothing the application owns** (`agent-design.md` section
   22, DEC-006). `domain/proposals/` has no `id`, no `status`, no approval field, and no severity;
   `extra="forbid"` makes an invented one a validation failure. A key shaped like an identifier is

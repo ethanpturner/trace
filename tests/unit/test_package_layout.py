@@ -43,6 +43,7 @@ PACKAGES = (
     "trace_ai.workflow",
     "trace_ai.services",
     "trace_ai.services.ingestion",
+    "trace_ai.services.context",
     "trace_ai.services.evidence",
     # Prompts are version-controlled files (current-architecture.md section 10); this package
     # reads and composes them, and holds no prompt text of its own.

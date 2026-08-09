@@ -65,6 +65,15 @@ class ModelProfile:
     """Cache reads are priced at a fraction of input. Separate because prompt caching is the
     capability DEC-014 kept the seam capability-aware for."""
 
+    max_input_characters: int = 400_000
+    """A conservative ceiling on assembled input, in characters rather than tokens.
+
+    Characters because the application cannot count a provider's tokens without asking it, and a
+    budget that needs a network call to evaluate is one that cannot be enforced while assembling.
+    Conservative because the consequence of being wrong is asymmetric: too low drops evidence and
+    says which, too high produces a request the provider refuses after the assembly work is done.
+    """
+
     def cost_of(
         self, *, input_tokens: int, output_tokens: int, cached_input_tokens: int = 0
     ) -> Decimal:
