@@ -244,6 +244,11 @@ Against the seven-stage [roadmap](#roadmap) below, Trace is inside Stage 1.
   assessment behind. Status describes the assessment as a deliverable, never where the pipeline
   has reached, and moves through named transitions of which only archiving is a person's to make. Callers receive a handle carrying both stores scoped to one assessment, so code holding
   one cannot address another by passing a different string.
+- **Evidence retrieval and verification** — the application-controlled interface `agent-design.md`
+  section 22 requires agents to sit behind, built before any agent so it has no exceptions. It
+  re-reads the artifact and distinguishes three outcomes rather than two: a matching quotation, a
+  changed one, and a missing file. The prompt-facing shape carries a quotation and a location and
+  no filesystem path at all.
 - **Normalization and evidence indexing** — line-count-preserving normalization, segmentation at
   the shallowest heading level that occurs more than once, JSON Pointer addressing for structured
   documents, and one `EvidenceReference` per addressable unit. The eight ForgeFlow inputs produce
@@ -276,8 +281,8 @@ Against the seven-stage [roadmap](#roadmap) below, Trace is inside Stage 1.
 
 ### What does not exist yet
 
-- No agent. No model call of any kind. Documents are ingested and turned into addressable
-  evidence, and nothing yet reads that evidence.
+- No agent. No model call of any kind. Documents are ingested, turned into addressable evidence,
+  and retrievable through the interface an agent would sit behind — but nothing sits behind it yet.
 - Almost no domain objects. The data model specifies roughly twenty-nine; `Assessment`,
   `AssessmentConfiguration`, `SourceDocument`, and `EvidenceReference` are implemented and the rest
   are not.
