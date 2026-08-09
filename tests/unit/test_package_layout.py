@@ -29,11 +29,14 @@ PACKAGE_ROOT = PROJECT_ROOT / "src" / "trace_ai"
 DOMAIN_ROOT = PACKAGE_ROOT / "domain"
 
 # The skeleton section 15 calls for, adapted to the real package name. `api/`, `application/`,
-# `workflow/`, `reporting/`, and `evaluation/` are deliberately absent: section 15 proposes them,
+# `reporting/` and `evaluation/` are deliberately absent: section 15 proposes them,
 # nothing in this milestone puts a file in them, and an empty package reads as a commitment that
 # has not been made.
 PACKAGES = (
     "trace_ai.domain",
+    # Orchestration (DEC-016): phases, the transition table, execution limits, and the node
+    # protocol. There is no framework; this is what the decision names instead.
+    "trace_ai.workflow",
     "trace_ai.services",
     "trace_ai.services.ingestion",
     "trace_ai.services.evidence",

@@ -40,6 +40,7 @@ src/trace_ai/        configuration and process bootstrap -- the only product cod
 src/trace_ai/domain/           enums.py and base.py; no concrete domain object yet
 src/trace_ai/services/         ingestion/ and evidence/ -- empty
 src/trace_ai/infrastructure/   filesystem/, database/, and model/ -- stores and the model seam
+src/trace_ai/workflow/         phases, the transition table, execution limits, the node protocol
                      Dependencies point inward. domain/ imports neither of the other two and
                      no provider SDK; tests/unit/test_package_layout.py asserts both.
 tests/unit/          the only tests that exist
@@ -310,6 +311,14 @@ Squashing either pull request breaks the chain: the hotfix commit stops being an
   Use `type(obj).model_validate({**obj.model_dump(), **changes})`. This is the only path on which
   a human-supplied value enters a domain object, so it is the one that least tolerates skipping
   the schema. Pinned by `tests/unit/test_domain_base.py`.
+- **Routing is the orchestrator's; ceilings are the orchestrator's** (DEC-016, `agent-design.md`
+  section 27). A node declares a phase, takes a `NodeContext`, and returns a `NodeResult`; it is
+  given no registry, no orchestrator, and no peer, because a node that could reach one could build
+  the loop section 27 prevents. The fourteen phases are `current-architecture.md` section 5.3's and
+  transitions are declared data — anything the table does not name is refused. Exceeding a ceiling
+  **stops** the run with a classified error; it never skips a node or shrinks a request.
+  `AssessmentState` holds identifiers and routing only (`data-model.md` section 31's state-design
+  rule), because a state carrying content is a second copy of the authoritative data.
 - **A prompt is a file, and shared blocks are composed rather than copied.** `agent-design.md`
   section 34 is authoritative for the tree; `current-architecture.md` section 10 was corrected to
   match it. `services/prompts/` reads the tree, joins each declared `shared/` block in order, and

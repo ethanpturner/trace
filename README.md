@@ -284,6 +284,10 @@ Against the seven-stage [roadmap](#roadmap) below, Trace is inside Stage 1.
   component types the data model never lists. Unknown transport encryption is the string `unknown`
   rather than `false` or absence, and an undocumented exposure is `None` rather than `False` — the
   DEC-009 discipline expressed at field level.
+- **The workflow runtime** — the fourteen phases as an explicit transition table, the node
+  protocol covering all three execution types, and the five ceilings `agent-design.md` section 27
+  requires, checked before a step rather than after it. There is no orchestration framework
+  (DEC-016). No pipeline node exists yet to register against it.
 - **The prompt registry** — prompts as version-controlled files, with the three shared blocks
   composed in rather than copied into each one, and the hash taken over the composed text so a
   change to a shared block is visible in every prompt that includes it. The tree is empty until the
@@ -362,6 +366,7 @@ src/trace_ai/                    configuration and process bootstrap
 src/trace_ai/domain/             domain objects and shared types
 src/trace_ai/services/           ingestion/ and evidence/ -- operations on those objects
 src/trace_ai/infrastructure/     filesystem/, database/, and model/ -- stores and the model seam
+src/trace_ai/workflow/           phases, transitions, limits, and the node protocol
 tests/               unit tests; integration/ and evaluation/ are scaffolded and empty
 docs/product/        vision, design principles, roadmap, future features
 docs/architecture/   scope, current architecture, agent design, data model,
