@@ -284,6 +284,10 @@ Against the seven-stage [roadmap](#roadmap) below, Trace is inside Stage 1.
   component types the data model never lists. Unknown transport encryption is the string `unknown`
   rather than `false` or absence, and an undocumented exposure is `None` rather than `False` — the
   DEC-009 discipline expressed at field level.
+- **The extractor's input package** — evidence reaching the agent through an application-controlled
+  interface rather than a filesystem, every excerpt fenced and carrying its identifier, fence
+  delimiters inside source text neutralised, and a budget overrun naming what it dropped. Assembly
+  is deterministic, which is what makes the replay cache usable.
 - **The context-extraction proposal schema** — one object the extractor is asked to return,
   structurally incapable of carrying an identifier, a status, an approval, a severity, or a
   finding. Proposed objects reference each other by local key; the application allocates the

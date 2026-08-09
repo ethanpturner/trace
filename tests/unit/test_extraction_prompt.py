@@ -110,12 +110,10 @@ def test_the_untrusted_boundary_is_stated_in_the_trusted_half() -> None:
     boundary announced inside the untrusted region is a boundary the untrusted region could
     describe differently."""
     text = PROMPT.read_text(encoding="utf-8")
-    instructions = text.index("## Authoritative instructions")
-    input_data = text.index("## Input data")
-    assert instructions < text.index("<source-content>") < input_data or (
-        "<source-content>" in text[instructions:input_data]
-    )
-    assert "<source-content>" in text[instructions:input_data]
+    trusted = text[text.index("## Authoritative instructions") : text.index("## Input data")]
+    assert "<source-content" in trusted
+    assert "</source-content>" in trusted
+    assert "neutralised" in trusted, "the prompt does not say a document cannot close its own fence"
 
 
 # ------------------------------------------------------------------------------------------
