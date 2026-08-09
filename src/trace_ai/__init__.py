@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 
 from trace_ai.config import Settings, get_settings, load_env
+from trace_ai.observability import install
 
 __all__ = ["bootstrap", "configure_logging", "main"]
 
@@ -12,16 +13,14 @@ logger = logging.getLogger(__name__)
 
 
 def configure_logging(settings: Settings) -> None:
-    """Install a root logging config at the configured level.
+    """Install the structured handler at the configured level.
 
-    `force=True` replaces any handlers a library installed on import, so the
-    configured level actually takes effect rather than being silently ignored.
+    Existing root handlers are replaced, which is what `basicConfig(force=True)` did before: a
+    handler a library installed on import would otherwise keep emitting records that never pass
+    through the redaction filter, which is the failure mode worth preventing rather than the
+    duplicate output.
     """
-    logging.basicConfig(
-        level=settings.log_level,
-        format="%(asctime)s %(levelname)-8s %(name)s: %(message)s",
-        force=True,
-    )
+    install(settings.log_level)
 
 
 def bootstrap() -> Settings:
