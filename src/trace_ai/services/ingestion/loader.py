@@ -54,6 +54,7 @@ if TYPE_CHECKING:
     from pathlib import Path
 
     from trace_ai.services.assessment import AssessmentHandle
+    from trace_ai.services.execution_ledger import ExecutionLedger
 
 __all__ = [
     "MAXIMUM_DOCUMENT_BYTES",
@@ -66,6 +67,11 @@ __all__ = [
     "UnaddressableDocumentError",
     "UnsupportedFormatError",
 ]
+
+# What this node is called in the execution ledger. The version is the node implementation's, not
+# the workflow's: `data-model.md` section 27 records both so a record says which code produced it.
+NODE_NAME: Final = "document_ingestion"
+NODE_VERSION: Final = "0.1"
 
 # Extension to format. Section 5.4's four MVP inputs, spelled the ways they are spelled on disk.
 # Extension only: content sniffing would let a document choose how it is parsed.
@@ -145,10 +151,15 @@ class DocumentLoader:
     """
 
     def __init__(
-        self, handle: AssessmentHandle, *, maximum_bytes: int = MAXIMUM_DOCUMENT_BYTES
+        self,
+        handle: AssessmentHandle,
+        *,
+        maximum_bytes: int = MAXIMUM_DOCUMENT_BYTES,
+        ledger: ExecutionLedger | None = None,
     ) -> None:
         self.handle = handle
         self._maximum_bytes = maximum_bytes
+        self._ledger = ledger
 
     def load_document(
         self,
@@ -161,6 +172,14 @@ class DocumentLoader:
 
         Inferring either would mean deciding from the file what to believe about the file.
         """
+        if self._ledger is None:
+            return self._load(path, origin=origin, trust_level=trust_level)
+        with self._ledger.record(NODE_NAME, node_version=NODE_VERSION) as execution:
+            document = self._load(path, origin=origin, trust_level=trust_level)
+            execution.produced(document.id)
+            return document
+
+    def _load(self, path: Path, *, origin: SourceOrigin, trust_level: TrustLevel) -> SourceDocument:
         media_type = self._media_type(path)
         content = self._read(path)
         self._parse(path, media_type, content)

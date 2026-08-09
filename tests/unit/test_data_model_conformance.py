@@ -55,6 +55,7 @@ from trace_ai.domain.enums import (
     ValidationStatus,
 )
 from trace_ai.domain.evidence import EvidenceReference
+from trace_ai.domain.execution import ExecutionRecord, WorkflowRun
 from trace_ai.domain.source_document import SourceDocument
 
 DATA_MODEL = PROJECT_ROOT / "docs" / "architecture" / "data-model.md"
@@ -215,8 +216,8 @@ REGISTRY: dict[str, Registration] = {
     "23": Registration("DocumentationGap", Status.PLANNED),
     "24": Registration("Critique", Status.DEFERRED),
     "25": Registration("ReviewerDecision", Status.PLANNED),
-    "26": Registration("WorkflowRun", Status.PLANNED),
-    "27": Registration("ExecutionRecord", Status.PLANNED),
+    "26": Registration("WorkflowRun", Status.IMPLEMENTED, WorkflowRun),
+    "27": Registration("ExecutionRecord", Status.IMPLEMENTED, ExecutionRecord),
     "28": Registration("EvaluationResult", Status.DEFERRED),
     "29": Registration("PromptDefinition", Status.DEFERRED),
     "30": Registration("RequirementsCatalog", Status.DEFERRED),
