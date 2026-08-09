@@ -278,9 +278,11 @@ Against the seven-stage [roadmap](#roadmap) below, Trace is inside Stage 1.
   `data-model.md` sections 5 and 6 by the conformance guard. The configuration carries no setting
   that governs the two human checkpoints, and a test asserts that reintroducing one fails
   validation rather than passing quietly.
-- **Identifiers and content hashing** — the twenty prefixes of section 2.1 as a closed registry,
-  both identifier forms DEC-018 defines, a typed identifier per object so a threat identifier
-  cannot be assigned to a finding's field, and the single SHA-256 utility DEC-019 requires.
+- **Identifiers and content hashing** — the twenty-three prefixes of section 2.1 as a closed
+  registry, both identifier forms DEC-018 defines, a typed identifier per object so a threat
+  identifier cannot be assigned to a finding's field, and the single SHA-256 utility DEC-019
+  requires. The scheme governs objects an assessment produces (DEC-034); authored configuration —
+  the requirements catalog, a prompt definition — carries a name rather than an identifier.
   Identifier allocation is a store operation, so what exists is the protocol and an in-memory
   implementation for tests; the store-backed one arrives with the persistence layer.
 - **Test discipline** — unit tests run by default; integration and evaluation tests sit behind

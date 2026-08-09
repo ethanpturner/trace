@@ -255,6 +255,10 @@ Squashing either pull request breaks the chain: the hotfix commit stops being an
   in `domain/identifiers.py` is for tests: a fresh instance restarts at `001`, so two of them
   collide and a resumed run would re-mint identifiers that already exist. Depend on the
   `IdentifierAllocator` protocol and let the persistence layer supply the implementation.
+  **The scheme governs objects an assessment produces** (DEC-034). Authored configuration —
+  `RequirementsCatalog`, `PromptDefinition` — is outside it and carries a *name*: a lowercase slug
+  with no prefix, identified by `(id, version)`. Do not give one a prefix; `cat-core` was that
+  mistake.
 - **Go through `AssessmentService` for anything assessment-shaped**, and hold the
   `AssessmentHandle` it returns rather than an identifier: it carries the scoped repository
   and the scoped artifact store together, so one assessment's code cannot reach another's.

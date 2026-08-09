@@ -14,6 +14,13 @@ identifiers a benchmark expected-output file may reference.
 assessment**, not globally: `thr-007` in two assessments is two different objects, and an
 identifier is fully qualified only by `(assessment_id, id)`.
 
+**The scheme governs objects an assessment produces** (DEC-034): scoped to one assessment,
+persisted by the assessment store, and referred to by identifier from somewhere else. `Requirement`
+is the one authored member, because assessment objects cite `req-AUTH-001` by identifier. Authored
+configuration -- `RequirementsCatalog`, `PromptDefinition` -- is outside it and carries a name
+rather than an identifier: `core`, `extract-context`, referenced by version. Nothing here validates
+those, and a prefixed value in one of them would be a name imitating an identifier.
+
 **Allocation is a store operation, not a pure function.** DEC-018 assigns a generated identifier
 at insert, from a monotonic counter per `(assessment_id, prefix)`. That is why this module defines
 `IdentifierAllocator` as a protocol rather than exposing a module-level `new_id()`: a
@@ -34,15 +41,18 @@ from pydantic import AfterValidator
 
 __all__ = [
     "PREFIXES",
+    "ActorId",
     "AssessmentId",
     "AssetId",
     "ComponentId",
     "ContextClaimId",
     "ControlId",
     "ControlMappingId",
+    "CritiqueId",
     "DataFlowId",
     "DocumentationGapId",
     "EvaluationResultId",
+    "EvidenceAssessmentId",
     "EvidenceReferenceId",
     "ExecutionRecordId",
     "FindingId",
@@ -66,9 +76,11 @@ __all__ = [
 # is carried rather than a bare set so that a validation error can name the object type, which is
 # the thing a reader of the error actually needs.
 #
-# There are twenty. The issue that asked for this module said nineteen and omitted `obs`, which
-# DEC-021 added along with SourceObservation after the backlog was written. Section 2.1 is
-# authoritative and lists it.
+# There are twenty-three. The issue that asked for this module said nineteen and omitted `obs`,
+# which DEC-021 added along with SourceObservation after the backlog was written. DEC-034 added
+# `act`, `eas`, and `crq`: all three name assessment-scoped objects that carry an `id` and had no
+# prefix, which a rule saying what the scheme governs made visible. Section 2.1 is authoritative
+# and lists them.
 PREFIXES: dict[str, str] = {
     "asm": "Assessment",
     "src": "SourceDocument",
@@ -86,6 +98,9 @@ PREFIXES: dict[str, str] = {
     "qst": "Question",
     "gap": "DocumentationGap",
     "obs": "SourceObservation",
+    "act": "Actor",
+    "eas": "EvidenceAssessment",
+    "crq": "Critique",
     "dec": "ReviewerDecision",
     "run": "WorkflowRun",
     "exe": "ExecutionRecord",
@@ -218,6 +233,9 @@ FindingId = Annotated[str, _validator("fnd")]
 QuestionId = Annotated[str, _validator("qst")]
 DocumentationGapId = Annotated[str, _validator("gap")]
 SourceObservationId = Annotated[str, _validator("obs")]
+ActorId = Annotated[str, _validator("act")]
+EvidenceAssessmentId = Annotated[str, _validator("eas")]
+CritiqueId = Annotated[str, _validator("crq")]
 ReviewerDecisionId = Annotated[str, _validator("dec")]
 WorkflowRunId = Annotated[str, _validator("run")]
 ExecutionRecordId = Annotated[str, _validator("exe")]

@@ -932,7 +932,7 @@ Decision:
 
 There are **two classes of identifier**, and they follow different rules.
 
-**Authored identifiers** are written by hand and carry meaning. The requirements catalog's `req-AUTH-001` is the only class currently in use: the prefix names the object type, the middle segment names the category, and the number is assigned by the author. They are globally unique, stable across catalog versions, and are the only identifiers a benchmark expected-output file may reference.
+**Authored identifiers** are written by hand and carry meaning. `req-` is the only authored prefix currently in use, in the requirements catalog's `req-AUTH-001`: the prefix names the object type, the middle segment names the category, and the number is assigned by the author. (This sentence originally read "the only class currently in use", which was inaccurate when written: `requirements/catalog.yaml` already called itself `cat-core`. DEC-034 settles that value and states which objects the scheme governs.) They are globally unique, stable across catalog versions, and are the only identifiers a benchmark expected-output file may reference.
 
 **Generated identifiers** are minted during an assessment. They take the form `<prefix>-<NNN>` — `thr-007`, `evd-014`, `fnd-003` — using the prefixes listed in `data-model.md` section 2.1, zero-padded to three digits and widening beyond three when a sequence exceeds 999. They are **unique within their assessment**, not globally; `thr-007` in one assessment and `thr-007` in another are different objects, and an identifier is fully qualified only by `(assessment_id, id)`.
 
@@ -1922,3 +1922,113 @@ Open Questions:
   does DEC-023's supersession apply?
 - Should `failed` carry the identifier of the `ExecutionRecord` that explains it, which is a
   reference rather than a duplicate?
+
+## DEC-034: The identifier scheme governs assessment data; configuration objects are named, not identified
+
+Date: 2026-08-09
+
+Status: Accepted
+
+Decision:
+
+`data-model.md` section 2.1 never said which objects the identifier scheme governs. It governs
+**objects an assessment produces**, and nothing else.
+
+An object is inside the scheme when all three hold: it is scoped to one assessment, it is persisted
+by the assessment store, and something else refers to it by identifier. Those objects carry an `id`
+of one of DEC-018's two forms, drawn from the prefix registry in section 2.1. The one authored
+exception is `Requirement`: it is written by hand rather than produced by a run, but assessment
+objects reference it by identifier — a `ControlMapping` names `req-AUTH-001` — so it is inside the
+scheme and keeps its `req-` prefix.
+
+**`RequirementsCatalog` and `PromptDefinition` are outside it.** They are authored configuration:
+not scoped to an assessment, not minted by the persistence layer, and referenced by *version* rather
+than by identifier. `Assessment.requirements_catalog_version` records a version, `PromptDefinition`
+is cited in generation metadata as `extract-context-v1`, and DEC-027 pins `catalog_version` in a
+benchmark scenario. Nothing anywhere joins on either object's `id`.
+
+Their `id` is therefore a **name**: a lowercase slug, stable across versions, unique among objects of
+its kind, carrying no prefix and no number. Identity is `(id, version)` — the slug names the family,
+the version names the edition.
+
+`requirements/catalog.yaml` changes from `cat-core` to `core`. The `cat-` prefix was imitation: it
+made a name look like an identifier from a registry that does not contain it, which is the reading
+that has to be prevented rather than the value that has to be preserved.
+
+Section 2.1's prefix list was also incomplete against the rule this entry states. Three
+assessment-scoped objects carry an `id` and had no prefix, and this entry adds them:
+
+| Prefix | Object | Defined in |
+|---|---|---|
+| `act` | Actor | `data-model.md` section 13 |
+| `eas` | EvidenceAssessment | section 20 |
+| `crq` | Critique | section 24 |
+
+The registry is now twenty-three. `SystemContext` (section 9) has no `id` field and needs no prefix:
+it is keyed by `(assessment_id, version)`, which DEC-023 makes the versioned object it is.
+
+DEC-018's "the requirements catalog's `req-AUTH-001` is the only class currently in use" is
+corrected. It was inaccurate when written — `cat-core` was already in the same directory — and the
+sentence is replaced with one that says `req-` is the only authored *prefix*, which is what was
+meant and is true.
+
+Why:
+
+The question the issue asks — what to do about one value in one file — is not the question worth
+answering. `cat-core` is a symptom of the omission in section 2.1: a document that lists prefixes
+without saying what the list is for invites every object with an `id` field to acquire one by
+resemblance. That is exactly how the value was produced, and fixing the value alone would leave the
+next authored object to make the same mistake.
+
+Stating the boundary answers the issue's own decision criteria in one move. Does anything join on
+`RequirementsCatalog.id`? No — `catalog_version` is the real key, in the evaluation contract, in
+`Assessment`, and in every requirement file's `catalog_version` field. Would a benchmark expected
+file reference a catalog identifier? It references the version, which DEC-027 settled. Is a third
+identifier form worth explaining? Not when the object needing it turns out not to need an identifier
+at all.
+
+`PromptDefinition` is the evidence that this is a class rather than one stray value. It has an `id`,
+it has no prefix, it is cited everywhere as `extract-context-v1`, and nobody has ever proposed
+`prm-`. The catalog and the prompt behave the same way, and a rule covering one covers both. That is
+the difference between a rule and an exception.
+
+Adding the three missing prefixes is part of the same decision rather than a separate cleanup.
+`Actor`, `EvidenceAssessment`, and `Critique` are inside the scheme under the rule stated here, so
+leaving them unlisted would publish a rule the registry contradicts, and would leave three
+in-progress issues each free to invent a prefix. A closed registry only works if it is complete.
+
+Alternatives Considered:
+
+- Add `cat` to section 2.1 and admit a third identifier form, `<prefix>-<name>`
+- Rename the catalog's identifier to a registered prefix, in one of the two existing forms
+- Drop `RequirementsCatalog.id` entirely, since `version` is the real key
+- State the boundary but leave the catalog's value as `cat-core`, treating the shape as harmless
+- State the boundary and defer the three missing prefixes to the issues implementing those objects
+
+Tradeoffs:
+
+- **Two kinds of `id` field now exist in one data model**, and the type does not distinguish them.
+  `RequirementsCatalog.id` and `Finding.id` are both `string` and only the section tells a reader
+  which rules apply. A `CatalogName` annotated type would say so in the schema; there is no loader
+  to put it on yet.
+- The rule is stated in prose and enforced by nothing for configuration objects. A future authored
+  object can still acquire a prefix by imitation, and the only thing standing in the way is a reader
+  of section 2.1.
+- Renaming `cat-core` to `core` changes a value in a version-controlled catalog. Nothing reads it,
+  so the change is free today and would not have been once a loader existed.
+- Three prefixes are now registered for objects that do not exist. If `Critique` is built and turns
+  out not to need an identifier — it is always reached through the object it critiques — `crq` is a
+  registered prefix naming nothing.
+- `eas` and `eval` are close enough to misread at a glance, and they name unrelated objects.
+- Requiring authored configuration to be unique "among objects of its kind" is unenforced: two
+  catalogs both named `core` at the same version would collide, and nothing checks.
+
+Open Questions:
+
+- When a catalog loader exists, should `RequirementsCatalog.id` become an annotated slug type, so
+  the schema rejects a prefixed value rather than a convention doing it?
+- Does `PromptDefinition.id` hold the slug (`extract-context`) with `version` separate, or the
+  composed `extract-context-v1` the corpus writes in metadata? The corpus shows the composed form
+  and section 29 requires both fields.
+- Is `Requirement` the only authored object that will ever be inside the scheme, or does a future
+  shared threat-pattern library create a second?

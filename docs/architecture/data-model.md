@@ -81,6 +81,12 @@ gap- Documentation gap
 
 obs- Source observation
 
+act- Actor
+
+eas- Evidence assessment
+
+crq- Critique
+
 dec- Reviewer decision
 
 run- Workflow run
@@ -89,11 +95,31 @@ exe- Execution record
 
 eval- Evaluation result
 
+## What the scheme governs
+
+The scheme governs **objects an assessment produces**. An object is inside it when all three hold:
+it is scoped to one assessment, it is persisted by the assessment store, and something else refers
+to it by identifier. Those objects carry an `id` in one of the two forms below, using a prefix from
+the list above.
+
+`Requirement` is the one authored exception, and it is inside the scheme: assessment objects
+reference it by identifier — a `ControlMapping` names `req-AUTH-001` — so it keeps its prefix.
+
+**Authored configuration is outside the scheme.** `RequirementsCatalog` (section 30) and
+`PromptDefinition` (section 29) are not scoped to an assessment, are not minted by the persistence
+layer, and are referenced by *version* rather than by identifier. Their `id` is a **name**: a
+lowercase slug, stable across versions, carrying no prefix and no number, with identity given by
+`(id, version)` — `core` at version `0.1`, `extract-context` at version `v1`. A prefixed value there
+would claim membership in a registry that does not contain it (DEC-034).
+
+`SystemContext` (section 9) has no `id` at all. It is keyed by `(assessment_id, version)`.
+
 ## Two classes of identifier
 
-**Authored identifiers** are written by hand and carry meaning. The requirements catalog's
-`req-AUTH-001` is the only class currently in use. They are globally unique, stable across catalog
-versions, and are the only identifiers a benchmark expected-output file may reference.
+**Authored identifiers** are written by hand and carry meaning. `req-` is the only authored prefix
+currently in use, in the requirements catalog's `req-AUTH-001`. They are globally unique, stable
+across catalog versions, and are the only identifiers a benchmark expected-output file may
+reference.
 
 **Generated identifiers** are minted during an assessment, in the form `<prefix>-<NNN>` using the
 prefixes above. They are unique **within their assessment**, not globally — `thr-007` in two
@@ -1869,7 +1895,7 @@ The prompt body may remain stored in a file, while metadata is available to the 
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| id | string | Yes | Prompt identifier |
+| id | string | Yes | Prompt name: a lowercase slug, outside the identifier scheme (DEC-034) |
 | version | string | Yes | Prompt version |
 | name | string | Yes | Prompt name |
 | purpose | string | Yes | Intended task |
@@ -1890,7 +1916,7 @@ Represents a versioned collection of reusable requirements.
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| id | string | Yes | Catalog identifier |
+| id | string | Yes | Catalog name: a lowercase slug, outside the identifier scheme (DEC-034) |
 | name | string | Yes | Catalog name |
 | version | string | Yes | Catalog version |
 | description | string | No | Catalog purpose |
@@ -1898,6 +1924,14 @@ Represents a versioned collection of reusable requirements.
 | created_at | datetime | Yes | Creation timestamp |
 | status | string | Yes | Draft, active, retired |
 | content_hash | string | Yes | `sha256:<hex>` over a canonical re-serialization (DEC-019) |
+
+## Note on identity
+
+A catalog is identified by `(id, version)`, not by `id` alone: the slug names the family and the
+version names the edition, and DEC-010 gives each version its own directory. Everything that refers
+to a catalog refers to the version — `Assessment.requirements_catalog_version`, each requirement's
+own `catalog_version`, and the `catalog_version` a benchmark scenario pins under DEC-027. Nothing
+joins on `id`.
 
 # 31. Assessment State
 

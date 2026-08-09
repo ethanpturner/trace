@@ -1,5 +1,7 @@
 catalog:
-  id: cat-core
+  # A name, not an identifier: authored configuration is outside the identifier scheme, and a
+  # catalog is identified by (id, version). See DEC-034 and data-model.md section 2.1.
+  id: core
   name: "Core Architecture Requirements"
   version: "0.1"
   description: >
