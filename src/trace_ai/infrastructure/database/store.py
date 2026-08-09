@@ -64,6 +64,12 @@ SCHEMA_VERSION: Final = 1
 
 DATABASE_FILENAME: Final = "trace.db"
 
+# The counter scope for identifiers that cannot belong to an assessment. DEC-018 scopes generated
+# identifiers to their assessment, which works for all nineteen prefixes except `asm` itself: an
+# assessment identifier has to be unique across the database, because it is what every other
+# identifier is qualified by. `*` is not a valid identifier, so no assessment can collide with it.
+GLOBAL_SCOPE: Final = "*"
+
 _SCHEMA: Final = """
 CREATE TABLE IF NOT EXISTS store_metadata (
     key   TEXT PRIMARY KEY,
@@ -212,6 +218,16 @@ class AssessmentStore:
             "SELECT value FROM store_metadata WHERE key = 'schema_version'"
         ).fetchone()
         return int(row["value"])
+
+    def allocate_assessment_id(self) -> str:
+        """The next `asm-NNN`, unique across this database.
+
+        The one allocation that is not assessment-scoped, and the case DEC-018 does not name.
+        Every other prefix counts within an assessment because `(assessment_id, id)` qualifies it;
+        an assessment identifier has nothing above it to be qualified by, so its counter is held
+        under `GLOBAL_SCOPE` and is unique database-wide.
+        """
+        return AssessmentRepository(self, GLOBAL_SCOPE).allocate("asm")
 
     def repository(self, assessment_id: str) -> AssessmentRepository:
         """A view scoped to one assessment. The only way to reach objects."""
@@ -367,6 +383,19 @@ class AssessmentRepository:
             parameters.append(status)
         rows = self._connection.execute(sql + " ORDER BY id", parameters).fetchall()
         return [self._load(model, row["id"], row["payload"]) for row in rows]
+
+    def counts_by_type(self) -> dict[str, int]:
+        """How many objects of each type this assessment holds.
+
+        Reported per type rather than for a named pair, so a type that does not exist yet is
+        absent rather than silently zero.
+        """
+        rows = self._connection.execute(
+            "SELECT object_type, COUNT(*) AS total FROM objects WHERE assessment_id = ? "
+            "GROUP BY object_type ORDER BY object_type",
+            (self.assessment_id,),
+        ).fetchall()
+        return {row["object_type"]: int(row["total"]) for row in rows}
 
     def count(self, model: type[DomainModel]) -> int:
         row = self._connection.execute(
