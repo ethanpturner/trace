@@ -2032,3 +2032,199 @@ Open Questions:
   and section 29 requires both fields.
 - Is `Requirement` the only authored object that will ever be inside the scheme, or does a future
   shared threat-pattern library create a second?
+
+## DEC-035: Sixteen report sections, four written by the agent; the renderer owns the document
+
+Date: 2026-08-09
+
+Status: Accepted
+
+Decision:
+
+The MVP report has **sixteen numbered sections**, fixed by `templates/report-v1.md`, and every one
+of them has exactly one owner. Markdown is the only output format, as `future-features.md` section
+13.5 defers PDF, HTML, JSON, SARIF, and audit packages.
+
+| # | Section | Anchor | Owner | Content |
+|---|---|---|---|---|
+| 1 | Executive summary | `s01-executive-summary` | Agent — `executive_summary` | What was assessed, what was concluded, what was not determined |
+| 2 | Scope | `s02-scope` | Rendered | `Assessment`, `AssessmentConfiguration`, and the source documents ingested |
+| 3 | System overview | `s03-system-overview` | Agent — `system_overview` | Narrative of the approved `SystemContext` |
+| 4 | Architecture summary | `s04-architecture-summary` | Rendered | `Component`, `Actor`, and `DataFlow` tables |
+| 5 | Assets and trust boundaries | `s05-assets-and-trust-boundaries` | Rendered | `Asset` and `TrustBoundary` tables |
+| 6 | Risk summary | `s06-risk-summary` | Agent — `risk_summary` | What the approved findings amount to together |
+| 7 | Significant threats | `s07-significant-threats` | Rendered | Validated `Threat` objects |
+| 8 | Approved findings | `s08-approved-findings` | Rendered | `Finding` objects approved at checkpoint 2 |
+| 9 | Documentation gaps | `s09-documentation-gaps` | Rendered | Approved `DocumentationGap` objects |
+| 10 | Assumptions | `s10-assumptions` | Rendered | `ContextClaim` with status `assumed` or `inferred`, with the DEC-022 rationale |
+| 11 | Open questions | `s11-open-questions` | Rendered | `Question` objects with status `open` |
+| 12 | Existing controls | `s12-existing-controls` | Rendered | `Control` objects whose `validation_status` is `supported` |
+| 13 | Recommended actions | `s13-recommended-actions` | Rendered | `Finding.recommendation` and `acceptance_criteria`, by severity then identifier |
+| 14 | Methodology | `s14-methodology` | Rendered | Fixed template text and the version pins |
+| 15 | Evidence appendix | `s15-evidence-appendix` | Rendered | Every `EvidenceReference` cited above, with `quoted_text` and location |
+| 16 | Assessment limitations | `s16-assessment-limitations` | Agent — `limitations` | One entry per limitation the assembler requires |
+
+The list is `current-architecture.md` section 5.13's fifteen with one addition. **Risk summary** is
+new, and it exists so that section 7 does not have to be half prose and half table: the model's
+synthesis of what the findings mean together is a section of its own rather than a paragraph
+interleaved into a rendered one.
+
+**Four sections are model-written and twelve are rendered.** The rule that produced that split is:
+*anything that restates an approved object is rendered; only prose that adds no fact is written by
+a model.* A section is never both.
+
+**The agent's output is a named structure of sections, not a document.** `ReportSections` carries
+four fields and the shared response metadata of `agent-design.md` section 6:
+
+| Field | Type | Constraint |
+|---|---|---|
+| `executive_summary` | string | Prose only. No headings, no Markdown tables, no links, no anchors |
+| `system_overview` | string | Same |
+| `risk_summary` | string | Same |
+| `limitations` | list of `{limitation_id, text}` | Exactly one entry per `required_limitation` in the input; no more, no fewer, no invented identifier |
+
+The agent no longer writes per-object prose. Section 19's responsibility list included finding
+descriptions, threat summaries, gap summaries, assumption summaries, and a recommended-priority
+narrative; all five are rendered from the objects instead. A `Finding.description` is text a
+reviewer approved, and often edited, at checkpoint 2. Regenerating it would put model prose where
+reviewer-approved text belongs and make "only approved content appears in the report" unverifiable.
+
+**Limitations are the exception that proves the split, and they are handled structurally.** The
+assembler computes a `required_limitations` list — one entry per limitation the run's own state
+implies, such as documents that failed ingestion, unanswered blocking questions, findings resting on
+inferred claims, a non-authoritative run under DEC-012, or an empty finding set — and hands the
+agent the identifier and the facts for each. The agent writes the words; the validator checks the
+set by identifier. That is why omission is a schema failure rather than a judgment call, and it is
+the only place a required-by-identifier list is used.
+
+**Numbering and anchors are fixed by the template.** Section numbers are literal, not computed from
+how many sections have content, and every section is emitted even when empty. Anchors are written as
+explicit `<a id="...">` elements rather than left to heading-derived anchors, which differ between
+Markdown renderers and change whenever a title is reworded. Object anchors are the object's own
+identifier lowercased — `fnd-003` — which is stable within its assessment, the scope a report is
+read in.
+
+**Output location and naming.** The report is written through the `ArtifactStore` to the assessment's
+`outputs/` area, named for the run that produced it:
+
+```
+data/assessments/<assessment_id>/outputs/report-<workflow_run_id>.md
+data/assessments/<assessment_id>/outputs/report-<workflow_run_id>.manifest.json
+```
+
+Naming per run rather than `report.md` is required rather than tidy: the artifact store refuses to
+overwrite a stored file with different content, so a second run over the same assessment would fail
+on a fixed name. `Assessment.final_report_path` holds the path **relative to the assessment root** —
+`outputs/report-run-003.md` — and names the report of the run whose findings were approved. A
+relative path keeps the value valid when the data directory moves, which an absolute one would not.
+
+**The output manifest is JSON**, one per report, carrying what a later reader needs to know that two
+reports are comparable:
+
+| Field | Content |
+|---|---|
+| `manifest_version` | Version of this manifest's own shape |
+| `assessment_id`, `workflow_run_id` | What produced the report |
+| `generated_at` | Render timestamp |
+| `report.path`, `report.content_hash`, `report.format`, `report.template_version` | The artifact, hashed per DEC-019, and the template it was rendered from |
+| `versions.architecture`, `versions.data_model`, `versions.workflow` | From `Assessment` |
+| `versions.requirements_catalog` | Catalog version, per DEC-034 the way a catalog is referenced |
+| `versions.prompts` | Every prompt version used in the run, by name |
+| `versions.model`, `versions.model_profile`, `versions.model_configuration` | DEC-014's bundle |
+| `counts.*` | Approved findings, findings by severity, documentation gaps, open questions, assumptions, confirmed controls, threats, evidence references |
+| `authoritative`, `ablations` | Whether the run applied a DEC-012 ablation, and which |
+
+The six version fields `evaluation-plan.md` section 3 requires are all present. JSON rather than
+YAML because nothing authors this file by hand and DEC-020 already makes JSON the machine format;
+the manifest sits beside the report so a report cannot be found without it.
+
+**No machine-readable sidecar is emitted.** `data-model.md` section 37's export package —
+`findings.json`, `report.md`, `evidence/` — stays deferred. The manifest describes the report; it
+does not contain the assessment's objects, and adding a second serialization of objects that already
+live in the assessment store would be a second authoritative copy for no MVP consumer.
+
+**Zero approved findings is a defined outcome with authored wording.** The template's
+`empty.findings` text states that no candidate weakness reached the assessment's bar, that this is
+not a statement that the system is secure, and where to read what could not be determined. Every
+rendered section that can be empty has wording of its own, written the same way, and no empty
+section is omitted: a section that disappears reads as one that was never considered.
+
+Why:
+
+Two documents disagreed about how many sections the report has — fifteen in `current-architecture.md`
+section 5.13, four in `agent-design.md` section 19 — and the disagreement was never about counting.
+Section 5.13 lists sections of a document; section 19 lists keys of an agent's output. They can both
+be right only once someone says which sections the agent writes, and nobody had.
+
+That question is the one that matters, because it decides what the agent can get wrong. A model that
+returns a document can put a fabricated fact anywhere in it, and validating that requires reading
+every sentence against every object. A model that returns four prose fields, none of which is
+allowed to contain a heading, a table, a link, or an identifier the input did not carry, can be
+checked. The renderer owns the document; the model owns four passages inside it.
+
+Rendering per-object text rather than having the model rewrite it is the same argument applied to
+the checkpoint. The reviewer approves finding text at checkpoint 2 under DEC-023, editing it where
+needed. If the report regenerates that text, the reviewer approved one thing and the report says
+another, and the guarantee that only approved content appears becomes unverifiable in the exact
+place it is most load-bearing. Rendering also makes the empty case free: a table with no rows is a
+defined state, while prose about nothing is a prompt for invention.
+
+The template being a specification rather than an engine template follows the same reasoning as
+DEC-032. A templating library is a dependency, a syntax, and a second place for logic to hide, in
+exchange for string substitution that Python does natively. What the artifact is actually needed for
+is to make the report's shape editable and reviewable in one file, and comparable against what the
+renderer emits — which a test can do against a specification just as well as against a live
+template.
+
+The fixed section numbering exists for the same reason the anchors do. This is a document a reviewer
+reads, quotes in a ticket, and links a colleague to. If section numbers shift because one assessment
+had no findings, then "section 12" means different things in two reports of the same system, and
+every link into the previous one silently points somewhere else.
+
+Alternatives Considered:
+
+- Have the agent return one Markdown document, with the renderer only writing files and the manifest
+- Keep section 19's four keys as the whole prose surface and drop Risk summary, folding it into the
+  executive summary
+- Let the agent write per-object prose — finding descriptions, threat summaries — as section 19
+  originally specified
+- Render the limitations section deterministically from structured facts, with no model involved
+- Number sections dynamically, skipping empty ones
+- Rely on heading-derived Markdown anchors rather than explicit anchor elements
+- Adopt Jinja2 and make `report-v1.md` a real engine template
+- Emit `findings.json` beside the report, bringing section 37's export forward into the MVP
+- Name the report `report.md` and overwrite it on each run
+
+Tradeoffs:
+
+- **Twelve rendered sections is a lot of rendering code**, and every one of them is a place where a
+  table can be built wrong. The failure is at least visible: a broken table looks broken, where a
+  fabricated sentence does not.
+- The report will read as two registers — synthesized prose in four places, structured output
+  everywhere else. That is honest about what wrote what, and it is not what a human-written
+  assessment reads like.
+- `required_limitations` is a mechanism that exists for one section. It is a real cost: the
+  assembler has to derive the list, the schema has to carry the identifiers, and the validator has to
+  check them, all to protect one section from omission.
+- Fixed section numbering means a report about a system with no data flows still contains a section
+  saying so. Some readers will read that as padding.
+- Naming the report per run means an assessment with several runs accumulates several reports in
+  `outputs/`, and only `final_report_path` says which one is current.
+- The manifest duplicates counts that can be derived from the assessment store. If a reviewer edits
+  an approved finding after the report is rendered, the manifest is stale and nothing detects it.
+- A sixteen-section report is long for a system with three findings. Nothing in this decision
+  shortens it, and the MVP has no reduced or summary variant.
+- Explicit anchor elements are inline HTML in a Markdown document. Renderers that strip HTML lose
+  every anchor, and the report degrades to unlinkable.
+
+Open Questions:
+
+- Does the evidence appendix quote every cited `EvidenceReference` in full, or excerpt long ones?
+  DEC-015 forbids modifying `quoted_text`, so excerpting would have to render a truncation rather
+  than a shortened quote.
+- Should the manifest carry the report's section-by-section ownership, so a reader can tell which
+  passages a model wrote without consulting the template?
+- Is `risk_summary` distinguishable from `executive_summary` in practice, or will the two converge
+  and one of them stop earning its section?
+- When a reviewer edits a finding after rendering, is the report re-rendered under a new run, or
+  amended in place with the manifest updated?
