@@ -1049,7 +1049,7 @@ Data from one assessment must not contaminate another assessment.
 
 Model-generated content is untrusted until validated and reviewed.
 
-Detailed risks and mitigations are maintained in threat model.md.
+Detailed risks and mitigations are maintained in [threat-model.md](threat-model.md), which covers each boundary above and names where every mitigation is enforced. The browser-to-application boundary is not present in the MVP: DEC-032 makes the interface a command line, so there is no listening port.
 
 ## 13. Deployment Model
 

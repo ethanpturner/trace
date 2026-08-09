@@ -438,8 +438,11 @@ version 0.1.
 | [Data Model](docs/architecture/data-model.md) | Domain objects and the lineage chain |
 | [Evaluation Plan](docs/architecture/evaluation-plan.md) | Benchmarks, baseline comparison, metrics |
 | [Decision Log](docs/architecture/decision-log.md) | The accepted and proposed decisions |
+| [Threat Model](docs/architecture/threat-model.md) | Trace's own security boundaries, and where each mitigation is enforced |
 
-A threat model is listed among the Stage 0 deliverables and has not yet been written.
+The threat model analyses Trace itself rather than any system it reviews. Every mitigation names
+the component that enforces it or is marked unimplemented, because a threat model listing controls
+without naming their enforcement point commits the failure this project exists to criticize.
 
 ## License
 

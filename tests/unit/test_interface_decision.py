@@ -104,6 +104,20 @@ def test_the_planned_command_surface_is_stated_the_same_way_twice() -> None:
         assert command in readme, f"README.md does not list {command!r}"
 
 
+def test_the_threat_model_records_that_the_boundary_is_absent() -> None:
+    """DEC-032 removes the browser-to-application boundary rather than mitigating it.
+
+    Asserted here rather than in a threat-model test file because the fact belongs to this
+    decision: if a Stage 5 view ships, this test fails and the threat model has to be revisited,
+    which is exactly the review trigger it states.
+    """
+    threat_model = (PROJECT_ROOT / "docs" / "architecture" / "threat-model.md").read_text(
+        encoding="utf-8"
+    )
+    assert "This boundary does not exist in the MVP" in threat_model
+    assert "DEC-032" in threat_model
+
+
 def test_no_web_framework_is_declared_either() -> None:
     """Stage 5's read-only view is not built, and nothing should imply it is."""
     web = {"fastapi", "flask", "django", "starlette", "uvicorn"}
