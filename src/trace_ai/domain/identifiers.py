@@ -41,6 +41,7 @@ from pydantic import AfterValidator
 
 __all__ = [
     "PREFIXES",
+    "PREFIX_BY_TERM",
     "ActorId",
     "AssessmentId",
     "AssetId",
@@ -107,6 +108,22 @@ PREFIXES: dict[str, str] = {
     "eval": "EvaluationResult",
 }
 
+
+def _term(object_type: str) -> str:
+    """`ContextClaim` -> `context_claim`: the object type as a vocabulary term.
+
+    Several objects name the type of another object in a free-text field -- `ContextClaim.
+    subject_type`, `Question.related_object_type`, `ReviewerDecision.subject_type` -- and every one
+    of them has to agree with the accompanying identifier about what kind of thing is being talked
+    about. One conversion, so the three cannot disagree about how `ContextClaim` is spelled.
+    """
+    return re.sub(r"(?<!^)(?=[A-Z])", "_", object_type).casefold()
+
+
+# Vocabulary term to prefix: `component` -> `cmp`, `context_claim` -> `ctx`. Derived from the
+# registry so a prefix added to section 2.1 is covered without a second list to maintain.
+PREFIX_BY_TERM: dict[str, str] = {_term(name): prefix for prefix, name in PREFIXES.items()}
+
 # DEC-018's zero-padding. Three digits, widening rather than wrapping past 999.
 NUMBER_WIDTH = 3
 
@@ -136,6 +153,15 @@ class ParsedIdentifier:
     def object_type(self) -> str:
         """The domain object this identifier names, per section 2.1."""
         return PREFIXES[self.prefix]
+
+    @property
+    def object_term(self) -> str:
+        """The same object type as a vocabulary term: `context_claim` rather than `ContextClaim`.
+
+        What a `subject_type` or `related_object_type` field holds, so a coherence check compares
+        one spelling rather than two.
+        """
+        return _term(self.object_type)
 
 
 def _registry_hint(prefix: str) -> str:

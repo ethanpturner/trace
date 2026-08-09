@@ -64,6 +64,7 @@ from trace_ai.domain.enums import (
 from trace_ai.domain.evidence import EvidenceReference
 from trace_ai.domain.execution import ExecutionRecord, WorkflowRun
 from trace_ai.domain.question import Question
+from trace_ai.domain.reviewer_decision import ReviewerDecision
 from trace_ai.domain.source_document import SourceDocument
 from trace_ai.domain.source_observation import SourceObservation
 from trace_ai.domain.system_context import SystemContext
@@ -227,7 +228,7 @@ REGISTRY: dict[str, Registration] = {
     "22": Registration("Question", Status.IMPLEMENTED, Question),
     "23": Registration("DocumentationGap", Status.PLANNED),
     "24": Registration("Critique", Status.DEFERRED),
-    "25": Registration("ReviewerDecision", Status.PLANNED),
+    "25": Registration("ReviewerDecision", Status.IMPLEMENTED, ReviewerDecision),
     "26": Registration("WorkflowRun", Status.IMPLEMENTED, WorkflowRun),
     "27": Registration("ExecutionRecord", Status.IMPLEMENTED, ExecutionRecord),
     "28": Registration("EvaluationResult", Status.DEFERRED),

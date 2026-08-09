@@ -139,13 +139,11 @@ class Question(DomainModel):
             return self
 
         parsed = parse_id(self.related_object_id)
-        if self.related_object_type is not None:
-            expected = parsed.object_type.casefold()
-            if self.related_object_type != expected:
-                raise ValueError(
-                    f"related_object_type is {self.related_object_type!r} but "
-                    f"related_object_id {self.related_object_id!r} names {parsed.object_type}"
-                )
+        if self.related_object_type is not None and self.related_object_type != parsed.object_term:
+            raise ValueError(
+                f"related_object_type is {self.related_object_type!r} but "
+                f"related_object_id {self.related_object_id!r} names {parsed.object_type}"
+            )
         return self
 
 
