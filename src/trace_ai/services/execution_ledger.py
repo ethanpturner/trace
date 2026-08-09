@@ -20,6 +20,7 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from dataclasses import dataclass, field
+from decimal import Decimal
 from typing import TYPE_CHECKING
 
 from trace_ai.domain.base import now
@@ -35,6 +36,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
     from datetime import datetime
 
+    from trace_ai.infrastructure.model.seam import ModelUsage
     from trace_ai.services.assessment import AssessmentHandle
 
 __all__ = ["MAXIMUM_ERROR_MESSAGE", "Execution", "ExecutionLedger", "start_run"]
@@ -54,12 +56,31 @@ class Execution:
     output_object_ids: list[str] = field(default_factory=list)
     metadata: dict[str, object] = field(default_factory=dict)
 
+    prompt_version: str | None = None
+    model_name: str | None = None
+    input_tokens: int = 0
+    output_tokens: int = 0
+    estimated_cost: Decimal = field(default_factory=lambda: Decimal(0))
+
     def produced(self, *object_ids: str) -> None:
         """Record objects this execution created or modified."""
         self.output_object_ids.extend(object_ids)
 
     def consumed(self, *object_ids: str) -> None:
         self.input_object_ids.extend(object_ids)
+
+    def record_usage(self, usage: ModelUsage) -> None:
+        """Add one model call's tokens and cost to this execution.
+
+        Accumulated rather than assigned: a node that makes two calls in one execution has one
+        record, and section 27's token fields are that record's totals. The model name comes from
+        the usage so it is the model that actually answered rather than the one that was asked
+        for -- a provider that served a fallback would otherwise be invisible.
+        """
+        self.input_tokens += usage.input_tokens
+        self.output_tokens += usage.output_tokens
+        self.estimated_cost += usage.estimated_cost
+        self.model_name = usage.model
 
 
 def safe_message(error: BaseException) -> str:
@@ -178,6 +199,11 @@ class ExecutionLedger:
                 error_type=error_type,
                 error_message=error_message,
                 duration_ms=max(int((completed - execution.started_at).total_seconds() * 1000), 0),
+                prompt_version=execution.prompt_version,
+                model_name=execution.model_name,
+                input_tokens=execution.input_tokens or None,
+                output_tokens=execution.output_tokens or None,
+                estimated_cost=execution.estimated_cost or None,
                 metadata=dict(execution.metadata),
             )
             repository.save(record)
@@ -192,18 +218,47 @@ class ExecutionLedger:
         ]
 
     def complete(self, *, error_summary: str | None = None) -> WorkflowRun:
-        """Close the run. `failed` when a summary is given, `completed` otherwise."""
+        """Close the run. `failed` when a summary is given, `completed` otherwise.
+
+        The section 26 counters are computed from the records rather than incremented as the run
+        goes, so they are a measurement of what was written rather than a parallel tally that can
+        drift from it.
+        """
         repository = self.handle.objects
+        records = self.records()
+        input_tokens = sum(record.input_tokens or 0 for record in records)
+        output_tokens = sum(record.output_tokens or 0 for record in records)
+        cost = sum((record.estimated_cost or Decimal(0) for record in records), Decimal(0))
         updated = WorkflowRun.model_validate(
             self.run.model_dump()
             | {
                 "status": RunStatus.FAILED if error_summary else RunStatus.COMPLETED,
                 "completed_at": now(),
                 "error_summary": error_summary,
+                "current_node": None,
                 "total_model_calls": sum(
-                    1 for record in self.records() if record.execution_type is ExecutionType.MODEL
+                    1 for record in records if record.execution_type is ExecutionType.MODEL
                 ),
+                "total_input_tokens": input_tokens or None,
+                "total_output_tokens": output_tokens or None,
+                "estimated_cost": cost or None,
             }
+        )
+        with repository.transaction():
+            repository.save(updated)
+        self.run = updated
+        return updated
+
+    def pause(self, *, current_node: str) -> WorkflowRun:
+        """Mark the run paused at `current_node` (DEC-017).
+
+        A pause is not a completion: `completed_at` stays unset, and the counters keep accumulating
+        when the run resumes. What makes the pause self-describing is this field plus the state's
+        `pending_human_review` block.
+        """
+        repository = self.handle.objects
+        updated = WorkflowRun.model_validate(
+            self.run.model_dump() | {"status": RunStatus.PAUSED, "current_node": current_node}
         )
         with repository.transaction():
             repository.save(updated)
