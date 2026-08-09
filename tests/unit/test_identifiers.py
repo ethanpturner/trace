@@ -26,6 +26,7 @@ from pydantic import ValidationError
 from trace_ai.config import PROJECT_ROOT
 from trace_ai.domain.base import DomainModel
 from trace_ai.domain.identifiers import (
+    PREFIX_BY_TERM,
     PREFIXES,
     AssessmentId,
     FindingId,
@@ -322,3 +323,18 @@ def test_a_typed_field_is_still_a_string() -> None:
     assert isinstance(sample.id, str)
     assert sample.model_dump() == {"id": "fnd-003", "assessment_id": "asm-001"}
     assert ThreatId is not FindingId
+
+
+def test_an_object_type_has_one_vocabulary_spelling() -> None:
+    """Three objects name another object's type in a free-text field — `ContextClaim.subject_type`,
+    `Question.related_object_type`, `ReviewerDecision.subject_type` — and each has to agree with an
+    accompanying identifier about what kind of thing is meant. One conversion, so they cannot
+    disagree about how `ContextClaim` is spelled."""
+    assert parse_id("ctx-001").object_term == "context_claim"
+    assert parse_id("cmp-001").object_term == "component"
+    assert parse_id("src-001").object_term == "source_document"
+
+
+def test_every_prefix_is_reachable_by_its_term() -> None:
+    assert set(PREFIX_BY_TERM.values()) == set(PREFIXES)
+    assert PREFIX_BY_TERM["evidence_reference"] == "evd"

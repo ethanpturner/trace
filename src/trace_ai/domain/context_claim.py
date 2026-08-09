@@ -42,7 +42,7 @@ from pydantic import Field, JsonValue, model_validator
 from trace_ai.domain.base import DomainModel
 from trace_ai.domain.enums import ConfidenceLevel, SourceOrigin
 from trace_ai.domain.identifiers import (
-    PREFIXES,
+    PREFIX_BY_TERM,
     AssessmentId,
     ContextClaimId,
     EvidenceReferenceId,
@@ -96,12 +96,6 @@ _REQUIRES_RATIONALE: Final = frozenset({ClaimStatus.INFERRED, ClaimStatus.ASSUME
 # The DEC-009 statuses. Nothing may require evidence of these, and the test that pins it is the
 # reason this set is named rather than written as a negation of the one above.
 _NEEDS_NO_EVIDENCE: Final = frozenset({ClaimStatus.ASSUMED, ClaimStatus.UNKNOWN})
-
-# Object name as a subject would spell it, mapped to the prefix its identifier carries. Built from
-# the registry so a prefix added to section 2.1 is covered without a second list to maintain.
-_SUBJECT_PREFIXES: Final[dict[str, str]] = {
-    name.casefold(): prefix for prefix, name in PREFIXES.items()
-}
 
 
 class ContextClaim(DomainModel):
@@ -184,7 +178,7 @@ class ContextClaim(DomainModel):
             return self
 
         parsed = parse_id(self.subject_id)
-        expected = _SUBJECT_PREFIXES.get(self.subject_type)
+        expected = PREFIX_BY_TERM.get(self.subject_type)
         if expected is not None and parsed.prefix != expected:
             raise ValueError(
                 f"subject_type is {self.subject_type!r} but subject_id {self.subject_id!r} names "
