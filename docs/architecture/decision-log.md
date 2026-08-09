@@ -1035,3 +1035,77 @@ Open Questions:
 - When a source document's hash no longer matches, are its evidence references invalidated, re-anchored, or left with their own hashes still passing?
 - Should the catalog hash cover comments, given that the catalog carries authored prose the parser discards?
 - Does anything need to verify a hash on a schedule, or only on read?
+
+## DEC-020: Persist generated objects as JSON payloads in SQLite, keyed by identity and routing columns
+
+Date: 2026-08-09
+
+Status: Accepted
+
+Decision:
+
+**Three stores, split on whether an artifact is authored or generated**, not on whether it is large or small.
+
+**Version-controlled files** hold what a person writes and a reviewer reads in a diff: the requirements catalog, prompt files, and benchmark expected outputs. These are inputs to an assessment, edited in pull requests, and their history belongs in git.
+
+**SQLite** holds everything an assessment generates: assessments, context objects, threats, controls, mappings, findings, questions, documentation gaps, reviewer decisions, workflow runs, execution records, and evaluation results.
+
+**The local filesystem under `data/`** holds generated files too large or too binary for a row: original documents, normalized artifacts, reports, debug artifacts, and traces, in the per-assessment layout of `current-architecture.md` section 5.16, with references and content hashes in the database. `data/` is not version-controlled.
+
+That answers `data-model.md` open question 13. The axis is authorship, not size: a requirement is a file because a person wrote it and a reviewer reviews it, and a threat is a row because a run produced it.
+
+**Objects are stored as JSON payloads with identity and routing lifted into columns.** One table holds every generated object type, keyed by `(assessment_id, id)`, with `object_type`, `status`, and `created_at` as columns and the validated object serialized into a payload column. Pydantic is the only schema; SQLite stores no field definitions.
+
+Adding, removing, or retyping a field is therefore a Pydantic change and not a database migration. That matters because the schema is still moving: DEC-012 removed two fields, DEC-015 constrained three, DEC-017 removed one, DEC-018 rewrote the identifier scheme, and DEC-019 redefined four field descriptions — five schema-affecting decisions in two days, with `data-model.md` section 39 still carrying open questions that will produce more.
+
+**Referential integrity lives in application code**, which is where the corpus already put it. The Context, Threat, and Mapping validation nodes each confirm that referenced objects exist; a foreign-key constraint would duplicate that check in a second place and in a second vocabulary, and the two would disagree the first time a validation rule changed.
+
+**Identifier counters get their own table**, keyed by `(assessment_id, prefix)`, incremented in the same transaction as the insert that consumes the number. DEC-018 requires assignment at persistence, so the counter is a store concern.
+
+**A repository is scoped to one assessment.** Every read is qualified by `assessment_id`, and there is no interface for a cross-assessment query outside the evaluation harness. The assessment-data boundary in `current-architecture.md` section 12 is thereby structural rather than a rule each query must remember.
+
+**Schema versioning refuses rather than migrates.** Every assessment records `data_model_version`. Loading one written by an incompatible version fails with a message naming both versions; there is no migration machinery. That answers open question 17 for early development.
+
+Re-running is cheaper than migrating, and now measurably so: `scripts/estimate_cost.py` puts a ForgeFlow assessment at $2.25 to $5.97. Regenerating an assessment costs a few dollars and no engineering time; writing a migration for a schema still under active decision costs hours and produces code that will itself need maintaining. The trigger to add migrations is the point at which an assessment becomes expensive or irreplaceable — real rather than fictional source material, or a benchmark run whose provenance matters.
+
+**Evaluation results and the longitudinal record are additionally written as version-controlled artifacts.** `evaluation-plan.md` section 17 requires every release to record its evaluation summary and known regressions, and section 16 wants metrics compared across versions. If assessments become unloadable after a schema change, a database-only evaluation history would break exactly when the comparison is most interesting. Writing the summary to a file keeps the history readable independent of whether the assessments behind it still load.
+
+Why:
+
+The corpus had already made most of this decision. Section 35 lists what goes in SQLite and what goes on the filesystem, and section 5.15 says the same. What was open was the mapping between Pydantic objects and rows, and the two questions section 39 records.
+
+The mapping question turns on one observation: **the schema is the least stable thing in the project right now.** Five decisions in two days changed it, and the ones still open — severity, contradictions, reviewer edits, confidence — will change it further. An ORM that mirrors the object model in table definitions converts each of those into a migration, and migrations written against a model that is still being decided are work that is thrown away.
+
+A JSON payload keyed by identity and routing columns costs almost nothing to change and serves every query the corpus actually asks for: by identifier, by assessment, by type, by status, and the identifier-following walks that section 32's lineage chain requires. Nothing in the MVP needs to query inside an object.
+
+The corpus also already declined the main argument for a relational schema. Referential integrity is checked by validation nodes in application code, deliberately, because the checks are semantic — a mapping must reference a threat *in the same assessment*, a documented claim must carry evidence — and a foreign key expresses only the first half. Adding constraints would not replace those nodes; it would duplicate part of them.
+
+DEC-004 removes the other argument. A local single-user application, whose process exits at every checkpoint under DEC-017, has no concurrency for a relational engine to arbitrate.
+
+Refusing to load rather than migrating is the same trade in a different place, and the cost estimate is what makes it defensible rather than merely convenient. Before that estimate this would have been an assertion that regeneration is cheap; now it is a figure.
+
+Alternatives Considered:
+
+- SQLAlchemy Core with a hand-written relational schema and Pydantic as a separate domain layer
+- SQLModel, fusing the domain object and the table definition
+- Filesystem only, one JSON or YAML document per assessment
+- One SQLite database per assessment rather than one database with `assessment_id` on every row
+- Relational tables for the few objects with stable shapes, JSON payloads for the rest
+- Alembic migrations from the first schema
+
+Tradeoffs:
+
+- **The database will accept anything the application writes.** With no column types and no constraints, a bug that writes a malformed object produces a row that loads back as a validation error rather than failing at write time. Pydantic validates on the way in, so this depends entirely on nothing bypassing the repository.
+- **A new query axis needs a new indexed column**, which is a migration after all — a cheap one, but the claim that schema changes are free holds only for changes to object *shape*, not to how objects are searched.
+- Objects of every type share one table, so a corrupt or oversized payload of one type sits alongside every other. Nothing partitions blast radius.
+- **Refusing to load old assessments discards evaluation history at every schema change.** Writing summaries to version-controlled files mitigates this and does not remove it: the underlying assessments are gone, so a result cannot be re-examined, only re-read.
+- One database for all assessments makes the assessment-data boundary a property of the repository rather than of the storage. A query written outside the repository can cross it.
+- JSON payloads are opaque to database tooling. Inspecting state means loading it through the application, which is a real loss when debugging.
+- The decision is shaped by the schema being unstable, and that is temporary. Once `data-model.md`'s open questions close, the reasoning weakens, and this should be revisited rather than assumed.
+
+Open Questions:
+
+- At what point does the schema count as stable enough to revisit this — a closed section 39, a shipped MVP, or the first assessment worth keeping?
+- Should the payload column store the object's `data_model_version` alongside it, so a mixed-version database can report precisely which rows are unreadable?
+- Does the evaluation harness get a cross-assessment read interface, and if so what prevents it being used from the pipeline?
+- Does anything need to detect that `data/` and the database have diverged — an artifact referenced by a row but missing from disk?
