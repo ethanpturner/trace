@@ -241,6 +241,13 @@ Squashing either pull request breaks the chain: the hotfix commit stops being an
   `extra="forbid"`. Do not relax it on a subclass: it is the mechanism by which an agent-proposed
   object carrying an invented field fails validation instead of passing downstream stripped of
   the field and looking valid. Timestamps come from `domain.base.now()`, never `datetime.now()`.
+- **Build an edited object with `model_validate`, never `model_copy`.** Domain objects are frozen,
+  so a DEC-023 reviewer edit constructs a new instance and persists it under the same identifier.
+  `model_copy(update=...)` looks like the API for that and validates nothing: an invalid enum
+  value survives and serializes into the DEC-020 JSON payload, and `extra="forbid"` is bypassed.
+  Use `type(obj).model_validate({**obj.model_dump(), **changes})`. This is the only path on which
+  a human-supplied value enters a domain object, so it is the one that least tolerates skipping
+  the schema. Pinned by `tests/unit/test_domain_base.py`.
 - **CI must never need a provider API key.** The `integration` and `evaluation` markers are
   deselected by default in `addopts` precisely so a bare `pytest` cannot spend money.
 - **Secrets go through `trace_ai.config.Settings`** as `SecretStr`. `.env` is gitignored;

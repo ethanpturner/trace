@@ -46,6 +46,33 @@ class DomainModel(BaseModel):
       model that later opts out of frozen does not silently opt out of validation with it.
     - `str_strip_whitespace=True` normalizes the ragged edges of text extracted from documents,
       where a trailing newline is an artifact of the source format rather than content.
+
+    **Producing an edited object: use `model_validate`, not `model_copy`.**
+
+    DEC-023 makes a reviewer edit a mutation in place -- the object keeps its identity, its
+    fields change, and the delta is recorded on a `ReviewerDecision`. Under a frozen model that
+    means constructing the edited object and persisting it under the same identifier, and
+    `model_copy(update=...)` is the API that looks designed for exactly that. It is the wrong
+    one. `model_copy` performs no validation at all:
+
+        edited = finding.model_copy(update={"severity": "not_a_severity"})
+        edited.model_dump_json()      # {"severity": "not_a_severity"}, UserWarning only
+
+    An invalid enum value survives, and `extra="forbid"` is bypassed as well -- an unknown key
+    lands on the instance, though not in the dump. DEC-020 persists generated objects as JSON
+    payloads, so the invalid value reaches the database. `validate_assignment=True` does not
+    catch it either: under `frozen=True` an assignment raises `frozen_instance` before any
+    validator runs, so that setting is inert here.
+
+    The correct form re-runs the full schema:
+
+        edited = type(finding).model_validate({**finding.model_dump(), **changes})
+
+    This matters more than it looks. The reviewer-edit path is the only one on which a
+    human-supplied value enters a domain object, and it would otherwise be the single path that
+    skips the guarantee the rest of this class exists to provide.
+    `tests/unit/test_domain_base.py` pins both behaviours so the difference is discoverable
+    before someone reaches for the obvious API.
     """
 
     model_config = ConfigDict(
