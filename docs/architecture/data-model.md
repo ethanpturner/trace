@@ -351,7 +351,14 @@ critical
 
 unassigned
 
-The MVP should avoid implementing an overly complex severity algorithm before the core workflow is validated.
+**`unassigned` is the value a finding is created with.** No pipeline node assigns severity:
+the reviewer assigns it at the finding checkpoint (DEC-030), because severity depends on
+business context the source documents do not carry. It is the one required `Finding` field
+that cannot be answered from the material under review.
+
+**`unassigned` may not survive approval.** See the approval rules in section 21.
+
+The MVP should avoid implementing an overly complex severity algorithm before the core workflow is validated. DEC-030 declined a deterministic heuristic on those grounds and on data: the fields a rule would use — `internet_exposed`, `business_criticality`, the impact fields, `data_classification` — are all optional and mostly free text with no controlled vocabulary.
 
 ## 4.6 ReviewDisposition
 
@@ -370,6 +377,12 @@ request_more_analysis
 convert_to_question
 
 convert_to_documentation_gap
+
+There is deliberately no `change_severity` value. A severity change is an `edit`, carrying
+`prior_value` and `updated_value` on `ReviewerDecision` per DEC-023. `current-architecture.md`
+section 5.12 lists changing severity among the reviewer's actions; that list names actions a
+reviewer takes and this one names dispositions the system records, and the two do not
+correspond one to one (DEC-030).
 
 ## 4.7 ValidationStatus
 
@@ -1405,6 +1418,15 @@ An approved finding should generally require:
 - A clear distinction from a documentation gap
 - Actionable remediation or acceptance criteria
 
+An approved finding **must** have:
+
+- A severity other than `unassigned` (DEC-030)
+
+This one is a hard rule rather than a general expectation. Severity is assigned only by the
+reviewer, so without it the field would stay `unassigned` on every finding and the report
+would have no ordering. It is what makes reviewer-assigned severity work instead of
+degrading into nobody assigning severity.
+
 ## Example
 
 id: fnd-003
@@ -2217,7 +2239,7 @@ These can be added later without expanding the initial MVP unnecessarily.
 11. How much model-generation metadata belongs on each object?
 12. Should workflow state store objects directly or only identifiers?
 13. ~~Which objects belong in SQLite versus version-controlled YAML or JSON?~~ Resolved by DEC-020: the split is by authorship. Authored artifacts are version-controlled files; generated objects are rows; generated files live under `data/`.
-14. How should severity be calculated?
+14. ~~How should severity be calculated?~~ Resolved by DEC-030: it is not calculated. The reviewer assigns it at the finding checkpoint, findings are created `unassigned`, and an approval carrying `unassigned` is rejected. No agent and no deterministic node proposes a value.
 15. ~~What is the minimum evidence required to approve a finding?~~ Resolved by DEC-013.
 16. How should rejected threats and findings be retained for evaluation?
 17. ~~How should data-model migrations be handled during early development?~~ Resolved by DEC-020: they are not. An incompatible `data_model_version` refuses to load, and the assessment is re-run — which the cost estimate makes cheaper than writing a migration against a schema still under decision.

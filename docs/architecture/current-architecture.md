@@ -558,12 +558,15 @@ Responsibilities include:
 - Link related threats
 - Separate risks from documentation gaps
 - Normalize titles
-- Assign preliminary severity
 - Preserve evidence references
 - Preserve criticism history
 - Identify unresolved questions
 
 The output remains provisional until human review.
+
+Consolidation does **not** assign severity. Findings leave this node with
+`severity: unassigned`, and the reviewer assigns it at the finding checkpoint (DEC-030).
+Neither this node nor an agent has the business context severity depends on.
 
 ## 5.12 Human Finding Review
 
@@ -572,11 +575,21 @@ The reviewer can:
 - Approve a finding
 - Reject a finding
 - Edit a finding
-- Change severity
+- Assign or change severity
 - Request additional analysis
 - Convert a finding to a question
 - Convert a finding to a documentation gap
 - Add reviewer notes
+
+**Assigning severity is not optional.** Findings arrive carrying `unassigned`, and an
+approval whose finding still carries it is rejected by validation (DEC-030). The reviewer
+holds the business context that severity depends on; no earlier node does.
+
+This list names actions a reviewer takes. `ReviewDisposition` in `data-model.md` section 4.6
+names dispositions the system records, and **the two lists do not correspond one to one**. A
+severity change is recorded as `edit` with `prior_value` and `updated_value` on
+`ReviewerDecision`, per DEC-023. There is no `change_severity` disposition and adding one
+would be a second way to express the same edit.
 
 Trace should record these actions for evaluation and auditability.
 
