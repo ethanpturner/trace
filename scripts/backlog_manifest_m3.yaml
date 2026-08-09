@@ -1,0 +1,169 @@
+issues:
+  - seed: m3-requirement-matcher-01
+    title: "Add the Requirement model and a loader for the requirements catalog"
+    milestone: "M3 Reasoning"
+    labels: ["comp:requirement-matcher", "type:feature"]
+    body_file: backlog_bodies/m3-requirement-matcher-01.md
+    size: M
+    blocked_by: ["m0-dx-02", "m0-dx-04", "m0-dx-20", "m1-foundations-02"]
+
+  - seed: m3-threat-engine-01
+    title: "Add the Threat model and threat-proposal schema"
+    milestone: "M3 Reasoning"
+    labels: ["comp:threat-engine", "type:feature", "needs-decision"]
+    body_file: backlog_bodies/m3-threat-engine-01.md
+    size: M
+    blocked_by:
+      ["m0-dx-02", "m0-dx-04", "m0-dx-19", "m1-foundations-02",
+       "m2-context-objects-01", "m1-evidence-01"]
+
+  - seed: m3-threat-engine-02
+    title: "Implement the Threat Analysis agent and its prompt artifacts"
+    milestone: "M3 Reasoning"
+    labels: ["comp:threat-engine", "type:feature", "needs-decision"]
+    body_file: backlog_bodies/m3-threat-engine-02.md
+    size: L
+    blocked_by:
+      ["m3-threat-engine-01", "m0-dx-05", "m0-dx-13", "m2-runtime-01",
+       "m1-runtime-02", "m2-context-review-01"]
+
+  - seed: m3-threat-engine-03
+    title: "Implement the Threat Validation node with duplicate handling"
+    milestone: "M3 Reasoning"
+    labels: ["comp:threat-engine", "type:feature", "needs-decision"]
+    body_file: backlog_bodies/m3-threat-engine-03.md
+    size: M
+    blocked_by: ["m3-threat-engine-02", "m0-dx-06"]
+
+  - seed: m3-requirement-matcher-02
+    title: "Implement deterministic candidate requirement selection"
+    milestone: "M3 Reasoning"
+    labels: ["comp:requirement-matcher", "type:feature"]
+    body_file: backlog_bodies/m3-requirement-matcher-02.md
+    size: M
+    blocked_by: ["m3-requirement-matcher-01", "m3-threat-engine-01", "m0-dx-10"]
+
+  - seed: m3-control-mapper-01
+    title: "Add the Control and ControlMapping models and define control ownership"
+    milestone: "M3 Reasoning"
+    labels: ["comp:control-mapper", "type:feature", "design-change", "needs-decision"]
+    body_file: backlog_bodies/m3-control-mapper-01.md
+    size: M
+    blocked_by:
+      ["m0-dx-02", "m0-dx-04", "m0-dx-15", "m0-dx-19", "m3-requirement-matcher-01",
+       "m3-threat-engine-01", "m2-context-objects-01", "m1-evidence-01"]
+
+  - seed: m3-control-mapper-02
+    title: "Add the DocumentationGap model and gap-candidate proposal schema"
+    milestone: "M3 Reasoning"
+    labels: ["comp:control-mapper", "type:feature", "design-change"]
+    body_file: backlog_bodies/m3-control-mapper-02.md
+    size: S
+    blocked_by: ["m0-dx-02", "m0-dx-11", "m1-foundations-02"]
+
+  - seed: m3-requirement-matcher-03
+    title: "Assemble the mapping payload from candidate requirements and context"
+    milestone: "M3 Reasoning"
+    labels: ["comp:requirement-matcher", "type:feature"]
+    body_file: backlog_bodies/m3-requirement-matcher-03.md
+    size: M
+    blocked_by:
+      ["m3-requirement-matcher-02", "m3-control-mapper-01", "m0-dx-03",
+       "m2-context-review-01", "m1-evidence-01"]
+
+  - seed: m3-evaluation-01
+    title: "Author the M3 benchmark truth files for ForgeFlow"
+    milestone: "M3 Reasoning"
+    labels: ["comp:evaluation", "type:test"]
+    body_file: backlog_bodies/m3-evaluation-01.md
+    size: M
+    blocked_by:
+      ["m0-dx-18", "m0-dx-08", "m3-requirement-matcher-01", "m3-threat-engine-01",
+       "m3-control-mapper-01"]
+
+  - seed: m3-control-mapper-03
+    title: "Implement the Requirement and Control Mapping agent and its prompt"
+    milestone: "M3 Reasoning"
+    labels: ["comp:control-mapper", "type:feature"]
+    body_file: backlog_bodies/m3-control-mapper-03.md
+    size: L
+    blocked_by:
+      ["m3-requirement-matcher-03", "m3-control-mapper-01", "m3-control-mapper-02",
+       "m3-threat-engine-03", "m3-evaluation-01", "m0-dx-05", "m0-dx-08", "m0-dx-09",
+       "m0-dx-10", "m0-dx-15", "m2-runtime-01", "m1-runtime-02"]
+
+  - seed: m3-control-mapper-04
+    title: "Implement the Mapping Validation node"
+    milestone: "M3 Reasoning"
+    labels: ["comp:control-mapper", "type:feature"]
+    body_file: backlog_bodies/m3-control-mapper-04.md
+    size: M
+    blocked_by:
+      ["m3-control-mapper-03", "m0-dx-06", "m0-dx-08", "m0-dx-09", "m1-foundations-07"]
+
+  - seed: m3-evidence-validation-01
+    title: "Add the EvidenceAssessment model and proposal schema"
+    milestone: "M3 Reasoning"
+    labels: ["comp:evidence-validation", "type:feature", "design-change"]
+    body_file: backlog_bodies/m3-evidence-validation-01.md
+    size: M
+    blocked_by:
+      ["m0-dx-02", "m0-dx-04", "m0-dx-14", "m0-dx-19", "m1-evidence-01",
+       "m3-control-mapper-01"]
+
+  - seed: m3-evidence-validation-02
+    title: "Implement the Evidence Validation agent and its prompt"
+    milestone: "M3 Reasoning"
+    labels: ["comp:evidence-validation", "type:feature"]
+    body_file: backlog_bodies/m3-evidence-validation-02.md
+    size: L
+    blocked_by:
+      ["m3-evidence-validation-01", "m3-control-mapper-04", "m3-threat-engine-02",
+       "m0-dx-05", "m0-dx-14", "m2-runtime-01", "m1-runtime-02"]
+
+  - seed: m3-evidence-validation-03
+    title: "Validate and persist evidence assessments deterministically"
+    milestone: "M3 Reasoning"
+    labels: ["comp:evidence-validation", "type:feature", "needs-decision"]
+    body_file: backlog_bodies/m3-evidence-validation-03.md
+    size: M
+    blocked_by:
+      ["m3-evidence-validation-02", "m0-dx-06", "m0-dx-14", "m1-foundations-07"]
+
+  - seed: m3-critic-01
+    title: "Add the Critique model and its vocabularies"
+    milestone: "M3 Reasoning"
+    labels: ["comp:critic", "type:feature", "design-change"]
+    body_file: backlog_bodies/m3-critic-01.md
+    size: S
+    blocked_by:
+      ["m0-dx-02", "m0-dx-04", "m0-dx-08", "m0-dx-11", "m0-dx-19",
+       "m3-evidence-validation-01"]
+
+  - seed: m3-critic-02
+    title: "Implement the Critical Review agent and its prompt"
+    milestone: "M3 Reasoning"
+    labels: ["comp:critic", "type:feature"]
+    body_file: backlog_bodies/m3-critic-02.md
+    size: L
+    blocked_by:
+      ["m3-critic-01", "m3-evidence-validation-03", "m3-threat-engine-02", "m0-dx-05",
+       "m0-dx-08", "m0-dx-15", "m2-runtime-01", "m1-runtime-02"]
+
+  - seed: m3-critic-03
+    title: "Implement critique validation and recommendation routing"
+    milestone: "M3 Reasoning"
+    labels: ["comp:critic", "type:feature"]
+    body_file: backlog_bodies/m3-critic-03.md
+    size: M
+    blocked_by: ["m3-critic-02", "m0-dx-06", "m0-dx-11", "m1-foundations-07"]
+
+  - seed: m3-evaluation-02
+    title: "Add regression cases for the known ForgeFlow false positives"
+    milestone: "M3 Reasoning"
+    labels: ["comp:evaluation", "type:test"]
+    body_file: backlog_bodies/m3-evaluation-02.md
+    size: M
+    blocked_by:
+      ["m3-evaluation-01", "m3-control-mapper-04", "m3-critic-03", "m0-dx-09",
+       "m0-dx-18"]

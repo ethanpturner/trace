@@ -1,0 +1,195 @@
+# M0 — Decisions
+#
+# Open design decisions that implementation is blocked on, plus two defects that need no
+# decision. Each decision issue closes with an entry in docs/architecture/decision-log.md.
+#
+# These are consolidated: several were surfaced independently by more than one research
+# pass over the corpus. DX-01 in particular was reached from four different directions.
+#
+# The recommended first slice is DX-01, DX-02, DX-03, DX-05, DX-06, DX-08, DX-10, plus
+# the fixture-leak defect. Those unblock the entire M1 and M2 critical path.
+
+issues:
+  # ---- defects: no decision required, only work ----
+
+  - seed: m0-fixture-leak
+    title: "Remove the benchmark contract from the ForgeFlow input fixture"
+    milestone: "M0 Decisions"
+    labels: ["comp:evaluation", "type:chore", "design-change"]
+    body_file: backlog_bodies/m0-fixture-leak.md
+    size: S
+    blocked_by: []
+
+  - seed: m0-threat-model
+    title: "Write the Trace threat model"
+    milestone: "M0 Decisions"
+    labels: ["type:docs"]
+    body_file: backlog_bodies/m0-threat-model.md
+    size: M
+    blocked_by: []
+
+  # ---- first slice: unblocks the M1 and M2 critical path ----
+
+  - seed: m0-dx-01
+    title: "Decide whether the human checkpoints are configurable"
+    milestone: "M0 Decisions"
+    labels: ["comp:context-review", "type:decision", "needs-decision", "design-change"]
+    body_file: backlog_bodies/m0-dx-01.md
+    size: S
+    blocked_by: []
+
+  - seed: m0-dx-02
+    title: "Decide the object identifier scheme"
+    milestone: "M0 Decisions"
+    labels: ["comp:foundations", "type:decision", "needs-decision"]
+    body_file: backlog_bodies/m0-dx-02.md
+    size: M
+    blocked_by: []
+
+  - seed: m0-dx-03
+    title: "Decide how evidence locations are represented across formats"
+    milestone: "M0 Decisions"
+    labels: ["comp:evidence", "type:decision", "type:spike", "needs-decision"]
+    body_file: backlog_bodies/m0-dx-03.md
+    size: M
+    blocked_by: []
+
+  - seed: m0-dx-04
+    title: "Decide the persistence layer and schema versioning"
+    milestone: "M0 Decisions"
+    labels: ["comp:foundations", "type:decision", "needs-decision"]
+    body_file: backlog_bodies/m0-dx-04.md
+    size: M
+    blocked_by: []
+
+  - seed: m0-dx-05
+    title: "Select the model provider, abstraction seam, and output strategy"
+    milestone: "M0 Decisions"
+    labels: ["comp:runtime", "type:decision", "needs-decision"]
+    body_file: backlog_bodies/m0-dx-05.md
+    size: L
+    blocked_by: []
+
+  - seed: m0-dx-06
+    title: "Decide the workflow orchestrator: accept or reject LangGraph"
+    milestone: "M0 Decisions"
+    labels: ["comp:runtime", "type:decision", "needs-decision", "design-change"]
+    body_file: backlog_bodies/m0-dx-06.md
+    size: M
+    blocked_by: []
+
+  - seed: m0-dx-08
+    title: "Define the evidence threshold separating satisfied, unverified, and unmet"
+    milestone: "M0 Decisions"
+    labels: ["comp:control-mapper", "type:decision", "needs-decision"]
+    body_file: backlog_bodies/m0-dx-08.md
+    size: M
+    blocked_by: []
+
+  - seed: m0-dx-10
+    title: "Decide requirement selection and whether mapping is one agent or two"
+    milestone: "M0 Decisions"
+    labels: ["comp:requirement-matcher", "type:decision", "type:spike", "needs-decision"]
+    body_file: backlog_bodies/m0-dx-10.md
+    size: M
+    blocked_by: []
+
+  # ---- second slice ----
+
+  - seed: m0-dx-07
+    title: "Decide the checkpoint pause and resume mechanism"
+    milestone: "M0 Decisions"
+    labels: ["comp:context-review", "type:decision", "needs-decision"]
+    body_file: backlog_bodies/m0-dx-07.md
+    size: M
+    blocked_by: ["m0-dx-01", "m0-dx-06"]
+
+  - seed: m0-dx-09
+    title: "Decide how common_false_positives is enforced and suppressions recorded"
+    milestone: "M0 Decisions"
+    labels: ["comp:control-mapper", "type:decision", "needs-decision"]
+    body_file: backlog_bodies/m0-dx-09.md
+    size: S
+    blocked_by: ["m0-dx-08"]
+
+  - seed: m0-dx-20
+    title: "Decide what computes and verifies content_hash"
+    milestone: "M0 Decisions"
+    labels: ["comp:foundations", "type:decision", "needs-decision"]
+    body_file: backlog_bodies/m0-dx-20.md
+    size: S
+    blocked_by: ["m0-dx-03"]
+
+  - seed: m0-dx-13
+    title: "Decide how a detected prompt-injection attempt is represented"
+    milestone: "M0 Decisions"
+    labels: ["comp:context-extractor", "type:decision", "needs-decision", "design-change"]
+    body_file: backlog_bodies/m0-dx-13.md
+    size: S
+    blocked_by: []
+
+  - seed: m0-dx-14
+    title: "Decide how context contradictions are represented"
+    milestone: "M0 Decisions"
+    labels: ["comp:context-objects", "type:decision", "needs-decision", "design-change"]
+    body_file: backlog_bodies/m0-dx-14.md
+    size: S
+    blocked_by: []
+
+  - seed: m0-dx-15
+    title: "Decide how inherited-control scope is represented"
+    milestone: "M0 Decisions"
+    labels: ["comp:control-mapper", "type:decision", "type:spike", "needs-decision"]
+    body_file: backlog_bodies/m0-dx-15.md
+    size: S
+    blocked_by: []
+
+  - seed: m0-dx-16
+    title: "Decide how reviewer edits are represented"
+    milestone: "M0 Decisions"
+    labels: ["comp:context-review", "type:decision", "needs-decision"]
+    body_file: backlog_bodies/m0-dx-16.md
+    size: S
+    blocked_by: []
+
+  - seed: m0-dx-17
+    title: "Decide the first interface: CLI or local web application"
+    milestone: "M0 Decisions"
+    labels: ["comp:foundations", "type:decision", "needs-decision"]
+    body_file: backlog_bodies/m0-dx-17.md
+    size: S
+    blocked_by: []
+
+  - seed: m0-dx-19
+    title: "Decide the confidence model"
+    milestone: "M0 Decisions"
+    labels: ["comp:context-objects", "type:decision", "needs-decision"]
+    body_file: backlog_bodies/m0-dx-19.md
+    size: S
+    blocked_by: []
+
+  # ---- needed before M4, and before any expected-output authoring ----
+
+  - seed: m0-dx-11
+    title: "Decide severity ownership and whether a seventh agent exists"
+    milestone: "M0 Decisions"
+    labels: ["comp:findings", "type:decision", "needs-decision", "design-change"]
+    body_file: backlog_bodies/m0-dx-11.md
+    size: S
+    blocked_by: []
+
+  - seed: m0-dx-12
+    title: "Specify the report template and the generation and rendering split"
+    milestone: "M0 Decisions"
+    labels: ["comp:report", "type:decision", "needs-decision"]
+    body_file: backlog_bodies/m0-dx-12.md
+    size: M
+    blocked_by: []
+
+  - seed: m0-dx-18
+    title: "Reconcile the benchmark layout and the ForgeFlow expected counts"
+    milestone: "M0 Decisions"
+    labels: ["comp:evaluation", "type:decision", "needs-decision"]
+    body_file: backlog_bodies/m0-dx-18.md
+    size: M
+    blocked_by: []
