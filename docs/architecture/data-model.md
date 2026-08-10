@@ -1504,6 +1504,7 @@ A finding is provisional until approved by a reviewer.
 | assumptions | list[string] | No | Assumptions used |
 | limitations | list[string] | No | Analysis limitations |
 | confidence | ConfidenceLevel | Yes | Finding confidence |
+| low_confidence_justification | string | No | Required when `confidence` is `low` (DEC-050) |
 | status | ObjectStatus | Yes | Candidate, approved, rejected |
 | generated_by | string | Yes | Workflow node or reviewer |
 | created_at | datetime | Yes | Creation timestamp |
@@ -1519,7 +1520,7 @@ A provisional finding should not be created unless it has:
 - At least one affected asset or component
 - At least one applicable requirement or stated security expectation
 - A described security impact
-- Evidence or an explicit low-confidence justification
+- Evidence, and an explicit low-confidence justification where confidence is `low`
 - A validation status
 - A confidence classification
 
@@ -1589,9 +1590,9 @@ evidence_ids:
 
 - evd-031
 
-validation_status: requires_confirmation
+validation_status: partially_supported
 
-severity: high
+severity: unassigned
 
 impact: >
 
@@ -1616,6 +1617,13 @@ status: candidate
 generated_by: finding-consolidation-v1
 
 This example remains a candidate because the absence of documented signature validation is not proof that validation is absent.
+
+Two of its values were corrected by DEC-050, which records why. It carried `severity: high` on a
+candidate, and DEC-030 has findings created `unassigned` because the reviewer assigns severity at
+checkpoint 2. It carried `validation_status: requires_confirmation`, which is a status DEC-013's
+outcome table produces no finding from — a finding is reachable only from `supported` or
+`partially_supported`. An example is read as a template, so one carrying values the schema refuses
+is a specification of an object nobody can build.
 
 # 22. Question
 

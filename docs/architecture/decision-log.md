@@ -3280,3 +3280,57 @@ Open Questions:
 - If the Stage 4 gate is passed, does missing-threat proposal come back as a bounded re-invocation, or as a separate deterministic coverage check over components no threat reaches?
 - Should the review group include the questions raised alongside a threat, which section 15 lists among its inputs and which the per-threat chain does not obviously contain?
 - Is `contradictory_analysis` doing too much work as the catch-all, and would the accepted-critique rate show it?
+
+## DEC-050: `Finding` gains a low-confidence justification; two of section 21's worked values were unbuildable
+
+Date: 2026-08-10
+
+Status: Accepted
+
+Decision:
+
+**`Finding` gains `low_confidence_justification`**, required when `confidence` is `low` and refused otherwise. `data-model.md` section 21 records the field.
+
+**It qualifies rather than substitutes.** `evidence_ids` stays required whatever the confidence. Section 21's minimum-validation rules read "Evidence or an explicit low-confidence justification", and the wording is corrected to "Evidence, and an explicit low-confidence justification where confidence is `low`".
+
+**DEC-013's outcome table is implemented once, in `domain/outcomes.py`, and `Finding` consults it.** The set of validation statuses a finding may carry is *derived* from the table rather than restated: `supported` and `partially_supported`, which are the two the table's four finding-producing cells use.
+
+**Where two of DEC-013's rows overlap, `any / not_evaluated` wins.** The pair `unverified` and `not_evaluated` matches both that row and `unverified / any`, and the table does not say which applies. The outcome is no output.
+
+**Section 21's worked example carried two values the schema now refuses**, and both are corrected: `severity: high` on a candidate becomes `unassigned`, and `validation_status: requires_confirmation` becomes `partially_supported`.
+
+Why:
+
+The justification had nowhere to live. DEC-013 describes it in detail — "a written rationale naming what evidence would raise confidence and why the conclusion is worth surfacing before that evidence exists" — and section 21's field table has no column for it. This is the fourth time the same shape has come up, after DEC-044, DEC-046, and DEC-047: the corpus names an output, the field table has no home for it, and the answer is to add the field rather than let the value evaporate. Treating that as the default is now warranted.
+
+**Reading the minimum rule as an either-or would have been the more serious error**, and it is the reading section 21's own wording invites. DEC-013 settles it in one sentence — the justification "does not substitute for the `unmet` evidence rule above. It qualifies a finding that already meets the rule but whose confidence is low" — and the consequence of getting it wrong is precise: an unevidenced finding would be constructible, which is the DEC-009 collapse arriving through a field added to prevent a different problem. Requiring evidence unconditionally is what keeps the structural argument intact, and the structural argument is the one that matters: an `EvidenceReference` quotes real source text and cannot express an absence, so requiring one makes concluding a weakness from silence impossible rather than discouraged.
+
+**Deriving the permitted statuses rather than restating them is the point of putting the table in code.** A hardcoded set on `Finding` would be a second opinion about when a finding is reachable, and DEC-013 already exists because two opinions about that is how the separation stops holding. The derivation also makes the table's own claim testable over its whole cross product rather than over the rows somebody remembered to write down.
+
+**The row precedence is a real ambiguity and not a reading error.** Both rows are in the table, both match, and neither is qualified. The tiebreak is the reason the `not_evaluated` row gives for itself: the mapping is incomplete, not negative. A documentation gap asserts that Trace could not determine whether a control exists; a mapping nobody evaluated has not established that, it has established nothing. Emitting a gap there turns an unfinished run into a reported conclusion, which is a worse failure than emitting nothing, because nothing is visibly nothing.
+
+**The worked example is the same failure the identifier examples had.** An example is read as a template. Section 21's carried `severity: high` on a candidate, which DEC-030 forbids — findings are created `unassigned` because the reviewer assigns severity at checkpoint 2 — and `validation_status: requires_confirmation`, which DEC-013's table produces no finding from at all. Both predate the decisions that govern them. Left there, the document would specify an object nobody can build, and the more likely outcome is that somebody relaxes the schema to make the example pass.
+
+Alternatives Considered:
+
+- Read section 21's minimum rule as an either-or and allow an unevidenced finding with a justification
+- Put the justification in `limitations` or `assumptions` rather than adding a field
+- Hardcode the permitted validation statuses on `Finding` and skip the table module
+- Resolve the overlapping rows the other way, emitting a gap for an unevaluated mapping
+- Leave section 21's example alone and note the divergence in a comment
+- Require `confidence` to be other than `low` on a finding at all
+
+Tradeoffs:
+
+- **A field required by one enum value is easy to forget.** Nothing prompts a caller to write a justification until validation fails, and the failure arrives at construction rather than where the confidence was decided.
+- The reverse rule — a justification on a non-`low` finding is refused — will annoy someone who wants to explain a `medium`-confidence conclusion. `limitations` and `assumptions` are where that goes, and the distinction is not obvious.
+- **`Finding` now imports the outcome table**, so a domain object depends on a module encoding a decision. That is the intent, and it means the table cannot be changed without considering every object that consults it.
+- Deriving `FINDING_VALIDATION_STATUSES` at import time means a change to the table silently changes what `Finding` accepts. That is correct and it is also action at a distance.
+- **Correcting the worked example changes a document readers may have copied from.** Anyone who built a fixture from it has an object the schema now refuses, which is the intended outcome and still a break.
+- The row precedence is recorded here rather than in DEC-013, so a reader of DEC-013's table alone still meets the overlap unresolved.
+
+Open Questions:
+
+- Should DEC-013's table itself be amended to state the precedence, rather than leaving it recorded here?
+- Does `low_confidence_justification` belong on `DocumentationGap` and `Question` too, or is a finding the only object where low confidence needs defending?
+- Is there a case for requiring the justification to name the evidence that would raise confidence in a structured way, rather than as prose nothing can check?

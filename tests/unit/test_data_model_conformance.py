@@ -68,6 +68,7 @@ from trace_ai.domain.enums import (
 from trace_ai.domain.evidence import EvidenceReference
 from trace_ai.domain.evidence_assessment import EvidenceAssessment
 from trace_ai.domain.execution import ExecutionRecord, WorkflowRun
+from trace_ai.domain.finding import Finding
 from trace_ai.domain.identifiers import PREFIXES, parse_id
 from trace_ai.domain.question import Question
 from trace_ai.domain.requirement import Requirement
@@ -242,7 +243,7 @@ REGISTRY: dict[str, Registration] = {
     # Was DEFERRED. Section 40 moved it, and states why there: DEC-022 made it the only home
     # for `EvidenceStrength`, and DEC-013's `unmet` rule reads its `validation_status`.
     "20": Registration("EvidenceAssessment", Status.IMPLEMENTED, EvidenceAssessment),
-    "21": Registration("Finding", Status.PLANNED),
+    "21": Registration("Finding", Status.IMPLEMENTED, Finding),
     "22": Registration("Question", Status.IMPLEMENTED, Question),
     "23": Registration("DocumentationGap", Status.IMPLEMENTED, DocumentationGap),
     # Was DEFERRED. Section 40 moved it, and states why there: roadmap Stage 4 gates the
