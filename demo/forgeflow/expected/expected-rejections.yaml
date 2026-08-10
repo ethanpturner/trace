@@ -1,0 +1,131 @@
+# ForgeFlow expected rejections
+#
+# The eleven claims a correct assessment does not make. Layout is fixed by DEC-027; the
+# source is demo/forgeflow/forgeflow-scenario.md section 22.
+#
+# Nothing in this directory is supplied to Trace during an assessment. See README.md.
+#
+# ## Every rejection names its mechanism
+#
+# A claim that fails to appear is not evidence of anything on its own -- a system that finds
+# nothing passes every negative test ever written. So each entry names *why* the claim is not
+# reached: a `common_false_positives` entry, a `non_applicable_conditions` entry, a documented
+# inherited control, or simply that no passage supports it. `tests/evaluation/` asserts the
+# mechanism, and `expected-control-mappings.yaml` carries the positive cases that keep the
+# suite from passing on an empty assessment.
+#
+# ## The last one is the interesting one
+#
+# Section 22 says so itself: "ForgeFlow lacks webhook replay protection" is the claim this
+# scenario most expects a generic review to get wrong. Nothing states the control is absent;
+# architecture-overview.md section 26 states that the topic is undocumented. That is GAP-004,
+# not a finding, and the distinction is the one this project exists to defend.
+
+benchmark_version: "1.0"
+scenario: forgeflow
+catalog_version: "0.1"
+source: forgeflow-scenario.md section 22
+
+rejections:
+  - key: REJ-01
+    claim: ForgeFlow lacks a password-complexity policy.
+    mechanism: common_false_positives
+    requirement_id: req-AUTH-001
+    entry: absent local password complexity policy
+    why: >
+      Authentication is delegated and no local credential store exists, so there is no local
+      policy to lack. evaluation-plan.md section 11 names this as a permanent regression.
+
+  - key: REJ-02
+    claim: ForgeFlow stores passwords insecurely.
+    mechanism: common_false_positives
+    requirement_id: req-AUTH-001
+    entry: absent credential storage or hashing description
+    why: >
+      No passwords are stored. A claim about how they are stored asserts the existence of
+      something the documents place elsewhere.
+
+  - key: REJ-03
+    claim: The managed database is unencrypted.
+    mechanism: common_false_positives
+    requirement_id: req-DATA-001
+    entry: absent encryption detail for a managed service that encrypts by default
+    why: >
+      The platform's encryption at rest is documented. evaluation-plan.md section 11 names
+      ignored inherited encryption as a permanent regression.
+
+  - key: REJ-04
+    claim: Redis is publicly accessible.
+    mechanism: no_evidence
+    requirement_id: req-NET-001
+    entry: >
+      No passage places the queue on a public network. Silence about a network control is
+      not the control being absent (DEC-009).
+    why: An invented exposure is the failure; a question about placement is the alternative.
+
+  - key: REJ-05
+    claim: The application lacks custom encryption algorithms.
+    mechanism: common_false_positives
+    requirement_id: req-DATA-001
+    entry: absent application-implemented cryptography where managed services provide it
+    why: >
+      Managed services are the implementation, and acceptable_implementations lists
+      mechanism classes rather than approved products.
+
+  - key: REJ-06
+    claim: Multi-factor authentication is completely absent.
+    mechanism: non_applicable_conditions
+    requirement_id: req-AUTH-002
+    entry: >
+      authentication and its factor policy are entirely owned by an external provider and
+      documented as such
+    why: >
+      Factor policy belongs to the identity provider. evaluation-plan.md section 11 names
+      hallucinated missing MFA as a permanent regression.
+
+  - key: REJ-07
+    claim: Installation tokens are permanently stored.
+    mechanism: no_evidence
+    requirement_id: req-SECRET-002
+    entry: No passage states that installation tokens are persisted.
+    why: >
+      The documents describe short-lived tokens in general terms. Asserting permanence
+      inverts what little they say.
+
+  - key: REJ-08
+    claim: Customer source code is used to train public models.
+    mechanism: no_evidence
+    requirement_id: req-TPI-001
+    entry: No passage describes training use.
+    why: >
+      Provider data handling is undocumented, which is Q-04's subject. Undocumented is not
+      the same as the worst available answer.
+
+  - key: REJ-09
+    claim: Administrators can definitely read all customer source code.
+    mechanism: no_evidence
+    requirement_id: req-ADMIN-001
+    entry: No passage establishes the reach of administrative access over tenant data.
+    why: >
+      The word doing the work is "definitely". THR-008 is a legitimate scenario and Q-05 is
+      the legitimate question; the certainty is what is rejected.
+
+  - key: REJ-10
+    claim: Every repository contributor can configure ForgeFlow.
+    mechanism: no_evidence
+    requirement_id: req-AUTHZ-001
+    entry: No passage grants contributors configuration authority.
+    why: A claim contradicted by the roles the documents do describe.
+
+  - key: REJ-11
+    claim: ForgeFlow lacks webhook replay protection.
+    mechanism: documentation_gap
+    requirement_id: req-WEBHOOK-002
+    entry: >
+      architecture-overview.md section 26 lists webhook replay handling under Known
+      Documentation Gaps. That establishes that the topic is undocumented, not that the
+      control is absent.
+    why: >
+      Section 22 names this as the claim a generic review most expects to get wrong, and
+      DEC-029 resolves it to GAP-004 rather than FND-001. The correct output is a
+      documentation gap and Q-02.

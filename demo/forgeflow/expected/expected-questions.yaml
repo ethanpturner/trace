@@ -1,0 +1,120 @@
+# ForgeFlow expected questions
+#
+# Benchmark truth for the questions a correct assessment asks. Layout is fixed by DEC-027;
+# the source is demo/forgeflow/forgeflow-scenario.md section 20.
+#
+# Nothing in this directory is supplied to Trace during an assessment. See README.md.
+#
+# ## Why these are the output rather than findings
+#
+# Every question here is the correct treatment of something the input documents leave
+# unsettled. DEC-009 says missing documentation is never proof of a vulnerability, and
+# agent-design.md section 16 says to use a question where the answer is obtainable and could
+# materially change the assessment. These ten are that case ten times.
+#
+# `changes` names what the answer would move. Section 20 requires questions to be prioritised
+# by their ability to change findings, so a question that changes nothing is noise however
+# reasonable it sounds -- and Question.order_for_review sorts on exactly that judgment.
+#
+# Wording is not matched. What is matched is the subject and what the answer would settle.
+
+benchmark_version: "1.0"
+scenario: forgeflow
+source: forgeflow-scenario.md section 20
+
+questions:
+  - key: Q-01
+    subject: webhook signature verification
+    asks: Does inbound webhook validation include cryptographic signature verification?
+    arises_from: scenario 15.1
+    requirement_id: req-WEBHOOK-001
+    changes: >
+      Whether req-WEBHOOK-001 is satisfied or stays unverified. The documents say requests
+      are "validated" without saying which kind of validation.
+    priority: high
+    blocking: false
+
+  - key: Q-02
+    subject: webhook replay detection
+    asks: Are delivery identifiers stored and checked so a repeated event is rejected?
+    arises_from: scenario 13.1
+    requirement_id: req-WEBHOOK-002
+    changes: >
+      Whether GAP-004 stays a documentation gap or becomes a finding. Nothing in the input
+      documents establishes either answer (DEC-029).
+    priority: high
+    blocking: false
+
+  - key: Q-03
+    subject: content sent to the model provider
+    asks: What repository content is sent to the AI provider, and how is it selected?
+    arises_from: scenario 13.5
+    requirement_id: req-AI-003
+    changes: Whether data minimisation is satisfied, and the impact ceiling on THR-005.
+    priority: high
+    blocking: false
+
+  - key: Q-04
+    subject: provider-side retention
+    asks: How long does the AI provider retain request content or metadata?
+    requirement_id: req-TPI-001
+    changes: The exposure window in THR-005, and whether external processing is documented.
+    priority: medium
+    blocking: false
+
+  - key: Q-05
+    subject: administrative reach over customer data
+    asks: Can administrators view customer source artifacts?
+    arises_from: scenario 13.4
+    requirement_id: req-ADMIN-001
+    changes: >
+      The impact of THR-008. Scenario section 22 rejects the claim that administrators can
+      definitely read all customer source code, so this is a question and not an assertion.
+    priority: high
+    blocking: false
+
+  - key: Q-06
+    subject: tenant isolation in object storage
+    asks: How is tenant isolation enforced for object-storage access?
+    requirement_id: req-DATA-003
+    changes: Whether THR-004 is a plausible scenario or a supported weakness.
+    priority: high
+    blocking: false
+
+  - key: Q-07
+    subject: review before publication
+    asks: Are AI-generated pull-request comments reviewed before publication?
+    arises_from: scenario 16.2
+    requirement_id: req-AI-002
+    changes: >
+      Which of two contradicting documents is authoritative, and therefore whether GW-13.2
+      is reachable at all.
+    priority: high
+    blocking: false
+
+  - key: Q-08
+    subject: source retention
+    asks: Which source-retention statement is authoritative?
+    arises_from: scenario 16.1
+    requirement_id: req-DATA-002
+    changes: >
+      Whether the retained period matches the product promise. Trace must not silently
+      choose the safer statement (scenario 16.1), so the contradiction becomes a question.
+    priority: high
+    blocking: false
+
+  - key: Q-09
+    subject: secret filtering before submission
+    asks: Are repository files filtered for secrets before model submission?
+    requirement_id: req-SECRET-001
+    changes: The confidentiality impact of THR-005 and THR-001.
+    priority: medium
+    blocking: false
+
+  - key: Q-10
+    subject: integration scope
+    asks: Are the code-hosting integration's permissions limited to the minimum required?
+    requirement_id: req-AUTHZ-002
+    changes: The blast radius of THR-003.
+    priority: medium
+    blocking: false
