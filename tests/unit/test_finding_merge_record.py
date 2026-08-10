@@ -45,9 +45,23 @@ def test_a_record_accepts_the_section_21a_fields() -> None:
     assert record.decision is MergeDecision.STRUCTURAL
 
 
-def test_the_decision_vocabulary_is_structural_and_model_assisted() -> None:
-    """Section 21a names exactly two values, and the node only ever writes the first."""
-    assert {decision.value for decision in MergeDecision} == {"structural", "model_assisted"}
+def test_the_decision_vocabulary_is_the_section_21a_three() -> None:
+    """DEC-052's two plus DEC-054's `reviewer`; the node only ever writes `structural`."""
+    assert {decision.value for decision in MergeDecision} == {
+        "structural",
+        "model_assisted",
+        "reviewer",
+    }
+
+
+def test_only_a_reviewer_merge_may_match_no_features() -> None:
+    """DEC-054: the rule's reason is its features; the reviewer's lives on the decision."""
+    with pytest.raises(ValidationError, match="record of nothing"):
+        FindingMergeRecord.model_validate(a_record(matched_features=[]))
+    record = FindingMergeRecord.model_validate(
+        a_record(matched_features=[], decision=MergeDecision.REVIEWER)
+    )
+    assert record.matched_features == []
 
 
 def test_a_survivor_cannot_also_be_merged() -> None:
