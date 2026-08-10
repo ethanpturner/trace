@@ -3161,3 +3161,61 @@ Open Questions:
 - When Finding Consolidation lands, should a disagreement between `recommendation` and DEC-013's outcome be a human-review trigger, or only an evaluation metric?
 - Should `evidence_strengths` and the hierarchy be reconciled — `EvidenceStrength` has four values and the hierarchy seven levels, and neither maps onto the other?
 - Does `Finding` belong in `SubjectType` before `Finding` exists, or should the enum grow with the models?
+
+## DEC-048: Evidence validation gets a deterministic node; `agent-design.md` section 3's diagram should be amended
+
+Date: 2026-08-10
+
+Status: Accepted
+
+Decision:
+
+**A deterministic node is built behind the Evidence Validation agent**, at `workflow/evidence_assessment_validation.py`, even though `agent-design.md` section 3's workflow overview does not draw one.
+
+**Section 3's omission is an omission, not an intent**, and the diagram should be amended to show the node. Editing the document is separate work; this entry is the record that it should happen and why.
+
+**This node owns the write, and it is the only validator for which that is literally true.** `workflow/evidence_validation.py` contains no store write — no `objects.save`, no `.transaction()`, no `allocate(` — and a test asserts it. Persistence of an `EvidenceAssessment` is unreachable except through validation. The other three validators check objects their agents already persisted.
+
+**Four of section 14's six failure conditions are checked here**: evidence references that do not exist, unsupported claims marked supported, model-generated text treated as source evidence, and contradictions present in the input and absent from the output. Misquotation is checked at the agent node, where the raw output still exists to preserve in `traces/`. "Evidence quantity is mistaken for evidence quality" is checked nowhere, because it is a judgment about reasoning.
+
+**Validation-status transitions are a permitted set.** `not_evaluated` may move anywhere, a status may be re-applied unchanged, and `requires_confirmation` may move anywhere. A settled classification moving to a different settled one is an error, not a write.
+
+**This node corrects nothing.** DEC-013 authorises Mapping Validation to downgrade an unsupported `unmet`; nothing here has an equivalent authority, and a failing assessment is refused rather than adjusted.
+
+Why:
+
+Two rules in the corpus outrank a diagram, and both apply directly. `data-model.md` section 33 requires validation after model-generated structured output without conditioning it on a node being drawn. `agent-design.md` section 22 states that agents never write authoritative records — so if no node exists, either the agent writes, which section 22 forbids, or nothing writes, which loses the output section 14 specifies. Section 4 also classifies every other reasoning agent as needing deterministic follow-up, and there is no property of this agent that would exempt it; if anything the case is stronger, because its failure conditions are the most mechanically checkable in the corpus.
+
+The asymmetry is worth recording rather than silently fixing, because the next reader will meet the diagram before the code and conclude one of them is wrong. It is the diagram.
+
+**Making this node the sole write path is the part that is more than tidiness.** For the other three agents, section 22's write model is a statement about who decides, enforced by convention: the agent node persists, having validated first, and nothing structural stops a future edit from persisting before validating. Here the agent module has no persistence code in it at all, so the rule is a property of the import graph. That is the strongest form of section 22 available, and it arrived because the split was forced — `NodeResult` carries identifiers and counts and never an object (section 31's state-design rule), so the proposal had to travel to the validator some other way, and the way that worked put the write on the far side.
+
+The transition table exists because "updated validation statuses" is the one thing this node changes on an object it did not create. Without a table the node would be a general-purpose status setter driven by model output, which is DEC-006's authoritative-state rule leaking. With one, a reversal is an event someone has to decide on. `requires_confirmation` moving freely is the case the table exists to permit rather than to catch: it means the documents could not settle the question and a person could, so a later answer resolving it is the designed path and not an anomaly.
+
+Refusing to correct is the same reasoning `agent-design.md` section 8 applies to the Context Validation node, stated for a different object. A node that re-labelled a `supported` assessment as `unsupported` to make it pass would produce a conclusion nobody asserted with a clean validation record, and the reviewer would never learn that the agent had claimed more than the evidence carried.
+
+`persist_assessments` refuses outright rather than writing the assessments that passed. A partial write leaves the run reporting a mixture nobody decided on, and the retry that follows would re-propose the failed assessments against a store already holding their siblings — which is a duplicate set with no way to tell which pass produced which.
+
+Alternatives Considered:
+
+- No node: let the Evidence Validation agent persist its own output, as the other three do
+- A node that corrects a failing assessment down to the strongest status its evidence supports
+- Amend `agent-design.md` section 3 in this change rather than recording that it should be amended
+- Allow any validation-status transition and record the previous value, as DEC-046 does for downgrades
+- Write the assessments that validated and report the rest as errors
+- Fold the checks into the agent node, keeping one module per step
+
+Tradeoffs:
+
+- **The code and the authoritative document now disagree**, deliberately, until section 3 is amended. Anyone reading the diagram alone will believe evidence validation has no follow-up node.
+- The split makes this step two modules where every other step is one, and a reader comparing them will see an inconsistency before they see the reason for it.
+- **The transition table is strict in a way that will be inconvenient.** A second run that genuinely reaches a different conclusion — new evidence, a reviewer answer, a corrected document — hits an error rather than an update. Whether re-running should relax it is unanswered.
+- Only `Control` carries a `validation_status`, so the transition machinery applies to one of the five subject types and is inert for the rest. That is correct today and looks over-built.
+- Refusing the whole set on any failure means one malformed assessment blocks four good ones. The retry re-proposes all five, which costs a call and re-derives work that was already right.
+- The model-generated-text check keys on `EvidenceReference.source_origin`, so it catches a citation to a system-produced reference and not a rationale that paraphrases an earlier analysis in its own words. The second is the likelier form and nothing detects it.
+
+Open Questions:
+
+- Should a re-run be allowed to move a settled validation status, and if so does it need DEC-046's from/reason record?
+- Does `agent-design.md` section 3's diagram need any other node it does not draw, or is this the only one?
+- Should the other three agents adopt the same arrangement — no write in the agent module — or is the convention enough where the node already validates first?
