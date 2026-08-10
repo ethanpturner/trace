@@ -759,6 +759,23 @@ def apply_edit[ModelT: DomainModel](
     return edited, decision
 
 
+def _has_status(obj: DomainModel) -> bool:
+    """Whether a decision changes anything on this object besides writing the record.
+
+    A `ContextClaim` has a `status`, and it is a `ClaimStatus` — what kind of assertion the claim
+    is, not where it sits in a workflow. An approval has no value to set there.
+    """
+    if isinstance(obj, ContextClaim):
+        return False
+    return "status" in type(obj).model_fields
+
+
+def _status_for(obj: DomainModel, disposition: ReviewDisposition) -> ObjectStatus:
+    return (
+        ObjectStatus.APPROVED if disposition is ReviewDisposition.APPROVE else ObjectStatus.REJECTED
+    )
+
+
 def decide_object[ModelT: DomainModel](
     handle: AssessmentHandle,
     obj: ModelT,
@@ -777,6 +794,13 @@ def decide_object[ModelT: DomainModel](
 
     `Actor` has no `status` field — `data-model.md` section 13's table has none and DEC-037 declined
     to add one — so an actor's decision is the whole record of it.
+
+    **`ContextClaim.status` is not a lifecycle** and is not set to `approved` here. Section 10's
+    status values are epistemic — what kind of assertion the claim is — and there is no `approved`
+    among them. Approving a claim therefore changes nothing on the object and the decision is the
+    whole record; a reviewer who wants to raise a claim's *authority* is confirming it, which is
+    `confirm_assumption` and a different status. Rejection does have a value, and it means what it
+    says: the reviewer discarded the claim.
     """
     if disposition not in {ReviewDisposition.APPROVE, ReviewDisposition.REJECT}:
         raise ReviewerActionError(
@@ -785,10 +809,12 @@ def decide_object[ModelT: DomainModel](
         )
 
     timestamp = at if at is not None else now()
-    status = (
-        ObjectStatus.APPROVED if disposition is ReviewDisposition.APPROVE else ObjectStatus.REJECTED
-    )
-    decided = _edited(obj, {"status": status}) if "status" in type(obj).model_fields else obj
+    if _has_status(obj):
+        decided = _edited(obj, {"status": _status_for(obj, disposition)})
+    elif isinstance(obj, ContextClaim) and disposition is ReviewDisposition.REJECT:
+        decided = _edited(obj, {"status": ClaimStatus.REJECTED})
+    else:
+        decided = obj
     decision = _decision_about(
         handle,
         decided,
