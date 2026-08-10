@@ -31,6 +31,7 @@ uv run pytest                    # unit tests; integration and evaluation are de
 uv run pytest tests/unit/test_config.py::test_settings_are_frozen   # one test by node id
 uv run pytest -k blank_key       # one test by keyword
 uv run pytest -m integration     # opt into a deselected marker
+uv run pytest -m evaluation      # the benchmark suite: ForgeFlow regressions, and one live file
 uv run pytest --cov=trace_ai.config          # coverage for one module
 
 uv run ruff check .              # lint
