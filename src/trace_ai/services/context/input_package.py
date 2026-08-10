@@ -50,6 +50,7 @@ __all__ = [
     "PRECEDENCE_RULE",
     "ExtractorInput",
     "assemble_extractor_input",
+    "fenced_excerpt",
     "neutralize_fence",
 ]
 
@@ -107,8 +108,13 @@ class ExtractorInput:
         return {"input.source_content": self.untrusted}
 
 
-def _fenced(excerpt: dict[str, Any]) -> str:
-    """One evidence reference as a fenced block carrying its identifier and its location."""
+def fenced_excerpt(excerpt: dict[str, Any]) -> str:
+    """One evidence reference as a fenced block carrying its identifier and its location.
+
+    Public because every agent that receives source text fences it the same way. A second
+    implementation of this in another package would be a second thing to get right, and the one
+    that stopped being updated would be the one that let a document close its own fence.
+    """
     location = excerpt.get("location") or {}
     parts = [f'{FENCE_OPEN} evidence_id="{excerpt["evidence_id"]}"']
     filename = excerpt.get("source_filename")
@@ -219,7 +225,7 @@ def assemble_extractor_input(
     budget = profile.max_input_characters
 
     for excerpt in excerpts:
-        block = _fenced(excerpt)
+        block = fenced_excerpt(excerpt)
         if used + len(block) > budget:
             excluded.append(excerpt["evidence_id"])
             continue

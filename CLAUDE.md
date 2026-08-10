@@ -48,8 +48,11 @@ uv run pre-commit run gitleaks --all-files   # a single hook
 src/trace_ai/        configuration, process bootstrap, and cli.py -- the command surface
 src/trace_ai/domain/           domain objects, identifiers, hashing, and proposals/
 src/trace_ai/domain/proposals/ what an agent returns: local keys, nothing authoritative
-src/trace_ai/services/         ingestion/, evidence/, context/, prompts/, and the execution ledger
+src/trace_ai/services/         ingestion/, evidence/, context/, threats/, requirements/,
+                     prompts/, and the execution ledger
 src/trace_ai/services/context/ input_package.py, pipeline.py, review_file.py
+src/trace_ai/services/threats/ input_package.py -- what the threat agent sees
+src/trace_ai/services/requirements/ loader.py -- the only reader of requirements/
 src/trace_ai/infrastructure/   filesystem/, database/, and model/ -- stores and the model seam
 src/trace_ai/workflow/         phases, transitions, limits, the node protocol, and the nodes
                      Dependencies point inward. domain/ imports neither of the other two and
