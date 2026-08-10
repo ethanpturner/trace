@@ -85,6 +85,13 @@ class DocumentationGap(DomainModel):
     """Evidence showing the ambiguity or contradiction. Optional, and deliberately so: the ordinary
     gap is documentation that says nothing, and silence cannot be quoted (DEC-013)."""
 
+    converted_from_id: str | None = None
+    """The object this was converted from, if it was (DEC-051).
+
+    Cross-type by design, so it is a plain identifier rather than a typed alias: a finding may
+    have been a documentation gap and a gap may have been a finding. `supersedes_id` is the
+    same-type mechanism DEC-023 gives for regeneration and does not reach across the boundary."""
+
     @field_validator("related_object_ids")
     @classmethod
     def _related_ids_are_identifiers(cls, value: list[str]) -> list[str]:

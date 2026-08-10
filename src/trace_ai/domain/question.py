@@ -107,6 +107,13 @@ class Question(DomainModel):
     status: QuestionStatus
     generated_by: str
 
+    converted_from_id: str | None = None
+    """The object this was converted from, if it was (DEC-051).
+
+    Cross-type by design, so it is a plain identifier rather than a typed alias: a finding may
+    have been a documentation gap and a gap may have been a finding. `supersedes_id` is the
+    same-type mechanism DEC-023 gives for regeneration and does not reach across the boundary."""
+
     @model_validator(mode="after")
     def _an_answer_is_complete_or_absent(self) -> Self:
         """Section 22's answer fields move together, and `answered` means all three are set.

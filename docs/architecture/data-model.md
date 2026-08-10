@@ -1510,6 +1510,7 @@ A finding is provisional until approved by a reviewer.
 | created_at | datetime | Yes | Creation timestamp |
 | updated_at | datetime | Yes | Last modification |
 | duplicate_of_id | string | No | Canonical finding if duplicate |
+| converted_from_id | string | No | The object this was converted from (DEC-051) |
 | reviewer_notes | string | No | Reviewer explanation |
 
 ## Minimum validation rules
@@ -1648,6 +1649,7 @@ Represents missing information that could materially affect the assessment.
 | answered_at | datetime | No | Response timestamp |
 | status | string | Yes | Open, answered, dismissed |
 | generated_by | string | Yes | Workflow node or reviewer |
+| converted_from_id | string | No | The object this was converted from (DEC-051) |
 
 ## Example
 
@@ -1700,6 +1702,7 @@ Represents missing or inadequate documentation without asserting that the implem
 | status | ObjectStatus | Yes | Candidate, approved, resolved |
 | generated_by | string | Yes | Workflow node or reviewer |
 | evidence_ids | list[string] | No | Evidence showing ambiguity or contradiction |
+| converted_from_id | string | No | The object this was converted from (DEC-051) |
 
 ## Important distinction
 
