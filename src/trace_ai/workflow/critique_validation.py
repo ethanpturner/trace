@@ -24,7 +24,9 @@ shown, it becomes a question with an answer. The threshold is a parameter with a
 rather than a constant nobody chose.
 
 **This node owns the write**, on DEC-048's argument applied again: `workflow/critical_review.py`
-contains no store write, so a critique reaches persistence only through validation.
+contains no store write, so a critique reaches persistence only through validation. Section 3's
+diagram did not draw this node either, for the same reason it did not draw the evidence one, and
+DEC-048 covers both corrections.
 """
 
 from __future__ import annotations

@@ -174,9 +174,37 @@ measures whether anything would stop it.
   live ones.
 - **The decision log stands at DEC-049.** Nothing in it is Proposed.
 - **M3 is 17 of 17**, with #82 closed as obsolete before the milestone started.
-- **One document disagreement is open on purpose.** DEC-048 records that `agent-design.md` section
-  3's workflow diagram should gain the Evidence Assessment Validation node it does not draw.
-  Editing that document is separate work and has not been done, so a reader of the diagram alone
-  will believe evidence validation has no follow-up node.
+- **The one document disagreement is now closed.** See below.
+
+## Closing the diagram, and the second node nobody had noticed
+
+DEC-048 left `agent-design.md` section 3's workflow diagram disagreeing with the code on purpose:
+the entry said the diagram should gain the Evidence Assessment Validation node it does not draw,
+and issue #91 put editing that document out of scope. That edit is now made.
+
+Making it surfaced something the entry had asked about and not answered. Its second open question
+was whether section 3 was missing any *other* node, and it was: **the Critique Validation node was
+undrawn too.** Issue #94 built it without a decision entry — it only needed section 22's write
+model, which is unambiguous — so the same discrepancy was created twice in one session and noticed
+once. Nothing in the diagram had said `CRITIC --> CONSOLIDATE` was wrong, and nothing would have.
+
+Both nodes are now drawn, both are classified in section 4's table, and both are named in
+`NODES_BY_PHASE` — which matters more than it looks, because that mapping is described in its own
+comment as "the thing a node registry is checked against: a node claiming a phase that does not
+list it is a node nobody decided to put there". A node absent from it cannot be registered against
+its phase at all. So the omission was not only in the document; it was in the one place the code
+checks the document against itself.
+
+The general point is the one to keep: **a diagram is not a schema, so nothing fails when it goes
+stale.** Every other disagreement between the corpus and the code in this project surfaces as a red
+test — `data-model.md`'s field tables through `test_data_model_conformance.py`, section 24's prompt
+structure through the five prompt tests, section 40's priority list through the registry. Section 3
+had no such guard, which is exactly why two nodes could go missing from it and why the second one
+was found by re-reading rather than by running anything. Whether the diagram deserves a parser is
+worth asking before M4 adds Finding Consolidation to it.
+
+The module and test docstrings that described the node as "the one section 3 does not draw" were
+corrected in the same change. Prose that describes a document is prose that goes stale when the
+document is fixed, and leaving it would have been the same failure one level down.
 
 M4 is Finding Consolidation, checkpoint 2, the Report Generation agent, and the renderer.
