@@ -60,6 +60,10 @@ PACKAGES = (
     # the deterministic requirement matcher the backlog put here, so there is one mapping step and
     # one package for it.
     "trace_ai.services.mapping",
+    # What the Critical Review agent sees: one threat's lineage and nothing wider (DEC-049).
+    # Its own package because the bound is the whole design -- an agent shown everything
+    # re-derives everything, which is section 15's second-full-assessment prohibition.
+    "trace_ai.services.critique",
     "trace_ai.infrastructure",
     "trace_ai.infrastructure.filesystem",
     "trace_ai.infrastructure.database",
