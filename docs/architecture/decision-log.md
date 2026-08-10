@@ -2737,3 +2737,86 @@ Open Questions:
   `KNOWN_THREAT_CATEGORIES`, so the drift is visible without being refused?
 - At what point does `threat_methodology` need a registry — a second methodology, or the first
   cross-assessment comparison?
+
+## DEC-042: Threat analysis runs once per assessment, over the whole approved context
+
+Date: 2026-08-09
+
+Status: Accepted
+
+Decision:
+
+`agent-design.md` section 38 question 2 asks whether threat generation should run once for the
+system or separately by trust boundary. It runs **once per assessment**, over the whole approved
+context, in a single model call.
+
+The approved baseline is assembled in full: every component, actor, asset, data flow, trust
+boundary, and context claim the approved `SystemContext` names, plus the evidence the caller
+selects. Nothing is partitioned and nothing is dropped. Only evidence is subject to the input
+budget, and an excluded excerpt is named rather than truncated.
+
+**How this scales, and when it stops.** The trigger is the input budget, not the object count: when
+the assembled architecture no longer leaves room for the evidence behind it, the successor is
+deterministic partition fan-out over **connected component groups** — subgraphs joined by data
+flows — with every partition run for the same assessment and the results merged by the validation
+node. It is not partition by trust boundary. Section 38 question 2 is resolved by this entry.
+
+Why:
+
+**A per-boundary call cannot see a cross-boundary threat.** Four of ForgeFlow's ten expected
+threats span boundaries. THR-001 has repository content reaching a model provider and model output
+returning to a pull-request comment, which crosses three. THR-004 is a cross-tenant authorization
+failure, and tenancy is not a boundary in the architecture at all. An agent shown one boundary at a
+time is structurally unable to describe any of them, and the failure is silent: each call returns
+plausible threats about the slice it was given, and nothing reports what could not be seen from
+there.
+
+**Partitioning multiplies the failure section 10 warns about.** The section says the agent "should
+not produce six generic threats merely to satisfy each STRIDE category". A call that sees one
+boundary has little architecture to reason from and the same coverage checklist, which is exactly
+the condition under which category-filling is the easiest way to answer. Six boundaries then
+produce six near-identical sets, and the duplicate detection in the validation node inherits a
+problem that the invocation shape created.
+
+**Section 23's context minimisation is satisfied by object selection, not by fan-out.** The section
+asks for the smallest *useful* context, and it names what this agent receives: approved context,
+relevant architecture objects, selected supporting evidence. The package already excludes the
+source documents, the ingestion records, the requirements catalog, and every object a reviewer
+rejected. For ForgeFlow that is a small architecture. Splitting it further trades the thing the
+agent is for — seeing how the parts connect — for tokens it is not short of.
+
+**One call is also the cheaper one.** `scripts/estimate_cost.py` assumes a per-assessment threat
+call. Per-boundary invocation multiplies the architecture context by the number of partitions,
+because each call needs enough surrounding architecture to be coherent, and the shared prefix stops
+being shared.
+
+This is the same shape as DEC-024, reached from the other direction: send the whole thing, and when
+it stops fitting, partition without excluding rather than filter.
+
+Alternatives Considered:
+
+- One invocation per trust boundary, as section 38 question 2 proposes
+- One invocation per bounded group of components, chosen deterministically
+- One invocation per externally reachable entry point
+- Two passes: a per-boundary pass for depth and a whole-system pass for cross-boundary scenarios
+
+Tradeoffs:
+
+- One call means one failure. A schema failure loses the whole threat set rather than one
+  partition's, and the retry re-sends the whole architecture. The retry budget is two, and the
+  cost of a repeated call is the cost this decision already accepted.
+- Depth per component is lower than a focused call would give. A threat agent looking at one
+  component in isolation would notice more about it; the judgment here is that noticing how
+  components connect matters more for an architecture review, which is what this project is.
+- The approved context has to fit one request. It does for ForgeFlow and for anything of that size,
+  and the expiry trigger above is the point at which it stops being true.
+- Coverage is unmeasurable per boundary. Nothing reports "these two boundaries produced no
+  threats", because there is no per-boundary unit of work to report on. If that turns out to
+  matter, it is a coverage-metadata output on the proposal, not a change to the invocation shape.
+
+Open Questions:
+
+- Should the node record which architecture objects no threat referenced, as a coverage signal for
+  the reviewer at checkpoint 2?
+- Does re-running threat analysis after a context revision need to see the previous run's threats,
+  or is a fresh pass plus duplicate detection the better shape?

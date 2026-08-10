@@ -1973,7 +1973,7 @@ These agents would expand project scope without proving the MVP thesis.
 # 38. Open Agent-Design Questions
 
 1. Does Context Extraction require one agent or separate extraction and architecture-normalization stages?
-2. Should threat generation run once for the system or separately by trust boundary?
+2. ~~Should threat generation run once for the system or separately by trust boundary?~~ Resolved by DEC-042: once for the system. Four of ForgeFlow's ten expected threats cross boundaries and one concerns tenancy, which is not a boundary at all, so a per-boundary call is structurally unable to see them. If the approved context outgrows one request, the successor is partition fan-out over connected component groups, not trust boundaries.
 3. ~~How many requirements should the Mapping Agent receive per call?~~ Resolved by DEC-024: all of them. The whole catalog is a stable cacheable prefix on every mapping call.
 4. ~~Should requirement retrieval use deterministic metadata filters before semantic retrieval?~~ Resolved by DEC-024: no. `applicable_technologies` is populated on zero of 23 requirements, so a metadata filter has no input, and semantic retrieval has no substrate while vector infrastructure is deferred.
 5. Should the Critical Review Agent review individual findings or small groups?

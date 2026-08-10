@@ -51,6 +51,9 @@ PACKAGES = (
     # The requirements catalog is version-controlled YAML outside the package (DEC-010); this
     # package is the only thing that reads it, and computes its DEC-019 content hash.
     "trace_ai.services.requirements",
+    # What the Threat Analysis agent sees (agent-design.md section 23): an approved architecture
+    # and the evidence behind it, fenced with the same helper the extractor's package uses.
+    "trace_ai.services.threats",
     "trace_ai.infrastructure",
     "trace_ai.infrastructure.filesystem",
     "trace_ai.infrastructure.database",
