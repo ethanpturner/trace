@@ -32,13 +32,13 @@ Three tests keep it that way, and they are the enforcement rather than this file
 | `evaluation-contract.yaml` | The grading policy. Declares no counts (DEC-028). |
 | `expected-context.yaml` | The context-extraction truth set. Authored. |
 | `expected-questions.yaml` | Authored — M3. |
-| `expected-observations.yaml` | Not yet authored. |
+| `expected-observations.yaml` | Authored — M4. |
 | `expected-threats.yaml` | Authored — M3. |
 | `expected-control-mappings.yaml` | Authored — M3. |
-| `expected-findings.yaml` | Not yet authored — M4. |
-| `expected-documentation-gaps.yaml` | Not yet authored — M4. |
+| `expected-findings.yaml` | Authored — M4. |
+| `expected-documentation-gaps.yaml` | Authored — M4. |
 | `expected-rejections.yaml` | Authored — M3. |
-| `reviewer-notes.md` | Not yet authored. |
+| `reviewer-notes.md` | Authored — M4. |
 
 The file list is derived from the object model rather than enumerated in prose (DEC-027): one
 `expected-*.yaml` per domain object type the pipeline produces and the benchmark grades, plus the
