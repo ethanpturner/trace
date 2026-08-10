@@ -2644,3 +2644,96 @@ Open Questions:
   `workflow_run_id`?
 - If a reviewer rejects every component, the approved baseline is empty and threat analysis has
   nothing to reason from. Is that a refusal condition at approval, or a legitimate outcome?
+
+## DEC-041: Threat categories are an open vocabulary; `threat_methodology` stays free text
+
+Date: 2026-08-09
+
+Status: Accepted
+
+Decision:
+
+`agent-design.md` section 11 requires the Threat Validation node to "Confirm threat categories use
+permitted values", and no document says what the permitted values are. This entry says.
+
+**`Threat.category` is an open vocabulary, normalized, and never rejected for being unfamiliar.**
+It is the DEC-036 treatment, reached by DEC-036's own stated test: `data-model.md` section 16 types
+the field `list[string]` and *illustrates* two values in its worked example rather than enumerating
+a set. `KNOWN_THREAT_CATEGORIES` in `domain/threat.py` records STRIDE in the snake_case spelling
+that example uses, plus four categories named from OWASP Top 10 for LLM Applications 2025. It is
+documentation and validates nothing.
+
+**An uncategorisable threat is recorded uncategorised.** `category` stays optional, as section 16
+has it. Nothing forces a threat into the nearest STRIDE bucket, because a category that does not
+fit is read downstream as one that does.
+
+**"Permitted values" is satisfied by normalization, not by a whitelist.** What the validation node
+checks is that a category is a well-formed vocabulary term and that the spellings do not drift --
+`Elevation of Privilege`, `elevation-of-privilege`, and `elevation_of_privilege` are one category
+written three ways, and three spellings make a coverage count wrong and a benchmark comparison
+meaningless. An unfamiliar term is recorded, not refused.
+
+**`AssessmentConfiguration.threat_methodology` stays free text for the MVP.** No registry, no enum.
+
+Why:
+
+**STRIDE has no category for the threat ForgeFlow is built around.** `demo/forgeflow/forgeflow-scenario.md`
+section 18's first expected threat is THR-001, repository prompt injection manipulating AI output.
+THR-005 is over-disclosure of source content to a model provider and THR-006 is unreviewed model
+output being published. `agent-design.md` section 10 requires AI-specific threats "where
+applicable". A closed STRIDE enum would reject or mis-bucket the single most important expected
+threat in the demo scenario, and the mis-bucketing is the worse outcome of the two: it is silent.
+
+This is the same failure DEC-036 documents for `component_type`, where a closed enum would have
+rejected six of the seven types `structured-system-input.yaml` uses. The catalog's
+`acceptable_implementations` is the third instance of one principle: a list of examples treated as
+the set of allowed values decides cases it was never shown.
+
+**Adding the AI categories to a closed set would not fix it either.** The set would then be
+whatever taxonomy was current when this was written, and the next scenario outside it fails the
+same way. The names here are cited rather than invented -- LLM01, LLM02, LLM05, LLM10, from a
+framework `requirements/README.md` already adopts -- which makes them a good starting list and
+still not a rule.
+
+**"Generic STRIDE labels are rejected" is a different check.** `agent-design.md` section 39 lists it
+among the fixture tests, and it is about *specificity*: a threat titled "Tampering" with a
+description restating the category is a checklist item, not a scenario. Section 10 says the same
+thing directly -- the agent "should not produce six generic threats merely to satisfy each STRIDE
+category". That check belongs to the Threat Validation node and tests the threat, not the
+vocabulary. Enforcing it through a category whitelist would not catch it, because the label on a
+generic threat is a perfectly valid STRIDE category.
+
+**On `threat_methodology`**: `data-model.md` section 6 types it `string` and one value exists,
+`stride-scenario-based`. A registry with one entry validates nothing and would have to be edited
+before the second methodology could be tried, which inverts the point of the field being
+configuration. `current-architecture.md` section 15 says the initial methodology "will likely use
+STRIDE", which is not the language of a fixed set.
+
+Alternatives Considered:
+
+- A closed STRIDE enum, with AI threats mapped onto the nearest STRIDE category
+- A closed enum of STRIDE plus the OWASP LLM categories
+- An open vocabulary with a warning recorded when a term is outside the known set
+- A required `category`, so every threat carries at least one
+- A registry of known values for `threat_methodology`, validated at assessment creation
+
+Tradeoffs:
+
+- The validation node's category check is weaker than section 11's wording suggests. It catches
+  drift and malformed terms, not an invented taxonomy. What stops a threat being labelled badly is
+  the specificity check and the reviewer at checkpoint 2, not the schema.
+- Coverage metrics over an open vocabulary are harder to compute: "did we cover all six STRIDE
+  categories" needs `STRIDE_CATEGORIES` explicitly rather than iterating an enum. That constant is
+  exported for exactly this.
+- `KNOWN_THREAT_CATEGORIES` will drift from what the corpus actually uses unless something watches
+  it. Nothing does today.
+- Free-text `threat_methodology` means two assessments can record `stride` and `stride-scenario-based`
+  and compare as different. For a single-user MVP with one methodology this costs nothing, and it
+  will cost something the first time results are compared across assessments.
+
+Open Questions:
+
+- Should the Threat Validation node record an observation when a category falls outside
+  `KNOWN_THREAT_CATEGORIES`, so the drift is visible without being refused?
+- At what point does `threat_methodology` need a registry — a second methodology, or the first
+  cross-assessment comparison?

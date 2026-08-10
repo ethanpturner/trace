@@ -63,6 +63,7 @@ from trace_ai.domain.enums import (
 )
 from trace_ai.domain.evidence import EvidenceReference
 from trace_ai.domain.execution import ExecutionRecord, WorkflowRun
+from trace_ai.domain.identifiers import PREFIXES, parse_id
 from trace_ai.domain.question import Question
 from trace_ai.domain.requirement import Requirement
 from trace_ai.domain.requirements_catalog import RequirementsCatalog
@@ -70,6 +71,7 @@ from trace_ai.domain.reviewer_decision import ReviewerDecision
 from trace_ai.domain.source_document import SourceDocument
 from trace_ai.domain.source_observation import SourceObservation
 from trace_ai.domain.system_context import SystemContext
+from trace_ai.domain.threat import Threat
 from trace_ai.domain.trust_boundary import TrustBoundary
 
 DATA_MODEL = PROJECT_ROOT / "docs" / "architecture" / "data-model.md"
@@ -221,7 +223,7 @@ REGISTRY: dict[str, Registration] = {
     "13": Registration("Actor", Status.IMPLEMENTED, Actor),
     "14": Registration("DataFlow", Status.IMPLEMENTED, DataFlow),
     "15": Registration("TrustBoundary", Status.IMPLEMENTED, TrustBoundary),
-    "16": Registration("Threat", Status.PLANNED),
+    "16": Registration("Threat", Status.IMPLEMENTED, Threat),
     "17": Registration("Requirement", Status.IMPLEMENTED, Requirement),
     "18": Registration("Control", Status.PLANNED),
     "19": Registration("ControlMapping", Status.PLANNED),
@@ -644,3 +646,44 @@ def test_the_enum_carries_exactly_these_values(
     enum: type[StrEnum], expected: tuple[str, ...]
 ) -> None:
     assert tuple(member.value for member in enum) == expected
+
+
+# --------------------------------------------------------------------------------------------
+# Section 2.1: the worked examples use identifiers the scheme actually allows
+# --------------------------------------------------------------------------------------------
+
+# A token that reads as an identifier: a section 2.1 prefix, a hyphen, and something after it.
+# Matched on the prefix list so that `cat-core` -- a catalog *name*, and the mistake DEC-034
+# corrected -- is not swept up, and neither is prose that happens to contain a hyphen.
+_IDENTIFIER_SHAPED = re.compile(
+    rf"(?<![\w-])(?:{'|'.join(sorted(PREFIXES, key=len, reverse=True))})-[A-Za-z0-9][\w-]*"
+)
+
+
+def test_the_worked_examples_use_conforming_identifiers() -> None:
+    """A document that illustrates an illegal identifier teaches one.
+
+    Section 16's example named `cmp-webhook-receiver` and `ast-analysis-capacity`, and section
+    21's and section 31's did the same. Those are neither DEC-018 form: a generated identifier is
+    `<prefix>-<NNN>` and an authored one is `<prefix>-<CATEGORY>-<NNN>`. The inconsistency was
+    inside a single example -- section 16's own `thr-007` and `asm-001` are correct, and only the
+    objects it referenced were slugs -- which is what made it survive.
+
+    Descriptive slugs read better in a document, and that is the argument for having written them.
+    It is also the argument an agent would make for minting `cmp-webhook-receiver` at generation
+    time, which is exactly what DEC-018 exists to stop.
+    """
+    text = DATA_MODEL.read_text(encoding="utf-8")
+
+    offenders: list[str] = []
+    for match in _IDENTIFIER_SHAPED.finditer(text):
+        try:
+            parse_id(match.group(0))
+        except ValueError:
+            offenders.append(match.group(0))
+
+    assert not offenders, (
+        f"data-model.md uses identifier-shaped tokens that section 2.1 does not permit: "
+        f"{sorted(set(offenders))}. A generated identifier is '<prefix>-<NNN>'; an authored one "
+        f"is '<prefix>-<CATEGORY>-<NNN>'."
+    )

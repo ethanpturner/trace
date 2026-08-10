@@ -93,6 +93,12 @@ class AssessmentConfiguration(DomainModel):
 
     STRIDE is a coverage aid rather than a mechanical threat generator, so this names an approach
     and not a checklist to enumerate.
+
+    **Free text, with no registry** (DEC-041). One methodology exists, and a registry with one
+    entry validates nothing while having to be edited before a second could be tried — which
+    inverts the point of this being configuration. The cost is that `stride` and
+    `stride-scenario-based` compare as different, which is free for a single-user MVP and stops
+    being free at the first cross-assessment comparison.
     """
 
     maximum_model_calls: int | None = Field(default=None, gt=0)
