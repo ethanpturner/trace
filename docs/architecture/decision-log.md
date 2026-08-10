@@ -3011,3 +3011,53 @@ Open Questions:
   given they are now distinguishable?
 - When the mapper proposes a control the extractor already created, is that a duplicate to merge or
   a refinement to apply? Section 12 says "new or refined", and refinement has no mechanism yet.
+
+## DEC-045: A documentation gap's severity rates the gap, is proposed, and is never `unassigned`
+
+Date: 2026-08-10
+
+Status: Accepted
+
+Decision:
+
+`DocumentationGap.severity` reuses section 4.5's `Severity` vocabulary for a different quantity than `Finding.severity` carries, and the two are governed by opposite rules.
+
+**It rates the gap, not a weakness.** The value answers how much the inability to verify impedes the assessment — whether a reviewer should chase the missing documentation before relying on the result. It does not say a control is absent, and nothing downstream may read it as though it did. `data-model.md` section 23 already names the field "Importance of documentation gap"; this states the consequence.
+
+**The node that raises the gap assigns it, and `DocumentationGapProposal` carries the field.** DEC-030 removed severity from every agent's output and made the reviewer its origin. That decision is about `Finding` and stays that way.
+
+**A `DocumentationGap` may not carry `unassigned`.** `DocumentationGap` refuses the value in a validator rather than defaulting to it.
+
+Why:
+
+DEC-030's mechanism does not reach this object, and the gap is structural rather than an oversight. Findings arrive `unassigned` because checkpoint 2 exists to resolve it: `current-architecture.md` section 5.12 lists "Assign or change severity" among the reviewer's actions, and DEC-030 makes an approval carrying `unassigned` a validation failure. Both halves are about findings. **Section 5.12 lists no action on a documentation gap at all** — the reviewer's gap-shaped action there is converting a *finding* into one.
+
+So a gap created with `unassigned` would keep that value through the entire pipeline and render into report section 9 with it. That is not a field awaiting a decision; it is a decision nobody is ever asked to make, displayed as though someone declined to make it. Refusing the value is what makes the difference visible at the point of construction rather than in the report.
+
+DEC-030's substantive argument also fails to transfer, which is why the different rule is not merely a workaround for a missing checkpoint. Severity on a finding is a business-risk judgment — what an outage costs, what the data is worth — and architecture documents do not contain it, so an agent asked for it produces a fluent answer from material that cannot support one. The importance of a documentation gap is a judgment about the *assessment*: which requirement could not be evaluated, which threat it bore on, how much of the analysis rests on the unknown. Every input to it is in the pipeline's own state, and the mapping step holds all of it at the moment it raises the gap. This is an evidence judgment in DEC-009's sense, not a risk judgment.
+
+The two fields sharing a vocabulary is the residual hazard, and it is accepted rather than solved. A separate `GapImportance` enum was the alternative, and it would make the distinction unmissable at the cost of contradicting section 23's field table, which types the field `Severity`. `data-model.md` is authoritative for types (`CLAUDE.md`), and `tests/unit/test_data_model_conformance.py` would fail on the change. Defending the distinction in the model docstring, the proposal docstring, and the validator's error message is weaker than a type would be, and it is what the authoritative document permits.
+
+Note that `importance` — required, free text, section 23 — is the field a reviewer actually reads. `severity` orders the list; `importance` says why the entry is on it. A gap carrying a severity and no importance would be a label with no argument behind it, which is why the schema requires both.
+
+Alternatives Considered:
+
+- Create gaps with `unassigned` and add a gap-severity action to checkpoint 2
+- A separate `GapImportance` enum, contradicting section 23's field table
+- Drop `severity` from `DocumentationGapProposal` and derive it deterministically from the mapping
+- Make `severity` optional on `DocumentationGap` and let the renderer omit it
+- Treat `importance` as the only rating and remove `severity` from the object
+
+Tradeoffs:
+
+- **One vocabulary now means two things**, and the object that carries the ambiguous field is the one whose whole purpose is to not be read as a finding. A reader scanning report section 9 beside section 8 sees `high` in both and has no visual cue that they are different quantities.
+- The mapping agent proposes a value with no evidence reference attached, which is the property DEC-030 objected to. The defence is that the inputs are pipeline state rather than business context, and it is a defence rather than a disproof.
+- Refusing `unassigned` means a node that genuinely cannot rate a gap has to pick a value anyway. `informational` is the honest floor and nothing enforces its use over `medium`.
+- Gap severities are unmeasured, in the same way DEC-030 leaves finding severities unmeasured. Nothing in `evaluation-plan.md` scores them.
+- If checkpoint 2 later gains gap review, this decision has to be revisited rather than extended: the reviewer would be editing a value an agent proposed, which is DEC-023's edit path and not DEC-030's assignment path.
+
+Open Questions:
+
+- Should the reviewer be able to edit a gap's severity at checkpoint 2, given that gaps appear in the review package but carry no approval action?
+- Does report section 9 need to state that gap severity and finding severity are different quantities, or does the section's own framing carry it?
+- Is a deterministic floor available — a gap on a requirement no threat could evaluate is at least `low` — or is that the same optional-free-text problem DEC-030 found?
