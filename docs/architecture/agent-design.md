@@ -1978,7 +1978,7 @@ These agents would expand project scope without proving the MVP thesis.
 4. ~~Should requirement retrieval use deterministic metadata filters before semantic retrieval?~~ Resolved by DEC-024: no. `applicable_technologies` is populated on zero of 23 requirements, so a metadata filter has no input, and semantic retrieval has no substrate while vector infrastructure is deferred.
 5. Should the Critical Review Agent review individual findings or small groups?
 6. ~~Is the Severity Support Agent necessary for the first demo?~~ Resolved by DEC-030: it is not built at all. Four of its six outputs already exist as `Finding` fields, and severity depends on business context the documents do not carry. The reviewer assigns it.
-7. Should duplicate detection use embeddings, a model, deterministic features, or a combination?
+7. ~~Should duplicate detection use embeddings, a model, deterministic features, or a combination?~~ Resolved by DEC-043 for the MVP: deterministic features — normalized title, affected component and asset sets, and category overlap — scored and recorded as an explicit merge proposal. Vector infrastructure is deferred, so embeddings have no substrate, and a model-assisted comparison would put a model call in a node section 4 classifies as deterministic. Revisited on a measured duplicate rate this misses, or when vector infrastructure arrives for another reason.
 8. How should contradictory evidence be represented to agents?
 9. Should reviewers see agent rationales directly or only concise evidence-based explanations?
 10. Which agent outputs should be editable before the next stage?
