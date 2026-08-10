@@ -803,14 +803,25 @@ def test_approval_sets_the_two_fields_and_writes_a_decision(reviewed: Any) -> No
     assert decision.prior_value is None, "an approval changes no field, so it carries no delta"
 
 
-def test_approval_does_not_change_the_revision_number(reviewed: Any) -> None:
-    """Approving version 1 produces an approved version 1. A new version is what a reviewer *edit*
-    produces (DEC-023), and that belongs to the next issue."""
+def test_approval_mints_the_next_revision_and_leaves_the_generated_one(reviewed: Any) -> None:
+    """DEC-023: `SystemContext.version` increments on approval, alongside `approved_at` and
+    `approved_by`. DEC-040 states what that means here.
+
+    Version 1 is the generated baseline and is never approved; version 2 is the baseline the
+    reviewer approved. Two revisions, always — so the difference between what the extractor
+    produced and what a person signed off is readable by diff rather than lost to an in-place
+    stamp.
+    """
     handle, _, _ = reviewed
     approved, _ = approve_context(handle, package_for(handle), reviewer_id=REVIEWER)
 
-    assert approved.version == 1
-    assert len(handle.objects.list(SystemContext)) == 1
+    assert approved.version == 2
+    assert approved.is_approved
+
+    revisions = {revision.version: revision for revision in handle.objects.list(SystemContext)}
+    assert set(revisions) == {1, 2}
+    assert not revisions[1].is_approved, "the generated baseline was stamped in place"
+    assert revisions[1].component_ids == revisions[2].component_ids
 
 
 def test_approval_is_refused_while_a_blocking_question_is_open(reviewed: Any) -> None:

@@ -21,7 +21,7 @@ import pytest
 
 from trace_ai.domain.assessment import default_configuration
 from trace_ai.domain.component import Component
-from trace_ai.domain.enums import ObjectStatus, ReviewDisposition
+from trace_ai.domain.enums import ObjectStatus, ReviewDisposition, SourceOrigin
 from trace_ai.domain.execution import ExecutionType, RunStatus
 from trace_ai.domain.question import Question, QuestionPriority, QuestionStatus
 from trace_ai.domain.reviewer_decision import ReviewerDecision
@@ -74,6 +74,7 @@ def component(
             "assessment_id": handle.assessment_id,
             "name": name,
             "component_type": "service",
+            "source_origin": SourceOrigin.UPLOADED_DOCUMENT,
             "status": ObjectStatus.CANDIDATE,
         }
     )
