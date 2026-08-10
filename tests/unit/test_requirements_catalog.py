@@ -1,53 +1,60 @@
-"""Tests for the requirements catalog in `requirements/`.
+"""Tests for the requirements catalog in `requirements/` and the loader that reads it.
 
-The catalog is hand-maintained YAML that no code reads yet, which is exactly the
-kind of data that drifts silently. These tests enforce what DEC-010 leaves to a
-"separate step": that requirement files conform to the Requirement object in
-`docs/architecture/data-model.md` section 17, that identifiers follow the
-catalog's convention, that the manifest and the files agree, and that framework
-citations carry a version.
+The catalog was hand-maintained YAML that no code read, and these tests were the only thing
+holding it to `docs/architecture/data-model.md` section 17. `services/requirements/loader.py`
+now reads it, so most of what was asserted here by convention is enforced at load for every
+caller, and this file tests through the loader rather than around it.
 
-They check structure and convention, not judgment. Whether a requirement is
-*correct* is a review question; whether it is *well-formed* is this file's.
+Two halves, deliberately kept apart:
+
+- **Loader behaviour.** Each refusal gets a test that constructs the broken catalog it refuses,
+  in a copy of the real tree under `tmp_path`. A validator with no test for the invalid case is
+  a validator nobody has run.
+- **Catalog authoring conventions.** Identifier prefix, and `source_frameworks` citation format
+  against the list of frameworks the catalog has adopted. These stay in the test because they
+  are conventions rather than schema: adopting a framework is a provenance decision recorded in
+  `requirements/README.md`, and putting the adopted list in product code would make citing a new
+  one a code change.
+
+Neither half checks judgment. Whether a requirement is *correct* is a review question; whether
+it is *well-formed* is this file's. In particular **nothing verifies that a cited control
+identifier exists** in the framework it names -- the frameworks are not vendored, and a plausible
+but wrong identifier passes.
 """
 
 from __future__ import annotations
 
-from typing import Any
+import shutil
+from pathlib import Path
+from typing import TYPE_CHECKING, Any
 
 import pytest
 import yaml
 
-from trace_ai.config import PROJECT_ROOT
-
-CATALOG_DIR = PROJECT_ROOT / "requirements"
-CATALOG_FILE = CATALOG_DIR / "catalog.yaml"
-
-# docs/architecture/data-model.md section 17.
-REQUIRED_FIELDS = frozenset(
-    {"id", "catalog_version", "title", "statement", "rationale", "category", "status"}
+from trace_ai.domain.enums import Severity
+from trace_ai.domain.requirement import CatalogStatus, Requirement
+from trace_ai.services.requirements.loader import (
+    CATALOG_ROOT,
+    CatalogHashError,
+    CatalogManifestError,
+    CatalogNotFoundError,
+    CatalogSchemaError,
+    CatalogVersionError,
+    canonical_bytes,
+    compute_hash,
+    current_version,
+    load_catalog,
 )
-OPTIONAL_FIELDS = frozenset(
-    {
-        "applicable_technologies",
-        "applicable_conditions",
-        "non_applicable_conditions",
-        "acceptable_implementations",
-        "evidence_expectations",
-        "common_false_positives",
-        "default_severity",
-        "source_frameworks",
-        "supersedes_id",
-    }
-)
-KNOWN_FIELDS = REQUIRED_FIELDS | OPTIONAL_FIELDS
 
-# data-model.md sections 4.5 and 17.
-SEVERITIES = frozenset({"informational", "low", "medium", "high", "critical", "unassigned"})
-STATUSES = frozenset({"draft", "active", "retired"})
+if TYPE_CHECKING:
+    from trace_ai.services.requirements.loader import LoadedCatalog
 
-# Frameworks cited in catalog version 0.1. A new framework is a deliberate
-# provenance decision (requirements/README.md), so it is added here too.
+VERSION = current_version()
+CATALOG = load_catalog(VERSION)
+ALL_REQUIREMENTS = CATALOG.requirements
+
+# Frameworks cited in catalog version 0.1. A new framework is a deliberate provenance decision
+# (requirements/README.md), so it is added here too.
 FRAMEWORKS = (
     "OWASP ASVS 5.0.0",
     "NIST SP 800-53 5.2.0",
@@ -55,145 +62,398 @@ FRAMEWORKS = (
 )
 
 
-def _manifest() -> dict[str, Any]:
-    loaded = yaml.safe_load(CATALOG_FILE.read_text(encoding="utf-8"))
-    catalog: dict[str, Any] = loaded["catalog"]
+# --------------------------------------------------------------------------------------------
+# A writable copy of the real tree, so a refusal is tested against a real catalog made wrong
+# --------------------------------------------------------------------------------------------
+
+
+@pytest.fixture
+def catalog_tree(tmp_path: Path) -> Path:
+    """A copy of `requirements/` that a test may break."""
+    root = tmp_path / "requirements"
+    shutil.copytree(CATALOG_ROOT, root)
+    return root
+
+
+def read_manifest(root: Path) -> dict[str, Any]:
+    document: dict[str, Any] = yaml.safe_load((root / "catalog.yaml").read_text(encoding="utf-8"))
+    catalog: dict[str, Any] = document["catalog"]
     return catalog
 
 
-def _version() -> str:
-    version: str = _manifest()["version"]
-    return version
+def write_manifest(root: Path, catalog: dict[str, Any]) -> None:
+    """Rewrite the manifest. Comments are lost, which is what the hash exists not to notice."""
+    (root / "catalog.yaml").write_text(yaml.safe_dump({"catalog": catalog}), encoding="utf-8")
 
 
-def _requirements() -> list[tuple[str, dict[str, Any]]]:
-    """Every requirement in the current catalog version, with its file name."""
-    found: list[tuple[str, dict[str, Any]]] = []
-    for path in sorted((CATALOG_DIR / _version()).glob("*.yaml")):
-        document = yaml.safe_load(path.read_text(encoding="utf-8"))
-        for requirement in document["requirements"]:
-            found.append((path.name, requirement))
-    return found
+def a_requirement_file(root: Path) -> Path:
+    return root / VERSION / "webhook-validation.yaml"
 
 
-ALL_REQUIREMENTS = _requirements()
+def edit_first_requirement(path: Path, changes: dict[str, Any]) -> None:
+    """Apply `changes` to the first requirement in `path`; a `None` value removes the key."""
+    document = yaml.safe_load(path.read_text(encoding="utf-8"))
+    requirement = document["requirements"][0]
+    for key, value in changes.items():
+        if value is None:
+            requirement.pop(key, None)
+        else:
+            requirement[key] = value
+    path.write_text(yaml.safe_dump(document), encoding="utf-8")
 
 
-def test_catalog_version_directory_exists() -> None:
-    assert (CATALOG_DIR / _version()).is_dir()
+# --------------------------------------------------------------------------------------------
+# The catalog loads
+# --------------------------------------------------------------------------------------------
 
 
-def test_catalog_contains_requirements() -> None:
-    # Guards the parametrized tests below: an empty glob would make them vacuous.
-    assert ALL_REQUIREMENTS
+def test_the_whole_catalog_loads() -> None:
+    assert len(CATALOG) == 23
+    assert CATALOG.version == VERSION
+    assert all(isinstance(requirement, Requirement) for requirement in ALL_REQUIREMENTS)
 
 
-def test_every_category_file_has_a_requirements_list() -> None:
-    for path in sorted((CATALOG_DIR / _version()).glob("*.yaml")):
-        document = yaml.safe_load(path.read_text(encoding="utf-8"))
-        assert isinstance(document, dict), f"{path.name} is not a mapping"
-        assert isinstance(document.get("requirements"), list), (
-            f"{path.name} has no top-level 'requirements' list"
-        )
+def test_the_catalog_is_the_manifest_and_the_requirements_together() -> None:
+    assert CATALOG.catalog.id == "core"
+    assert CATALOG.catalog.status is CatalogStatus.DRAFT
+    assert sorted(CATALOG.catalog.requirement_ids) == sorted(CATALOG.by_id())
 
 
-def test_manifest_and_files_agree() -> None:
-    declared = _manifest()["requirement_ids"]
-    found = [requirement["id"] for _, requirement in ALL_REQUIREMENTS]
-
-    assert sorted(declared) == sorted(found), (
-        "catalog.yaml and the requirement files disagree; "
-        f"only in manifest: {sorted(set(declared) - set(found))}, "
-        f"only in files: {sorted(set(found) - set(declared))}"
-    )
+def test_the_catalog_name_is_a_name_and_not_an_identifier() -> None:
+    """DEC-034. `cat-core` was the mistake; `cat` is not a prefix in section 2.1."""
+    assert "-" not in CATALOG.catalog.id
 
 
-def test_requirement_ids_are_unique() -> None:
-    found = [requirement["id"] for _, requirement in ALL_REQUIREMENTS]
+def test_the_version_directory_exists() -> None:
+    assert (CATALOG_ROOT / VERSION).is_dir()
 
-    duplicates = sorted({rid for rid in found if found.count(rid) > 1})
 
-    assert not duplicates, f"duplicate requirement ids: {duplicates}"
+def test_every_requirement_is_reachable_by_identifier() -> None:
+    by_id = CATALOG.by_id()
+
+    assert len(by_id) == len(ALL_REQUIREMENTS), "two requirements share an identifier"
+
+
+# --------------------------------------------------------------------------------------------
+# Version pinning: a version added to the tree cannot change an in-flight assessment
+# --------------------------------------------------------------------------------------------
+
+
+def test_loading_requires_a_version_the_tree_holds(catalog_tree: Path) -> None:
+    with pytest.raises(CatalogVersionError) as raised:
+        load_catalog("0.2", root=catalog_tree)
+
+    assert "0.2" in str(raised.value)
+    assert VERSION in str(raised.value)
+
+
+def test_a_version_directory_that_is_missing_is_named(catalog_tree: Path) -> None:
+    shutil.rmtree(catalog_tree / VERSION)
+
+    with pytest.raises(CatalogNotFoundError, match=VERSION):
+        load_catalog(VERSION, root=catalog_tree)
+
+
+def test_an_absent_manifest_is_not_a_silent_empty_catalog(catalog_tree: Path) -> None:
+    (catalog_tree / "catalog.yaml").unlink()
+
+    with pytest.raises(CatalogNotFoundError):
+        load_catalog(VERSION, root=catalog_tree)
+
+
+# --------------------------------------------------------------------------------------------
+# Schema conformance, enforced at load rather than asserted per field
+# --------------------------------------------------------------------------------------------
+
+
+def test_a_field_outside_section_seventeen_fails_and_names_it(catalog_tree: Path) -> None:
+    edit_first_requirement(a_requirement_file(catalog_tree), {"severity_if_unmet": "high"})
+    with pytest.raises(CatalogSchemaError) as raised:
+        load_catalog(VERSION, root=catalog_tree)
+
+    message = str(raised.value)
+    assert "severity_if_unmet" in message
+    assert "data-model.md section 17" in message
+    assert "req-WEBHOOK-001" in message
+
+
+def test_a_missing_required_field_fails(catalog_tree: Path) -> None:
+    edit_first_requirement(a_requirement_file(catalog_tree), {"rationale": None})
+    with pytest.raises(CatalogSchemaError, match="rationale"):
+        load_catalog(VERSION, root=catalog_tree)
+
+
+def test_default_severity_takes_only_the_section_four_five_vocabulary(catalog_tree: Path) -> None:
+    edit_first_requirement(a_requirement_file(catalog_tree), {"default_severity": "severe"})
+    with pytest.raises(CatalogSchemaError, match="default_severity"):
+        load_catalog(VERSION, root=catalog_tree)
+
+
+def test_status_takes_only_draft_active_retired(catalog_tree: Path) -> None:
+    edit_first_requirement(a_requirement_file(catalog_tree), {"status": "published"})
+    with pytest.raises(CatalogSchemaError, match="status"):
+        load_catalog(VERSION, root=catalog_tree)
+
+
+def test_category_must_be_a_non_empty_list(catalog_tree: Path) -> None:
+    edit_first_requirement(a_requirement_file(catalog_tree), {"category": []})
+    with pytest.raises(CatalogSchemaError, match="category"):
+        load_catalog(VERSION, root=catalog_tree)
+
+
+def test_a_category_file_without_a_requirements_list_fails(catalog_tree: Path) -> None:
+    a_requirement_file(catalog_tree).write_text("webhooks: []\n", encoding="utf-8")
+
+    with pytest.raises(CatalogSchemaError, match="requirements"):
+        load_catalog(VERSION, root=catalog_tree)
+
+
+# --------------------------------------------------------------------------------------------
+# Identifiers
+# --------------------------------------------------------------------------------------------
+
+
+def test_a_generated_identifier_is_refused(catalog_tree: Path) -> None:
+    """DEC-018 gives catalog requirements the authored form.
+
+    `req-001` is a perfectly valid *generated* identifier, which is the problem: it is a number
+    from a counter rather than one a person assigned, and benchmark expected-output files
+    reference requirement identifiers by hand.
+    """
+    path = a_requirement_file(catalog_tree)
+    edit_first_requirement(path, {"id": "req-001"})
+    catalog = read_manifest(catalog_tree)
+    catalog["requirement_ids"] = [
+        "req-001" if rid == "req-WEBHOOK-001" else rid for rid in catalog["requirement_ids"]
+    ]
+    write_manifest(catalog_tree, catalog)
+
+    with pytest.raises(CatalogManifestError) as raised:
+        load_catalog(VERSION, root=catalog_tree)
+
+    assert "req-001" in str(raised.value)
+    assert "authored" in str(raised.value)
+
+
+def test_an_identifier_without_the_req_prefix_is_refused(catalog_tree: Path) -> None:
+    edit_first_requirement(a_requirement_file(catalog_tree), {"id": "thr-WEBHOOK-001"})
+    with pytest.raises(CatalogSchemaError, match="Requirement identifier"):
+        load_catalog(VERSION, root=catalog_tree)
+
+
+# --------------------------------------------------------------------------------------------
+# Manifest agreement, in both directions
+# --------------------------------------------------------------------------------------------
+
+
+def test_an_identifier_only_in_the_manifest_is_an_error_naming_it(catalog_tree: Path) -> None:
+    catalog = read_manifest(catalog_tree)
+    catalog["requirement_ids"] = [*catalog["requirement_ids"], "req-GHOST-001"]
+    write_manifest(catalog_tree, catalog)
+
+    with pytest.raises(CatalogManifestError) as raised:
+        load_catalog(VERSION, root=catalog_tree)
+
+    assert "req-GHOST-001" in str(raised.value)
+    assert "Only in the manifest" in str(raised.value)
+
+
+def test_an_identifier_only_in_the_files_is_an_error_naming_it(catalog_tree: Path) -> None:
+    catalog = read_manifest(catalog_tree)
+    catalog["requirement_ids"] = [
+        rid for rid in catalog["requirement_ids"] if rid != "req-WEBHOOK-002"
+    ]
+    write_manifest(catalog_tree, catalog)
+
+    with pytest.raises(CatalogManifestError) as raised:
+        load_catalog(VERSION, root=catalog_tree)
+
+    assert "req-WEBHOOK-002" in str(raised.value)
+    assert "only in the files" in str(raised.value)
+
+
+def test_a_duplicate_identifier_is_an_error(catalog_tree: Path) -> None:
+    path = catalog_tree / VERSION / "logging.yaml"
+    document = yaml.safe_load(path.read_text(encoding="utf-8"))
+    duplicate = dict(document["requirements"][0])
+    duplicate["id"] = "req-WEBHOOK-001"
+    document["requirements"].append(duplicate)
+    path.write_text(yaml.safe_dump(document), encoding="utf-8")
+
+    with pytest.raises(CatalogManifestError, match="duplicate"):
+        load_catalog(VERSION, root=catalog_tree)
+
+
+def test_a_requirement_declaring_another_catalog_version_is_an_error(catalog_tree: Path) -> None:
+    edit_first_requirement(a_requirement_file(catalog_tree), {"catalog_version": "0.9"})
+    with pytest.raises(CatalogManifestError) as raised:
+        load_catalog(VERSION, root=catalog_tree)
+
+    assert "req-WEBHOOK-001" in str(raised.value)
+
+
+# --------------------------------------------------------------------------------------------
+# content_hash (DEC-019)
+# --------------------------------------------------------------------------------------------
+
+
+def test_the_declared_hash_matches_the_catalog() -> None:
+    assert CATALOG.catalog.content_hash == compute_hash(VERSION)
+
+
+def test_the_hash_is_stable_across_runs() -> None:
+    assert compute_hash(VERSION) == compute_hash(VERSION)
+
+
+def test_the_hash_changes_when_a_requirement_changes(catalog_tree: Path) -> None:
+    before = compute_hash(VERSION, catalog_tree)
+    edit_first_requirement(a_requirement_file(catalog_tree), {"title": "Something else"})
+
+    assert compute_hash(VERSION, catalog_tree) != before
+
+
+def test_the_hash_ignores_comments_and_key_order(catalog_tree: Path) -> None:
+    """It covers the parsed catalog, not the file (DEC-019).
+
+    `write_manifest` round-trips through `yaml.safe_dump`, which discards every comment in the
+    manifest and re-orders its keys alphabetically. That is the largest formatting change the
+    file can undergo, and the hash does not move.
+    """
+    before = compute_hash(VERSION, catalog_tree)
+    write_manifest(catalog_tree, read_manifest(catalog_tree))
+
+    assert compute_hash(VERSION, catalog_tree) == before
+
+
+def test_the_hash_ignores_the_order_of_requirement_ids(catalog_tree: Path) -> None:
+    before = compute_hash(VERSION, catalog_tree)
+    catalog = read_manifest(catalog_tree)
+    catalog["requirement_ids"] = list(reversed(catalog["requirement_ids"]))
+    write_manifest(catalog_tree, catalog)
+
+    assert compute_hash(VERSION, catalog_tree) == before
+
+
+def test_a_stale_hash_stops_the_load_and_says_how_to_repair_it(catalog_tree: Path) -> None:
+    edit_first_requirement(a_requirement_file(catalog_tree), {"title": "Something else"})
+
+    with pytest.raises(CatalogHashError) as raised:
+        load_catalog(VERSION, root=catalog_tree)
+
+    assert "scripts/catalog_hash.py" in str(raised.value)
+
+
+def test_an_absent_hash_is_an_error_carrying_the_value_to_record(catalog_tree: Path) -> None:
+    catalog = read_manifest(catalog_tree)
+    expected = catalog.pop("content_hash")
+    write_manifest(catalog_tree, catalog)
+
+    with pytest.raises(CatalogHashError) as raised:
+        load_catalog(VERSION, root=catalog_tree)
+
+    assert expected in str(raised.value)
+
+
+def test_the_hash_excludes_itself_from_its_own_input() -> None:
+    """Otherwise it could not be computed: the manifest carries the value being hashed."""
+    payload = canonical_bytes(CATALOG.catalog, CATALOG.requirements)
+
+    assert CATALOG.catalog.content_hash.encode("utf-8") not in payload
+    assert b"content_hash" not in payload
+
+
+def test_the_hash_covers_the_rest_of_the_manifest(catalog_tree: Path) -> None:
+    before = compute_hash(VERSION, catalog_tree)
+    catalog = read_manifest(catalog_tree)
+    catalog["name"] = "Something Else"
+    write_manifest(catalog_tree, catalog)
+
+    assert compute_hash(VERSION, catalog_tree) != before
+
+
+# --------------------------------------------------------------------------------------------
+# Per-requirement authoring conventions
+# --------------------------------------------------------------------------------------------
 
 
 @pytest.mark.parametrize(
-    ("file_name", "requirement"),
-    [(name, requirement) for name, requirement in ALL_REQUIREMENTS],
-    ids=[requirement["id"] for _, requirement in ALL_REQUIREMENTS],
+    "requirement",
+    ALL_REQUIREMENTS,
+    ids=[requirement.id for requirement in ALL_REQUIREMENTS],
 )
 class TestRequirement:
-    """Per-requirement conformance, so a failure names the offending requirement."""
+    """Per-requirement checks, so a failure names the offending requirement."""
 
-    def test_has_required_fields(self, file_name: str, requirement: dict[str, Any]) -> None:
-        missing = sorted(REQUIRED_FIELDS - set(requirement))
+    def test_id_follows_the_naming_convention(self, requirement: Requirement) -> None:
+        assert requirement.id.startswith("req-")
+        assert requirement.id == requirement.id.strip()
 
-        assert not missing, f"{file_name}: missing required fields {missing}"
+    def test_catalog_version_matches_the_manifest(self, requirement: Requirement) -> None:
+        assert requirement.catalog_version == VERSION
 
-    def test_has_no_unknown_fields(self, file_name: str, requirement: dict[str, Any]) -> None:
-        unknown = sorted(set(requirement) - KNOWN_FIELDS)
+    def test_status_is_a_known_value(self, requirement: Requirement) -> None:
+        assert requirement.status in set(CatalogStatus)
 
-        assert not unknown, (
-            f"{file_name}: fields not in data-model.md section 17: {unknown}. "
-            "Adding a field to the Requirement object is a design change."
-        )
+    def test_severity_is_a_known_value(self, requirement: Requirement) -> None:
+        assert requirement.default_severity is None or requirement.default_severity in set(Severity)
 
-    def test_id_follows_the_naming_convention(
-        self, file_name: str, requirement: dict[str, Any]
-    ) -> None:
-        rid = requirement["id"]
+    def test_category_is_a_non_empty_list(self, requirement: Requirement) -> None:
+        assert requirement.category
 
-        assert rid.startswith("req-"), f"{file_name}: {rid} does not start with 'req-'"
-        assert rid == rid.strip(), f"{file_name}: {rid} has surrounding whitespace"
-
-    def test_catalog_version_matches_the_manifest(
-        self, file_name: str, requirement: dict[str, Any]
-    ) -> None:
-        assert requirement["catalog_version"] == _version(), (
-            f"{file_name}: {requirement['id']} declares catalog_version "
-            f"{requirement['catalog_version']!r}, manifest declares {_version()!r}"
-        )
-
-    def test_status_is_a_known_value(self, file_name: str, requirement: dict[str, Any]) -> None:
-        assert requirement["status"] in STATUSES, (
-            f"{file_name}: {requirement['id']} has status {requirement['status']!r}"
-        )
-
-    def test_severity_is_a_known_value(self, file_name: str, requirement: dict[str, Any]) -> None:
-        severity = requirement.get("default_severity")
-
-        assert severity is None or severity in SEVERITIES, (
-            f"{file_name}: {requirement['id']} has default_severity {severity!r}"
-        )
-
-    def test_category_is_a_non_empty_list(
-        self, file_name: str, requirement: dict[str, Any]
-    ) -> None:
-        category = requirement["category"]
-
-        assert isinstance(category, list) and category, (
-            f"{file_name}: {requirement['id']} has an empty or non-list category"
-        )
-
-    def test_citations_name_a_known_framework_and_version(
-        self, file_name: str, requirement: dict[str, Any]
-    ) -> None:
+    def test_citations_name_a_known_framework_and_version(self, requirement: Requirement) -> None:
         """`source_frameworks` entries are '<framework> <version>: <control id>'.
 
-        The version lives inside the string because section 17 types the field as
-        a list of strings, and control identifiers are not stable across releases
-        (requirements/README.md). A citation without one goes stale invisibly.
+        The version lives inside the string because section 17 types the field as a list of
+        strings, and control identifiers are not stable across releases
+        (`requirements/README.md`). A citation without one goes stale invisibly.
+
+        This is an authoring convention rather than a schema rule, so it is checked here rather
+        than in the loader: the adopted-framework list below is the thing being enforced, and
+        adopting a framework is a provenance decision, not a code change.
         """
-        for citation in requirement.get("source_frameworks", []):
+        for citation in requirement.source_frameworks:
             framework, separator, control = citation.partition(": ")
 
             assert separator, (
-                f"{file_name}: {requirement['id']} citation {citation!r} "
+                f"{requirement.id} citation {citation!r} "
                 "is not '<framework> <version>: <control id>'"
             )
             assert framework in FRAMEWORKS, (
-                f"{file_name}: {requirement['id']} cites unknown framework {framework!r}. "
+                f"{requirement.id} cites unknown framework {framework!r}. "
                 "Citing a new framework is a provenance decision; add it to FRAMEWORKS."
             )
-            assert control.strip(), (
-                f"{file_name}: {requirement['id']} citation {citation!r} has no control id"
-            )
+            assert control.strip(), f"{requirement.id} citation {citation!r} has no control id"
+
+
+# --------------------------------------------------------------------------------------------
+# The loaded object
+# --------------------------------------------------------------------------------------------
+
+
+def test_absent_optional_lists_are_empty_rather_than_none() -> None:
+    """So a consumer iterates rather than testing for `None` first."""
+    for requirement in ALL_REQUIREMENTS:
+        assert isinstance(requirement.applicable_technologies, list)
+        assert isinstance(requirement.common_false_positives, list)
+
+
+def test_applicable_technologies_is_populated_on_nothing() -> None:
+    """The fact DEC-024 turns on, asserted so it cannot change without the decision being reread.
+
+    It is the only structured filter field section 17 offers, and it carries no data. That is why
+    there is no deterministic requirement pre-filter and why the whole catalog goes to every
+    mapping call. If this starts failing, DEC-024's expiry trigger is worth re-reading.
+    """
+    populated = [r.id for r in ALL_REQUIREMENTS if r.applicable_technologies]
+
+    assert not populated, (
+        f"{populated} now carry applicable_technologies. DEC-024 rejected a deterministic "
+        f"pre-filter partly because this field is empty on every requirement."
+    )
+
+
+def test_a_loaded_catalog_is_immutable() -> None:
+    loaded: LoadedCatalog = CATALOG
+
+    with pytest.raises(AttributeError):
+        loaded.catalog = CATALOG.catalog  # type: ignore[misc]

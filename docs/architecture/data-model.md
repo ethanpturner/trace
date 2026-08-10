@@ -2349,6 +2349,7 @@ Implement these first:
 20. ReviewerDecision
 21. WorkflowRun
 22. ExecutionRecord
+23. RequirementsCatalog
 
 `SourceObservation` (section 10a) was added by DEC-021 after this list was written, and the list
 was not updated with it. It is not optional: DEC-021 makes contradictions and detected
@@ -2360,6 +2361,13 @@ sits after `ContextClaim` because `subject_claim_ids` references claims.
 objects at all. DEC-037 answers it: they are, `SystemContext.actor_ids` references them, and the
 entry above places `Actor` after `Asset` and before `DataFlow`.
 
-Add Critique, EvidenceAssessment, PromptDefinition, RequirementsCatalog, and EvaluationResult once the main workflow begins operating.
+`RequirementsCatalog` (section 30) was on the deferred list, on the grounds that it should arrive
+once the workflow operates. It arrives earlier than that, and not by preference: DEC-019 makes its
+`content_hash` a value computed and verified at catalog load, DEC-024 puts the whole catalog into
+every mapping call, and the requirement-matcher step needs a loader before either. A catalog read
+without a manifest object is a catalog with no integrity marker and no single place that says what
+version was used, so it sits last on this list rather than on the next one.
+
+Add Critique, EvidenceAssessment, PromptDefinition, and EvaluationResult once the main workflow begins operating.
 
 The data model should serve the workflow. The workflow should not become complicated merely to exercise every possible object.

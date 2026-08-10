@@ -446,6 +446,8 @@ A `catalog.yaml` manifest lists the requirement identifiers the version contains
 
 `content_hash`, which DEC-006's structured-state model requires on RequirementsCatalog, is deliberately omitted until a loader exists to compute it.
 
+**Corrected 2026-08-09: the loader exists.** `src/trace_ai/services/requirements/loader.py` reads the catalog, validates every requirement against section 17, checks the manifest and the category files against each other in both directions, and computes and verifies `content_hash` per DEC-019 on every load. `requirements/catalog.yaml` carries the value, and `scripts/catalog_hash.py --write` regenerates it. Two sentences below are now historical rather than current: the catalog is no longer data that only a test reads, and the tradeoff that "the test constrains the catalog only while the catalog has no other reader" has expired — the constraint is now at load, for every reader. `RequirementsCatalog` moved from `data-model.md` section 40's deferred list to its build-first list in the same change, for the reason stated there.
+
 Why:
 
 The architecture already requires the catalog to be stored separately from application code and to use version-controlled structured data.
