@@ -909,6 +909,19 @@ removing it, which DEC-012 requires.
 The review package is derived from the persisted run rather than stored with it, so the mechanism
 does not presuppose which interface renders it.
 
+### How a checkpoint is passed, and what rejection does
+
+Checkpoint 1's gate is `SystemContext.is_approved`, and it is read rather than counted: the
+checkpoint node names the `SystemContext` among the objects awaiting a decision whenever
+`approved_at` and `approved_by` are unset, so a run advances to threat generation only after a
+reviewer approved the revision. Approval is refused while a blocking question is open or a blocking
+validation error is outstanding, and the refusal names what is outstanding.
+
+Rejection — "request re-extraction" in `agent-design.md` section 9 — stops the run and is recorded
+as a `ReviewerDecision` with disposition `request_more_analysis`. It does not route the run
+backwards: DEC-038 makes re-extraction the assessment's next `WorkflowRun`, so the transition table
+stays a sequence and there is no edge from `human_context_review` back to `context_extraction`.
+
 ## 9. Model Interaction Architecture
 
 Trace should use a model abstraction layer rather than calling one provider directly throughout the codebase.

@@ -2395,3 +2395,94 @@ Open Questions:
   object that happens to share a shape with a legitimate actor?
 - Should `SystemContext.actor_ids` be required-but-possibly-empty, like the other lists, or optional?
   The other five are required in section 9, and this entry follows them.
+
+## DEC-038: Re-extraction is the assessment's next workflow run, not a backward transition
+
+Date: 2026-08-09
+
+Status: Accepted
+
+Decision:
+
+"Request re-extraction", which `agent-design.md` section 9 lists among the reviewer's actions at
+checkpoint 1, is a **new `WorkflowRun` for the same assessment**. It is not a transition from
+`human_context_review` back to `context_extraction`, and no such edge is added to the transition
+table.
+
+The reviewer's rejection is recorded as a `ReviewerDecision` against the `SystemContext` with
+disposition `request_more_analysis`, carrying a required rationale. That row is what connects the
+two runs: the second run is a re-extraction because a decision on the first one says so, not
+because the orchestrator routed backwards.
+
+The transition table therefore stays a sequence — every phase names exactly one successor, and
+`successor()` keeps returning a single value.
+
+Why:
+
+Three decisions already made settle this, and the only reason it looked open is that the phrase
+"the re-extraction path" appears in an issue without appearing anywhere in the corpus.
+
+**DEC-016 declares the pipeline as an ordered table with no analytical branching.** An edge from
+`human_context_review` to `context_extraction` would give one phase two successors, which is the
+one shape `successor()` refuses to resolve — it raises rather than choosing. Every consumer of the
+table would gain a branch, and the branch would exist to serve a case that happens rarely and
+costs a process restart when it does.
+
+**`agent-design.md` section 27 requires the orchestrator to prevent uncontrolled loops**, and a
+backward edge is the loop: extraction, validation, review, extraction. Bounding it would mean a
+re-extraction ceiling, which is a fourth kind of limit alongside node executions, model calls, and
+cost — invented to make a transition safe that nothing needed.
+
+**DEC-017 already says a rejected review is a stopped run.** Pausing is stopping: the state is
+written, the process exits, and resuming is a read in a new process. A rejection arrives after the
+process that produced the context is gone, so there is nothing to route; what happens next happens
+in a new invocation either way. Making that invocation a new run rather than a resumed one costs
+nothing and says what actually occurred.
+
+**DEC-031 already allows for it.** `Assessment.status` is the deliverable's lifecycle and
+`WorkflowRun.status` is the pipeline's position, and an assessment may have several runs. A
+re-extraction is the plainest example of why that separation exists: the assessment is one
+deliverable being worked on twice, and a failed or rejected run leaves its assessment in `draft`.
+
+The alternative that looks tidier — reusing the run and stepping it backwards — also loses the
+record. A run that visited `context_extraction` twice has one `WorkflowRun` row whose counters are
+the sum of two attempts, and the evaluation question "how often does a reviewer reject an extracted
+context" becomes unanswerable from the ledger. Two runs answer it by counting.
+
+`SystemContext.next_version()` and DEC-023's `supersedes_id` do the rest without a transition: the
+second run's context is version 2, its claims supersede version 1's, and both revisions stay in the
+store.
+
+Alternatives Considered:
+
+- Add `human_context_review -> context_extraction` to `TRANSITIONS` and bound it with a
+  re-extraction ceiling
+- Add the edge and let `agent-design.md` section 27's node-execution ceiling bound it implicitly
+- Treat re-extraction as a resumed run that rewinds `AssessmentState.current_phase`
+- Leave the action unimplemented until M4, when the finding checkpoint needs the same shape
+
+Tradeoffs:
+
+- **A reviewer rejecting a context has to start a run rather than press continue.** The command-line
+  surface has to make that obvious, or it will read as the rejection having done nothing.
+- The connection between the two runs is a `ReviewerDecision` row rather than a workflow edge, so
+  anything reconstructing the history has to read decisions as well as runs. A single run with a
+  backward edge would have carried it in one place.
+- Two runs mean two sets of execution records for one assessment, and a cost report that sums runs
+  will show the rejected attempt. That is accurate and is also the first time a reader will notice
+  that a rejected extraction was paid for.
+- `ReviewDisposition.REQUEST_MORE_ANALYSIS` now carries two meanings across the two checkpoints —
+  re-extraction here, further analysis of a finding at checkpoint 2. The disposition vocabulary
+  names what the system records rather than what the reviewer said, so the subject type
+  distinguishes them, but a reader counting dispositions across an assessment has to split by
+  subject.
+
+Open Questions:
+
+- Should the second run's extraction receive the rejection rationale as input? The retry rule in
+  section 26 says a repeated attempt carries feedback or it is a repetition, which argues yes; but
+  the rationale is reviewer-authored text entering a prompt, which is a trust question the
+  untrusted-source boundary does not currently cover.
+- Does a rejected run's `Assessment` need a status distinct from `draft`? DEC-031 gives four values
+  and a failed run leaves its assessment in `draft`; a rejected review is not a failure, and it is
+  not obvious the two should look identical.
