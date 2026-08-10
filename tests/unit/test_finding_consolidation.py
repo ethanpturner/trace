@@ -546,3 +546,80 @@ def test_the_node_name_is_the_one_the_phase_registry_lists() -> None:
     from trace_ai.workflow.phases import NODES_BY_PHASE, Phase
 
     assert NODE_NAME in NODES_BY_PHASE[Phase.FINDING_CONSOLIDATION]
+
+
+# ------------------------------------------------------------------------------------------
+# The DEC-046 second half: conditions 2 and 3, applied here, appending (DEC-055)
+# ------------------------------------------------------------------------------------------
+
+
+def test_an_unsupported_unmet_is_downgraded_and_recorded() -> None:
+    """DEC-013's `downgrade_only` cell: lowered to unverified, recorded, nothing produced."""
+    outcome = run(
+        mappings=[
+            a_mapping(satisfaction_status=SatisfactionStatus.UNMET, evidence_ids=["evd-001"])
+        ],
+        assessments=[an_assessment(validation_status=ValidationStatus.UNSUPPORTED)],
+    )
+
+    assert outcome.findings == ()
+    (lowered,) = outcome.downgraded_mappings
+    assert lowered.satisfaction_status is SatisfactionStatus.UNVERIFIED
+    assert lowered.downgraded_from is SatisfactionStatus.UNMET
+    assert lowered.downgrade_reason is not None
+    assert lowered.downgrade_reason.startswith(f"{NODE_NAME}:")
+    (rejected,) = outcome.rejected
+    assert rejected.outcome is Outcome.DOWNGRADE_ONLY
+
+
+def test_an_unsupported_satisfied_is_downgraded_and_asked_about() -> None:
+    """The `question_after_downgrade` cell produces the question the table names."""
+    outcome = run(
+        mappings=[
+            a_mapping(satisfaction_status=SatisfactionStatus.SATISFIED, evidence_ids=["evd-001"])
+        ],
+        assessments=[an_assessment(validation_status=ValidationStatus.UNSUPPORTED)],
+    )
+
+    (lowered,) = outcome.downgraded_mappings
+    assert lowered.satisfaction_status is SatisfactionStatus.UNVERIFIED
+    assert lowered.downgraded_from is SatisfactionStatus.SATISFIED
+    assert len(outcome.questions) == 1
+    assert outcome.rejected == ()
+
+
+def test_a_second_downgrade_appends_and_never_overwrites() -> None:
+    """DEC-055's answer to DEC-046's open question, exercised.
+
+    The reason accumulates node-prefixed entries; `downgraded_from` keeps what the agent
+    proposed, because a second downgrade does not change what was proposed.
+    """
+    prior = "mapping-validation: DEC-013 condition 1 failed on the original proposal"
+    outcome = run(
+        mappings=[
+            a_mapping(
+                satisfaction_status=SatisfactionStatus.UNMET,
+                evidence_ids=["evd-001"],
+                downgraded_from=SatisfactionStatus.SATISFIED,
+                downgrade_reason=prior,
+            )
+        ],
+        assessments=[an_assessment(validation_status=ValidationStatus.UNSUPPORTED)],
+    )
+
+    (lowered,) = outcome.downgraded_mappings
+    assert lowered.downgrade_reason is not None
+    assert lowered.downgrade_reason.startswith(prior + "; ")
+    assert f"{NODE_NAME}:" in lowered.downgrade_reason
+    assert lowered.downgraded_from is SatisfactionStatus.SATISFIED, "first writer wins"
+
+
+def test_a_carried_conclusion_is_not_downgraded() -> None:
+    outcome = run(
+        mappings=[
+            a_mapping(satisfaction_status=SatisfactionStatus.UNMET, evidence_ids=["evd-001"])
+        ],
+        assessments=[an_assessment(validation_status=ValidationStatus.SUPPORTED)],
+    )
+    assert outcome.downgraded_mappings == ()
+    assert len(outcome.findings) == 1

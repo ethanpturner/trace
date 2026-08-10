@@ -38,8 +38,9 @@ from trace_ai.domain.enums import ObjectStatus, ReviewDisposition, Severity
 from trace_ai.domain.execution import ExecutionType
 from trace_ai.domain.finding import Finding
 from trace_ai.domain.finding_merge_record import MERGE_FEATURES, MergeDecision
+from trace_ai.domain.outcomes import FINDING_VALIDATION_STATUSES
 from trace_ai.domain.reviewer_decision import ReviewerDecision
-from trace_ai.workflow.checkpoint import CheckpointNode
+from trace_ai.workflow.checkpoint import CheckpointNode, decided_object_ids
 from trace_ai.workflow.context_review import ReviewerActionError
 from trace_ai.workflow.finding_dedup import DuplicateGroup, merge_findings, shared_features
 from trace_ai.workflow.phases import Phase
@@ -48,10 +49,11 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
     from datetime import datetime
 
+    from trace_ai.domain.assessment import Assessment
     from trace_ai.domain.documentation_gap import DocumentationGap
     from trace_ai.domain.finding_merge_record import FindingMergeRecord
     from trace_ai.domain.question import Question, QuestionPriority
-    from trace_ai.services.assessment import AssessmentHandle
+    from trace_ai.services.assessment import AssessmentHandle, AssessmentService
     from trace_ai.workflow.nodes import NodeContext, NodeResult
 
 __all__ = [
@@ -60,6 +62,7 @@ __all__ = [
     "add_reviewer_rationale",
     "approve_finding",
     "change_severity",
+    "conclude_finding_review",
     "convert_to_documentation_gap",
     "convert_to_question",
     "defer_finding",
@@ -185,20 +188,37 @@ def _decide(
     return decided, decision
 
 
+# The validation statuses under which an approval needs no override: the evidence carries the
+# conclusion (data-model.md section 21, DEC-013). Derived from the same table `Finding` consults,
+# not restated.
+_CARRIED: Final = FINDING_VALIDATION_STATUSES
+
+
 def approve_finding(
     handle: AssessmentHandle,
     finding: Finding,
     *,
     reviewer_id: str,
     rationale: str | None = None,
+    override_rationale: str | None = None,
     workflow_run_id: str | None = None,
     at: datetime | None = None,
 ) -> tuple[Finding, ReviewerDecision]:
     """Approve one provisional finding — the only path to `approved` anywhere (DEC-005).
 
-    Refused while `severity` is `unassigned`: the reviewer assigns severity at this checkpoint
-    and an approval without one is how reviewer-assigned severity degrades into nobody assigning
-    it (DEC-030). Assign through `change_severity` first, or in the same sitting.
+    The deterministic gate (DEC-055) enforces data-model section 21's approved-finding
+    conditions here, the last enforcement point before the conclusion becomes official:
+
+    - **Severity is assigned** (DEC-030). Refused outright; assign through `change_severity`.
+    - **The finding is canonical.** A duplicate merged into a survivor is refused outright.
+    - **The evidence carries the conclusion.** A `validation_status` outside `supported` and
+      `partially_supported` — unreachable through the schema, and the gate does not assume the
+      schema was upstream of every caller — is approvable only with an explicit
+      `override_rationale`, recorded on the decision with an `override:` prefix so overrides
+      stay retrievable. The silent path is refused.
+    - **The remediation is actionable.** No recommendation and no acceptance criteria is refused
+      outright, as is a finding citing no evidence — a finding indistinguishable from a
+      documentation gap must not become official as one (DEC-009).
     """
     if finding.severity is Severity.UNASSIGNED:
         raise ReviewerActionError(
@@ -211,16 +231,66 @@ def approve_finding(
             f"the one to approve. A duplicate approved alongside its survivor would be the same "
             f"conclusion reported twice."
         )
+    if not finding.evidence_ids:
+        raise ReviewerActionError(
+            f"{finding.id} cites no evidence and cannot be approved. A finding that rests on "
+            f"nothing quotable is indistinguishable from a documentation gap, and approving it "
+            f"would collapse the DEC-009 separation at the last place it is enforced."
+        )
+    if not finding.recommendation.strip() and not finding.acceptance_criteria:
+        raise ReviewerActionError(
+            f"{finding.id} carries no recommendation and no acceptance criteria. An approved "
+            f"finding requires actionable remediation or acceptance criteria (data-model.md "
+            f"section 21); add one through the edit actions, then approve."
+        )
+
+    decision_rationale = rationale
+    if finding.validation_status not in _CARRIED:
+        if not override_rationale or not override_rationale.strip():
+            raise ReviewerActionError(
+                f"{finding.id} has validation_status {finding.validation_status.value!r}, which "
+                f"the evidence does not carry, and cannot be approved silently. Approving it "
+                f"anyway requires an explicit override_rationale, which is recorded on the "
+                f"ReviewerDecision (DEC-055)."
+            )
+        decision_rationale = f"override: {override_rationale.strip()}"
+
     return _decide(
         handle,
         finding,
         status=ObjectStatus.APPROVED,
         disposition=ReviewDisposition.APPROVE,
         reviewer_id=reviewer_id,
-        rationale=rationale,
+        rationale=decision_rationale,
         workflow_run_id=workflow_run_id,
         at=at,
     )
+
+
+def conclude_finding_review(service: AssessmentService, assessment_id: str) -> Assessment:
+    """Move the assessment forward once every provisional finding has a decision.
+
+    The transition is `AssessmentService.resume_from_review` — the existing named verb for
+    "every pending object has a `ReviewerDecision`; the run continues" (DEC-017, DEC-031). The
+    assessment returns to `draft` and the run proceeds to report generation; `approve` stays
+    the pipeline-completion verb and is not this function's to call. It refuses while any
+    provisional finding lacks a decision, which is the checkpoint's completion condition
+    restated where the deliverable's lifecycle advances.
+    """
+    handle = service.handle(assessment_id)
+    provisional = [
+        finding
+        for finding in handle.objects.list(Finding, status=ObjectStatus.CANDIDATE.value)
+        if finding.duplicate_of_id is None
+    ]
+    decided = decided_object_ids(handle)
+    undecided = [finding.id for finding in provisional if finding.id not in decided]
+    if undecided:
+        raise ReviewerActionError(
+            f"the finding checkpoint is not complete: {undecided} await a ReviewerDecision. "
+            f"The assessment advances when every provisional finding has one (DEC-005)."
+        )
+    return service.resume_from_review(assessment_id)
 
 
 def reject_finding(
