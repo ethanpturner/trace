@@ -120,6 +120,13 @@ class Finding(DomainModel):
     duplicate_of_id: FindingId | None = None
     reviewer_notes: str | None = None
 
+    converted_from_id: str | None = None
+    """The object this was converted from, if it was (DEC-051).
+
+    Cross-type by design, so it is a plain identifier rather than a typed alias: a finding may
+    have been a documentation gap and a gap may have been a finding. `supersedes_id` is the
+    same-type mechanism DEC-023 gives for regeneration and does not reach across the boundary."""
+
     @model_validator(mode="after")
     def _affects_an_asset_or_a_component(self) -> Self:
         """Section 21: at least one affected asset or component.

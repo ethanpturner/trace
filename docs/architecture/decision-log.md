@@ -3334,3 +3334,55 @@ Open Questions:
 - Should DEC-013's table itself be amended to state the precedence, rather than leaving it recorded here?
 - Does `low_confidence_justification` belong on `DocumentationGap` and `Question` too, or is a finding the only object where low confidence needs defending?
 - Is there a case for requiring the justification to name the evidence that would raise confidence in a structured way, rather than as prose nothing can check?
+
+## DEC-051: Conversions across the outcome boundary carry `converted_from_id`; the source is superseded, not deleted
+
+Date: 2026-08-10
+
+Status: Accepted
+
+Decision:
+
+**`Finding`, `DocumentationGap`, and `Question` gain `converted_from_id`.** It names the object a conversion produced this one from, and it is cross-type: a plain identifier rather than a typed alias, because a finding may have been a gap and a gap may have been a finding. `data-model.md` sections 21, 22, and 23 record it.
+
+**A conversion supersedes its source rather than deleting it.** The source moves to `ObjectStatus.SUPERSEDED` and stays retrievable. Both objects come back from the helper and the caller persists both.
+
+**A conversion never fabricates a required field.** Every field the target requires and the source does not carry is a keyword argument with no default, and a blank one is refused by name.
+
+**Converting *to* a `Finding` runs the full minimum criteria and DEC-013's outcome table.** The helper is a thin wrapper over `Finding.model_validate` and gains no privileges from being one.
+
+Why:
+
+DEC-023 gives three mechanisms for three causes — a reviewer edit mutates in place with a `ReviewerDecision`, a regenerating node sets `supersedes_id`, an approved baseline increments `SystemContext.version` — and a conversion is a fourth cause none of them covers. `supersedes_id` is the closest and it is same-type by construction: `ContextClaim.supersedes_id` is a `ContextClaimId`. Reusing it would mean typing it as a bare string on three objects to accommodate one case, which loses the checking everywhere else to gain it here.
+
+A separate `ConversionRecord` object was the alternative and it fails DEC-025's test: the record is a property of the converted object rather than a thing in its own right, and detached from it means nothing. The same reasoning put suppressions on the mapping that suppressed them.
+
+**Fabrication is the failure mode a conversion helper invites**, which is why the signature is the enforcement rather than a rule. `DocumentationGap.importance` and `Question.rationale` are required and a `Finding` carries neither, so a helper that wanted to be convenient would write "converted from fnd-001" into them and produce an object whose required fields say nothing. Making them arguments means the caller states them; refusing a blank one closes the other half, which is passing `""` to satisfy the signature.
+
+**Severity is the case worth stating separately**, because it looks inheritable and is not. A `Finding` has a severity, so carrying it into the gap seems obviously right — but findings are created `unassigned` (DEC-030) and a gap may never be `unassigned` (DEC-045). The value would move a field meaning "nobody has decided yet" into a field where nobody ever will, and DEC-045's whole argument is that a gap's severity has no later step to resolve it. The reverse direction has the same shape for a different reason: a gap's severity rates the gap and a finding's rates a weakness, so a gap converted forward starts `unassigned` whatever it rated itself.
+
+**The escape-hatch risk is the reason `documentation_gap_to_finding` is deliberately unhelpful.** A gap records that something could not be determined. Converting one forward means somebody determined it, which requires evidence the gap did not have — so `evidence_ids` is a parameter rather than inherited, since a gap's evidence shows ambiguity or contradiction and a finding's has to support the weakness. Building through `model_validate` means DEC-013's table applies, and a gap cannot become a finding on a validation status the pipeline could not have reached one from.
+
+Alternatives Considered:
+
+- Widen `supersedes_id` to a bare string on the three outcome objects
+- A `ConversionRecord` object with its own identifier prefix
+- Record conversions only on `ReviewerDecision`, using the two existing dispositions
+- Delete the source object, since the converted one carries its content
+- Let the helpers derive `importance` and `rationale` from the source's `description`
+- Inherit severity across the conversion in both directions
+
+Tradeoffs:
+
+- **Three objects now carry a field only conversions set**, and nothing prevents a caller writing an unrelated identifier into it. The chain walk raises on one that does not resolve, which catches the accident and not the deliberate misuse.
+- Recording conversions on the object rather than on `ReviewerDecision` means a reviewer-driven conversion is recorded twice — once as a disposition and once as a field — and nothing checks the two agree.
+- **`conversion_chain` raises rather than returning a partial walk**, so a single broken link makes the whole history unreadable rather than mostly readable. That is the intended exchange and it will be inconvenient.
+- The helpers take a long argument list, and a long keyword-only signature is easy to call wrongly in ways the type checker catches and a reader does not.
+- Superseding rather than deleting means an assessment accumulates objects nothing reports. The review package and the renderer both have to filter on status, and neither is written yet.
+- `Question` carries one `related_object_id`, so a conversion from a finding keeps the threat and loses the requirement and mapping references except through the chain. Section 22's shape is the constraint and this decision does not change it.
+
+Open Questions:
+
+- Should a reviewer-driven conversion assert that its `ReviewerDecision` disposition and the `converted_from_id` on the result agree?
+- Does `Question` need the fuller lineage a finding carries, or is one related object plus the chain enough?
+- Should `conversion_chain` have a lenient variant for a report that would rather show a partial history than nothing?
