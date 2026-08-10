@@ -3435,3 +3435,53 @@ Open Questions:
 
 - Should the checkpoint 2 review package show merge records alongside the findings they merged, and DEC-043's threat merge proposals with them?
 - When a reviewer rejects a survivor, what happens to the findings merged into it — do they stay duplicates of a rejected finding, or return to the provisional set?
+
+## DEC-053: Consolidation applies forward critique recommendations; a deterministic revision adds and never rewrites
+
+Date: 2026-08-10
+
+Status: Accepted
+
+Decision:
+
+**Finding Consolidation applies the critique recommendations that route forward, and only those.** `workflow/critique_validation.py` already splits the recommendations: `revise` and `investigate` against a threat, control, mapping, or evidence assessment re-enter a passed phase and are the orchestrator's budget-gated concern, while everything else "is applied going forward, by Finding Consolidation or the reviewer". This decision settles the going-forward half, per action:
+
+- **`keep`** — recorded, nothing changes.
+- **`reject`** — the candidate moves to `rejected`, leaves the provisional set, and is retained with the critique identifier as its stated reason. Never deleted.
+- **`revise`** — the candidate is rebuilt with the critique's description appended to `limitations` under the critique's identifier, and the critique's cited evidence unioned into `evidence_ids`. Nothing else changes. The pre-revision state is preserved on the application record, DEC-023's `prior_value` pattern applied to a node.
+- **`merge`** — deferred to the DEC-052 merge operation; consolidation's critique step performs no merge of its own, so one recommendation cannot merge through two doors.
+- **`investigate`** — deferred to the checkpoint 2 reviewer, whose vocabulary has "request more analysis". A deterministic node cannot investigate.
+
+**A `documentation_gap_only` critique outranks its own `recommended_action`.** Whatever the critic recommended doing with the finding, the type asserts the finding should not exist as one — so the candidate routes through DEC-051's `finding_to_documentation_gap`, with the critique's rationale as the gap's importance and the source finding superseded, never through an ad hoc edit that softens a description. The precedent is the contradiction rule in the same node: a structural signal outranks an advisory one.
+
+**No critique path can produce an approved object.** Approval is the checkpoint's (DEC-005); the application writes `rejected`, `superseded`, and revised candidates, and nothing else. A critique that resolves to no candidate, or to one already rejected or converted, is reported as unapplied with the reason — never silently dropped.
+
+**The lineage surface is a query, not a stored structure.** `services/findings/lineage.py` walks section 32's chain backward from a finding — critiques, mappings, evidence assessments, threats, context claims, evidence references, source documents — resolving every referenced identifier and raising on one that does not resolve. Nothing new is persisted for it; the chain is already on the objects, which is what DEC-006 buys.
+
+Why:
+
+**The revision rule is the decision that needed making**, because "apply critique recommendations" (`agent-design.md` section 16) collides with two other rules the moment the action is `revise`: the node is deterministic and cannot write prose, and section 15 forbids rewriting objects without preserving lineage. Appending the critique's own words to `limitations` threads it: the text is agent output that already passed schema validation and the critique validation node, the field means exactly "analysis limitations", the entry carries the critique identifier so the change records its cause on the object itself, and nothing the earlier pipeline asserted is altered. A revision that *rewrote* `description` or `impact` deterministically would have to fabricate, and fabrication under a validation-shaped name is the section 26 failure.
+
+**Rejection is consolidation's to perform** because section 16 already gives this node "use no output when" rules and section 18 keeps rejected candidates available rather than deleted. The critic still decides nothing: the recommendation is applied by deterministic logic the same way an `unverified` mapping is routed by the outcome table — section 2.5's "agents propose; deterministic logic and humans decide" with the deciding logic in the application, not the agent.
+
+**The type-outranks-action rule closes the softening path.** A `documentation_gap_only` critique answered with a revision would produce exactly what the issue names as the failure: a finding with a softened description that still asserts a weakness the evidence does not carry. Routing through the DEC-051 helper means the minimum criteria, the severity rules, and the lineage field all apply, and the source survives as `superseded`.
+
+Alternatives Considered:
+
+- Have the revision lower `confidence` to `low` with the critique's rationale as the justification
+- A `supersedes_id` on `Finding`, minting a new finding per revision (DEC-023's regeneration mechanism)
+- A persisted `CritiqueApplication` object with its own prefix
+- Apply `documentation_gap_only` only when `recommended_action` agrees
+- Let consolidation perform `merge` recommendations directly
+
+Tradeoffs:
+
+- **A rejected candidate's stated reason lives on the application record, not on the object** — `Finding` has no rejection-reason field and this decision adds none. Retention and the persisted linkage for rejections are #103's; until then the reason survives the run only in the outcome the caller holds.
+- `limitations` now serves two writers: the consolidation build and the critique application. An entry is attributable only because the application prefixes the critique identifier, which is a convention, not a schema rule.
+- Deferring `merge` and `investigate` means two of the five actions produce no change here, and a reader of "apply critique recommendations" may expect more. The alternative was a node that merges through a second door and "investigates" by guessing.
+- The revision unions the critique's evidence into the finding's. Critique evidence shows what the criticism rests on, which is not always evidence *for* the finding; the union is honest about provenance only because `EvidenceReference` records what each excerpt is.
+
+Open Questions:
+
+- Should the application records be persisted alongside #103's retained rejections, so a resumed run can re-state why a candidate is absent?
+- When a revised candidate is later rejected by the reviewer, is the pre-revision state part of what checkpoint 2 shows, or only the revised object?
