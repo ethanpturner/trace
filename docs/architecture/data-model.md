@@ -1651,19 +1651,22 @@ is unrepresentable rather than merely forbidden.
 | assessment_id | string | Yes | Parent assessment |
 | surviving_finding_id | string | Yes | The canonical finding the merge kept |
 | merged_finding_ids | list[string] | Yes | Findings merged into the survivor; each carries `duplicate_of_id` |
-| matched_features | list[string] | Yes | Structural features that matched (DEC-052) |
+| matched_features | list[string] | No | Structural features that matched; empty only on a reviewer merge (DEC-052, DEC-054) |
 | decision | MergeDecision | Yes | Structural or model-assisted (DEC-052) |
 | detail | string | Yes | Human-readable account of the match |
 | generated_by | string | Yes | Workflow node or reviewer |
 | created_at | datetime | Yes | Merge timestamp |
 
-`MergeDecision` has two values: `structural`, a merge the deterministic identifier rule decided,
-and `model_assisted`, a merge a reviewer decided from a model-proposed candidate pair. The node
-only ever writes `structural`; a model-assisted comparison proposes pairs and merges nothing
-(DEC-052).
+`MergeDecision` has three values (DEC-052, amended by DEC-054): `structural`, a merge the
+deterministic identifier rule decided; `model_assisted`, a merge a reviewer decided from a
+model-proposed candidate pair; and `reviewer`, a merge the checkpoint 2 reviewer decided
+unprompted. The node only ever writes `structural`; a model-assisted comparison proposes pairs
+and merges nothing.
 
 `matched_features` values name what overlapped: `threats`, `requirements`, `control_mappings`,
-`components`, `assets`. The first two decide a structural merge; the rest corroborate.
+`components`, `assets`. The first two decide a structural merge; the rest corroborate. The list
+may be empty only when `decision` is `reviewer` — the rule's reason is its features, while a
+reviewer's reason lives on the `ReviewerDecision` rationale (DEC-054).
 
 # 22. Question
 
@@ -1682,7 +1685,7 @@ Represents missing information that could materially affect the assessment.
 | related_object_type | string | No | Threat, component, mapping, etc. |
 | related_object_id | string | No | Referenced object |
 | priority | string | Yes | Low, medium, high |
-| blocking | boolean | Yes | Whether workflow should pause |
+| blocking | boolean | Yes | Surfaced first at the next checkpoint; pauses nothing (DEC-054) |
 | response | string | No | User response |
 | response_origin | SourceOrigin | No | Response source |
 | answered_at | datetime | No | Response timestamp |

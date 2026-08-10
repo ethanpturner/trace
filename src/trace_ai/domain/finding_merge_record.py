@@ -14,7 +14,9 @@ boundary is unrepresentable rather than merely forbidden. The other half is the 
 **`decision` says who decided, not who noticed.** `structural` is a merge the deterministic
 identifier rule decided. `model_assisted` is a merge a reviewer decided from a model-proposed
 candidate pair — the node never writes it, because DEC-052 confines any semantic comparison to
-proposing pairs.
+proposing pairs. `reviewer` (DEC-054) is a merge the checkpoint 2 reviewer decided unprompted,
+and it is the one decision whose `matched_features` may be empty: the rule's reason is its
+features, while a reviewer's reason lives on the `ReviewerDecision` rationale.
 """
 
 from __future__ import annotations
@@ -32,10 +34,11 @@ __all__ = ["MERGE_FEATURES", "FindingMergeRecord", "MergeDecision"]
 
 
 class MergeDecision(StrEnum):
-    """Which kind of decision performed the merge (section 21a)."""
+    """Which kind of decision performed the merge (section 21a; DEC-052, DEC-054)."""
 
     STRUCTURAL = "structural"
     MODEL_ASSISTED = "model_assisted"
+    REVIEWER = "reviewer"
 
 
 # The feature vocabulary section 21a names. The first two decide a structural merge; the rest
@@ -60,7 +63,9 @@ class FindingMergeRecord(DomainModel):
     """Non-empty by schema: a merge that merged nothing is not a merge, and writing a record for
     one would make `duplicate_finding_rate` count events that never happened."""
 
-    matched_features: list[str] = Field(min_length=1)
+    matched_features: list[str] = Field(default_factory=list)
+    """May be empty only when `decision` is `reviewer` (DEC-054); the validator below holds it."""
+
     decision: MergeDecision
     detail: str = Field(min_length=1)
 
@@ -98,4 +103,10 @@ class FindingMergeRecord(DomainModel):
             )
         if len(set(self.matched_features)) != len(self.matched_features):
             raise ValueError(f"matched_features lists a feature twice: {self.matched_features}")
+        if not self.matched_features and self.decision is not MergeDecision.REVIEWER:
+            raise ValueError(
+                f"a {self.decision.value} merge with no matched features is a record of nothing: "
+                f"the rule's reason is its features (DEC-052). Only a reviewer merge may match "
+                f"none, because the reviewer's reason lives on the ReviewerDecision (DEC-054)."
+            )
         return self

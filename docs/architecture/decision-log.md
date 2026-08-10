@@ -3485,3 +3485,49 @@ Open Questions:
 
 - Should the application records be persisted alongside #103's retained rejections, so a resumed run can re-state why a candidate is absent?
 - When a revised candidate is later rejected by the reviewer, is the pre-revision state part of what checkpoint 2 shows, or only the revised object?
+
+## DEC-054: The finding checkpoint reuses the shared machinery; a reviewer merge is an edit plus the record; a blocking question pauses nothing
+
+Date: 2026-08-10
+
+Status: Accepted
+
+Decision:
+
+**Checkpoint 2 is the shared `CheckpointNode`, configured for `human_finding_review`, waiting on the provisional findings.** Its subjects are the state's `candidate_finding_ids`; it advances only when every one has a `ReviewerDecision`, and there is no flag, configuration field, or argument that changes the condition (DEC-005, DEC-012). Pause and resume are DEC-017's, unchanged. An assessment in which the reviewer approves nothing passes the checkpoint: rejection is a decision, and an empty approved set is a valid outcome.
+
+**There is no `merge` disposition, and none is added.** The `ReviewDisposition` gap against `agent-design.md` section 18 is resolved the way DEC-030 resolved severity: section 18 names actions a reviewer takes, section 4.6 names dispositions the system records, and the two do not correspond one to one. A reviewer merge is recorded as what it does — an `edit` per merged finding whose delta is `duplicate_of_id`, an `edit` on the survivor when the union changed it — plus **the same `FindingMergeRecord` the automatic path writes** (DEC-052), so `duplicate_finding_rate` counts both paths from one table.
+
+**`MergeDecision` gains `reviewer`, amending DEC-052's two values.** DEC-052 named `structural` and `model_assisted` and defined `model_assisted` as a reviewer merging from a model-proposed pair — which left a reviewer merging on their own judgment, the checkpoint's ordinary case, unrepresentable. Three values now: `structural` (the identifier rule decided), `model_assisted` (a reviewer decided from a model proposal), `reviewer` (a reviewer decided unprompted). `matched_features` may be empty **only** on a reviewer merge: the rule's reason is its features and a record of it without them is a record of nothing, while a reviewer's reason lives in the `ReviewerDecision` rationale.
+
+**A blocking `Question` pauses nothing; it is surfaced first at the next structural checkpoint.** Section 22 described `blocking` as "whether workflow should pause", which contradicts DEC-005's two structural checkpoints — a field that could pause the pipeline anywhere would be a third checkpoint nobody decided to add, configurable per question by whatever writes the field. The field's real meaning is priority of a specific kind: the assessment cannot conclude soundly without the answer, so the question leads the review package (`order_for_review` already puts blocking first) and the reviewer — who can defer every finding the question touches — decides what it holds up. Section 22's description and `domain/question.py`'s docstrings are corrected.
+
+**An approval whose finding carries `severity: unassigned` is refused at this node** (DEC-030's load-bearing half, landing where that entry said it would). So is approving a finding already merged into a survivor — the canonical finding is the one to decide.
+
+**Reviewer identity stays DEC-023's convention.** Every checkpoint-2 decision carries `reviewer_id`, a configured local string defaulting to the operating-system username. No authentication, role, or tenancy is introduced (DEC-004).
+
+Why:
+
+**Recording a merge as edits keeps the audit trail one mechanism.** DEC-023 gives reviewer changes exactly one shape — mutate in place, record the delta — and a merge *is* a set of field changes: `duplicate_of_id` on the merged, unions on the survivor. A `merge` disposition would record the same facts a second way, and every consumer of decisions would need to understand both. The merge-specific facts that edits cannot carry — the survivor, the set merged, what matched — already have a persisted home in DEC-052's record, built for exactly this reuse.
+
+**The blocking-question resolution follows from where answers come from.** A question is answered by a person. Between consolidation and checkpoint 2 no person is present, so a pause anywhere but a checkpoint would stop the process where nobody is looking at it; DEC-017's pause already waits indefinitely at the place the reviewer *is* looking. Surfacing first at the checkpoint is the whole enforceable content of "this must be resolved before conclusions rest on it".
+
+Alternatives Considered:
+
+- Add `merge` to `ReviewDisposition` and record one decision per merge
+- Record a reviewer merge as a single `edit` on the survivor only, with the merged identifiers in the rationale
+- Reuse `model_assisted` for reviewer-initiated merges
+- Let a blocking question pause the run where it is raised, as section 22's description implied
+- Gate checkpoint completion on every blocking question being answered
+
+Tradeoffs:
+
+- A reviewer merge of N findings writes N+1 or N+2 rows (edits plus the record), which is chattier than one `merge` decision; the compensation is that no consumer needs a second vocabulary.
+- `matched_features` empty-only-for-reviewer is a conditional constraint on a schema field, which is harder to state than `min_length=1`; the validator names the condition.
+- A blocking question that the reviewer overlooks holds up nothing mechanically. The checkpoint surfaces it first and counts it, but "blocking" is enforced by the reviewer's judgment, not the application — deliberately, and weaker than the old description promised.
+- Checkpoint completion requires a decision per provisional finding with no bulk approve (DEC-017's stated friction), and this decision does not soften it.
+
+Open Questions:
+
+- Should a checkpoint-2 approval write `Assessment.approved_by`, or does `Assessment.status` stay the deliverable's lifecycle only (DEC-031) with attribution living on the decisions?
+- Does the review surface need to show, per finding, the blocking questions that touch it as a refusal-shaped warning rather than a list entry?

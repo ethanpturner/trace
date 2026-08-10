@@ -59,6 +59,7 @@ __all__ = [
     "detect_duplicates",
     "merge_findings",
     "persist_dedup",
+    "shared_features",
 ]
 
 # What `generated_by` records on every merge record the automatic path writes. The dedup step is
@@ -142,7 +143,7 @@ def _allocation_order(finding_id: str) -> tuple[int, str]:
     return (len(finding_id), finding_id)
 
 
-def _shared_features(a: Finding, b: Finding) -> dict[str, frozenset[str]]:
+def shared_features(a: Finding, b: Finding) -> dict[str, frozenset[str]]:
     """The identifier overlap between two findings, one entry per section 21a feature."""
     return {
         "threats": frozenset(a.threat_ids) & frozenset(b.threat_ids),
@@ -191,7 +192,7 @@ def detect_duplicates(findings: Sequence[Finding]) -> tuple[DuplicateGroup, ...]
     pair_shared: dict[tuple[str, str], dict[str, frozenset[str]]] = {}
     for index, first in enumerate(canonical):
         for second in canonical[index + 1 :]:
-            shared = _shared_features(first, second)
+            shared = shared_features(first, second)
             if all(shared[feature] for feature in _DECIDING):
                 pair_shared[(first.id, second.id)] = shared
                 parent[root(first.id)] = root(second.id)
