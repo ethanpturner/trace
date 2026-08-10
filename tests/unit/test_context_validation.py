@@ -41,6 +41,7 @@ def component(object_id: str = "cmp-001", **changes: Any) -> Component:
             "assessment_id": ASSESSMENT,
             "name": "Webhook Receiver",
             "component_type": "service",
+            "source_origin": SourceOrigin.UPLOADED_DOCUMENT,
             "status": ObjectStatus.CANDIDATE,
             "evidence_ids": ["evd-001"],
             **changes,
@@ -55,6 +56,7 @@ def boundary(object_id: str = "tb-001", **changes: Any) -> TrustBoundary:
             "assessment_id": ASSESSMENT,
             "name": "GitHub Boundary",
             "boundary_type": "organization_to_third_party",
+            "source_origin": SourceOrigin.UPLOADED_DOCUMENT,
             "inside_component_ids": ["cmp-001"],
             "status": ObjectStatus.CANDIDATE,
             **changes,
@@ -116,6 +118,7 @@ def flow(object_id: str = "df-001", **changes: Any) -> DataFlow:
             "source_component_id": "cmp-001",
             "destination_component_id": "cmp-002",
             "direction": FlowDirection.ONE_WAY,
+            "source_origin": SourceOrigin.UPLOADED_DOCUMENT,
             "status": ObjectStatus.CANDIDATE,
             **changes,
         }

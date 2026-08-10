@@ -4,10 +4,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-Trace is a context-aware security architecture analysis system. It is **in the design stage**: the
-architecture, data model, agent design, and evaluation plan are written; the analysis pipeline is
-not built. What exists today is configuration, process bootstrap, tooling, and a complete design
-corpus. There are no agents and no model calls anywhere in `src/`.
+Trace is a context-aware security architecture analysis system. **The context slice is built; the
+analysis half is not.** One of the six model-assisted agents exists — Context Extraction — with the
+validation node behind it, checkpoint 1, the reviewer's actions, and a command line that drives all
+of it. The pipeline runs five of its fourteen phases and stops where it is supposed to. Threat
+analysis, control mapping, findings, and the report are specified and unbuilt.
+
+There is exactly one model call in `src/`, through the seam, and no test makes it: everything runs
+against `DeterministicModel`, and `--model-profile offline-fake --response recorded.json` is a
+supported way to run the pipeline without a provider.
 
 Read `README.md` for the full picture. The authoritative design lives in `docs/architecture/` and
 `docs/product/` — all plain Markdown, all marked *Proposed, version 0.1*.
@@ -16,7 +21,11 @@ Read `README.md` for the full picture. The authoritative design lives in `docs/a
 
 ```bash
 uv sync                          # install runtime + dev dependencies from uv.lock
-uv run trace                     # run the CLI (prints env, log level, configured credentials)
+uv run trace                     # no arguments: env, log level, configured credentials
+uv run trace assessment create --name X          # the command surface; --help lists it
+uv run trace context extract asm-001 --model-profile offline-fake --response recorded.json
+uv run trace context show asm-001 --evidence     # the review package, excerpts labelled
+uv run trace context approve asm-001             # non-zero while something blocking is open
 
 uv run pytest                    # unit tests; integration and evaluation are deselected
 uv run pytest tests/unit/test_config.py::test_settings_are_frozen   # one test by node id
@@ -36,24 +45,25 @@ uv run pre-commit run gitleaks --all-files   # a single hook
 ## Repository layout
 
 ```
-src/trace_ai/        configuration and process bootstrap -- the only product code that runs
+src/trace_ai/        configuration, process bootstrap, and cli.py -- the command surface
 src/trace_ai/domain/           domain objects, identifiers, hashing, and proposals/
 src/trace_ai/domain/proposals/ what an agent returns: local keys, nothing authoritative
-src/trace_ai/services/         ingestion/ and evidence/ -- empty
+src/trace_ai/services/         ingestion/, evidence/, context/, prompts/, and the execution ledger
+src/trace_ai/services/context/ input_package.py, pipeline.py, review_file.py
 src/trace_ai/infrastructure/   filesystem/, database/, and model/ -- stores and the model seam
-src/trace_ai/workflow/         phases, the transition table, execution limits, the node protocol
+src/trace_ai/workflow/         phases, transitions, limits, the node protocol, and the nodes
                      Dependencies point inward. domain/ imports neither of the other two and
                      no provider SDK; tests/unit/test_package_layout.py asserts both.
-tests/unit/          the only tests that exist
-tests/integration/   scaffolded, empty
-tests/evaluation/    scaffolded, empty
+tests/unit/          the tests that run by default
+tests/integration/   one live adapter call; marked `integration`, deselected
+tests/evaluation/    the live context fixtures; marked `evaluation`, deselected
 docs/product/        vision, design principles, roadmap, future features
 docs/architecture/   scope, current architecture, agent design, data model,
                      evaluation plan, decision log
 demo/forgeflow/      the ForgeFlow scenario: the demo and benchmark scenario one
 demo/forgeflow/input/      material supplied to Trace
-demo/forgeflow/expected/   the truth set; never supplied to Trace. Only the contract is
-                           written; the expected-*.yaml files are not yet authored
+demo/forgeflow/expected/   the truth set; never supplied to Trace. The contract and
+                           expected-context.yaml are written; the rest are not
 requirements/        the requirements catalog; see Requirements catalog below
 journal/             dated session entries; see Journal below
 benchmarks/          scenarios two onward, same input/ + expected/ layout

@@ -95,7 +95,7 @@ def convert_proposal(
     identifiers: dict[str, str] = {}
 
     def allocate(key: str, prefix: str) -> str:
-        identifier = allocator.new_id(prefix)
+        identifier = allocator.allocate(prefix)
         identifiers[key] = identifier
         return identifier
 
@@ -113,6 +113,7 @@ def convert_proposal(
             | {
                 "id": allocate(proposed.key, "cmp"),
                 "assessment_id": assessment_id,
+                "source_origin": SourceOrigin.UPLOADED_DOCUMENT,
                 "status": ObjectStatus.CANDIDATE,
             }
         )
@@ -122,7 +123,11 @@ def convert_proposal(
     actors = tuple(
         Actor.model_validate(
             proposed.model_dump(exclude={"key"})
-            | {"id": allocate(proposed.key, "act"), "assessment_id": assessment_id}
+            | {
+                "id": allocate(proposed.key, "act"),
+                "assessment_id": assessment_id,
+                "source_origin": SourceOrigin.UPLOADED_DOCUMENT,
+            }
         )
         for proposed in proposal.actors
     )
@@ -133,6 +138,7 @@ def convert_proposal(
             | {
                 "id": allocate(proposed.key, "ast"),
                 "assessment_id": assessment_id,
+                "source_origin": SourceOrigin.UPLOADED_DOCUMENT,
                 "status": ObjectStatus.CANDIDATE,
                 "component_ids": [
                     resolve(key, described_as=f"asset {proposed.key!r}")
@@ -149,6 +155,7 @@ def convert_proposal(
             | {
                 "id": allocate(proposed.key, "tb"),
                 "assessment_id": assessment_id,
+                "source_origin": SourceOrigin.UPLOADED_DOCUMENT,
                 "status": ObjectStatus.CANDIDATE,
                 "inside_component_ids": [
                     resolve(key, described_as=f"trust boundary {proposed.key!r}")
@@ -176,6 +183,7 @@ def convert_proposal(
             | {
                 "id": allocate(proposed.key, "df"),
                 "assessment_id": assessment_id,
+                "source_origin": SourceOrigin.UPLOADED_DOCUMENT,
                 "status": ObjectStatus.CANDIDATE,
                 "source_component_id": resolve(
                     proposed.source_component_key, described_as=f"data flow {proposed.key!r}"

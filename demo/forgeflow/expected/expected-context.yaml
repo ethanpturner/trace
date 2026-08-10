@@ -1,0 +1,997 @@
+# ForgeFlow expected context
+#
+# Benchmark truth for the context-extraction half of the pipeline: the system context and the
+# components, actors, assets, data flows, trust boundaries, and context claims a correct
+# extraction produces. Layout is fixed by DEC-027; field names and types come from
+# docs/architecture/data-model.md sections 9 to 15, which is authoritative for both.
+#
+# Nothing in this directory is supplied to Trace during an assessment. See README.md.
+#
+# ## What this file was derived from
+#
+# The eight files in demo/forgeflow/input/, and nothing else:
+#
+#   product-overview.md   architecture-overview.md   security-overview.md   operations-guide.md
+#   github-integration.md   ai-analysis.md   sample-repository-notes.md
+#   structured-system-input.yaml
+#
+# demo/forgeflow/forgeflow-scenario.md sections 5, 7, 8, 10, and 11 enumerate the scenario's
+# actors, components, assets, data flows, and trust boundaries in full. **They are hidden truth
+# and were not used here.** They describe the system as its author knows it; the input documents
+# describe the system as its documentation records it, and those are different sets. Grading an
+# extraction against the former would penalise Trace for not knowing things nobody told it, which
+# is the DEC-009 failure inverted: rewarding invention instead of punishing silence.
+#
+# Every entry below therefore carries an `evidence` list naming the input document and section it
+# rests on. An entry that could not be sourced that way was removed rather than kept as a
+# plausible guess. Three examples of what that excluded: the scenario names a Job Orchestration
+# component the input documents never separate from the worker; it names a Support Engineer actor
+# the documents mention only as "support personnel" in one sentence about retention extensions;
+# and it states the true 30-day source retention, which the input documents contradict themselves
+# about and which is therefore recorded here as a contradicted claim rather than a settled one.
+#
+# ## What this file deliberately does not contain
+#
+# Questions and source observations. Both are produced by the context step, and both have their
+# own file under DEC-027's derived list -- expected-questions.yaml and expected-observations.yaml
+# -- which later milestones author. The claims those objects bear on are here: a claim the
+# documents contradict is recorded with status `contradicted`, and a claim the documents do not
+# settle is recorded with status `unknown`. Recording the same fact in two files would make one
+# of them wrong the first time either changed.
+#
+# Findings, threats, control mappings, and severities are not context and are not here.
+#
+# ## Identifiers
+#
+# There are none. DEC-018 allocates identifiers at insert from a per-assessment counter, so a
+# generated identifier carries no meaning across runs and could not be matched against. Where a
+# domain field holds an identifier, this file holds the referenced object's `name` instead, under
+# a field named for what it points at:
+#
+#   evidence_ids           -> evidence      (document and section, not an evidence identifier)
+#   component_ids          -> components
+#   source_component_id    -> source_component
+#   destination_component_id -> destination_component
+#   crosses_trust_boundary_ids -> crosses_trust_boundaries
+#   inside_component_ids   -> inside_components
+#   outside_component_ids  -> outside_components
+#   subject_id             -> subject
+#
+# tests/unit/test_context_fixtures.py asserts that every other key in every entry is a real field
+# of the corresponding domain model, so a field this file invents fails rather than sitting here
+# looking authoritative.
+
+benchmark_version: "1.0"
+scenario: forgeflow
+catalog_version: "0.1"
+
+matching:
+  # Expected-to-actual matching is semantic. Names are the match key because identifiers are not
+  # stable across runs (DEC-018); a produced object whose name differs but whose substance matches
+  # is a match, and the grader is responsible for saying so.
+  components_match_on: [name]
+  actors_match_on: [name]
+  assets_match_on: [name]
+  data_flows_match_on: [source_component, destination_component]
+  trust_boundaries_match_on: [name]
+  context_claims_match_on: [subject, predicate]
+
+  # `component_type`, `actor_type`, `asset_type`, and `boundary_type` are open vocabularies
+  # (DEC-036). The values below are the ones the corpus already uses; a defensible synonym is not
+  # a miss, and the grader compares them advisorily rather than exactly.
+  type_fields_are_advisory: true
+
+  # An extraction that produces objects this file does not list is not thereby wrong. The
+  # documents support more detail than is enumerated here, and design-principles.md section 9
+  # rejects volume targets in either direction. Unlisted objects are reported, not penalised.
+  extra_objects_are_not_errors: true
+
+system_context:
+  system_name: ForgeFlow
+  system_purpose: >-
+    A multi-customer SaaS platform that receives GitHub pull-request events, retrieves selected
+    repository content, performs AI-assisted analysis, stores the result, and displays it to
+    authenticated users. It may also publish a summary comment to the pull request.
+  business_criticality: Medium
+  deployment_model: SaaS
+  environment: [Production]
+  data_classifications: [Restricted, Confidential, Internal]
+  evidence:
+    - document: architecture-overview.md
+      section: "2. System Overview"
+    - document: structured-system-input.yaml
+      section: "system"
+
+components:
+  - name: Managed CDN and Web Application Firewall
+    component_type: service
+    description: >-
+      The public edge. Terminates TLS, serves static frontend content, routes application traffic,
+      applies managed filtering rules, and provides basic denial-of-service protection.
+    internet_accessible: true
+    externally_managed: true
+    evidence:
+      - document: architecture-overview.md
+        section: "4. Public Edge"
+
+  - name: React Web Application
+    component_type: web_application
+    description: The customer-facing single-page application.
+    internet_accessible: true
+    externally_managed: false
+    authentication_mechanisms: [GitHub OAuth]
+    evidence:
+      - document: architecture-overview.md
+        section: "5. React Web Application"
+      - document: structured-system-input.yaml
+        section: "components"
+
+  - name: ForgeFlow API
+    component_type: service
+    description: >-
+      Customer-facing application functionality: sessions, organization membership, repository
+      configuration, analysis results, signed artifact links, and permitted administrative
+      operations.
+    technology: [Python]
+    authentication_mechanisms: [ForgeFlow session]
+    authorization_mechanisms: [Organization membership, Customer role]
+    externally_managed: false
+    evidence:
+      - document: architecture-overview.md
+        section: "6. ForgeFlow API"
+      - document: security-overview.md
+        section: "4. Authorization"
+
+  - name: Webhook Receiver
+    component_type: service
+    description: >-
+      An internet-facing service dedicated to GitHub webhook events. Validates incoming requests,
+      identifies the installation and repository, and creates analysis jobs.
+    internet_accessible: true
+    externally_managed: false
+    # What "validating incoming requests" covers is not stated. It is left unset rather than
+    # guessed; see the `webhook_request_validation` claim.
+    evidence:
+      - document: architecture-overview.md
+        section: "8. Webhook Receiver"
+      - document: github-integration.md
+        section: "6. Webhook Processing"
+
+  - name: Managed Redis Queue
+    component_type: managed_cache
+    description: Pending analysis jobs, retry state, rate-limiting state, and short-lived metadata.
+    internet_accessible: false
+    externally_managed: true
+    evidence:
+      - document: architecture-overview.md
+        section: "9. Managed Redis Queue"
+      - document: architecture-overview.md
+        section: "25. Architecture Assumptions"
+
+  - name: Analysis Worker
+    component_type: background_worker
+    description: >-
+      Background pull-request processing: retrieves repository content, calls the AI provider,
+      validates the response structure, and stores the result. The primary component handling
+      customer source content.
+    data_classifications: [Restricted]
+    externally_managed: false
+    evidence:
+      - document: architecture-overview.md
+        section: "10. Analysis Worker"
+
+  - name: GitHub Comment Service
+    component_type: service
+    description: Formats and publishes ForgeFlow summaries to pull requests.
+    externally_managed: false
+    evidence:
+      - document: architecture-overview.md
+        section: "11. GitHub Comment Service"
+
+  - name: Managed PostgreSQL
+    component_type: managed_database
+    description: >-
+      The primary structured-data store: users, organizations, memberships, installation metadata,
+      job metadata, structured analysis results, and administrative audit events.
+    data_classifications: [Confidential]
+    externally_managed: true
+    evidence:
+      - document: architecture-overview.md
+        section: "12. Managed PostgreSQL"
+
+  - name: Managed Object Storage
+    component_type: managed_storage
+    description: >-
+      Larger or temporary artifacts, stored under paths containing the organization identifier and
+      job identifier.
+    data_classifications: [Restricted, Confidential]
+    externally_managed: true
+    evidence:
+      - document: architecture-overview.md
+        section: "13. Managed Object Storage"
+      - document: operations-guide.md
+        section: "5. Artifact Storage"
+
+  - name: Managed Secrets Service
+    component_type: managed_security_service
+    description: >-
+      Holds the GitHub App private key, the GitHub OAuth client secret, the AI-provider API key,
+      the email-provider API key, and selected database credentials.
+    externally_managed: true
+    authorization_mechanisms: [Workload identity]
+    evidence:
+      - document: architecture-overview.md
+        section: "14. Managed Secrets Service"
+
+  - name: Administrative Interface
+    component_type: internal_application
+    description: >-
+      Internal operational support: locating organizations, viewing job status, retrying jobs,
+      disabling integrations, and supporting data-deletion requests.
+    authentication_mechanisms: [Corporate identity provider]
+    externally_managed: false
+    # Not exposed through the normal customer login flow, which is a statement about the login
+    # flow rather than about network reachability. `internet_accessible` is left unset.
+    evidence:
+      - document: architecture-overview.md
+        section: "15. Administrative Interface"
+
+  - name: Central Logging Platform
+    component_type: external_service
+    description: >-
+      Shared platform receiving authentication events, API request metadata, webhook outcomes, job
+      status, provider request metadata, and administrative actions.
+    externally_managed: true
+    evidence:
+      - document: architecture-overview.md
+        section: "16. Central Logging Platform"
+
+  - name: GitHub
+    component_type: repository_provider
+    description: >-
+      Customer authentication, GitHub App installation, repository permissions, pull-request
+      metadata, source-content retrieval, webhook events, and pull-request comments.
+    internet_accessible: true
+    externally_managed: true
+    evidence:
+      - document: architecture-overview.md
+        section: "17. GitHub Integration"
+      - document: github-integration.md
+        section: "2. GitHub App"
+
+  - name: External AI Provider
+    component_type: external_service
+    description: >-
+      Receives selected pull-request and repository content and returns a structured analysis
+      response.
+    internet_accessible: true
+    externally_managed: true
+    data_classifications: [Restricted]
+    evidence:
+      - document: architecture-overview.md
+        section: "18. External AI Provider"
+      - document: ai-analysis.md
+        section: "1. Purpose"
+
+  - name: Email Provider
+    component_type: external_service
+    description: >-
+      Third-party notification service. Receives user email addresses and minimal notification
+      content, and no customer repository source code.
+    externally_managed: true
+    evidence:
+      - document: architecture-overview.md
+        section: "19. Email Provider"
+
+  - name: Corporate Identity Provider
+    component_type: identity_provider
+    description: Authenticates ForgeFlow administrators before they reach the administrative interface.
+    externally_managed: true
+    evidence:
+      - document: architecture-overview.md
+        section: "15. Administrative Interface"
+      - document: security-overview.md
+        section: "12. Administrative Access"
+
+actors:
+  - name: Customer User
+    actor_type: end_user
+    trust_level: Authenticated customer
+    authentication_method: GitHub OAuth
+    capabilities:
+      - View connected organizations and repositories
+      - View pull-request analysis status and results
+      - Initiate permitted job retries
+    evidence:
+      - document: architecture-overview.md
+        section: "5. React Web Application"
+      - document: github-integration.md
+        section: "3. Authentication"
+
+  - name: Customer Administrator
+    actor_type: administrator
+    trust_level: Authenticated customer with elevated organization role
+    authentication_method: GitHub OAuth
+    capabilities:
+      - Select which repositories ForgeFlow may access during installation
+      - Manage customer organization settings
+      - Configure automatic pull-request comments
+    evidence:
+      - document: github-integration.md
+        section: "2. GitHub App"
+      - document: architecture-overview.md
+        section: "5. React Web Application"
+
+  - name: ForgeFlow Administrator
+    actor_type: administrator
+    trust_level: Internal operational personnel
+    authentication_method: Corporate identity provider
+    capabilities:
+      - Locate organizations and installations
+      - View analysis job status and error metadata
+      - Retry failed jobs and disable an integration
+      - Support data-deletion requests
+    evidence:
+      - document: architecture-overview.md
+        section: "15. Administrative Interface"
+      - document: security-overview.md
+        section: "12. Administrative Access"
+
+assets:
+  - name: Customer Source Code
+    asset_type: source_code
+    data_classification: Restricted
+    description: >-
+      Pull-request diffs and selected repository files retrieved for analysis, and the model input
+      artifacts derived from them.
+    confidentiality_impact: >-
+      Disclosure exposes customer intellectual property and may expose credentials committed to a
+      repository.
+    components: [Analysis Worker, Managed Object Storage, External AI Provider]
+    evidence:
+      - document: structured-system-input.yaml
+        section: "data_assets"
+      - document: architecture-overview.md
+        section: "13. Managed Object Storage"
+
+  - name: Pull Request Metadata
+    asset_type: repository_metadata
+    data_classification: Confidential
+    components: [Managed PostgreSQL, Analysis Worker]
+    evidence:
+      - document: structured-system-input.yaml
+        section: "data_assets"
+      - document: architecture-overview.md
+        section: "12. Managed PostgreSQL"
+
+  - name: Analysis Results
+    asset_type: model_output
+    data_classification: Confidential
+    description: >-
+      Structured analysis output stored in PostgreSQL and object storage, and published to pull
+      requests when automatic commenting is enabled.
+    integrity_impact: >-
+      Altered results would be presented to developers as review guidance and may be published to
+      a pull request.
+    components: [Managed PostgreSQL, Managed Object Storage, GitHub Comment Service]
+    evidence:
+      - document: structured-system-input.yaml
+        section: "data_assets"
+      - document: ai-analysis.md
+        section: "1. Purpose"
+
+  - name: GitHub Installation Metadata
+    asset_type: repository_metadata
+    data_classification: Confidential
+    components: [Managed PostgreSQL]
+    evidence:
+      - document: structured-system-input.yaml
+        section: "data_assets"
+      - document: architecture-overview.md
+        section: "12. Managed PostgreSQL"
+
+  - name: GitHub App Private Key
+    asset_type: api_key
+    data_classification: Restricted
+    description: >-
+      Held in the managed secrets service and used to obtain short-lived installation tokens. The
+      documents state it is not sent to the AI provider.
+    confidentiality_impact: >-
+      Disclosure would grant repository access across every customer installation.
+    components: [Managed Secrets Service]
+    evidence:
+      - document: architecture-overview.md
+        section: "14. Managed Secrets Service"
+      - document: architecture-overview.md
+        section: "18. External AI Provider"
+
+  - name: AI Provider API Key
+    asset_type: api_key
+    data_classification: Restricted
+    components: [Managed Secrets Service]
+    evidence:
+      - document: architecture-overview.md
+        section: "14. Managed Secrets Service"
+      - document: structured-system-input.yaml
+        section: "data_assets"
+
+  - name: GitHub Installation Token
+    asset_type: access_token
+    data_classification: Restricted
+    description: >-
+      Short-lived repository access token, generated when needed and not permanently stored.
+    components: [Analysis Worker, GitHub Comment Service]
+    evidence:
+      - document: github-integration.md
+        section: "5. Installation Tokens"
+      - document: architecture-overview.md
+        section: "17. GitHub Integration"
+
+  - name: ForgeFlow Session
+    asset_type: user_identity
+    data_classification: Confidential
+    description: The browser session established after GitHub authentication completes.
+    components: [ForgeFlow API, React Web Application]
+    evidence:
+      - document: architecture-overview.md
+        section: "7. GitHub Authentication"
+      - document: security-overview.md
+        section: "3. Authentication"
+
+data_flows:
+  - name: Customer login
+    source_component: React Web Application
+    destination_component: ForgeFlow API
+    direction: bidirectional
+    protocol: HTTPS
+    data_types: [GitHub user identity, Authorization response, Session cookie]
+    authentication: github_oauth
+    encryption_in_transit: tls
+    crosses_trust_boundaries: [Public internet boundary, Customer authentication boundary]
+    internet_exposed: true
+    evidence:
+      - document: architecture-overview.md
+        section: "20.1 Customer Login"
+      - document: security-overview.md
+        section: "6. Encryption"
+
+  - name: Webhook delivery
+    source_component: GitHub
+    destination_component: Webhook Receiver
+    direction: one_way
+    data_types: [Event type, Delivery information, Installation identifier, Repository identifier]
+    # The documents say incoming requests are validated and do not say what validation covers.
+    # `unknown` is the required value: `false` here would assert an unauthenticated endpoint that
+    # nobody evidenced (data-model.md section 14, DEC-009).
+    authentication: unknown
+    encryption_in_transit: unknown
+    crosses_trust_boundaries: [Public internet boundary, GitHub boundary]
+    internet_exposed: true
+    evidence:
+      - document: architecture-overview.md
+        section: "20.2 Pull-Request Event Processing"
+      - document: github-integration.md
+        section: "6. Webhook Processing"
+
+  - name: Analysis job enqueue
+    source_component: Webhook Receiver
+    destination_component: Managed Redis Queue
+    direction: one_way
+    data_types: [Organization identifier, Installation identifier, Repository identifier, Pull-request identifier, Event identifier]
+    authentication: unknown
+    encryption_in_transit: unknown
+    evidence:
+      - document: architecture-overview.md
+        section: "9. Managed Redis Queue"
+      - document: operations-guide.md
+        section: "3. Queue Processing"
+
+  - name: Analysis job dequeue
+    source_component: Managed Redis Queue
+    destination_component: Analysis Worker
+    direction: one_way
+    data_types: [Analysis job]
+    authentication: unknown
+    encryption_in_transit: unknown
+    evidence:
+      - document: architecture-overview.md
+        section: "20.2 Pull-Request Event Processing"
+      - document: operations-guide.md
+        section: "2. Background Job Processing"
+
+  - name: Repository content retrieval
+    source_component: Analysis Worker
+    destination_component: GitHub
+    direction: bidirectional
+    data_types: [Short-lived installation token, Pull-request changes, Selected source files, Repository metadata]
+    authentication: short_lived_installation_token
+    encryption_in_transit: unknown
+    crosses_trust_boundaries: [GitHub boundary]
+    evidence:
+      - document: architecture-overview.md
+        section: "20.3 Repository Content Retrieval"
+      - document: github-integration.md
+        section: "7. Repository Content Retrieval"
+
+  - name: AI analysis request
+    source_component: Analysis Worker
+    destination_component: External AI Provider
+    direction: bidirectional
+    data_types: [Pull-request content, Selected repository context, Analysis instructions, Structured output]
+    authentication: api_key
+    encryption_in_transit: unknown
+    crosses_trust_boundaries: [AI-provider boundary, Repository-content instruction boundary]
+    evidence:
+      - document: architecture-overview.md
+        section: "20.4 AI Analysis"
+      - document: ai-analysis.md
+        section: "1. Purpose"
+
+  - name: Structured result storage
+    source_component: Analysis Worker
+    destination_component: Managed PostgreSQL
+    direction: one_way
+    data_types: [Job metadata, Structured result, Model metadata]
+    authentication: unknown
+    encryption_in_transit: unknown
+    crosses_trust_boundaries: [Organization boundary]
+    evidence:
+      - document: architecture-overview.md
+        section: "20.5 Result Storage"
+
+  - name: Artifact storage
+    source_component: Analysis Worker
+    destination_component: Managed Object Storage
+    direction: one_way
+    data_types: [Temporary source artifacts, Provider input and output artifacts, Diagnostic artifacts]
+    authentication: unknown
+    encryption_in_transit: unknown
+    crosses_trust_boundaries: [Organization boundary]
+    evidence:
+      - document: architecture-overview.md
+        section: "20.5 Result Storage"
+      - document: operations-guide.md
+        section: "5. Artifact Storage"
+
+  - name: Customer result access
+    source_component: ForgeFlow API
+    destination_component: Managed PostgreSQL
+    direction: bidirectional
+    data_types: [Analysis results, Job status, Customer settings]
+    authentication: unknown
+    encryption_in_transit: unknown
+    crosses_trust_boundaries: [Organization boundary]
+    evidence:
+      - document: architecture-overview.md
+        section: "20.6 Customer Result Access"
+
+  - name: Pull-request comment publication
+    source_component: GitHub Comment Service
+    destination_component: GitHub
+    direction: one_way
+    data_types: [Structured summary, Pull-request identifier, Result link]
+    authentication: short_lived_installation_token
+    encryption_in_transit: unknown
+    crosses_trust_boundaries: [GitHub boundary]
+    evidence:
+      - document: architecture-overview.md
+        section: "20.7 Pull-Request Comment Publication"
+      - document: architecture-overview.md
+        section: "11. GitHub Comment Service"
+
+  - name: Administrative support
+    source_component: Administrative Interface
+    destination_component: ForgeFlow API
+    direction: bidirectional
+    data_types: [Organization metadata, Integration status, Job metadata, Error details, Administrative actions]
+    authentication: corporate_identity_provider
+    encryption_in_transit: unknown
+    crosses_trust_boundaries: [Administrative privilege boundary]
+    evidence:
+      - document: architecture-overview.md
+        section: "20.8 Administrative Support"
+
+  - name: Secret retrieval
+    source_component: Analysis Worker
+    destination_component: Managed Secrets Service
+    direction: bidirectional
+    data_types: [Application credentials]
+    authentication: workload_identity
+    encryption_in_transit: unknown
+    crosses_trust_boundaries: [Secret-access boundary]
+    evidence:
+      - document: architecture-overview.md
+        section: "14. Managed Secrets Service"
+
+trust_boundaries:
+  - name: Public internet boundary
+    boundary_type: internet_to_application
+    description: >-
+      Separates public users and external providers from ForgeFlow's application services. Crossed
+      by browser traffic and GitHub webhook events.
+    inside_components: [React Web Application, ForgeFlow API, Webhook Receiver]
+    outside_components: [GitHub]
+    controls: [Managed CDN and web application firewall, TLS termination, Managed filtering rules]
+    evidence:
+      - document: architecture-overview.md
+        section: "21. Trust Boundaries"
+      - document: architecture-overview.md
+        section: "4. Public Edge"
+
+  - name: Customer authentication boundary
+    boundary_type: internet_to_application
+    description: Separates unauthenticated users from authenticated ForgeFlow sessions.
+    inside_components: [ForgeFlow API]
+    outside_components: [React Web Application]
+    controls: [GitHub OAuth, ForgeFlow session]
+    evidence:
+      - document: architecture-overview.md
+        section: "21. Trust Boundaries"
+
+  - name: Organization boundary
+    boundary_type: tenant_boundary
+    description: >-
+      Separates one customer organization's data from another's, across API authorization, database
+      queries, object paths, background jobs, and analysis results.
+    inside_components: [ForgeFlow API, Managed PostgreSQL, Managed Object Storage, Analysis Worker]
+    controls: [Organization membership checks, Organization identifiers on customer records, Organization-prefixed object paths]
+    evidence:
+      - document: architecture-overview.md
+        section: "21. Trust Boundaries"
+      - document: security-overview.md
+        section: "10. Tenant Isolation"
+
+  - name: GitHub boundary
+    boundary_type: organization_to_third_party
+    description: >-
+      Separates ForgeFlow from GitHub-controlled identity, repository, and webhook systems.
+    inside_components: [Analysis Worker, Webhook Receiver, GitHub Comment Service]
+    outside_components: [GitHub]
+    controls: [GitHub App installation permissions, Short-lived installation tokens]
+    evidence:
+      - document: architecture-overview.md
+        section: "21. Trust Boundaries"
+      - document: github-integration.md
+        section: "5. Installation Tokens"
+
+  - name: AI-provider boundary
+    boundary_type: organization_to_third_party
+    description: >-
+      Separates ForgeFlow-controlled systems from the external AI provider. Customer source content
+      may cross it.
+    inside_components: [Analysis Worker]
+    outside_components: [External AI Provider]
+    controls: [Content selection limits, Enterprise provider agreement, Response structure validation]
+    evidence:
+      - document: architecture-overview.md
+        section: "21. Trust Boundaries"
+      - document: security-overview.md
+        section: "9. External AI Provider"
+
+  - name: Administrative privilege boundary
+    boundary_type: user_to_administration
+    description: Separates customer functionality from internal operational administration.
+    inside_components: [Administrative Interface]
+    outside_components: [React Web Application]
+    controls: [Corporate identity provider authentication, Administrative action audit records]
+    evidence:
+      - document: architecture-overview.md
+        section: "21. Trust Boundaries"
+      - document: security-overview.md
+        section: "12. Administrative Access"
+
+  - name: Secret-access boundary
+    boundary_type: low_privilege_to_high_privilege
+    description: Separates application workloads from stored credential material.
+    inside_components: [Managed Secrets Service]
+    outside_components: [ForgeFlow API, Webhook Receiver, Analysis Worker, GitHub Comment Service]
+    controls: [Workload identity, Per-service secret access]
+    evidence:
+      - document: architecture-overview.md
+        section: "21. Trust Boundaries"
+      - document: architecture-overview.md
+        section: "14. Managed Secrets Service"
+
+  - name: Repository-content instruction boundary
+    boundary_type: organization_to_third_party
+    description: >-
+      Separates trusted ForgeFlow analysis instructions from untrusted repository and pull-request
+      content. The boundary the planted fixture in sample-repository-notes.md crosses.
+    inside_components: [Analysis Worker]
+    outside_components: [External AI Provider, GitHub]
+    controls: [Response structure validation]
+    evidence:
+      - document: architecture-overview.md
+        section: "21. Trust Boundaries"
+      - document: architecture-overview.md
+        section: "25. Architecture Assumptions"
+
+context_claims:
+  # -- Authentication: forgeflow-scenario.md section 14.1 --------------------------------------
+  # Delegated authentication is a control provided by GitHub, not a missing ForgeFlow control. A
+  # correct extraction records the delegation; it does not record an absent local password policy.
+  - subject: system
+    subject_type: system
+    predicate: customer_authentication_provider
+    value: GitHub OAuth
+    status: documented
+    confidence: high
+    evidence:
+      - document: security-overview.md
+        section: "3. Authentication"
+      - document: github-integration.md
+        section: "3. Authentication"
+
+  - subject: system
+    subject_type: system
+    predicate: local_password_storage
+    value: false
+    status: documented
+    confidence: high
+    evidence:
+      - document: architecture-overview.md
+        section: "7. GitHub Authentication"
+      - document: security-overview.md
+        section: "3. Authentication"
+
+  - subject: system
+    subject_type: system
+    predicate: administrative_authentication_provider
+    value: Corporate identity platform
+    status: documented
+    confidence: high
+    evidence:
+      - document: security-overview.md
+        section: "12. Administrative Access"
+
+  # forgeflow-scenario.md section 14.3. Customer MFA is governed by GitHub account and
+  # organization policy; the input documents say nothing about it. `unknown`, not `false`.
+  - subject: system
+    subject_type: system
+    predicate: customer_multi_factor_authentication
+    value: null
+    status: unknown
+    confidence: high
+    rationale: >-
+      Customer authentication is delegated to GitHub and no input document states whether
+      multi-factor authentication is enforced for customer accounts. Absence of a statement is not
+      a statement of absence (DEC-009).
+
+  # -- Encryption: forgeflow-scenario.md section 14.2 ------------------------------------------
+  # The managed platform provides encryption at rest. It is an inherited control, recorded as
+  # documented at the level the documents state it -- and never as an absent control.
+  - subject: system
+    subject_type: system
+    predicate: storage_encryption_at_rest
+    value: Provided by the managed cloud storage services
+    status: documented
+    confidence: medium
+    evidence:
+      - document: security-overview.md
+        section: "6. Encryption"
+
+  - subject: system
+    subject_type: system
+    predicate: customer_traffic_encryption
+    value: TLS
+    status: documented
+    confidence: high
+    evidence:
+      - document: security-overview.md
+        section: "6. Encryption"
+      - document: architecture-overview.md
+        section: "4. Public Edge"
+
+  - subject: system
+    subject_type: system
+    predicate: custom_cryptography
+    value: false
+    status: documented
+    confidence: high
+    evidence:
+      - document: security-overview.md
+        section: "6. Encryption"
+
+  # -- Webhook validation: forgeflow-scenario.md section 15.1 ----------------------------------
+  # security-overview.md says webhook events "are validated before processing"; github-integration
+  # .md says incoming requests "are validated". Neither says whether validation covers the GitHub
+  # HMAC signature. The claim is `unknown` and the corresponding question is expected-questions
+  # .yaml's; a `documented` claim asserting signature verification is the failure this case tests.
+  - subject: Webhook Receiver
+    subject_type: component
+    predicate: webhook_request_validation
+    value: null
+    status: unknown
+    confidence: high
+    rationale: >-
+      Two documents state that incoming webhook requests are validated. Neither states whether
+      validation includes cryptographic verification of the GitHub signature or only payload and
+      schema checks, and the difference decides whether forged deliveries are accepted.
+
+  - subject: Webhook Receiver
+    subject_type: component
+    predicate: webhook_replay_protection
+    value: null
+    status: unknown
+    confidence: high
+    rationale: >-
+      architecture-overview.md section 26 lists webhook replay handling among its known
+      documentation gaps, and operations-guide.md carries a delivery identifier in the job payload
+      without stating whether duplicates are rejected. A document volunteering that a topic is not
+      covered is not evidence that the control is absent (DEC-009).
+
+  # -- Source retention: forgeflow-scenario.md section 16.1 -----------------------------------
+  # product-overview.md section 7 says source files are deleted after analysis completes;
+  # operations-guide.md section 6 says artifacts are retained for 30 days. The claim is
+  # `contradicted` and stays that way until a reviewer resolves it. Silently preferring either
+  # statement -- including the safer one -- is the failure this case tests.
+  - subject: Customer Source Code
+    subject_type: asset
+    predicate: retention_period
+    value: null
+    status: contradicted
+    confidence: high
+    rationale: >-
+      product-overview.md section 7 and operations-guide.md section 6 disagree. The corresponding
+      source observation is expected-observations.yaml's.
+    evidence:
+      - document: product-overview.md
+        section: "7. Source-Content Processing"
+      - document: operations-guide.md
+        section: "6. Artifact Retention"
+
+  # -- AI output review: forgeflow-scenario.md section 16.2 -----------------------------------
+  - subject: Analysis Results
+    subject_type: asset
+    predicate: human_review_before_publication
+    value: null
+    status: contradicted
+    confidence: high
+    rationale: >-
+      security-overview.md section 13 states that externally visible AI output is reviewed before
+      publication; architecture-overview.md section 11 states that comments are published when
+      automatic commenting is enabled and the job completes successfully. structured-system-input
+      .yaml records `human_review_required: unknown`, which agrees with neither.
+    evidence:
+      - document: security-overview.md
+        section: "13. AI Output Handling"
+      - document: architecture-overview.md
+        section: "11. GitHub Comment Service"
+
+  # -- Redis network placement: forgeflow-scenario.md section 14.4 ----------------------------
+  # The documents do restrict Redis, in two places. A correct extraction records what they say; it
+  # does not invent a public Redis exposure, and it does not record `internet_accessible: true`.
+  - subject: Managed Redis Queue
+    subject_type: component
+    predicate: network_exposure
+    value: Accessible only from approved application workloads
+    status: documented
+    confidence: medium
+    evidence:
+      - document: architecture-overview.md
+        section: "9. Managed Redis Queue"
+      - document: architecture-overview.md
+        section: "25. Architecture Assumptions"
+
+  # -- AI provider handling: forgeflow-scenario.md section 15.2 -------------------------------
+  - subject: External AI Provider
+    subject_type: component
+    predicate: trains_on_customer_content
+    value: false
+    status: documented
+    confidence: medium
+    evidence:
+      - document: security-overview.md
+        section: "9. External AI Provider"
+      - document: product-overview.md
+        section: "6. Customer Data"
+
+  - subject: External AI Provider
+    subject_type: component
+    predicate: request_content_retention
+    value: null
+    status: unknown
+    confidence: high
+    rationale: >-
+      The documents state that customer API content is not used to train publicly available
+      models. They do not state whether prompts are retained, for how long, whether
+      abuse-monitoring personnel can access them, or whether data-region restrictions apply. Not
+      training is not the same claim as not retaining.
+
+  # -- Tenant isolation ------------------------------------------------------------------------
+  - subject: system
+    subject_type: system
+    predicate: tenant_isolation_model
+    value: Organization identifiers on customer records and organization-prefixed object paths
+    status: documented
+    confidence: medium
+    evidence:
+      - document: security-overview.md
+        section: "10. Tenant Isolation"
+      - document: architecture-overview.md
+        section: "13. Managed Object Storage"
+
+  - subject: Managed Object Storage
+    subject_type: component
+    predicate: tenant_isolation_enforcement
+    value: null
+    status: unknown
+    confidence: high
+    rationale: >-
+      The documents describe organization-prefixed storage paths and state that application
+      services are responsible for applying organization-aware access rules. Neither describes the
+      mechanism that enforces it, and a path convention is a naming scheme rather than an
+      authorization control.
+
+  # -- Administrative access -------------------------------------------------------------------
+  - subject: system
+    subject_type: system
+    predicate: administrative_access_to_source_artifacts
+    value: null
+    status: unknown
+    confidence: high
+    rationale: >-
+      The documents state that administrative tooling is intended to respect customer isolation
+      requirements and that administrative actions are recorded. They do not state whether a
+      ForgeFlow administrator can view customer source artifacts, nor what approval it requires.
+
+  # -- Secrets and credentials -----------------------------------------------------------------
+  - subject: GitHub App Private Key
+    subject_type: asset
+    predicate: storage_location
+    value: Managed secrets service
+    status: documented
+    confidence: high
+    evidence:
+      - document: architecture-overview.md
+        section: "14. Managed Secrets Service"
+      - document: security-overview.md
+        section: "7. Secrets Management"
+
+  - subject: GitHub App Private Key
+    subject_type: asset
+    predicate: disclosed_to_ai_provider
+    value: false
+    status: documented
+    confidence: high
+    evidence:
+      - document: architecture-overview.md
+        section: "18. External AI Provider"
+
+  - subject: GitHub Installation Token
+    subject_type: asset
+    predicate: lifetime
+    value: Short-lived, generated when repository access is needed and not permanently stored
+    status: documented
+    confidence: high
+    evidence:
+      - document: github-integration.md
+        section: "5. Installation Tokens"
+
+  # -- GitHub App permissions ------------------------------------------------------------------
+  - subject: system
+    subject_type: system
+    predicate: github_app_permission_scope
+    value: null
+    status: unknown
+    confidence: high
+    rationale: >-
+      github-integration.md lists typical capabilities and states that the app requests only the
+      permissions required. architecture-overview.md section 26 and security-overview.md section
+      18 both list the exact permissions among what they do not document.
+
+  # -- Repository content as untrusted input ---------------------------------------------------
+  # architecture-overview.md states the assumption directly, and sample-repository-notes.md
+  # demonstrates why. The claim is about the documented assumption; the planted block itself is a
+  # source observation, not a claim about the system (DEC-021).
+  - subject: system
+    subject_type: system
+    predicate: repository_content_trust
+    value: Repository content may be untrusted
+    status: documented
+    confidence: high
+    evidence:
+      - document: architecture-overview.md
+        section: "25. Architecture Assumptions"
+      - document: architecture-overview.md
+        section: "21. Trust Boundaries"

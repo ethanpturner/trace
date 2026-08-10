@@ -34,7 +34,7 @@ from trace_ai.domain.actor import KNOWN_ACTOR_TYPES, Actor
 from trace_ai.domain.asset import KNOWN_ASSET_TYPES, Asset
 from trace_ai.domain.component import KNOWN_COMPONENT_TYPES, Component
 from trace_ai.domain.data_flow import DataFlow, FlowDirection
-from trace_ai.domain.enums import ObjectStatus
+from trace_ai.domain.enums import ObjectStatus, SourceOrigin
 from trace_ai.domain.trust_boundary import KNOWN_BOUNDARY_TYPES, TrustBoundary
 from trace_ai.domain.vocabulary import UNKNOWN, normalize_term
 
@@ -50,6 +50,7 @@ def component(**changes: Any) -> Component:
             "assessment_id": ASSESSMENT,
             "name": "Webhook Receiver",
             "component_type": "service",
+            "source_origin": SourceOrigin.UPLOADED_DOCUMENT,
             "status": ObjectStatus.CANDIDATE,
             **changes,
         }
@@ -63,6 +64,7 @@ def actor(**changes: Any) -> Actor:
             "assessment_id": ASSESSMENT,
             "name": "Repository Administrator",
             "actor_type": "administrator",
+            "source_origin": SourceOrigin.UPLOADED_DOCUMENT,
             **changes,
         }
     )
@@ -75,6 +77,7 @@ def asset(**changes: Any) -> Asset:
             "assessment_id": ASSESSMENT,
             "name": "Customer Source Code",
             "asset_type": "source_code",
+            "source_origin": SourceOrigin.UPLOADED_DOCUMENT,
             "status": ObjectStatus.CANDIDATE,
             **changes,
         }
@@ -90,6 +93,7 @@ def data_flow(**changes: Any) -> DataFlow:
             "source_component_id": "cmp-001",
             "destination_component_id": "cmp-002",
             "direction": FlowDirection.ONE_WAY,
+            "source_origin": SourceOrigin.UPLOADED_DOCUMENT,
             "status": ObjectStatus.CANDIDATE,
             **changes,
         }
@@ -103,6 +107,7 @@ def trust_boundary(**changes: Any) -> TrustBoundary:
             "assessment_id": ASSESSMENT,
             "name": "Public Internet",
             "boundary_type": "internet_to_application",
+            "source_origin": SourceOrigin.UPLOADED_DOCUMENT,
             "status": ObjectStatus.CANDIDATE,
             **changes,
         }

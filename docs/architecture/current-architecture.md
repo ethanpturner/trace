@@ -909,6 +909,37 @@ removing it, which DEC-012 requires.
 The review package is derived from the persisted run rather than stored with it, so the mechanism
 does not presuppose which interface renders it.
 
+### How a checkpoint is passed, and what rejection does
+
+Checkpoint 1's gate is `SystemContext.is_approved`, and it is read rather than counted: the
+checkpoint node names the `SystemContext` among the objects awaiting a decision whenever
+`approved_at` and `approved_by` are unset, so a run advances to threat generation only after a
+reviewer approved the revision. Approval is refused while a blocking question is open or a blocking
+validation error is outstanding, and the refusal names what is outstanding.
+
+Rejection — "request re-extraction" in `agent-design.md` section 9 — stops the run and is recorded
+as a `ReviewerDecision` with disposition `request_more_analysis`, carrying a required rationale. It
+does not route the run backwards: DEC-038 makes re-extraction the assessment's next `WorkflowRun`,
+so the transition table stays a sequence and there is no edge from `human_context_review` back to
+`context_extraction`. The rationale travels into the next run's extraction prompt, in the trusted
+region outside the source-content fence, because `reviewer_edit` is not material under review
+(DEC-040).
+
+### What the reviewer's edits produce
+
+Every mutating action at the checkpoint — editing an object, adding one the extractor missed,
+correcting a data flow, confirming an assumption, resolving a contradiction, answering a question,
+attaching evidence — mutates the object in place under its own identifier and writes a
+`ReviewerDecision` carrying the fields that changed, before and after (DEC-023). A reviewer-added
+object carries `source_origin` of `reviewer_edit` (DEC-039), which is what distinguishes it from an
+extracted one without reading the decision log.
+
+Approval mints the next `SystemContext` revision and stamps `approved_at` and `approved_by` on it
+(DEC-040). Version 1 is the baseline the extractor produced and is never approved; version 2 is the
+baseline a person approved. The successor's identifier lists are recomputed from the store rather
+than copied, so a reviewer-added object reaches the approved baseline and a reviewer-rejected one
+stays out of it.
+
 ## 9. Model Interaction Architecture
 
 Trace should use a model abstraction layer rather than calling one provider directly throughout the codebase.

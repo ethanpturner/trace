@@ -261,27 +261,27 @@ def test_a_requirement_field_accepts_the_authored_form() -> None:
 
 def test_the_allocator_numbers_from_one_and_increments() -> None:
     allocator = InMemoryAllocator()
-    assert [allocator.new_id("thr") for _ in range(3)] == ["thr-001", "thr-002", "thr-003"]
+    assert [allocator.allocate("thr") for _ in range(3)] == ["thr-001", "thr-002", "thr-003"]
 
 
 def test_counters_are_independent_per_prefix() -> None:
     allocator = InMemoryAllocator()
-    assert allocator.new_id("thr") == "thr-001"
-    assert allocator.new_id("fnd") == "fnd-001"
-    assert allocator.new_id("thr") == "thr-002"
+    assert allocator.allocate("thr") == "thr-001"
+    assert allocator.allocate("fnd") == "fnd-001"
+    assert allocator.allocate("thr") == "thr-002"
 
 
 def test_no_number_is_issued_twice() -> None:
     """Monotonic per DEC-018: a discarded object's number is never handed back."""
     allocator = InMemoryAllocator()
-    issued = [allocator.new_id("evd") for _ in range(500)]
+    issued = [allocator.allocate("evd") for _ in range(500)]
     assert len(set(issued)) == 500
     assert allocator.issued("evd") == 500
 
 
 def test_the_allocator_rejects_an_unregistered_prefix() -> None:
     with pytest.raises(ValueError, match=re.escape("data-model.md section 2.1")):
-        InMemoryAllocator().new_id("xyz")
+        InMemoryAllocator().allocate("xyz")
 
 
 def test_a_fresh_allocator_restarts_and_collides() -> None:
@@ -293,7 +293,7 @@ def test_a_fresh_allocator_restarts_and_collides() -> None:
     because a store is inconvenient should find this test when they look for why.
     """
     first, second = InMemoryAllocator(), InMemoryAllocator()
-    assert first.new_id("thr") == second.new_id("thr") == "thr-001"
+    assert first.allocate("thr") == second.allocate("thr") == "thr-001"
 
 
 def test_the_allocator_satisfies_the_protocol() -> None:
@@ -301,7 +301,7 @@ def test_the_allocator_satisfies_the_protocol() -> None:
     from trace_ai.domain.identifiers import IdentifierAllocator
 
     allocator: IdentifierAllocator = InMemoryAllocator()
-    assert parse_id(allocator.new_id("run")).prefix == "run"
+    assert parse_id(allocator.allocate("run")).prefix == "run"
 
 
 def test_identifiers_do_not_depend_on_a_display_name() -> None:
@@ -313,7 +313,7 @@ def test_identifiers_do_not_depend_on_a_display_name() -> None:
     """
     import inspect
 
-    signature = inspect.signature(InMemoryAllocator.new_id)
+    signature = inspect.signature(InMemoryAllocator.allocate)
     assert list(signature.parameters) == ["self", "prefix"]
 
 
