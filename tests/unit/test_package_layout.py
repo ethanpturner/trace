@@ -72,6 +72,10 @@ PACKAGES = (
     # Report Generation agent and the deterministic renderer cannot disagree about what was
     # approved. Findings come solely from the DEC-055 accessor.
     "trace_ai.services.report",
+    # The finding-quality metrics (DEC-056, issue #110): deterministic computation over
+    # persisted objects, with benchmark matching against the authored truth sets. No model on
+    # the default path.
+    "trace_ai.services.evaluation",
     "trace_ai.infrastructure",
     "trace_ai.infrastructure.filesystem",
     "trace_ai.infrastructure.database",

@@ -21,10 +21,12 @@
 
 benchmark_version: "1.0"
 scenario: forgeflow
+catalog_version: "0.1"
 source: forgeflow-scenario.md section 21
 
 documentation_gaps:
   - key: GAP-001
+    requirement_id: req-TPI-001
     subject: AI provider data-handling details are incomplete
     arises_from: scenario 15.2
     missing:
@@ -38,6 +40,7 @@ documentation_gaps:
       - ai-analysis.md
 
   - key: GAP-002
+    requirement_id: req-ADMIN-001
     subject: administrative data access is not clearly defined
     arises_from: scenario 21
     missing:
@@ -49,6 +52,7 @@ documentation_gaps:
       - operations-guide.md
 
   - key: GAP-003
+    requirement_id: req-DATA-003
     subject: tenant isolation enforcement is undocumented
     arises_from: scenario 21
     missing:
@@ -57,6 +61,7 @@ documentation_gaps:
       - architecture-overview.md
 
   - key: GAP-004
+    requirement_id: req-WEBHOOK-002
     subject: webhook replay handling is undocumented
     arises_from: scenario 13.1, via DEC-029
     missing:

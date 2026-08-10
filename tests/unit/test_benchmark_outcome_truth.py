@@ -211,7 +211,13 @@ def test_nothing_under_expected_is_read_by_an_assessment_run() -> None:
     protects: no module under `src/` references this directory.
     """
     offenders = []
+    evaluation = PROJECT_ROOT / "src" / "trace_ai" / "services" / "evaluation"
     for path in (PROJECT_ROOT / "src").rglob("*.py"):
+        if path.is_relative_to(evaluation):
+            # The one sanctioned consumer: the evaluation harness compares a *finished* run
+            # against the truth set, which is grading, not assessing. Nothing on the pipeline
+            # path may read it.
+            continue
         source = path.read_text(encoding="utf-8")
         if "forgeflow/expected" in source or "expected-findings" in source:
             offenders.append(str(path.relative_to(PROJECT_ROOT)))

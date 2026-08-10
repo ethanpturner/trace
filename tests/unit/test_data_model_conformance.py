@@ -65,6 +65,7 @@ from trace_ai.domain.enums import (
     SourceOrigin,
     ValidationStatus,
 )
+from trace_ai.domain.evaluation_result import EvaluationResult
 from trace_ai.domain.evidence import EvidenceReference
 from trace_ai.domain.evidence_assessment import EvidenceAssessment
 from trace_ai.domain.execution import ExecutionRecord, WorkflowRun
@@ -257,7 +258,9 @@ REGISTRY: dict[str, Registration] = {
     "25": Registration("ReviewerDecision", Status.IMPLEMENTED, ReviewerDecision),
     "26": Registration("WorkflowRun", Status.IMPLEMENTED, WorkflowRun),
     "27": Registration("ExecutionRecord", Status.IMPLEMENTED, ExecutionRecord),
-    "28": Registration("EvaluationResult", Status.DEFERRED),
+    # Was DEFERRED. DEC-056 promoted it: the M4 finding-quality metrics persist their results
+    # as rows, and a metric with no persisted object is a print statement.
+    "28": Registration("EvaluationResult", Status.IMPLEMENTED, EvaluationResult),
     "29": Registration("PromptDefinition", Status.DEFERRED),
     # Was DEFERRED. Section 40 moved it onto the build-first list, and states why there:
     # DEC-019 computes its `content_hash` at catalog load and DEC-024 sends the whole catalog to
@@ -339,8 +342,8 @@ def test_every_field_row_has_a_description() -> None:
 
 def test_section_forty_parses_into_two_lists() -> None:
     first, later = implementation_priority()
-    assert len(first) == 26, first
-    assert later == ["PromptDefinition", "EvaluationResult"]
+    assert len(first) == 27, first
+    assert later == ["PromptDefinition"]
 
 
 # --------------------------------------------------------------------------------------------
