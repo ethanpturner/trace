@@ -164,6 +164,15 @@ class ArtifactStore:
         """Store normalized text. Populates `SourceDocument.normalized_path`."""
         return self._write("normalized", filename, content)
 
+    def store_output(self, filename: str, content: bytes) -> Path:
+        """Store a produced output — a rendered report, its manifest (DEC-035).
+
+        The same no-different-overwrite rule as every stored artifact, which is why DEC-035 names
+        the report per run: a second run over the same assessment writes a new name rather than
+        failing on a fixed one.
+        """
+        return self._write("outputs", filename, content)
+
     def read(self, area: str, filename: str) -> bytes:
         """Read back a stored artifact, refusing anything outside this assessment."""
         target = self._safe_path(area, filename)
