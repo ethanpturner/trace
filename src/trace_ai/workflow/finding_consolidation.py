@@ -39,7 +39,11 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Final
 
 from trace_ai.domain.base import now
-from trace_ai.domain.control_mapping import ApplicabilityStatus, ControlMapping
+from trace_ai.domain.control_mapping import (
+    ApplicabilityStatus,
+    ControlMapping,
+    SatisfactionStatus,
+)
 from trace_ai.domain.documentation_gap import DocumentationGap
 from trace_ai.domain.enums import ConfidenceLevel, ObjectStatus, Severity, ValidationStatus
 from trace_ai.domain.evidence_assessment import EvidenceAssessment, Recommendation, SubjectType
@@ -96,7 +100,7 @@ class RejectedCandidate:
 class ConsolidationOutcome:
     """What one consolidation pass produced.
 
-    Four collections and no count of any of them is compared to anything. `rejected` is not a
+    Five collections and no count of any of them is compared to anything. `rejected` is not a
     failure list: most of it is `Outcome.NO_OUTPUT`, which is what a satisfied or inapplicable
     requirement produces and is the ordinary case.
     """
@@ -105,6 +109,11 @@ class ConsolidationOutcome:
     questions: tuple[Question, ...] = ()
     documentation_gaps: tuple[DocumentationGap, ...] = ()
     rejected: tuple[RejectedCandidate, ...] = ()
+    downgraded_mappings: tuple[ControlMapping, ...] = ()
+    """Mappings this pass lowered to `unverified` under DEC-013's conditions 2 and 3 — the half
+    DEC-046 assigned here because `EvidenceAssessment` does not exist when Mapping Validation
+    runs. Each carries the appended `downgrade_reason` entry (DEC-055) and is persisted under
+    its existing identifier."""
 
     @property
     def object_ids(self) -> list[str]:
@@ -176,6 +185,31 @@ def _question_or_gap(assessed: EvidenceAssessment | None) -> Outcome | Recommend
     return Recommendation.DOCUMENTATION_GAP
 
 
+def _downgraded(mapping: ControlMapping, assessed: EvidenceAssessment | None) -> ControlMapping:
+    """The mapping lowered to `unverified`, with the record appended (DEC-046, DEC-055).
+
+    `downgrade_reason` is appended to and never overwritten: two nodes can each lower a
+    conclusion for different reasons, and overwriting would leave the record claiming the second
+    reason was the only one. `downgraded_from` is first-writer — it records what the agent
+    proposed, and a second downgrade does not change what was proposed.
+    """
+    status = assessed.validation_status.value if assessed is not None else "not_evaluated"
+    entry = (
+        f"{NODE_NAME}: the evidence assessment is {status!r}, not supported or "
+        f"partially_supported, so the conclusion does not meet DEC-013's evidence conditions"
+    )
+    return ControlMapping.model_validate(
+        {
+            **mapping.model_dump(),
+            "satisfaction_status": SatisfactionStatus.UNVERIFIED,
+            "downgraded_from": mapping.downgraded_from or mapping.satisfaction_status,
+            "downgrade_reason": (
+                f"{mapping.downgrade_reason}; {entry}" if mapping.downgrade_reason else entry
+            ),
+        }
+    )
+
+
 def _reason(outcome: Outcome, mapping: ControlMapping) -> str:
     """Why a mapping produced nothing, in terms a reviewer can act on."""
     if mapping.applicability_status is ApplicabilityStatus.NOT_APPLICABLE:
@@ -221,6 +255,7 @@ def consolidate(
     questions: list[Question] = []
     gaps: list[DocumentationGap] = []
     rejected: list[RejectedCandidate] = []
+    downgraded: list[ControlMapping] = []
 
     for mapping in mappings:
         threat = by_threat.get(mapping.threat_id)
@@ -281,6 +316,26 @@ def consolidate(
                 )
             continue
 
+        if outcome in {Outcome.DOWNGRADE_ONLY, Outcome.QUESTION_AFTER_DOWNGRADE}:
+            # DEC-046's second half, performed where it said it would be: conditions 2 and 3
+            # read the EvidenceAssessment, which exists by this phase, and the mapping is
+            # lowered with the record appended (DEC-055).
+            lowered = _downgraded(mapping, assessed)
+            downgraded.append(lowered)
+            if outcome is Outcome.QUESTION_AFTER_DOWNGRADE:
+                # The table names the question: the conclusion asserted more than its evidence
+                # carries, and the resulting uncertainty is asked about rather than dropped.
+                questions.append(
+                    _build_question(
+                        mapping=lowered,
+                        threat=threat,
+                        assessed=assessed,
+                        question_id=mint("qst"),
+                        assessment_id=assessment_id,
+                    )
+                )
+                continue
+
         rejected.append(
             RejectedCandidate(
                 mapping_id=mapping.id,
@@ -296,6 +351,7 @@ def consolidate(
         questions=tuple(questions),
         documentation_gaps=tuple(gaps),
         rejected=tuple(rejected),
+        downgraded_mappings=tuple(downgraded),
     )
 
 
@@ -449,6 +505,11 @@ def persist_consolidation(
     gaps: list[DocumentationGap] = []
 
     with repository.transaction():
+        for mapping in outcome.downgraded_mappings:
+            # Under its existing identifier: a downgrade changes content, never identity, and
+            # every reference into the mapping must keep resolving (DEC-046, DEC-055).
+            repository.save(mapping)
+
         for finding in outcome.findings:
             stored = Finding.model_validate(
                 {**finding.model_dump(), "id": repository.allocate("fnd")}
@@ -475,6 +536,7 @@ def persist_consolidation(
         questions=tuple(questions),
         documentation_gaps=tuple(gaps),
         rejected=outcome.rejected,
+        downgraded_mappings=outcome.downgraded_mappings,
     )
 
 

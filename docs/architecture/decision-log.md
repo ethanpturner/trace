@@ -3531,3 +3531,49 @@ Open Questions:
 
 - Should a checkpoint-2 approval write `Assessment.approved_by`, or does `Assessment.status` stay the deliverable's lifecycle only (DEC-031) with attribution living on the decisions?
 - Does the review surface need to show, per finding, the blocking questions that touch it as a refusal-shaped warning rather than a list entry?
+
+## DEC-055: Consolidation's downgrade appends to the reason and never overwrites; approval runs a deterministic gate with a recorded override
+
+Date: 2026-08-10
+
+Status: Accepted
+
+Decision:
+
+**`downgrade_reason` is appended to, never overwritten, and `downgraded_from` is written once.** This answers DEC-046's open question. When Finding Consolidation applies DEC-013's conditions 2 and 3 — the two that read `EvidenceAssessment` and could not run at Mapping Validation — it lowers the mapping to `unverified` and records why as a new entry appended to `downgrade_reason`, each entry prefixed with the node that wrote it and joined with `"; "`. `downgraded_from` keeps its existing value when one is present: it records the status the *agent proposed*, and a second downgrade does not change what was proposed.
+
+**Consolidation now performs the downgrade DEC-046 assigned to it.** The `downgrade_only` and `question_after_downgrade` cells of the outcome table rebuild the mapping to `unverified` with the record, and the run's outcome carries the downgraded mappings so persistence writes them under their identifiers. A `question_after_downgrade` cell produces the question the table names; a `downgrade_only` cell produces nothing further, and the retained rejected-candidate entry states why.
+
+**Approval runs a deterministic gate, and the override path is explicit.** `approve_finding` refuses, in addition to DEC-030's severity rule: a finding whose `validation_status` is not `supported` or `partially_supported` — approvable only with an explicit `override_rationale`, which is stored on the `ReviewerDecision` with the rationale prefixed `override:` so overrides are retrievable by inspection — and, outright, a finding with no evidence citation or no actionable remediation (no recommendation and no acceptance criteria). The refused conditions are already unreachable through the schema for objects built normally; the gate is the last enforcement point before a conclusion becomes official, and it does not assume the schema was upstream of every caller. **The issue's premise for the override is stale and is recorded as such**: it predates DEC-013 and DEC-050, under which a finding carrying `unsupported` or `contradicted` is unconstructible — `Finding` refuses every validation status the outcome table produces no finding from. The gate's refusal is exercised against a validation-bypassing construct, and an override that passes the gate still meets the schema at persistence, which refuses the object; the override machinery exists so that if the table ever widens, approving a non-carried status is loud and recorded rather than silent.
+
+**One accessor owns the approved set.** `services/findings/approved.py` is the only module that queries findings by approved status; report generation, rendering, and evaluation consume it, and a source-scan test holds every other module to that. Rejected, deferred, and superseded candidates are retained and queryable through `retained_candidates`, each with its stated reason — the reviewer's rationale where a decision exists, the rejecting critique's description where consolidation applied one (DEC-053's deferred linkage, landing here).
+
+**Checkpoint completion moves the assessment through the existing verb.** `conclude_finding_review` verifies every provisional finding has a `ReviewerDecision` and calls `AssessmentService.resume_from_review` — DEC-031's verb for a completed checkpoint, returning the assessment to `draft` while the run continues to report generation. `approve` stays the pipeline-completion verb. No new status and no setter.
+
+Why:
+
+**Append preserves the attribution DEC-046 exists for.** Its whole argument is that a downgrade count must distinguish a catalog problem from a model problem from an application correction. Two nodes can each lower a conclusion for different reasons across a revision cycle, and overwriting would leave the record claiming the second node's reason was the only one — a silent erasure inside the field that exists to prevent silent changes. Node-prefixed entries keep each reason attributable at the cost of a delimiter convention.
+
+**`downgraded_from` is first-writer because it answers a different question.** The reason accumulates because "why is this not what the agent said" can have several answers; the origin does not accumulate because "what did the agent say" has one.
+
+**The override is a prefix convention rather than a field** because `ReviewerDecision` (section 25) has no override column and the delta fields carry field changes, not judgments about conditions. A prefix on `rationale` is retrievable with a string match, costs no schema change, and keeps the record readable as a sentence. If overrides become an evaluation metric, a field is the successor and this entry is where the convention is recorded.
+
+Alternatives Considered:
+
+- Overwrite `downgrade_reason` with the latest node's reason
+- A list-valued `downgrade_reasons` field on `ControlMapping`
+- Advance `downgraded_from` to the pre-downgrade status at each downgrade
+- An `override` boolean on `ReviewerDecision`
+- Enforcing the approved-set rule at the store layer rather than by source scan
+
+Tradeoffs:
+
+- A delimiter convention inside a free-text field is parsing by agreement; a consumer that wants the entries separately splits on `"; "` and trusts writers to have used the prefix.
+- The gate re-checks conditions the schema already guarantees, which is redundant until the day an object reaches it another way — the redundancy is the point, and it costs a few comparisons.
+- The `override:` prefix makes the rationale slightly less natural to read and is the kind of convention that erodes without the test that greps for it.
+- The accessor rule is enforced by source scan, which a sufficiently creative query evades; the store cannot enforce it without knowing who is asking, which DEC-004 declines to model.
+
+Open Questions:
+
+- Should overrides be counted as their own evaluation metric, and does that justify promoting the prefix convention to a field on `ReviewerDecision`?
+- When a revision run re-proposes a previously downgraded mapping, does the new mapping inherit the old downgrade record or start clean with `supersedes_id` carrying the history?
