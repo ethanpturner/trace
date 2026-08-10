@@ -1,6 +1,6 @@
 """What the Requirement and Control Mapping agent returns, and the promotions that own it.
 
-The same boundary as `threat_analysis.py`, applied to two objects: `id`, `assessment_id`,
+The same boundary as `threat_analysis.py`, applied to three objects: `id`, `assessment_id`,
 `generated_by`, `reviewer_status`, `status`, `validation_status`, and `created_at` have no field
 here, and `extra="forbid"` makes a payload carrying one a validation error rather than a dropped
 key.
@@ -25,8 +25,14 @@ from typing import TYPE_CHECKING, Final
 from pydantic import Field
 
 from trace_ai.domain.base import DomainModel, now
-from trace_ai.domain.control import Control, ControlType, ImplementationStatus
+from trace_ai.domain.control import (
+    EVIDENCED_IMPLEMENTATION_STATUSES,
+    Control,
+    ControlType,
+    ImplementationStatus,
+)
 from trace_ai.domain.control_mapping import (
+    EVIDENCED_SATISFACTION_STATUSES,
     ApplicabilityStatus,
     ControlMapping,
     SatisfactionStatus,
@@ -197,6 +203,66 @@ class MappingProposal(DomainModel):
                 f"these identifiers were not in the input package: "
                 f"{sorted({value for values in unknown.values() for value in values})}. A mapping "
                 f"may only reference threats, requirements, controls, and evidence it was given."
+            )
+
+    def validate_evidence_policy(self) -> None:
+        """A status that asserts something cites a passage, checked before promotion.
+
+        `Control` and `ControlMapping` both enforce this, so a violating proposal would fail at
+        promotion anyway — as a `ValidationError` raised from inside a transaction, naming a
+        pydantic model rather than the mapping the agent wrote. Checked here it is a retryable
+        schema failure with feedback the agent can act on, which is what the module docstring
+        promises and what section 12's "unverified controls are marked implemented" failure
+        condition needs in order to be correctable.
+        """
+        problems: list[str] = []
+        for control in self.controls:
+            if control.control_type in {ControlType.PLANNED, ControlType.RECOMMENDED}:
+                continue
+            if (
+                control.implementation_status in EVIDENCED_IMPLEMENTATION_STATUSES
+                and not control.evidence_ids
+            ):
+                problems.append(
+                    f"control {control.key!r} has implementation_status "
+                    f"{control.implementation_status.value!r} and cites no evidence. A "
+                    f"control nobody documented is 'claimed' or 'unknown'."
+                )
+
+        for position, mapping in enumerate(self.mappings):
+            if (
+                mapping.satisfaction_status in EVIDENCED_SATISFACTION_STATUSES
+                and not mapping.evidence_ids
+            ):
+                problems.append(
+                    f"mapping {position} of {mapping.requirement_id} has "
+                    f"satisfaction_status {mapping.satisfaction_status.value!r} and cites no "
+                    f"evidence. Absence of evidence resolves to 'unverified' (DEC-009)."
+                )
+
+        if problems:
+            raise ProposalError(
+                "these proposed objects assert something no passage supports: "
+                + "; ".join(problems)
+            )
+
+    def validate_threat(self, threat_id: str) -> None:
+        """Every mapping is a mapping for the threat the package was assembled around.
+
+        The package carries one threat (DEC-024: a requirement is evaluated only through a threat),
+        so a mapping naming a different one is about a call that was not made. `validate_references`
+        would not catch it: the other threat's identifier is not in the package, so the error would
+        read as an unknown reference and the correction would be to look it up rather than to stop
+        answering about it.
+        """
+        wrong = sorted(
+            {mapping.threat_id for mapping in self.mappings if mapping.threat_id != threat_id}
+        )
+        if wrong:
+            raise ProposalError(
+                f"these mappings name threat {wrong} and this call is about {threat_id!r}. One "
+                f"mapping call evaluates one threat; a mapping for another threat belongs to that "
+                f"threat's call."
             )
 
     def validate_keys(self) -> None:
