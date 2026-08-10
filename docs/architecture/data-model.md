@@ -1273,6 +1273,8 @@ Represents an implemented, inherited, claimed, or proposed security safeguard.
 | evidence_ids | list[string] | No | Supporting evidence |
 | owner | string | No | Control owner |
 | limitations | list[string] | No | Known limitations |
+| generated_by | string | Yes | Workflow node or reviewer (DEC-044) |
+| created_at | datetime | Yes | Creation timestamp (DEC-044) |
 | status | ObjectStatus | Yes | Lifecycle state |
 
 ## Note on inherited-control scope
@@ -1294,6 +1296,23 @@ intentional non-findings turn on:
 | Platform probably provides it, nothing says so | `inherited` | `claimed` | absent | A `Question` requesting confirmation |
 
 The second never resolves to `absent`, and by DEC-013 never to `unmet`.
+
+## Note on provenance
+
+`generated_by` and `created_at` were added by DEC-044. A `Control` has three possible origins —
+the Context Extraction step finds one described, the Mapping step proposes one, or a reviewer adds
+one at a checkpoint — and section 18 as first written carried no field recording which. Every other
+object produced by the pipeline carries provenance, and a control without it is the one object
+whose origin cannot be recovered from the record.
+
+## Note on evidence
+
+An `implementation_status` of `implemented`, `partially_implemented`, or `absent` asserts something
+about the system, so it cites at least one `EvidenceReference` (DEC-044). `claimed` and `unknown`
+are exempt, and the exemption is DEC-009: they are what an unevidenced control is called, and
+requiring evidence of them would leave an undocumented control nowhere to be recorded except as
+absent. A `planned` or `recommended` control is exempt whatever its status, because it is the
+assessment's own proposal and no source passage describes something nobody has built.
 
 ## Control-type values
 
