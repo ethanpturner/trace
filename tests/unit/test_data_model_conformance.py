@@ -69,6 +69,7 @@ from trace_ai.domain.evidence import EvidenceReference
 from trace_ai.domain.evidence_assessment import EvidenceAssessment
 from trace_ai.domain.execution import ExecutionRecord, WorkflowRun
 from trace_ai.domain.finding import Finding
+from trace_ai.domain.finding_merge_record import FindingMergeRecord
 from trace_ai.domain.identifiers import PREFIXES, parse_id
 from trace_ai.domain.question import Question
 from trace_ai.domain.requirement import Requirement
@@ -244,6 +245,10 @@ REGISTRY: dict[str, Registration] = {
     # for `EvidenceStrength`, and DEC-013's `unmet` rule reads its `validation_status`.
     "20": Registration("EvidenceAssessment", Status.IMPLEMENTED, EvidenceAssessment),
     "21": Registration("Finding", Status.IMPLEMENTED, Finding),
+    # Documented as `21a` for the same reason `10a` is: DEC-052 added it after the rest were
+    # numbered. The guard found it absent from section 40's priority list the same way, and the
+    # entry arrived with the model.
+    "21a": Registration("FindingMergeRecord", Status.IMPLEMENTED, FindingMergeRecord),
     "22": Registration("Question", Status.IMPLEMENTED, Question),
     "23": Registration("DocumentationGap", Status.IMPLEMENTED, DocumentationGap),
     # Was DEFERRED. Section 40 moved it, and states why there: roadmap Stage 4 gates the
@@ -269,7 +274,9 @@ REGISTRY: dict[str, Registration] = {
 OBJECT_SECTIONS = [
     *(str(number) for number in range(5, 11)),
     "10a",
-    *(str(number) for number in range(11, 32)),
+    *(str(number) for number in range(11, 22)),
+    "21a",
+    *(str(number) for number in range(22, 32)),
 ]
 
 
@@ -332,7 +339,7 @@ def test_every_field_row_has_a_description() -> None:
 
 def test_section_forty_parses_into_two_lists() -> None:
     first, later = implementation_priority()
-    assert len(first) == 25, first
+    assert len(first) == 26, first
     assert later == ["PromptDefinition", "EvaluationResult"]
 
 

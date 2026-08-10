@@ -57,6 +57,7 @@ __all__ = [
     "EvidenceReferenceId",
     "ExecutionRecordId",
     "FindingId",
+    "FindingMergeRecordId",
     "IdentifierAllocator",
     "IdentifierKind",
     "InMemoryAllocator",
@@ -77,11 +78,11 @@ __all__ = [
 # is carried rather than a bare set so that a validation error can name the object type, which is
 # the thing a reader of the error actually needs.
 #
-# There are twenty-three. The issue that asked for this module said nineteen and omitted `obs`,
+# There are twenty-four. The issue that asked for this module said nineteen and omitted `obs`,
 # which DEC-021 added along with SourceObservation after the backlog was written. DEC-034 added
 # `act`, `eas`, and `crq`: all three name assessment-scoped objects that carry an `id` and had no
-# prefix, which a rule saying what the scheme governs made visible. Section 2.1 is authoritative
-# and lists them.
+# prefix, which a rule saying what the scheme governs made visible. DEC-052 added `mrg` with
+# FindingMergeRecord. Section 2.1 is authoritative and lists them.
 PREFIXES: dict[str, str] = {
     "asm": "Assessment",
     "src": "SourceDocument",
@@ -106,6 +107,7 @@ PREFIXES: dict[str, str] = {
     "run": "WorkflowRun",
     "exe": "ExecutionRecord",
     "eval": "EvaluationResult",
+    "mrg": "FindingMergeRecord",
 }
 
 
@@ -266,6 +268,7 @@ ReviewerDecisionId = Annotated[str, _validator("dec")]
 WorkflowRunId = Annotated[str, _validator("run")]
 ExecutionRecordId = Annotated[str, _validator("exe")]
 EvaluationResultId = Annotated[str, _validator("eval")]
+FindingMergeRecordId = Annotated[str, _validator("mrg")]
 
 
 class IdentifierAllocator(Protocol):
