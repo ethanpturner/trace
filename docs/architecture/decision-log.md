@@ -3172,7 +3172,9 @@ Decision:
 
 **A deterministic node is built behind the Evidence Validation agent**, at `workflow/evidence_assessment_validation.py`, even though `agent-design.md` section 3's workflow overview does not draw one.
 
-**Section 3's omission is an omission, not an intent**, and the diagram should be amended to show the node. Editing the document is separate work; this entry is the record that it should happen and why.
+**Section 3's omission is an omission, not an intent**, and the diagram is amended to show the node. That edit has since been made, together with the section 4 classification row and the `NODES_BY_PHASE` entry, and the diagram carries a sentence saying why both nodes arrived late.
+
+**The same correction applies to the Critique Validation node**, which section 3 did not draw either and which `agent-design.md` section 15 and section 22 require for the same reasons. It was built under the same argument and is now drawn. That answers this entry's second open question: two nodes were missing, not one, and every reasoning agent is now followed by a deterministic node.
 
 **This node owns the write, and it is the only validator for which that is literally true.** `workflow/evidence_validation.py` contains no store write — no `objects.save`, no `.transaction()`, no `allocate(` — and a test asserts it. Persistence of an `EvidenceAssessment` is unreachable except through validation. The other three validators check objects their agents already persisted.
 
@@ -3217,7 +3219,7 @@ Tradeoffs:
 Open Questions:
 
 - Should a re-run be allowed to move a settled validation status, and if so does it need DEC-046's from/reason record?
-- Does `agent-design.md` section 3's diagram need any other node it does not draw, or is this the only one?
+- ~~Does `agent-design.md` section 3's diagram need any other node it does not draw, or is this the only one?~~ Answered: two were missing, this one and Critique Validation. Both are drawn, and section 4's table lists both.
 - Should the other three agents adopt the same arrangement — no write in the agent module — or is the convention enough where the node already validates first?
 
 ## DEC-049: The critic reviews one threat's lineage, its vocabularies are closed, and it proposes no missing threats

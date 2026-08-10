@@ -174,7 +174,11 @@ VALIDATE_MAP[Mapping Validation Node]
 
 EVIDENCE[Evidence Validation Agent]
 
+VALIDATE_EVIDENCE[Evidence Assessment Validation Node]
+
 CRITIC[Critical Review Agent]
+
+VALIDATE_CRITIQUE[Critique Validation Node]
 
 CONSOLIDATE[Finding Consolidation Node]
 
@@ -206,9 +210,13 @@ MAP --> VALIDATE_MAP
 
 VALIDATE_MAP --> EVIDENCE
 
-EVIDENCE --> CRITIC
+EVIDENCE --> VALIDATE_EVIDENCE
 
-CRITIC --> CONSOLIDATE
+VALIDATE_EVIDENCE --> CRITIC
+
+CRITIC --> VALIDATE_CRITIQUE
+
+VALIDATE_CRITIQUE --> CONSOLIDATE
 
 CONSOLIDATE --> REVIEW_FINDINGS
 
@@ -217,6 +225,13 @@ REVIEW_FINDINGS --> REPORT
 REPORT --> RENDER
 
 RENDER --> EVALUATE
+
+`VALIDATE_EVIDENCE` and `VALIDATE_CRITIQUE` were absent from an earlier version of this diagram,
+and DEC-048 records the correction. Both were built anyway, because `data-model.md` section 33
+requires validation after model-generated structured output and section 22 states that agents
+never write authoritative records — neither rule is conditioned on a node being drawn. Every
+reasoning agent is now followed by a deterministic node, which is what section 4 classifies and
+what the write model requires.
 
 # 4. Component Classification
 
@@ -233,7 +248,9 @@ RENDER --> EVALUATE
 | Requirement and Control Mapping | Reasoning agent | Yes | No |
 | Mapping Validation | Deterministic node | No | No |
 | Evidence Validation | Reasoning agent | Yes | No |
+| Evidence Assessment Validation | Deterministic node | No | No |
 | Critical Review | Reasoning agent | Yes | No |
+| Critique Validation | Deterministic node | No | No |
 | Finding Consolidation | Primarily deterministic node | Optional | No |
 | Finding Review | Human checkpoint | No | Yes |
 | Report Generation | Constrained generation agent | Yes | No |

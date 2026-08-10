@@ -83,8 +83,12 @@ NODES_BY_PHASE: Final[dict[Phase, tuple[str, ...]]] = {
         "requirement-and-control-mapping",
         "mapping-validation",
     ),
-    Phase.EVIDENCE_VALIDATION: ("evidence-validation",),
-    Phase.CRITICAL_REVIEW: ("critical-review",),
+    # Two nodes each, for the reason the mapping and threat phases have two: an agent and the
+    # deterministic node behind it. Section 3's diagram drew neither validation node until
+    # DEC-048; both were built anyway, and both are the only path to persistence for what their
+    # agent proposes.
+    Phase.EVIDENCE_VALIDATION: ("evidence-validation", "evidence-assessment-validation"),
+    Phase.CRITICAL_REVIEW: ("critical-review", "critique-validation"),
     Phase.FINDING_CONSOLIDATION: ("finding-consolidation",),
     Phase.HUMAN_FINDING_REVIEW: ("human-finding-review",),
     Phase.REPORT_GENERATION: ("report-generation", "report-rendering"),

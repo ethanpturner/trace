@@ -1,9 +1,10 @@
-"""The node `agent-design.md` section 3 does not draw, and the write path it owns.
+"""The node `agent-design.md` section 3 left out, and the write path it owns.
 
-DEC-048 records the asymmetry: every other reasoning agent has a deterministic node behind it and
-this one does not, on the diagram. It exists anyway, because `data-model.md` section 33 requires
-validation after model-generated structured output and section 22 states that agents never write
-authoritative records — and neither rule is conditioned on a node being drawn.
+DEC-048 records the asymmetry and its repair: every other reasoning agent had a deterministic node
+behind it on the diagram and this one did not. It was built anyway, because `data-model.md`
+section 33 requires validation after model-generated structured output and section 22 states that
+agents never write authoritative records — and neither rule is conditioned on a node being drawn.
+Section 3 has since been amended to draw this node and the Critique Validation node beside it.
 
 Two properties carry the file.
 

@@ -1,12 +1,12 @@
-"""The Evidence Assessment Validation node: the one section 3 does not draw.
+"""The Evidence Assessment Validation node: the one section 3 used to leave out.
 
-`agent-design.md` section 3 gives every other reasoning agent a deterministic node behind it —
+`agent-design.md` section 3 gave every other reasoning agent a deterministic node behind it —
 Context Extraction has Context Validation, Threat Analysis has Threat Validation, Requirement and
-Control Mapping has Mapping Validation — and evidence validation runs straight into Critical
-Review. DEC-048 records that this is an omission rather than an intent, and that a node exists
-anyway on the strength of two rules the diagram does not override: `data-model.md` section 33
-requires validation after model-generated structured output, and `agent-design.md` section 22
-states that agents never write authoritative records.
+Control Mapping has Mapping Validation — and evidence validation ran straight into Critical Review.
+DEC-048 records that this was an omission rather than an intent, and that a node was built anyway
+on the strength of two rules a diagram does not override: `data-model.md` section 33 requires
+validation after model-generated structured output, and `agent-design.md` section 22 states that
+agents never write authoritative records. Section 3 now draws it, and section 4 classifies it.
 
 **This node owns the write.** `workflow/evidence_validation.py` contains no store write at all, so
 persistence is unreachable except through here. That is the arrangement section 22's write model
