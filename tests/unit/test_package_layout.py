@@ -64,6 +64,10 @@ PACKAGES = (
     # Its own package because the bound is the whole design -- an agent shown everything
     # re-derives everything, which is section 15's second-full-assessment prohibition.
     "trace_ai.services.critique",
+    # The finding-side query surface: section 32's lineage walk, which the checkpoint 2 review
+    # package and the "why was this generated" view consume (issue #100). A service because it
+    # spans most of the object model; nothing in it is persisted (DEC-053).
+    "trace_ai.services.findings",
     "trace_ai.infrastructure",
     "trace_ai.infrastructure.filesystem",
     "trace_ai.infrastructure.database",
