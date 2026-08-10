@@ -3219,3 +3219,62 @@ Open Questions:
 - Should a re-run be allowed to move a settled validation status, and if so does it need DEC-046's from/reason record?
 - Does `agent-design.md` section 3's diagram need any other node it does not draw, or is this the only one?
 - Should the other three agents adopt the same arrangement — no write in the agent module — or is the convention enough where the node already validates first?
+
+## DEC-049: The critic reviews one threat's lineage, its vocabularies are closed, and it proposes no missing threats
+
+Date: 2026-08-10
+
+Status: Accepted
+
+Decision:
+
+**The critic's unit of work is one threat and everything downstream of it.** The review group is a threat, the `ControlMapping` objects that cite it, the `Control` objects those mappings reference, the `EvidenceAssessment` objects over any of them, and the `DocumentationGap` objects raised alongside. That is `agent-design.md` section 23's "bounded group of related objects" made specific, and it is the same chain `data-model.md` section 32 calls object lineage.
+
+**`Critique`'s three prose vocabularies become closed enumerations.** `CritiqueSubjectType` has six values — `threat`, `control`, `control_mapping`, `evidence_assessment`, `documentation_gap`, `finding`. `CritiqueType` has eleven, section 24's twelve less one. `RecommendedAction` has section 24's five.
+
+**`missing_high_impact_threat` is excluded, and the critic proposes no missing threats.** Section 15 lists both among the critic's concerns and outputs; both are dropped for the MVP.
+
+**A severity critique needs a severity that someone assigned.** `severity_overstated` and `severity_understated` are refused against `unassigned` and against a subject that carries no severity at all. `DocumentationGap` is where the pair is genuinely reachable in M3, because DEC-045 has the mapping step assign a gap's rating and forbid `unassigned`.
+
+Why:
+
+**The unit of work follows from what a critique has to be able to say.** Section 15's twelve concerns are almost all comparisons — an ignored inherited control compares a mapping against a control, a duplicate compares two threats, a mislabelled documentation gap compares a mapping's conclusion against its evidence. None of them can be made from a single object, and all of them can be made from one threat's downstream chain. A smaller group makes the comparison impossible; a larger one is section 15's "unrestricted second full assessment" prohibition, which is a statement about scope rather than about volume.
+
+The per-threat shape also matches what the pipeline already does. DEC-024 makes mapping per-threat for its own reasons, so the mappings, controls, and assessments belonging to one threat are already a natural set, and no new grouping rule is invented to produce it.
+
+**Closing the vocabularies is where section 15's two structural failure conditions live.** "Critiques lack target objects" and "critiques lack actionable recommendations" are the only two of its six that a schema can refuse, and a free-text `subject_type` or `recommended_action` gives it nothing to refuse. Section 24 types them as strings and then names the values in prose — `recommended_action` is described as "Keep, revise, reject, merge, investigate", which is DEC-036's naming case rather than its illustrating case. `critique_type` is headed "Critique-type examples", which reads like the illustrating case and is treated as the naming case anyway, because the alternative is a critique type nobody can route on and section 15's last failure condition is precisely output that cannot be traced to specific issues.
+
+`CritiqueSubjectType` has six values where section 24's purpose names three — "a generated threat, mapping, or finding" — because section 15's own responsibilities need more targets than its purpose sentence allows. A critique about a mislabelled documentation gap has a gap as its natural target, and one about an unsupported claim often has an evidence assessment. Reading the purpose sentence as exhaustive would force those critiques onto the nearest permitted object and lose which thing was actually wrong.
+
+**Excluding missing-threat proposals resolves a contradiction inside section 15 rather than overriding it.** The section lists "missing high-impact threats" among what the critic looks for and "candidate missing-threat proposals" among its outputs, and it also makes "critiques lack target objects" invalid output. A missing threat has no target object by definition. One of those three statements has to give, and the failure condition is the one that is structurally enforceable and that the whole object model is built around.
+
+Section 27 settles it from the other direction, with a worked example that is exactly this case: "The critic may recommend that a threat be reconsidered. It may not automatically start an unlimited threat-generation and criticism loop." A critic-proposed threat is a threat generated outside the single call DEC-042 specifies, from different inputs, with the Threat Validation node already several phases behind it. There is nowhere for it to be validated and no phase for it to be generated in.
+
+Roadmap Stage 4's decision gate — "if the critic or another agent does not improve results, remove or defer it" — argues for the narrowest useful version. Missing-threat proposals are the widest thing section 15 asks for and the least verifiable; building them before the gate is passed is building the feature most likely to be removed.
+
+**The severity rule exists because the two severity critique types are almost unreachable and the reason is easy to miss.** Critical review runs before checkpoint 2, where DEC-030 has the reviewer assign a finding's severity. So on a `Finding`, severity is `unassigned` everywhere the critic can see it, and `severity_overstated` against `unassigned` is a critique of a default value nobody chose. Refusing it by name, citing DEC-030, is what stops the pair being used as a general-purpose "I disagree with the emphasis" type. `DocumentationGap` keeps them honest: DEC-045 makes a gap's severity a real judgment made by a real step, so disagreeing with it is a real critique.
+
+Alternatives Considered:
+
+- Review the whole assessment at once, as one call
+- Review one object at a time, with no group
+- Group by component rather than by threat
+- Leave `critique_type` open, since section 24 heads its list "examples"
+- Keep `missing_high_impact_threat` and let it target the `SystemContext` version or an unreached `Component`
+- Keep missing-threat proposals behind a bounded budget, per section 27's loop rules
+- Drop `severity_overstated` and `severity_understated` entirely until `Finding` exists
+
+Tradeoffs:
+
+- **A real capability is gone.** Section 15 asks the critic to notice missing high-impact threats, and it now cannot. The false-negative rate in `evaluation-plan.md` section 8 and the human at checkpoint 2 are the only things left that would catch a whole missing threat, and neither is as targeted as an agent looking for one.
+- The per-threat group means a critique that spans two threats — "these two are the same scenario" — is only available when both are in one group, which they never are. Duplicate detection across threats stays DEC-043's deterministic comparison, and the critic's `duplicate` type is left able to see only duplicates within one chain.
+- **Per-threat grouping multiplies calls.** Ten threats is ten critic calls where one call over everything would be one, and the critic is the agent whose value is least established. If the Stage 4 gate is failed on cost rather than on quality, this decision is part of why.
+- Closing `critique_type` over eleven values means a challenge that fits none of them has to be forced into `contradictory_analysis` or dropped. Section 24 called them examples and this treats them as a set.
+- Six subject types where section 24's purpose names three is a departure the document does not sanction; section 24 now records it, which is a document edit made on the strength of section 15 rather than of section 24.
+- The severity rule is enforced by a method the validating node has to call rather than by a validator, because the subject's severity is not on the critique. A caller that forgets to call it gets no error.
+
+Open Questions:
+
+- If the Stage 4 gate is passed, does missing-threat proposal come back as a bounded re-invocation, or as a separate deterministic coverage check over components no threat reaches?
+- Should the review group include the questions raised alongside a threat, which section 15 lists among its inputs and which the per-threat chain does not obviously contain?
+- Is `contradictory_analysis` doing too much work as the catch-all, and would the accepted-critique rate show it?

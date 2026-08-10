@@ -21,6 +21,12 @@ from trace_ai.domain.proposals.context_extraction import (
     ProposedTrustBoundary,
 )
 from trace_ai.domain.proposals.conversion import ConvertedContext, convert_proposal
+from trace_ai.domain.proposals.critical_review import (
+    CRITICAL_REVIEW_AGENT,
+    CriticalReviewProposal,
+    CritiqueProposal,
+    promote_critique,
+)
 from trace_ai.domain.proposals.evidence_validation import (
     EVIDENCE_VALIDATION_AGENT,
     EvidenceAssessmentProposal,
@@ -46,12 +52,15 @@ from trace_ai.domain.proposals.threat_analysis import (
 
 __all__ = [
     "CONTEXT_EXTRACTION_AGENT",
+    "CRITICAL_REVIEW_AGENT",
     "EVIDENCE_VALIDATION_AGENT",
     "MAPPING_AGENT",
     "THREAT_ANALYSIS_AGENT",
     "ContextExtractionProposal",
     "ControlProposal",
     "ConvertedContext",
+    "CriticalReviewProposal",
+    "CritiqueProposal",
     "DocumentationGapProposal",
     "EvidenceAssessmentProposal",
     "EvidenceValidationProposal",
@@ -73,6 +82,7 @@ __all__ = [
     "convert_proposal",
     "promote_assessment",
     "promote_control",
+    "promote_critique",
     "promote_documentation_gap",
     "promote_mapping",
     "promote_threat",
