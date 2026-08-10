@@ -2820,3 +2820,97 @@ Open Questions:
   the reviewer at checkpoint 2?
 - Does re-running threat analysis after a context revision need to see the previous run's threats,
   or is a fresh pass plus duplicate detection the better shape?
+
+## DEC-043: Duplicate threats are found by deterministic feature comparison and proposed, never merged
+
+Date: 2026-08-09
+
+Status: Accepted
+
+Decision:
+
+`agent-design.md` section 38 question 7 asks whether duplicate detection should use embeddings, a
+model, deterministic features, or a combination. For the MVP: **deterministic features**, scored,
+with the outcome recorded as a proposal.
+
+Three features, weighted, summing to one:
+
+| Feature | Weight | What it compares |
+|---|---|---|
+| Title | 0.50 | Jaccard overlap of normalized title tokens, minus a short stop list |
+| Targets | 0.35 | Jaccard overlap of affected component and asset identifiers, as one set |
+| Category | 0.15 | Jaccard overlap of the category lists |
+
+A pair scoring above **0.75** is proposed as a duplicate. Two empty sets score 0.0 rather than 1.0.
+
+**The output is a `MergeProposal`, and nothing merges.** It carries both threat identifiers, the
+score, and which features matched. Section 11 requires the merge decision to stay explicit and
+traceable, and section 16 assigns the merge itself to Finding Consolidation in M4. A merge proposal
+does not block the threat set from reaching control mapping: two overlapping threats are still two
+threats worth mapping, and collapsing them first would lose whichever the merge did not keep.
+
+**When this is revisited.** Two triggers, either one sufficient. First, a benchmark duplicate rate
+that this misses — `agent-design.md` section 10 lists duplicate rate as an evaluation criterion, so
+the number exists to check against. Second, vector infrastructure arriving for another reason;
+`current-architecture.md` section 17 defers it, and if it stops being deferred, an embedding
+comparison becomes cheap enough to add as a *second* signal alongside these features rather than in
+place of them. The pairwise comparison is quadratic, which is free at tens of threats and worth
+revisiting past a few hundred.
+
+Why:
+
+**An embedding approach has no substrate.** `current-architecture.md` section 17 defers vector
+infrastructure. Adding an embedding model for this one comparison would mean a second provider
+dependency, a second thing to cache, and a similarity threshold tuned against nothing — the
+benchmark that would tune it is the same one that has not run yet.
+
+**A model-assisted comparison would put a model call in a deterministic node.** `agent-design.md`
+section 4 classifies this node as deterministic, and the six-agent cap in section 36 is on
+model-assisted agents. A comparison call is arguably not an agent, which is exactly the argument
+that erodes a cap. It is also the wrong shape: a model asked whether two threats are the same
+returns a judgment with no features attached, and section 11 requires the decision to be traceable.
+
+**The weights follow from what a duplicate actually is.** Two threats are the same threat when they
+describe the same thing happening to the same objects. Title carries the most weight because it is
+the only field that summarises the scenario, and targets carry nearly as much because a title can
+be reworded while the objects cannot. Category is a coverage label rather than a description, so it
+breaks ties and does not decide.
+
+**0.75 is where identical-alone stops being enough.** A pair with identical titles and no shared
+target scores 0.50; identical targets and no shared title scores 0.35. Either is a real possibility
+— two different scenarios against one component, or one scenario written twice about different
+components — and neither should be proposed on its own. A pair matching strongly on both crosses.
+The number is a starting point with a stated meaning rather than a tuned value, because there is
+nothing yet to tune it against.
+
+**Two empty sets score 0.0, not 1.0.** The convention matters more than it looks: DEC-041 makes
+`category` optional, and a Jaccard implementation returning 1.0 for two empty sets would make every
+pair of uncategorised threats look identical on that feature.
+
+Alternatives Considered:
+
+- Embedding similarity over threat descriptions, with a vector store
+- A model-assisted pairwise comparison, prompted to answer "same threat or not"
+- Exact match on normalized title only, as `workflow/context_validation.py` does for components
+- Deterministic features first, escalating to a model call for pairs in an uncertain band
+- Merging automatically above a higher threshold and proposing between the two
+
+Tradeoffs:
+
+- Rewording defeats it. Two threats describing one scenario in different words, against different
+  components, are not detected. That is the case an embedding would catch and this does not, and
+  it is the reason the revisit trigger is a measured duplicate rate rather than a date.
+- The threshold is asserted, not derived. Until the benchmark runs, nobody knows whether 0.75 is
+  generous or strict, and the failure directions are asymmetric: too low produces proposals a
+  reviewer dismisses, too high produces duplicates nobody sees.
+- Stop words are a small English list. A title in another language tokenizes worse, which does not
+  matter for a local single-user MVP assessing English documentation and would matter later.
+- Proposals do not block, so a run can reach control mapping with two near-identical threats and
+  map both. That is the intended behaviour and it costs a mapping call.
+
+Open Questions:
+
+- Should the merge proposal survive into checkpoint 2's review package, or is it consumed by
+  Finding Consolidation and never shown?
+- Does a proposal need a recommended survivor — the more specific threat, the one with more
+  evidence — or is that the merging step's judgment?
