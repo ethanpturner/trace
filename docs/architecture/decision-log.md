@@ -3061,3 +3061,52 @@ Open Questions:
 - Should the reviewer be able to edit a gap's severity at checkpoint 2, given that gaps appear in the review package but carry no approval action?
 - Does report section 9 need to state that gap severity and finding severity are different quantities, or does the section's own framing carry it?
 - Is a deterministic floor available — a gap on a requirement no threat could evaluate is at least `low` — or is that the same optional-free-text problem DEC-030 found?
+
+## DEC-046: The downgrade is recorded on the mapping; two of DEC-013's four conditions wait for Finding Consolidation
+
+Date: 2026-08-10
+
+Status: Accepted
+
+Decision:
+
+**`ControlMapping` gains `downgraded_from` and `downgrade_reason`.** When the Mapping Validation node lowers a proposed `unmet` to `unverified`, it records the status it lowered *from* and the DEC-013 condition that failed. Both fields are present or both absent, and a downgrade whose recorded origin equals its current status is refused.
+
+**A downgrade is not a suppression.** DEC-025's `suppressed_conclusion` and `suppressed_by` stay for what they were added for: the *agent* declining a negative conclusion because a `common_false_positives` entry applies. A downgrade is the *application* refusing one the agent drew. The four fields are not merged.
+
+**The node applies the two DEC-013 conditions that can be checked where it runs.** DEC-013 states four conditions for `unmet`. Conditions 1 and 4 — at least one cited `EvidenceReference`, and no unresolved contradiction bearing on the conclusion — read only the mapping, the catalog, and the `SourceObservation` records, all of which exist at this phase. Conditions 2 and 3 read `EvidenceAssessment`: whether a cited reference is `direct` or `contradictory` rather than merely `contextual`, and whether the assessment's `validation_status` is `supported` or `partially_supported`.
+
+**`EvidenceAssessment` does not exist yet when this node runs**, and that is the pipeline's order rather than an implementation gap. `current-architecture.md` section 5.3 puts Evidence Validation *after* Requirement and Control Mapping. So DEC-013's "enforcement happens twice" is narrowed here: Mapping Validation enforces conditions 1 and 4 and performs the downgrade for them; Finding Consolidation applies the outcome table, including conditions 2 and 3, and performs any further downgrade at that point. DEC-025's structural check — an `unmet` against a requirement carrying `common_false_positives` entries must say why none applies — is enforced here too, because it reads only the catalog.
+
+Why:
+
+The record had to live somewhere and DEC-013 already implied where. Its own open questions ask whether the downgrade should be "visible to the reviewer as a distinct event, rather than only as a recorded reason **on the mapping**", which takes the mapping as the baseline and asks whether more is needed. This decision answers only the baseline; the distinct-event question stays open.
+
+Reusing DEC-025's two fields was the obvious shortcut and it destroys the measurement both records exist for. `evaluation-plan.md` section 8 makes false-negative rate a primary metric, and the two records answer different questions about a rising rate. A high suppression count with a low downgrade count means the *catalog* is suppressing too much — DEC-011 names over-suppression as `common_false_positives`'s principal risk. A high downgrade count with a low suppression count means the *agent* is reaching for negative conclusions the evidence does not carry. One pair of fields would show a single number that could not distinguish a catalog problem from a model problem, which is exactly the attribution DEC-025 was written to preserve.
+
+Recording rather than silently lowering follows the same argument the issue makes: a silent downgrade is as invisible to evaluation as a silent upgrade. It also keeps the node honest about what it did — `agent-design.md` section 8 and section 11 both make the validators report rather than correct, and this node is the one place a validator *does* change its input. DEC-013 sanctions that specific change and no other; the record is what keeps the exception legible as an exception.
+
+The split across two nodes deserves recording because the alternative reading is available and wrong. One could implement conditions 2 and 3 here against a *missing* `EvidenceAssessment` and treat absence as failure, which would downgrade every `unmet` mapping in every run, unconditionally, and look like a very strict evidence rule rather than like a node reading a field that is not populated yet. Nothing would fail; the assessment would simply never report an unmet requirement, and the false-negative rate would move with no attributable cause.
+
+Alternatives Considered:
+
+- Reuse `suppressed_conclusion` and `suppressed_by` for the downgrade
+- A `Downgrade` object of its own, linked to the mapping
+- Record downgrades only in `ExecutionRecord` metadata
+- Move Evidence Validation before Requirement and Control Mapping so all four conditions are checkable at once
+- Treat a missing `EvidenceAssessment` as failing conditions 2 and 3
+- Perform the whole DEC-013 rule in Finding Consolidation and leave Mapping Validation reporting only
+
+Tradeoffs:
+
+- **Two more optional fields on the most complex object in the model.** `ControlMapping` now carries four fields about conclusions that were not drawn, which is more space given to negative space than to the mapping itself.
+- The reviewer sees `unverified` with a note, not the `unmet` the agent proposed. Whether that is enough visibility is DEC-013's open question and is still open.
+- **DEC-013's enforcement is now genuinely partial at this node**, and a reader of section 19 could reasonably expect the whole rule to run here. The document says which half runs where; a reader who skips that will over-trust this node.
+- Splitting the rule across two nodes means the second half has no implementation yet — Finding Consolidation is M4 — so between now and then an `unmet` resting on purely contextual evidence survives to the checkpoint. The reviewer is the backstop in the meantime, which is weaker than the decision intends.
+- `downgraded_from` is a status the mapping never had persisted, so an audit reading only stored states sees `unverified` and a claim that it used to be something else. There is no `ExecutionRecord` of the intermediate object.
+
+Open Questions:
+
+- Should Finding Consolidation append to `downgrade_reason` or overwrite it when it applies conditions 2 and 3 to an already-downgraded mapping?
+- Does a downgrade belong on the checkpoint 2 review package as its own line, or is the mapping's status enough?
+- Should the ratio of downgrades to suppressions be an evaluation metric in its own right, given that this decision argues the two numbers mean different things?

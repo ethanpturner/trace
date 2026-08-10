@@ -1361,6 +1361,8 @@ This is one of the most important objects in Trace because it prevents the appli
 | applicability_reason | string | Yes | Explanation |
 | suppressed_conclusion | string | No | A conclusion not drawn because a `common_false_positives` entry applies (DEC-025) |
 | suppressed_by | string | No | The `common_false_positives` entry that applies (DEC-025) |
+| downgraded_from | string | No | The satisfaction status validation lowered, if it did (DEC-046) |
+| downgrade_reason | string | No | Why the downgrade happened (DEC-046) |
 | satisfaction_status | string | Yes | Satisfied, partial, unverified, unmet |
 | evidence_ids | list[string] | No | Mapping evidence |
 | assumptions | list[string] | No | Assumptions affecting mapping |
@@ -1410,7 +1412,13 @@ candidate finding is reachable only under the evaluation-only `permissive` thres
 contradicts a claim that it exists. Because an EvidenceReference must quote real source
 text, silence cannot be cited, so this rule is enforced by the schema rather than by
 instruction. The Mapping Validation node downgrades an unsupported `unmet` to `unverified`
-and records the downgrade.
+and records the downgrade on `downgraded_from` and `downgrade_reason` (DEC-046).
+
+Two of DEC-013's four conditions for `unmet` cannot be checked at this node, because they read
+`EvidenceAssessment`, which the Evidence Validation phase produces afterwards. DEC-046 records
+which half is enforced where: Mapping Validation applies the conditions that read only the
+mapping, the catalog, and the source observations; Finding Consolidation applies the outcome
+table, by which point the evidence assessments exist.
 
 A high proportion of `unverified` mappings is the expected result of assessing ordinary
 architecture documentation. It is not a defect and must not be treated as one in evaluation.
