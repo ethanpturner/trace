@@ -21,6 +21,9 @@ Three tests keep it that way, and they are the enforcement rather than this file
   registered scenario, never a descendant.
 - `tests/unit/test_context_fixtures.py` asserts that `expected-context.yaml` conforms to the M2
   domain models and that every passage it cites exists in the input documents.
+- `tests/unit/test_benchmark_truth.py` holds the four M3 truth files to their shape, resolves
+  every requirement identifier against catalog 0.1, asserts that no requirement text is restated,
+  and asserts that every suppression names an entry the catalog actually has.
 
 ## What is here
 
@@ -28,13 +31,13 @@ Three tests keep it that way, and they are the enforcement rather than this file
 | --- | --- |
 | `evaluation-contract.yaml` | The grading policy. Declares no counts (DEC-028). |
 | `expected-context.yaml` | The context-extraction truth set. Authored. |
-| `expected-questions.yaml` | Not yet authored. |
+| `expected-questions.yaml` | Authored — M3. |
 | `expected-observations.yaml` | Not yet authored. |
-| `expected-threats.yaml` | Not yet authored — M3. |
-| `expected-control-mappings.yaml` | Not yet authored — M4. |
+| `expected-threats.yaml` | Authored — M3. |
+| `expected-control-mappings.yaml` | Authored — M3. |
 | `expected-findings.yaml` | Not yet authored — M4. |
 | `expected-documentation-gaps.yaml` | Not yet authored — M4. |
-| `expected-rejections.yaml` | Not yet authored — M4. |
+| `expected-rejections.yaml` | Authored — M3. |
 | `reviewer-notes.md` | Not yet authored. |
 
 The file list is derived from the object model rather than enumerated in prose (DEC-027): one

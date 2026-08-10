@@ -1,0 +1,303 @@
+# ForgeFlow expected control mappings
+#
+# Benchmark truth for the requirement-and-control-mapping step. Layout is fixed by DEC-027;
+# the satisfaction rules are DEC-013's and the suppression mechanism is DEC-011's and
+# DEC-025's.
+#
+# Nothing in this directory is supplied to Trace during an assessment. See README.md.
+#
+# ## Requirements are referenced, never restated
+#
+# Every entry names a catalog identifier and nothing else. Restating requirement text here
+# would fork the catalog: two copies of one statement, one of which stops being updated.
+# DEC-010's first open question asks exactly this about the evaluation plan's per-scenario
+# requirements file, and this is the answer for ForgeFlow. `catalog_version` below fixes
+# which text the identifiers mean.
+#
+# ## The negatives are the point
+#
+# `must_not_conclude` entries are the five intentional non-findings in scenario section 14,
+# each keyed to the mechanism that suppresses it — a `common_false_positives` entry, a
+# `non_applicable_conditions` entry, or a documented inherited control. A regression test
+# that passes for an unknown reason is not evidence of anything, so every negative names its
+# reason and `tests/evaluation/` asserts the reason rather than the absence.
+#
+# ## unverified is the expected answer, not a shortfall
+#
+# Most entries here expect `unverified`. data-model.md section 19 states that a high
+# proportion of `unverified` is the expected result of assessing ordinary architecture
+# documentation and must not be treated as a defect, and requirements/README.md records that
+# the catalog is phrased so silence resolves there. No entry expects `unmet` unless the
+# input documents carry a passage describing the shortfall, and exactly zero do.
+
+benchmark_version: "1.0"
+scenario: forgeflow
+catalog_version: "0.1"
+
+# ---------------------------------------------------------------------------------------
+# Positive expectations: the requirements each expected threat should engage.
+# ---------------------------------------------------------------------------------------
+
+mappings:
+  - threat_key: THR-001
+    applicable:
+      - requirement_id: req-AI-001
+        expected_satisfaction: unverified
+        # Scenario 13.5: the worker marks repository content but adds no isolation or
+        # secondary validation. The documents describe the marking and not the rest, so the
+        # honest answer is that the expectation is not established either way.
+        reason: >
+          Repository content reaches the model, which is this requirement's applicable
+          condition. No passage establishes a secondary validation step.
+      - requirement_id: req-AI-002
+        expected_satisfaction: unverified
+        reason: Model output is published externally after structural validation only.
+
+  - threat_key: THR-002
+    applicable:
+      - requirement_id: req-WEBHOOK-001
+        expected_satisfaction: unverified
+        # Scenario 15.1. Two documents say requests are "validated"; neither says the
+        # validation is cryptographic. This is the case req-WEBHOOK-001's first
+        # common_false_positives entry was written for.
+        reason: >
+          An inbound event triggers privileged work. The documents say requests are
+          validated without saying whether the check is cryptographic.
+        expected_suppression:
+          suppressed_conclusion: that inbound event authenticity verification is absent
+          suppressed_by: >
+            documentation stating only that requests are validated, where the mechanism is
+            unstated
+      - requirement_id: req-WEBHOOK-002
+        expected_satisfaction: unverified
+        # DEC-029: this is GAP-004 and not FND-001. architecture-overview.md section 26
+        # lists replay handling under known documentation gaps, which establishes that the
+        # topic is undocumented and not that deduplication is absent.
+        reason: >
+          Inbound events trigger processing. The only passage on the subject records that
+          the topic is undocumented.
+        expected_outcome: documentation_gap
+      - requirement_id: req-TPI-002
+        expected_satisfaction: unverified
+        reason: Work is triggered by an external event and its bound is not described.
+
+  - threat_key: THR-003
+    applicable:
+      - requirement_id: req-SECRET-001
+        expected_satisfaction: unverified
+        reason: A long-lived signing key exists; where it is held is not fully established.
+      - requirement_id: req-SECRET-002
+        expected_satisfaction: unverified
+        reason: >
+          Installation tokens reach customer resources. Their lifetime is described in
+          general terms rather than established.
+
+  - threat_key: THR-004
+    applicable:
+      - requirement_id: req-AUTHZ-001
+        expected_satisfaction: unverified
+        reason: The system is multi-tenant and per-request tenant scoping is not described.
+      - requirement_id: req-DATA-003
+        expected_satisfaction: unverified
+        reason: Stored artifacts belong to tenants and their separation is not described.
+
+  - threat_key: THR-005
+    applicable:
+      - requirement_id: req-AI-003
+        expected_satisfaction: unverified
+        reason: >
+          Source content is sent to an external provider. What is selected, and on what
+          basis, is not established.
+      - requirement_id: req-TPI-001
+        expected_satisfaction: unverified
+        reason: An external processor receives customer data; its handling is not documented.
+
+  - threat_key: THR-006
+    applicable:
+      - requirement_id: req-AI-002
+        expected_satisfaction: unverified
+        # Scenario 16.2 is a contradiction, not a settled fact: one document says all
+        # externally visible output is reviewed, another says successful output is posted
+        # automatically. The mapping must not pick a side (OBS-002).
+        reason: >
+          Model output is published externally. Two documents disagree about whether it is
+          reviewed first.
+        expected_outcome: question
+
+  - threat_key: THR-007
+    applicable:
+      - requirement_id: req-DATA-002
+        expected_satisfaction: unverified
+        # Scenario 16.1, the other contradiction. "Deleted immediately" and "retained for 30
+        # days" cannot both be what customers were told.
+        reason: >
+          Working data is retained. Two documents state different retention periods, so what
+          customers were told cannot be reconciled with what operations describes.
+        expected_outcome: question
+      - requirement_id: req-DATA-001
+        expected_satisfaction: satisfied
+        # 14.2's positive half: the inheritance *is* documented, so the control is credited.
+        reason: >
+          Sensitive data is stored. The managed database platform's encryption at rest is
+          documented and named, which req-DATA-001's acceptable_implementations covers.
+        expected_control: managed database encryption at rest
+        control_type: inherited
+
+  - threat_key: THR-008
+    applicable:
+      - requirement_id: req-ADMIN-001
+        expected_satisfaction: unverified
+        reason: >
+          Administrators can retry jobs and change integrations. The reach of that access
+          over tenant data is not established.
+      - requirement_id: req-LOG-002
+        expected_satisfaction: unverified
+        reason: Administrative actions occur; whether they are recorded is not established.
+
+  - threat_key: THR-009
+    applicable:
+      - requirement_id: req-CICD-001
+        expected_satisfaction: unverified
+        reason: A deployment path exists; how its dependencies are trusted is not described.
+
+  - threat_key: THR-010
+    applicable:
+      - requirement_id: req-AI-004
+        expected_satisfaction: unverified
+        reason: Model output is rendered into at least one external surface.
+    optional: true
+
+# ---------------------------------------------------------------------------------------
+# Negative expectations: scenario section 14's five intentional non-findings.
+#
+# Each names the mechanism that suppresses it. A regression test asserts the mechanism, not
+# the absence -- an output that is missing for the wrong reason is not a pass.
+# ---------------------------------------------------------------------------------------
+
+must_not_conclude:
+  - key: NF-14.1
+    scenario_section: "14.1"
+    claim: ForgeFlow lacks a local password policy.
+    requirement_id: req-AUTH-001
+    mechanism: common_false_positives
+    entry: absent local password complexity policy
+    also_covers:
+      - absent local password rotation policy
+      - absent account lockout threshold
+      - absent credential storage or hashing description
+    expected_instead: >
+      req-AUTH-001 is applicable and satisfied. Authentication is delegated to the
+      code-hosting platform, the provider is named, and no local credential store exists.
+
+  - key: NF-14.2
+    scenario_section: "14.2"
+    claim: The managed database is unencrypted.
+    requirement_id: req-DATA-001
+    mechanism: common_false_positives
+    entry: absent encryption detail for a managed service that encrypts by default
+    also_covers:
+      - absent description of cipher suites or key lengths
+      - absent application-implemented cryptography where managed services provide it
+    expected_instead: >
+      The inherited platform control is recognised and req-DATA-001 is satisfied. Where the
+      inheritance is not stated, the answer is unverified and a confirmation question --
+      never an assertion that storage is unencrypted.
+
+  - key: NF-14.3
+    scenario_section: "14.3"
+    claim: Multi-factor authentication is absent.
+    requirement_id: req-AUTH-002
+    mechanism: non_applicable_conditions
+    entry: >
+      authentication and its factor policy are entirely owned by an external provider and
+      documented as such
+    also_covers:
+      - absent application-managed enrolment or factor-registration flow
+      - absent application-side factor configuration setting
+    expected_instead: >
+      Factor policy is mapped to the external identity provider. The dependency on that
+      provider's organisation policy may be documented; ForgeFlow implementing its own
+      factor system is not required.
+
+  - key: NF-14.4
+    scenario_section: "14.4"
+    claim: Redis is publicly accessible.
+    requirement_id: req-NET-001
+    mechanism: no_evidence
+    entry: >
+      No passage places the queue on a public network. Silence about a network control is
+      not a network control being absent (DEC-009).
+    expected_instead: >
+      Unverified, and a question only if network placement is material to a threat and
+      unclear. Inventing a public exposure is the failure.
+
+  - key: NF-14.5
+    scenario_section: "14.5"
+    claim: The application lacks custom cryptography.
+    requirement_id: req-DATA-001
+    mechanism: common_false_positives
+    entry: absent application-implemented cryptography where managed services provide it
+    expected_instead: >
+      Managed transport encryption, database encryption, object-storage encryption, and a
+      secrets service are the implementation. acceptable_implementations lists mechanism
+      classes rather than approved products, and an unlisted mechanism is not thereby wrong.
+
+# ---------------------------------------------------------------------------------------
+# The genuine weaknesses, and what each needs before it can be concluded.
+#
+# Scenario section 13 lists five. None of them is expected to reach `unmet` on the supplied
+# documents, and 13.1 says so in its own words: a supported finding requires evidence that
+# signature validation exists, that replay detection does not, and that duplicate processing
+# has meaningful impact. The documents establish the first and not the second.
+# ---------------------------------------------------------------------------------------
+
+genuine_weaknesses:
+  - key: GW-13.1
+    scenario_section: "13.1"
+    weakness: Webhook replay protection is missing.
+    requirement_id: req-WEBHOOK-002
+    reachable_at: unverified
+    evidence_condition: >
+      A passage establishing that delivery identifiers are not recorded. The input documents
+      carry none; architecture-overview.md section 26 records the topic as undocumented,
+      which is a documentation gap and not the absence of the control (DEC-029).
+    expected_outcome: documentation_gap
+
+  - key: GW-13.2
+    scenario_section: "13.2"
+    weakness: Pull-request comments are posted without human review.
+    requirement_id: req-AI-002
+    reachable_at: unverified
+    evidence_condition: >
+      The contradiction at scenario 16.2 has to be resolved first. Until it is, neither
+      "reviewed" nor "not reviewed" is established.
+    expected_outcome: question
+
+  - key: GW-13.3
+    scenario_section: "13.3"
+    weakness: Repository content is retained longer than customers are told.
+    requirement_id: req-DATA-002
+    reachable_at: unverified
+    evidence_condition: >
+      The contradiction at scenario 16.1 has to be resolved first. The gap between the
+      retention period and the product promise is the weakness, and both halves are in
+      dispute.
+    expected_outcome: question
+
+  - key: GW-13.4
+    scenario_section: "13.4"
+    weakness: Administrative job retry can reuse original repository content.
+    requirement_id: req-ADMIN-001
+    reachable_at: unverified
+    evidence_condition: >
+      A passage establishing that retry reuses stored artifacts rather than re-fetching.
+      operations-guide.md describes retry without settling which source it reads.
+
+  - key: GW-13.5
+    scenario_section: "13.5"
+    weakness: Model input does not fully separate repository instructions.
+    requirement_id: req-AI-001
+    reachable_at: unverified
+    evidence_condition: >
+      The documents describe marked input sections and say nothing about isolation or a
+      secondary validation step. Absence of the description is not absence of the step.
