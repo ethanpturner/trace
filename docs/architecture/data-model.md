@@ -95,6 +95,8 @@ exe- Execution record
 
 eval- Evaluation result
 
+mrg- Finding merge record
+
 ## What the scheme governs
 
 The scheme governs **objects an assessment produces**. An object is inside it when all three hold:
@@ -1626,6 +1628,43 @@ outcome table produces no finding from — a finding is reachable only from `sup
 `partially_supported`. An example is read as a template, so one carrying values the schema refuses
 is a specification of an object nobody can build.
 
+# 21a. FindingMergeRecord
+
+## Purpose
+
+Records one finding merge: which finding survived, which findings were merged into it, which
+structural features matched, and whether the decision was structural or model-assisted.
+
+Added by DEC-052, after the rest of these sections were numbered. `agent-design.md` section 11
+requires the merge decision to stay explicit and traceable, and a decision recorded only in a
+node's return value stops being traceable when the process exits. Every merge writes one record.
+
+The identifier fields are finding identifiers by type, which is half of the DEC-009 enforcement: a
+record naming a `DocumentationGap` does not validate, so a merge across the finding/gap boundary
+is unrepresentable rather than merely forbidden.
+
+## Fields
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| id | string | Yes | Stable merge-record identifier |
+| assessment_id | string | Yes | Parent assessment |
+| surviving_finding_id | string | Yes | The canonical finding the merge kept |
+| merged_finding_ids | list[string] | Yes | Findings merged into the survivor; each carries `duplicate_of_id` |
+| matched_features | list[string] | Yes | Structural features that matched (DEC-052) |
+| decision | MergeDecision | Yes | Structural or model-assisted (DEC-052) |
+| detail | string | Yes | Human-readable account of the match |
+| generated_by | string | Yes | Workflow node or reviewer |
+| created_at | datetime | Yes | Merge timestamp |
+
+`MergeDecision` has two values: `structural`, a merge the deterministic identifier rule decided,
+and `model_assisted`, a merge a reviewer decided from a model-proposed candidate pair. The node
+only ever writes `structural`; a model-assisted comparison proposes pairs and merges nothing
+(DEC-052).
+
+`matched_features` values name what overlapped: `threats`, `requirements`, `control_mappings`,
+`components`, `assets`. The first two decide a structural merge; the rest corroborate.
+
 # 22. Question
 
 ## Purpose
@@ -2420,6 +2459,7 @@ Implement these first:
 23. RequirementsCatalog
 24. EvidenceAssessment
 25. Critique
+26. FindingMergeRecord
 
 `SourceObservation` (section 10a) was added by DEC-021 after this list was written, and the list
 was not updated with it. It is not optional: DEC-021 makes contradictions and detected
@@ -2444,6 +2484,10 @@ Add PromptDefinition and EvaluationResult once the main workflow begins operatin
 differently: the critic is the fifth of section 36's six agents and roadmap Stage 4 sets a
 decision gate on whether it improves results at all. The gate cannot be reached without the
 object, and DEC-049 fixes the vocabularies section 24 left as prose examples.
+
+`FindingMergeRecord` (section 21a) was added by DEC-052 after this list was written, the same way
+`SourceObservation` was. It sits last because it references `Finding` and nothing references it:
+a merge record that outran the object it records would be a record of nothing.
 
 `EvidenceAssessment` (section 20) was on that deferred list and arrives with the mapping step
 instead, which is the condition the list states. Two reasons make it earlier rather than

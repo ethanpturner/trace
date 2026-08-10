@@ -3386,3 +3386,52 @@ Open Questions:
 - Should a reviewer-driven conversion assert that its `ReviewerDecision` disposition and the `converted_from_id` on the result agree?
 - Does `Question` need the fuller lineage a finding carries, or is one related object plus the chain enough?
 - Should `conversion_chain` have a lenient variant for a report that would rather show a partial history than nothing?
+
+## DEC-052: Finding duplicates are detected on shared identifiers, merged by the node, and every merge persists a record
+
+Date: 2026-08-10
+
+Status: Accepted
+
+Decision:
+
+**Duplicate detection over provisional findings is deterministic and reads identifiers, not prose.** Two provisional findings are duplicates when they share at least one threat identifier *and* at least one requirement identifier. A shared control mapping implies both, because a mapping names one threat and one requirement. Shared affected components and shared affected assets are corroborating features — recorded on the merge when present, deciding nothing on their own. One component hosting two distinct weaknesses is the ordinary case, not a duplicate.
+
+**The node performs the merge; it does not stop at proposing.** This is the half DEC-043 assigned forward: `agent-design.md` section 16 makes "merge duplicate issues" a Finding Consolidation responsibility, and by this phase merging loses no downstream analysis — mapping and evidence validation have already run. The survivor is the earliest-allocated finding (lowest identifier), which is stable across runs and favors nothing else. The survivor takes the union of the evidence, threat, requirement, control-mapping, affected-component, and affected-asset references of everything merged into it, losing none. Every merged finding is retained with `duplicate_of_id` set to the survivor; nothing is deleted.
+
+**`FindingMergeRecord` is a persisted object** — `data-model.md` section 21a, prefix `mrg`. It names the survivor, the merged identifiers, the features that matched, a `decision` of `structural` or `model_assisted`, and a human-readable detail. Section 11's constraint is that the merge decision stays explicit and traceable, and a record that lives only in a node's return value is not traceable after the process exits.
+
+**A model-assisted comparison, if one is ever wired in, proposes candidate pairs and nothing else.** Its proposals are recorded as proposals on the node outcome, are never merged by the node, and reach a merge only through a reviewer decision — which reuses the same merge operation and records `model_assisted`. The MVP wires no model here, for DEC-043's reasons: the node is classified primarily deterministic, and the six-agent cap is not eroded by comparison calls that are "arguably not an agent". The seam exists so the decision to add one later is a wiring change, not a redesign.
+
+**A `Finding` and a `DocumentationGap` are never merged.** They are different conclusions about different things (DEC-009), and the schema is the enforcement: `FindingMergeRecord`'s identifier fields are `FindingId`-typed, so a record naming a gap fails validation, and the merge operation refuses non-`Finding` input before that.
+
+Why:
+
+**The detection rule differs from DEC-043's because the substrate differs.** A threat is prose — a title, a category list — so DEC-043 scores weighted token overlap. A provisional finding is built from identifiers: it names its threats, requirements, and mappings outright. Where the identifiers agree, the two findings assert the same shortfall against the same scenario, and a similarity score over their derived titles would be a noisy proxy for an exact question the objects already answer. The conjunction — threat *and* requirement — is the narrowest rule that merges what consolidation actually produces twice: two mappings of the same requirement to the same threat, through different controls.
+
+**Merging here rather than proposing here is DEC-043's own assignment.** Its record says section 16 assigns the merge itself to Finding Consolidation, and its reason for not merging threats — collapsing before mapping would lose whichever threat the merge did not keep — does not apply after mapping has run and the references are unioned onto the survivor.
+
+**The record is an object rather than fields on the survivor** because the survivor cannot carry it honestly. The merged identifiers are derivable from `duplicate_of_id`, but the matched features and the decision mode are not derivable from anything, and `duplicate_finding_rate` (`data-model.md` section 28) needs to count merges after the fact. DEC-025's locality test — a record detached from its object means nothing — cuts the other way here: a merge concerns several findings at once, so it has no single object to live on.
+
+**Earliest-allocated survivor rather than most-evidenced.** The union makes the survivor's evidence identical whichever member survives, so the tiebreak only chooses which title, summary, and description persist. Earliest allocation is deterministic, cheap to explain, and does not smuggle in a quality judgment no rule defines. DEC-043's open question about a recommended survivor is answered for findings by making the choice not matter.
+
+Alternatives Considered:
+
+- Score weighted feature overlap with a threshold, as DEC-043 does for threats
+- Propose merges to the checkpoint 2 reviewer and merge nothing automatically
+- Record merges as fields on the surviving finding
+- Record merges only in `ExecutionRecord` metadata
+- Select the survivor by evidence count, or by lowest `confidence`, rather than by allocation order
+- A model-assisted comparison for pairs the structural rule misses
+
+Tradeoffs:
+
+- **Rewording does not defeat this rule, but disjoint lineage does.** Two findings describing one weakness through different threats and different requirements are not detected. That is the case a semantic comparison would catch, and the revisit trigger is the same as DEC-043's: a measured `duplicate_finding_rate` this rule misses.
+- The conjunction is strict. Two findings sharing a requirement across two related threats stay separate, which can read as noise to a reviewer; the checkpoint reviewer can merge them, and the operation is built to be reused there.
+- A twenty-fourth prefix and a twenty-seventh documented object, for a record type that most assessments will produce zero of.
+- Merged findings stay `candidate` with `duplicate_of_id` set, so every consumer of the provisional set — the review package, the renderer, the metrics — must filter on `duplicate_of_id` rather than getting a pre-filtered set.
+
+Open Questions:
+
+- Should the checkpoint 2 review package show merge records alongside the findings they merged, and DEC-043's threat merge proposals with them?
+- When a reviewer rejects a survivor, what happens to the findings merged into it — do they stay duplicates of a rejected finding, or return to the provisional set?
