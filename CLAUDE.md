@@ -156,11 +156,17 @@ Two things are commonly assumed and are **not** decided:
 ## Requirements catalog
 
 `requirements/` holds version-controlled YAML requirements, one file per primary category under a
-directory named for the catalog version (DEC-010). It is data; no product code reads it, and
-`tests/unit/test_requirements_catalog.py` checks that it is well-formed. `requirements/README.md` is
-the full guide — read it before editing the catalog.
+directory named for the catalog version (DEC-010). `services/requirements/loader.py` reads it and is
+the only thing that does; it validates every requirement, checks the manifest and the files against
+each other in both directions, and recomputes `content_hash` on every load.
+`requirements/README.md` is the full guide — read it before editing the catalog.
 
-Four things are easy to get wrong:
+**Editing a requirement moves the content hash, and the loader then refuses to read the catalog.**
+Run `uv run python scripts/catalog_hash.py --write`. The hash covers the *parsed* catalog (DEC-019),
+so comments, indentation, and key order do not move it, and a comment doing real work is invisible
+to it.
+
+Five things are easy to get wrong:
 
 - **`docs/architecture/data-model.md` section 17 is authoritative** for field names and types. The
   catalog conforms to it; it does not define its own shape.
@@ -173,6 +179,10 @@ Four things are easy to get wrong:
 - **`source_frameworks` is provenance, not compliance mapping.** Broad compliance-framework mapping is
   deferred. Requirement text is written originally — ASVS is CC BY-SA, so its wording is cited by
   identifier and never reproduced.
+- **A requirement identifier is authored, and a caller names the catalog version it wants.**
+  `req-AUTH-001`, not `req-001`: a counter-numbered identifier is one no person assigned, and the
+  loader refuses it. `load_catalog(version)` takes the version rather than globbing the directories,
+  so a `0.2/` added mid-assessment cannot change what an in-flight run is assessed against.
 
 Requirements are phrased so that absence of evidence resolves to `unverified`, never `unmet`. A
 requirement written so that silence proves absence is a DEC-009 violation regardless of how it is

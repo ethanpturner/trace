@@ -64,6 +64,8 @@ from trace_ai.domain.enums import (
 from trace_ai.domain.evidence import EvidenceReference
 from trace_ai.domain.execution import ExecutionRecord, WorkflowRun
 from trace_ai.domain.question import Question
+from trace_ai.domain.requirement import Requirement
+from trace_ai.domain.requirements_catalog import RequirementsCatalog
 from trace_ai.domain.reviewer_decision import ReviewerDecision
 from trace_ai.domain.source_document import SourceDocument
 from trace_ai.domain.source_observation import SourceObservation
@@ -220,7 +222,7 @@ REGISTRY: dict[str, Registration] = {
     "14": Registration("DataFlow", Status.IMPLEMENTED, DataFlow),
     "15": Registration("TrustBoundary", Status.IMPLEMENTED, TrustBoundary),
     "16": Registration("Threat", Status.PLANNED),
-    "17": Registration("Requirement", Status.PLANNED),
+    "17": Registration("Requirement", Status.IMPLEMENTED, Requirement),
     "18": Registration("Control", Status.PLANNED),
     "19": Registration("ControlMapping", Status.PLANNED),
     "20": Registration("EvidenceAssessment", Status.DEFERRED),
@@ -233,7 +235,11 @@ REGISTRY: dict[str, Registration] = {
     "27": Registration("ExecutionRecord", Status.IMPLEMENTED, ExecutionRecord),
     "28": Registration("EvaluationResult", Status.DEFERRED),
     "29": Registration("PromptDefinition", Status.DEFERRED),
-    "30": Registration("RequirementsCatalog", Status.DEFERRED),
+    # Was DEFERRED. Section 40 moved it onto the build-first list, and states why there:
+    # DEC-019 computes its `content_hash` at catalog load and DEC-024 sends the whole catalog to
+    # every mapping call, so the loader in `services/requirements/` needed the object before the
+    # workflow began operating rather than after.
+    "30": Registration("RequirementsCatalog", Status.IMPLEMENTED, RequirementsCatalog),
     # Workflow state, described as a proposed structure rather than a field table. It is not a
     # persisted object and has nothing to conform to.
     "31": Registration("Assessment State", Status.NOT_AN_OBJECT),
@@ -307,12 +313,11 @@ def test_every_field_row_has_a_description() -> None:
 
 def test_section_forty_parses_into_two_lists() -> None:
     first, later = implementation_priority()
-    assert len(first) == 22, first
+    assert len(first) == 23, first
     assert later == [
         "Critique",
         "EvidenceAssessment",
         "PromptDefinition",
-        "RequirementsCatalog",
         "EvaluationResult",
     ]
 

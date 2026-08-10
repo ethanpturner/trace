@@ -48,6 +48,9 @@ PACKAGES = (
     # Prompts are version-controlled files (current-architecture.md section 10); this package
     # reads and composes them, and holds no prompt text of its own.
     "trace_ai.services.prompts",
+    # The requirements catalog is version-controlled YAML outside the package (DEC-010); this
+    # package is the only thing that reads it, and computes its DEC-019 content hash.
+    "trace_ai.services.requirements",
     "trace_ai.infrastructure",
     "trace_ai.infrastructure.filesystem",
     "trace_ai.infrastructure.database",
