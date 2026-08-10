@@ -3,19 +3,20 @@
 **Context-Aware Security Architecture Analysis**
 
 [![CI](https://github.com/ethanpturner/trace/actions/workflows/ci.yml/badge.svg)](https://github.com/ethanpturner/trace/actions/workflows/ci.yml)
-![Status: design stage](https://img.shields.io/badge/status-design%20stage-orange)
+![Status: context slice built](https://img.shields.io/badge/status-context%20slice%20built-yellow)
 ![Python 3.14+](https://img.shields.io/badge/python-3.14%2B-blue)
 ![License: MIT](https://img.shields.io/badge/license-MIT-green)
 
-Trace is a system, currently in design, for producing security architecture assessments in which
-every conclusion is traceable back to a specific passage in a specific source document — and in
-which missing documentation is treated as a question to ask, not a vulnerability to report.
+Trace is a system, partly built, for producing security architecture assessments in which every
+conclusion is traceable back to a specific passage in a specific source document — and in which
+missing documentation is treated as a question to ask, not a vulnerability to report.
 
-> **Project status: design stage.** The architecture, data model, agent design, and evaluation
-> plan are written. The analysis pipeline is not built. What exists in this repository today is
-> the project scaffolding — typed configuration, a CI pipeline running lint, strict type checking
-> and tests, and a complete design corpus. There are no agents, no model calls, and no report
-> generation. [Status](#status) gives a precise breakdown.
+> **Project status: the context slice runs; the analysis half does not.** One of six agents is
+> built — Context Extraction — along with the validation node behind it, the first of the two
+> structural human checkpoints, and a command line that drives all of it. A person can register
+> documents, extract a context, read every claim with the passage it rests on, edit it, and approve
+> a baseline. What that baseline feeds — threat analysis, control mapping, findings, and the report
+> — is specified and not built. [Status](#status) gives a precise breakdown.
 
 ## Problem
 
@@ -207,7 +208,7 @@ Throughout this README:
 **Designed** — fully specified in the design documents; no code.
 **Planned** — on the roadmap; not yet specified in detail.
 
-Against the seven-stage [roadmap](#roadmap) below, Trace is inside Stage 1.
+Against the seven-stage [roadmap](#roadmap) below, Trace has completed Stage 2.
 
 ### What exists today
 
@@ -302,7 +303,7 @@ Against the seven-stage [roadmap](#roadmap) below, Trace is inside Stage 1.
 - **The workflow runtime** — the fourteen phases as an explicit transition table, the node
   protocol covering all three execution types, and the five ceilings `agent-design.md` section 27
   requires, checked before a step rather than after it. There is no orchestration framework
-  (DEC-016). No pipeline node exists yet to register against it.
+  (DEC-016). Five of the fourteen phases have a node registered against it.
 - **The checkpoint machinery** — both structural checkpoints share it: pause by persisting and
   exiting, resume by reading in a new process, and a review package derived from the run rather
   than stored in it. There is no way to express skipping a checkpoint, which is the property
@@ -327,6 +328,37 @@ Against the seven-stage [roadmap](#roadmap) below, Trace is inside Stage 1.
   the requirements catalog, a prompt definition — carries a name rather than an identifier.
   Identifier allocation is a store operation, so what exists is the protocol and an in-memory
   implementation for tests; the store-backed one arrives with the persistence layer.
+- **Checkpoint 1** — the context approval gate, and it is a return value rather than a check.
+  `ContextReviewNode` names the `SystemContext` among the objects awaiting a decision whenever it
+  is not approved, and the orchestrator advances only on an empty list — so there is no path to
+  threat analysis that does not pass an approved context, and no argument that could make one. The
+  gate reads `approved_at` and `approved_by` rather than counting decisions, so a row written by
+  something other than the approval path does not open it.
+- **The review package** — every context object grouped by type, every claim with its status,
+  confidence, and the passages it rests on, the human-review triggers that fired with the objects
+  that caused them, and open questions with blocking ones first. Documented claims are kept apart
+  from inferred, assumed, unknown, and contradicted ones, because one undifferentiated list is how
+  an interpretation becomes a confirmed fact by layout. Excerpts are labelled
+  `quoted untrusted source content` and are verbatim.
+- **The reviewer's actions** — approve, reject, edit, add a missing object, correct a data flow,
+  confirm an assumption, resolve a contradiction, answer a question, attach evidence, and request
+  re-extraction. An edit mutates the object in place and records only the fields that changed,
+  before and after (DEC-023), so the generated value stays recoverable after the object has moved
+  on. A correction that would dangle a data-flow endpoint is refused in the validation node's own
+  words. Approval mints the next `SystemContext` revision: version 1 is what the extractor
+  produced and is never approved, version 2 is what a person approved.
+- **The command line for the slice** — `trace context extract`, `show`, `review`, and `approve`,
+  plus `trace assessment status` reporting the run's phase, its counters, and what checkpoint it is
+  waiting at. `context review` takes flags or round-trips an editable YAML file; both write
+  identical decision rows, because both call the same functions. A refused approval exits non-zero
+  and names every blocker.
+- **The ForgeFlow context truth set** — `demo/forgeflow/expected/expected-context.yaml`, derived
+  from the eight input documents and nothing else. The scenario narrative knows more than the
+  documents do, and grading against that would reward invention; so every entry cites the document
+  and section it rests on, and a test resolves the citation.
+- **The prompt-injection regression tests** — one per planted instruction, each crafting the
+  response a compliant model would return and asserting the application refuses it. The defence
+  does not rest on the model behaving.
 - **Test discipline** — unit tests run by default; integration and evaluation tests sit behind
   pytest markers that are deselected, so CI never needs a provider API key.
 - **The design corpus** — vision, scope, roadmap, architecture, agent design, data model,
@@ -335,21 +367,25 @@ Against the seven-stage [roadmap](#roadmap) below, Trace is inside Stage 1.
 
 ### What does not exist yet
 
-- No model call has ever been made. The Context Extraction node calls the seam, and every test
-  drives it through the deterministic substitute; the Anthropic adapter has never run against a
-  provider outside an opt-in integration test. Documents
-  are ingested, turned into addressable evidence, and retrievable through the interface an agent
-  would sit behind — but nothing sits behind it yet.
-- Eleven domain objects of roughly twenty-nine: `Assessment`, `AssessmentConfiguration`,
-  `SourceDocument`, `EvidenceReference`, `WorkflowRun`, `ExecutionRecord`, and the five
-  architecture objects of the context baseline — `Component`, `Actor`, `Asset`, `DataFlow`, and
-  `TrustBoundary`. `SystemContext`, `ContextClaim`, and the threat, finding, and review objects are
-  not implemented.
-- No CLI beyond a banner printing the environment and which credentials are configured.
-- No threat analysis, no findings, no report generation, no evaluation harness.
-- The demo scenario is not runnable.
-- Provider SDKs and orchestration libraries are declared as dependencies but imported nowhere in
-  `src/`. They are placed, not used.
+- **Five of the six agents.** Threat Analysis, Requirement and Control Mapping, Evidence
+  Validation, Critical Review, and Report Generation are specified and not built. So the pipeline
+  runs its first five phases of fourteen and stops at the checkpoint, which is where it is supposed
+  to stop — but nothing resumes past it yet.
+- **No threat, no finding, no report, no evaluation harness.** The report template exists and fixes
+  the sixteen sections and their owners; nothing renders it.
+- **No live extraction has been measured.** Every test drives the seam through its deterministic
+  substitute, and the Anthropic adapter has run against a provider only in an opt-in integration
+  test that asks it the colour of the sky. `tests/evaluation/test_context_extraction_live.py`
+  exists and carries the `evaluation` marker, so it is deselected by default and has not been run
+  in anger.
+- **Roughly seventeen domain objects of twenty-nine.** The context half is complete —
+  `SystemContext`, `ContextClaim`, `Question`, `SourceObservation`, `ReviewerDecision`, and the
+  five architecture objects. `Threat`, `Requirement`, `Control`, `ControlMapping`, `Finding`,
+  `DocumentationGap`, `Critique`, `EvidenceAssessment`, and `EvaluationResult` are not implemented.
+- **Four of the eight expected-output files.** `expected-context.yaml` is authored;
+  `expected-questions.yaml`, `expected-observations.yaml`, and everything M3 and M4 grade are not.
+- **The demo produces a context, not an assessment.** ForgeFlow can be ingested and extracted end
+  to end; what it cannot yet do is produce the findings the scenario was built to test.
 
 ### Running it today
 
@@ -367,17 +403,40 @@ uv run trace evidence verify asm-001
 
 That ingests the eight ForgeFlow documents, normalizes them, and produces the evidence references
 every later conclusion would have to cite — 153 of them, each verifiable against the original file.
-No API key is required, because nothing in this path calls a model.
+No API key is required for any of it.
+
+Extracting a context does need a model, and there are two ways to supply one:
+
+```bash
+# with a provider
+uv run trace context extract asm-001
+
+# without one, replaying a recorded response
+uv run trace context extract asm-001 --model-profile offline-fake --response recorded.json
+```
+
+Either way the run stops at the checkpoint, because the checkpoint is a phase in the transition
+table rather than a conditional something could skip. From there:
+
+```bash
+uv run trace context show asm-001 --evidence
+uv run trace context review asm-001 --export review.yaml   # edit it, then --apply it
+uv run trace context approve asm-001
+```
+
+`context show` prints every context object, each claim with its status and confidence, and — with
+`--evidence` — the passage it rests on, labelled `quoted untrusted source content`. A reviewer
+meeting the ForgeFlow prompt-injection fixture meets it framed as data, verbatim, because judging an
+injection attempt means reading the instruction.
+
+`context approve` exits non-zero and names what is outstanding while a blocking question or a
+blocking validation error remains, so it is usable from a script without parsing prose.
 
 `uv run trace` with no arguments still prints the resolved environment, the log level, and which
 provider credentials are configured — names only, never key material.
 
-What it cannot do is analyse anything. There is no context extraction, no threat analysis, and no
-report: those need agents, and there are none.
-
-Of the Stage 1 command surface, everything except `trace context extract` and `trace context show`
-is implemented. Those two are the only ones missing. Those two need the Context Extraction agent, and a stub that prints "not
-implemented" would be worse than a command that is not there.
+What it cannot do is analyse anything past the context. There is no threat analysis, no finding, and
+no report: those need the other five agents.
 
 The command line is the interface through M4 (DEC-032), including both human checkpoints. A
 read-only local view may follow in Stage 5 for the demonstration; no review interaction moves to a
@@ -391,7 +450,7 @@ src/trace_ai/domain/             domain objects and shared types
 src/trace_ai/services/           ingestion/ and evidence/ -- operations on those objects
 src/trace_ai/infrastructure/     filesystem/, database/, and model/ -- stores and the model seam
 src/trace_ai/workflow/           phases, transitions, limits, and the node protocol
-tests/               unit tests; integration/ and evaluation/ are scaffolded and empty
+tests/               unit tests; integration/ and evaluation/ are opt-in and deselected
 docs/product/        vision, design principles, roadmap, future features
 docs/architecture/   scope, current architecture, agent design, data model,
                      evaluation plan, decision log
@@ -410,9 +469,9 @@ service or a store, and a test asserts that direction, because it is the one tha
 anyone deciding to erode it.
 
 The layout is narrower than
-[`current-architecture.md`](docs/architecture/current-architecture.md) section 15 proposes.
-`api/`, `application/`, `workflow/`, `reporting/`, and `evaluation/` are absent until something
-belongs in them; an empty package reads as a commitment that has not been made.
+[`current-architecture.md`](docs/architecture/current-architecture.md) section 15 proposes. `api/`,
+`application/`, `reporting/`, and `evaluation/` are absent until something belongs in them; an empty
+package reads as a commitment that has not been made. `workflow/` arrived when the orchestrator did.
 
 ## Roadmap
 
@@ -421,8 +480,8 @@ The sequencing is deliberate: prove the thesis before expanding the platform.
 | Stage | Focus | State |
 |---|---|---|
 | 0 | Product and architecture foundation | Built |
-| 1 | Development and repository foundation — tooling, first domain models, SQLite persistence, a minimal CLI | In progress — tooling done; domain models, persistence and CLI not started |
-| 2 | Context extraction vertical slice — the first meaningful product milestone | Planned |
+| 1 | Development and repository foundation — tooling, first domain models, SQLite persistence, a minimal CLI | Built |
+| 2 | Context extraction vertical slice — the first meaningful product milestone | Built |
 | 3 | Threat, requirement, and control analysis — the core false-positive-reduction mechanism | Planned |
 | 4 | Evidence-driven findings and human review | Planned |
 | 5 | Evaluation and demo hardening | Planned |
