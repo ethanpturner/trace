@@ -3110,3 +3110,54 @@ Open Questions:
 - Should Finding Consolidation append to `downgrade_reason` or overwrite it when it applies conditions 2 and 3 to an already-downgraded mapping?
 - Does a downgrade belong on the checkpoint 2 review package as its own line, or is the mapping's status enough?
 - Should the ratio of downgrades to suppressions be an evaluation metric in its own right, given that this decision argues the two numbers mean different things?
+
+## DEC-047: `EvidenceAssessment` carries the recommendation; the evidence hierarchy is a vocabulary, not a score
+
+Date: 2026-08-10
+
+Status: Accepted
+
+Decision:
+
+**`EvidenceAssessment` gains `recommendation`**, a closed vocabulary of five values: `continue`, `revise`, `stop`, `downgrade_to_question`, `documentation_gap`. `agent-design.md` section 14 lists "recommendations to continue, revise, or stop a candidate conclusion" among the agent's outputs and adds the two DEC-009 outlets under its allowed operations. Section 20's field table had nowhere to put any of them, so the field is added and `data-model.md` section 20 records it.
+
+**It is a recommendation and not an action.** DEC-013's outcome table decides what a conclusion becomes, deterministically, from `satisfaction_status` and `validation_status`. The agent's recommendation is stored beside that so the two are comparable rather than so one is obeyed. The agent creates no `Question`, creates no `DocumentationGap`, and approves nothing.
+
+**Section 14's evidence hierarchy is an ordered vocabulary and nothing converts it to a number.** `EVIDENCE_HIERARCHY` is a tuple of seven labels a rationale cites by name. No function ranks two levels, no field stores a position, and no rule combines a level with a confidence.
+
+**`subject_type` is a closed enum over section 20's own five**: `context_claim`, `control`, `control_mapping`, `threat`, `finding`. `documentation_gap` is not among them.
+
+Why:
+
+The recommendation had to be persisted or discarded, and discarding it removes the only signal that would show the agent and the deterministic rule disagreeing. `evaluation-plan.md` section 7 measures classification accuracy against a truth set; the cheaper and earlier signal is internal — an assessment recommending `stop` on a conclusion the outcome table carries forward is a case worth a person's attention, and it is invisible if the recommendation lives only in a proposal object that promotion drops. This is the same argument DEC-025 made for suppressions and DEC-046 for downgrades, and adding the field follows DEC-044's precedent of giving a named output a home rather than letting it evaporate at the boundary.
+
+Making it advisory rather than executive is what keeps DEC-005 and DEC-013 intact. A recommendation the pipeline obeyed would be an agent deciding a candidate's fate, and DEC-013 deliberately made that determination a deterministic table precisely so no prompt instruction could move it.
+
+The hierarchy is the more consequential half of this entry, because encoding it as a score is the natural implementation and it contradicts the document in one line. Section 14 says the hierarchy "is guidance, not a universal scoring formula". A rank function would make that sentence false: as soon as levels compare, a downstream rule will compare them, and the result is a number that looks like a measurement of evidence quality while actually being the position of a label in a list somebody wrote once. `design-principles.md` section 15 asks whether a score helps a reviewer decide or merely makes the output look precise, and applied here the answer is available rather than debatable — the reviewer wants to know *why* a passage is direct evidence, which is the rationale, not that it scored 2.
+
+`subject_type` is closed for the reason a free string here is worse than a free string elsewhere: an assessment whose subject type does not match its subject identifier is unjoinable to the thing it assesses, and nothing downstream can detect it. DEC-036's test applies cleanly — section 20's purpose *names* the five rather than illustrating them — so the prefix check has something to check against. `documentation_gap` is excluded because section 14 lists gap candidates among the agent's outputs rather than among what it evaluates, and an assessment of a gap would be an evaluation of whether the evidence supports the claim that there is no evidence.
+
+Alternatives Considered:
+
+- Keep `recommendation` on the proposal only, consumed by the validating node and discarded
+- A separate `Recommendation` object linked to the assessment
+- Let the recommendation drive the outcome, and make DEC-013's table the fallback
+- Add a numeric `evidence_level` field ranking each reference on the hierarchy
+- A `rank()` helper that compares two hierarchy levels without storing a number
+- Leave `subject_type` a free string, as section 20's table types it
+- Include `documentation_gap` in `SubjectType`
+
+Tradeoffs:
+
+- **A field the pipeline does not act on.** `recommendation` is written and, until Finding Consolidation exists, read by nothing. That is one more thing to keep correct with no test downstream of it that would notice if it were wrong.
+- Storing an advisory recommendation beside a deterministic outcome invites a future reader to wire the first into the second. Nothing structural prevents it; this entry is the only thing that does.
+- **Refusing a rank function makes some legitimate work harder.** "Is this evidence stronger than that evidence" is a question a reviewer will ask, and the answer is now prose rather than a comparison. That is the intended exchange and it is a real cost.
+- The seven hierarchy levels are carried as a vocabulary nothing validates against: no field stores a level, so an agent citing one in a rationale can cite it wrongly and no schema notices.
+- Closing `subject_type` means an object type added later is a schema change rather than a value. `Finding` is in the enum before the model exists, which is a value nothing can currently produce.
+- Excluding `documentation_gap` means a gap's own evidential basis is never assessed. If gaps later need validating, this decision has to be revisited rather than extended.
+
+Open Questions:
+
+- When Finding Consolidation lands, should a disagreement between `recommendation` and DEC-013's outcome be a human-review trigger, or only an evaluation metric?
+- Should `evidence_strengths` and the hierarchy be reconciled — `EvidenceStrength` has four values and the hierarchy seven levels, and neither maps onto the other?
+- Does `Finding` belong in `SubjectType` before `Finding` exists, or should the enum grow with the models?
