@@ -24,6 +24,7 @@ from typing import Final
 from pydantic import Field
 
 from trace_ai.domain.base import DomainModel
+from trace_ai.domain.enums import SourceOrigin
 from trace_ai.domain.identifiers import ActorId, AssessmentId, EvidenceReferenceId
 from trace_ai.domain.vocabulary import VocabularyTerm
 
@@ -60,3 +61,9 @@ class Actor(DomainModel):
     capabilities: list[str] = Field(default_factory=list)
     authentication_method: str | None = None
     evidence_ids: list[EvidenceReferenceId] = Field(default_factory=list)
+
+    source_origin: SourceOrigin
+    """Where this object came from (section 4.4). `uploaded_document` for something the extractor
+    read out of a document, `reviewer_edit` for something a person added at the checkpoint. Required
+    rather than defaulted, because a default would make the extractor's provenance the answer given
+    when nobody supplied one (DEC-039)."""

@@ -2486,3 +2486,159 @@ Open Questions:
 - Does a rejected run's `Assessment` need a status distinct from `draft`? DEC-031 gives four values
   and a failed run leaves its assessment in `draft`; a rejected review is not a failure, and it is
   not obvious the two should look identical.
+
+## DEC-039: The five architecture objects carry `source_origin`
+
+Date: 2026-08-09
+
+Status: Accepted
+
+Decision:
+
+`Component`, `Asset`, `Actor`, `DataFlow`, and `TrustBoundary` gain a required `source_origin`
+field, typed `SourceOrigin` and added to their field tables in `data-model.md` sections 11 to 15.
+The extractor's conversion sets `uploaded_document`; a reviewer adding a missing object at
+checkpoint 1 sets `reviewer_edit`.
+
+It is required rather than defaulted. A default would make the extractor's provenance the answer
+given when nobody supplied one, and the case that matters — an object a person created — is the one
+that would then have to be remembered at the call site.
+
+Why:
+
+Section 4.4 says `SourceOrigin` "identifies where information originated", and it was carried by
+exactly two objects: `EvidenceReference` and `ContextClaim`. That looked like a pattern — the
+objects that carry an *assertion* record where the assertion came from, and a component is a
+structural fact rather than an assertion — and it is a defensible reading. It stops being defensible
+at the checkpoint, where a reviewer adds a component the extractor missed.
+
+**A reviewer-added object was indistinguishable from a generated one.** Nothing in `Component`
+records who created it. `generated_by` is on `ContextClaim` and `Question` and not here, and
+`ObjectStatus` describes lifecycle rather than origin. So the only record of the addition would be
+the `ReviewerDecision` naming it — and `ReviewDisposition` has no member meaning "added". An
+addition would have to be recorded as an approval, which is exactly what approving an *extracted*
+object also produces. The two would be the same row.
+
+That matters beyond tidiness. `docs/product/roadmap.md` makes reviewer correction rate a primary
+evaluation metric and `data-model.md` section 2.5 says reviewer edits "are the evaluation signal
+that shows where the workflow was inaccurate". "The reviewer had to add three components the
+extractor missed" is the sharpest form of that signal, and it was not computable from the objects.
+
+The alternative — adding a `ReviewDisposition` member for additions — was rejected because section
+4.6's vocabulary names what the *system records* about an existing object, and an addition is not a
+disposition toward anything. DEC-030 made the same distinction for severity and DEC-023 for
+re-extraction: the reviewer's action vocabulary and the system's disposition vocabulary do not
+correspond one to one.
+
+Alternatives Considered:
+
+- Leave the field off and record additions as `ReviewerDecision` rows with disposition `approve`
+- Add a `ReviewDisposition` member meaning "added by the reviewer"
+- Add `generated_by` to the five objects instead, matching `ContextClaim`
+- Make `source_origin` optional with a default of `system_generated`
+
+Tradeoffs:
+
+- **Required means every construction site must state it**, including tests. Five models, one
+  conversion function, and five test modules changed in the commit that introduced it, and every
+  future fixture has to carry a field that is almost always `uploaded_document`.
+- `Actor` now has `source_origin` and still no `status`, so the asymmetry DEC-037 left is still
+  there and is now one field narrower, which reads as an oversight rather than as the deliberate
+  omission it is.
+- `source_origin` on a `Component` says where the *object* came from, not where each of its fields
+  came from. A component the extractor created and a reviewer then corrected still reads
+  `uploaded_document`, and the correction is only in the decision log. The field answers "who
+  created this" and not "who last touched it", and nothing in the name says so.
+- Two objects now carry provenance twice over: a `ContextClaim` about a `Component` has its own
+  `source_origin`, and so does the component. They can disagree, and neither is wrong when they do.
+
+Open Questions:
+
+- Should `Threat`, `ControlMapping`, and `Finding` carry it too, for the same reason at checkpoint 2?
+  M4 will meet the identical problem.
+- Does a reviewer-corrected object need a separate marker from a reviewer-created one, or is the
+  decision log the right place for that distinction to stay?
+
+## DEC-040: Approval mints the revision; reviewer edits mutate in place
+
+Date: 2026-08-09
+
+Status: Accepted
+
+Decision:
+
+DEC-023 says `SystemContext.version` "increments on approval, alongside `approved_at` and
+`approved_by`". This entry states what that means in code, because the sentence admits a looser
+reading that the first implementation took.
+
+**`approve_context` mints the next revision.** It calls `SystemContext.next_version()`, stamps
+`approved_at` and `approved_by` on the successor, and saves it. The revision the extractor produced
+is left exactly as it was and stays retrievable. So version 1 is always the generated baseline and
+is never approved; version 2 is the baseline the reviewer approved.
+
+**The new revision's identifier lists are recomputed from the store**, not copied from the previous
+revision. They name every context object in the assessment whose status is not `rejected`. A
+reviewer-added object therefore reaches the approved baseline, and a reviewer-rejected one does not.
+
+**Nothing else is versioned.** A reviewer edit to a `Component`, a `ContextClaim`, a `Question`, or
+a `SourceObservation` mutates the object in place under the same identifier and records its delta on
+a `ReviewerDecision` (DEC-023's first mechanism). `supersedes_id` stays reserved for re-extraction.
+
+**A reviewer's re-extraction rationale may reach the next run's prompt**, in the trusted region and
+outside the source-content fence. This closes DEC-038's open question.
+
+Why:
+
+The looser reading was that approval stamps whatever revision is current, and that a new version
+appears only when a reviewer's edits change the baseline's membership. It fails on its own terms:
+an edit that changes a claim's text changes no membership list, so an assessment could be reviewed,
+edited, and approved with exactly one revision in the store — and "leave the prior revision
+retrievable" would be satisfied by there being nothing to retrieve. Two revisions, always, is both
+simpler to state and the only version that keeps the generated baseline intact next to the approved
+one. The difference between them is the reviewer's work, readable by diff.
+
+**Recomputing membership rather than copying it** is what makes rejection mean something.
+`current-architecture.md` section 5.6 says threat analysis reasons from the approved baseline
+rather than reinterpreting the documents; a component the reviewer rejected sitting in that
+baseline would be reasoned from anyway, and the rejection would be a row nothing consulted.
+
+**On the reviewer's rationale reaching a prompt**: DEC-013's trust levels already answer it. The
+corpus divides origins into material under review and everything else — `uploaded_document` and
+`structured_input` are untrusted; `reviewer_edit` and `requirements_catalog` are not. A reviewer is
+the operator of the tool, not a document being assessed, so their text belongs in the trusted half
+alongside the assessment name and the precedence rule. Putting it inside the fence would tell the
+model to treat the operator's instruction as data, which is the opposite of the distinction the
+fence exists to draw. `agent-design.md` section 26 supplies the reason it must be carried at all: a
+repeated attempt carries feedback or it is a repetition.
+
+Alternatives Considered:
+
+- Stamp approval on the current revision and mint a new one only when membership changes
+- Mint the revision on the reviewer's first mutating action rather than at approval
+- Copy the previous revision's identifier lists and edit them as the reviewer works
+- Keep rejected objects in the approved baseline and let downstream nodes filter by status
+- Withhold the re-extraction rationale from the prompt and let the reviewer re-word the documents
+
+Tradeoffs:
+
+- **A reviewer who approves without changing anything still produces version 2**, identical to
+  version 1 but for the approval fields. That is a row that carries no information about the
+  reviewer's work, and someone will read the version number as an edit count.
+- Version numbers advance by one per approval, so an assessment that goes through re-extraction
+  twice ends at version 3 or 4 with no obvious mapping back to "how many times was this reviewed".
+- Recomputing membership means the approved revision reflects the store at the moment of approval,
+  including any object written between the package being built and the approval being made. For a
+  local single-user MVP there is no concurrency to worry about, and that stops being true the moment
+  there is.
+- Rejected objects stay in the store and out of the baseline, so `assessment_ids()` counts and
+  baseline counts disagree. Anything reporting "components found" has to say which it means.
+- Carrying reviewer text into a prompt puts human-authored free text into a model request with no
+  boundary around it. The trust argument is sound and the blast radius is a bad extraction rather
+  than an escalation, but it is the first place operator text and model input meet.
+
+Open Questions:
+
+- Should the approved revision record *which* run approved it, beyond the `ReviewerDecision`'s
+  `workflow_run_id`?
+- If a reviewer rejects every component, the approved baseline is empty and threat analysis has
+  nothing to reason from. Is that a refusal condition at approval, or a legitimate outcome?

@@ -83,6 +83,16 @@ class ContextExtractionNode:
     retry_policy: RetryPolicy = field(default_factory=RetryPolicy)
     structured_input: dict[str, Any] | None = None
 
+    reviewer_feedback: str | None = None
+    """Why a reviewer rejected the previous run's context, carried into this attempt.
+
+    DEC-038 makes re-extraction a new `WorkflowRun` rather than a backward transition, and this is
+    what connects the two in the prompt: a repeated attempt carries feedback or it is a repetition
+    (`agent-design.md` section 26). It goes in the **trusted** half, outside the source-content
+    fence, because DEC-013 puts `reviewer_edit` among the origins that are not material under
+    review — the reviewer is the operator, not a document being assessed (DEC-040).
+    """
+
     version: str = NODE_VERSION
     execution_type: ExecutionType = field(default=ExecutionType.MODEL, init=False)
 
@@ -121,6 +131,14 @@ class ContextExtractionNode:
                 **package.substitutions(),
             },
         )
+        system = package.trusted
+        if self.reviewer_feedback:
+            system = (
+                f"{system}\n\n## Reviewer feedback on the previous extraction\n\n"
+                f"A reviewer rejected the previous run's context for this reason. It is a "
+                f"trusted instruction from the operator, not source material:\n\n"
+                f"{self.reviewer_feedback}"
+            )
 
         usages: list[Any] = []
         attempts = 0
@@ -145,7 +163,7 @@ class ContextExtractionNode:
                 prompt=prompt,
                 schema=ContextExtractionProposal,
                 settings=self.profile.settings,
-                system=package.trusted,
+                system=system,
             )
 
             if isinstance(outcome, ModelFailure):
@@ -208,6 +226,7 @@ class ContextExtractionNode:
                 execution.record_usage(usage)
             execution.metadata["attempts"] = attempts
             execution.metadata["evidence_excluded"] = len(package.excluded_evidence_ids)
+            execution.metadata["carried_reviewer_feedback"] = bool(self.reviewer_feedback)
 
         return NodeResult(
             produced_object_ids=produced,
@@ -226,7 +245,11 @@ class ContextExtractionNode:
             model_usages=list(usages),
             prompt_version=composed.reference,
             model_name=context.model.name,
-            metadata={"attempts": attempts, "excluded": len(package.excluded_evidence_ids)},
+            metadata={
+                "attempts": attempts,
+                "excluded": len(package.excluded_evidence_ids),
+                "carried_reviewer_feedback": bool(self.reviewer_feedback),
+            },
         )
 
     # -- persistence -----------------------------------------------------------------------

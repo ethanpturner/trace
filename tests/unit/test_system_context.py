@@ -62,6 +62,7 @@ def population(**changes: Any) -> list[DomainModel]:
         "source_component_id": "cmp-001",
         "destination_component_id": "cmp-002",
         "direction": FlowDirection.ONE_WAY,
+        "source_origin": SourceOrigin.UPLOADED_DOCUMENT,
         "crosses_trust_boundary_ids": ["tb-001"],
         "status": ObjectStatus.CANDIDATE,
         **changes,
@@ -88,6 +89,7 @@ def population(**changes: Any) -> list[DomainModel]:
                 "assessment_id": ASSESSMENT,
                 "name": "GitHub",
                 "component_type": "repository_provider",
+                "source_origin": SourceOrigin.UPLOADED_DOCUMENT,
                 "status": ObjectStatus.CANDIDATE,
             }
         ),
@@ -97,6 +99,7 @@ def population(**changes: Any) -> list[DomainModel]:
                 "assessment_id": ASSESSMENT,
                 "name": "Webhook Receiver",
                 "component_type": "service",
+                "source_origin": SourceOrigin.UPLOADED_DOCUMENT,
                 "status": ObjectStatus.CANDIDATE,
             }
         ),
@@ -106,6 +109,7 @@ def population(**changes: Any) -> list[DomainModel]:
                 "assessment_id": ASSESSMENT,
                 "name": "Customer Source Code",
                 "asset_type": "source_code",
+                "source_origin": SourceOrigin.UPLOADED_DOCUMENT,
                 "status": ObjectStatus.CANDIDATE,
             }
         ),
@@ -115,6 +119,7 @@ def population(**changes: Any) -> list[DomainModel]:
                 "assessment_id": ASSESSMENT,
                 "name": "Developer",
                 "actor_type": "developer",
+                "source_origin": SourceOrigin.UPLOADED_DOCUMENT,
             }
         ),
         DataFlow.model_validate(flow_fields),
@@ -124,6 +129,7 @@ def population(**changes: Any) -> list[DomainModel]:
                 "assessment_id": ASSESSMENT,
                 "name": "GitHub Boundary",
                 "boundary_type": "organization_to_third_party",
+                "source_origin": SourceOrigin.UPLOADED_DOCUMENT,
                 "status": ObjectStatus.CANDIDATE,
             }
         ),
@@ -236,6 +242,7 @@ def test_an_object_from_another_assessment_is_reported() -> None:
             "assessment_id": "asm-002",
             "name": "Someone else's GitHub",
             "component_type": "repository_provider",
+            "source_origin": SourceOrigin.UPLOADED_DOCUMENT,
             "status": ObjectStatus.CANDIDATE,
         }
     )

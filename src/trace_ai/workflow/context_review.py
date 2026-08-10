@@ -36,7 +36,22 @@ than saying no.
 **Rejection stops the run; it does not route backwards.** DEC-038 settles what "request
 re-extraction" means: a new `WorkflowRun` for the same assessment, not a transition from
 `human_context_review` back to `context_extraction`. The decision is recorded here with disposition
-`request_more_analysis`, which is what connects the two runs.
+`request_more_analysis`, which is what connects the two runs — and `re_extraction_feedback` is how
+the reviewer's rationale reaches the next attempt, in the trusted half of the prompt, because
+DEC-013 puts `reviewer_edit` among the origins that are not material under review.
+
+**Every mutating action leaves a record, and the record carries the delta.** `data-model.md`
+section 2.5 forbids *silently* overwriting generated content — the load-bearing word is *silently* —
+so an edit mutates the object in place under the same identifier and writes a `ReviewerDecision`
+carrying only the fields that changed, before and after (DEC-023). That is what keeps the generated
+value recoverable after the object has moved on, and what makes reviewer edit rate computable per
+field rather than per object. `supersedes_id` is not used here: it records a generated object
+replacing a generated one, and its case is re-extraction.
+
+**Approval mints the revision** (DEC-040). Version 1 is the generated baseline and is never
+approved; version 2 is the baseline a person approved, and its membership is recomputed from the
+store — so a reviewer-added object reaches it and a reviewer-rejected one does not. Nothing else in
+the model is versioned.
 
 This module is at `workflow/` rather than at the `application/` path the issue named: there is no
 `application` package, and the two nodes either side of this one — `context_extraction.py` and
@@ -50,15 +65,17 @@ from typing import TYPE_CHECKING, Any, Final
 
 from trace_ai.domain.actor import Actor
 from trace_ai.domain.asset import Asset
-from trace_ai.domain.base import now
+from trace_ai.domain.base import DomainModel, now
 from trace_ai.domain.component import Component
 from trace_ai.domain.context_claim import ClaimStatus, ContextClaim
 from trace_ai.domain.data_flow import DataFlow
-from trace_ai.domain.enums import ReviewDisposition
+from trace_ai.domain.enums import ObjectStatus, ReviewDisposition, SourceOrigin
 from trace_ai.domain.execution import ExecutionType
+from trace_ai.domain.identifiers import PREFIXES, parse_id
 from trace_ai.domain.question import Question, QuestionStatus, order_for_review
 from trace_ai.domain.reviewer_decision import ReviewerDecision
 from trace_ai.domain.source_document import SourceDocument
+from trace_ai.domain.source_observation import ObservationKind, SourceObservation
 from trace_ai.domain.system_context import SystemContext
 from trace_ai.domain.trust_boundary import TrustBoundary
 from trace_ai.services.evidence.index import EvidenceNotFoundError
@@ -70,7 +87,8 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
     from datetime import datetime
 
-    from trace_ai.domain.base import DomainModel
+    from pydantic import JsonValue
+
     from trace_ai.services.assessment import AssessmentHandle
     from trace_ai.services.evidence.index import EvidenceIndex
     from trace_ai.workflow.checkpoint import ReviewPackage
@@ -89,13 +107,34 @@ __all__ = [
     "ClaimPresentation",
     "ContextReviewNode",
     "ContextReviewPackage",
+    "ContradictionResolution",
     "QuotedExcerpt",
+    "ReviewerActionError",
+    "add_context_object",
+    "answer_question",
+    "apply_edit",
     "approve_context",
+    "approved_membership",
+    "attach_evidence",
     "build_context_review_package",
+    "confirm_assumption",
     "current_system_context",
+    "decide_object",
+    "re_extraction_feedback",
     "request_re_extraction",
+    "resolve_contradiction",
     "system_context_key",
 ]
+
+# Which `SystemContext` identifier list each presentation group fills. One mapping, so the package
+# and the approved revision cannot disagree about which objects belong to which list.
+_LIST_BY_GROUP: Final[dict[str, str]] = {
+    "components": "component_ids",
+    "actors": "actor_ids",
+    "assets": "asset_ids",
+    "data_flows": "data_flow_ids",
+    "trust_boundaries": "trust_boundary_ids",
+}
 
 NODE_NAME: Final = "human-context-review"
 
@@ -495,13 +534,21 @@ def approve_context(
     workflow_run_id: str | None = None,
     at: datetime | None = None,
 ) -> tuple[SystemContext, ReviewerDecision]:
-    """Approve the current context revision, or refuse and say what is outstanding.
+    """Mint the approved revision, or refuse and say what is outstanding.
 
-    Approval writes two things and they belong together: `approved_at` and `approved_by` on the
-    revision, which is what the gate reads, and a `ReviewerDecision`, which is what section 2.5
-    requires so the action is recorded rather than applied silently.
+    **Approval increments the version** (DEC-023: `SystemContext.version` increments on approval,
+    alongside `approved_at` and `approved_by`; DEC-040 states what that means in practice). The
+    revision the extractor produced is left exactly as it was, so the generated baseline and the
+    approved one sit side by side and the difference between them is readable. Nothing else in the
+    model is versioned — a reviewer edit to a `Component` mutates it in place and records its delta
+    on a `ReviewerDecision`.
 
-    The revision is rebuilt with `model_validate` rather than `model_copy` (DEC-023). This is the
+    **The new revision's membership is recomputed from the store**, not copied. That is how a
+    reviewer-added object reaches the approved baseline and how a reviewer-rejected one stays out
+    of it: threat analysis reasons from this object, and an object the reviewer rejected is not
+    something to reason from.
+
+    The revision is built with `model_validate` rather than `model_copy` (DEC-023). This is the
     path a human-supplied value takes into a domain object, so it is the one that least tolerates
     skipping the schema.
     """
@@ -510,7 +557,9 @@ def approve_context(
 
     timestamp = at if at is not None else now()
     approved = SystemContext.model_validate(
-        package.system_context.model_dump() | {"approved_at": timestamp, "approved_by": reviewer_id}
+        package.system_context.next_version().model_dump()
+        | approved_membership(handle)
+        | {"approved_at": timestamp, "approved_by": reviewer_id}
     )
     with handle.objects.transaction() as repository:
         repository.save(approved)
@@ -561,3 +610,509 @@ def request_re_extraction(
         workflow_run_id=workflow_run_id,
         at=at if at is not None else now(),
     )
+
+
+# ------------------------------------------------------------------------------------------
+# The mutating reviewer actions (`agent-design.md` section 9)
+# ------------------------------------------------------------------------------------------
+
+
+class ReviewerActionError(ValueError):
+    """A reviewer action the application refuses, with the reason in the corpus's terms."""
+
+
+def _object_term(obj: DomainModel) -> str:
+    """The vocabulary term for an object's type, agreeing with its identifier's prefix."""
+    identifier = getattr(obj, "id", None)
+    if isinstance(identifier, str):
+        return parse_id(identifier).object_term
+    return "system_context"
+
+
+def _persist(handle: AssessmentHandle, obj: DomainModel, decision: ReviewerDecision) -> None:
+    """The object and the record of who changed it, in one transaction.
+
+    Section 2.5 forbids *silently* overwriting generated content. An overwrite that committed while
+    its decision failed would be exactly that, and nothing afterwards could tell the difference
+    between a reviewer edit and a bug.
+    """
+    with handle.objects.transaction() as repository:
+        repository.save(obj)
+        repository.save(decision)
+
+
+def _decision_about(
+    handle: AssessmentHandle,
+    obj: DomainModel,
+    *,
+    disposition: ReviewDisposition,
+    reviewer_id: str,
+    rationale: str | None,
+    workflow_run_id: str | None,
+    at: datetime,
+) -> ReviewerDecision:
+    """A decision carrying no delta — approval, rejection, or an addition."""
+    return ReviewerDecision.model_validate(
+        {
+            "id": handle.objects.allocate("dec"),
+            "assessment_id": getattr(obj, "assessment_id", handle.assessment_id),
+            "subject_type": _object_term(obj),
+            "subject_id": getattr(obj, "id", ""),
+            "disposition": disposition,
+            "rationale": rationale,
+            "reviewer_id": reviewer_id,
+            "created_at": at,
+            "workflow_run_id": workflow_run_id,
+        }
+    )
+
+
+def _edited[ModelT: DomainModel](obj: ModelT, changes: dict[str, Any]) -> ModelT:
+    """The object with `changes` applied, built through the schema.
+
+    `model_validate`, never `model_copy` (DEC-023). The copy API validates nothing: an invalid enum
+    value survives it and serializes into the DEC-020 payload, and `extra="forbid"` is bypassed.
+    This is the one path on which a human-supplied value enters a domain object, so it is the one
+    that least tolerates skipping the schema.
+    """
+    payload = obj.model_dump() | changes
+    if "updated_at" in type(obj).model_fields and "updated_at" not in changes:
+        payload["updated_at"] = now()
+    return type(obj).model_validate(payload)
+
+
+def _context_objects(handle: AssessmentHandle) -> list[DomainModel]:
+    """Every context object in the assessment, for a referential check."""
+    return [obj for _, model in CONTEXT_OBJECT_TYPES for obj in handle.objects.list(model)]
+
+
+def _refuse_new_reference_problems(
+    handle: AssessmentHandle, before: DomainModel, after: DomainModel
+) -> None:
+    """Refuse an edit that makes a reference dangle, with the validation node's own message.
+
+    The check runs against `SystemContext.validate_against`, which is what the Context Validation
+    node calls, so the reviewer is refused in the same words the pipeline would have reported later.
+    Comparing before and after rather than checking the result outright matters: a context that was
+    already inconsistent is not made the reviewer's fault by an unrelated edit.
+    """
+    identifier = getattr(after, "id", None)
+    if not isinstance(identifier, str):
+        return
+
+    context = current_system_context(handle)
+    objects = [obj for obj in _context_objects(handle) if getattr(obj, "id", None) != identifier]
+    existing = set(context.validate_against([*objects, before]))
+    introduced = [
+        problem
+        for problem in context.validate_against([*objects, after])
+        if problem not in existing
+    ]
+    if introduced:
+        raise ReviewerActionError(
+            "this edit would leave a reference that does not resolve:\n  - "
+            + "\n  - ".join(introduced)
+            + "\nA reviewer correction cannot introduce a dangling endpoint; add the object it "
+            "names first."
+        )
+
+
+def apply_edit[ModelT: DomainModel](
+    handle: AssessmentHandle,
+    obj: ModelT,
+    changes: dict[str, Any],
+    *,
+    reviewer_id: str,
+    rationale: str | None = None,
+    workflow_run_id: str | None = None,
+    at: datetime | None = None,
+) -> tuple[ModelT, ReviewerDecision]:
+    """Edit an object in place and record what changed.
+
+    DEC-023's first mechanism. The object keeps its identifier, its fields change, and the decision
+    carries `prior_value` and `updated_value` holding **only the changed fields** — which is what
+    makes reviewer edit rate computable per field rather than per object, and what makes the
+    generated value recoverable after the object has moved on.
+
+    The delta is captured by `ReviewerDecision.capture_edit`, which takes both states rather than
+    being assembled here. A `prior_value` copied from the already-edited object records that
+    nothing changed, and that is not a mistake any call site should be able to make.
+    """
+    timestamp = at if at is not None else now()
+    edited = _edited(obj, changes)
+    _refuse_new_reference_problems(handle, obj, edited)
+
+    with handle.objects.transaction() as repository:
+        decision = ReviewerDecision.capture_edit(
+            decision_id=repository.allocate("dec"),
+            before=obj,
+            after=edited,
+            subject_type=_object_term(obj),
+            subject_id=str(getattr(obj, "id", "")),
+            created_at=timestamp,
+            rationale=rationale,
+            reviewer_id=reviewer_id,
+            workflow_run_id=workflow_run_id,
+        )
+        repository.save(edited)
+        repository.save(decision)
+    return edited, decision
+
+
+def decide_object[ModelT: DomainModel](
+    handle: AssessmentHandle,
+    obj: ModelT,
+    disposition: ReviewDisposition,
+    *,
+    reviewer_id: str,
+    rationale: str | None = None,
+    workflow_run_id: str | None = None,
+    at: datetime | None = None,
+) -> tuple[ModelT, ReviewerDecision]:
+    """Approve or reject one extracted object.
+
+    The status change and the disposition say the same thing, which is why the decision carries no
+    delta: `ReviewerDecision` refuses one on an approval or a rejection, because a change to the
+    object's *content* is an edit and this is not one.
+
+    `Actor` has no `status` field — `data-model.md` section 13's table has none and DEC-037 declined
+    to add one — so an actor's decision is the whole record of it.
+    """
+    if disposition not in {ReviewDisposition.APPROVE, ReviewDisposition.REJECT}:
+        raise ReviewerActionError(
+            f"{disposition} is not an approve-or-reject decision. An edit goes through "
+            f"`apply_edit`, which records what changed."
+        )
+
+    timestamp = at if at is not None else now()
+    status = (
+        ObjectStatus.APPROVED if disposition is ReviewDisposition.APPROVE else ObjectStatus.REJECTED
+    )
+    decided = _edited(obj, {"status": status}) if "status" in type(obj).model_fields else obj
+    decision = _decision_about(
+        handle,
+        decided,
+        disposition=disposition,
+        reviewer_id=reviewer_id,
+        rationale=rationale,
+        workflow_run_id=workflow_run_id,
+        at=timestamp,
+    )
+    _persist(handle, decided, decision)
+    return decided, decision
+
+
+def add_context_object[ModelT: DomainModel](
+    handle: AssessmentHandle,
+    model: type[ModelT],
+    fields: dict[str, Any],
+    *,
+    reviewer_id: str,
+    rationale: str | None = None,
+    workflow_run_id: str | None = None,
+    at: datetime | None = None,
+) -> tuple[ModelT, ReviewerDecision]:
+    """Add a component, actor, asset, data flow, or trust boundary the extractor missed.
+
+    The object carries `source_origin` of `reviewer_edit` (DEC-039), which is what distinguishes it
+    from an extracted one without joining to the decision log. It is `approved` from birth: nobody
+    needs to approve what they just wrote, and leaving it `candidate` would make the checkpoint wait
+    on a decision about the reviewer's own object.
+
+    The identifier is allocated by the store like every other one (DEC-018). A reviewer-supplied
+    identifier could collide with a number the counter has not reached yet.
+    """
+    known = {name for name, candidate in CONTEXT_OBJECT_TYPES if candidate is model}
+    if not known:
+        raise ReviewerActionError(
+            f"{model.__name__} is not one of the context object types a reviewer may add: "
+            f"{', '.join(name for name, _ in CONTEXT_OBJECT_TYPES)}."
+        )
+
+    timestamp = at if at is not None else now()
+    prefix = next(candidate for candidate, name in PREFIXES.items() if name == model.__name__)
+
+    with handle.objects.transaction() as repository:
+        payload: dict[str, Any] = {
+            "id": repository.allocate(prefix),
+            "assessment_id": handle.assessment_id,
+            "source_origin": SourceOrigin.REVIEWER_EDIT,
+            **fields,
+        }
+        if "status" in model.model_fields:
+            payload.setdefault("status", ObjectStatus.APPROVED)
+        added = model.model_validate(payload)
+        decision = _decision_about(
+            handle,
+            added,
+            disposition=ReviewDisposition.APPROVE,
+            reviewer_id=reviewer_id,
+            rationale=rationale,
+            workflow_run_id=workflow_run_id,
+            at=timestamp,
+        )
+        repository.save(added)
+        repository.save(decision)
+
+    _refuse_new_reference_problems(handle, added, added)
+    return added, decision
+
+
+def confirm_assumption(
+    handle: AssessmentHandle,
+    claim: ContextClaim,
+    *,
+    reviewer_id: str,
+    rationale: str | None = None,
+    workflow_run_id: str | None = None,
+    at: datetime | None = None,
+) -> tuple[ContextClaim, ReviewerDecision]:
+    """Move a claim to `user_confirmed`: the top of `agent-design.md` section 14's hierarchy.
+
+    The transition is recorded rather than inferred, because it is the one status change that adds
+    authority without adding evidence — the reviewer *is* the evidence. A claim that arrived
+    `assumed` and leaves `user_confirmed` has been promoted by a person, and the decision is where
+    that person is named.
+    """
+    if claim.status is ClaimStatus.USER_CONFIRMED:
+        raise ReviewerActionError(f"{claim.id} is already user_confirmed")
+    return apply_edit(
+        handle,
+        claim,
+        {"status": ClaimStatus.USER_CONFIRMED},
+        reviewer_id=reviewer_id,
+        rationale=rationale,
+        workflow_run_id=workflow_run_id,
+        at=at,
+    )
+
+
+@dataclass(frozen=True, slots=True)
+class ContradictionResolution:
+    """What resolving one contradiction produced: the observation, the claims, and the records."""
+
+    observation: SourceObservation
+    claims: tuple[ContextClaim, ...]
+    decisions: tuple[ReviewerDecision, ...]
+
+
+def resolve_contradiction(
+    handle: AssessmentHandle,
+    observation: SourceObservation,
+    *,
+    resolution: JsonValue,
+    rationale: str,
+    reviewer_id: str,
+    workflow_run_id: str | None = None,
+    at: datetime | None = None,
+) -> ContradictionResolution:
+    """Record which statement is authoritative, and why, without discarding the other.
+
+    `demo/forgeflow/forgeflow-scenario.md` section 16 states the requirement negatively — do not
+    quietly choose the safer statement — and this is the positive form of it. The observation keeps
+    **every** evidence reference it was created with, so the statement the reviewer did not select
+    stays retrievable; what changes is that the observation now carries a rationale and the claims
+    it bears on carry the chosen value as `user_confirmed`.
+
+    A rationale is required. A resolution with no reasoning is indistinguishable from the silent
+    choice the scenario exists to catch.
+    """
+    if observation.kind is not ObservationKind.CONTRADICTION:
+        raise ReviewerActionError(
+            f"{observation.id} is a {observation.kind} observation; only a contradiction is "
+            f"resolved by choosing between statements"
+        )
+    if not rationale.strip():
+        raise ReviewerActionError(
+            "a contradiction resolution must carry a rationale. Without one it is "
+            "indistinguishable from quietly choosing the safer statement "
+            "(forgeflow-scenario.md section 16)."
+        )
+    if not observation.subject_claim_ids:
+        raise ReviewerActionError(
+            f"{observation.id} names no claim, so there is nothing for a resolution to settle"
+        )
+
+    timestamp = at if at is not None else now()
+    resolved, observation_decision = apply_edit(
+        handle,
+        observation,
+        {"reviewer_notes": rationale, "status": ObjectStatus.APPROVED},
+        reviewer_id=reviewer_id,
+        rationale=rationale,
+        workflow_run_id=workflow_run_id,
+        at=timestamp,
+    )
+
+    claims: list[ContextClaim] = []
+    decisions: list[ReviewerDecision] = [observation_decision]
+    for claim_id in observation.subject_claim_ids:
+        claim = handle.objects.find(ContextClaim, claim_id)
+        if claim is None:
+            raise ReviewerActionError(
+                f"{observation.id} names claim {claim_id}, which this assessment does not hold"
+            )
+        settled, decision = apply_edit(
+            handle,
+            claim,
+            {
+                "value": resolution,
+                "status": ClaimStatus.USER_CONFIRMED,
+                "rationale": rationale,
+            },
+            reviewer_id=reviewer_id,
+            rationale=rationale,
+            workflow_run_id=workflow_run_id,
+            at=timestamp,
+        )
+        claims.append(settled)
+        decisions.append(decision)
+
+    return ContradictionResolution(
+        observation=resolved, claims=tuple(claims), decisions=tuple(decisions)
+    )
+
+
+def answer_question(
+    handle: AssessmentHandle,
+    question: Question,
+    *,
+    response: str,
+    reviewer_id: str,
+    workflow_run_id: str | None = None,
+    at: datetime | None = None,
+) -> tuple[Question, ReviewerDecision]:
+    """Record a reviewer's answer, which is what takes a question out of the blocking set.
+
+    `data-model.md` section 22's three answer fields move together and `Question` enforces it: a
+    response with no origin is an answer nobody is accountable for, and an origin with no timestamp
+    is an answer that cannot be placed in the review.
+    """
+    if question.status is not QuestionStatus.OPEN:
+        raise ReviewerActionError(f"{question.id} is {question.status}, not open")
+    if not response.strip():
+        raise ReviewerActionError(
+            f"{question.id} needs an answer, not an empty one. A question the reviewer cannot "
+            f"answer is dismissed, which is a different status and a different record."
+        )
+
+    timestamp = at if at is not None else now()
+    return apply_edit(
+        handle,
+        question,
+        {
+            "response": response,
+            "response_origin": SourceOrigin.USER_RESPONSE,
+            "answered_at": timestamp,
+            "status": QuestionStatus.ANSWERED,
+        },
+        reviewer_id=reviewer_id,
+        rationale=None,
+        workflow_run_id=workflow_run_id,
+        at=timestamp,
+    )
+
+
+def attach_evidence[ModelT: DomainModel](
+    handle: AssessmentHandle,
+    obj: ModelT,
+    evidence_ids: Sequence[str],
+    *,
+    index: EvidenceIndex,
+    reviewer_id: str,
+    rationale: str | None = None,
+    workflow_run_id: str | None = None,
+    at: datetime | None = None,
+) -> tuple[ModelT, ReviewerDecision]:
+    """Link an existing `EvidenceReference` to an object.
+
+    **Evidence text is never edited.** `data-model.md` section 8 requires a correction to create a
+    new evidence reference, because DEC-019 hashes `quoted_text` and the indexer records the line
+    range it came from — editing it in place would leave the stored text disagreeing with both its
+    own hash and its own location, and the disagreement would surface as an unverifiable citation
+    rather than as the edit that caused it. So this function links; it does not write.
+
+    Each reference is resolved before it is linked, so a reviewer cannot attach a citation that
+    resolves to nothing — the failure `agent-design.md` section 14 names.
+    """
+    if "evidence_ids" not in type(obj).model_fields:
+        raise ReviewerActionError(f"{type(obj).__name__} carries no evidence references")
+
+    unknown = [
+        evidence_id
+        for evidence_id in evidence_ids
+        if handle.objects.find(_reference(), evidence_id) is None
+    ]
+    if unknown:
+        raise ReviewerActionError(
+            f"{', '.join(unknown)} do not resolve to stored evidence. Section 8 requires a "
+            f"correction to create a new evidence reference; a citation nobody can follow is the "
+            f"failure agent-design.md section 14 names."
+        )
+
+    existing: list[str] = list(getattr(obj, "evidence_ids"))  # noqa: B009 - the name is dynamic
+    added = [evidence_id for evidence_id in evidence_ids if evidence_id not in existing]
+    if not added:
+        raise ReviewerActionError(
+            f"{getattr(obj, 'id', type(obj).__name__)} already cites "
+            f"{', '.join(evidence_ids)}; there is no change to record"
+        )
+    index.resolve(added)
+
+    return apply_edit(
+        handle,
+        obj,
+        {"evidence_ids": [*existing, *added]},
+        reviewer_id=reviewer_id,
+        rationale=rationale,
+        workflow_run_id=workflow_run_id,
+        at=at,
+    )
+
+
+def _reference() -> type[Any]:
+    from trace_ai.domain.evidence import EvidenceReference
+
+    return EvidenceReference
+
+
+def approved_membership(handle: AssessmentHandle) -> dict[str, list[str]]:
+    """The identifier lists an approved revision carries: every context object not rejected.
+
+    Recomputed from the store rather than copied from the previous revision, so a reviewer-added
+    object reaches the baseline and a reviewer-rejected one does not. Threat analysis reasons from
+    this object; an object the reviewer rejected is not something to reason from (DEC-040).
+    """
+    lists: dict[str, list[str]] = {}
+    for name, model in CONTEXT_OBJECT_TYPES:
+        field_name = _LIST_BY_GROUP[name]
+        lists[field_name] = [
+            obj.id
+            for obj in handle.objects.list(model)
+            if getattr(obj, "status", None) is not ObjectStatus.REJECTED
+        ]
+    lists["context_claim_ids"] = [
+        claim.id
+        for claim in handle.objects.list(ContextClaim)
+        if claim.status is not ClaimStatus.REJECTED
+    ]
+    return lists
+
+
+def re_extraction_feedback(handle: AssessmentHandle) -> str | None:
+    """The most recent re-extraction rationale, for the next run's extraction node to carry.
+
+    Reviewer text is trusted input and does not go inside the source-content fence: DEC-013's
+    trust levels put `reviewer_edit` among the origins that are *not* material under review, and
+    the reviewer is the operator rather than a document being assessed. This closes DEC-038's open
+    question about whether the rationale may reach a prompt.
+    """
+    requests = [
+        decision
+        for decision in handle.objects.list(ReviewerDecision)
+        if decision.disposition is ReviewDisposition.REQUEST_MORE_ANALYSIS
+        and decision.subject_type == "system_context"
+    ]
+    if not requests:
+        return None
+    return max(requests, key=lambda decision: (decision.created_at, decision.id)).rationale

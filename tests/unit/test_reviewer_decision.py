@@ -19,7 +19,7 @@ import pytest
 from pydantic import ValidationError
 
 from trace_ai.domain.component import Component
-from trace_ai.domain.enums import ObjectStatus, ReviewDisposition
+from trace_ai.domain.enums import ObjectStatus, ReviewDisposition, SourceOrigin
 from trace_ai.domain.reviewer_decision import ReviewerDecision, changed_fields
 from trace_ai.domain.system_context import FIRST_VERSION, SystemContext
 
@@ -48,6 +48,7 @@ def component(**changes: Any) -> Component:
             "assessment_id": ASSESSMENT,
             "name": "Webhook Receiver",
             "component_type": "service",
+            "source_origin": SourceOrigin.UPLOADED_DOCUMENT,
             "internet_accessible": None,
             "status": ObjectStatus.CANDIDATE,
             **changes,

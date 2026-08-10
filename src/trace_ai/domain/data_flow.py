@@ -31,7 +31,7 @@ from typing import Self
 from pydantic import Field, model_validator
 
 from trace_ai.domain.base import DomainModel
-from trace_ai.domain.enums import ObjectStatus
+from trace_ai.domain.enums import ObjectStatus, SourceOrigin
 from trace_ai.domain.identifiers import (
     AssessmentId,
     ComponentId,
@@ -83,6 +83,13 @@ class DataFlow(DomainModel):
     """`None` means the documentation does not say, which is not `False`."""
 
     evidence_ids: list[EvidenceReferenceId] = Field(default_factory=list)
+
+    source_origin: SourceOrigin
+    """Where this object came from (section 4.4). `uploaded_document` for something the extractor
+    read out of a document, `reviewer_edit` for something a person added at the checkpoint. Required
+    rather than defaulted, because a default would make the extractor's provenance the answer given
+    when nobody supplied one (DEC-039)."""
+
     status: ObjectStatus
 
     @model_validator(mode="after")

@@ -881,6 +881,7 @@ Examples:
 | authentication_mechanisms | list[string] | No | Authentication methods |
 | authorization_mechanisms | list[string] | No | Authorization methods |
 | evidence_ids | list[string] | No | Supporting evidence |
+| source_origin | SourceOrigin | Yes | Where the object originated (section 4.4) |
 | status | ObjectStatus | Yes | Lifecycle state |
 
 ## Component-type examples
@@ -935,6 +936,7 @@ Assets may be technical, informational, or operational.
 | owner | string | No | Business or technical owner |
 | component_ids | list[string] | No | Components holding or processing asset |
 | evidence_ids | list[string] | No | Supporting evidence |
+| source_origin | SourceOrigin | Yes | Where the object originated (section 4.4) |
 | status | ObjectStatus | Yes | Lifecycle state |
 
 ## Asset-type examples
@@ -979,6 +981,7 @@ Represents a legitimate user, system identity, administrator, threat actor, or e
 | capabilities | list[string] | No | Relevant actions or privileges |
 | authentication_method | string | No | Authentication method |
 | evidence_ids | list[string] | No | Supporting evidence |
+| source_origin | SourceOrigin | Yes | Where the object originated (section 4.4) |
 
 ## Actor-type examples
 
@@ -1021,6 +1024,7 @@ Represents movement of data or commands between components.
 | crosses_trust_boundary_ids | list[string] | No | Boundaries crossed |
 | internet_exposed | boolean | No | Internet exposure |
 | evidence_ids | list[string] | No | Supporting evidence |
+| source_origin | SourceOrigin | Yes | Where the object originated (section 4.4) |
 | status | ObjectStatus | Yes | Lifecycle state |
 
 ## Validation rules
@@ -1048,6 +1052,7 @@ Represents a change in trust, ownership, privilege, or security control.
 | outside_component_ids | list[string] | No | Relevant outside components |
 | controls | list[string] | No | Known controls at boundary |
 | evidence_ids | list[string] | No | Supporting evidence |
+| source_origin | SourceOrigin | Yes | Where the object originated (section 4.4) |
 | status | ObjectStatus | Yes | Lifecycle state |
 
 ## Boundary-type examples
