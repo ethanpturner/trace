@@ -782,7 +782,7 @@ assessment_id: asm-001
 
 subject_type: component
 
-subject_id: cmp-identity
+subject_id: cmp-003
 
 predicate: authentication_provider
 
@@ -1131,15 +1131,15 @@ category:
 
 affected_component_ids:
 
-- cmp-webhook-receiver
+- cmp-004
 
-- cmp-job-worker
+- cmp-007
 
 affected_asset_ids:
 
-- ast-analysis-capacity
+- ast-002
 
-- ast-repository-metadata
+- ast-005
 
 preconditions:
 
@@ -1525,13 +1525,13 @@ control_mapping_ids:
 
 affected_component_ids:
 
-- cmp-webhook-receiver
+- cmp-004
 
 affected_asset_ids:
 
-- ast-analysis-capacity
+- ast-002
 
-- ast-repository-metadata
+- ast-005
 
 evidence_ids:
 
@@ -1975,29 +1975,29 @@ context_claim_ids:
 
 component_ids:
 
-- cmp-web
+- cmp-001
 
-- cmp-api
+- cmp-002
 
-- cmp-database
+- cmp-003
 
 asset_ids:
 
-- ast-source-code
+- ast-001
 
-- ast-access-token
+- ast-002
 
 data_flow_ids:
 
-- df-web-api
+- df-001
 
-- df-api-database
+- df-002
 
 trust_boundary_ids:
 
-- tb-internet
+- tb-001
 
-- tb-third-party
+- tb-002
 
 candidate_threat_ids:
 

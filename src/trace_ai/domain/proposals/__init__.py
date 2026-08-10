@@ -22,9 +22,15 @@ from trace_ai.domain.proposals.context_extraction import (
 )
 from trace_ai.domain.proposals.conversion import ConvertedContext, convert_proposal
 from trace_ai.domain.proposals.generation import CONTEXT_EXTRACTION_AGENT, GenerationMetadata
+from trace_ai.domain.proposals.threat_analysis import (
+    THREAT_ANALYSIS_AGENT,
+    ThreatProposal,
+    promote_threat,
+)
 
 __all__ = [
     "CONTEXT_EXTRACTION_AGENT",
+    "THREAT_ANALYSIS_AGENT",
     "ContextExtractionProposal",
     "ConvertedContext",
     "GenerationMetadata",
@@ -39,5 +45,7 @@ __all__ = [
     "ProposedQuestion",
     "ProposedSystemContext",
     "ProposedTrustBoundary",
+    "ThreatProposal",
     "convert_proposal",
+    "promote_threat",
 ]

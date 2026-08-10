@@ -1,0 +1,144 @@
+"""`Threat`: a plausible adverse security scenario, and the vocabulary it is categorised with.
+
+`data-model.md` section 16 is authoritative for the fields. Three things decided about this object
+are easier to get wrong than to get right.
+
+**A threat is not a finding.** Section 16 says so in its purpose line and the whole pipeline shape
+depends on it: a threat is a scenario worth evaluating, and it becomes a finding only through a
+`ControlMapping` and the evidence behind it. Nothing here carries a severity, a verdict, or an
+assertion that a control is absent.
+
+**`category` is an open vocabulary** (DEC-041, applying DEC-036). Section 16 types it `list[string]`
+and illustrates two values in its example rather than enumerating a set, which is DEC-036's stated
+test. `KNOWN_THREAT_CATEGORIES` records STRIDE and the four OWASP LLM categories the ForgeFlow
+scenario exercises; it is documentation and validates nothing. The decisive case is ForgeFlow's own
+THR-001, prompt injection, which STRIDE has no category for -- a closed STRIDE enum would reject or
+mis-bucket the single threat the demo scenario is built around.
+
+**`affected_component_ids`, `affected_asset_ids`, and `impact` are non-empty, and section 16 does
+not say so.** `agent-design.md` section 10 does: "Threats do not identify affected assets or
+components" and "Threats lack plausible security impact" are named failure conditions for the
+Threat Analysis agent. A threat naming nothing it affects cannot be mapped to a requirement, and
+one with no impact is a scenario nobody can weigh. The schema refuses both rather than leaving them
+for the validation node to notice.
+"""
+
+from __future__ import annotations
+
+from datetime import datetime
+from typing import Final
+
+from pydantic import Field
+
+from trace_ai.domain.base import DomainModel
+from trace_ai.domain.enums import ConfidenceLevel, ObjectStatus
+from trace_ai.domain.identifiers import (
+    ActorId,
+    AssessmentId,
+    AssetId,
+    ComponentId,
+    ContextClaimId,
+    DataFlowId,
+    EvidenceReferenceId,
+    QuestionId,
+    ThreatId,
+)
+from trace_ai.domain.vocabulary import VocabularyTerm
+
+__all__ = [
+    "AI_THREAT_CATEGORIES",
+    "KNOWN_THREAT_CATEGORIES",
+    "STRIDE_CATEGORIES",
+    "Threat",
+]
+
+# STRIDE, in the snake_case spelling section 16's own example uses (`spoofing`,
+# `elevation_of_privilege`). `agent-design.md` section 10 calls STRIDE a *coverage aid* and warns
+# against producing six generic threats to satisfy each category, so this is a checklist for
+# noticing gaps rather than a set of buckets to fill.
+STRIDE_CATEGORIES: Final[frozenset[str]] = frozenset(
+    {
+        "spoofing",
+        "tampering",
+        "repudiation",
+        "information_disclosure",
+        "denial_of_service",
+        "elevation_of_privilege",
+    }
+)
+
+# What STRIDE has no category for. `agent-design.md` section 10 requires AI-specific threats "where
+# applicable", and ForgeFlow's expected threats include prompt injection, over-disclosure to a model
+# provider, and unreviewed model output being published. The names follow OWASP Top 10 for LLM
+# Applications 2025, which `requirements/README.md` already adopts as a provenance source:
+# LLM01, LLM02, LLM05, LLM10.
+AI_THREAT_CATEGORIES: Final[frozenset[str]] = frozenset(
+    {
+        "prompt_injection",
+        "sensitive_information_disclosure",
+        "improper_output_handling",
+        "unbounded_consumption",
+    }
+)
+
+# Documentation, not a validation rule (DEC-036, DEC-041). The same relationship
+# `acceptable_implementations` has to the requirements catalog, for the same reason: a list of
+# examples treated as the set of allowed values decides cases it was never shown.
+KNOWN_THREAT_CATEGORIES: Final[frozenset[str]] = STRIDE_CATEGORIES | AI_THREAT_CATEGORIES
+
+
+class Threat(DomainModel):
+    """A plausible adverse security scenario (section 16). Not a finding."""
+
+    id: ThreatId
+    assessment_id: AssessmentId
+
+    title: str = Field(min_length=1)
+    description: str = Field(min_length=1)
+
+    methodology: str = Field(min_length=1)
+    """How the threat was arrived at, such as `stride-scenario-based`. Free text for the MVP
+    (DEC-041): one methodology exists, and a registry with one entry validates nothing."""
+
+    category: list[VocabularyTerm] = Field(default_factory=list)
+    """Open vocabulary; see `KNOWN_THREAT_CATEGORIES`. Optional in section 16, and it stays
+    optional: an uncategorisable threat is recorded uncategorised rather than forced into a
+    category that does not fit."""
+
+    threat_actor_ids: list[ActorId] = Field(default_factory=list)
+
+    affected_component_ids: list[ComponentId] = Field(min_length=1)
+    """Non-empty. `agent-design.md` section 10 makes a threat that identifies no affected component
+    an invalid output, and an unmapped threat reaches no requirement."""
+
+    affected_asset_ids: list[AssetId] = Field(min_length=1)
+    """Non-empty, for the same reason."""
+
+    related_data_flow_ids: list[DataFlowId] = Field(default_factory=list)
+    preconditions: list[str] = Field(default_factory=list)
+    attack_path: list[str] = Field(default_factory=list)
+
+    impact: str = Field(min_length=1)
+    """The security consequence. Non-empty: section 10 makes a threat lacking plausible security
+    impact an invalid output. `str_strip_whitespace` on `DomainModel` means whitespace-only text
+    arrives empty and is refused here."""
+
+    likelihood: str | None = None
+    """Preliminary, and free text. Not a severity: DEC-030 gives severity to the reviewer at
+    checkpoint 2, and nothing on this object feeds an automatic one."""
+
+    confidence: ConfidenceLevel
+    evidence_ids: list[EvidenceReferenceId] = Field(default_factory=list)
+
+    assumption_ids: list[ContextClaimId] = Field(default_factory=list)
+    """Claims the scenario rests on. `ContextClaim` identifiers: an assumption is a claim with
+    `status: assumed`, not a separate object."""
+
+    open_question_ids: list[QuestionId] = Field(default_factory=list)
+
+    status: ObjectStatus
+    generated_by: str = Field(min_length=1)
+    """The agent version or the reviewer, such as `threat-analysis-v1` (`agent-design.md`
+    section 33). Not the model name."""
+
+    created_at: datetime
