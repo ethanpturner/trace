@@ -217,31 +217,38 @@ class ExecutionLedger:
             if record.workflow_run_id == self.run.id
         ]
 
-    def complete(self, *, error_summary: str | None = None) -> WorkflowRun:
-        """Close the run. `failed` when a summary is given, `completed` otherwise.
+    def counters(self) -> dict[str, object]:
+        """The section 26 counters, computed from the records this run wrote.
 
-        The section 26 counters are computed from the records rather than incremented as the run
-        goes, so they are a measurement of what was written rather than a parallel tally that can
-        drift from it.
+        Computed rather than incremented as the run goes, so they are a measurement of what was
+        written rather than a parallel tally that can drift from it. Shared by `complete` and
+        `pause`: a reviewer at a checkpoint asking what the run cost is asking the same question a
+        finished run answers, and two implementations would eventually give two answers.
         """
-        repository = self.handle.objects
         records = self.records()
         input_tokens = sum(record.input_tokens or 0 for record in records)
         output_tokens = sum(record.output_tokens or 0 for record in records)
         cost = sum((record.estimated_cost or Decimal(0) for record in records), Decimal(0))
+        return {
+            "total_model_calls": sum(
+                1 for record in records if record.execution_type is ExecutionType.MODEL
+            ),
+            "total_input_tokens": input_tokens or None,
+            "total_output_tokens": output_tokens or None,
+            "estimated_cost": cost or None,
+        }
+
+    def complete(self, *, error_summary: str | None = None) -> WorkflowRun:
+        """Close the run. `failed` when a summary is given, `completed` otherwise."""
+        repository = self.handle.objects
         updated = WorkflowRun.model_validate(
             self.run.model_dump()
+            | self.counters()
             | {
                 "status": RunStatus.FAILED if error_summary else RunStatus.COMPLETED,
                 "completed_at": now(),
                 "error_summary": error_summary,
                 "current_node": None,
-                "total_model_calls": sum(
-                    1 for record in records if record.execution_type is ExecutionType.MODEL
-                ),
-                "total_input_tokens": input_tokens or None,
-                "total_output_tokens": output_tokens or None,
-                "estimated_cost": cost or None,
             }
         )
         with repository.transaction():
@@ -255,10 +262,16 @@ class ExecutionLedger:
         A pause is not a completion: `completed_at` stays unset, and the counters keep accumulating
         when the run resumes. What makes the pause self-describing is this field plus the state's
         `pending_human_review` block.
+
+        The counters are brought up to date here as well as at completion. A paused run is one a
+        person is looking at, and "what has this cost so far" is the question they ask; leaving the
+        counters at zero until the run finished would answer it wrongly rather than not at all.
         """
         repository = self.handle.objects
         updated = WorkflowRun.model_validate(
-            self.run.model_dump() | {"status": RunStatus.PAUSED, "current_node": current_node}
+            self.run.model_dump()
+            | self.counters()
+            | {"status": RunStatus.PAUSED, "current_node": current_node}
         )
         with repository.transaction():
             repository.save(updated)
