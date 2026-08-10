@@ -115,6 +115,17 @@ class ControlMapping(DomainModel):
     suppressed_by: str | None = None
     """The `common_false_positives` entry that stopped it (DEC-025)."""
 
+    downgraded_from: SatisfactionStatus | None = None
+    """The satisfaction status the mapping proposed before validation lowered it (DEC-046).
+
+    Set by the Mapping Validation node and by nothing else. A suppression (above) is the *agent*
+    declining a conclusion; a downgrade is the *application* refusing one the agent drew. They
+    are recorded separately because a metric that could not tell them apart could not tell an
+    over-aggressive catalog entry from an under-evidenced model."""
+
+    downgrade_reason: str | None = None
+    """Why the downgrade happened, naming the DEC-013 condition that failed (DEC-046)."""
+
     satisfaction_status: SatisfactionStatus
     evidence_ids: list[EvidenceReferenceId] = Field(default_factory=list)
     assumptions: list[str] = Field(default_factory=list)
@@ -152,5 +163,27 @@ class ControlMapping(DomainModel):
             raise ValueError(
                 "suppressed_conclusion and suppressed_by are recorded together (DEC-025). One "
                 "without the other is a suppression nobody can check."
+            )
+        return self
+
+    @model_validator(mode="after")
+    def _downgrade_is_recorded_in_both_halves(self) -> Self:
+        """A downgraded mapping says what it was and why (DEC-046).
+
+        The same shape as the suppression pair, for the same reason: a status marked as lowered,
+        with nothing saying from what or why, reads as an unexplained value rather than a
+        deliberate one. `data-model.md` section 19 requires the downgrade to be recorded, and half
+        a record does not satisfy it.
+        """
+        if bool(self.downgraded_from) != bool(self.downgrade_reason):
+            raise ValueError(
+                "downgraded_from and downgrade_reason are recorded together (DEC-046). A "
+                "downgrade nobody can trace is as invisible to evaluation as a silent one."
+            )
+        if self.downgraded_from is not None and self.downgraded_from == self.satisfaction_status:
+            raise ValueError(
+                f"downgraded_from is {self.downgraded_from.value!r} and so is "
+                f"satisfaction_status. A downgrade that changed nothing is a record of an event "
+                f"that did not happen."
             )
         return self
