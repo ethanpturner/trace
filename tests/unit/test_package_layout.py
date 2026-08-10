@@ -54,6 +54,12 @@ PACKAGES = (
     # What the Threat Analysis agent sees (agent-design.md section 23): an approved architecture
     # and the evidence behind it, fenced with the same helper the extractor's package uses.
     "trace_ai.services.threats",
+    # What the Requirement and Control Mapping agent sees. Its own package rather than a module
+    # under `requirements/`, because that package is the catalog's reader (DEC-010) and this one
+    # assembles a payload from the catalog, the approved context, and the store. DEC-024 removed
+    # the deterministic requirement matcher the backlog put here, so there is one mapping step and
+    # one package for it.
+    "trace_ai.services.mapping",
     "trace_ai.infrastructure",
     "trace_ai.infrastructure.filesystem",
     "trace_ai.infrastructure.database",
