@@ -57,15 +57,23 @@ __all__ = ["ThreatAnalysisInput", "UnapprovedContextError", "assemble_threat_inp
 
 
 class UnapprovedContextError(RuntimeError):
-    """Threat analysis was asked to reason from a context nobody approved."""
+    """A step after checkpoint 1 was asked to reason from a context nobody approved.
 
-    def __init__(self, version: int) -> None:
+    One class rather than one per step. `agent-design.md` section 9 states the rule once — threat
+    analysis *and everything after it* works from the approved baseline — so `step` names the
+    caller and the rest of the sentence is the same wherever it is raised. Two classes would be two
+    places to keep the DEC-005 citation correct, and the one that stopped being updated would be
+    the one whose message stopped explaining why the run stopped.
+    """
+
+    def __init__(self, version: int, *, step: str = "Threat analysis") -> None:
         super().__init__(
-            f"system context version {version} is not approved. Threat analysis reasons from the "
+            f"system context version {version} is not approved. {step} reasons from the "
             f"approved baseline (current-architecture.md section 5.6), and checkpoint 1 is a phase "
             f"in the transition table rather than a step a node may skip (DEC-005)."
         )
         self.version = version
+        self.step = step
 
 
 @dataclass(frozen=True, slots=True)
