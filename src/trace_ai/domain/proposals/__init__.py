@@ -25,9 +25,11 @@ from trace_ai.domain.proposals.generation import CONTEXT_EXTRACTION_AGENT, Gener
 from trace_ai.domain.proposals.mapping import (
     MAPPING_AGENT,
     ControlProposal,
+    DocumentationGapProposal,
     MappingProposal,
     RequirementMappingProposal,
     promote_control,
+    promote_documentation_gap,
     promote_mapping,
 )
 from trace_ai.domain.proposals.threat_analysis import (
@@ -43,6 +45,7 @@ __all__ = [
     "ContextExtractionProposal",
     "ControlProposal",
     "ConvertedContext",
+    "DocumentationGapProposal",
     "GenerationMetadata",
     "LocalKey",
     "MappingProposal",
@@ -60,6 +63,7 @@ __all__ = [
     "ThreatProposal",
     "convert_proposal",
     "promote_control",
+    "promote_documentation_gap",
     "promote_mapping",
     "promote_threat",
 ]

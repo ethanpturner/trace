@@ -54,6 +54,7 @@ from trace_ai.domain.context_claim import ContextClaim
 from trace_ai.domain.control import Control
 from trace_ai.domain.control_mapping import ControlMapping
 from trace_ai.domain.data_flow import DataFlow
+from trace_ai.domain.documentation_gap import DocumentationGap
 from trace_ai.domain.enums import (
     ConfidenceLevel,
     EvidenceStrength,
@@ -232,7 +233,7 @@ REGISTRY: dict[str, Registration] = {
     "20": Registration("EvidenceAssessment", Status.DEFERRED),
     "21": Registration("Finding", Status.PLANNED),
     "22": Registration("Question", Status.IMPLEMENTED, Question),
-    "23": Registration("DocumentationGap", Status.PLANNED),
+    "23": Registration("DocumentationGap", Status.IMPLEMENTED, DocumentationGap),
     "24": Registration("Critique", Status.DEFERRED),
     "25": Registration("ReviewerDecision", Status.IMPLEMENTED, ReviewerDecision),
     "26": Registration("WorkflowRun", Status.IMPLEMENTED, WorkflowRun),

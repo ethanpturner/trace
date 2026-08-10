@@ -31,7 +31,8 @@ from trace_ai.domain.control_mapping import (
     ControlMapping,
     SatisfactionStatus,
 )
-from trace_ai.domain.enums import ConfidenceLevel, ObjectStatus, ValidationStatus
+from trace_ai.domain.documentation_gap import DocumentationGap
+from trace_ai.domain.enums import ConfidenceLevel, ObjectStatus, Severity, ValidationStatus
 from trace_ai.domain.identifiers import (
     AssetId,
     ComponentId,
@@ -45,14 +46,21 @@ if TYPE_CHECKING:
     from collections.abc import Mapping, Set
     from datetime import datetime
 
-    from trace_ai.domain.identifiers import AssessmentId, ControlId, ControlMappingId
+    from trace_ai.domain.identifiers import (
+        AssessmentId,
+        ControlId,
+        ControlMappingId,
+        DocumentationGapId,
+    )
 
 __all__ = [
     "MAPPING_AGENT",
     "ControlProposal",
+    "DocumentationGapProposal",
     "MappingProposal",
     "RequirementMappingProposal",
     "promote_control",
+    "promote_documentation_gap",
     "promote_mapping",
 ]
 
@@ -108,8 +116,33 @@ class RequirementMappingProposal(DomainModel):
     confidence: ConfidenceLevel
 
 
+class DocumentationGapProposal(DomainModel):
+    """A gap candidate the mapper raised (section 23, minus what the application owns).
+
+    `agent-design.md` section 12 lists "DocumentationGap candidates" among this agent's outputs, so
+    the object is produced here rather than at finding consolidation. What the schema *omits* is
+    the point: no recommendation, no impact, no validation status, and no way to say a control is
+    absent. A gap records that Trace could not determine whether a control exists (section 23), and
+    a proposal shape that could express more than that would let the DEC-009 collapse happen at the
+    boundary rather than downstream of it.
+
+    `severity` is present and rates the gap, not a weakness (DEC-045). Unlike `Finding.severity` it
+    is the agent's to propose, because no checkpoint ever asks a reviewer for a gap's severity.
+    """
+
+    title: str = Field(min_length=1)
+    description: str = Field(min_length=1)
+    importance: str = Field(min_length=1)
+
+    related_object_ids: list[str] = Field(default_factory=list)
+    requested_evidence: list[str] = Field(default_factory=list)
+    evidence_ids: list[EvidenceReferenceId] = Field(default_factory=list)
+
+    severity: Severity
+
+
 class MappingProposal(DomainModel):
-    """One model response: the controls found and the mappings drawn.
+    """One model response: the controls found, the mappings drawn, and the gaps raised.
 
     An empty `mappings` list is valid for the same reason an empty threat list is: a requirement
     that does not apply to any threat in scope produces nothing, and a schema demanding output
@@ -118,6 +151,7 @@ class MappingProposal(DomainModel):
 
     controls: list[ControlProposal] = Field(default_factory=list)
     mappings: list[RequirementMappingProposal] = Field(default_factory=list)
+    documentation_gaps: list[DocumentationGapProposal] = Field(default_factory=list)
 
     def validate_references(self, available: Set[str]) -> None:
         """Every identifier a mapping names must be one the input package supplied.
@@ -147,6 +181,16 @@ class MappingProposal(DomainModel):
             missing = sorted({value for value in referenced if value not in available})
             if missing:
                 unknown[-1 - position] = missing
+
+        # A gap's `related_object_ids` is checked here rather than on `DocumentationGap`, because
+        # only the caller knows what the assessment contains. The model checks the identifiers are
+        # well formed; this checks they name something that was supplied.
+        offset = -1 - len(self.controls)
+        for position, gap in enumerate(self.documentation_gaps):
+            referenced = [*gap.related_object_ids, *gap.evidence_ids]
+            missing = sorted({value for value in referenced if value not in available})
+            if missing:
+                unknown[offset - position] = missing
 
         if unknown:
             raise ProposalError(
@@ -204,6 +248,29 @@ def promote_control(
             "validation_status": ValidationStatus.NOT_EVALUATED,
             "generated_by": generated_by,
             "created_at": created_at if created_at is not None else now(),
+            "status": ObjectStatus.CANDIDATE,
+        }
+    )
+
+
+def promote_documentation_gap(
+    proposal: DocumentationGapProposal,
+    *,
+    gap_id: DocumentationGapId,
+    assessment_id: AssessmentId,
+    generated_by: str = MAPPING_AGENT,
+) -> DocumentationGap:
+    """Turn a proposed gap into one the application owns.
+
+    `status` is `candidate` and is not a parameter, for the same reason `promote_threat` fixes it:
+    an agent that could propose `approved` would be approving its own work (DEC-005).
+    """
+    return DocumentationGap.model_validate(
+        {
+            **proposal.model_dump(),
+            "id": gap_id,
+            "assessment_id": assessment_id,
+            "generated_by": generated_by,
             "status": ObjectStatus.CANDIDATE,
         }
     )
