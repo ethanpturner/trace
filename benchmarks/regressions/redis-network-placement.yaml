@@ -1,0 +1,28 @@
+# Prevents: an invented public-exposure finding for a component mentioned without its network
+# controls. Defends DEC-009 and DEC-013; the intended treatment is forgeflow-scenario.md
+# section 14.4's: do not invent a public Redis exposure, ask only if placement is material and
+# unclear -- so the correct output is a question, and the fixture's assessment names exactly
+# the missing evidence that makes the answer obtainable.
+regression: redis-network-placement
+prevents: a public-exposure finding invented from undescribed network controls
+defends: DEC-009, DEC-013 (forgeflow-scenario.md section 14.4)
+correct_output: question
+requirement_id: req-NET-001
+
+provider_component:
+  id: cmp-001
+  name: Managed Redis Queue
+  component_type: queue
+
+mapping:
+  id: map-001
+  satisfaction_status: unverified
+  applicability_reason: >
+    The queue is an internal component whose reachability the requirement covers, and the
+    documents mention it without describing its network placement.
+
+assessment:
+  validation_status: unsupported
+  rationale: No passage describes where the queue sits in the network.
+  missing_evidence:
+    - where the managed Redis queue sits in the network and what can reach it

@@ -1,0 +1,33 @@
+# Prevents: password-policy findings generated under delegated authentication -- the first
+# failure evaluation-plan.md section 11 names. Defends DEC-009 and DEC-011; the intended
+# treatment is forgeflow-scenario.md section 14.1's: recognise delegated authentication,
+# identify the external identity provider as the control provider, produce no local
+# password-policy finding.
+regression: delegated-authentication
+prevents: a local password-policy finding under delegated authentication
+defends: DEC-009, DEC-011 (forgeflow-scenario.md section 14.1)
+correct_output: no_output
+requirement_id: req-AUTH-001
+
+provider_component:
+  id: cmp-001
+  name: GitHub
+  component_type: external_identity_provider
+
+control:
+  id: ctl-001
+  name: Delegated authentication via GitHub OAuth
+  description: Authentication is delegated to GitHub; no local credential store exists.
+  control_type: inherited
+  implementation_status: implemented
+
+mapping:
+  id: map-001
+  satisfaction_status: satisfied
+  applicability_reason: >
+    Authentication is delegated to GitHub OAuth and the application stores no local
+    passwords, so the delegation itself is the control under review.
+
+assessment:
+  validation_status: supported
+  rationale: The integration documentation states that authentication is delegated to GitHub.
