@@ -68,6 +68,10 @@ PACKAGES = (
     # package and the "why was this generated" view consume (issue #100). A service because it
     # spans most of the object model; nothing in it is persisted (DEC-053).
     "trace_ai.services.findings",
+    # The report input assembly (DEC-035, issue #104): approved state gathered once, so the
+    # Report Generation agent and the deterministic renderer cannot disagree about what was
+    # approved. Findings come solely from the DEC-055 accessor.
+    "trace_ai.services.report",
     "trace_ai.infrastructure",
     "trace_ai.infrastructure.filesystem",
     "trace_ai.infrastructure.database",
