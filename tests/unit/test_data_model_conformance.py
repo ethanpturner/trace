@@ -53,6 +53,7 @@ from trace_ai.domain.component import Component
 from trace_ai.domain.context_claim import ContextClaim
 from trace_ai.domain.control import Control
 from trace_ai.domain.control_mapping import ControlMapping
+from trace_ai.domain.critique import Critique
 from trace_ai.domain.data_flow import DataFlow
 from trace_ai.domain.documentation_gap import DocumentationGap
 from trace_ai.domain.enums import (
@@ -178,7 +179,14 @@ def implementation_priority() -> tuple[list[str], list[str]]:
     ]
     sentence = re.search(r"^Add (.+?) once the main workflow", section_40, flags=re.MULTILINE)
     assert sentence is not None, "section 40's deferred sentence changed shape"
-    later = [name.strip() for name in sentence.group(1).replace("and ", "").split(",")]
+    # Split on commas *and* on a trailing "and", so the sentence reads naturally in the document
+    # whether it lists two objects ("A and B") or four ("A, B, C, and D").
+    later = [
+        name.strip()
+        for chunk in sentence.group(1).split(",")
+        for name in chunk.replace(" and ", " ").split()
+        if name.strip()
+    ]
 
     return first, later
 
@@ -237,7 +245,9 @@ REGISTRY: dict[str, Registration] = {
     "21": Registration("Finding", Status.PLANNED),
     "22": Registration("Question", Status.IMPLEMENTED, Question),
     "23": Registration("DocumentationGap", Status.IMPLEMENTED, DocumentationGap),
-    "24": Registration("Critique", Status.DEFERRED),
+    # Was DEFERRED. Section 40 moved it, and states why there: roadmap Stage 4 gates the
+    # critic on whether it improves results, and the gate needs the object.
+    "24": Registration("Critique", Status.IMPLEMENTED, Critique),
     "25": Registration("ReviewerDecision", Status.IMPLEMENTED, ReviewerDecision),
     "26": Registration("WorkflowRun", Status.IMPLEMENTED, WorkflowRun),
     "27": Registration("ExecutionRecord", Status.IMPLEMENTED, ExecutionRecord),
@@ -321,8 +331,8 @@ def test_every_field_row_has_a_description() -> None:
 
 def test_section_forty_parses_into_two_lists() -> None:
     first, later = implementation_priority()
-    assert len(first) == 24, first
-    assert later == ["Critique", "PromptDefinition", "EvaluationResult"]
+    assert len(first) == 25, first
+    assert later == ["PromptDefinition", "EvaluationResult"]
 
 
 # --------------------------------------------------------------------------------------------

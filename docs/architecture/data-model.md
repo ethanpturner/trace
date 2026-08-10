@@ -1715,13 +1715,13 @@ Represents a structured challenge to a generated threat, mapping, or finding.
 |---|---|---|---|
 | id | string | Yes | Stable critique identifier |
 | assessment_id | string | Yes | Parent assessment |
-| subject_type | string | Yes | Object being challenged |
+| subject_type | CritiqueSubjectType | Yes | Object being challenged; closed by DEC-049 |
 | subject_id | string | Yes | Object identifier |
-| critique_type | string | Yes | Unsupported, duplicate, severity, etc. |
+| critique_type | CritiqueType | Yes | Closed by DEC-049 over the examples below, less `missing_high_impact_threat` |
 | description | string | Yes | Criticism |
 | rationale | string | Yes | Supporting explanation |
 | evidence_ids | list[string] | No | Supporting evidence |
-| recommended_action | string | Yes | Keep, revise, reject, merge, investigate |
+| recommended_action | RecommendedAction | Yes | Keep, revise, reject, merge, investigate (DEC-049) |
 | confidence | ConfidenceLevel | Yes | Critique confidence |
 | status | ObjectStatus | Yes | Review state |
 | generated_by | string | Yes | Critic node or reviewer |
@@ -1751,6 +1751,11 @@ documentation_gap_only
 contradictory_analysis
 
 missing_high_impact_threat
+
+`missing_high_impact_threat` is **not** a `CritiqueType` value. A missing threat has no target
+object, which `agent-design.md` section 15 makes invalid output, and proposing one is the
+threat-generation loop section 27's worked example forbids. DEC-049 records the exclusion and
+what it costs.
 
 # 25. ReviewerDecision
 
@@ -2403,6 +2408,7 @@ Implement these first:
 22. ExecutionRecord
 23. RequirementsCatalog
 24. EvidenceAssessment
+25. Critique
 
 `SourceObservation` (section 10a) was added by DEC-021 after this list was written, and the list
 was not updated with it. It is not optional: DEC-021 makes contradictions and detected
@@ -2421,7 +2427,12 @@ every mapping call, and the requirement-matcher step needs a loader before eithe
 without a manifest object is a catalog with no integrity marker and no single place that says what
 version was used, so it sits last on this list rather than on the next one.
 
-Add Critique, PromptDefinition, and EvaluationResult once the main workflow begins operating.
+Add PromptDefinition and EvaluationResult once the main workflow begins operating.
+
+`Critique` (section 24) was on that deferred list too, and arrives for the same reason stated
+differently: the critic is the fifth of section 36's six agents and roadmap Stage 4 sets a
+decision gate on whether it improves results at all. The gate cannot be reached without the
+object, and DEC-049 fixes the vocabularies section 24 left as prose examples.
 
 `EvidenceAssessment` (section 20) was on that deferred list and arrives with the mapping step
 instead, which is the condition the list states. Two reasons make it earlier rather than
