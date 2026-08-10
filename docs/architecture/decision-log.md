@@ -2914,3 +2914,100 @@ Open Questions:
   Finding Consolidation and never shown?
 - Does a proposal need a recommended survivor — the more specific threat, the one with more
   evidence — or is that the merging step's judgment?
+
+## DEC-044: Two nodes create controls, both record which; `Control` gains provenance
+
+Date: 2026-08-09
+
+Status: Accepted
+
+Decision:
+
+No document said which node creates a `Control`. Three places imply they exist — Context Extraction
+identifies "Existing controls" (`agent-design.md` section 7), the Mapping Agent outputs "New or
+refined Control objects" (section 12), and Mapping Validation must "Confirm control identifiers
+exist" (section 13) — and section 18 carried no field recording which of them was responsible.
+
+**Two nodes create controls, and a reviewer is the third origin.**
+
+| Origin | `generated_by` | When |
+|---|---|---|
+| Context Extraction | `context-extraction-v1` | The documentation describes a safeguard while the architecture is being read |
+| Requirement and Control Mapping | `mapping-v1` | A requirement is evaluated and a control bearing on it is found described |
+| Reviewer | `reviewer_edit` | A person adds one at a checkpoint |
+
+**A control claimed during context extraction becomes a `Control` row at conversion**, alongside
+the components and claims from the same response, with `validation_status: not_evaluated`. It does
+not wait for the mapping step. A safeguard the documentation describes is a fact about the
+architecture, the reviewer approves it at checkpoint 1 with everything else, and the mapping step
+then references it by identifier through `existing_control_ids` rather than re-proposing it.
+
+**`Control` gains `generated_by` and `created_at`.** Both required. `data-model.md` section 18 is
+updated, which is what makes this a design change rather than an implementation detail.
+
+**An asserted implementation status cites evidence.** `implemented`, `partially_implemented`, and
+`absent` require at least one `EvidenceReference`. `claimed` and `unknown` do not. A `planned` or
+`recommended` control is exempt whatever its status.
+
+**`ControlMapping` keeps the mirrored rule.** `satisfied`, `partially_satisfied`, and `unmet`
+require evidence; `unverified` does not.
+
+Why:
+
+**Provenance was unrecoverable, and this is the one object where three answers were possible.**
+Every other object the pipeline produces carries `generated_by` or `source_origin` or both. A
+control could have come from the extractor, the mapper, or a person, and the record could not say
+which — which matters directly for evaluation, because "did the extractor recognise the inherited
+managed-database encryption" and "did the mapper infer it while evaluating a requirement" are
+different results with different fixes.
+
+**Creating extraction-found controls at conversion keeps checkpoint 1 meaningful.** The alternative
+— the extractor notes controls in prose and the mapper creates the rows later — puts a class of
+architectural fact outside the baseline the reviewer approves. DEC-040 recomputes approved
+membership from the store, so a control created after checkpoint 1 would never be in an approved
+revision at all, and the reviewer would first see it inside a mapping.
+
+**The evidence rules are one rule from two ends, and both ends are named failure conditions.**
+Section 12 lists "unverified controls are marked implemented" as a failure of the mapping step;
+section 19 says a high proportion of `unverified` mappings "is the expected result of assessing
+ordinary architecture documentation" and "must not be treated as a defect". A schema requiring
+evidence everywhere would force every honest silence into a status that asserts something, which is
+the DEC-009 collapse. A schema requiring it nowhere would leave section 12's failure entirely to
+instruction. Requiring it for exactly the statuses that assert something is the only split that
+serves both.
+
+`unmet` cannot be reached by silence for a structural reason section 19 already gives: an
+`EvidenceReference` quotes real source text, so an absence has nothing to cite.
+
+Alternatives Considered:
+
+- Only the mapping step creates controls; extraction records them as context claims and the mapper
+  converts them
+- Only extraction creates controls; the mapper may reference but never propose
+- No `generated_by`, with provenance recovered from the `ExecutionRecord` that produced the object
+- `source_origin` instead of `generated_by`, matching the five context objects DEC-039 covers
+- Require evidence for every implementation status, and record undocumented controls as `unknown`
+
+Tradeoffs:
+
+- Two creating nodes means duplicate controls are possible: the extractor records a safeguard and
+  the mapper proposes the same one under a different name. `existing_control_ids` is the mechanism
+  that should prevent it, and nothing enforces that the mapper uses it. The Mapping Validation node
+  is where that check belongs.
+- `generated_by` and `created_at` widen section 18 beyond what the corpus originally specified.
+  Every field added to a data-model object is a field an agent might try to set, and both are
+  absent from `ControlProposal` for that reason.
+- The evidence rule is structural and says nothing about evidence *quality*. A control citing a
+  passage that does not actually describe it passes here; that is the Evidence Validation step's
+  question, and `validation_status: not_evaluated` at promotion is what records that it has not
+  been asked yet.
+- `source_origin` is not added, so a control does not record whether the underlying material was an
+  uploaded document or structured input the way DEC-039's five context objects do. `generated_by`
+  names the node, and the node's `ExecutionRecord` names what it consumed.
+
+Open Questions:
+
+- Should the extractor's control-recognition be a separate evaluation metric from the mapper's,
+  given they are now distinguishable?
+- When the mapper proposes a control the extractor already created, is that a duplicate to merge or
+  a refinement to apply? Section 12 says "new or refined", and refinement has no mechanism yet.

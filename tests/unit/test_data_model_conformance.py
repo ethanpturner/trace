@@ -51,6 +51,8 @@ from trace_ai.domain.asset import Asset
 from trace_ai.domain.base import DomainModel
 from trace_ai.domain.component import Component
 from trace_ai.domain.context_claim import ContextClaim
+from trace_ai.domain.control import Control
+from trace_ai.domain.control_mapping import ControlMapping
 from trace_ai.domain.data_flow import DataFlow
 from trace_ai.domain.enums import (
     ConfidenceLevel,
@@ -225,8 +227,8 @@ REGISTRY: dict[str, Registration] = {
     "15": Registration("TrustBoundary", Status.IMPLEMENTED, TrustBoundary),
     "16": Registration("Threat", Status.IMPLEMENTED, Threat),
     "17": Registration("Requirement", Status.IMPLEMENTED, Requirement),
-    "18": Registration("Control", Status.PLANNED),
-    "19": Registration("ControlMapping", Status.PLANNED),
+    "18": Registration("Control", Status.IMPLEMENTED, Control),
+    "19": Registration("ControlMapping", Status.IMPLEMENTED, ControlMapping),
     "20": Registration("EvidenceAssessment", Status.DEFERRED),
     "21": Registration("Finding", Status.PLANNED),
     "22": Registration("Question", Status.IMPLEMENTED, Question),
