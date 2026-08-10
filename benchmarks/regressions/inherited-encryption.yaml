@@ -1,0 +1,33 @@
+# Prevents: ignored inherited encryption -- the second failure evaluation-plan.md section 11
+# names. Defends DEC-009 and DEC-026; the intended treatment is forgeflow-scenario.md section
+# 14.2's: recognise the documented platform control, do not assert unencrypted storage. The
+# test additionally asserts the inherited control is *recognised* -- is_documented_inheritance
+# -- not merely that no finding was produced.
+regression: inherited-encryption
+prevents: an unencrypted-storage finding over a platform-encrypted managed database
+defends: DEC-009, DEC-026 (forgeflow-scenario.md section 14.2)
+correct_output: no_output
+requirement_id: req-DATA-001
+
+provider_component:
+  id: cmp-001
+  name: Managed PostgreSQL Platform
+  component_type: managed_database
+
+control:
+  id: ctl-001
+  name: Platform encryption at rest
+  description: The managed database platform encrypts storage at rest by default.
+  control_type: inherited
+  implementation_status: implemented
+
+mapping:
+  id: map-001
+  satisfaction_status: satisfied
+  applicability_reason: >
+    Sensitive data is stored in the managed database, and the platform's documented
+    encryption at rest is the control that satisfies the requirement.
+
+assessment:
+  validation_status: supported
+  rationale: The operations documentation states the platform encrypts at rest.

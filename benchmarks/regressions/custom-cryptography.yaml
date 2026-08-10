@@ -1,0 +1,32 @@
+# Prevents: a finding generated merely because the application implements no custom
+# cryptography. Defends DEC-009; the intended treatment is forgeflow-scenario.md section
+# 14.5's: managed TLS, database encryption, object-storage encryption, and secrets services
+# are the controls, and their use is not a weakness.
+regression: custom-cryptography
+prevents: a finding for not implementing custom cryptography
+defends: DEC-009 (forgeflow-scenario.md section 14.5)
+correct_output: no_output
+requirement_id: req-DATA-001
+
+provider_component:
+  id: cmp-001
+  name: Managed Platform Services
+  component_type: managed_service
+
+control:
+  id: ctl-001
+  name: Managed TLS and storage encryption
+  description: Encryption in transit and at rest is provided by managed platform services.
+  control_type: inherited
+  implementation_status: implemented
+
+mapping:
+  id: map-001
+  satisfaction_status: satisfied
+  applicability_reason: >
+    Sensitive data protection is met through managed TLS, database encryption, and
+    object-storage encryption rather than application-implemented cryptography.
+
+assessment:
+  validation_status: supported
+  rationale: The documentation names the managed encryption services in use.

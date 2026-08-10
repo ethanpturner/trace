@@ -1,0 +1,31 @@
+# Prevents: hallucinated missing MFA -- the third failure evaluation-plan.md section 11 names.
+# Defends DEC-009; the intended treatment is forgeflow-scenario.md section 14.3's: map MFA to
+# the external identity provider and do not require the application to implement its own.
+regression: missing-mfa
+prevents: a missing-MFA finding where MFA is governed by the external identity provider
+defends: DEC-009 (forgeflow-scenario.md section 14.3)
+correct_output: no_output
+requirement_id: req-AUTH-002
+
+provider_component:
+  id: cmp-001
+  name: GitHub
+  component_type: external_identity_provider
+
+control:
+  id: ctl-001
+  name: MFA under GitHub account and organization policy
+  description: Multi-factor authentication is governed by the identity provider's policy.
+  control_type: inherited
+  implementation_status: implemented
+
+mapping:
+  id: map-001
+  satisfaction_status: satisfied
+  applicability_reason: >
+    Customer MFA responsibility is established with the external identity provider, which is
+    what the requirement asks to be documented.
+
+assessment:
+  validation_status: supported
+  rationale: The security documentation places MFA with GitHub organization policy.
