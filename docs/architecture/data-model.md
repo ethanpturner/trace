@@ -1444,8 +1444,33 @@ Represents an explicit evaluation of whether evidence supports a claim, control,
 | missing_evidence | list[string] | No | Evidence still needed |
 | contradictions | list[string] | No | Contradictory evidence |
 | confidence | ConfidenceLevel | Yes | Confidence |
+| recommendation | Recommendation | Yes | Continue, revise, stop, downgrade to a question, or documentation-gap treatment (DEC-047) |
 | generated_by | string | Yes | Workflow node or reviewer |
 | created_at | datetime | Yes | Creation timestamp |
+
+## Subject-type values
+
+context_claim
+
+control
+
+control_mapping
+
+threat
+
+finding
+
+## Recommendation values
+
+continue
+
+revise
+
+stop
+
+downgrade_to_question
+
+documentation_gap
 
 # 21. Finding
 
@@ -2377,6 +2402,7 @@ Implement these first:
 21. WorkflowRun
 22. ExecutionRecord
 23. RequirementsCatalog
+24. EvidenceAssessment
 
 `SourceObservation` (section 10a) was added by DEC-021 after this list was written, and the list
 was not updated with it. It is not optional: DEC-021 makes contradictions and detected
@@ -2395,6 +2421,13 @@ every mapping call, and the requirement-matcher step needs a loader before eithe
 without a manifest object is a catalog with no integrity marker and no single place that says what
 version was used, so it sits last on this list rather than on the next one.
 
-Add Critique, EvidenceAssessment, PromptDefinition, and EvaluationResult once the main workflow begins operating.
+Add Critique, PromptDefinition, and EvaluationResult once the main workflow begins operating.
+
+`EvidenceAssessment` (section 20) was on that deferred list and arrives with the mapping step
+instead, which is the condition the list states. Two reasons make it earlier rather than
+optional: DEC-022 gave it `evidence_strengths` as the only home for `EvidenceStrength`, and
+DEC-013's `unmet` rule reads its `validation_status`, so the object is a dependency of a rule
+the mapping slice already applies. DEC-046 records that the half of that rule which reads this
+object waits for Finding Consolidation, which is only coherent if the object exists.
 
 The data model should serve the workflow. The workflow should not become complicated merely to exercise every possible object.
