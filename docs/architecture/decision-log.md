@@ -3577,3 +3577,44 @@ Open Questions:
 
 - Should overrides be counted as their own evaluation metric, and does that justify promoting the prefix convention to a field on `ReviewerDecision`?
 - When a revision run re-proposes a previously downgraded mapping, does the new mapping inherit the old downgrade record or start clean with `supersedes_id` carrying the history?
+
+## DEC-056: Benchmark matching is structural through the contract's fields, and a consolidation scores full credit per matched expectation
+
+Date: 2026-08-10
+
+Status: Accepted
+
+Decision:
+
+**An expected finding matches an approved finding when the finding cites the expected `requirement_id` and names an affected component whose name matches the expected `affected_component`.** The contract already fixes the fields (`matching.findings_match_on`); this decision fixes the mechanics: component matching goes through the run's own `Component` objects — identifier to name, compared case-insensitively after whitespace normalization — because generated identifiers are run-scoped (DEC-018) and names are what the truth set can carry. Title wording is never compared. `expected-findings.yaml` gains the `affected_component` field the contract's rule requires.
+
+**A consolidated finding scores full credit for every expected entry it matches.** DEC-029 enumerates FND-002 and FND-004 separately and states that one well-reasoned combined finding is defensible rather than wrong; `allow_consolidation: true` is the contract's word for it. This closes DEC-029's open question: no partial credit, no penalty fraction — a defensible consolidation scored at half would be a penalty wearing a measurement's name, and the metric it would depress is the false-negative rate, exactly the number the scenario exists to keep honest. The consolidation is *observable* instead: the evaluation records how many expected entries resolved onto fewer produced findings, so drift toward over-merging shows up as a count rather than as a hidden discount.
+
+**An expected documentation gap matches a produced gap through the requirement it bears on.** `expected-documentation-gaps.yaml` gains `requirement_id`, and a produced gap reaches a requirement through its related mapping (consolidation writes `related_object_ids` as threat and mapping). Gap wording is never compared, for the same reason as titles.
+
+**`EvaluationResult` is promoted from section 40's deferred list**, which this issue's metrics make unavoidable: a metric with no persisted object is a print statement. Section 40 records the promotion; `PromptDefinition` stays deferred.
+
+Why:
+
+**Structural matching is the only kind that cannot be gamed by prose.** A matcher over titles rewards the run that words its findings like the truth set, which is a copying test, not a correctness test. Requirement and component are the two fields DEC-029's analysis actually used to decide what was distinct, and both survive rewording.
+
+**Full credit follows from what the truth set records.** The finer decomposition exists because a matcher can collapse two entries onto one finding and cannot split one entry across two (DEC-029's own words). If collapsing is an accepted mechanic of the matcher, penalising the run for triggering it is incoherent — the score would depend on an authoring choice the run cannot see.
+
+Alternatives Considered:
+
+- Match findings on normalized title overlap, DEC-043-style
+- Partial credit (half per expected entry) for a consolidated match
+- A separate `consolidation_penalty` metric subtracted from coverage
+- Matching gaps on subject keywords rather than through a requirement
+- Leaving `EvaluationResult` deferred and writing metrics only to a JSON file
+
+Tradeoffs:
+
+- Component names in the truth set must stay aligned with `expected-context.yaml`'s names; a rename there silently breaks matching here, and only a benchmark run notices.
+- Full credit means a run that merged everything into one mega-finding could still score zero false negatives if the structure matched; the volume principle and the reviewer are the backstops, and the recorded consolidation count is the tell.
+- Requirement-mediated gap matching cannot match a gap raised outside any mapping; such a gap scores as unexpected even when reasonable. The precision metric therefore reads best alongside the reviewer notes, not alone.
+
+Open Questions:
+
+- Should the consolidation count become a named metric with a target, or stay metadata on the false-negative computation?
+- When scenario two arrives, does component-name matching survive a scenario whose truth set names components differently from its own context file?

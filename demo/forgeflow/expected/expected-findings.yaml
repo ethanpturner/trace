@@ -35,6 +35,7 @@ findings:
     subject: AI-generated pull-request comments are published without adequate review
     severity_guidance: medium-or-high
     requirement_id: req-AI-002
+    affected_component: GitHub Comment Service
     arises_from: scenario 13.2
     evidence_establishes:
       - Repository content supplied to the model is untrusted third-party material.
@@ -54,6 +55,7 @@ findings:
     subject: repository content retention exceeds the documented temporary-processing need
     severity_guidance: medium
     requirement_id: req-DATA-002
+    affected_component: Managed Object Storage
     arises_from: scenario 13.3
     evidence_establishes:
       - Analysis artifacts are retained in object storage for 30 days.
@@ -72,6 +74,7 @@ findings:
     subject: model input handling is insufficiently resistant to repository prompt injection
     severity_guidance: medium
     requirement_id: req-AI-001
+    affected_component: Analysis Worker
     arises_from: scenario 13.5
     evidence_establishes:
       - Repository content is placed into the model prompt as marked input sections.

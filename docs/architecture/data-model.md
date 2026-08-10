@@ -2463,6 +2463,7 @@ Implement these first:
 24. EvidenceAssessment
 25. Critique
 26. FindingMergeRecord
+27. EvaluationResult
 
 `SourceObservation` (section 10a) was added by DEC-021 after this list was written, and the list
 was not updated with it. It is not optional: DEC-021 makes contradictions and detected
@@ -2481,7 +2482,13 @@ every mapping call, and the requirement-matcher step needs a loader before eithe
 without a manifest object is a catalog with no integrity marker and no single place that says what
 version was used, so it sits last on this list rather than on the next one.
 
-Add PromptDefinition and EvaluationResult once the main workflow begins operating.
+Add PromptDefinition once the main workflow begins operating.
+
+`EvaluationResult` (section 28) was on that deferred list and is promoted by DEC-056: the M4
+finding-quality metrics persist their results as rows, because `evaluation-plan.md` section 3
+requires evaluations to be comparable across versions and comparability is a property of stored
+rows rather than console output. It sits last on the list above because it references the
+`WorkflowRun` it evaluates and nothing references it.
 
 `Critique` (section 24) was on that deferred list too, and arrives for the same reason stated
 differently: the critic is the fifth of section 36's six agents and roadmap Stage 4 sets a
