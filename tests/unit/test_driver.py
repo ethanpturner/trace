@@ -356,6 +356,18 @@ def test_a_full_assessment_runs_offline_pausing_at_both_checkpoints(
         metrics = handle.artifacts.area("evaluation") / f"metrics-{run_id}.json"
         assert metrics.exists()
 
+        # The whole chain verifies — and a tampered report is caught by its manifest pin.
+        from trace_ai.services.verification import verify_assessment
+
+        verification = verify_assessment(handle)
+        assert verification.ok
+        assert verification.manifest_checked
+
+        report.write_text(report.read_text(encoding="utf-8") + "\ntampered", encoding="utf-8")
+        drifted = verify_assessment(handle)
+        assert not drifted.ok
+        assert any(d.subject == "report.content_hash" for d in drifted.manifest_drift)
+
 
 def test_the_assessment_lifecycle_moves_with_the_run(prepared: tuple[Path, str]) -> None:
     """DEC-031: `pending_review` while a person is deciding, `draft` while the run works.

@@ -374,6 +374,7 @@ def test_the_command_surface_is_the_one_dec_032_confirms() -> None:
         "resume",
         "findings",
         "report",
+        "verify",
     }
     assert _subcommands("source") == {"add", "list"}
     assert _subcommands("evidence") == {"list", "show", "verify"}
@@ -1284,6 +1285,11 @@ def test_the_pipeline_runs_end_to_end_from_the_command_line(
     assert invoke(data_root, "report", "show", identifier, "--manifest") == 0
     manifest = capsys.readouterr().out
     assert '"manifest_version"' in manifest
+
+    # The whole chain verifies from the command line, in one line of output.
+    assert invoke(data_root, "verify", identifier) == 0
+    verified = capsys.readouterr().out
+    assert "1 manifest" in verified
 
 
 def test_report_show_is_refused_while_no_report_exists(
