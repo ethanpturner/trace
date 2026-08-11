@@ -71,7 +71,10 @@ STRIDE_CATEGORIES: Final[frozenset[str]] = frozenset(
 # applicable", and ForgeFlow's expected threats include prompt injection, over-disclosure to a model
 # provider, and unreviewed model output being published. The names follow OWASP Top 10 for LLM
 # Applications 2025, which `requirements/README.md` already adopts as a provenance source:
-# LLM01, LLM02, LLM05, LLM10.
+# LLM01:2025, LLM02:2025, LLM05:2025, LLM10:2025. The year matters: the 2026 release renumbered two
+# of the four -- Improper Output Handling is LLM05:2025 but LLM10:2026, and Unbounded Consumption is
+# LLM10:2025 but LLM06:2026 -- so a bare "LLM05" or "LLM10" names different risks in adjacent
+# releases. The snake_case terms themselves are stable across both.
 AI_THREAT_CATEGORIES: Final[frozenset[str]] = frozenset(
     {
         "prompt_injection",
