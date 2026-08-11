@@ -409,6 +409,8 @@ Controls may be:
 - Satisfied through an alternative mechanism
 - Known to the organization but not repeated in every architecture artifact
 
+**Corroborated 2026-08-10** (issue #226, survey item A6). Three independent sources in the OWASP corpus reached the same position after this decision was recorded. ASVS 5.0 made "the documentation exists and defines X" a first-class requirement class distinct from "the control exists" — its guidance for users of 4.0 (`5.0/en/0x05-For-Users-Of-4.0.md`) describes the new `X.1 Documentation` sections as exactly that split. The GenAI LLM Top 10 2026 preface (`2026/final/LLM00_Preface.md`) argues from a 7,714-incident corpus that low signal does not indicate low risk — its "defense effect" analysis is this decision's reasoning applied to incident data rather than to documents. And TM-BOM makes `assumed` a first-class control state distinct from `active`: a control nobody has evidenced is recorded as assumed, not as absent, which is this decision expressed as a schema.
+
 Alternatives Considered:
 
 - Generate a finding whenever a required control is undocumented
