@@ -54,6 +54,15 @@ class Scenario:
         return self.path / "recorded"
 
     @property
+    def has_recording(self) -> bool:
+        """Whether the scenario carries response recordings the harness can replay.
+
+        A bare `recorded/` directory is not a recording: it must hold response JSON files. The
+        harness refuses a scenario without one by name, and `--all` reports it skipped.
+        """
+        return self.recorded_dir.is_dir() and any(self.recorded_dir.glob("*.json"))
+
+    @property
     def has_outcome_truth(self) -> bool:
         """Whether the outcome-side truth files the benchmark metrics read are authored."""
         return (self.expected_dir / "expected-findings.yaml").is_file() and (

@@ -1,0 +1,43 @@
+# Invoice Agent expected documentation gaps
+#
+# Benchmark truth for what a correct assessment records as undeterminable (DEC-009). Layout is
+# fixed by DEC-027; the source is agent-overview.md and nothing else. Nothing in this directory
+# is supplied to Trace during an assessment.
+
+benchmark_version: "1.0"
+scenario: invoice-agent
+catalog_version: "0.1"
+source: agent-overview.md
+
+documentation_gaps:
+  - key: GAP-IA-01
+    requirement_id: req-SECRET-001
+    subject: how the provider and observability credentials are held is not described
+    arises_from: agent-overview.md section 5
+    missing:
+      - Where the model-provider credential is stored
+      - Where the observability credential is stored
+      - Whether either is scoped or rotated
+    supported_by:
+      - agent-overview.md
+    paired_question: Q-IA-01
+    notes: >
+      Section 5 states the agent runs with both credentials and says nothing about their
+      custody. That the credentials exist is documented; how they are held cannot be
+      determined, and concluding they are held insecurely would be the DEC-009 failure.
+
+  - key: GAP-IA-02
+    requirement_id: req-AUTHZ-001
+    subject: how submitters are established upstream of the workflow is not described
+    arises_from: agent-overview.md section 4
+    missing:
+      - Whether the submission workflow authenticates users before the agent sees a file
+      - Whether the submitter field is bound to that identity anywhere upstream
+    supported_by:
+      - agent-overview.md
+    paired_question: Q-IA-02
+    notes: >
+      Section 4 states the submitter field is a value in the uploaded document and that
+      submitters are not otherwise authenticated *to the workflow*. Whether an upstream system
+      authenticates them is not established either way; the paired question is what turns this
+      into an answerable item rather than an assumed weakness.

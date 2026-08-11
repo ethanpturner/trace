@@ -48,7 +48,7 @@ def test_an_unknown_slug_is_refused_with_the_known_list() -> None:
 
 def test_a_scenario_without_a_recording_is_refused_by_name(tmp_path: Path) -> None:
     """Silent skipping is the failure mode; the refusal names the scenario and the reason."""
-    with pytest.raises(HarnessError, match=r"husky-ai.*no recorded"):
+    with pytest.raises(HarnessError, match=r"husky-ai.*no recording"):
         run_scenario("husky-ai", data_root=tmp_path, label="test")
 
 
@@ -99,6 +99,31 @@ def test_forgeflow_replays_through_the_harness_offline(
     assert classified > 0, "every expected finding is classified, not merely counted"
     for prints in items["fingerprints"].values():
         assert all(fingerprint.startswith("sha256:") for fingerprint in prints)
+
+
+@pytest.mark.parametrize(
+    ("slug", "expected_key", "expected_requirement"),
+    [
+        ("unsigned-webhooks", "FND-UW-01", "req-WEBHOOK-001"),
+        ("contradictory-docs", "FND-CD-01", "req-DATA-002"),
+    ],
+)
+def test_a_second_scenario_replays_and_scores_its_finding(
+    tmp_path: Path, slug: str, expected_key: str, expected_requirement: str
+) -> None:
+    """The multi-scenario harness: two authored #268 scenarios replay offline and their one
+    finding matches its truth entry with nothing spurious."""
+    outcome = run_scenario(
+        slug, data_root=tmp_path / "work", label="test", results_root=tmp_path / "results"
+    )
+    assert outcome.completed
+    assert outcome.feed_path is not None
+    feed = json.loads(outcome.feed_path.read_text(encoding="utf-8"))
+    findings = feed["items"]["findings"]
+    assert list(findings["matched"]) == [expected_key]
+    assert findings["missed"] == []
+    assert findings["spurious"] == []
+    assert feed["metrics"]["false_negative_rate"]["value"] == 0.0
 
 
 def test_an_ablated_run_is_marked_from_birth_and_substitutes_the_nodes(

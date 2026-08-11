@@ -1,0 +1,16 @@
+# Managed DB Service expected findings
+#
+# This scenario expects no findings. Encryption at rest and in transit is inherited from the
+# managed database platform and documented as such, so req-DATA-001 is satisfied by an
+# inherited control rather than unmet. The finding a generic review most often invents here —
+# "no encryption detail" for a managed service that encrypts by default — is a false positive
+# named in the catalog. The graded content is expected-rejections.yaml.
+#
+# Nothing in this directory is supplied to Trace during an assessment.
+
+benchmark_version: "1.0"
+scenario: managed-db-service
+catalog_version: "0.1"
+source: system-overview.md
+
+findings: []

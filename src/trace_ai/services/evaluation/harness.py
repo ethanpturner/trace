@@ -145,10 +145,10 @@ def run_scenario(
     stated, never inferred.
     """
     entry = load_scenario(slug, registry_path=registry_path)
-    if not entry.recorded_dir.is_dir():
+    if not entry.has_recording:
         raise HarnessError(
-            f"scenario {slug!r} has no recorded/ directory; the harness replays recordings "
-            f"(DEC-073) and cannot run a scenario that has none"
+            f"scenario {slug!r} has no recording; the harness replays recordings (DEC-073) and "
+            f"cannot run a scenario whose recorded/ directory holds no response files"
         )
 
     recordings = _recordings_for(entry, ablations)
@@ -248,6 +248,11 @@ def _apply_context_decisions(
     handle = service.handle(assessment_id)
     decisions_path = entry.recorded_dir / "decisions-context.yaml"
     document = read_review_file(decisions_path.read_text(encoding="utf-8"))
+    # The recorded file carries the authoring-time assessment id; rebind it to this run's.
+    # A replay assigns a fresh identifier (asm-002 when a prior scenario took asm-001 in a shared
+    # store), and the review-file guard exists to stop one assessment's decisions reaching
+    # another's — which is not what a rebind to the current run is.
+    document["assessment_id"] = assessment_id
     apply_review_file(handle, document, reviewer_id=HARNESS_REVIEWER)
     validation = validate_context(
         current_system_context(handle),
@@ -269,20 +274,25 @@ def _apply_finding_decisions(
     recorded = yaml.safe_load(
         (entry.recorded_dir / "decisions-findings.yaml").read_text(encoding="utf-8")
     )
-    findings = {finding.id: finding for finding in handle.objects.list(Finding)}
-    for decided in recorded.get("findings", []):
-        finding = findings.get(str(decided["id"]))
-        if finding is None:
-            continue
+    # Findings are matched by the recording's order rather than by identifier: a shared store
+    # gives this run's findings different identifiers than the recording captured, and the
+    # decisions apply to the candidate set positionally.
+    candidates = sorted(
+        (finding for finding in handle.objects.list(Finding) if finding.duplicate_of_id is None),
+        key=lambda finding: finding.id,
+    )
+    recorded_findings = recorded.get("findings", [])
+    for decided, candidate in zip(recorded_findings, candidates, strict=False):
+        finding = candidate
+        _ = decided.get("id")  # recorded for provenance; matching is positional
         if "severity" in decided:
             finding, _ = change_severity(
                 handle, finding, Severity(decided["severity"]), reviewer_id=HARNESS_REVIEWER
             )
         if decided.get("decision") == ReviewDisposition.APPROVE.value:
-            finding, _ = approve_finding(
+            approve_finding(
                 handle, finding, reviewer_id=HARNESS_REVIEWER, rationale=decided.get("rationale")
             )
-        findings[finding.id] = finding
     conclude_finding_review(service, assessment_id)
 
 

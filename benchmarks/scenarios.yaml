@@ -51,8 +51,47 @@ scenarios:
     path: benchmarks/invoice-agent
     # GenAI Agent Security Initiative insecure invoice-agent sample (license unasserted;
     # everything authored originally, source cited by URL). The first scenario whose
-    # subject is itself an LLM agent.
-    status: expected-threats-authored
+    # subject is itself an LLM agent. Outcome-side truth (findings, gaps, questions,
+    # rejections) authored in #268; recording pending.
+    status: expected-outputs-authored
 
-# Roadmap Stage 5 calls for 8 to 12 scenarios. The remainder are unwritten; each will be
-# added here as benchmarks/<slug>/ with the same input/ and expected/ layout.
+  # Scenarios five through eight are original small architectures authored for this project
+  # (issue #268, design-principles section 19), each built to exercise one catalog mechanism
+  # cleanly from evaluation-plan.md section 6's list. Every one carries a full outcome-side
+  # truth set (findings, gaps, questions, rejections) the harness scores. The two
+  # finding-bearing scenarios also carry a recording and replay offline (status: authored);
+  # the two zero-finding scenarios exercise the inherited-control path and carry their truth
+  # sets while their recordings are authored (status: expected-outputs-authored), which the
+  # harness reports as skipped rather than running.
+
+  - slug: unsigned-webhooks
+    name: Deploy Notifier
+    path: benchmarks/unsigned-webhooks
+    # A documented-absent webhook signature check: the finding-versus-gap boundary from the
+    # documented-negative side. One finding, one gap.
+    status: authored
+
+  - slug: contradictory-docs
+    name: Export Service
+    path: benchmarks/contradictory-docs
+    # Two supplied documents that disagree about retention: contradiction handling. One
+    # finding, one observation, one gap.
+    status: authored
+
+  - slug: oidc-portal
+    name: Support Portal
+    path: benchmarks/oidc-portal
+    # Delegated OpenID Connect authentication: the local-password-policy false-positive class.
+    # Expects zero findings; recording pending the inherited-control replay path.
+    status: expected-outputs-authored
+
+  - slug: managed-db-service
+    name: Metrics Store
+    path: benchmarks/managed-db-service
+    # Inherited managed-platform encryption: the encryption-detail false-positive class.
+    # Expects zero findings; recording pending the inherited-control replay path.
+    status: expected-outputs-authored
+
+# Roadmap Stage 5 calls for 8 to 12 scenarios. The three seeded scenarios above
+# (husky-ai, crypto-wallet, invoice-agent) reach the full outcome-side truth as recordings
+# are authored for them; further scenarios are added here with the same layout.
