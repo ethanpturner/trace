@@ -87,7 +87,7 @@ Sources used in version 0.1:
 |---|---|
 | OWASP ASVS 5.0.0 | Primary. Version 5.0 gives every domain chapter an explicit `X.1 Documentation` section, so those requirements are assessable from design documentation rather than from a running application. |
 | NIST SP 800-53 Release 5.2.0 | Secondary. Covers ground ASVS leaves out of scope: segmentation, availability, retention, external system services. Public domain. |
-| OWASP Top 10 for LLM Applications 2025 | The AI-provider surface, which neither of the above addresses. |
+| OWASP Top 10 for LLM Applications 2025 | The AI-provider surface, which neither of the above addresses. **An archived release**: the 2026 list was published 2026-08-04 under the [GenAI Security Project organisation](https://github.com/GenAI-Security-Project/GenAI-LLM-Top10), and the original OWASP repository is now a legacy archive. The 2026 release renumbers two of the categories this catalog cites — Improper Output Handling moves LLM05:2025 to LLM10:2026, Unbounded Consumption moves LLM10:2025 to LLM06:2026 — so the version-pinned 2025 citations below remain correct provenance, and a bare `LLMxx` with no year is ambiguous. Whether catalog 0.2 adopts the 2026 identifiers is a separate decision. |
 
 Requirement text in this catalog is **written originally**. ASVS is licensed CC BY-SA 4.0, so
 reproducing its wording would place this catalog under a share-alike obligation; citing identifiers
