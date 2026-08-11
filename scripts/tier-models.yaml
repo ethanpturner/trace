@@ -1,0 +1,9 @@
+# Tier label -> the model that executes "proceed to issue #N" work at that tier.
+# Data, not code: retuning the routing is an edit here, reviewed like any other change.
+# The classifier that *assigns* tiers is separate (triage.py, Haiku over the API) and is
+# deliberately not listed -- classification never draws on a Claude Code subscription.
+tiers:
+  "model:0-mechanical": claude-haiku-4-5
+  "model:1-routine": claude-haiku-4-5
+  "model:2-standard": claude-sonnet-5
+  "model:3-judgment": claude-opus-5
