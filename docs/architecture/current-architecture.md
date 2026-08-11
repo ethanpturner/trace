@@ -473,6 +473,11 @@ The reviewer can:
 
 This review creates an approved context baseline for downstream analysis.
 
+An accepted assumption is not settled forever: every claim with status `assumed` is a standing
+revisit subject, re-presented at the next revision's checkpoint 1 under the `revisit_due`
+routing reason (DEC-061, DEC-062). Assumptions carry no review-by date; revisit is episodic,
+triggered by the next run or revision, because nothing in this system watches a clock.
+
 The threat-analysis phase should primarily reason from the approved context baseline rather than repeatedly reinterpreting all source documents independently.
 
 ## 5.7 Threat Analysis
@@ -605,6 +610,7 @@ The reviewer can:
 - Reject a finding
 - Edit a finding
 - Assign or change severity
+- Assign a risk treatment
 - Request additional analysis
 - Convert a finding to a question
 - Convert a finding to a documentation gap
@@ -613,6 +619,12 @@ The reviewer can:
 **Assigning severity is not optional.** Findings arrive carrying `unassigned`, and an
 approval whose finding still carries it is rejected by validation (DEC-030). The reviewer
 holds the business context that severity depends on; no earlier node does.
+
+**Assigning a treatment is optional.** Findings arrive with `risk_treatment: undecided`, the
+reviewer may choose `mitigate`, `accept`, `transfer`, or `avoid`, and `undecided` may survive
+approval — treatment is frequently the system owner's decision to make after reading the report,
+and a gate would manufacture defaults (DEC-060). The one hard rule: `accept` requires a
+`treatment_rationale`, the residual-risk statement, and an approval without one is refused.
 
 This list names actions a reviewer takes. `ReviewDisposition` in `data-model.md` section 4.6
 names dispositions the system records, and **the two lists do not correspond one to one**. A
@@ -931,6 +943,12 @@ removing it, which DEC-012 requires.
 
 The review package is derived from the persisted run rather than stored with it, so the mechanism
 does not presuppose which interface renders it.
+
+Each subject in the package may carry typed routing reasons — `low_confidence`, `contradicted`,
+`no_evidence`, `injection_flag`, `revisit_due` — derived at package-build time as deterministic
+functions of persisted state, never stored (DEC-062). Reasons triage the reviewer's attention and
+never filter: a subject with no reasons is routine, not exempt, and every subject still requires
+a `ReviewerDecision` before the checkpoint advances.
 
 ### How a checkpoint is passed, and what rejection does
 
