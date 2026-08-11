@@ -743,6 +743,10 @@ Include:
 
 ### Portfolio narrative
 
+The measured ablation narrative is written: [ablation-narrative.md](ablation-narrative.md) reads the
+components back from the committed evaluation artifacts, weaves in the baseline and adversarial
+results, and tells the DEC-016 framework story once, for the interview package.
+
 Explain:
 
 - The problem

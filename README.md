@@ -420,9 +420,10 @@ and measures itself offline. Stage 5's demonstration half (M9), the demo-hardeni
   committed recording, scores it against the authored truth set, runs the DEC-074 baselines
   through the same seam, applies the DEC-012 ablations with the run marked non-authoritative,
   and writes a results feed under `benchmarks/results/`. `scripts/build_scorecard.py` renders
-  the committed per-scenario [scorecard](docs/eval/scorecard.html) and
-  `scripts/build_comparison.py` the per-tool [comparison table](docs/eval/comparison.md); CI fails
-  if either drifts from the recorded runs.
+  the committed per-scenario [scorecard](docs/eval/scorecard.html), `scripts/build_comparison.py`
+  the per-tool [comparison table](docs/eval/comparison.md), and `scripts/build_ablation.py` the
+  [ablation table](docs/eval/ablation.md); CI fails if any of the three drifts from the recorded
+  runs.
 - **The adversarial condition** — DEC-075's poisoned-document variant with all five payload
   classes, run as an ordinary scenario condition, with the two-axis attack metrics (detection,
   and injected-instruction compliance with a target of zero) reported per payload class.
@@ -451,9 +452,10 @@ and measures itself offline. Stage 5's demonstration half (M9), the demo-hardeni
   Anthropic adapter has run against a provider only in an opt-in integration test; cost,
   runtime, and run-to-run stability (DEC-077) are unmeasured, and every scorecard cost reads
   zero.
-- **The portfolio narrative.** The read-only local interface, the finding-lineage view, the demo
-  script, and the recovery plan now exist (milestone M9); the ablation write-up that reads them
-  back as the Stage 6 portfolio story is the remaining piece.
+- **The public release packaging.** Milestone M9's demonstration surface is built — the read-only
+  view, the finding-lineage view, the demo script and its recovery plan, and the measured ablation
+  narrative. What remains for Stage 6 is the public-facing packaging around it: a short video and
+  the release presentation.
 - **The recorded decisions of the M0 wave.** DEC-057 through DEC-072 — risk treatment, episodic
   revisit, routing reasons, the coverage baseline, the precedent feed, catalog-gap candidates,
   fingerprints, cache accounting, context extensions, profile overlays, parsers, the coverage
@@ -738,6 +740,7 @@ version 0.1.
 | [Design Principles](docs/product/design-principles.md) | The principles in full, with rationale |
 | [Roadmap](docs/product/roadmap.md) | Seven-stage sequencing and stop conditions |
 | [Demo Script](docs/product/demo-script.md) | The ten-beat offline walkthrough and its recovery plan |
+| [Ablation Narrative](docs/product/ablation-narrative.md) | What each removed component changes, measured, with the framework story |
 | [Future Features](docs/product/future-features.md) | Deferred ideas and what would promote them |
 | [Project Scope](docs/architecture/project-scope.md) | MVP boundaries, non-goals, constraints |
 | [Current Architecture](docs/architecture/current-architecture.md) | Pipeline, components, proposed technology |
