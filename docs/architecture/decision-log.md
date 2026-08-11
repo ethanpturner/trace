@@ -4584,3 +4584,201 @@ Open Questions:
 
 - When the measurement runs, is the right comparison per-agent model ablation against the
   uniform baseline, or a small set of curated mixed profiles?
+
+## DEC-070: Machine-readable artifacts may be parsed deterministically into documented claims; parser output enters the same proposal path, and compose manifests come first
+
+Date: 2026-08-10
+
+Status: Accepted
+
+Decision:
+
+**The capability is adopted, post-MVP.** A deterministic parser may derive context claims from a
+machine-readable artifact — a container-compose manifest, an OpenAPI description, an IaC plan —
+each claim carrying a verifiable excerpt hash into the artifact, exactly as document-cited
+evidence does. A claim derived mechanically is *documented* evidence: the artifact states the
+port, the volume, the dependency, and the excerpt proves it. This shrinks the DocumentationGap
+surface at zero model cost, which is DEC-009 served directly.
+
+**Parser output enters the pipeline as proposals, not as authority.** Parsed objects go through
+the same conversion, the same Context Validation, and the same checkpoint 1 as agent-extracted
+ones; determinism earns no bypass, because a parser can be wrong about meaning while right about
+syntax (a compose port exposed to a host network is not thereby internet-accessible). The
+Context Extraction agent receives parser-derived claims as existing context so it extends rather
+than re-derives — the division of labor: parsers own what the artifact states, the agent owns
+what the documents mean.
+
+**Provenance rides the existing vocabulary.** Parser-derived objects carry
+`source_origin: structured_input`, whose meaning section 4.4 widens to "parsed
+deterministically from a machine-readable source"; `generated_by` names the parser. No new
+`SourceOrigin` value — the distinction that matters, mechanical versus model-extracted, is
+exactly the one `structured_input` already draws against `uploaded_document`.
+
+**The untrusted-source rules apply unchanged.** A compose file is attacker-authorable text; its
+excerpts live inside the fence like every other excerpt, and nothing a parser reads becomes an
+instruction. Parsers are the one place this is easy to forget, because their input looks like
+configuration rather than prose.
+
+**Priority order: compose manifests, then OpenAPI, then IaC.** Compose is OdTM's proven ground
+and yields the topology objects (components, flows, ports) with the least ambiguity. OpenAPI
+yields entry points — feeding `entry_point_types` (DEC-068) — and authentication declarations.
+IaC is the largest surface with the hardest semantics and waits. Cross-claim consistency checks
+(a flow naming HTTP implies its endpoints speak HTTP) accrue to Context Validation as warn-only
+observations, the DEC-063 posture.
+
+Why:
+
+**The pipeline's scarcest resource is verifiable ground, and machine-readable artifacts are
+made of it.** Every claim a parser derives arrives with evidence that re-verifies forever, at
+no model cost, in exactly the format the evidence resolver already checks. The alternative is
+a model reading the same artifact and paraphrasing what a parser could quote.
+
+Alternatives Considered:
+
+- Parser output bypassing checkpoint 1 on the grounds that it is deterministic
+- A new `SourceOrigin` value for parser-derived objects
+- Letting the extraction agent alone read machine-readable artifacts, unassisted
+- OpenAPI first, on the strength of the DEC-068 entry-point synergy
+
+Tradeoffs:
+
+- Two producers of context objects means duplicate-shaped claims when the agent re-derives
+  what a parser stated; feeding parser claims into the agent's package mitigates, and the
+  validation node's duplicate detection is the backstop.
+- A parser is a maintenance surface tracking a moving format; dormant-project history (OdTM
+  itself) shows these rot quietly. Each parser needs its own fixture corpus.
+- `structured_input` now covers both authored structured input and parsed artifacts; anyone
+  needing the finer distinction reads `generated_by`, which is one hop less obvious.
+
+Open Questions:
+
+- Does the roadmap give parsers their own stage, or do they ride the first post-MVP scenario
+  that supplies machine-readable input?
+
+## DEC-071: Every source document lands in exactly one coverage bucket, rendered in the report's methodology section
+
+Date: 2026-08-10
+
+Status: Accepted
+
+Decision:
+
+**The report renders a per-source coverage ledger, and section 14 (Methodology) owns it.** No
+new section; the ledger is deterministic content in an existing rendered section, so the
+sixteen-section contract (DEC-035) is untouched. Every source document supplied to the
+assessment appears in exactly one bucket, each entry with its stored justification:
+
+- `reviewed` — ingested, and its evidence was available to every stage
+- `reviewed_with_exclusions` — reviewed, but the evidence budget excluded named excerpts; the
+  ledger names them, the fence rule's naming obligation carried through to the reader
+- `could_not_process` — supplied but not ingestable (format, corruption), with the error class
+- `excluded_by_rule` — deliberately out of scope, with the rule stated
+
+**The ledger is derived at render time from persisted state.** Ingestion already records what
+could not process; package assembly already names budget exclusions; scope rules are
+configuration. The implementing change fixes the carriers; the decision fixes that every
+disposition must be persisted somewhere derivable, because a ledger with a memory hole is worse
+than none.
+
+**The limitations section may interpret the ledger and never restates it.** Section 16 is agent
+prose; the ledger is rendered fact. The Report Generation agent receives the ledger as input so
+its limitations prose can bound blind spots honestly, and DEC-035's no-rewriting rule keeps the
+authoritative table the rendered one.
+
+Why:
+
+**A reader cannot weigh conclusions without knowing what was never read.** lets-threat-model's
+ledger is the survey's most honest mechanism because it converts the invisible failure — a
+document silently dropped — into a visible row. Trace already does the hard half (naming budget
+exclusions at package-assembly time, DEC-025's fence rule); this decision is where that
+information stops dying inside the run and reaches the person the report is for.
+
+**Methodology is the right owner.** The ledger answers "what did the analysis actually
+consume," which is a methodology fact. The evidence appendix describes what *was* cited;
+limitations interprets; neither states coverage.
+
+Alternatives Considered:
+
+- A seventeenth section owning coverage, amending DEC-035
+- Rendering the ledger in section 15 (Evidence appendix)
+- Limitations-only: the agent describes coverage in prose from run data
+- Per-excerpt rather than per-document granularity throughout
+
+Tradeoffs:
+
+- Exactly-one-bucket forces a call on partially processed documents; `reviewed_with_exclusions`
+  absorbs the budget case, but a document half-parsed by a failing converter still needs one
+  honest bucket, and `could_not_process` with a partial-evidence note is the least-bad answer.
+- The ledger's completeness depends on every exclusion path persisting its reason; a new
+  exclusion path added without a recorded justification silently produces an unlisted document.
+  The renderer should refuse to render a ledger that does not account for every
+  `SourceDocument` — a loud failure over a quiet omission.
+- More rendered content in section 14 lengthens every report, including clean ones.
+
+Open Questions:
+
+- Should the JSON manifest beside the report carry the ledger too, for machine consumers ahead
+  of the export formats (DEC-072)?
+
+## DEC-072: Interop exports are a post-MVP serializer family, not report formats — TM-BOM first, SARIF second, Mermaid third, CycloneDX deferred
+
+Date: 2026-08-10
+
+Status: Accepted
+
+Decision:
+
+**Exports are deterministic serializers over approved objects, and they are not reports.**
+DEC-035's "Markdown is the only MVP output format" governs the *report*; an export is a
+different artifact family — no prose, no model call, approved objects only, written to the
+assessment's `outputs/` beside the same version-pin manifest discipline. The distinction is
+recorded so the report contract and the export family never blur.
+
+**The family and its order:**
+
+1. **TM-BOM** — the OWASP Threat Model Library schema, a near-superset of Trace's approved
+   context with first-class assumptions, and Threat Dragon's declared future primary format.
+   Approved context, threats, and findings serialize; Trace-specific fields ride the schema's
+   namespaced extensions block. This is the ecosystem door: diagramming and GRC tooling reads
+   it with no Trace UI built.
+2. **SARIF 2.1.0** — approved findings as code-scanning alerts. Two hard rules from the trap
+   lets-threat-model demonstrated: only *approved* findings serialize, and the only severity
+   ever written is the reviewer-assigned one — a model-derived rating rendered by GitHub as
+   authority is the exact failure DEC-030 exists to prevent, exported.
+3. **Mermaid DFD** — rendered deterministically from approved `Component` and `DataFlow`
+   objects, never model-drawn. A standalone artifact in `outputs/`; it does **not** embed in
+   the MVP report, so the sixteen-section contract and `templates/report-v1.md` stay untouched.
+4. **CycloneDX for the catalog** — same family, no demonstrated consumer; deferred
+   indefinitely rather than ordered.
+
+**All post-MVP**, sequenced after assembly (M6); nothing here enters a current milestone.
+
+Why:
+
+**Ordering by who consumes, not by ease.** TM-BOM has a named consumer ecosystem and carries
+the most of Trace's structure; SARIF has the single highest-adoption surface (a repository's
+security tab) and the sharpest misuse trap, which is why its rules are fixed at decision time;
+the DFD is a rendering convenience. Deciding the order now prevents the easiest one (Mermaid)
+from shipping first because it is easiest.
+
+Alternatives Considered:
+
+- Treating exports as report formats and amending DEC-035's format list
+- SARIF first, for the adoption surface
+- Embedding the Mermaid DFD in the report's architecture section
+- Committing to all four with milestones now
+
+Tradeoffs:
+
+- TM-BOM is itself pre-1.0; serializing to a moving schema means tracking it, and the
+  extensions block is the hedge — Trace-specific content survives schema drift there.
+- SARIF's consumers will display findings next to static-analysis results with numeric
+  confidence; Trace's reviewer-severity-only rule will read as missing data in that UI, which
+  is correct and will still generate questions.
+- A deferred CycloneDX row is a standing invitation to implement it anyway; the deferral names
+  the missing prerequisite (a demonstrated consumer) so the invitation has a test.
+
+Open Questions:
+
+- Does the TM-BOM serializer round-trip — can Trace *read* a TM-BOM file as structured input
+  (DEC-070's family) — or is export one-way?

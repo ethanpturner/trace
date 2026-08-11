@@ -11,3 +11,6 @@
 {"issue": 238, "tier": 3, "model": "claude-fable-5", "classified_by": "hard-rule", "outcome": "clean", "escalated_to": null, "date": "2026-08-10", "note": "DEC-067 cache-token accounting"}
 {"issue": 241, "tier": 3, "model": "claude-fable-5", "classified_by": "hard-rule", "outcome": "clean", "escalated_to": null, "date": "2026-08-10", "note": "DEC-068 context-model extensions"}
 {"issue": 242, "tier": 3, "model": "claude-fable-5", "classified_by": "hard-rule", "outcome": "clean", "escalated_to": null, "date": "2026-08-10", "note": "DEC-069 per-agent model profiles"}
+{"issue": 243, "tier": 3, "model": "claude-fable-5", "classified_by": "hard-rule", "outcome": "clean", "escalated_to": null, "date": "2026-08-10", "note": "DEC-070 deterministic artifact ingestion"}
+{"issue": 232, "tier": 3, "model": "claude-fable-5", "classified_by": "hard-rule", "outcome": "clean", "escalated_to": null, "date": "2026-08-10", "note": "DEC-071 per-source coverage ledger"}
+{"issue": 231, "tier": 3, "model": "claude-fable-5", "classified_by": "hard-rule", "outcome": "clean", "escalated_to": null, "date": "2026-08-10", "note": "DEC-072 interop export family"}
