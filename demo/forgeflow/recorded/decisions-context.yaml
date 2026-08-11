@@ -1,0 +1,98 @@
+assessment_id: asm-001
+system_context_version: 1
+reviewer: recorded-reviewer
+components:
+- id: cmp-001
+  decision: approve
+  editable:
+    name: Webhook Receiver
+    description: null
+    component_type: service
+    technology: []
+    ownership: null
+    deployment_zone: null
+    internet_accessible: true
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+- id: cmp-002
+  decision: approve
+  editable:
+    name: Analysis Worker
+    description: null
+    component_type: background_worker
+    technology: []
+    ownership: null
+    deployment_zone: null
+    internet_accessible: null
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+actors:
+- id: act-001
+  decision: approve
+  editable:
+    name: Customer Developer
+    actor_type: end_user
+    trust_level: null
+    capabilities: []
+    authentication_method: null
+assets:
+- id: ast-001
+  decision: approve
+  editable:
+    name: Customer Source Code
+    asset_type: source_code
+    description: null
+    confidentiality_impact: null
+    integrity_impact: null
+    availability_impact: null
+    data_classification: null
+    owner: null
+data_flows:
+- id: df-001
+  decision: approve
+  editable:
+    name: Analysis job enqueue
+    direction: one_way
+    protocol: null
+    data_types: []
+    authentication: unknown
+    encryption_in_transit: unknown
+    internet_exposed: null
+    source_component_id: cmp-001
+    destination_component_id: cmp-002
+trust_boundaries:
+- id: tb-001
+  decision: approve
+  editable:
+    name: Public internet boundary
+    boundary_type: internet_to_application
+    description: null
+    controls: []
+claims:
+- id: ctx-001
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  evidence:
+  - evd-001
+  editable:
+    predicate: request_validation
+    value: requests are described as validated, mechanism unstated
+    rationale: null
+- id: ctx-002
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  evidence:
+  - evd-002
+  editable:
+    predicate: input_source
+    value: the worker reads repository content supplied by customers
+    rationale: null
+questions: []

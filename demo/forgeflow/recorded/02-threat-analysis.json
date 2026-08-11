@@ -1,0 +1,66 @@
+{
+  "threats": [
+    {
+      "title": "Forged repository webhooks trigger unauthorized analysis jobs",
+      "description": "An attacker who can submit unsigned or incorrectly validated webhook requests may trigger analysis jobs for repositories they do not control.",
+      "methodology": "stride-scenario-based",
+      "category": [
+        "spoofing"
+      ],
+      "threat_actor_ids": [],
+      "affected_component_ids": [
+        "cmp-001"
+      ],
+      "affected_asset_ids": [
+        "ast-001"
+      ],
+      "related_data_flow_ids": [],
+      "preconditions": [
+        "signature validation is absent or bypassable"
+      ],
+      "attack_path": [
+        "forge a delivery",
+        "submit it to the receiver"
+      ],
+      "impact": "Unauthorized jobs and denial of service",
+      "likelihood": null,
+      "confidence": "medium",
+      "evidence_ids": [
+        "evd-001"
+      ],
+      "assumption_ids": [],
+      "open_question_ids": []
+    },
+    {
+      "title": "Repository content carries instructions the analysis model may follow",
+      "description": "The worker reads repository content the customer controls; content crafted as instructions may redirect the analysis model rather than being analysed.",
+      "methodology": "stride-scenario-based",
+      "category": [
+        "tampering"
+      ],
+      "threat_actor_ids": [],
+      "affected_component_ids": [
+        "cmp-002"
+      ],
+      "affected_asset_ids": [
+        "ast-001"
+      ],
+      "related_data_flow_ids": [],
+      "preconditions": [
+        "repository content reaches the model without a content boundary"
+      ],
+      "attack_path": [
+        "commit crafted content",
+        "trigger an analysis"
+      ],
+      "impact": "Analysis output steered by the material under analysis",
+      "likelihood": null,
+      "confidence": "medium",
+      "evidence_ids": [
+        "evd-002"
+      ],
+      "assumption_ids": [],
+      "open_question_ids": []
+    }
+  ]
+}
