@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trace — Evaluation Scorecard</title>
+<style>
+:root { --fg: #1f2328; --muted: #57606a; --line: #d0d7de; --bg: #ffffff;
+        --head: #f6f8fa; --good: #1a7f37; --bad: #cf222e; }
+:root[data-theme="dark"], :root:not([data-theme="light"]) {
+  --fg: #e6edf3; --muted: #9198a1; --line: #30363d; --bg: #0d1117;
+  --head: #161b22; --good: #3fb950; --bad: #f85149; }
+@media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) {
+  --fg: #1f2328; --muted: #57606a; --line: #d0d7de; --bg: #ffffff;
+  --head: #f6f8fa; --good: #1a7f37; --bad: #cf222e; } }
+body { background: var(--bg); color: var(--fg); margin: 0; padding: 2rem;
+       font: 15px/1.5 -apple-system, system-ui, sans-serif; }
+h1 { font-size: 1.4rem; margin: 0 0 0.25rem; }
+.meta { color: var(--muted); margin-bottom: 1.5rem; }
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; max-width: 100%; }
+th, td { padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--line); text-align: right;
+         white-space: nowrap; }
+th:first-child, td:first-child, th:nth-child(2), td:nth-child(2) { text-align: left; }
+thead th { background: var(--head); position: sticky; top: 0; }
+tbody tr.scenario-start td { border-top: 2px solid var(--line); }
+.ablated { color: var(--muted); }
+.note { color: var(--muted); margin-top: 1.5rem; max-width: 60ch; }
+</style>
+</head>
+<body>
+<h1>Trace — Evaluation Scorecard</h1>
+<p class="meta">Generated 2026-08-11 from recorded runs.
+Metrics and identifiers only — no assessment content (DEC-076).</p>
+<div class="scroll">
+<table>
+<thead><tr>
+<th>Scenario</th><th>Condition</th>
+<th>Precision</th><th>Recall</th><th>F1</th>
+<th>Matched</th><th>Missed</th><th>Spurious</th>
+<th>Schema</th><th>Cost</th>
+</tr></thead>
+<tbody>
+<tr class="scenario-start ablated"><td>contradictory-docs</td><td>baseline-generic *</td><td>50%</td><td>100%</td><td>67%</td><td>1</td><td>0</td><td>1</td><td>valid</td><td>—</td></tr>
+<tr class="ablated"><td>contradictory-docs</td><td>baseline-structured *</td><td>100%</td><td>100%</td><td>100%</td><td>1</td><td>0</td><td>0</td><td>valid</td><td>—</td></tr>
+<tr><td>contradictory-docs</td><td>clean</td><td>100%</td><td>100%</td><td>100%</td><td>1</td><td>0</td><td>0</td><td>—</td><td>0.0000</td></tr>
+<tr class="scenario-start"><td>forgeflow</td><td>clean</td><td>0%</td><td>0%</td><td>—</td><td>0</td><td>3</td><td>1</td><td>—</td><td>0.0000</td></tr>
+<tr class="scenario-start ablated"><td>managed-db-service</td><td>baseline-generic *</td><td>0%</td><td>—</td><td>—</td><td>0</td><td>0</td><td>1</td><td>valid</td><td>—</td></tr>
+<tr class="ablated"><td>managed-db-service</td><td>baseline-structured *</td><td>—</td><td>—</td><td>—</td><td>0</td><td>0</td><td>0</td><td>valid</td><td>—</td></tr>
+<tr class="scenario-start ablated"><td>oidc-portal</td><td>baseline-generic *</td><td>0%</td><td>—</td><td>—</td><td>0</td><td>0</td><td>2</td><td>valid</td><td>—</td></tr>
+<tr class="ablated"><td>oidc-portal</td><td>baseline-structured *</td><td>—</td><td>—</td><td>—</td><td>0</td><td>0</td><td>0</td><td>valid</td><td>—</td></tr>
+<tr class="scenario-start ablated"><td>unsigned-webhooks</td><td>baseline-generic *</td><td>50%</td><td>100%</td><td>67%</td><td>1</td><td>0</td><td>1</td><td>valid</td><td>—</td></tr>
+<tr class="ablated"><td>unsigned-webhooks</td><td>baseline-structured *</td><td>100%</td><td>100%</td><td>100%</td><td>1</td><td>0</td><td>0</td><td>valid</td><td>—</td></tr>
+<tr><td>unsigned-webhooks</td><td>clean</td><td>100%</td><td>100%</td><td>100%</td><td>1</td><td>0</td><td>0</td><td>—</td><td>0.0000</td></tr>
+</tbody>
+</table>
+</div>
+<p class="note">Precision, recall, and F1 are over the finding truth-set field class
+(DEC-056 matching). A dash is an undefined ratio — recall where the scenario expects no findings,
+precision where a run produced none. Rows marked * are non-authoritative (baselines and
+ablations, DEC-012). Run-to-run variance (DEC-077) is a live measurement and is not shown for
+these recorded runs, which are deterministic. Per-item diffs stay local (DEC-073).</p>
+</body>
+</html>
