@@ -115,6 +115,58 @@ def test_archive_is_the_only_transition_offered(
 # ------------------------------------------------------------------------------------------
 
 
+def test_reset_without_force_lists_and_removes_nothing(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """`reset` is the one destructive command, so its default is a preview and a refusal."""
+    identifier = created(data_root, capsys)
+
+    assert invoke(data_root, "reset") == 1
+    captured = capsys.readouterr()
+    assert "would remove" in captured.out
+    assert "pass --force" in captured.err
+
+    assert invoke(data_root, "assessment", "status", identifier) == 0
+
+
+def test_reset_with_force_returns_the_root_to_the_fresh_state(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """The rerun problem (#321): a used root mints asm-002 while every documented command names
+    asm-001. After a reset, the next create allocates asm-001 again — the property a scripted
+    demonstration depends on."""
+    identifier = created(data_root, capsys)
+    assert invoke(data_root, "source", "add", identifier, str(FORGEFLOW_INPUT)) == 0
+    capsys.readouterr()
+
+    assert invoke(data_root, "reset", "--force") == 0
+    assert "removed" in capsys.readouterr().out
+
+    assert invoke(data_root, "assessment", "list") == 0
+    assert "no assessments" in capsys.readouterr().out
+    assert created(data_root, capsys) == "asm-001"
+
+
+def test_reset_refuses_a_directory_that_is_not_a_data_root(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A flag that removes data, pointed at the wrong directory, must do nothing at all."""
+    other = tmp_path / "not-a-data-root"
+    other.mkdir()
+    (other / "keep.txt").write_text("not trace's", encoding="utf-8")
+
+    assert invoke(other, "reset", "--force") == 1
+    assert "does not look like a trace data root" in capsys.readouterr().err
+    assert (other / "keep.txt").exists()
+
+
+def test_reset_on_a_fresh_root_is_a_no_op(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    assert invoke(data_root, "reset", "--force") == 0
+    assert "already fresh" in capsys.readouterr().out
+
+
 def test_adding_a_directory_registers_and_indexes_the_corpus(
     data_root: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
@@ -376,6 +428,7 @@ def test_the_command_surface_is_the_one_dec_032_confirms() -> None:
         "report",
         "verify",
         "evaluate",
+        "reset",
     }
     assert _subcommands("source") == {"add", "list"}
     assert _subcommands("evidence") == {"list", "show", "verify"}
