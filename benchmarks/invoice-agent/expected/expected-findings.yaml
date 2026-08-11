@@ -1,0 +1,78 @@
+# Invoice Agent expected findings
+#
+# Benchmark truth for the findings a correct assessment approves. Layout is fixed by DEC-027;
+# the source is the scenario's own input documents and nothing else — this scenario has no
+# narrative, so every entry cites the passage in agent-overview.md it rests on.
+#
+# Nothing in this directory is supplied to Trace during an assessment.
+#
+# ## What is matched
+#
+# Wording is not matched. A finding matches on `requirement_id` and `affected_component`
+# (DEC-056), and `evidence_establishes` lists what the cited passages affirmatively state —
+# never an absence, which is what keeps this file on the right side of the DEC-009 line.
+#
+# ## Severity is guidance, not graded output
+#
+# Severity is assigned by the reviewer at checkpoint 2 (DEC-030); `severity_guidance` exists so
+# whoever plays the reviewer in a benchmark run does not introduce variance between runs.
+
+benchmark_version: "1.0"
+scenario: invoice-agent
+catalog_version: "0.1"
+source: agent-overview.md
+
+findings:
+  - key: FND-IA-01
+    subject: submitted invoice content steers the approval decision through the conversation
+    severity_guidance: high
+    requirement_id: req-AI-001
+    affected_component: Invoice Agent
+    arises_from: agent-overview.md sections 1, 2, and 4
+    evidence_establishes:
+      - The invoice file's contents are parsed and returned to the model as the invoice details.
+      - The denial follow-up carries the agent's prior messages into a reconsideration request.
+      - The instructions direct the agent to use its best discretion between the deny rules and
+        the approve rules.
+    supported_by:
+      - agent-overview.md
+    notes: >
+      The submission is attacker-supplied content that reaches the model twice — once as parsed
+      invoice details and again through the urgency follow-up — and the decision policy
+      explicitly leaves the deny rules negotiable by discretion. The finding rests on those
+      affirmative statements, not on the absence of an injection filter.
+
+  - key: FND-IA-02
+    subject: the spending ceiling is enforced by model discretion rather than by validation
+    severity_guidance: medium-or-high
+    requirement_id: req-AI-002
+    affected_component: Invoice Agent
+    arises_from: agent-overview.md sections 2 and 3
+    evidence_establishes:
+      - The $20,000 ceiling is applied by the agent from its instructions.
+      - The schema does not enforce a maximum amount.
+      - The approve rule prioritizes due-date urgency, and discretion arbitrates between the
+        rule sets.
+    supported_by:
+      - agent-overview.md
+    notes: >
+      The model's approve-or-deny output is acted on as the decision, and the one deterministic
+      layer that could hold the ceiling is documented as not enforcing it. This is a validation
+      finding about the acted-on output, not a claim that the model is inaccurate.
+
+  - key: FND-IA-03
+    subject: traces carry full request and response bodies to the observability service
+    severity_guidance: medium
+    requirement_id: req-LOG-001
+    affected_component: Invoice Agent
+    arises_from: agent-overview.md section 5
+    evidence_establishes:
+      - Request and tool-call traces, including HTTP request and response bodies, are captured.
+      - Invoice contents are parsed and returned to the model, so bodies contain submitted
+        financial data.
+    supported_by:
+      - agent-overview.md
+    notes: >
+      The capture behaviour is affirmatively documented; the finding is about what the
+      documented behaviour sends to a third-party service, not about how that service stores it
+      — which the documents do not establish and GAP-IA-01 records.

@@ -1,0 +1,13 @@
+benchmark_version: "1.0"
+scenario: unsigned-webhooks
+source: system-overview.md
+
+questions:
+  - key: Q-UW-01
+    subject: replay handling
+    asks: Does a delivery carry a nonce or timestamp, and would a replayed delivery be reprocessed?
+    arises_from: system-overview.md section 2
+    requirement_id: req-WEBHOOK-002
+    changes: whether GAP-UW-01 resolves to a satisfied requirement or a finding
+    priority: low
+    blocking: false

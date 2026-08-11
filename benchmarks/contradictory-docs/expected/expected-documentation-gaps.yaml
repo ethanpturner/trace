@@ -1,0 +1,24 @@
+# Contradictory Docs expected documentation gaps
+#
+# One gap: whether the retained exports are encrypted at rest in the managed object store is
+# not stated. Nothing in this directory is supplied to Trace.
+
+benchmark_version: "1.0"
+scenario: contradictory-docs
+catalog_version: "0.1"
+source: architecture-overview.md and operations-guide.md
+
+documentation_gaps:
+  - key: GAP-CD-01
+    requirement_id: req-DATA-001
+    subject: whether retained exports are encrypted at rest is not described
+    arises_from: architecture-overview.md section 2
+    missing:
+      - Whether the managed object store encrypts export objects at rest
+      - Who holds the keys
+    supported_by:
+      - architecture-overview.md
+    paired_question: Q-CD-01
+    notes: >
+      The store is described as managed; whether it encrypts at rest is not stated either way.
+      Undetermined, not absent — a gap rather than a finding.

@@ -1262,7 +1262,7 @@ def _evaluate(args: argparse.Namespace, service: AssessmentService) -> int:
     if args.all_scenarios:
         slugs = []
         for entry in load_registry():
-            if entry.recorded_dir.is_dir():
+            if entry.has_recording:
                 slugs.append(entry.slug)
             else:
                 print(f"skipped {entry.slug}: no recording")
