@@ -67,16 +67,17 @@ def documented_prefixes() -> dict[str, str]:
 
 def test_the_prefix_list_was_found() -> None:
     """Guard the parser: an empty parse would make the comparison below vacuous."""
-    assert len(documented_prefixes()) == 23
+    assert len(documented_prefixes()) == 24
 
 
 def test_the_registry_matches_section_two_point_one() -> None:
     """The document is authoritative for which prefixes exist.
 
-    There are twenty-three. The issue asking for this module said nineteen and omitted `obs`, which
+    There are twenty-four. The issue asking for this module said nineteen and omitted `obs`, which
     DEC-021 added with SourceObservation after the backlog was written. DEC-034 added `act`, `eas`,
     and `crq` — three assessment-scoped objects that carry an `id` and had no prefix, which only
-    became visible once section 2.1 stated what the scheme governs.
+    became visible once section 2.1 stated what the scheme governs. DEC-052 added `mrg` with
+    FindingMergeRecord.
     """
     documented = documented_prefixes()
     assert set(PREFIXES) == set(documented), (

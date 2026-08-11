@@ -142,10 +142,16 @@ def test_every_benchmark_directory_is_registered() -> None:
     That is a silent omission, which is the failure mode this project is least tolerant of.
     DEC-027 raised it as an open question and this test closes it.
     """
+    # `regressions/` is not a scenario: it holds single-behaviour false-positive fixtures
+    # consumed directly by unit tests (issue #112, evaluation-plan.md section 11), has no
+    # input/expected split, and is never run by the harness — so the registry does not list
+    # it and the silent-omission argument does not apply.
     unregistered = sorted(
         path.name
         for path in BENCHMARKS.iterdir()
-        if path.is_dir() and path.name not in {str(s["slug"]) for s in scenarios()}
+        if path.is_dir()
+        and path.name != "regressions"
+        and path.name not in {str(s["slug"]) for s in scenarios()}
     )
     assert not unregistered, (
         f"{unregistered} sit under benchmarks/ without a scenarios.yaml entry and would "

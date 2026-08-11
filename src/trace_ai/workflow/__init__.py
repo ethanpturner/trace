@@ -76,13 +76,24 @@ from trace_ai.workflow.state import (
     PendingHumanReview,
     RemainingLimits,
 )
+from trace_ai.workflow.threat_validation import (
+    DUPLICATE_THRESHOLD,
+    SECTION_10_TRIGGERS,
+    MergeProposal,
+    ThreatValidationError,
+    ThreatValidationOutcome,
+    duplicate_groups,
+    validate_threats,
+)
 
 __all__ = [
+    "DUPLICATE_THRESHOLD",
     "NODES_BY_PHASE",
     "NON_RETRYABLE",
     "PAUSE_PHASES",
     "RETRYABLE",
     "SECTION_7_TRIGGERS",
+    "SECTION_10_TRIGGERS",
     "SECTION_11_FAILURE_CLASSES",
     "TRANSITIONS",
     "ApprovalRefusedError",
@@ -99,6 +110,7 @@ __all__ = [
     "ErrorClass",
     "LimitExceededError",
     "LimitKind",
+    "MergeProposal",
     "NextAction",
     "Node",
     "NodeContext",
@@ -113,6 +125,8 @@ __all__ = [
     "ReviewTrigger",
     "ReviewerActionError",
     "RunOutcome",
+    "ThreatValidationError",
+    "ThreatValidationOutcome",
     "TransitionError",
     "ValidationError",
     "WorkflowError",
@@ -128,6 +142,7 @@ __all__ = [
     "classify_model_failure",
     "confirm_assumption",
     "decide_object",
+    "duplicate_groups",
     "load_state",
     "pending_object_ids",
     "preserve_failed_output",
@@ -140,4 +155,5 @@ __all__ = [
     "successor",
     "system_context_key",
     "validate_context",
+    "validate_threats",
 ]

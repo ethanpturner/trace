@@ -11,11 +11,13 @@ catalog:
   created_at: 2026-08-08
   status: draft
 
-  # content_hash is defined as required on RequirementsCatalog in
-  # docs/architecture/data-model.md section 30, and is deliberately absent here.
-  # It is a derived value with no loader to compute or verify it against, and a
-  # hand-maintained hash would be stale after the first edit. See
-  # requirements/README.md.
+  # Generated. SHA-256 over a canonical re-serialization of the parsed catalog
+  # (DEC-019), computed and verified by src/trace_ai/services/requirements/loader.py
+  # every time the catalog is read. It covers meaning rather than formatting, so
+  # comments, indentation, and key order do not move it -- and a comment doing real
+  # work is invisible to it. Do not edit by hand; run
+  #   uv run python scripts/catalog_hash.py --write
+  content_hash: sha256:cf77bb8255daf25a747549c46c7e8a1a993075771b469718413a2a1c3e61e759
 
   requirement_ids:
 

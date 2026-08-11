@@ -174,7 +174,11 @@ VALIDATE_MAP[Mapping Validation Node]
 
 EVIDENCE[Evidence Validation Agent]
 
+VALIDATE_EVIDENCE[Evidence Assessment Validation Node]
+
 CRITIC[Critical Review Agent]
+
+VALIDATE_CRITIQUE[Critique Validation Node]
 
 CONSOLIDATE[Finding Consolidation Node]
 
@@ -206,9 +210,13 @@ MAP --> VALIDATE_MAP
 
 VALIDATE_MAP --> EVIDENCE
 
-EVIDENCE --> CRITIC
+EVIDENCE --> VALIDATE_EVIDENCE
 
-CRITIC --> CONSOLIDATE
+VALIDATE_EVIDENCE --> CRITIC
+
+CRITIC --> VALIDATE_CRITIQUE
+
+VALIDATE_CRITIQUE --> CONSOLIDATE
 
 CONSOLIDATE --> REVIEW_FINDINGS
 
@@ -217,6 +225,13 @@ REVIEW_FINDINGS --> REPORT
 REPORT --> RENDER
 
 RENDER --> EVALUATE
+
+`VALIDATE_EVIDENCE` and `VALIDATE_CRITIQUE` were absent from an earlier version of this diagram,
+and DEC-048 records the correction. Both were built anyway, because `data-model.md` section 33
+requires validation after model-generated structured output and section 22 states that agents
+never write authoritative records — neither rule is conditioned on a node being drawn. Every
+reasoning agent is now followed by a deterministic node, which is what section 4 classifies and
+what the write model requires.
 
 # 4. Component Classification
 
@@ -233,7 +248,9 @@ RENDER --> EVALUATE
 | Requirement and Control Mapping | Reasoning agent | Yes | No |
 | Mapping Validation | Deterministic node | No | No |
 | Evidence Validation | Reasoning agent | Yes | No |
+| Evidence Assessment Validation | Deterministic node | No | No |
 | Critical Review | Reasoning agent | Yes | No |
+| Critique Validation | Deterministic node | No | No |
 | Finding Consolidation | Primarily deterministic node | Optional | No |
 | Finding Review | Human checkpoint | No | Yes |
 | Report Generation | Constrained generation agent | Yes | No |
@@ -1973,12 +1990,12 @@ These agents would expand project scope without proving the MVP thesis.
 # 38. Open Agent-Design Questions
 
 1. Does Context Extraction require one agent or separate extraction and architecture-normalization stages?
-2. Should threat generation run once for the system or separately by trust boundary?
+2. ~~Should threat generation run once for the system or separately by trust boundary?~~ Resolved by DEC-042: once for the system. Four of ForgeFlow's ten expected threats cross boundaries and one concerns tenancy, which is not a boundary at all, so a per-boundary call is structurally unable to see them. If the approved context outgrows one request, the successor is partition fan-out over connected component groups, not trust boundaries.
 3. ~~How many requirements should the Mapping Agent receive per call?~~ Resolved by DEC-024: all of them. The whole catalog is a stable cacheable prefix on every mapping call.
 4. ~~Should requirement retrieval use deterministic metadata filters before semantic retrieval?~~ Resolved by DEC-024: no. `applicable_technologies` is populated on zero of 23 requirements, so a metadata filter has no input, and semantic retrieval has no substrate while vector infrastructure is deferred.
 5. Should the Critical Review Agent review individual findings or small groups?
 6. ~~Is the Severity Support Agent necessary for the first demo?~~ Resolved by DEC-030: it is not built at all. Four of its six outputs already exist as `Finding` fields, and severity depends on business context the documents do not carry. The reviewer assigns it.
-7. Should duplicate detection use embeddings, a model, deterministic features, or a combination?
+7. ~~Should duplicate detection use embeddings, a model, deterministic features, or a combination?~~ Resolved by DEC-043 for the MVP: deterministic features — normalized title, affected component and asset sets, and category overlap — scored and recorded as an explicit merge proposal. Vector infrastructure is deferred, so embeddings have no substrate, and a model-assisted comparison would put a model call in a node section 4 classifies as deterministic. Revisited on a measured duplicate rate this misses, or when vector infrastructure arrives for another reason. DEC-052 answers the finding half: detection reads shared threat and requirement identifiers rather than scored text overlap, the consolidation node performs the merge section 16 assigns to it, and every merge persists a `FindingMergeRecord`.
 8. How should contradictory evidence be represented to agents?
 9. Should reviewers see agent rationales directly or only concise evidence-based explanations?
 10. Which agent outputs should be editable before the next stage?

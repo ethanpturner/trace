@@ -9,9 +9,12 @@ A `Question` is not a `DocumentationGap` (section 23). A question asks a person 
 documents do not contain; a gap records that the documentation itself is insufficient. The two are
 often raised together and they are answered by different people doing different things.
 
-**`blocking` is required and has no default.** Whether the workflow pauses for an answer is a
-property of the question, and a default would let an unset field decide it — quietly, in the
-direction whoever wrote the default happened to choose.
+**`blocking` is required and has no default.** Whether the assessment can conclude soundly
+without the answer is a property of the question, and a default would let an unset field decide
+it — quietly, in the direction whoever wrote the default happened to choose. A blocking question
+pauses nothing (DEC-054): the pipeline pauses only at DEC-005's two structural checkpoints, and
+`blocking` puts the question first in the review package there, where the reviewer decides what
+it holds up.
 
 **An answered question carries all three answer fields or none.** A question with a `response` and
 no `answered_at`, or an `answered` status and no response, reads as resolved from every angle a
@@ -97,7 +100,8 @@ class Question(DomainModel):
 
     priority: QuestionPriority
     blocking: bool
-    """Whether the workflow pauses for an answer. Required, and deliberately undefaulted."""
+    """Whether the assessment can conclude soundly without the answer. Required, and deliberately
+    undefaulted. It pauses nothing (DEC-054); it puts the question first at the checkpoint."""
 
     response: str | None = None
     response_origin: SourceOrigin | None = None
@@ -106,6 +110,13 @@ class Question(DomainModel):
     answered_at: datetime | None = None
     status: QuestionStatus
     generated_by: str
+
+    converted_from_id: str | None = None
+    """The object this was converted from, if it was (DEC-051).
+
+    Cross-type by design, so it is a plain identifier rather than a typed alias: a finding may
+    have been a documentation gap and a gap may have been a finding. `supersedes_id` is the
+    same-type mechanism DEC-023 gives for regeneration and does not reach across the boundary."""
 
     @model_validator(mode="after")
     def _an_answer_is_complete_or_absent(self) -> Self:
@@ -151,8 +162,9 @@ def order_for_review(questions: Iterable[Question]) -> list[Question]:
     """The open questions, blocking first, then by priority, then by identifier.
 
     Scenario section 20 asks for questions ordered by their ability to change findings. Blocking
-    comes first because a blocking question stops the workflow — nothing else can be worked on
-    until it is answered — and priority orders the rest. The identifier is the final tiebreak so
+    comes first because a blocking question is one the assessment cannot conclude soundly without
+    (DEC-054) — the reviewer meets it before anything it might change — and priority orders the
+    rest. The identifier is the final tiebreak so
     the order is total: two runs over the same questions produce the same list, which is what makes
     a review package comparable with the one a reviewer saw yesterday.
 

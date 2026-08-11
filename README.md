@@ -455,7 +455,7 @@ docs/product/        vision, design principles, roadmap, future features
 docs/architecture/   scope, current architecture, agent design, data model,
                      evaluation plan, decision log
 demo/forgeflow/      the demo scenario and its input fixtures
-requirements/        the requirements catalog -- version-controlled YAML, read by nothing yet
+requirements/        the requirements catalog -- version-controlled YAML, read at load and hashed
 scripts/             repository utilities
 benchmarks/          scenarios two onward, plus scenarios.yaml, the scenario registry
 templates/           report-v1.md -- the report's sixteen sections and their owners

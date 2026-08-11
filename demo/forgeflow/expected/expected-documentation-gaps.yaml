@@ -1,0 +1,83 @@
+# ForgeFlow expected documentation gaps
+#
+# Benchmark truth for what a correct assessment records as undeterminable. Layout is fixed by
+# DEC-027; the source is demo/forgeflow/forgeflow-scenario.md section 21.
+#
+# Nothing in this directory is supplied to Trace during an assessment. See README.md.
+#
+# ## A gap asserts nothing about the implementation
+#
+# Each entry records that the supplied documents do not establish whether a control exists or
+# is effective (DEC-009). None of these is a finding, and grading one as a finding would grade
+# the failure this project exists to avoid as correct.
+#
+# ## GAP-004 is the most valuable single item in this scenario
+#
+# It was FND-001 until DEC-029. A generic security review reports an undocumented control as a
+# missing control, and architecture-overview.md section 26 is a document volunteering that a
+# topic is not covered -- about exactly the right subject. A system that concludes "no replay
+# protection" from that sentence has committed the DEC-009 failure, confidently. The paired
+# question Q-02 (section 20 candidate 2) is load-bearing rather than optional.
+
+benchmark_version: "1.0"
+scenario: forgeflow
+catalog_version: "0.1"
+source: forgeflow-scenario.md section 21
+
+documentation_gaps:
+  - key: GAP-001
+    requirement_id: req-TPI-001
+    subject: AI provider data-handling details are incomplete
+    arises_from: scenario 15.2
+    missing:
+      - Retention behaviour at the AI provider
+      - Who can access submitted content
+      - Processing region
+      - Abuse monitoring
+      - Deletion behaviour
+    supported_by:
+      - architecture-overview.md
+      - ai-analysis.md
+
+  - key: GAP-002
+    requirement_id: req-ADMIN-001
+    subject: administrative data access is not clearly defined
+    arises_from: scenario 21
+    missing:
+      - Whether administrators can view source content
+      - Approval or audit requirements for administrative access
+      - Break-glass behaviour
+    supported_by:
+      - security-overview.md
+      - operations-guide.md
+
+  - key: GAP-003
+    requirement_id: req-DATA-003
+    subject: tenant isolation enforcement is undocumented
+    arises_from: scenario 21
+    missing:
+      - The mechanism that enforces tenant separation beyond prefixed storage paths
+    supported_by:
+      - architecture-overview.md
+
+  - key: GAP-004
+    requirement_id: req-WEBHOOK-002
+    subject: webhook replay handling is undocumented
+    arises_from: scenario 13.1, via DEC-029
+    missing:
+      - Whether delivery identifiers are stored
+      - Whether duplicate deliveries are rejected or deduplicated
+      - What a replayed event would cost in duplicate model work
+    supported_by:
+      - architecture-overview.md
+      - github-integration.md
+      - operations-guide.md
+    paired_question: Q-02
+    notes: >
+      The only direct evidence available is a document stating that the topic is undocumented:
+      architecture-overview.md section 26 lists webhook replay handling under its own Known
+      Documentation Gaps. github-integration.md section 6 says requests are validated without
+      saying what validation covers, and operations-guide.md section 3 shows a delivery
+      identifier in the job payload without stating whether it is checked. Concluding absence
+      from that is the DEC-009 failure; the expected rejection REJ-11 records the wrong
+      conclusion this gap exists to prevent.

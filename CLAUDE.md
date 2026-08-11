@@ -31,6 +31,7 @@ uv run pytest                    # unit tests; integration and evaluation are de
 uv run pytest tests/unit/test_config.py::test_settings_are_frozen   # one test by node id
 uv run pytest -k blank_key       # one test by keyword
 uv run pytest -m integration     # opt into a deselected marker
+uv run pytest -m evaluation      # the benchmark suite: ForgeFlow regressions, and one live file
 uv run pytest --cov=trace_ai.config          # coverage for one module
 
 uv run ruff check .              # lint
@@ -48,8 +49,11 @@ uv run pre-commit run gitleaks --all-files   # a single hook
 src/trace_ai/        configuration, process bootstrap, and cli.py -- the command surface
 src/trace_ai/domain/           domain objects, identifiers, hashing, and proposals/
 src/trace_ai/domain/proposals/ what an agent returns: local keys, nothing authoritative
-src/trace_ai/services/         ingestion/, evidence/, context/, prompts/, and the execution ledger
+src/trace_ai/services/         ingestion/, evidence/, context/, threats/, requirements/,
+                     prompts/, and the execution ledger
 src/trace_ai/services/context/ input_package.py, pipeline.py, review_file.py
+src/trace_ai/services/threats/ input_package.py -- what the threat agent sees
+src/trace_ai/services/requirements/ loader.py -- the only reader of requirements/
 src/trace_ai/infrastructure/   filesystem/, database/, and model/ -- stores and the model seam
 src/trace_ai/workflow/         phases, transitions, limits, the node protocol, and the nodes
                      Dependencies point inward. domain/ imports neither of the other two and
@@ -156,11 +160,17 @@ Two things are commonly assumed and are **not** decided:
 ## Requirements catalog
 
 `requirements/` holds version-controlled YAML requirements, one file per primary category under a
-directory named for the catalog version (DEC-010). It is data; no product code reads it, and
-`tests/unit/test_requirements_catalog.py` checks that it is well-formed. `requirements/README.md` is
-the full guide — read it before editing the catalog.
+directory named for the catalog version (DEC-010). `services/requirements/loader.py` reads it and is
+the only thing that does; it validates every requirement, checks the manifest and the files against
+each other in both directions, and recomputes `content_hash` on every load.
+`requirements/README.md` is the full guide — read it before editing the catalog.
 
-Four things are easy to get wrong:
+**Editing a requirement moves the content hash, and the loader then refuses to read the catalog.**
+Run `uv run python scripts/catalog_hash.py --write`. The hash covers the *parsed* catalog (DEC-019),
+so comments, indentation, and key order do not move it, and a comment doing real work is invisible
+to it.
+
+Five things are easy to get wrong:
 
 - **`docs/architecture/data-model.md` section 17 is authoritative** for field names and types. The
   catalog conforms to it; it does not define its own shape.
@@ -173,6 +183,10 @@ Four things are easy to get wrong:
 - **`source_frameworks` is provenance, not compliance mapping.** Broad compliance-framework mapping is
   deferred. Requirement text is written originally — ASVS is CC BY-SA, so its wording is cited by
   identifier and never reproduced.
+- **A requirement identifier is authored, and a caller names the catalog version it wants.**
+  `req-AUTH-001`, not `req-001`: a counter-numbered identifier is one no person assigned, and the
+  loader refuses it. `load_catalog(version)` takes the version rather than globbing the directories,
+  so a `0.2/` added mid-assessment cannot change what an in-flight run is assessed against.
 
 Requirements are phrased so that absence of evidence resolves to `unverified`, never `unmet`. A
 requirement written so that silence proves absence is a DEC-009 violation regardless of how it is

@@ -48,6 +48,34 @@ PACKAGES = (
     # Prompts are version-controlled files (current-architecture.md section 10); this package
     # reads and composes them, and holds no prompt text of its own.
     "trace_ai.services.prompts",
+    # The requirements catalog is version-controlled YAML outside the package (DEC-010); this
+    # package is the only thing that reads it, and computes its DEC-019 content hash.
+    "trace_ai.services.requirements",
+    # What the Threat Analysis agent sees (agent-design.md section 23): an approved architecture
+    # and the evidence behind it, fenced with the same helper the extractor's package uses.
+    "trace_ai.services.threats",
+    # What the Requirement and Control Mapping agent sees. Its own package rather than a module
+    # under `requirements/`, because that package is the catalog's reader (DEC-010) and this one
+    # assembles a payload from the catalog, the approved context, and the store. DEC-024 removed
+    # the deterministic requirement matcher the backlog put here, so there is one mapping step and
+    # one package for it.
+    "trace_ai.services.mapping",
+    # What the Critical Review agent sees: one threat's lineage and nothing wider (DEC-049).
+    # Its own package because the bound is the whole design -- an agent shown everything
+    # re-derives everything, which is section 15's second-full-assessment prohibition.
+    "trace_ai.services.critique",
+    # The finding-side query surface: section 32's lineage walk, which the checkpoint 2 review
+    # package and the "why was this generated" view consume (issue #100). A service because it
+    # spans most of the object model; nothing in it is persisted (DEC-053).
+    "trace_ai.services.findings",
+    # The report input assembly (DEC-035, issue #104): approved state gathered once, so the
+    # Report Generation agent and the deterministic renderer cannot disagree about what was
+    # approved. Findings come solely from the DEC-055 accessor.
+    "trace_ai.services.report",
+    # The finding-quality metrics (DEC-056, issue #110): deterministic computation over
+    # persisted objects, with benchmark matching against the authored truth sets. No model on
+    # the default path.
+    "trace_ai.services.evaluation",
     "trace_ai.infrastructure",
     "trace_ai.infrastructure.filesystem",
     "trace_ai.infrastructure.database",

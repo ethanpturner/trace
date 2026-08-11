@@ -95,6 +95,8 @@ exe- Execution record
 
 eval- Evaluation result
 
+mrg- Finding merge record
+
 ## What the scheme governs
 
 The scheme governs **objects an assessment produces**. An object is inside it when all three hold:
@@ -782,7 +784,7 @@ assessment_id: asm-001
 
 subject_type: component
 
-subject_id: cmp-identity
+subject_id: cmp-003
 
 predicate: authentication_provider
 
@@ -1131,15 +1133,15 @@ category:
 
 affected_component_ids:
 
-- cmp-webhook-receiver
+- cmp-004
 
-- cmp-job-worker
+- cmp-007
 
 affected_asset_ids:
 
-- ast-analysis-capacity
+- ast-002
 
-- ast-repository-metadata
+- ast-005
 
 preconditions:
 
@@ -1273,6 +1275,8 @@ Represents an implemented, inherited, claimed, or proposed security safeguard.
 | evidence_ids | list[string] | No | Supporting evidence |
 | owner | string | No | Control owner |
 | limitations | list[string] | No | Known limitations |
+| generated_by | string | Yes | Workflow node or reviewer (DEC-044) |
+| created_at | datetime | Yes | Creation timestamp (DEC-044) |
 | status | ObjectStatus | Yes | Lifecycle state |
 
 ## Note on inherited-control scope
@@ -1294,6 +1298,23 @@ intentional non-findings turn on:
 | Platform probably provides it, nothing says so | `inherited` | `claimed` | absent | A `Question` requesting confirmation |
 
 The second never resolves to `absent`, and by DEC-013 never to `unmet`.
+
+## Note on provenance
+
+`generated_by` and `created_at` were added by DEC-044. A `Control` has three possible origins —
+the Context Extraction step finds one described, the Mapping step proposes one, or a reviewer adds
+one at a checkpoint — and section 18 as first written carried no field recording which. Every other
+object produced by the pipeline carries provenance, and a control without it is the one object
+whose origin cannot be recovered from the record.
+
+## Note on evidence
+
+An `implementation_status` of `implemented`, `partially_implemented`, or `absent` asserts something
+about the system, so it cites at least one `EvidenceReference` (DEC-044). `claimed` and `unknown`
+are exempt, and the exemption is DEC-009: they are what an unevidenced control is called, and
+requiring evidence of them would leave an undocumented control nowhere to be recorded except as
+absent. A `planned` or `recommended` control is exempt whatever its status, because it is the
+assessment's own proposal and no source passage describes something nobody has built.
 
 ## Control-type values
 
@@ -1342,6 +1363,8 @@ This is one of the most important objects in Trace because it prevents the appli
 | applicability_reason | string | Yes | Explanation |
 | suppressed_conclusion | string | No | A conclusion not drawn because a `common_false_positives` entry applies (DEC-025) |
 | suppressed_by | string | No | The `common_false_positives` entry that applies (DEC-025) |
+| downgraded_from | string | No | The satisfaction status validation lowered, if it did (DEC-046) |
+| downgrade_reason | string | No | Why the downgrade happened (DEC-046) |
 | satisfaction_status | string | Yes | Satisfied, partial, unverified, unmet |
 | evidence_ids | list[string] | No | Mapping evidence |
 | assumptions | list[string] | No | Assumptions affecting mapping |
@@ -1391,7 +1414,13 @@ candidate finding is reachable only under the evaluation-only `permissive` thres
 contradicts a claim that it exists. Because an EvidenceReference must quote real source
 text, silence cannot be cited, so this rule is enforced by the schema rather than by
 instruction. The Mapping Validation node downgrades an unsupported `unmet` to `unverified`
-and records the downgrade.
+and records the downgrade on `downgraded_from` and `downgrade_reason` (DEC-046).
+
+Two of DEC-013's four conditions for `unmet` cannot be checked at this node, because they read
+`EvidenceAssessment`, which the Evidence Validation phase produces afterwards. DEC-046 records
+which half is enforced where: Mapping Validation applies the conditions that read only the
+mapping, the catalog, and the source observations; Finding Consolidation applies the outcome
+table, by which point the evidence assessments exist.
 
 A high proportion of `unverified` mappings is the expected result of assessing ordinary
 architecture documentation. It is not a defect and must not be treated as one in evaluation.
@@ -1417,8 +1446,33 @@ Represents an explicit evaluation of whether evidence supports a claim, control,
 | missing_evidence | list[string] | No | Evidence still needed |
 | contradictions | list[string] | No | Contradictory evidence |
 | confidence | ConfidenceLevel | Yes | Confidence |
+| recommendation | Recommendation | Yes | Continue, revise, stop, downgrade to a question, or documentation-gap treatment (DEC-047) |
 | generated_by | string | Yes | Workflow node or reviewer |
 | created_at | datetime | Yes | Creation timestamp |
+
+## Subject-type values
+
+context_claim
+
+control
+
+control_mapping
+
+threat
+
+finding
+
+## Recommendation values
+
+continue
+
+revise
+
+stop
+
+downgrade_to_question
+
+documentation_gap
 
 # 21. Finding
 
@@ -1452,11 +1506,13 @@ A finding is provisional until approved by a reviewer.
 | assumptions | list[string] | No | Assumptions used |
 | limitations | list[string] | No | Analysis limitations |
 | confidence | ConfidenceLevel | Yes | Finding confidence |
+| low_confidence_justification | string | No | Required when `confidence` is `low` (DEC-050) |
 | status | ObjectStatus | Yes | Candidate, approved, rejected |
 | generated_by | string | Yes | Workflow node or reviewer |
 | created_at | datetime | Yes | Creation timestamp |
 | updated_at | datetime | Yes | Last modification |
 | duplicate_of_id | string | No | Canonical finding if duplicate |
+| converted_from_id | string | No | The object this was converted from (DEC-051) |
 | reviewer_notes | string | No | Reviewer explanation |
 
 ## Minimum validation rules
@@ -1467,7 +1523,7 @@ A provisional finding should not be created unless it has:
 - At least one affected asset or component
 - At least one applicable requirement or stated security expectation
 - A described security impact
-- Evidence or an explicit low-confidence justification
+- Evidence, and an explicit low-confidence justification where confidence is `low`
 - A validation status
 - A confidence classification
 
@@ -1525,21 +1581,21 @@ control_mapping_ids:
 
 affected_component_ids:
 
-- cmp-webhook-receiver
+- cmp-004
 
 affected_asset_ids:
 
-- ast-analysis-capacity
+- ast-002
 
-- ast-repository-metadata
+- ast-005
 
 evidence_ids:
 
 - evd-031
 
-validation_status: requires_confirmation
+validation_status: partially_supported
 
-severity: high
+severity: unassigned
 
 impact: >
 
@@ -1565,6 +1621,53 @@ generated_by: finding-consolidation-v1
 
 This example remains a candidate because the absence of documented signature validation is not proof that validation is absent.
 
+Two of its values were corrected by DEC-050, which records why. It carried `severity: high` on a
+candidate, and DEC-030 has findings created `unassigned` because the reviewer assigns severity at
+checkpoint 2. It carried `validation_status: requires_confirmation`, which is a status DEC-013's
+outcome table produces no finding from — a finding is reachable only from `supported` or
+`partially_supported`. An example is read as a template, so one carrying values the schema refuses
+is a specification of an object nobody can build.
+
+# 21a. FindingMergeRecord
+
+## Purpose
+
+Records one finding merge: which finding survived, which findings were merged into it, which
+structural features matched, and whether the decision was structural or model-assisted.
+
+Added by DEC-052, after the rest of these sections were numbered. `agent-design.md` section 11
+requires the merge decision to stay explicit and traceable, and a decision recorded only in a
+node's return value stops being traceable when the process exits. Every merge writes one record.
+
+The identifier fields are finding identifiers by type, which is half of the DEC-009 enforcement: a
+record naming a `DocumentationGap` does not validate, so a merge across the finding/gap boundary
+is unrepresentable rather than merely forbidden.
+
+## Fields
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| id | string | Yes | Stable merge-record identifier |
+| assessment_id | string | Yes | Parent assessment |
+| surviving_finding_id | string | Yes | The canonical finding the merge kept |
+| merged_finding_ids | list[string] | Yes | Findings merged into the survivor; each carries `duplicate_of_id` |
+| matched_features | list[string] | No | Structural features that matched; empty only on a reviewer merge (DEC-052, DEC-054) |
+| decision | MergeDecision | Yes | Structural or model-assisted (DEC-052) |
+| detail | string | Yes | Human-readable account of the match |
+| generated_by | string | Yes | Workflow node or reviewer |
+| created_at | datetime | Yes | Merge timestamp |
+
+`MergeDecision` has three values (DEC-052, amended by DEC-054): `structural`, a merge the
+deterministic identifier rule decided; `model_assisted`, a merge a reviewer decided from a
+model-proposed candidate pair; and `reviewer`, a merge the checkpoint 2 reviewer decided
+unprompted. The node only ever writes `structural`; a model-assisted comparison proposes pairs
+and merges nothing.
+
+`matched_features` values name what overlapped: `threats`, `requirements`, `control_mappings`,
+`components`, `assets`. The first two decide a structural merge; the rest corroborate. The list
+may be empty only when `decision` is `reviewer` — the rule's reason is its features, while a
+reviewer's reason lives on the `ReviewerDecision` rationale (DEC-054).
+
 # 22. Question
 
 ## Purpose
@@ -1582,12 +1685,13 @@ Represents missing information that could materially affect the assessment.
 | related_object_type | string | No | Threat, component, mapping, etc. |
 | related_object_id | string | No | Referenced object |
 | priority | string | Yes | Low, medium, high |
-| blocking | boolean | Yes | Whether workflow should pause |
+| blocking | boolean | Yes | Surfaced first at the next checkpoint; pauses nothing (DEC-054) |
 | response | string | No | User response |
 | response_origin | SourceOrigin | No | Response source |
 | answered_at | datetime | No | Response timestamp |
 | status | string | Yes | Open, answered, dismissed |
 | generated_by | string | Yes | Workflow node or reviewer |
+| converted_from_id | string | No | The object this was converted from (DEC-051) |
 
 ## Example
 
@@ -1640,6 +1744,7 @@ Represents missing or inadequate documentation without asserting that the implem
 | status | ObjectStatus | Yes | Candidate, approved, resolved |
 | generated_by | string | Yes | Workflow node or reviewer |
 | evidence_ids | list[string] | No | Evidence showing ambiguity or contradiction |
+| converted_from_id | string | No | The object this was converted from (DEC-051) |
 
 ## Important distinction
 
@@ -1663,13 +1768,13 @@ Represents a structured challenge to a generated threat, mapping, or finding.
 |---|---|---|---|
 | id | string | Yes | Stable critique identifier |
 | assessment_id | string | Yes | Parent assessment |
-| subject_type | string | Yes | Object being challenged |
+| subject_type | CritiqueSubjectType | Yes | Object being challenged; closed by DEC-049 |
 | subject_id | string | Yes | Object identifier |
-| critique_type | string | Yes | Unsupported, duplicate, severity, etc. |
+| critique_type | CritiqueType | Yes | Closed by DEC-049 over the examples below, less `missing_high_impact_threat` |
 | description | string | Yes | Criticism |
 | rationale | string | Yes | Supporting explanation |
 | evidence_ids | list[string] | No | Supporting evidence |
-| recommended_action | string | Yes | Keep, revise, reject, merge, investigate |
+| recommended_action | RecommendedAction | Yes | Keep, revise, reject, merge, investigate (DEC-049) |
 | confidence | ConfidenceLevel | Yes | Critique confidence |
 | status | ObjectStatus | Yes | Review state |
 | generated_by | string | Yes | Critic node or reviewer |
@@ -1699,6 +1804,11 @@ documentation_gap_only
 contradictory_analysis
 
 missing_high_impact_threat
+
+`missing_high_impact_threat` is **not** a `CritiqueType` value. A missing threat has no target
+object, which `agent-design.md` section 15 makes invalid output, and proposing one is the
+threat-generation loop section 27's worked example forbids. DEC-049 records the exclusion and
+what it costs.
 
 # 25. ReviewerDecision
 
@@ -1975,29 +2085,29 @@ context_claim_ids:
 
 component_ids:
 
-- cmp-web
+- cmp-001
 
-- cmp-api
+- cmp-002
 
-- cmp-database
+- cmp-003
 
 asset_ids:
 
-- ast-source-code
+- ast-001
 
-- ast-access-token
+- ast-002
 
 data_flow_ids:
 
-- df-web-api
+- df-001
 
-- df-api-database
+- df-002
 
 trust_boundary_ids:
 
-- tb-internet
+- tb-001
 
-- tb-third-party
+- tb-002
 
 candidate_threat_ids:
 
@@ -2349,6 +2459,11 @@ Implement these first:
 20. ReviewerDecision
 21. WorkflowRun
 22. ExecutionRecord
+23. RequirementsCatalog
+24. EvidenceAssessment
+25. Critique
+26. FindingMergeRecord
+27. EvaluationResult
 
 `SourceObservation` (section 10a) was added by DEC-021 after this list was written, and the list
 was not updated with it. It is not optional: DEC-021 makes contradictions and detected
@@ -2360,6 +2475,35 @@ sits after `ContextClaim` because `subject_claim_ids` references claims.
 objects at all. DEC-037 answers it: they are, `SystemContext.actor_ids` references them, and the
 entry above places `Actor` after `Asset` and before `DataFlow`.
 
-Add Critique, EvidenceAssessment, PromptDefinition, RequirementsCatalog, and EvaluationResult once the main workflow begins operating.
+`RequirementsCatalog` (section 30) was on the deferred list, on the grounds that it should arrive
+once the workflow operates. It arrives earlier than that, and not by preference: DEC-019 makes its
+`content_hash` a value computed and verified at catalog load, DEC-024 puts the whole catalog into
+every mapping call, and the requirement-matcher step needs a loader before either. A catalog read
+without a manifest object is a catalog with no integrity marker and no single place that says what
+version was used, so it sits last on this list rather than on the next one.
+
+Add PromptDefinition once the main workflow begins operating.
+
+`EvaluationResult` (section 28) was on that deferred list and is promoted by DEC-056: the M4
+finding-quality metrics persist their results as rows, because `evaluation-plan.md` section 3
+requires evaluations to be comparable across versions and comparability is a property of stored
+rows rather than console output. It sits last on the list above because it references the
+`WorkflowRun` it evaluates and nothing references it.
+
+`Critique` (section 24) was on that deferred list too, and arrives for the same reason stated
+differently: the critic is the fifth of section 36's six agents and roadmap Stage 4 sets a
+decision gate on whether it improves results at all. The gate cannot be reached without the
+object, and DEC-049 fixes the vocabularies section 24 left as prose examples.
+
+`FindingMergeRecord` (section 21a) was added by DEC-052 after this list was written, the same way
+`SourceObservation` was. It sits last because it references `Finding` and nothing references it:
+a merge record that outran the object it records would be a record of nothing.
+
+`EvidenceAssessment` (section 20) was on that deferred list and arrives with the mapping step
+instead, which is the condition the list states. Two reasons make it earlier rather than
+optional: DEC-022 gave it `evidence_strengths` as the only home for `EvidenceStrength`, and
+DEC-013's `unmet` rule reads its `validation_status`, so the object is a dependency of a rule
+the mapping slice already applies. DEC-046 records that the half of that rule which reads this
+object waits for Finding Consolidation, which is only coherent if the object exists.
 
 The data model should serve the workflow. The workflow should not become complicated merely to exercise every possible object.

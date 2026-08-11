@@ -446,6 +446,8 @@ A `catalog.yaml` manifest lists the requirement identifiers the version contains
 
 `content_hash`, which DEC-006's structured-state model requires on RequirementsCatalog, is deliberately omitted until a loader exists to compute it.
 
+**Corrected 2026-08-09: the loader exists.** `src/trace_ai/services/requirements/loader.py` reads the catalog, validates every requirement against section 17, checks the manifest and the category files against each other in both directions, and computes and verifies `content_hash` per DEC-019 on every load. `requirements/catalog.yaml` carries the value, and `scripts/catalog_hash.py --write` regenerates it. Two sentences below are now historical rather than current: the catalog is no longer data that only a test reads, and the tradeoff that "the test constrains the catalog only while the catalog has no other reader" has expired — the constraint is now at load, for every reader. `RequirementsCatalog` moved from `data-model.md` section 40's deferred list to its build-first list in the same change, for the reason stated there.
+
 Why:
 
 The architecture already requires the catalog to be stored separately from application code and to use version-controlled structured data.
@@ -2642,3 +2644,977 @@ Open Questions:
   `workflow_run_id`?
 - If a reviewer rejects every component, the approved baseline is empty and threat analysis has
   nothing to reason from. Is that a refusal condition at approval, or a legitimate outcome?
+
+## DEC-041: Threat categories are an open vocabulary; `threat_methodology` stays free text
+
+Date: 2026-08-09
+
+Status: Accepted
+
+Decision:
+
+`agent-design.md` section 11 requires the Threat Validation node to "Confirm threat categories use
+permitted values", and no document says what the permitted values are. This entry says.
+
+**`Threat.category` is an open vocabulary, normalized, and never rejected for being unfamiliar.**
+It is the DEC-036 treatment, reached by DEC-036's own stated test: `data-model.md` section 16 types
+the field `list[string]` and *illustrates* two values in its worked example rather than enumerating
+a set. `KNOWN_THREAT_CATEGORIES` in `domain/threat.py` records STRIDE in the snake_case spelling
+that example uses, plus four categories named from OWASP Top 10 for LLM Applications 2025. It is
+documentation and validates nothing.
+
+**An uncategorisable threat is recorded uncategorised.** `category` stays optional, as section 16
+has it. Nothing forces a threat into the nearest STRIDE bucket, because a category that does not
+fit is read downstream as one that does.
+
+**"Permitted values" is satisfied by normalization, not by a whitelist.** What the validation node
+checks is that a category is a well-formed vocabulary term and that the spellings do not drift --
+`Elevation of Privilege`, `elevation-of-privilege`, and `elevation_of_privilege` are one category
+written three ways, and three spellings make a coverage count wrong and a benchmark comparison
+meaningless. An unfamiliar term is recorded, not refused.
+
+**`AssessmentConfiguration.threat_methodology` stays free text for the MVP.** No registry, no enum.
+
+Why:
+
+**STRIDE has no category for the threat ForgeFlow is built around.** `demo/forgeflow/forgeflow-scenario.md`
+section 18's first expected threat is THR-001, repository prompt injection manipulating AI output.
+THR-005 is over-disclosure of source content to a model provider and THR-006 is unreviewed model
+output being published. `agent-design.md` section 10 requires AI-specific threats "where
+applicable". A closed STRIDE enum would reject or mis-bucket the single most important expected
+threat in the demo scenario, and the mis-bucketing is the worse outcome of the two: it is silent.
+
+This is the same failure DEC-036 documents for `component_type`, where a closed enum would have
+rejected six of the seven types `structured-system-input.yaml` uses. The catalog's
+`acceptable_implementations` is the third instance of one principle: a list of examples treated as
+the set of allowed values decides cases it was never shown.
+
+**Adding the AI categories to a closed set would not fix it either.** The set would then be
+whatever taxonomy was current when this was written, and the next scenario outside it fails the
+same way. The names here are cited rather than invented -- LLM01, LLM02, LLM05, LLM10, from a
+framework `requirements/README.md` already adopts -- which makes them a good starting list and
+still not a rule.
+
+**"Generic STRIDE labels are rejected" is a different check.** `agent-design.md` section 39 lists it
+among the fixture tests, and it is about *specificity*: a threat titled "Tampering" with a
+description restating the category is a checklist item, not a scenario. Section 10 says the same
+thing directly -- the agent "should not produce six generic threats merely to satisfy each STRIDE
+category". That check belongs to the Threat Validation node and tests the threat, not the
+vocabulary. Enforcing it through a category whitelist would not catch it, because the label on a
+generic threat is a perfectly valid STRIDE category.
+
+**On `threat_methodology`**: `data-model.md` section 6 types it `string` and one value exists,
+`stride-scenario-based`. A registry with one entry validates nothing and would have to be edited
+before the second methodology could be tried, which inverts the point of the field being
+configuration. `current-architecture.md` section 15 says the initial methodology "will likely use
+STRIDE", which is not the language of a fixed set.
+
+Alternatives Considered:
+
+- A closed STRIDE enum, with AI threats mapped onto the nearest STRIDE category
+- A closed enum of STRIDE plus the OWASP LLM categories
+- An open vocabulary with a warning recorded when a term is outside the known set
+- A required `category`, so every threat carries at least one
+- A registry of known values for `threat_methodology`, validated at assessment creation
+
+Tradeoffs:
+
+- The validation node's category check is weaker than section 11's wording suggests. It catches
+  drift and malformed terms, not an invented taxonomy. What stops a threat being labelled badly is
+  the specificity check and the reviewer at checkpoint 2, not the schema.
+- Coverage metrics over an open vocabulary are harder to compute: "did we cover all six STRIDE
+  categories" needs `STRIDE_CATEGORIES` explicitly rather than iterating an enum. That constant is
+  exported for exactly this.
+- `KNOWN_THREAT_CATEGORIES` will drift from what the corpus actually uses unless something watches
+  it. Nothing does today.
+- Free-text `threat_methodology` means two assessments can record `stride` and `stride-scenario-based`
+  and compare as different. For a single-user MVP with one methodology this costs nothing, and it
+  will cost something the first time results are compared across assessments.
+
+Open Questions:
+
+- Should the Threat Validation node record an observation when a category falls outside
+  `KNOWN_THREAT_CATEGORIES`, so the drift is visible without being refused?
+- At what point does `threat_methodology` need a registry — a second methodology, or the first
+  cross-assessment comparison?
+
+## DEC-042: Threat analysis runs once per assessment, over the whole approved context
+
+Date: 2026-08-09
+
+Status: Accepted
+
+Decision:
+
+`agent-design.md` section 38 question 2 asks whether threat generation should run once for the
+system or separately by trust boundary. It runs **once per assessment**, over the whole approved
+context, in a single model call.
+
+The approved baseline is assembled in full: every component, actor, asset, data flow, trust
+boundary, and context claim the approved `SystemContext` names, plus the evidence the caller
+selects. Nothing is partitioned and nothing is dropped. Only evidence is subject to the input
+budget, and an excluded excerpt is named rather than truncated.
+
+**How this scales, and when it stops.** The trigger is the input budget, not the object count: when
+the assembled architecture no longer leaves room for the evidence behind it, the successor is
+deterministic partition fan-out over **connected component groups** — subgraphs joined by data
+flows — with every partition run for the same assessment and the results merged by the validation
+node. It is not partition by trust boundary. Section 38 question 2 is resolved by this entry.
+
+Why:
+
+**A per-boundary call cannot see a cross-boundary threat.** Four of ForgeFlow's ten expected
+threats span boundaries. THR-001 has repository content reaching a model provider and model output
+returning to a pull-request comment, which crosses three. THR-004 is a cross-tenant authorization
+failure, and tenancy is not a boundary in the architecture at all. An agent shown one boundary at a
+time is structurally unable to describe any of them, and the failure is silent: each call returns
+plausible threats about the slice it was given, and nothing reports what could not be seen from
+there.
+
+**Partitioning multiplies the failure section 10 warns about.** The section says the agent "should
+not produce six generic threats merely to satisfy each STRIDE category". A call that sees one
+boundary has little architecture to reason from and the same coverage checklist, which is exactly
+the condition under which category-filling is the easiest way to answer. Six boundaries then
+produce six near-identical sets, and the duplicate detection in the validation node inherits a
+problem that the invocation shape created.
+
+**Section 23's context minimisation is satisfied by object selection, not by fan-out.** The section
+asks for the smallest *useful* context, and it names what this agent receives: approved context,
+relevant architecture objects, selected supporting evidence. The package already excludes the
+source documents, the ingestion records, the requirements catalog, and every object a reviewer
+rejected. For ForgeFlow that is a small architecture. Splitting it further trades the thing the
+agent is for — seeing how the parts connect — for tokens it is not short of.
+
+**One call is also the cheaper one.** `scripts/estimate_cost.py` assumes a per-assessment threat
+call. Per-boundary invocation multiplies the architecture context by the number of partitions,
+because each call needs enough surrounding architecture to be coherent, and the shared prefix stops
+being shared.
+
+This is the same shape as DEC-024, reached from the other direction: send the whole thing, and when
+it stops fitting, partition without excluding rather than filter.
+
+Alternatives Considered:
+
+- One invocation per trust boundary, as section 38 question 2 proposes
+- One invocation per bounded group of components, chosen deterministically
+- One invocation per externally reachable entry point
+- Two passes: a per-boundary pass for depth and a whole-system pass for cross-boundary scenarios
+
+Tradeoffs:
+
+- One call means one failure. A schema failure loses the whole threat set rather than one
+  partition's, and the retry re-sends the whole architecture. The retry budget is two, and the
+  cost of a repeated call is the cost this decision already accepted.
+- Depth per component is lower than a focused call would give. A threat agent looking at one
+  component in isolation would notice more about it; the judgment here is that noticing how
+  components connect matters more for an architecture review, which is what this project is.
+- The approved context has to fit one request. It does for ForgeFlow and for anything of that size,
+  and the expiry trigger above is the point at which it stops being true.
+- Coverage is unmeasurable per boundary. Nothing reports "these two boundaries produced no
+  threats", because there is no per-boundary unit of work to report on. If that turns out to
+  matter, it is a coverage-metadata output on the proposal, not a change to the invocation shape.
+
+Open Questions:
+
+- Should the node record which architecture objects no threat referenced, as a coverage signal for
+  the reviewer at checkpoint 2?
+- Does re-running threat analysis after a context revision need to see the previous run's threats,
+  or is a fresh pass plus duplicate detection the better shape?
+
+## DEC-043: Duplicate threats are found by deterministic feature comparison and proposed, never merged
+
+Date: 2026-08-09
+
+Status: Accepted
+
+Decision:
+
+`agent-design.md` section 38 question 7 asks whether duplicate detection should use embeddings, a
+model, deterministic features, or a combination. For the MVP: **deterministic features**, scored,
+with the outcome recorded as a proposal.
+
+Three features, weighted, summing to one:
+
+| Feature | Weight | What it compares |
+|---|---|---|
+| Title | 0.50 | Jaccard overlap of normalized title tokens, minus a short stop list |
+| Targets | 0.35 | Jaccard overlap of affected component and asset identifiers, as one set |
+| Category | 0.15 | Jaccard overlap of the category lists |
+
+A pair scoring above **0.75** is proposed as a duplicate. Two empty sets score 0.0 rather than 1.0.
+
+**The output is a `MergeProposal`, and nothing merges.** It carries both threat identifiers, the
+score, and which features matched. Section 11 requires the merge decision to stay explicit and
+traceable, and section 16 assigns the merge itself to Finding Consolidation in M4. A merge proposal
+does not block the threat set from reaching control mapping: two overlapping threats are still two
+threats worth mapping, and collapsing them first would lose whichever the merge did not keep.
+
+**When this is revisited.** Two triggers, either one sufficient. First, a benchmark duplicate rate
+that this misses — `agent-design.md` section 10 lists duplicate rate as an evaluation criterion, so
+the number exists to check against. Second, vector infrastructure arriving for another reason;
+`current-architecture.md` section 17 defers it, and if it stops being deferred, an embedding
+comparison becomes cheap enough to add as a *second* signal alongside these features rather than in
+place of them. The pairwise comparison is quadratic, which is free at tens of threats and worth
+revisiting past a few hundred.
+
+Why:
+
+**An embedding approach has no substrate.** `current-architecture.md` section 17 defers vector
+infrastructure. Adding an embedding model for this one comparison would mean a second provider
+dependency, a second thing to cache, and a similarity threshold tuned against nothing — the
+benchmark that would tune it is the same one that has not run yet.
+
+**A model-assisted comparison would put a model call in a deterministic node.** `agent-design.md`
+section 4 classifies this node as deterministic, and the six-agent cap in section 36 is on
+model-assisted agents. A comparison call is arguably not an agent, which is exactly the argument
+that erodes a cap. It is also the wrong shape: a model asked whether two threats are the same
+returns a judgment with no features attached, and section 11 requires the decision to be traceable.
+
+**The weights follow from what a duplicate actually is.** Two threats are the same threat when they
+describe the same thing happening to the same objects. Title carries the most weight because it is
+the only field that summarises the scenario, and targets carry nearly as much because a title can
+be reworded while the objects cannot. Category is a coverage label rather than a description, so it
+breaks ties and does not decide.
+
+**0.75 is where identical-alone stops being enough.** A pair with identical titles and no shared
+target scores 0.50; identical targets and no shared title scores 0.35. Either is a real possibility
+— two different scenarios against one component, or one scenario written twice about different
+components — and neither should be proposed on its own. A pair matching strongly on both crosses.
+The number is a starting point with a stated meaning rather than a tuned value, because there is
+nothing yet to tune it against.
+
+**Two empty sets score 0.0, not 1.0.** The convention matters more than it looks: DEC-041 makes
+`category` optional, and a Jaccard implementation returning 1.0 for two empty sets would make every
+pair of uncategorised threats look identical on that feature.
+
+Alternatives Considered:
+
+- Embedding similarity over threat descriptions, with a vector store
+- A model-assisted pairwise comparison, prompted to answer "same threat or not"
+- Exact match on normalized title only, as `workflow/context_validation.py` does for components
+- Deterministic features first, escalating to a model call for pairs in an uncertain band
+- Merging automatically above a higher threshold and proposing between the two
+
+Tradeoffs:
+
+- Rewording defeats it. Two threats describing one scenario in different words, against different
+  components, are not detected. That is the case an embedding would catch and this does not, and
+  it is the reason the revisit trigger is a measured duplicate rate rather than a date.
+- The threshold is asserted, not derived. Until the benchmark runs, nobody knows whether 0.75 is
+  generous or strict, and the failure directions are asymmetric: too low produces proposals a
+  reviewer dismisses, too high produces duplicates nobody sees.
+- Stop words are a small English list. A title in another language tokenizes worse, which does not
+  matter for a local single-user MVP assessing English documentation and would matter later.
+- Proposals do not block, so a run can reach control mapping with two near-identical threats and
+  map both. That is the intended behaviour and it costs a mapping call.
+
+Open Questions:
+
+- Should the merge proposal survive into checkpoint 2's review package, or is it consumed by
+  Finding Consolidation and never shown?
+- Does a proposal need a recommended survivor — the more specific threat, the one with more
+  evidence — or is that the merging step's judgment?
+
+## DEC-044: Two nodes create controls, both record which; `Control` gains provenance
+
+Date: 2026-08-09
+
+Status: Accepted
+
+Decision:
+
+No document said which node creates a `Control`. Three places imply they exist — Context Extraction
+identifies "Existing controls" (`agent-design.md` section 7), the Mapping Agent outputs "New or
+refined Control objects" (section 12), and Mapping Validation must "Confirm control identifiers
+exist" (section 13) — and section 18 carried no field recording which of them was responsible.
+
+**Two nodes create controls, and a reviewer is the third origin.**
+
+| Origin | `generated_by` | When |
+|---|---|---|
+| Context Extraction | `context-extraction-v1` | The documentation describes a safeguard while the architecture is being read |
+| Requirement and Control Mapping | `mapping-v1` | A requirement is evaluated and a control bearing on it is found described |
+| Reviewer | `reviewer_edit` | A person adds one at a checkpoint |
+
+**A control claimed during context extraction becomes a `Control` row at conversion**, alongside
+the components and claims from the same response, with `validation_status: not_evaluated`. It does
+not wait for the mapping step. A safeguard the documentation describes is a fact about the
+architecture, the reviewer approves it at checkpoint 1 with everything else, and the mapping step
+then references it by identifier through `existing_control_ids` rather than re-proposing it.
+
+**`Control` gains `generated_by` and `created_at`.** Both required. `data-model.md` section 18 is
+updated, which is what makes this a design change rather than an implementation detail.
+
+**An asserted implementation status cites evidence.** `implemented`, `partially_implemented`, and
+`absent` require at least one `EvidenceReference`. `claimed` and `unknown` do not. A `planned` or
+`recommended` control is exempt whatever its status.
+
+**`ControlMapping` keeps the mirrored rule.** `satisfied`, `partially_satisfied`, and `unmet`
+require evidence; `unverified` does not.
+
+Why:
+
+**Provenance was unrecoverable, and this is the one object where three answers were possible.**
+Every other object the pipeline produces carries `generated_by` or `source_origin` or both. A
+control could have come from the extractor, the mapper, or a person, and the record could not say
+which — which matters directly for evaluation, because "did the extractor recognise the inherited
+managed-database encryption" and "did the mapper infer it while evaluating a requirement" are
+different results with different fixes.
+
+**Creating extraction-found controls at conversion keeps checkpoint 1 meaningful.** The alternative
+— the extractor notes controls in prose and the mapper creates the rows later — puts a class of
+architectural fact outside the baseline the reviewer approves. DEC-040 recomputes approved
+membership from the store, so a control created after checkpoint 1 would never be in an approved
+revision at all, and the reviewer would first see it inside a mapping.
+
+**The evidence rules are one rule from two ends, and both ends are named failure conditions.**
+Section 12 lists "unverified controls are marked implemented" as a failure of the mapping step;
+section 19 says a high proportion of `unverified` mappings "is the expected result of assessing
+ordinary architecture documentation" and "must not be treated as a defect". A schema requiring
+evidence everywhere would force every honest silence into a status that asserts something, which is
+the DEC-009 collapse. A schema requiring it nowhere would leave section 12's failure entirely to
+instruction. Requiring it for exactly the statuses that assert something is the only split that
+serves both.
+
+`unmet` cannot be reached by silence for a structural reason section 19 already gives: an
+`EvidenceReference` quotes real source text, so an absence has nothing to cite.
+
+Alternatives Considered:
+
+- Only the mapping step creates controls; extraction records them as context claims and the mapper
+  converts them
+- Only extraction creates controls; the mapper may reference but never propose
+- No `generated_by`, with provenance recovered from the `ExecutionRecord` that produced the object
+- `source_origin` instead of `generated_by`, matching the five context objects DEC-039 covers
+- Require evidence for every implementation status, and record undocumented controls as `unknown`
+
+Tradeoffs:
+
+- Two creating nodes means duplicate controls are possible: the extractor records a safeguard and
+  the mapper proposes the same one under a different name. `existing_control_ids` is the mechanism
+  that should prevent it, and nothing enforces that the mapper uses it. The Mapping Validation node
+  is where that check belongs.
+- `generated_by` and `created_at` widen section 18 beyond what the corpus originally specified.
+  Every field added to a data-model object is a field an agent might try to set, and both are
+  absent from `ControlProposal` for that reason.
+- The evidence rule is structural and says nothing about evidence *quality*. A control citing a
+  passage that does not actually describe it passes here; that is the Evidence Validation step's
+  question, and `validation_status: not_evaluated` at promotion is what records that it has not
+  been asked yet.
+- `source_origin` is not added, so a control does not record whether the underlying material was an
+  uploaded document or structured input the way DEC-039's five context objects do. `generated_by`
+  names the node, and the node's `ExecutionRecord` names what it consumed.
+
+Open Questions:
+
+- Should the extractor's control-recognition be a separate evaluation metric from the mapper's,
+  given they are now distinguishable?
+- When the mapper proposes a control the extractor already created, is that a duplicate to merge or
+  a refinement to apply? Section 12 says "new or refined", and refinement has no mechanism yet.
+
+## DEC-045: A documentation gap's severity rates the gap, is proposed, and is never `unassigned`
+
+Date: 2026-08-10
+
+Status: Accepted
+
+Decision:
+
+`DocumentationGap.severity` reuses section 4.5's `Severity` vocabulary for a different quantity than `Finding.severity` carries, and the two are governed by opposite rules.
+
+**It rates the gap, not a weakness.** The value answers how much the inability to verify impedes the assessment — whether a reviewer should chase the missing documentation before relying on the result. It does not say a control is absent, and nothing downstream may read it as though it did. `data-model.md` section 23 already names the field "Importance of documentation gap"; this states the consequence.
+
+**The node that raises the gap assigns it, and `DocumentationGapProposal` carries the field.** DEC-030 removed severity from every agent's output and made the reviewer its origin. That decision is about `Finding` and stays that way.
+
+**A `DocumentationGap` may not carry `unassigned`.** `DocumentationGap` refuses the value in a validator rather than defaulting to it.
+
+Why:
+
+DEC-030's mechanism does not reach this object, and the gap is structural rather than an oversight. Findings arrive `unassigned` because checkpoint 2 exists to resolve it: `current-architecture.md` section 5.12 lists "Assign or change severity" among the reviewer's actions, and DEC-030 makes an approval carrying `unassigned` a validation failure. Both halves are about findings. **Section 5.12 lists no action on a documentation gap at all** — the reviewer's gap-shaped action there is converting a *finding* into one.
+
+So a gap created with `unassigned` would keep that value through the entire pipeline and render into report section 9 with it. That is not a field awaiting a decision; it is a decision nobody is ever asked to make, displayed as though someone declined to make it. Refusing the value is what makes the difference visible at the point of construction rather than in the report.
+
+DEC-030's substantive argument also fails to transfer, which is why the different rule is not merely a workaround for a missing checkpoint. Severity on a finding is a business-risk judgment — what an outage costs, what the data is worth — and architecture documents do not contain it, so an agent asked for it produces a fluent answer from material that cannot support one. The importance of a documentation gap is a judgment about the *assessment*: which requirement could not be evaluated, which threat it bore on, how much of the analysis rests on the unknown. Every input to it is in the pipeline's own state, and the mapping step holds all of it at the moment it raises the gap. This is an evidence judgment in DEC-009's sense, not a risk judgment.
+
+The two fields sharing a vocabulary is the residual hazard, and it is accepted rather than solved. A separate `GapImportance` enum was the alternative, and it would make the distinction unmissable at the cost of contradicting section 23's field table, which types the field `Severity`. `data-model.md` is authoritative for types (`CLAUDE.md`), and `tests/unit/test_data_model_conformance.py` would fail on the change. Defending the distinction in the model docstring, the proposal docstring, and the validator's error message is weaker than a type would be, and it is what the authoritative document permits.
+
+Note that `importance` — required, free text, section 23 — is the field a reviewer actually reads. `severity` orders the list; `importance` says why the entry is on it. A gap carrying a severity and no importance would be a label with no argument behind it, which is why the schema requires both.
+
+Alternatives Considered:
+
+- Create gaps with `unassigned` and add a gap-severity action to checkpoint 2
+- A separate `GapImportance` enum, contradicting section 23's field table
+- Drop `severity` from `DocumentationGapProposal` and derive it deterministically from the mapping
+- Make `severity` optional on `DocumentationGap` and let the renderer omit it
+- Treat `importance` as the only rating and remove `severity` from the object
+
+Tradeoffs:
+
+- **One vocabulary now means two things**, and the object that carries the ambiguous field is the one whose whole purpose is to not be read as a finding. A reader scanning report section 9 beside section 8 sees `high` in both and has no visual cue that they are different quantities.
+- The mapping agent proposes a value with no evidence reference attached, which is the property DEC-030 objected to. The defence is that the inputs are pipeline state rather than business context, and it is a defence rather than a disproof.
+- Refusing `unassigned` means a node that genuinely cannot rate a gap has to pick a value anyway. `informational` is the honest floor and nothing enforces its use over `medium`.
+- Gap severities are unmeasured, in the same way DEC-030 leaves finding severities unmeasured. Nothing in `evaluation-plan.md` scores them.
+- If checkpoint 2 later gains gap review, this decision has to be revisited rather than extended: the reviewer would be editing a value an agent proposed, which is DEC-023's edit path and not DEC-030's assignment path.
+
+Open Questions:
+
+- Should the reviewer be able to edit a gap's severity at checkpoint 2, given that gaps appear in the review package but carry no approval action?
+- Does report section 9 need to state that gap severity and finding severity are different quantities, or does the section's own framing carry it?
+- Is a deterministic floor available — a gap on a requirement no threat could evaluate is at least `low` — or is that the same optional-free-text problem DEC-030 found?
+
+## DEC-046: The downgrade is recorded on the mapping; two of DEC-013's four conditions wait for Finding Consolidation
+
+Date: 2026-08-10
+
+Status: Accepted
+
+Decision:
+
+**`ControlMapping` gains `downgraded_from` and `downgrade_reason`.** When the Mapping Validation node lowers a proposed `unmet` to `unverified`, it records the status it lowered *from* and the DEC-013 condition that failed. Both fields are present or both absent, and a downgrade whose recorded origin equals its current status is refused.
+
+**A downgrade is not a suppression.** DEC-025's `suppressed_conclusion` and `suppressed_by` stay for what they were added for: the *agent* declining a negative conclusion because a `common_false_positives` entry applies. A downgrade is the *application* refusing one the agent drew. The four fields are not merged.
+
+**The node applies the two DEC-013 conditions that can be checked where it runs.** DEC-013 states four conditions for `unmet`. Conditions 1 and 4 — at least one cited `EvidenceReference`, and no unresolved contradiction bearing on the conclusion — read only the mapping, the catalog, and the `SourceObservation` records, all of which exist at this phase. Conditions 2 and 3 read `EvidenceAssessment`: whether a cited reference is `direct` or `contradictory` rather than merely `contextual`, and whether the assessment's `validation_status` is `supported` or `partially_supported`.
+
+**`EvidenceAssessment` does not exist yet when this node runs**, and that is the pipeline's order rather than an implementation gap. `current-architecture.md` section 5.3 puts Evidence Validation *after* Requirement and Control Mapping. So DEC-013's "enforcement happens twice" is narrowed here: Mapping Validation enforces conditions 1 and 4 and performs the downgrade for them; Finding Consolidation applies the outcome table, including conditions 2 and 3, and performs any further downgrade at that point. DEC-025's structural check — an `unmet` against a requirement carrying `common_false_positives` entries must say why none applies — is enforced here too, because it reads only the catalog.
+
+Why:
+
+The record had to live somewhere and DEC-013 already implied where. Its own open questions ask whether the downgrade should be "visible to the reviewer as a distinct event, rather than only as a recorded reason **on the mapping**", which takes the mapping as the baseline and asks whether more is needed. This decision answers only the baseline; the distinct-event question stays open.
+
+Reusing DEC-025's two fields was the obvious shortcut and it destroys the measurement both records exist for. `evaluation-plan.md` section 8 makes false-negative rate a primary metric, and the two records answer different questions about a rising rate. A high suppression count with a low downgrade count means the *catalog* is suppressing too much — DEC-011 names over-suppression as `common_false_positives`'s principal risk. A high downgrade count with a low suppression count means the *agent* is reaching for negative conclusions the evidence does not carry. One pair of fields would show a single number that could not distinguish a catalog problem from a model problem, which is exactly the attribution DEC-025 was written to preserve.
+
+Recording rather than silently lowering follows the same argument the issue makes: a silent downgrade is as invisible to evaluation as a silent upgrade. It also keeps the node honest about what it did — `agent-design.md` section 8 and section 11 both make the validators report rather than correct, and this node is the one place a validator *does* change its input. DEC-013 sanctions that specific change and no other; the record is what keeps the exception legible as an exception.
+
+The split across two nodes deserves recording because the alternative reading is available and wrong. One could implement conditions 2 and 3 here against a *missing* `EvidenceAssessment` and treat absence as failure, which would downgrade every `unmet` mapping in every run, unconditionally, and look like a very strict evidence rule rather than like a node reading a field that is not populated yet. Nothing would fail; the assessment would simply never report an unmet requirement, and the false-negative rate would move with no attributable cause.
+
+Alternatives Considered:
+
+- Reuse `suppressed_conclusion` and `suppressed_by` for the downgrade
+- A `Downgrade` object of its own, linked to the mapping
+- Record downgrades only in `ExecutionRecord` metadata
+- Move Evidence Validation before Requirement and Control Mapping so all four conditions are checkable at once
+- Treat a missing `EvidenceAssessment` as failing conditions 2 and 3
+- Perform the whole DEC-013 rule in Finding Consolidation and leave Mapping Validation reporting only
+
+Tradeoffs:
+
+- **Two more optional fields on the most complex object in the model.** `ControlMapping` now carries four fields about conclusions that were not drawn, which is more space given to negative space than to the mapping itself.
+- The reviewer sees `unverified` with a note, not the `unmet` the agent proposed. Whether that is enough visibility is DEC-013's open question and is still open.
+- **DEC-013's enforcement is now genuinely partial at this node**, and a reader of section 19 could reasonably expect the whole rule to run here. The document says which half runs where; a reader who skips that will over-trust this node.
+- Splitting the rule across two nodes means the second half has no implementation yet — Finding Consolidation is M4 — so between now and then an `unmet` resting on purely contextual evidence survives to the checkpoint. The reviewer is the backstop in the meantime, which is weaker than the decision intends.
+- `downgraded_from` is a status the mapping never had persisted, so an audit reading only stored states sees `unverified` and a claim that it used to be something else. There is no `ExecutionRecord` of the intermediate object.
+
+Open Questions:
+
+- Should Finding Consolidation append to `downgrade_reason` or overwrite it when it applies conditions 2 and 3 to an already-downgraded mapping?
+- Does a downgrade belong on the checkpoint 2 review package as its own line, or is the mapping's status enough?
+- Should the ratio of downgrades to suppressions be an evaluation metric in its own right, given that this decision argues the two numbers mean different things?
+
+## DEC-047: `EvidenceAssessment` carries the recommendation; the evidence hierarchy is a vocabulary, not a score
+
+Date: 2026-08-10
+
+Status: Accepted
+
+Decision:
+
+**`EvidenceAssessment` gains `recommendation`**, a closed vocabulary of five values: `continue`, `revise`, `stop`, `downgrade_to_question`, `documentation_gap`. `agent-design.md` section 14 lists "recommendations to continue, revise, or stop a candidate conclusion" among the agent's outputs and adds the two DEC-009 outlets under its allowed operations. Section 20's field table had nowhere to put any of them, so the field is added and `data-model.md` section 20 records it.
+
+**It is a recommendation and not an action.** DEC-013's outcome table decides what a conclusion becomes, deterministically, from `satisfaction_status` and `validation_status`. The agent's recommendation is stored beside that so the two are comparable rather than so one is obeyed. The agent creates no `Question`, creates no `DocumentationGap`, and approves nothing.
+
+**Section 14's evidence hierarchy is an ordered vocabulary and nothing converts it to a number.** `EVIDENCE_HIERARCHY` is a tuple of seven labels a rationale cites by name. No function ranks two levels, no field stores a position, and no rule combines a level with a confidence.
+
+**`subject_type` is a closed enum over section 20's own five**: `context_claim`, `control`, `control_mapping`, `threat`, `finding`. `documentation_gap` is not among them.
+
+Why:
+
+The recommendation had to be persisted or discarded, and discarding it removes the only signal that would show the agent and the deterministic rule disagreeing. `evaluation-plan.md` section 7 measures classification accuracy against a truth set; the cheaper and earlier signal is internal — an assessment recommending `stop` on a conclusion the outcome table carries forward is a case worth a person's attention, and it is invisible if the recommendation lives only in a proposal object that promotion drops. This is the same argument DEC-025 made for suppressions and DEC-046 for downgrades, and adding the field follows DEC-044's precedent of giving a named output a home rather than letting it evaporate at the boundary.
+
+Making it advisory rather than executive is what keeps DEC-005 and DEC-013 intact. A recommendation the pipeline obeyed would be an agent deciding a candidate's fate, and DEC-013 deliberately made that determination a deterministic table precisely so no prompt instruction could move it.
+
+The hierarchy is the more consequential half of this entry, because encoding it as a score is the natural implementation and it contradicts the document in one line. Section 14 says the hierarchy "is guidance, not a universal scoring formula". A rank function would make that sentence false: as soon as levels compare, a downstream rule will compare them, and the result is a number that looks like a measurement of evidence quality while actually being the position of a label in a list somebody wrote once. `design-principles.md` section 15 asks whether a score helps a reviewer decide or merely makes the output look precise, and applied here the answer is available rather than debatable — the reviewer wants to know *why* a passage is direct evidence, which is the rationale, not that it scored 2.
+
+`subject_type` is closed for the reason a free string here is worse than a free string elsewhere: an assessment whose subject type does not match its subject identifier is unjoinable to the thing it assesses, and nothing downstream can detect it. DEC-036's test applies cleanly — section 20's purpose *names* the five rather than illustrating them — so the prefix check has something to check against. `documentation_gap` is excluded because section 14 lists gap candidates among the agent's outputs rather than among what it evaluates, and an assessment of a gap would be an evaluation of whether the evidence supports the claim that there is no evidence.
+
+Alternatives Considered:
+
+- Keep `recommendation` on the proposal only, consumed by the validating node and discarded
+- A separate `Recommendation` object linked to the assessment
+- Let the recommendation drive the outcome, and make DEC-013's table the fallback
+- Add a numeric `evidence_level` field ranking each reference on the hierarchy
+- A `rank()` helper that compares two hierarchy levels without storing a number
+- Leave `subject_type` a free string, as section 20's table types it
+- Include `documentation_gap` in `SubjectType`
+
+Tradeoffs:
+
+- **A field the pipeline does not act on.** `recommendation` is written and, until Finding Consolidation exists, read by nothing. That is one more thing to keep correct with no test downstream of it that would notice if it were wrong.
+- Storing an advisory recommendation beside a deterministic outcome invites a future reader to wire the first into the second. Nothing structural prevents it; this entry is the only thing that does.
+- **Refusing a rank function makes some legitimate work harder.** "Is this evidence stronger than that evidence" is a question a reviewer will ask, and the answer is now prose rather than a comparison. That is the intended exchange and it is a real cost.
+- The seven hierarchy levels are carried as a vocabulary nothing validates against: no field stores a level, so an agent citing one in a rationale can cite it wrongly and no schema notices.
+- Closing `subject_type` means an object type added later is a schema change rather than a value. `Finding` is in the enum before the model exists, which is a value nothing can currently produce.
+- Excluding `documentation_gap` means a gap's own evidential basis is never assessed. If gaps later need validating, this decision has to be revisited rather than extended.
+
+Open Questions:
+
+- When Finding Consolidation lands, should a disagreement between `recommendation` and DEC-013's outcome be a human-review trigger, or only an evaluation metric?
+- Should `evidence_strengths` and the hierarchy be reconciled — `EvidenceStrength` has four values and the hierarchy seven levels, and neither maps onto the other?
+- Does `Finding` belong in `SubjectType` before `Finding` exists, or should the enum grow with the models?
+
+## DEC-048: Evidence validation gets a deterministic node; `agent-design.md` section 3's diagram should be amended
+
+Date: 2026-08-10
+
+Status: Accepted
+
+Decision:
+
+**A deterministic node is built behind the Evidence Validation agent**, at `workflow/evidence_assessment_validation.py`, even though `agent-design.md` section 3's workflow overview does not draw one.
+
+**Section 3's omission is an omission, not an intent**, and the diagram is amended to show the node. That edit has since been made, together with the section 4 classification row and the `NODES_BY_PHASE` entry, and the diagram carries a sentence saying why both nodes arrived late.
+
+**The same correction applies to the Critique Validation node**, which section 3 did not draw either and which `agent-design.md` section 15 and section 22 require for the same reasons. It was built under the same argument and is now drawn. That answers this entry's second open question: two nodes were missing, not one, and every reasoning agent is now followed by a deterministic node.
+
+**This node owns the write, and it is the only validator for which that is literally true.** `workflow/evidence_validation.py` contains no store write — no `objects.save`, no `.transaction()`, no `allocate(` — and a test asserts it. Persistence of an `EvidenceAssessment` is unreachable except through validation. The other three validators check objects their agents already persisted.
+
+**Four of section 14's six failure conditions are checked here**: evidence references that do not exist, unsupported claims marked supported, model-generated text treated as source evidence, and contradictions present in the input and absent from the output. Misquotation is checked at the agent node, where the raw output still exists to preserve in `traces/`. "Evidence quantity is mistaken for evidence quality" is checked nowhere, because it is a judgment about reasoning.
+
+**Validation-status transitions are a permitted set.** `not_evaluated` may move anywhere, a status may be re-applied unchanged, and `requires_confirmation` may move anywhere. A settled classification moving to a different settled one is an error, not a write.
+
+**This node corrects nothing.** DEC-013 authorises Mapping Validation to downgrade an unsupported `unmet`; nothing here has an equivalent authority, and a failing assessment is refused rather than adjusted.
+
+Why:
+
+Two rules in the corpus outrank a diagram, and both apply directly. `data-model.md` section 33 requires validation after model-generated structured output without conditioning it on a node being drawn. `agent-design.md` section 22 states that agents never write authoritative records — so if no node exists, either the agent writes, which section 22 forbids, or nothing writes, which loses the output section 14 specifies. Section 4 also classifies every other reasoning agent as needing deterministic follow-up, and there is no property of this agent that would exempt it; if anything the case is stronger, because its failure conditions are the most mechanically checkable in the corpus.
+
+The asymmetry is worth recording rather than silently fixing, because the next reader will meet the diagram before the code and conclude one of them is wrong. It is the diagram.
+
+**Making this node the sole write path is the part that is more than tidiness.** For the other three agents, section 22's write model is a statement about who decides, enforced by convention: the agent node persists, having validated first, and nothing structural stops a future edit from persisting before validating. Here the agent module has no persistence code in it at all, so the rule is a property of the import graph. That is the strongest form of section 22 available, and it arrived because the split was forced — `NodeResult` carries identifiers and counts and never an object (section 31's state-design rule), so the proposal had to travel to the validator some other way, and the way that worked put the write on the far side.
+
+The transition table exists because "updated validation statuses" is the one thing this node changes on an object it did not create. Without a table the node would be a general-purpose status setter driven by model output, which is DEC-006's authoritative-state rule leaking. With one, a reversal is an event someone has to decide on. `requires_confirmation` moving freely is the case the table exists to permit rather than to catch: it means the documents could not settle the question and a person could, so a later answer resolving it is the designed path and not an anomaly.
+
+Refusing to correct is the same reasoning `agent-design.md` section 8 applies to the Context Validation node, stated for a different object. A node that re-labelled a `supported` assessment as `unsupported` to make it pass would produce a conclusion nobody asserted with a clean validation record, and the reviewer would never learn that the agent had claimed more than the evidence carried.
+
+`persist_assessments` refuses outright rather than writing the assessments that passed. A partial write leaves the run reporting a mixture nobody decided on, and the retry that follows would re-propose the failed assessments against a store already holding their siblings — which is a duplicate set with no way to tell which pass produced which.
+
+Alternatives Considered:
+
+- No node: let the Evidence Validation agent persist its own output, as the other three do
+- A node that corrects a failing assessment down to the strongest status its evidence supports
+- Amend `agent-design.md` section 3 in this change rather than recording that it should be amended
+- Allow any validation-status transition and record the previous value, as DEC-046 does for downgrades
+- Write the assessments that validated and report the rest as errors
+- Fold the checks into the agent node, keeping one module per step
+
+Tradeoffs:
+
+- **The code and the authoritative document now disagree**, deliberately, until section 3 is amended. Anyone reading the diagram alone will believe evidence validation has no follow-up node.
+- The split makes this step two modules where every other step is one, and a reader comparing them will see an inconsistency before they see the reason for it.
+- **The transition table is strict in a way that will be inconvenient.** A second run that genuinely reaches a different conclusion — new evidence, a reviewer answer, a corrected document — hits an error rather than an update. Whether re-running should relax it is unanswered.
+- Only `Control` carries a `validation_status`, so the transition machinery applies to one of the five subject types and is inert for the rest. That is correct today and looks over-built.
+- Refusing the whole set on any failure means one malformed assessment blocks four good ones. The retry re-proposes all five, which costs a call and re-derives work that was already right.
+- The model-generated-text check keys on `EvidenceReference.source_origin`, so it catches a citation to a system-produced reference and not a rationale that paraphrases an earlier analysis in its own words. The second is the likelier form and nothing detects it.
+
+Open Questions:
+
+- Should a re-run be allowed to move a settled validation status, and if so does it need DEC-046's from/reason record?
+- ~~Does `agent-design.md` section 3's diagram need any other node it does not draw, or is this the only one?~~ Answered: two were missing, this one and Critique Validation. Both are drawn, and section 4's table lists both.
+- Should the other three agents adopt the same arrangement — no write in the agent module — or is the convention enough where the node already validates first?
+
+## DEC-049: The critic reviews one threat's lineage, its vocabularies are closed, and it proposes no missing threats
+
+Date: 2026-08-10
+
+Status: Accepted
+
+Decision:
+
+**The critic's unit of work is one threat and everything downstream of it.** The review group is a threat, the `ControlMapping` objects that cite it, the `Control` objects those mappings reference, the `EvidenceAssessment` objects over any of them, and the `DocumentationGap` objects raised alongside. That is `agent-design.md` section 23's "bounded group of related objects" made specific, and it is the same chain `data-model.md` section 32 calls object lineage.
+
+**`Critique`'s three prose vocabularies become closed enumerations.** `CritiqueSubjectType` has six values — `threat`, `control`, `control_mapping`, `evidence_assessment`, `documentation_gap`, `finding`. `CritiqueType` has eleven, section 24's twelve less one. `RecommendedAction` has section 24's five.
+
+**`missing_high_impact_threat` is excluded, and the critic proposes no missing threats.** Section 15 lists both among the critic's concerns and outputs; both are dropped for the MVP.
+
+**A severity critique needs a severity that someone assigned.** `severity_overstated` and `severity_understated` are refused against `unassigned` and against a subject that carries no severity at all. `DocumentationGap` is where the pair is genuinely reachable in M3, because DEC-045 has the mapping step assign a gap's rating and forbid `unassigned`.
+
+Why:
+
+**The unit of work follows from what a critique has to be able to say.** Section 15's twelve concerns are almost all comparisons — an ignored inherited control compares a mapping against a control, a duplicate compares two threats, a mislabelled documentation gap compares a mapping's conclusion against its evidence. None of them can be made from a single object, and all of them can be made from one threat's downstream chain. A smaller group makes the comparison impossible; a larger one is section 15's "unrestricted second full assessment" prohibition, which is a statement about scope rather than about volume.
+
+The per-threat shape also matches what the pipeline already does. DEC-024 makes mapping per-threat for its own reasons, so the mappings, controls, and assessments belonging to one threat are already a natural set, and no new grouping rule is invented to produce it.
+
+**Closing the vocabularies is where section 15's two structural failure conditions live.** "Critiques lack target objects" and "critiques lack actionable recommendations" are the only two of its six that a schema can refuse, and a free-text `subject_type` or `recommended_action` gives it nothing to refuse. Section 24 types them as strings and then names the values in prose — `recommended_action` is described as "Keep, revise, reject, merge, investigate", which is DEC-036's naming case rather than its illustrating case. `critique_type` is headed "Critique-type examples", which reads like the illustrating case and is treated as the naming case anyway, because the alternative is a critique type nobody can route on and section 15's last failure condition is precisely output that cannot be traced to specific issues.
+
+`CritiqueSubjectType` has six values where section 24's purpose names three — "a generated threat, mapping, or finding" — because section 15's own responsibilities need more targets than its purpose sentence allows. A critique about a mislabelled documentation gap has a gap as its natural target, and one about an unsupported claim often has an evidence assessment. Reading the purpose sentence as exhaustive would force those critiques onto the nearest permitted object and lose which thing was actually wrong.
+
+**Excluding missing-threat proposals resolves a contradiction inside section 15 rather than overriding it.** The section lists "missing high-impact threats" among what the critic looks for and "candidate missing-threat proposals" among its outputs, and it also makes "critiques lack target objects" invalid output. A missing threat has no target object by definition. One of those three statements has to give, and the failure condition is the one that is structurally enforceable and that the whole object model is built around.
+
+Section 27 settles it from the other direction, with a worked example that is exactly this case: "The critic may recommend that a threat be reconsidered. It may not automatically start an unlimited threat-generation and criticism loop." A critic-proposed threat is a threat generated outside the single call DEC-042 specifies, from different inputs, with the Threat Validation node already several phases behind it. There is nowhere for it to be validated and no phase for it to be generated in.
+
+Roadmap Stage 4's decision gate — "if the critic or another agent does not improve results, remove or defer it" — argues for the narrowest useful version. Missing-threat proposals are the widest thing section 15 asks for and the least verifiable; building them before the gate is passed is building the feature most likely to be removed.
+
+**The severity rule exists because the two severity critique types are almost unreachable and the reason is easy to miss.** Critical review runs before checkpoint 2, where DEC-030 has the reviewer assign a finding's severity. So on a `Finding`, severity is `unassigned` everywhere the critic can see it, and `severity_overstated` against `unassigned` is a critique of a default value nobody chose. Refusing it by name, citing DEC-030, is what stops the pair being used as a general-purpose "I disagree with the emphasis" type. `DocumentationGap` keeps them honest: DEC-045 makes a gap's severity a real judgment made by a real step, so disagreeing with it is a real critique.
+
+Alternatives Considered:
+
+- Review the whole assessment at once, as one call
+- Review one object at a time, with no group
+- Group by component rather than by threat
+- Leave `critique_type` open, since section 24 heads its list "examples"
+- Keep `missing_high_impact_threat` and let it target the `SystemContext` version or an unreached `Component`
+- Keep missing-threat proposals behind a bounded budget, per section 27's loop rules
+- Drop `severity_overstated` and `severity_understated` entirely until `Finding` exists
+
+Tradeoffs:
+
+- **A real capability is gone.** Section 15 asks the critic to notice missing high-impact threats, and it now cannot. The false-negative rate in `evaluation-plan.md` section 8 and the human at checkpoint 2 are the only things left that would catch a whole missing threat, and neither is as targeted as an agent looking for one.
+- The per-threat group means a critique that spans two threats — "these two are the same scenario" — is only available when both are in one group, which they never are. Duplicate detection across threats stays DEC-043's deterministic comparison, and the critic's `duplicate` type is left able to see only duplicates within one chain.
+- **Per-threat grouping multiplies calls.** Ten threats is ten critic calls where one call over everything would be one, and the critic is the agent whose value is least established. If the Stage 4 gate is failed on cost rather than on quality, this decision is part of why.
+- Closing `critique_type` over eleven values means a challenge that fits none of them has to be forced into `contradictory_analysis` or dropped. Section 24 called them examples and this treats them as a set.
+- Six subject types where section 24's purpose names three is a departure the document does not sanction; section 24 now records it, which is a document edit made on the strength of section 15 rather than of section 24.
+- The severity rule is enforced by a method the validating node has to call rather than by a validator, because the subject's severity is not on the critique. A caller that forgets to call it gets no error.
+
+Open Questions:
+
+- If the Stage 4 gate is passed, does missing-threat proposal come back as a bounded re-invocation, or as a separate deterministic coverage check over components no threat reaches?
+- Should the review group include the questions raised alongside a threat, which section 15 lists among its inputs and which the per-threat chain does not obviously contain?
+- Is `contradictory_analysis` doing too much work as the catch-all, and would the accepted-critique rate show it?
+
+## DEC-050: `Finding` gains a low-confidence justification; two of section 21's worked values were unbuildable
+
+Date: 2026-08-10
+
+Status: Accepted
+
+Decision:
+
+**`Finding` gains `low_confidence_justification`**, required when `confidence` is `low` and refused otherwise. `data-model.md` section 21 records the field.
+
+**It qualifies rather than substitutes.** `evidence_ids` stays required whatever the confidence. Section 21's minimum-validation rules read "Evidence or an explicit low-confidence justification", and the wording is corrected to "Evidence, and an explicit low-confidence justification where confidence is `low`".
+
+**DEC-013's outcome table is implemented once, in `domain/outcomes.py`, and `Finding` consults it.** The set of validation statuses a finding may carry is *derived* from the table rather than restated: `supported` and `partially_supported`, which are the two the table's four finding-producing cells use.
+
+**Where two of DEC-013's rows overlap, `any / not_evaluated` wins.** The pair `unverified` and `not_evaluated` matches both that row and `unverified / any`, and the table does not say which applies. The outcome is no output.
+
+**Section 21's worked example carried two values the schema now refuses**, and both are corrected: `severity: high` on a candidate becomes `unassigned`, and `validation_status: requires_confirmation` becomes `partially_supported`.
+
+Why:
+
+The justification had nowhere to live. DEC-013 describes it in detail — "a written rationale naming what evidence would raise confidence and why the conclusion is worth surfacing before that evidence exists" — and section 21's field table has no column for it. This is the fourth time the same shape has come up, after DEC-044, DEC-046, and DEC-047: the corpus names an output, the field table has no home for it, and the answer is to add the field rather than let the value evaporate. Treating that as the default is now warranted.
+
+**Reading the minimum rule as an either-or would have been the more serious error**, and it is the reading section 21's own wording invites. DEC-013 settles it in one sentence — the justification "does not substitute for the `unmet` evidence rule above. It qualifies a finding that already meets the rule but whose confidence is low" — and the consequence of getting it wrong is precise: an unevidenced finding would be constructible, which is the DEC-009 collapse arriving through a field added to prevent a different problem. Requiring evidence unconditionally is what keeps the structural argument intact, and the structural argument is the one that matters: an `EvidenceReference` quotes real source text and cannot express an absence, so requiring one makes concluding a weakness from silence impossible rather than discouraged.
+
+**Deriving the permitted statuses rather than restating them is the point of putting the table in code.** A hardcoded set on `Finding` would be a second opinion about when a finding is reachable, and DEC-013 already exists because two opinions about that is how the separation stops holding. The derivation also makes the table's own claim testable over its whole cross product rather than over the rows somebody remembered to write down.
+
+**The row precedence is a real ambiguity and not a reading error.** Both rows are in the table, both match, and neither is qualified. The tiebreak is the reason the `not_evaluated` row gives for itself: the mapping is incomplete, not negative. A documentation gap asserts that Trace could not determine whether a control exists; a mapping nobody evaluated has not established that, it has established nothing. Emitting a gap there turns an unfinished run into a reported conclusion, which is a worse failure than emitting nothing, because nothing is visibly nothing.
+
+**The worked example is the same failure the identifier examples had.** An example is read as a template. Section 21's carried `severity: high` on a candidate, which DEC-030 forbids — findings are created `unassigned` because the reviewer assigns severity at checkpoint 2 — and `validation_status: requires_confirmation`, which DEC-013's table produces no finding from at all. Both predate the decisions that govern them. Left there, the document would specify an object nobody can build, and the more likely outcome is that somebody relaxes the schema to make the example pass.
+
+Alternatives Considered:
+
+- Read section 21's minimum rule as an either-or and allow an unevidenced finding with a justification
+- Put the justification in `limitations` or `assumptions` rather than adding a field
+- Hardcode the permitted validation statuses on `Finding` and skip the table module
+- Resolve the overlapping rows the other way, emitting a gap for an unevaluated mapping
+- Leave section 21's example alone and note the divergence in a comment
+- Require `confidence` to be other than `low` on a finding at all
+
+Tradeoffs:
+
+- **A field required by one enum value is easy to forget.** Nothing prompts a caller to write a justification until validation fails, and the failure arrives at construction rather than where the confidence was decided.
+- The reverse rule — a justification on a non-`low` finding is refused — will annoy someone who wants to explain a `medium`-confidence conclusion. `limitations` and `assumptions` are where that goes, and the distinction is not obvious.
+- **`Finding` now imports the outcome table**, so a domain object depends on a module encoding a decision. That is the intent, and it means the table cannot be changed without considering every object that consults it.
+- Deriving `FINDING_VALIDATION_STATUSES` at import time means a change to the table silently changes what `Finding` accepts. That is correct and it is also action at a distance.
+- **Correcting the worked example changes a document readers may have copied from.** Anyone who built a fixture from it has an object the schema now refuses, which is the intended outcome and still a break.
+- The row precedence is recorded here rather than in DEC-013, so a reader of DEC-013's table alone still meets the overlap unresolved.
+
+Open Questions:
+
+- Should DEC-013's table itself be amended to state the precedence, rather than leaving it recorded here?
+- Does `low_confidence_justification` belong on `DocumentationGap` and `Question` too, or is a finding the only object where low confidence needs defending?
+- Is there a case for requiring the justification to name the evidence that would raise confidence in a structured way, rather than as prose nothing can check?
+
+## DEC-051: Conversions across the outcome boundary carry `converted_from_id`; the source is superseded, not deleted
+
+Date: 2026-08-10
+
+Status: Accepted
+
+Decision:
+
+**`Finding`, `DocumentationGap`, and `Question` gain `converted_from_id`.** It names the object a conversion produced this one from, and it is cross-type: a plain identifier rather than a typed alias, because a finding may have been a gap and a gap may have been a finding. `data-model.md` sections 21, 22, and 23 record it.
+
+**A conversion supersedes its source rather than deleting it.** The source moves to `ObjectStatus.SUPERSEDED` and stays retrievable. Both objects come back from the helper and the caller persists both.
+
+**A conversion never fabricates a required field.** Every field the target requires and the source does not carry is a keyword argument with no default, and a blank one is refused by name.
+
+**Converting *to* a `Finding` runs the full minimum criteria and DEC-013's outcome table.** The helper is a thin wrapper over `Finding.model_validate` and gains no privileges from being one.
+
+Why:
+
+DEC-023 gives three mechanisms for three causes — a reviewer edit mutates in place with a `ReviewerDecision`, a regenerating node sets `supersedes_id`, an approved baseline increments `SystemContext.version` — and a conversion is a fourth cause none of them covers. `supersedes_id` is the closest and it is same-type by construction: `ContextClaim.supersedes_id` is a `ContextClaimId`. Reusing it would mean typing it as a bare string on three objects to accommodate one case, which loses the checking everywhere else to gain it here.
+
+A separate `ConversionRecord` object was the alternative and it fails DEC-025's test: the record is a property of the converted object rather than a thing in its own right, and detached from it means nothing. The same reasoning put suppressions on the mapping that suppressed them.
+
+**Fabrication is the failure mode a conversion helper invites**, which is why the signature is the enforcement rather than a rule. `DocumentationGap.importance` and `Question.rationale` are required and a `Finding` carries neither, so a helper that wanted to be convenient would write "converted from fnd-001" into them and produce an object whose required fields say nothing. Making them arguments means the caller states them; refusing a blank one closes the other half, which is passing `""` to satisfy the signature.
+
+**Severity is the case worth stating separately**, because it looks inheritable and is not. A `Finding` has a severity, so carrying it into the gap seems obviously right — but findings are created `unassigned` (DEC-030) and a gap may never be `unassigned` (DEC-045). The value would move a field meaning "nobody has decided yet" into a field where nobody ever will, and DEC-045's whole argument is that a gap's severity has no later step to resolve it. The reverse direction has the same shape for a different reason: a gap's severity rates the gap and a finding's rates a weakness, so a gap converted forward starts `unassigned` whatever it rated itself.
+
+**The escape-hatch risk is the reason `documentation_gap_to_finding` is deliberately unhelpful.** A gap records that something could not be determined. Converting one forward means somebody determined it, which requires evidence the gap did not have — so `evidence_ids` is a parameter rather than inherited, since a gap's evidence shows ambiguity or contradiction and a finding's has to support the weakness. Building through `model_validate` means DEC-013's table applies, and a gap cannot become a finding on a validation status the pipeline could not have reached one from.
+
+Alternatives Considered:
+
+- Widen `supersedes_id` to a bare string on the three outcome objects
+- A `ConversionRecord` object with its own identifier prefix
+- Record conversions only on `ReviewerDecision`, using the two existing dispositions
+- Delete the source object, since the converted one carries its content
+- Let the helpers derive `importance` and `rationale` from the source's `description`
+- Inherit severity across the conversion in both directions
+
+Tradeoffs:
+
+- **Three objects now carry a field only conversions set**, and nothing prevents a caller writing an unrelated identifier into it. The chain walk raises on one that does not resolve, which catches the accident and not the deliberate misuse.
+- Recording conversions on the object rather than on `ReviewerDecision` means a reviewer-driven conversion is recorded twice — once as a disposition and once as a field — and nothing checks the two agree.
+- **`conversion_chain` raises rather than returning a partial walk**, so a single broken link makes the whole history unreadable rather than mostly readable. That is the intended exchange and it will be inconvenient.
+- The helpers take a long argument list, and a long keyword-only signature is easy to call wrongly in ways the type checker catches and a reader does not.
+- Superseding rather than deleting means an assessment accumulates objects nothing reports. The review package and the renderer both have to filter on status, and neither is written yet.
+- `Question` carries one `related_object_id`, so a conversion from a finding keeps the threat and loses the requirement and mapping references except through the chain. Section 22's shape is the constraint and this decision does not change it.
+
+Open Questions:
+
+- Should a reviewer-driven conversion assert that its `ReviewerDecision` disposition and the `converted_from_id` on the result agree?
+- Does `Question` need the fuller lineage a finding carries, or is one related object plus the chain enough?
+- Should `conversion_chain` have a lenient variant for a report that would rather show a partial history than nothing?
+
+## DEC-052: Finding duplicates are detected on shared identifiers, merged by the node, and every merge persists a record
+
+Date: 2026-08-10
+
+Status: Accepted
+
+Decision:
+
+**Duplicate detection over provisional findings is deterministic and reads identifiers, not prose.** Two provisional findings are duplicates when they share at least one threat identifier *and* at least one requirement identifier. A shared control mapping implies both, because a mapping names one threat and one requirement. Shared affected components and shared affected assets are corroborating features — recorded on the merge when present, deciding nothing on their own. One component hosting two distinct weaknesses is the ordinary case, not a duplicate.
+
+**The node performs the merge; it does not stop at proposing.** This is the half DEC-043 assigned forward: `agent-design.md` section 16 makes "merge duplicate issues" a Finding Consolidation responsibility, and by this phase merging loses no downstream analysis — mapping and evidence validation have already run. The survivor is the earliest-allocated finding (lowest identifier), which is stable across runs and favors nothing else. The survivor takes the union of the evidence, threat, requirement, control-mapping, affected-component, and affected-asset references of everything merged into it, losing none. Every merged finding is retained with `duplicate_of_id` set to the survivor; nothing is deleted.
+
+**`FindingMergeRecord` is a persisted object** — `data-model.md` section 21a, prefix `mrg`. It names the survivor, the merged identifiers, the features that matched, a `decision` of `structural` or `model_assisted`, and a human-readable detail. Section 11's constraint is that the merge decision stays explicit and traceable, and a record that lives only in a node's return value is not traceable after the process exits.
+
+**A model-assisted comparison, if one is ever wired in, proposes candidate pairs and nothing else.** Its proposals are recorded as proposals on the node outcome, are never merged by the node, and reach a merge only through a reviewer decision — which reuses the same merge operation and records `model_assisted`. The MVP wires no model here, for DEC-043's reasons: the node is classified primarily deterministic, and the six-agent cap is not eroded by comparison calls that are "arguably not an agent". The seam exists so the decision to add one later is a wiring change, not a redesign.
+
+**A `Finding` and a `DocumentationGap` are never merged.** They are different conclusions about different things (DEC-009), and the schema is the enforcement: `FindingMergeRecord`'s identifier fields are `FindingId`-typed, so a record naming a gap fails validation, and the merge operation refuses non-`Finding` input before that.
+
+Why:
+
+**The detection rule differs from DEC-043's because the substrate differs.** A threat is prose — a title, a category list — so DEC-043 scores weighted token overlap. A provisional finding is built from identifiers: it names its threats, requirements, and mappings outright. Where the identifiers agree, the two findings assert the same shortfall against the same scenario, and a similarity score over their derived titles would be a noisy proxy for an exact question the objects already answer. The conjunction — threat *and* requirement — is the narrowest rule that merges what consolidation actually produces twice: two mappings of the same requirement to the same threat, through different controls.
+
+**Merging here rather than proposing here is DEC-043's own assignment.** Its record says section 16 assigns the merge itself to Finding Consolidation, and its reason for not merging threats — collapsing before mapping would lose whichever threat the merge did not keep — does not apply after mapping has run and the references are unioned onto the survivor.
+
+**The record is an object rather than fields on the survivor** because the survivor cannot carry it honestly. The merged identifiers are derivable from `duplicate_of_id`, but the matched features and the decision mode are not derivable from anything, and `duplicate_finding_rate` (`data-model.md` section 28) needs to count merges after the fact. DEC-025's locality test — a record detached from its object means nothing — cuts the other way here: a merge concerns several findings at once, so it has no single object to live on.
+
+**Earliest-allocated survivor rather than most-evidenced.** The union makes the survivor's evidence identical whichever member survives, so the tiebreak only chooses which title, summary, and description persist. Earliest allocation is deterministic, cheap to explain, and does not smuggle in a quality judgment no rule defines. DEC-043's open question about a recommended survivor is answered for findings by making the choice not matter.
+
+Alternatives Considered:
+
+- Score weighted feature overlap with a threshold, as DEC-043 does for threats
+- Propose merges to the checkpoint 2 reviewer and merge nothing automatically
+- Record merges as fields on the surviving finding
+- Record merges only in `ExecutionRecord` metadata
+- Select the survivor by evidence count, or by lowest `confidence`, rather than by allocation order
+- A model-assisted comparison for pairs the structural rule misses
+
+Tradeoffs:
+
+- **Rewording does not defeat this rule, but disjoint lineage does.** Two findings describing one weakness through different threats and different requirements are not detected. That is the case a semantic comparison would catch, and the revisit trigger is the same as DEC-043's: a measured `duplicate_finding_rate` this rule misses.
+- The conjunction is strict. Two findings sharing a requirement across two related threats stay separate, which can read as noise to a reviewer; the checkpoint reviewer can merge them, and the operation is built to be reused there.
+- A twenty-fourth prefix and a twenty-seventh documented object, for a record type that most assessments will produce zero of.
+- Merged findings stay `candidate` with `duplicate_of_id` set, so every consumer of the provisional set — the review package, the renderer, the metrics — must filter on `duplicate_of_id` rather than getting a pre-filtered set.
+
+Open Questions:
+
+- Should the checkpoint 2 review package show merge records alongside the findings they merged, and DEC-043's threat merge proposals with them?
+- When a reviewer rejects a survivor, what happens to the findings merged into it — do they stay duplicates of a rejected finding, or return to the provisional set?
+
+## DEC-053: Consolidation applies forward critique recommendations; a deterministic revision adds and never rewrites
+
+Date: 2026-08-10
+
+Status: Accepted
+
+Decision:
+
+**Finding Consolidation applies the critique recommendations that route forward, and only those.** `workflow/critique_validation.py` already splits the recommendations: `revise` and `investigate` against a threat, control, mapping, or evidence assessment re-enter a passed phase and are the orchestrator's budget-gated concern, while everything else "is applied going forward, by Finding Consolidation or the reviewer". This decision settles the going-forward half, per action:
+
+- **`keep`** — recorded, nothing changes.
+- **`reject`** — the candidate moves to `rejected`, leaves the provisional set, and is retained with the critique identifier as its stated reason. Never deleted.
+- **`revise`** — the candidate is rebuilt with the critique's description appended to `limitations` under the critique's identifier, and the critique's cited evidence unioned into `evidence_ids`. Nothing else changes. The pre-revision state is preserved on the application record, DEC-023's `prior_value` pattern applied to a node.
+- **`merge`** — deferred to the DEC-052 merge operation; consolidation's critique step performs no merge of its own, so one recommendation cannot merge through two doors.
+- **`investigate`** — deferred to the checkpoint 2 reviewer, whose vocabulary has "request more analysis". A deterministic node cannot investigate.
+
+**A `documentation_gap_only` critique outranks its own `recommended_action`.** Whatever the critic recommended doing with the finding, the type asserts the finding should not exist as one — so the candidate routes through DEC-051's `finding_to_documentation_gap`, with the critique's rationale as the gap's importance and the source finding superseded, never through an ad hoc edit that softens a description. The precedent is the contradiction rule in the same node: a structural signal outranks an advisory one.
+
+**No critique path can produce an approved object.** Approval is the checkpoint's (DEC-005); the application writes `rejected`, `superseded`, and revised candidates, and nothing else. A critique that resolves to no candidate, or to one already rejected or converted, is reported as unapplied with the reason — never silently dropped.
+
+**The lineage surface is a query, not a stored structure.** `services/findings/lineage.py` walks section 32's chain backward from a finding — critiques, mappings, evidence assessments, threats, context claims, evidence references, source documents — resolving every referenced identifier and raising on one that does not resolve. Nothing new is persisted for it; the chain is already on the objects, which is what DEC-006 buys.
+
+Why:
+
+**The revision rule is the decision that needed making**, because "apply critique recommendations" (`agent-design.md` section 16) collides with two other rules the moment the action is `revise`: the node is deterministic and cannot write prose, and section 15 forbids rewriting objects without preserving lineage. Appending the critique's own words to `limitations` threads it: the text is agent output that already passed schema validation and the critique validation node, the field means exactly "analysis limitations", the entry carries the critique identifier so the change records its cause on the object itself, and nothing the earlier pipeline asserted is altered. A revision that *rewrote* `description` or `impact` deterministically would have to fabricate, and fabrication under a validation-shaped name is the section 26 failure.
+
+**Rejection is consolidation's to perform** because section 16 already gives this node "use no output when" rules and section 18 keeps rejected candidates available rather than deleted. The critic still decides nothing: the recommendation is applied by deterministic logic the same way an `unverified` mapping is routed by the outcome table — section 2.5's "agents propose; deterministic logic and humans decide" with the deciding logic in the application, not the agent.
+
+**The type-outranks-action rule closes the softening path.** A `documentation_gap_only` critique answered with a revision would produce exactly what the issue names as the failure: a finding with a softened description that still asserts a weakness the evidence does not carry. Routing through the DEC-051 helper means the minimum criteria, the severity rules, and the lineage field all apply, and the source survives as `superseded`.
+
+Alternatives Considered:
+
+- Have the revision lower `confidence` to `low` with the critique's rationale as the justification
+- A `supersedes_id` on `Finding`, minting a new finding per revision (DEC-023's regeneration mechanism)
+- A persisted `CritiqueApplication` object with its own prefix
+- Apply `documentation_gap_only` only when `recommended_action` agrees
+- Let consolidation perform `merge` recommendations directly
+
+Tradeoffs:
+
+- **A rejected candidate's stated reason lives on the application record, not on the object** — `Finding` has no rejection-reason field and this decision adds none. Retention and the persisted linkage for rejections are #103's; until then the reason survives the run only in the outcome the caller holds.
+- `limitations` now serves two writers: the consolidation build and the critique application. An entry is attributable only because the application prefixes the critique identifier, which is a convention, not a schema rule.
+- Deferring `merge` and `investigate` means two of the five actions produce no change here, and a reader of "apply critique recommendations" may expect more. The alternative was a node that merges through a second door and "investigates" by guessing.
+- The revision unions the critique's evidence into the finding's. Critique evidence shows what the criticism rests on, which is not always evidence *for* the finding; the union is honest about provenance only because `EvidenceReference` records what each excerpt is.
+
+Open Questions:
+
+- Should the application records be persisted alongside #103's retained rejections, so a resumed run can re-state why a candidate is absent?
+- When a revised candidate is later rejected by the reviewer, is the pre-revision state part of what checkpoint 2 shows, or only the revised object?
+
+## DEC-054: The finding checkpoint reuses the shared machinery; a reviewer merge is an edit plus the record; a blocking question pauses nothing
+
+Date: 2026-08-10
+
+Status: Accepted
+
+Decision:
+
+**Checkpoint 2 is the shared `CheckpointNode`, configured for `human_finding_review`, waiting on the provisional findings.** Its subjects are the state's `candidate_finding_ids`; it advances only when every one has a `ReviewerDecision`, and there is no flag, configuration field, or argument that changes the condition (DEC-005, DEC-012). Pause and resume are DEC-017's, unchanged. An assessment in which the reviewer approves nothing passes the checkpoint: rejection is a decision, and an empty approved set is a valid outcome.
+
+**There is no `merge` disposition, and none is added.** The `ReviewDisposition` gap against `agent-design.md` section 18 is resolved the way DEC-030 resolved severity: section 18 names actions a reviewer takes, section 4.6 names dispositions the system records, and the two do not correspond one to one. A reviewer merge is recorded as what it does — an `edit` per merged finding whose delta is `duplicate_of_id`, an `edit` on the survivor when the union changed it — plus **the same `FindingMergeRecord` the automatic path writes** (DEC-052), so `duplicate_finding_rate` counts both paths from one table.
+
+**`MergeDecision` gains `reviewer`, amending DEC-052's two values.** DEC-052 named `structural` and `model_assisted` and defined `model_assisted` as a reviewer merging from a model-proposed pair — which left a reviewer merging on their own judgment, the checkpoint's ordinary case, unrepresentable. Three values now: `structural` (the identifier rule decided), `model_assisted` (a reviewer decided from a model proposal), `reviewer` (a reviewer decided unprompted). `matched_features` may be empty **only** on a reviewer merge: the rule's reason is its features and a record of it without them is a record of nothing, while a reviewer's reason lives in the `ReviewerDecision` rationale.
+
+**A blocking `Question` pauses nothing; it is surfaced first at the next structural checkpoint.** Section 22 described `blocking` as "whether workflow should pause", which contradicts DEC-005's two structural checkpoints — a field that could pause the pipeline anywhere would be a third checkpoint nobody decided to add, configurable per question by whatever writes the field. The field's real meaning is priority of a specific kind: the assessment cannot conclude soundly without the answer, so the question leads the review package (`order_for_review` already puts blocking first) and the reviewer — who can defer every finding the question touches — decides what it holds up. Section 22's description and `domain/question.py`'s docstrings are corrected.
+
+**An approval whose finding carries `severity: unassigned` is refused at this node** (DEC-030's load-bearing half, landing where that entry said it would). So is approving a finding already merged into a survivor — the canonical finding is the one to decide.
+
+**Reviewer identity stays DEC-023's convention.** Every checkpoint-2 decision carries `reviewer_id`, a configured local string defaulting to the operating-system username. No authentication, role, or tenancy is introduced (DEC-004).
+
+Why:
+
+**Recording a merge as edits keeps the audit trail one mechanism.** DEC-023 gives reviewer changes exactly one shape — mutate in place, record the delta — and a merge *is* a set of field changes: `duplicate_of_id` on the merged, unions on the survivor. A `merge` disposition would record the same facts a second way, and every consumer of decisions would need to understand both. The merge-specific facts that edits cannot carry — the survivor, the set merged, what matched — already have a persisted home in DEC-052's record, built for exactly this reuse.
+
+**The blocking-question resolution follows from where answers come from.** A question is answered by a person. Between consolidation and checkpoint 2 no person is present, so a pause anywhere but a checkpoint would stop the process where nobody is looking at it; DEC-017's pause already waits indefinitely at the place the reviewer *is* looking. Surfacing first at the checkpoint is the whole enforceable content of "this must be resolved before conclusions rest on it".
+
+Alternatives Considered:
+
+- Add `merge` to `ReviewDisposition` and record one decision per merge
+- Record a reviewer merge as a single `edit` on the survivor only, with the merged identifiers in the rationale
+- Reuse `model_assisted` for reviewer-initiated merges
+- Let a blocking question pause the run where it is raised, as section 22's description implied
+- Gate checkpoint completion on every blocking question being answered
+
+Tradeoffs:
+
+- A reviewer merge of N findings writes N+1 or N+2 rows (edits plus the record), which is chattier than one `merge` decision; the compensation is that no consumer needs a second vocabulary.
+- `matched_features` empty-only-for-reviewer is a conditional constraint on a schema field, which is harder to state than `min_length=1`; the validator names the condition.
+- A blocking question that the reviewer overlooks holds up nothing mechanically. The checkpoint surfaces it first and counts it, but "blocking" is enforced by the reviewer's judgment, not the application — deliberately, and weaker than the old description promised.
+- Checkpoint completion requires a decision per provisional finding with no bulk approve (DEC-017's stated friction), and this decision does not soften it.
+
+Open Questions:
+
+- Should a checkpoint-2 approval write `Assessment.approved_by`, or does `Assessment.status` stay the deliverable's lifecycle only (DEC-031) with attribution living on the decisions?
+- Does the review surface need to show, per finding, the blocking questions that touch it as a refusal-shaped warning rather than a list entry?
+
+## DEC-055: Consolidation's downgrade appends to the reason and never overwrites; approval runs a deterministic gate with a recorded override
+
+Date: 2026-08-10
+
+Status: Accepted
+
+Decision:
+
+**`downgrade_reason` is appended to, never overwritten, and `downgraded_from` is written once.** This answers DEC-046's open question. When Finding Consolidation applies DEC-013's conditions 2 and 3 — the two that read `EvidenceAssessment` and could not run at Mapping Validation — it lowers the mapping to `unverified` and records why as a new entry appended to `downgrade_reason`, each entry prefixed with the node that wrote it and joined with `"; "`. `downgraded_from` keeps its existing value when one is present: it records the status the *agent proposed*, and a second downgrade does not change what was proposed.
+
+**Consolidation now performs the downgrade DEC-046 assigned to it.** The `downgrade_only` and `question_after_downgrade` cells of the outcome table rebuild the mapping to `unverified` with the record, and the run's outcome carries the downgraded mappings so persistence writes them under their identifiers. A `question_after_downgrade` cell produces the question the table names; a `downgrade_only` cell produces nothing further, and the retained rejected-candidate entry states why.
+
+**Approval runs a deterministic gate, and the override path is explicit.** `approve_finding` refuses, in addition to DEC-030's severity rule: a finding whose `validation_status` is not `supported` or `partially_supported` — approvable only with an explicit `override_rationale`, which is stored on the `ReviewerDecision` with the rationale prefixed `override:` so overrides are retrievable by inspection — and, outright, a finding with no evidence citation or no actionable remediation (no recommendation and no acceptance criteria). The refused conditions are already unreachable through the schema for objects built normally; the gate is the last enforcement point before a conclusion becomes official, and it does not assume the schema was upstream of every caller. **The issue's premise for the override is stale and is recorded as such**: it predates DEC-013 and DEC-050, under which a finding carrying `unsupported` or `contradicted` is unconstructible — `Finding` refuses every validation status the outcome table produces no finding from. The gate's refusal is exercised against a validation-bypassing construct, and an override that passes the gate still meets the schema at persistence, which refuses the object; the override machinery exists so that if the table ever widens, approving a non-carried status is loud and recorded rather than silent.
+
+**One accessor owns the approved set.** `services/findings/approved.py` is the only module that queries findings by approved status; report generation, rendering, and evaluation consume it, and a source-scan test holds every other module to that. Rejected, deferred, and superseded candidates are retained and queryable through `retained_candidates`, each with its stated reason — the reviewer's rationale where a decision exists, the rejecting critique's description where consolidation applied one (DEC-053's deferred linkage, landing here).
+
+**Checkpoint completion moves the assessment through the existing verb.** `conclude_finding_review` verifies every provisional finding has a `ReviewerDecision` and calls `AssessmentService.resume_from_review` — DEC-031's verb for a completed checkpoint, returning the assessment to `draft` while the run continues to report generation. `approve` stays the pipeline-completion verb. No new status and no setter.
+
+Why:
+
+**Append preserves the attribution DEC-046 exists for.** Its whole argument is that a downgrade count must distinguish a catalog problem from a model problem from an application correction. Two nodes can each lower a conclusion for different reasons across a revision cycle, and overwriting would leave the record claiming the second node's reason was the only one — a silent erasure inside the field that exists to prevent silent changes. Node-prefixed entries keep each reason attributable at the cost of a delimiter convention.
+
+**`downgraded_from` is first-writer because it answers a different question.** The reason accumulates because "why is this not what the agent said" can have several answers; the origin does not accumulate because "what did the agent say" has one.
+
+**The override is a prefix convention rather than a field** because `ReviewerDecision` (section 25) has no override column and the delta fields carry field changes, not judgments about conditions. A prefix on `rationale` is retrievable with a string match, costs no schema change, and keeps the record readable as a sentence. If overrides become an evaluation metric, a field is the successor and this entry is where the convention is recorded.
+
+Alternatives Considered:
+
+- Overwrite `downgrade_reason` with the latest node's reason
+- A list-valued `downgrade_reasons` field on `ControlMapping`
+- Advance `downgraded_from` to the pre-downgrade status at each downgrade
+- An `override` boolean on `ReviewerDecision`
+- Enforcing the approved-set rule at the store layer rather than by source scan
+
+Tradeoffs:
+
+- A delimiter convention inside a free-text field is parsing by agreement; a consumer that wants the entries separately splits on `"; "` and trusts writers to have used the prefix.
+- The gate re-checks conditions the schema already guarantees, which is redundant until the day an object reaches it another way — the redundancy is the point, and it costs a few comparisons.
+- The `override:` prefix makes the rationale slightly less natural to read and is the kind of convention that erodes without the test that greps for it.
+- The accessor rule is enforced by source scan, which a sufficiently creative query evades; the store cannot enforce it without knowing who is asking, which DEC-004 declines to model.
+
+Open Questions:
+
+- Should overrides be counted as their own evaluation metric, and does that justify promoting the prefix convention to a field on `ReviewerDecision`?
+- When a revision run re-proposes a previously downgraded mapping, does the new mapping inherit the old downgrade record or start clean with `supersedes_id` carrying the history?
+
+## DEC-056: Benchmark matching is structural through the contract's fields, and a consolidation scores full credit per matched expectation
+
+Date: 2026-08-10
+
+Status: Accepted
+
+Decision:
+
+**An expected finding matches an approved finding when the finding cites the expected `requirement_id` and names an affected component whose name matches the expected `affected_component`.** The contract already fixes the fields (`matching.findings_match_on`); this decision fixes the mechanics: component matching goes through the run's own `Component` objects — identifier to name, compared case-insensitively after whitespace normalization — because generated identifiers are run-scoped (DEC-018) and names are what the truth set can carry. Title wording is never compared. `expected-findings.yaml` gains the `affected_component` field the contract's rule requires.
+
+**A consolidated finding scores full credit for every expected entry it matches.** DEC-029 enumerates FND-002 and FND-004 separately and states that one well-reasoned combined finding is defensible rather than wrong; `allow_consolidation: true` is the contract's word for it. This closes DEC-029's open question: no partial credit, no penalty fraction — a defensible consolidation scored at half would be a penalty wearing a measurement's name, and the metric it would depress is the false-negative rate, exactly the number the scenario exists to keep honest. The consolidation is *observable* instead: the evaluation records how many expected entries resolved onto fewer produced findings, so drift toward over-merging shows up as a count rather than as a hidden discount.
+
+**An expected documentation gap matches a produced gap through the requirement it bears on.** `expected-documentation-gaps.yaml` gains `requirement_id`, and a produced gap reaches a requirement through its related mapping (consolidation writes `related_object_ids` as threat and mapping). Gap wording is never compared, for the same reason as titles.
+
+**`EvaluationResult` is promoted from section 40's deferred list**, which this issue's metrics make unavoidable: a metric with no persisted object is a print statement. Section 40 records the promotion; `PromptDefinition` stays deferred.
+
+Why:
+
+**Structural matching is the only kind that cannot be gamed by prose.** A matcher over titles rewards the run that words its findings like the truth set, which is a copying test, not a correctness test. Requirement and component are the two fields DEC-029's analysis actually used to decide what was distinct, and both survive rewording.
+
+**Full credit follows from what the truth set records.** The finer decomposition exists because a matcher can collapse two entries onto one finding and cannot split one entry across two (DEC-029's own words). If collapsing is an accepted mechanic of the matcher, penalising the run for triggering it is incoherent — the score would depend on an authoring choice the run cannot see.
+
+Alternatives Considered:
+
+- Match findings on normalized title overlap, DEC-043-style
+- Partial credit (half per expected entry) for a consolidated match
+- A separate `consolidation_penalty` metric subtracted from coverage
+- Matching gaps on subject keywords rather than through a requirement
+- Leaving `EvaluationResult` deferred and writing metrics only to a JSON file
+
+Tradeoffs:
+
+- Component names in the truth set must stay aligned with `expected-context.yaml`'s names; a rename there silently breaks matching here, and only a benchmark run notices.
+- Full credit means a run that merged everything into one mega-finding could still score zero false negatives if the structure matched; the volume principle and the reviewer are the backstops, and the recorded consolidation count is the tell.
+- Requirement-mediated gap matching cannot match a gap raised outside any mapping; such a gap scores as unexpected even when reasonable. The precision metric therefore reads best alongside the reviewer notes, not alone.
+
+Open Questions:
+
+- Should the consolidation count become a named metric with a target, or stay metadata on the false-negative computation?
+- When scenario two arrives, does component-name matching survive a scenario whose truth set names components differently from its own context file?

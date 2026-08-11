@@ -1,0 +1,92 @@
+# ForgeFlow expected findings
+#
+# Benchmark truth for the findings a correct assessment approves. Layout is fixed by DEC-027;
+# the source is demo/forgeflow/forgeflow-scenario.md section 19, as amended by DEC-029.
+#
+# Nothing in this directory is supplied to Trace during an assessment. See README.md.
+#
+# ## Three findings, and the absent one is the point
+#
+# FND-001 ("webhook events lack replay protection") is not here. No input document establishes
+# that replay protection is absent -- architecture-overview.md section 26 states that the topic
+# is *undocumented*, which is GAP-004 and a question, never a finding (DEC-009, DEC-029). The
+# count is not declared anywhere (DEC-028); it is what this file enumerates.
+#
+# ## Severity is guidance, not graded output
+#
+# Severity is assigned by the reviewer at checkpoint 2 (DEC-030), so the pipeline produces
+# nothing to score it against. `severity_guidance` exists so whoever plays the reviewer in a
+# benchmark run does not introduce variance between runs.
+#
+# ## What is matched
+#
+# Wording is not matched. What is matched is the subject, the affirmative evidence the finding
+# must rest on, and the documents that supply it. `evidence_establishes` lists what the cited
+# passages must affirmatively state -- every entry is a positive statement in a document, never
+# an absence, which is what keeps this file on the right side of the DEC-009 line.
+
+benchmark_version: "1.0"
+scenario: forgeflow
+catalog_version: "0.1"
+source: forgeflow-scenario.md section 19
+
+findings:
+  - key: FND-002
+    subject: AI-generated pull-request comments are published without adequate review
+    severity_guidance: medium-or-high
+    requirement_id: req-AI-002
+    affected_component: GitHub Comment Service
+    arises_from: scenario 13.2
+    evidence_establishes:
+      - Repository content supplied to the model is untrusted third-party material.
+      - Model output may be manipulated by repository content.
+      - Successful analysis output is automatically posted when comments are enabled.
+      - Schema validation confirms structure, not factual correctness or content safety.
+    supported_by:
+      - ai-analysis.md
+      - security-overview.md
+    notes: >
+      The security overview's "reviewed before publication" statement contradicts the
+      automatic-posting behaviour (scenario 16.2, OBS-02), and the contradiction resolves to
+      automatic posting. The finding rests on the affirmative posting behaviour, not on the
+      absence of a review step.
+
+  - key: FND-003
+    subject: repository content retention exceeds the documented temporary-processing need
+    severity_guidance: medium
+    requirement_id: req-DATA-002
+    affected_component: Managed Object Storage
+    arises_from: scenario 13.3
+    evidence_establishes:
+      - Analysis artifacts are retained in object storage for 30 days.
+      - Product documentation describes source files as temporary data deleted after analysis.
+      - The retention window increases the exposure of customer source content.
+    supported_by:
+      - operations-guide.md
+      - product-overview.md
+    notes: >
+      The subject also appears in architecture-overview.md section 26, but this finding rests
+      on an affirmative statement of a 30-day retention target -- the deliberate contrast with
+      GAP-004, where the only available statement is that the topic is undocumented. Silence
+      and a positive statement fall on opposite sides of the DEC-009 line.
+
+  - key: FND-004
+    subject: model input handling is insufficiently resistant to repository prompt injection
+    severity_guidance: medium
+    requirement_id: req-AI-001
+    affected_component: Analysis Worker
+    arises_from: scenario 13.5
+    evidence_establishes:
+      - Repository content is placed into the model prompt as marked input sections.
+      - No additional content isolation, sanitization, or secondary validation is applied.
+      - A repository contains instruction-shaped content addressed to the analysis model.
+    supported_by:
+      - ai-analysis.md
+      - sample-repository-notes.md
+    notes: >
+      Separate from FND-002 by scenario section 19's own consolidation test: FND-002 needs a
+      human approval gate before external publication, this needs isolation of untrusted
+      repository content from model instructions, and either can be fixed without the other.
+      Trace combining the two at runtime into one well-reasoned finding is defensible and is
+      not scored as an error; the truth set records the finer decomposition because a matcher
+      can collapse it and cannot split a coarser one (DEC-029).

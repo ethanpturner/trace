@@ -51,7 +51,11 @@ from trace_ai.domain.asset import Asset
 from trace_ai.domain.base import DomainModel
 from trace_ai.domain.component import Component
 from trace_ai.domain.context_claim import ContextClaim
+from trace_ai.domain.control import Control
+from trace_ai.domain.control_mapping import ControlMapping
+from trace_ai.domain.critique import Critique
 from trace_ai.domain.data_flow import DataFlow
+from trace_ai.domain.documentation_gap import DocumentationGap
 from trace_ai.domain.enums import (
     ConfidenceLevel,
     EvidenceStrength,
@@ -61,13 +65,21 @@ from trace_ai.domain.enums import (
     SourceOrigin,
     ValidationStatus,
 )
+from trace_ai.domain.evaluation_result import EvaluationResult
 from trace_ai.domain.evidence import EvidenceReference
+from trace_ai.domain.evidence_assessment import EvidenceAssessment
 from trace_ai.domain.execution import ExecutionRecord, WorkflowRun
+from trace_ai.domain.finding import Finding
+from trace_ai.domain.finding_merge_record import FindingMergeRecord
+from trace_ai.domain.identifiers import PREFIXES, parse_id
 from trace_ai.domain.question import Question
+from trace_ai.domain.requirement import Requirement
+from trace_ai.domain.requirements_catalog import RequirementsCatalog
 from trace_ai.domain.reviewer_decision import ReviewerDecision
 from trace_ai.domain.source_document import SourceDocument
 from trace_ai.domain.source_observation import SourceObservation
 from trace_ai.domain.system_context import SystemContext
+from trace_ai.domain.threat import Threat
 from trace_ai.domain.trust_boundary import TrustBoundary
 
 DATA_MODEL = PROJECT_ROOT / "docs" / "architecture" / "data-model.md"
@@ -170,7 +182,14 @@ def implementation_priority() -> tuple[list[str], list[str]]:
     ]
     sentence = re.search(r"^Add (.+?) once the main workflow", section_40, flags=re.MULTILINE)
     assert sentence is not None, "section 40's deferred sentence changed shape"
-    later = [name.strip() for name in sentence.group(1).replace("and ", "").split(",")]
+    # Split on commas *and* on a trailing "and", so the sentence reads naturally in the document
+    # whether it lists two objects ("A and B") or four ("A, B, C, and D").
+    later = [
+        name.strip()
+        for chunk in sentence.group(1).split(",")
+        for name in chunk.replace(" and ", " ").split()
+        if name.strip()
+    ]
 
     return first, later
 
@@ -219,21 +238,35 @@ REGISTRY: dict[str, Registration] = {
     "13": Registration("Actor", Status.IMPLEMENTED, Actor),
     "14": Registration("DataFlow", Status.IMPLEMENTED, DataFlow),
     "15": Registration("TrustBoundary", Status.IMPLEMENTED, TrustBoundary),
-    "16": Registration("Threat", Status.PLANNED),
-    "17": Registration("Requirement", Status.PLANNED),
-    "18": Registration("Control", Status.PLANNED),
-    "19": Registration("ControlMapping", Status.PLANNED),
-    "20": Registration("EvidenceAssessment", Status.DEFERRED),
-    "21": Registration("Finding", Status.PLANNED),
+    "16": Registration("Threat", Status.IMPLEMENTED, Threat),
+    "17": Registration("Requirement", Status.IMPLEMENTED, Requirement),
+    "18": Registration("Control", Status.IMPLEMENTED, Control),
+    "19": Registration("ControlMapping", Status.IMPLEMENTED, ControlMapping),
+    # Was DEFERRED. Section 40 moved it, and states why there: DEC-022 made it the only home
+    # for `EvidenceStrength`, and DEC-013's `unmet` rule reads its `validation_status`.
+    "20": Registration("EvidenceAssessment", Status.IMPLEMENTED, EvidenceAssessment),
+    "21": Registration("Finding", Status.IMPLEMENTED, Finding),
+    # Documented as `21a` for the same reason `10a` is: DEC-052 added it after the rest were
+    # numbered. The guard found it absent from section 40's priority list the same way, and the
+    # entry arrived with the model.
+    "21a": Registration("FindingMergeRecord", Status.IMPLEMENTED, FindingMergeRecord),
     "22": Registration("Question", Status.IMPLEMENTED, Question),
-    "23": Registration("DocumentationGap", Status.PLANNED),
-    "24": Registration("Critique", Status.DEFERRED),
+    "23": Registration("DocumentationGap", Status.IMPLEMENTED, DocumentationGap),
+    # Was DEFERRED. Section 40 moved it, and states why there: roadmap Stage 4 gates the
+    # critic on whether it improves results, and the gate needs the object.
+    "24": Registration("Critique", Status.IMPLEMENTED, Critique),
     "25": Registration("ReviewerDecision", Status.IMPLEMENTED, ReviewerDecision),
     "26": Registration("WorkflowRun", Status.IMPLEMENTED, WorkflowRun),
     "27": Registration("ExecutionRecord", Status.IMPLEMENTED, ExecutionRecord),
-    "28": Registration("EvaluationResult", Status.DEFERRED),
+    # Was DEFERRED. DEC-056 promoted it: the M4 finding-quality metrics persist their results
+    # as rows, and a metric with no persisted object is a print statement.
+    "28": Registration("EvaluationResult", Status.IMPLEMENTED, EvaluationResult),
     "29": Registration("PromptDefinition", Status.DEFERRED),
-    "30": Registration("RequirementsCatalog", Status.DEFERRED),
+    # Was DEFERRED. Section 40 moved it onto the build-first list, and states why there:
+    # DEC-019 computes its `content_hash` at catalog load and DEC-024 sends the whole catalog to
+    # every mapping call, so the loader in `services/requirements/` needed the object before the
+    # workflow began operating rather than after.
+    "30": Registration("RequirementsCatalog", Status.IMPLEMENTED, RequirementsCatalog),
     # Workflow state, described as a proposed structure rather than a field table. It is not a
     # persisted object and has nothing to conform to.
     "31": Registration("Assessment State", Status.NOT_AN_OBJECT),
@@ -244,7 +277,9 @@ REGISTRY: dict[str, Registration] = {
 OBJECT_SECTIONS = [
     *(str(number) for number in range(5, 11)),
     "10a",
-    *(str(number) for number in range(11, 32)),
+    *(str(number) for number in range(11, 22)),
+    "21a",
+    *(str(number) for number in range(22, 32)),
 ]
 
 
@@ -307,14 +342,8 @@ def test_every_field_row_has_a_description() -> None:
 
 def test_section_forty_parses_into_two_lists() -> None:
     first, later = implementation_priority()
-    assert len(first) == 22, first
-    assert later == [
-        "Critique",
-        "EvidenceAssessment",
-        "PromptDefinition",
-        "RequirementsCatalog",
-        "EvaluationResult",
-    ]
+    assert len(first) == 27, first
+    assert later == ["PromptDefinition"]
 
 
 # --------------------------------------------------------------------------------------------
@@ -639,3 +668,44 @@ def test_the_enum_carries_exactly_these_values(
     enum: type[StrEnum], expected: tuple[str, ...]
 ) -> None:
     assert tuple(member.value for member in enum) == expected
+
+
+# --------------------------------------------------------------------------------------------
+# Section 2.1: the worked examples use identifiers the scheme actually allows
+# --------------------------------------------------------------------------------------------
+
+# A token that reads as an identifier: a section 2.1 prefix, a hyphen, and something after it.
+# Matched on the prefix list so that `cat-core` -- a catalog *name*, and the mistake DEC-034
+# corrected -- is not swept up, and neither is prose that happens to contain a hyphen.
+_IDENTIFIER_SHAPED = re.compile(
+    rf"(?<![\w-])(?:{'|'.join(sorted(PREFIXES, key=len, reverse=True))})-[A-Za-z0-9][\w-]*"
+)
+
+
+def test_the_worked_examples_use_conforming_identifiers() -> None:
+    """A document that illustrates an illegal identifier teaches one.
+
+    Section 16's example named `cmp-webhook-receiver` and `ast-analysis-capacity`, and section
+    21's and section 31's did the same. Those are neither DEC-018 form: a generated identifier is
+    `<prefix>-<NNN>` and an authored one is `<prefix>-<CATEGORY>-<NNN>`. The inconsistency was
+    inside a single example -- section 16's own `thr-007` and `asm-001` are correct, and only the
+    objects it referenced were slugs -- which is what made it survive.
+
+    Descriptive slugs read better in a document, and that is the argument for having written them.
+    It is also the argument an agent would make for minting `cmp-webhook-receiver` at generation
+    time, which is exactly what DEC-018 exists to stop.
+    """
+    text = DATA_MODEL.read_text(encoding="utf-8")
+
+    offenders: list[str] = []
+    for match in _IDENTIFIER_SHAPED.finditer(text):
+        try:
+            parse_id(match.group(0))
+        except ValueError:
+            offenders.append(match.group(0))
+
+    assert not offenders, (
+        f"data-model.md uses identifier-shaped tokens that section 2.1 does not permit: "
+        f"{sorted(set(offenders))}. A generated identifier is '<prefix>-<NNN>'; an authored one "
+        f"is '<prefix>-<CATEGORY>-<NNN>'."
+    )

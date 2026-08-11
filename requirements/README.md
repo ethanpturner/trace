@@ -1,8 +1,10 @@
 # Requirements catalog
 
 Version-controlled security expectations that the Requirement and Control Mapping step is designed to
-apply against an approved system context. This directory holds data. No product code reads it;
-`tests/unit/test_requirements_catalog.py` checks that it is well-formed.
+apply against an approved system context. This directory holds data.
+`src/trace_ai/services/requirements/loader.py` reads it, validates it, and computes its
+`content_hash`; `tests/unit/test_requirements_catalog.py` tests the loader and holds the authoring
+conventions the loader does not.
 
 The catalog exists so that requirement applicability can be *decided* rather than assumed. Its purpose
 is as much to establish when a requirement does not apply as when it does — see
@@ -106,23 +108,41 @@ Three limits worth stating rather than hiding:
 
 ## Validation
 
-`tests/unit/test_requirements_catalog.py` runs under a bare `uv run pytest`. It enforces four things
-and deliberately no more:
+Most of this happens at load, for every caller, in
+[`loader.py`](../src/trace_ai/services/requirements/loader.py). It refuses to return a catalog that
+is not well-formed rather than returning a partial one:
 
 - **Schema conformance** against data-model.md section 17 — required fields present, no unknown
-  fields, `status` and `default_severity` drawn from the vocabularies in section 4.5.
-- **Identifier convention** — every requirement identifier starts with `req-`.
-- **Manifest agreement** — `catalog.yaml` and the category files list the same identifiers, with no
-  duplicates.
+  fields, `status` and `default_severity` drawn from the vocabularies in section 4.5. Enforced by
+  the `Requirement` model itself, which inherits `extra="forbid"`.
+- **Identifier form** — every requirement identifier is *authored* in the DEC-018 sense:
+  `req-AUTH-001`, prefix and category and number. `req-001` is a valid generated identifier and is
+  refused here, because a catalog entry numbered by a counter is one no person assigned.
+- **Manifest agreement** — `catalog.yaml` and the category files list the same identifiers, in both
+  directions, with no duplicates, all declaring the same `catalog_version`.
+- **Version pinning** — a caller names the version it wants. Nothing globs the version directories
+  and takes the last one, so adding `0.2/` cannot change what an in-flight assessment is assessed
+  against.
+- **`content_hash`** — recomputed and compared on every load. See below.
+
+Two things stay in `tests/unit/test_requirements_catalog.py`, because they are authoring
+conventions rather than schema:
+
 - **Citation format** — every `source_frameworks` entry parses as `<framework> <version>: <control
-  id>` and names a framework the catalog has already adopted.
+  id>` and names a framework the catalog has already adopted. The adopted list lives in the test:
+  adopting a framework is a provenance decision recorded in this file, not a code change.
+- **`applicable_technologies` is populated on nothing.** Asserted, because it is the fact DEC-024
+  turns on — it is the only structured filter field section 17 offers, it carries no data, and that
+  is why there is no deterministic requirement pre-filter.
 
-It checks form, not judgment. That a requirement is well-formed says nothing about whether it is
+None of it checks judgment. That a requirement is well-formed says nothing about whether it is
 right, whether its citation is apt, or whether it belongs in the catalog at all; those stay review
-questions. In particular **nothing verifies that a cited control identifier exists** in the framework
-it names — the frameworks are not vendored, and a plausible but wrong identifier passes.
+questions. **ASVS citations are resolved against a cached v5.0.0 export** by
+`scripts/asvs_resolver.py` and tested in `tests/unit/test_requirements_catalog.py` (issue #221,
+survey item A1); NIST SP 800-53 and OWASP Top 10 for LLM Applications are not vendored, so a
+plausible but wrong identifier for either of those still passes.
 
-Adding a field to a requirement fails the unknown-field test by design. The Requirement object is
+Adding a field to a requirement fails validation by design. The Requirement object is
 defined in the data model, so extending it is a design change and belongs in the decision log
 (DEC-011 is the worked example) rather than in a YAML file.
 
@@ -142,18 +162,27 @@ is authored, globally unique, and inside the scheme, because assessment objects 
 
 ## `content_hash`
 
-Section 30 lists `content_hash` as required on `RequirementsCatalog`, and `catalog.yaml` does not carry
-one. It is a derived value; there is no loader to compute or verify it, and a hand-maintained hash
-would be stale after the first edit. `RequirementsCatalog` is itself deferred in the data model's
-initial implementation priority. The hash is designed to be computed when a loader exists.
+Section 30 requires `content_hash` on `RequirementsCatalog`, and `catalog.yaml` carries one.
+DEC-010 omitted it while no loader existed to compute it; DEC-019 states what the loader computes
+and the loader now does.
 
-DEC-019 states what that loader computes: `sha256:` followed by 64 lowercase hexadecimal characters,
-over a **canonical re-serialization** of the parsed catalog with keys sorted and formatting
-discarded — not over the file bytes. Reformatting, reordering keys, and editing comments therefore
-do not change the hash.
+It is `sha256:` followed by 64 lowercase hexadecimal characters, over a **canonical
+re-serialization** of the parsed catalog with keys sorted and formatting discarded — not over the
+file bytes. Reformatting, reordering keys, reordering `requirement_ids`, and editing comments
+therefore do not change the hash. `loader.py`'s module docstring states the exact input, because a
+hash over an unstated input is not verifiable.
+
+**Do not edit the value by hand.** Editing a requirement moves it, and the loader then refuses to
+read the catalog until it is regenerated:
+
+```bash
+uv run python scripts/catalog_hash.py            # print declared and computed
+uv run python scripts/catalog_hash.py --write    # rewrite the line
+```
 
 That has a consequence worth knowing when editing this catalog: the hash covers what the parser
-sees. Prose carried in a YAML comment is invisible to it, even where that prose is doing real work.
+sees. Prose carried in a YAML comment is invisible to it, even where that prose is doing real work
+— including the comment above `content_hash` itself.
 
 ## Version 0.1
 
