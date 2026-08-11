@@ -73,13 +73,21 @@ cited framework, and no framework in this catalog is covered completely.
 Citations use one string per reference:
 
 ```
-"<framework> <version>: <control id>"
+"<framework>: <version-qualified reference>"
 ```
 
 The version belongs inside the string because section 17 types this field as a list of strings, and
 because control identifiers are not stable across releases — NIST renders the same control as
 `AC-2(1)`, `AC-02(01)`, or `ac-2.1` depending on the source. Recording the version makes a stale
 citation visible rather than silent.
+
+**Where a framework prescribes a reference format, the reference segment uses it.** ASVS's README
+prescribes `v5.0.0-2.1.1` for citing a requirement in an external document, precisely because
+identifiers are not stable across versions, so an ASVS citation here is `"OWASP ASVS:
+v5.0.0-2.1.1"` and the framework segment carries no version of its own (AISVS prescribes the same
+shape, `v1.0-C9.4.3`, should the catalog ever adopt it). NIST SP 800-53 and the LLM Top 10
+prescribe no reference format, so their citations keep the version in the framework segment:
+`"NIST SP 800-53 5.2.0: SI-10"`, `"OWASP Top 10 for LLM Applications 2025: LLM01"`.
 
 Sources used in version 0.1:
 
@@ -134,8 +142,9 @@ is not well-formed rather than returning a partial one:
 Two things stay in `tests/unit/test_requirements_catalog.py`, because they are authoring
 conventions rather than schema:
 
-- **Citation format** — every `source_frameworks` entry parses as `<framework> <version>: <control
-  id>` and names a framework the catalog has already adopted. The adopted list lives in the test:
+- **Citation format** — every `source_frameworks` entry parses as `<framework>:
+  <version-qualified reference>` and names a framework the catalog has already adopted, and an
+  ASVS reference uses the `v5.0.0-2.1.1` form ASVS prescribes. The adopted list lives in the test:
   adopting a framework is a provenance decision recorded in this file, not a code change.
 - **`applicable_technologies` is populated on nothing.** Asserted, because it is the fact DEC-024
   turns on — it is the only structured filter field section 17 offers, it carries no data, and that

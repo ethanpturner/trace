@@ -26,6 +26,7 @@ there still passes.
 from __future__ import annotations
 
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -59,12 +60,18 @@ CATALOG = load_catalog(VERSION)
 ALL_REQUIREMENTS = CATALOG.requirements
 
 # Frameworks cited in catalog version 0.1. A new framework is a deliberate provenance decision
-# (requirements/README.md), so it is added here too.
+# (requirements/README.md), so it is added here too. ASVS carries no version in the framework
+# segment because its reference token is version-qualified by construction (`v5.0.0-2.1.1`, the
+# form its README prescribes — issue #222); the other two carry the version in the framework
+# segment because neither prescribes a reference format of its own.
 FRAMEWORKS = (
-    "OWASP ASVS 5.0.0",
+    "OWASP ASVS",
     "NIST SP 800-53 5.2.0",
     "OWASP Top 10 for LLM Applications 2025",
 )
+
+# The reference form ASVS's README prescribes for external documents: `v<release>-<requirement>`.
+ASVS_TOKEN = re.compile(r"^v\d+\.\d+\.\d+-\d+\.\d+\.\d+$")
 
 
 # --------------------------------------------------------------------------------------------
@@ -406,11 +413,14 @@ class TestRequirement:
         assert requirement.category
 
     def test_citations_name_a_known_framework_and_version(self, requirement: Requirement) -> None:
-        """`source_frameworks` entries are '<framework> <version>: <control id>'.
+        """`source_frameworks` entries are '<framework>: <version-qualified reference>'.
 
         The version lives inside the string because section 17 types the field as a list of
         strings, and control identifiers are not stable across releases
-        (`requirements/README.md`). A citation without one goes stale invisibly.
+        (`requirements/README.md`). A citation without one goes stale invisibly. Where the cited
+        framework prescribes a reference format, the reference segment uses it: ASVS prescribes
+        `v5.0.0-2.1.1` (issue #222), which carries the version itself. The other frameworks
+        prescribe none, so their version stays in the framework segment.
 
         This is an authoring convention rather than a schema rule, so it is checked here rather
         than in the loader: the adopted-framework list below is the thing being enforced, and
@@ -421,13 +431,18 @@ class TestRequirement:
 
             assert separator, (
                 f"{requirement.id} citation {citation!r} "
-                "is not '<framework> <version>: <control id>'"
+                "is not '<framework>: <version-qualified reference>'"
             )
             assert framework in FRAMEWORKS, (
                 f"{requirement.id} cites unknown framework {framework!r}. "
                 "Citing a new framework is a provenance decision; add it to FRAMEWORKS."
             )
             assert control.strip(), f"{requirement.id} citation {citation!r} has no control id"
+            if framework == "OWASP ASVS":
+                assert ASVS_TOKEN.fullmatch(control.strip()), (
+                    f"{requirement.id} citation {citation!r} does not use the reference form "
+                    "ASVS prescribes, 'v<release>-<requirement>' (e.g. 'v5.0.0-2.1.1')."
+                )
 
 
 # --------------------------------------------------------------------------------------------
@@ -435,13 +450,15 @@ class TestRequirement:
 # --------------------------------------------------------------------------------------------
 #
 # ASVS publishes a stable flat JSON export at each release tag, keyed by `req_id` like `V6.1.3`.
-# The catalog cites the same identifier without the `V` prefix (e.g. `6.1.3`), so resolution is a
-# lookup after prefixing. The export is cached under `requirements/_external/asvs/` so CI needs no
-# network. `scripts/asvs_resolver.py` is the CLI for the same check; it is run here as a subprocess
-# so the test exercises the script's entry point and not just its logic.
+# The catalog cites the reference token ASVS prescribes, `v5.0.0-6.1.3` (issue #222), so
+# resolution is a version check and a lookup after re-prefixing. The export is cached under
+# `requirements/_external/asvs/` so CI needs no network. `scripts/asvs_resolver.py` is the CLI for
+# the same check; it is run here as a subprocess so the test exercises the script's entry point
+# and not just its logic.
 
 ASVS_EXPORT = CATALOG_ROOT / "_external" / "asvs" / "v5.0.0.flat.json"
-ASVS_FRAMEWORK = "OWASP ASVS 5.0.0"
+ASVS_FRAMEWORK = "OWASP ASVS"
+ASVS_TOKEN_PREFIX = "v5.0.0-"
 ASVS_ROW_COUNT = 345  # v5.0.0; the survey verified the row count by hand.
 
 
@@ -483,10 +500,15 @@ def test_the_cached_asvs_export_is_the_expected_release() -> None:
 def test_every_asvs_citation_resolves_against_the_pinned_export(
     requirement_id: str, citation: str
 ) -> None:
-    """A typo'd or stale ASVS identifier is currently silent; this resolves it by lookup."""
-    _framework, _separator, control = citation.partition(": ")
-    assert f"V{control}" in _asvs_req_ids(), (
-        f"{requirement_id} cites {citation!r}, and `V{control}` is not a `req_id` in the pinned "
+    """A typo'd or stale ASVS identifier is otherwise silent; this resolves it by lookup."""
+    _framework, _separator, token = citation.partition(": ")
+    assert token.startswith(ASVS_TOKEN_PREFIX), (
+        f"{requirement_id} cites {citation!r}, which does not pin the cached export's release "
+        f"({ASVS_TOKEN_PREFIX.rstrip('-')}). The resolver can only vouch for the release it holds."
+    )
+    req_id = f"V{token.removeprefix(ASVS_TOKEN_PREFIX)}"
+    assert req_id in _asvs_req_ids(), (
+        f"{requirement_id} cites {citation!r}, and `{req_id}` is not a `req_id` in the pinned "
         f"ASVS v5.0.0 export at {ASVS_EXPORT}. The identifier is typo'd or stale."
     )
 
