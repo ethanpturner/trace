@@ -6,7 +6,11 @@ prevent — import it from `trace_ai.infrastructure.model.anthropic_adapter` at 
 constructs it.
 """
 
-from trace_ai.infrastructure.model.fake import DeterministicModel, RecordedCall
+from trace_ai.infrastructure.model.fake import (
+    DeterministicModel,
+    RecordedCall,
+    ResponsesExhaustedError,
+)
 from trace_ai.infrastructure.model.profiles import (
     DEFAULT_PROFILE,
     PROFILES,
@@ -43,6 +47,7 @@ __all__ = [
     "ModelUsage",
     "RecordedCall",
     "ReplayCache",
+    "ResponsesExhaustedError",
     "StructuredModel",
     "UnknownModelProfileError",
     "cache_key",

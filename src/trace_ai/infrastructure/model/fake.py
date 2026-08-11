@@ -34,7 +34,32 @@ if TYPE_CHECKING:
 
     from pydantic import BaseModel
 
-__all__ = ["DeterministicModel", "RecordedCall"]
+__all__ = ["DeterministicModel", "RecordedCall", "ResponsesExhaustedError"]
+
+
+class ResponsesExhaustedError(AssertionError):
+    """The fake was asked for one more call than it had responses queued.
+
+    An `AssertionError`, because in a test running out means the test described fewer calls than
+    the node makes. It is typed because the same thing happens outside tests: `offline-fake` is a
+    first-class provider, and an operator who supplies fewer `--response` files than the run makes
+    model calls hits this too, so the CLI catches it by name and answers in one line.
+    """
+
+    def __init__(self, name: str, calls_made: int, last_mismatch: str | None) -> None:
+        message = (
+            f"{name} was asked for model call {calls_made} with no response left to serve. A "
+            f"recorded run supplies one response per model call, in the order the run makes "
+            f"them; repeating an earlier answer would hide a step calling the model more often "
+            f"than the recording describes."
+        )
+        if last_mismatch is not None:
+            message += (
+                f" The previous call was served {last_mismatch}, so the run retried it and "
+                f"consumed the response meant for the call after — check the order the "
+                f"responses were supplied in."
+            )
+        super().__init__(message)
 
 
 @dataclass(frozen=True, slots=True)
@@ -66,6 +91,7 @@ class DeterministicModel:
         self._queued: deque[BaseModel | ModelFailure] = deque(outcomes)
         self._name = name
         self._capabilities = capabilities
+        self._last_mismatch: str | None = None
         self.calls: list[RecordedCall] = []
 
     @property
@@ -92,26 +118,28 @@ class DeterministicModel:
         self.calls.append(RecordedCall(prompt, schema, settings, system))
 
         if not self._queued:
-            raise AssertionError(
-                f"{self._name} was called {len(self.calls)} time(s) with nothing queued for this "
-                f"one. Queue an outcome per expected call; a fake that repeats its last answer "
-                f"hides a node calling the model more often than the test describes."
-            )
+            raise ResponsesExhaustedError(self._name, len(self.calls), self._last_mismatch)
 
         outcome = self._queued.popleft()
         usage = ModelUsage(model=self._name)
 
         if isinstance(outcome, ModelFailure):
+            self._last_mismatch = None
             return outcome
 
         if not isinstance(outcome, schema):
+            # Remembered so that running out on the retry can say what actually went wrong: the
+            # retry consumed the next call's response, and without this the exhaustion message
+            # would blame the count when the cause was the order.
+            self._last_mismatch = (
+                f"a {type(outcome).__name__} where {schema.__name__} was asked for"
+            )
             return ModelFailure(
                 reason=FailureReason.SCHEMA_VALIDATION_FAILURE,
-                message=(
-                    f"queued a {type(outcome).__name__} where {schema.__name__} was asked for"
-                ),
+                message=f"queued {self._last_mismatch}",
                 usage=usage,
                 raw_output=repr(outcome),
             )
 
+        self._last_mismatch = None
         return ModelSuccess(value=outcome, usage=usage)
