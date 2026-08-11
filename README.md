@@ -27,6 +27,12 @@ documentation is treated as a question to ask, not a vulnerability to report.
 > layer that measures quality — the evaluation harness, the additional benchmark scenarios, the
 > baselines and ablations. [Status](#status) gives a precise breakdown.
 
+![The pipeline replayed offline: both checkpoints, the report, and the evidence walk](demo/forgeflow/assets/pipeline-demo.gif)
+
+The recording is rendered from [`demo/forgeflow/pipeline-demo.tape`](demo/forgeflow/pipeline-demo.tape)
+by [VHS](https://github.com/charmbracelet/vhs), and CI re-renders it when the tape or the command
+surface changes — the demo is derived from the commands, not captured beside them.
+
 ## Problem
 
 Modern software development moves faster than traditional security architecture review processes.
