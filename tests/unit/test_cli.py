@@ -115,6 +115,58 @@ def test_archive_is_the_only_transition_offered(
 # ------------------------------------------------------------------------------------------
 
 
+def test_reset_without_force_lists_and_removes_nothing(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """`reset` is the one destructive command, so its default is a preview and a refusal."""
+    identifier = created(data_root, capsys)
+
+    assert invoke(data_root, "reset") == 1
+    captured = capsys.readouterr()
+    assert "would remove" in captured.out
+    assert "pass --force" in captured.err
+
+    assert invoke(data_root, "assessment", "status", identifier) == 0
+
+
+def test_reset_with_force_returns_the_root_to_the_fresh_state(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """The rerun problem (#321): a used root mints asm-002 while every documented command names
+    asm-001. After a reset, the next create allocates asm-001 again — the property a scripted
+    demonstration depends on."""
+    identifier = created(data_root, capsys)
+    assert invoke(data_root, "source", "add", identifier, str(FORGEFLOW_INPUT)) == 0
+    capsys.readouterr()
+
+    assert invoke(data_root, "reset", "--force") == 0
+    assert "removed" in capsys.readouterr().out
+
+    assert invoke(data_root, "assessment", "list") == 0
+    assert "no assessments" in capsys.readouterr().out
+    assert created(data_root, capsys) == "asm-001"
+
+
+def test_reset_refuses_a_directory_that_is_not_a_data_root(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A flag that removes data, pointed at the wrong directory, must do nothing at all."""
+    other = tmp_path / "not-a-data-root"
+    other.mkdir()
+    (other / "keep.txt").write_text("not trace's", encoding="utf-8")
+
+    assert invoke(other, "reset", "--force") == 1
+    assert "does not look like a trace data root" in capsys.readouterr().err
+    assert (other / "keep.txt").exists()
+
+
+def test_reset_on_a_fresh_root_is_a_no_op(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    assert invoke(data_root, "reset", "--force") == 0
+    assert "already fresh" in capsys.readouterr().out
+
+
 def test_adding_a_directory_registers_and_indexes_the_corpus(
     data_root: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
@@ -146,6 +198,45 @@ def test_registering_without_indexing_is_available(
 
     invoke(data_root, "source", "list", identifier)
     assert "registered" in capsys.readouterr().out
+
+
+def test_adding_the_same_directory_twice_changes_no_count(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A repeated `source add` — one rehearsal not wiped, one command run twice — must not move a
+    single number the reviewer is about to quote (#320). The skipped documents are named by
+    identifier, never re-registered and never re-indexed."""
+    identifier = created(data_root, capsys)
+    assert invoke(data_root, "source", "add", identifier, str(FORGEFLOW_INPUT)) == 0
+    first = capsys.readouterr().out
+    assert "registered 8 document(s)" in first
+
+    assert invoke(data_root, "source", "add", identifier, str(FORGEFLOW_INPUT)) == 0
+    second = capsys.readouterr().out
+    assert "registered 0 document(s)" in second
+    assert "already registered: src-001" in second
+    assert "indexed 0 evidence reference(s)" in second
+
+    assert invoke(data_root, "assessment", "status", identifier) == 0
+    status = capsys.readouterr().out
+    assert "source documents: 8" in status
+
+
+def test_a_no_index_registration_is_completed_by_the_next_add(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Rerunning without `--no-index` finishes the job rather than skipping it: the documents are
+    already registered, and the second add indexes what is still unindexed."""
+    identifier = created(data_root, capsys)
+    path = FORGEFLOW_INPUT / "product-overview.md"
+    assert invoke(data_root, "source", "add", identifier, str(path), "--no-index") == 0
+    capsys.readouterr()
+
+    assert invoke(data_root, "source", "add", identifier, str(path)) == 0
+    output = capsys.readouterr().out
+    assert "registered 0 document(s)" in output
+    assert "already registered: src-001" in output
+    assert "indexed 0 evidence reference(s)" not in output
 
 
 def test_source_list_reports_documents_without_their_content(
@@ -376,6 +467,7 @@ def test_the_command_surface_is_the_one_dec_032_confirms() -> None:
         "report",
         "verify",
         "evaluate",
+        "reset",
     }
     assert _subcommands("source") == {"add", "list"}
     assert _subcommands("evidence") == {"list", "show", "verify"}

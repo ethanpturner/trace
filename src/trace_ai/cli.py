@@ -38,7 +38,7 @@ from trace_ai.domain.evidence import EvidenceReference
 from trace_ai.domain.execution import RunStatus, WorkflowRun
 from trace_ai.domain.finding import Finding
 from trace_ai.domain.proposals import ContextExtractionProposal
-from trace_ai.domain.source_document import SourceDocument, TrustLevel
+from trace_ai.domain.source_document import IngestionStatus, SourceDocument, TrustLevel
 from trace_ai.infrastructure.database.store import AssessmentStore, StoreError
 from trace_ai.infrastructure.filesystem.artifact_store import DEFAULT_ROOT, ArtifactStoreError
 from trace_ai.infrastructure.model.factory import UnknownProviderError, build_model
@@ -458,6 +458,23 @@ def build_parser() -> argparse.ArgumentParser:
         help="print the report's manifest instead of the report",
     )
 
+    reset = commands.add_parser(
+        "reset",
+        help="return the data root to the fresh-clone state",
+        description=(
+            "Removes the assessment store and every assessment directory under the data root. "
+            "Exists for the rerun problem: a second run against a used root mints asm-002 while "
+            "every documented command names asm-001, so a rehearsal that was not wiped diverges "
+            "from any script. Without --force it lists what would go and removes nothing, and a "
+            "directory that does not look like a trace data root is refused outright."
+        ),
+    )
+    reset.add_argument(
+        "--force",
+        action="store_true",
+        help="actually remove; without it the command lists what would go and exits non-zero",
+    )
+
     return parser
 
 
@@ -526,6 +543,14 @@ def run(argv: Sequence[str] | None = None) -> int:
 
     if args.group is None:
         return _banner()
+    if args.group == "reset":
+        # Before a store opens: `reset` removes the database, and `AssessmentStore.at_root`
+        # would first recreate the thing it is about to delete.
+        try:
+            return _reset(args)
+        except EXPECTED_ERRORS as error:
+            print(f"error: {error}", file=sys.stderr)
+            return 1
     command = getattr(args, "command", None)
     if command is None and (args.group, None) not in handlers:
         parser.parse_args([args.group, "--help"])
@@ -557,6 +582,45 @@ def _banner() -> int:
     print("trace: context-aware security architecture analysis")
     print(f"env: {settings.app_env}  log level: {settings.log_level}")
     print(f"credentials configured: {', '.join(configured) if configured else 'none'}")
+    return 0
+
+
+def _reset(args: argparse.Namespace) -> int:
+    """Return the data root to the fresh-clone state, deliberately.
+
+    Two refusals fail it closed: without `--force` it lists what would go and removes nothing,
+    and a directory holding no store database is refused outright — the flag removes data, and
+    pointed at the wrong directory it must do nothing at all. Entry names are printed rather
+    than paths; `trace.db` and `asm-*` are the assessment's, not the machine's.
+    """
+    import shutil
+
+    from trace_ai.infrastructure.database.store import DATABASE_FILENAME
+
+    root: Path = args.data_root
+    if not root.exists() or not any(root.iterdir()):
+        print("nothing to reset: the data root is already fresh")
+        return 0
+    if not (root / DATABASE_FILENAME).is_file():
+        raise ValueError(
+            f"{root.name!r} holds no {DATABASE_FILENAME}, so it does not look like a trace "
+            f"data root; refusing to remove anything"
+        )
+
+    entries = sorted(root.iterdir())
+    if not args.force:
+        print(f"would remove {len(entries)} entr{'y' if len(entries) == 1 else 'ies'}:")
+        for child in entries:
+            print(f"  {child.name}")
+        print("nothing was removed; pass --force to remove them", file=sys.stderr)
+        return 1
+
+    for child in entries:
+        if child.is_dir():
+            shutil.rmtree(child)
+        else:
+            child.unlink()
+    print(f"reset: removed {len(entries)} entr{'y' if len(entries) == 1 else 'ies'}")
     return 0
 
 
@@ -649,8 +713,15 @@ def _assessment_archive(args: argparse.Namespace, service: AssessmentService) ->
 
 
 def _source_add(args: argparse.Namespace, service: AssessmentService) -> int:
+    """Register documents, reporting what was new and what was already there.
+
+    Registration is idempotent in the loader (#320), so a repeated `source add` returns the
+    existing documents; this handler tells the difference by identifier and does not count a
+    skipped document as registered — the numbers a reviewer quotes must not move on a rerun.
+    """
     handle = service.handle(args.assessment_id)
     loader = DocumentLoader(handle)
+    before = {document.id for document in handle.objects.list(SourceDocument)}
 
     if args.path.is_dir():
         documents = loader.load_directory(
@@ -664,13 +735,19 @@ def _source_add(args: argparse.Namespace, service: AssessmentService) -> int:
                 trust_level=TrustLevel.UNTRUSTED,
             )
         ]
+    skipped = [document for document in documents if document.id in before]
 
+    # Index whatever is still unindexed, which is every new document and any earlier
+    # `--no-index` registration this command is now completing.
     references = 0
     if not args.no_index:
         for document in documents:
-            references += len(index_document(handle, document))
+            if document.ingestion_status is IngestionStatus.REGISTERED:
+                references += len(index_document(handle, document))
 
-    print(f"registered {len(documents)} document(s)")
+    print(f"registered {len(documents) - len(skipped)} document(s)")
+    for document in skipped:
+        print(f"already registered: {document.id}  {document.filename}")
     if not args.no_index:
         print(f"indexed {references} evidence reference(s)")
     return 0
