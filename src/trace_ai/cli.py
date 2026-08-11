@@ -32,15 +32,17 @@ import sys
 from typing import TYPE_CHECKING, Any
 
 from trace_ai.domain.assessment import default_configuration
-from trace_ai.domain.enums import ReviewDisposition, SourceOrigin
+from trace_ai.domain.enums import ReviewDisposition, Severity, SourceOrigin
 from trace_ai.domain.evidence import EvidenceReference
-from trace_ai.domain.execution import WorkflowRun
+from trace_ai.domain.execution import RunStatus, WorkflowRun
+from trace_ai.domain.finding import Finding
 from trace_ai.domain.proposals import ContextExtractionProposal
 from trace_ai.domain.source_document import SourceDocument, TrustLevel
 from trace_ai.infrastructure.database.store import AssessmentStore, StoreError
 from trace_ai.infrastructure.filesystem.artifact_store import DEFAULT_ROOT, ArtifactStoreError
 from trace_ai.infrastructure.model.factory import UnknownProviderError, build_model
 from trace_ai.infrastructure.model.profiles import UnknownModelProfileError, resolve_profile
+from trace_ai.infrastructure.model.recorded import load_recorded_responses
 from trace_ai.services.assessment import AssessmentService, AssessmentServiceError
 from trace_ai.services.context.pipeline import context_objects, run_context_slice
 from trace_ai.services.context.review_file import (
@@ -49,8 +51,13 @@ from trace_ai.services.context.review_file import (
     read_review_file,
     write_review_file,
 )
+from trace_ai.services.driver import resume_assessment, run_assessment
 from trace_ai.services.evidence.index import EvidenceIndex, EvidenceNotFoundError
 from trace_ai.services.evidence.indexing import IndexingError, index_document
+from trace_ai.services.findings.review_package import (
+    build_finding_review_package,
+    render_markdown,
+)
 from trace_ai.services.ingestion.loader import DocumentLoader, DocumentLoadError
 from trace_ai.workflow.checkpoint import load_state
 from trace_ai.workflow.context_review import (
@@ -66,7 +73,15 @@ from trace_ai.workflow.context_review import (
 )
 from trace_ai.workflow.context_validation import validate_context
 from trace_ai.workflow.errors import WorkflowError
+from trace_ai.workflow.finding_review import (
+    approve_finding,
+    change_severity,
+    conclude_finding_review,
+    edit_finding,
+    reject_finding,
+)
 from trace_ai.workflow.limits import LimitExceededError
+from trace_ai.workflow.phases import Phase
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
@@ -248,7 +263,117 @@ def build_parser() -> argparse.ArgumentParser:
     approve.add_argument("--reviewer", help="who the approval is attributed to")
     approve.add_argument("--note", help="why the baseline was approved")
 
+    running = commands.add_parser(
+        "run",
+        help="run the pipeline until it pauses at a checkpoint or completes",
+        description=(
+            "Runs every phase the transition table names, in order, and stops where the table "
+            "stops: at a checkpoint (exit 0, the run is paused and waiting for a person), at "
+            "completion (exit 0), or at a classified error (exit 1). Pausing is stopping: the "
+            "process exits and `trace resume` continues in a new one."
+        ),
+    )
+    running.add_argument("assessment_id")
+    _model_flags(running)
+
+    resuming = commands.add_parser(
+        "resume",
+        help="resume a paused run in a new process",
+        description=(
+            "Loads the paused state, re-runs the checkpoint, and continues when every subject "
+            "has a decision. With subjects still undecided the run pauses again, which is "
+            "partial progress rather than an error."
+        ),
+    )
+    resuming.add_argument("assessment_id")
+    resuming.add_argument("--run", dest="workflow_run_id", help="a specific paused run")
+    _model_flags(resuming)
+
+    findings = commands.add_parser("findings", help="review and approve candidate findings")
+    findings_commands = findings.add_subparsers(dest="command")
+
+    findings_show = findings_commands.add_parser(
+        "show", help="print the review package for the finding checkpoint"
+    )
+    findings_show.add_argument("assessment_id")
+
+    findings_review = findings_commands.add_parser("review", help="record reviewer decisions")
+    findings_review.add_argument("assessment_id")
+    findings_review.add_argument("--reviewer", help="who the decisions are attributed to")
+    findings_review.add_argument(
+        "--severity",
+        action="append",
+        dest="severities",
+        default=[],
+        metavar="ID=LEVEL",
+        help="assign a severity; the reviewer's to give and recorded as an edit (DEC-030)",
+    )
+    findings_review.add_argument(
+        "--edit",
+        action="append",
+        nargs=2,
+        dest="edits",
+        default=[],
+        metavar=("ID", "FIELD=VALUE"),
+        help="change one field; validated in full and recorded with the delta (DEC-023)",
+    )
+    findings_review.add_argument(
+        "--approve", action="append", dest="approved", default=[], metavar="ID"
+    )
+    findings_review.add_argument(
+        "--reject", action="append", dest="rejected", default=[], metavar="ID"
+    )
+    findings_review.add_argument("--note", help="a rationale recorded with each decision")
+    findings_review.add_argument(
+        "--override-rationale",
+        dest="override_rationale",
+        help="approve past the deterministic gate, with the override recorded (DEC-055)",
+    )
+
+    findings_approve = findings_commands.add_parser(
+        "approve", help="conclude the finding review once every finding is decided"
+    )
+    findings_approve.add_argument("assessment_id")
+
+    report = commands.add_parser("report", help="inspect the rendered report")
+    report_commands = report.add_subparsers(dest="command")
+
+    report_show = report_commands.add_parser("show", help="print the rendered report")
+    report_show.add_argument("assessment_id")
+    report_show.add_argument(
+        "--manifest",
+        action="store_true",
+        help="print the report's manifest instead of the report",
+    )
+
     return parser
+
+
+def _model_flags(parser: argparse.ArgumentParser) -> None:
+    """The flags every model-reaching run command shares."""
+    parser.add_argument(
+        "--model-profile",
+        default=DEFAULT_MODEL_PROFILE,
+        help="the provider, model, and settings bundle to run with",
+    )
+    parser.add_argument(
+        "--response",
+        action="append",
+        dest="responses",
+        default=[],
+        type=_path,
+        metavar="PATH",
+        help=(
+            "a recorded model response to replay, repeatable; files are consumed in the order "
+            "given, one per model call the run makes"
+        ),
+    )
+    parser.add_argument(
+        "--max-model-calls",
+        type=int,
+        help="stop the run before exceeding this many model calls",
+    )
+    parser.add_argument("--max-cost", help="stop the run before exceeding this estimated cost")
 
 
 def _path(value: str) -> Path:
@@ -262,12 +387,6 @@ def run(argv: Sequence[str] | None = None) -> int:
     drive it directly."""
     parser = build_parser()
     args = parser.parse_args(argv)
-
-    if args.group is None:
-        return _banner()
-    if getattr(args, "command", None) is None:
-        parser.parse_args([args.group, "--help"])
-        return 2
 
     handlers = {
         ("assessment", "create"): _assessment_create,
@@ -283,8 +402,21 @@ def run(argv: Sequence[str] | None = None) -> int:
         ("context", "show"): _context_show,
         ("context", "review"): _context_review,
         ("context", "approve"): _context_approve,
+        ("run", None): _run,
+        ("resume", None): _resume,
+        ("findings", "show"): _findings_show,
+        ("findings", "review"): _findings_review,
+        ("findings", "approve"): _findings_approve,
+        ("report", "show"): _report_show,
     }
-    handler = handlers[(args.group, args.command)]
+
+    if args.group is None:
+        return _banner()
+    command = getattr(args, "command", None)
+    if command is None and (args.group, None) not in handlers:
+        parser.parse_args([args.group, "--help"])
+        return 2
+    handler = handlers[(args.group, command)]
 
     try:
         with AssessmentStore.at_root(args.data_root) as store:
@@ -811,3 +943,200 @@ def _context_approve(args: argparse.Namespace, service: AssessmentService) -> in
 def _latest_run(handle: AssessmentHandle) -> WorkflowRun | None:
     runs = handle.objects.list(WorkflowRun)
     return runs[-1] if runs else None
+
+
+# ------------------------------------------------------------------------------------------
+# The pipeline: run, resume, the finding checkpoint, and the report
+# ------------------------------------------------------------------------------------------
+
+
+def _budget_from(args: argparse.Namespace) -> Any:
+    from decimal import Decimal
+
+    from trace_ai.workflow.limits import Budget
+
+    if args.max_model_calls is None and args.max_cost is None:
+        return None
+    return Budget(
+        maximum_model_calls=args.max_model_calls,
+        maximum_cost=Decimal(args.max_cost) if args.max_cost else None,
+    )
+
+
+def _run(args: argparse.Namespace, service: AssessmentService) -> int:
+    """Run the pipeline from initialization until it pauses, completes, or stops.
+
+    The run is `services/driver.py`'s; this reads flags, builds the model, and prints where the
+    run got to. Exit codes are the documented ones: 0 for a pause or a completion (the table
+    stopped the run where it says to stop), 1 for a failed run.
+    """
+    profile = resolve_profile(args.model_profile)
+    outcome = run_assessment(
+        service,
+        args.assessment_id,
+        model=build_model(profile, responses=load_recorded_responses(args.responses)),
+        profile=profile,
+        budget=_budget_from(args),
+    )
+    return _print_run_outcome(outcome)
+
+
+def _resume(args: argparse.Namespace, service: AssessmentService) -> int:
+    """Resume a paused run: the checkpoint re-runs, and decided subjects let it advance."""
+    profile = resolve_profile(args.model_profile)
+    outcome = resume_assessment(
+        service,
+        args.assessment_id,
+        model=build_model(profile, responses=load_recorded_responses(args.responses)),
+        profile=profile,
+        workflow_run_id=args.workflow_run_id,
+        budget=_budget_from(args),
+    )
+    return _print_run_outcome(outcome)
+
+
+def _print_run_outcome(outcome: Any) -> int:
+    state = outcome.state
+
+    if state.status is RunStatus.FAILED:
+        for recorded in state.errors:
+            print(f"error: {recorded}", file=sys.stderr)
+        print(
+            f"run {state.workflow_run_id} failed at {state.current_phase.value} "
+            f"({outcome.stopped_because})",
+            file=sys.stderr,
+        )
+        return 1
+
+    print(f"workflow run: {state.workflow_run_id}")
+    if outcome.paused:
+        pending = state.pending_human_review
+        waiting = len(pending.object_ids) if pending is not None else 0
+        print(f"paused at:    {state.current_phase.value}")
+        print(f"awaiting:     {waiting} subject(s)")
+        if state.current_phase is Phase.HUMAN_FINDING_REVIEW:
+            print()
+            print(
+                "Review with `trace findings show` and `trace findings review`, conclude with "
+                "`trace findings approve`, then continue with `trace resume`."
+            )
+        else:
+            print()
+            print(
+                "Review with `trace context show` and `trace context review`, approve with "
+                "`trace context approve`, then continue with `trace resume`."
+            )
+        return 0
+
+    print("completed; the report and its manifest are in the assessment's outputs")
+    print("Print the report with `trace report show`.")
+    return 0
+
+
+def _findings_show(args: argparse.Namespace, service: AssessmentService) -> int:
+    """Print the checkpoint-2 review package, findings first, evidence excerpts labelled."""
+    handle = service.handle(args.assessment_id)
+    package = build_finding_review_package(handle, index=EvidenceIndex(handle))
+    print(render_markdown(package))
+    return 0
+
+
+def _findings_review(args: argparse.Namespace, service: AssessmentService) -> int:
+    """Record finding decisions: severity and edits first, then rejections, then approvals.
+
+    The order inside one invocation is fixed so `--severity fnd-001=medium --approve fnd-001`
+    means what it reads as: the severity lands before the approval gate checks it.
+    """
+    handle = service.handle(args.assessment_id)
+    reviewer = args.reviewer or _default_reviewer()
+    run = _latest_run(handle)
+    run_id = run.id if run is not None else None
+    findings = {finding.id: finding for finding in handle.objects.list(Finding)}
+    decisions = []
+
+    for entry in args.severities:
+        identifier, separator, level = entry.partition("=")
+        if not separator:
+            raise ValueError(f"--severity takes ID=LEVEL, not {entry!r}")
+        finding = _require(findings, identifier, "a finding in this assessment")
+        updated, decision = change_severity(
+            handle,
+            finding,
+            Severity(level),
+            reviewer_id=reviewer,
+            rationale=args.note,
+            workflow_run_id=run_id,
+        )
+        findings[identifier] = updated
+        decisions.append(decision)
+
+    for identifier, assignment in args.edits:
+        field, separator, value = assignment.partition("=")
+        if not separator or not field:
+            raise ValueError(f"--edit takes ID FIELD=VALUE, not {assignment!r}")
+        finding = _require(findings, identifier, "a finding in this assessment")
+        updated, decision = edit_finding(
+            handle,
+            finding,
+            {field: value},
+            reviewer_id=reviewer,
+            rationale=args.note,
+            workflow_run_id=run_id,
+        )
+        findings[identifier] = updated
+        decisions.append(decision)
+
+    for identifier in args.rejected:
+        finding = _require(findings, identifier, "a finding in this assessment")
+        updated, decision = reject_finding(
+            handle, finding, reviewer_id=reviewer, rationale=args.note, workflow_run_id=run_id
+        )
+        findings[identifier] = updated
+        decisions.append(decision)
+
+    for identifier in args.approved:
+        finding = _require(findings, identifier, "a finding in this assessment")
+        updated, decision = approve_finding(
+            handle,
+            finding,
+            reviewer_id=reviewer,
+            rationale=args.note,
+            override_rationale=args.override_rationale,
+            workflow_run_id=run_id,
+        )
+        findings[identifier] = updated
+        decisions.append(decision)
+
+    if not decisions:
+        print("no decisions recorded")
+        return 0
+    for decision in decisions:
+        print(f"{decision.id}  {decision.disposition:<22} {decision.subject_id}")
+    print(f"{len(decisions)} decision(s) recorded as {reviewer}")
+    return 0
+
+
+def _findings_approve(args: argparse.Namespace, service: AssessmentService) -> int:
+    """Conclude the finding review, or exit non-zero naming the findings still undecided."""
+    assessment = conclude_finding_review(service, args.assessment_id)
+    print(f"finding review concluded; assessment {assessment.id} is {assessment.status.value}")
+    print("Continue the run with `trace resume`.")
+    return 0
+
+
+def _report_show(args: argparse.Namespace, service: AssessmentService) -> int:
+    """Print the rendered report, or its manifest. Non-zero while no report exists."""
+    assessment = service.get(args.assessment_id)
+    if assessment.final_report_path is None:
+        print(
+            "error: no report has been rendered for this assessment; run the pipeline to "
+            "completion first",
+            file=sys.stderr,
+        )
+        return 1
+    filename = assessment.final_report_path.rpartition("/")[2]
+    if args.manifest:
+        filename = filename.removesuffix(".md") + ".manifest.json"
+    handle = service.handle(args.assessment_id)
+    print(handle.artifacts.read("outputs", filename).decode("utf-8"))
+    return 0

@@ -48,7 +48,11 @@ from trace_ai.workflow.context_review import (
     build_context_review_package,
     decide_object,
 )
-from trace_ai.workflow.finding_review import approve_finding, change_severity
+from trace_ai.workflow.finding_review import (
+    approve_finding,
+    change_severity,
+    conclude_finding_review,
+)
 from trace_ai.workflow.limits import Budget, LimitKind
 from trace_ai.workflow.phases import NODES_BY_PHASE, Phase
 
@@ -231,11 +235,12 @@ class _Stage:
         self.root = root
         self.assessment_id = assessment_id
 
-    def __enter__(self) -> AssessmentHandle:
+    def __enter__(self) -> _Stage:
         self._store = AssessmentStore.at_root(self.root)
         store = self._store.__enter__()
         self.service = AssessmentService(store, artifact_root=self.root)
-        return self.service.handle(self.assessment_id)
+        self.handle = self.service.handle(self.assessment_id)
+        return self
 
     def __exit__(
         self,
@@ -302,8 +307,11 @@ def test_a_full_assessment_runs_offline_pausing_at_both_checkpoints(
     root, assessment_id = prepared
 
     # Process 1: run until checkpoint 1.
-    with _Stage(root, assessment_id) as handle:
-        outcome = run_assessment(handle, model=_extraction_model(), profile=PROFILE)
+    with _Stage(root, assessment_id) as stage:
+        handle = stage.handle
+        outcome = run_assessment(
+            stage.service, assessment_id, model=_extraction_model(), profile=PROFILE
+        )
         assert outcome.paused
         assert outcome.state.current_phase is Phase.HUMAN_CONTEXT_REVIEW
         run_id = outcome.state.workflow_run_id
@@ -313,9 +321,12 @@ def test_a_full_assessment_runs_offline_pausing_at_both_checkpoints(
         assert state_file.exists(), "DEC-017: a pause without a state file cannot be resumed"
 
     # Process 2: the reviewer decides, then the run resumes to checkpoint 2.
-    with _Stage(root, assessment_id) as handle:
+    with _Stage(root, assessment_id) as stage:
+        handle = stage.handle
         _approve_checkpoint_one(handle)
-        outcome = resume_assessment(handle, model=_reasoning_model(), profile=PROFILE)
+        outcome = resume_assessment(
+            stage.service, assessment_id, model=_reasoning_model(), profile=PROFILE
+        )
         assert outcome.paused
         assert outcome.state.current_phase is Phase.HUMAN_FINDING_REVIEW
         assert outcome.state.candidate_finding_ids == ["fnd-001"]
@@ -323,9 +334,12 @@ def test_a_full_assessment_runs_offline_pausing_at_both_checkpoints(
         assert outcome.state.pending_human_review.object_ids == ["fnd-001"]
 
     # Process 3: severity assigned, finding approved, run resumes to completion.
-    with _Stage(root, assessment_id) as handle:
+    with _Stage(root, assessment_id) as stage:
+        handle = stage.handle
         _approve_checkpoint_two(handle)
-        outcome = resume_assessment(handle, model=_report_model(handle), profile=PROFILE)
+        outcome = resume_assessment(
+            stage.service, assessment_id, model=_report_model(handle), profile=PROFILE
+        )
         assert outcome.completed
         assert outcome.state.current_phase is Phase.ASSESSMENT_COMPLETION
         assert outcome.state.pending_human_review is None
@@ -343,6 +357,36 @@ def test_a_full_assessment_runs_offline_pausing_at_both_checkpoints(
         assert metrics.exists()
 
 
+def test_the_assessment_lifecycle_moves_with_the_run(prepared: tuple[Path, str]) -> None:
+    """DEC-031: `pending_review` while a person is deciding, `draft` while the run works.
+
+    The move to `pending_review` commits with the pause; resuming returns the assessment to
+    `draft` before the run continues, and a re-pause moves it straight back.
+    """
+    root, assessment_id = prepared
+    with _Stage(root, assessment_id) as stage:
+        run_assessment(stage.service, assessment_id, model=_extraction_model(), profile=PROFILE)
+        assessment = stage.handle.objects.get(Assessment, assessment_id)
+        assert assessment.status is ObjectStatus.PENDING_REVIEW
+
+    with _Stage(root, assessment_id) as stage:
+        _approve_checkpoint_one(stage.handle)
+        resume_assessment(stage.service, assessment_id, model=_reasoning_model(), profile=PROFILE)
+        assessment = stage.handle.objects.get(Assessment, assessment_id)
+        assert assessment.status is ObjectStatus.PENDING_REVIEW, "paused again at checkpoint 2"
+
+    with _Stage(root, assessment_id) as stage:
+        _approve_checkpoint_two(stage.handle)
+        concluded = conclude_finding_review(stage.service, assessment_id)
+        assert concluded.status is ObjectStatus.DRAFT
+        outcome = resume_assessment(
+            stage.service, assessment_id, model=_report_model(stage.handle), profile=PROFILE
+        )
+        assert outcome.completed
+        assessment = stage.handle.objects.get(Assessment, assessment_id)
+        assert assessment.status is ObjectStatus.DRAFT, "approval is a person's verb, not a run's"
+
+
 def test_the_run_records_one_execution_per_node_execution(prepared: tuple[Path, str]) -> None:
     """The agent nodes account for themselves; the orchestrator must not double them.
 
@@ -350,8 +394,11 @@ def test_the_run_records_one_execution_per_node_execution(prepared: tuple[Path, 
     would report calls that never happened and bill them against the ceiling twice.
     """
     root, assessment_id = prepared
-    with _Stage(root, assessment_id) as handle:
-        outcome = run_assessment(handle, model=_extraction_model(), profile=PROFILE)
+    with _Stage(root, assessment_id) as stage:
+        handle = stage.handle
+        outcome = run_assessment(
+            stage.service, assessment_id, model=_extraction_model(), profile=PROFILE
+        )
         run = handle.objects.get(WorkflowRun, outcome.state.workflow_run_id)
         assert run.total_model_calls == 1
 
@@ -369,9 +416,11 @@ def test_the_run_records_one_execution_per_node_execution(prepared: tuple[Path, 
 
 def test_a_model_call_ceiling_stops_the_run_classified(prepared: tuple[Path, str]) -> None:
     root, assessment_id = prepared
-    with _Stage(root, assessment_id) as handle:
+    with _Stage(root, assessment_id) as stage:
+        handle = stage.handle
         outcome = run_assessment(
-            handle,
+            stage.service,
+            assessment_id,
             model=_extraction_model(),
             profile=PROFILE,
             budget=Budget(maximum_model_calls=0),
@@ -388,8 +437,7 @@ def test_a_run_with_no_sources_stops_with_a_classified_error(tmp_path: Path) -> 
         created = service.create(
             "Empty", default_configuration("offline-fake", "stride-scenario-based")
         )
-        handle = service.handle(created.id)
-        outcome = run_assessment(handle, model=DeterministicModel(), profile=PROFILE)
+        outcome = run_assessment(service, created.id, model=DeterministicModel(), profile=PROFILE)
         assert outcome.state.status is RunStatus.FAILED
         assert outcome.stopped_because == "missing_required_relationship"
         assert "no source documents" in outcome.state.errors[0]
@@ -398,7 +446,8 @@ def test_a_run_with_no_sources_stops_with_a_classified_error(tmp_path: Path) -> 
 def test_build_nodes_covers_every_declared_node(prepared: tuple[Path, str]) -> None:
     """Every name in `NODES_BY_PHASE`, no extras, no duplicates — the driver is the table's."""
     root, assessment_id = prepared
-    with _Stage(root, assessment_id) as handle:
+    with _Stage(root, assessment_id) as stage:
+        handle = stage.handle
         run = start_run(handle, workflow_version="0.1", model_profile=PROFILE.name)
         nodes = build_nodes(handle, ledger=ExecutionLedger(handle, run), profile=PROFILE)
         built = {(node.phase, node.name) for node in nodes}
@@ -412,11 +461,13 @@ def test_resuming_with_subjects_still_undecided_pauses_again(
 ) -> None:
     """DEC-017's partial progress: the checkpoint re-runs, decides nothing, and holds."""
     root, assessment_id = prepared
-    with _Stage(root, assessment_id) as handle:
-        run_assessment(handle, model=_extraction_model(), profile=PROFILE)
+    with _Stage(root, assessment_id) as stage:
+        run_assessment(stage.service, assessment_id, model=_extraction_model(), profile=PROFILE)
 
-    with _Stage(root, assessment_id) as handle:
-        outcome = resume_assessment(handle, model=DeterministicModel(), profile=PROFILE)
+    with _Stage(root, assessment_id) as stage:
+        outcome = resume_assessment(
+            stage.service, assessment_id, model=DeterministicModel(), profile=PROFILE
+        )
         assert outcome.paused
         assert outcome.state.current_phase is Phase.HUMAN_CONTEXT_REVIEW
 
@@ -424,10 +475,10 @@ def test_resuming_with_subjects_still_undecided_pauses_again(
 def test_resuming_without_a_paused_run_is_refused(prepared: tuple[Path, str]) -> None:
     root, assessment_id = prepared
     with (
-        _Stage(root, assessment_id) as handle,
+        _Stage(root, assessment_id) as stage,
         pytest.raises(ValueError, match="no paused workflow run"),
     ):
-        resume_assessment(handle, model=DeterministicModel(), profile=PROFILE)
+        resume_assessment(stage.service, assessment_id, model=DeterministicModel(), profile=PROFILE)
 
 
 def test_the_resumed_state_is_running_and_carries_no_stale_pause(
@@ -435,12 +486,16 @@ def test_the_resumed_state_is_running_and_carries_no_stale_pause(
 ) -> None:
     """`paused_for` is cleared the moment the checkpoint completes, not at the next pause."""
     root, assessment_id = prepared
-    with _Stage(root, assessment_id) as handle:
-        run_assessment(handle, model=_extraction_model(), profile=PROFILE)
+    with _Stage(root, assessment_id) as stage:
+        handle = stage.handle
+        run_assessment(stage.service, assessment_id, model=_extraction_model(), profile=PROFILE)
 
-    with _Stage(root, assessment_id) as handle:
+    with _Stage(root, assessment_id) as stage:
+        handle = stage.handle
         _approve_checkpoint_one(handle)
-        outcome = resume_assessment(handle, model=_reasoning_model(), profile=PROFILE)
+        outcome = resume_assessment(
+            stage.service, assessment_id, model=_reasoning_model(), profile=PROFILE
+        )
         # Paused again at checkpoint 2 — but for checkpoint 2's subjects, not checkpoint 1's.
         assert outcome.state.pending_human_review is not None
         assert outcome.state.pending_human_review.checkpoint_type is Phase.HUMAN_FINDING_REVIEW

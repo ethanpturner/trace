@@ -101,14 +101,14 @@ from trace_ai.workflow.threat_analysis import ThreatAnalysisNode
 from trace_ai.workflow.threat_validation import validate_threats
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Callable, Sequence
     from typing import Any
 
     from trace_ai.domain.base import DomainModel
     from trace_ai.domain.proposals.report_sections import ReportSections
     from trace_ai.infrastructure.model.profiles import ModelProfile
     from trace_ai.infrastructure.model.seam import StructuredModel
-    from trace_ai.services.assessment import AssessmentHandle
+    from trace_ai.services.assessment import AssessmentHandle, AssessmentService
     from trace_ai.services.critique.input_package import SelectedObjects
     from trace_ai.services.report.input_assembly import ReportInput
     from trace_ai.workflow.nodes import Node
@@ -926,7 +926,8 @@ def build_nodes(
 
 
 def run_assessment(
-    handle: AssessmentHandle,
+    service: AssessmentService,
+    assessment_id: str,
     *,
     model: StructuredModel,
     profile: ModelProfile,
@@ -937,8 +938,13 @@ def run_assessment(
 
     The budget defaults to the assessment's own configuration (`Budget.from_configuration`), which
     is where DEC-012 left the ceilings: limits are configuration, checkpoints are not.
+
+    The caller is the service, not a bare handle, because the deliverable's lifecycle moves with
+    the run: a pause writes `begin_review` in the same transaction as the run row (DEC-031), and a
+    failed run leaves the assessment in `draft` by never reaching that transaction.
     """
-    assessment = handle.objects.get(Assessment, handle.assessment_id)
+    handle = service.handle(assessment_id)
+    assessment = handle.objects.get(Assessment, assessment_id)
     spend = budget if budget is not None else Budget.from_configuration(assessment.configuration)
     run = start_run(handle, workflow_version=WORKFLOW_VERSION, model_profile=profile.name)
     ledger = ExecutionLedger(handle, run)
@@ -954,14 +960,16 @@ def run_assessment(
         ),
         budget=spend,
         model=model,
+        on_pause=_begin_review_on_pause(service, assessment_id),
     )
     return orchestrator.run(
-        AssessmentState.begin(assessment_id=handle.assessment_id, workflow_run_id=run.id)
+        AssessmentState.begin(assessment_id=assessment_id, workflow_run_id=run.id)
     )
 
 
 def resume_assessment(
-    handle: AssessmentHandle,
+    service: AssessmentService,
+    assessment_id: str,
     *,
     model: StructuredModel,
     profile: ModelProfile,
@@ -973,10 +981,18 @@ def resume_assessment(
     The checkpoint node runs again and decides nothing new: with every subject decided it comes
     back empty and the run advances; with any subject still waiting the run pauses again, which is
     the partial-progress case DEC-017 allows.
+
+    Resuming ends the review session: an assessment sitting at `pending_review` returns to `draft`
+    before the run continues (DEC-031's `resume_from_review`), and if the checkpoint still blocks,
+    the re-pause moves it right back. `trace findings approve` concludes the review through the
+    same verb, so an assessment already back in `draft` is left alone.
     """
+    handle = service.handle(assessment_id)
     run = _paused_run(handle, workflow_run_id)
     state, _pending = resume(handle, run.id)
-    assessment = handle.objects.get(Assessment, handle.assessment_id)
+    assessment = handle.objects.get(Assessment, assessment_id)
+    if assessment.status is ObjectStatus.PENDING_REVIEW:
+        service.resume_from_review(assessment_id)
     spend = budget if budget is not None else Budget.from_configuration(assessment.configuration)
     ledger = ExecutionLedger(handle, run)
     orchestrator = Orchestrator(
@@ -985,8 +1001,20 @@ def resume_assessment(
         nodes=build_nodes(handle, ledger=ledger, profile=profile, budget=spend),
         budget=spend,
         model=model,
+        on_pause=_begin_review_on_pause(service, assessment_id),
     )
     return orchestrator.run(state)
+
+
+def _begin_review_on_pause(
+    service: AssessmentService, assessment_id: str
+) -> Callable[[AssessmentState], None]:
+    """DEC-031's half of a pause: the assessment moves to `pending_review` with the run row."""
+
+    def on_pause(_state: AssessmentState) -> None:
+        service.begin_review(assessment_id)
+
+    return on_pause
 
 
 def _paused_run(handle: AssessmentHandle, workflow_run_id: str | None) -> WorkflowRun:

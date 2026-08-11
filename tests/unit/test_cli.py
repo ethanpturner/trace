@@ -365,10 +365,21 @@ def test_the_command_surface_is_the_one_dec_032_confirms() -> None:
     groups = next(
         action for action in parser._actions if isinstance(action, argparse._SubParsersAction)
     )
-    assert set(groups.choices) == {"assessment", "source", "evidence", "context"}
+    assert set(groups.choices) == {
+        "assessment",
+        "source",
+        "evidence",
+        "context",
+        "run",
+        "resume",
+        "findings",
+        "report",
+    }
     assert _subcommands("source") == {"add", "list"}
     assert _subcommands("evidence") == {"list", "show", "verify"}
     assert _subcommands("assessment") == {"create", "list", "status", "archive"}
+    assert _subcommands("findings") == {"show", "review", "approve"}
+    assert _subcommands("report") == {"show"}
 
 
 def test_a_group_with_no_subcommand_prints_help() -> None:
@@ -1057,3 +1068,257 @@ def test_context_help_follows_the_corpus_prose_register() -> None:
         for word in banned:
             assert word not in lowered, f"{word!r} appears in help output"
         assert text == text.replace("  \n", "\n")
+
+
+# ------------------------------------------------------------------------------------------
+# The pipeline: run, resume, the finding checkpoint, and the report (#261)
+# ------------------------------------------------------------------------------------------
+
+
+def _recorded_file(path: Path, payload: object) -> str:
+    from pydantic import BaseModel
+
+    assert isinstance(payload, BaseModel)
+    path.write_text(payload.model_dump_json(indent=2), encoding="utf-8")
+    return str(path)
+
+
+def _pipeline_recordings(tmp_path: Path) -> dict[str, str]:
+    """The five agents' recorded responses, borrowed from the driver's end-to-end test."""
+    from test_driver import ASSESSMENT, EXTRACTION, MAPPING, THREAT
+
+    from trace_ai.domain.proposals import ContextExtractionProposal
+    from trace_ai.domain.proposals.critical_review import CriticalReviewProposal
+    from trace_ai.domain.proposals.evidence_validation import EvidenceValidationProposal
+    from trace_ai.domain.proposals.mapping import MappingProposal
+    from trace_ai.domain.proposals.threat_analysis import ThreatAnalysisProposal
+
+    return {
+        "extraction": _recorded_file(
+            tmp_path / "extraction.json", ContextExtractionProposal.model_validate(EXTRACTION)
+        ),
+        "threats": _recorded_file(
+            tmp_path / "threats.json", ThreatAnalysisProposal.model_validate({"threats": [THREAT]})
+        ),
+        "mapping": _recorded_file(
+            tmp_path / "mapping.json", MappingProposal.model_validate({"mappings": [MAPPING]})
+        ),
+        "evidence": _recorded_file(
+            tmp_path / "evidence.json",
+            EvidenceValidationProposal.model_validate({"assessments": [ASSESSMENT]}),
+        ),
+        "critique": _recorded_file(
+            tmp_path / "critique.json", CriticalReviewProposal.model_validate({"critiques": []})
+        ),
+    }
+
+
+def _approve_everything_in(review_file: Path) -> None:
+    import yaml
+
+    document = yaml.safe_load(review_file.read_text(encoding="utf-8"))
+    for group in ("components", "actors", "assets", "data_flows", "trust_boundaries", "claims"):
+        for entry in document.get(group) or []:
+            entry["decision"] = "approve"
+    review_file.write_text(yaml.safe_dump(document, sort_keys=False), encoding="utf-8")
+
+
+def _sections_file(data_root: Path, identifier: str, path: Path) -> str:
+    from trace_ai.domain.proposals.report_sections import LimitationEntry, ReportSections
+    from trace_ai.infrastructure.database.store import AssessmentStore
+    from trace_ai.services.assessment import AssessmentService
+    from trace_ai.services.report.input_assembly import assemble_report_input
+
+    with AssessmentStore.at_root(data_root) as store:
+        service = AssessmentService(store, artifact_root=data_root)
+        assembly = assemble_report_input(
+            service.handle(identifier),
+            prompt_versions={"generate-report-sections": "generate-report-sections-v1"},
+            model="deterministic-fake",
+            model_configuration="offline-fake",
+        )
+        sections = ReportSections.model_validate(
+            {
+                "executive_summary": "The assessment reviewed the webhook processing path.",
+                "system_overview": "The system accepts repository events and queues jobs.",
+                "risk_summary": "The approved findings concern unverified event ingestion.",
+                "limitations": [
+                    LimitationEntry.model_validate(
+                        {"limitation_id": limitation.limitation_id, "text": limitation.facts}
+                    )
+                    for limitation in assembly.required_limitations
+                ],
+            }
+        )
+    return _recorded_file(path, sections)
+
+
+def test_the_pipeline_runs_end_to_end_from_the_command_line(
+    data_root: Path, capsys: pytest.CaptureFixture[str], tmp_path: Path
+) -> None:
+    """#261's acceptance criterion: create, run, review both checkpoints, and render the report
+    using only documented commands and recorded responses. No provider key exists in this test."""
+    identifier = created(data_root, capsys)
+    assert (
+        invoke(
+            data_root,
+            "source",
+            "add",
+            identifier,
+            str(FORGEFLOW_INPUT / "architecture-overview.md"),
+        )
+        == 0
+    )
+    recordings = _pipeline_recordings(tmp_path)
+    capsys.readouterr()
+
+    # Run to checkpoint 1.
+    assert (
+        invoke(
+            data_root,
+            "run",
+            identifier,
+            "--model-profile",
+            "offline-fake",
+            "--response",
+            recordings["extraction"],
+        )
+        == 0
+    )
+    output = capsys.readouterr().out
+    assert "paused at:    human_context_review" in output
+
+    # Resuming with nothing decided pauses again — partial progress, not an error.
+    assert invoke(data_root, "resume", identifier, "--model-profile", "offline-fake") == 0
+    assert "paused at:    human_context_review" in capsys.readouterr().out
+
+    # Checkpoint 1: export, approve everything, apply, approve the baseline.
+    review_file = tmp_path / "context-review.yaml"
+    assert invoke(data_root, "context", "review", identifier, "--export", str(review_file)) == 0
+    _approve_everything_in(review_file)
+    assert (
+        invoke(
+            data_root,
+            "context",
+            "review",
+            identifier,
+            "--reviewer",
+            "reviewer",
+            "--apply",
+            str(review_file),
+        )
+        == 0
+    )
+    assert invoke(data_root, "context", "approve", identifier, "--reviewer", "reviewer") == 0
+    capsys.readouterr()
+
+    # Resume to checkpoint 2.
+    assert (
+        invoke(
+            data_root,
+            "resume",
+            identifier,
+            "--model-profile",
+            "offline-fake",
+            "--response",
+            recordings["threats"],
+            "--response",
+            recordings["mapping"],
+            "--response",
+            recordings["evidence"],
+            "--response",
+            recordings["critique"],
+        )
+        == 0
+    )
+    output = capsys.readouterr().out
+    assert "paused at:    human_finding_review" in output
+
+    # Concluding with an undecided finding is refused, with the finding named.
+    assert invoke(data_root, "findings", "approve", identifier) == 1
+    assert "fnd-001" in capsys.readouterr().err
+
+    # The package prints; severity is assigned; the finding is approved; the review concludes.
+    assert invoke(data_root, "findings", "show", identifier) == 0
+    assert "fnd-001" in capsys.readouterr().out
+    assert (
+        invoke(
+            data_root,
+            "findings",
+            "review",
+            identifier,
+            "--reviewer",
+            "reviewer",
+            "--severity",
+            "fnd-001=medium",
+            "--approve",
+            "fnd-001",
+        )
+        == 0
+    )
+    output = capsys.readouterr().out
+    assert "2 decision(s) recorded as reviewer" in output
+    assert invoke(data_root, "findings", "approve", identifier) == 0
+    capsys.readouterr()
+
+    # Resume to completion, then print the report and its manifest.
+    sections = _sections_file(data_root, identifier, tmp_path / "sections.json")
+    assert (
+        invoke(
+            data_root,
+            "resume",
+            identifier,
+            "--model-profile",
+            "offline-fake",
+            "--response",
+            sections,
+        )
+        == 0
+    )
+    assert "completed" in capsys.readouterr().out
+
+    assert invoke(data_root, "report", "show", identifier) == 0
+    report = capsys.readouterr().out
+    assert "fnd-001" in report
+
+    assert invoke(data_root, "report", "show", identifier, "--manifest") == 0
+    manifest = capsys.readouterr().out
+    assert '"manifest_version"' in manifest
+
+
+def test_report_show_is_refused_while_no_report_exists(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    identifier = created(data_root, capsys)
+    assert invoke(data_root, "report", "show", identifier) == 1
+    assert "no report has been rendered" in capsys.readouterr().err
+
+
+def test_a_failed_run_exits_one_and_names_the_error(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """The documented exit codes: 0 for a pause or completion, 1 for a failed run."""
+    identifier = created(data_root, capsys)
+    assert invoke(data_root, "run", identifier, "--model-profile", "offline-fake") == 1
+    assert "no source documents" in capsys.readouterr().err
+
+
+def test_an_unreadable_recording_is_refused_by_name(
+    data_root: Path, capsys: pytest.CaptureFixture[str], tmp_path: Path
+) -> None:
+    identifier = created(data_root, capsys)
+    bad = tmp_path / "empty.json"
+    bad.write_text("{}", encoding="utf-8")
+    assert (
+        invoke(
+            data_root,
+            "run",
+            identifier,
+            "--model-profile",
+            "offline-fake",
+            "--response",
+            str(bad),
+        )
+        == 1
+    )
+    assert "empty.json" in capsys.readouterr().err
