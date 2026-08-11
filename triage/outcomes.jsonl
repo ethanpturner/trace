@@ -14,3 +14,8 @@
 {"issue": 243, "tier": 3, "model": "claude-fable-5", "classified_by": "hard-rule", "outcome": "clean", "escalated_to": null, "date": "2026-08-10", "note": "DEC-070 deterministic artifact ingestion"}
 {"issue": 232, "tier": 3, "model": "claude-fable-5", "classified_by": "hard-rule", "outcome": "clean", "escalated_to": null, "date": "2026-08-10", "note": "DEC-071 per-source coverage ledger"}
 {"issue": 231, "tier": 3, "model": "claude-fable-5", "classified_by": "hard-rule", "outcome": "clean", "escalated_to": null, "date": "2026-08-10", "note": "DEC-072 interop export family"}
+{"issue": 255, "tier": 3, "model": "claude-fable-5", "classified_by": "hard-rule", "outcome": "clean", "escalated_to": null, "date": "2026-08-10", "note": "DEC-073 evaluation harness design"}
+{"issue": 256, "tier": 3, "model": "claude-fable-5", "classified_by": "hard-rule", "outcome": "clean", "escalated_to": null, "date": "2026-08-10", "note": "DEC-074 baseline comparison protocol"}
+{"issue": 257, "tier": 3, "model": "claude-fable-5", "classified_by": "hard-rule", "outcome": "clean", "escalated_to": null, "date": "2026-08-10", "note": "DEC-075 adversarial evaluation design"}
+{"issue": 258, "tier": 3, "model": "claude-fable-5", "classified_by": "hard-rule", "outcome": "clean", "escalated_to": null, "date": "2026-08-10", "note": "DEC-076 published scorecard"}
+{"issue": 259, "tier": 3, "model": "claude-fable-5", "classified_by": "hard-rule", "outcome": "clean", "escalated_to": null, "date": "2026-08-10", "note": "DEC-077 stability measurement"}

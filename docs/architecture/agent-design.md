@@ -2047,7 +2047,10 @@ These agents would expand project scope without proving the MVP thesis.
 8. How should contradictory evidence be represented to agents?
 9. Should reviewers see agent rationales directly or only concise evidence-based explanations?
 10. Which agent outputs should be editable before the next stage?
-11. How should prompt-injection detection be implemented and evaluated?
+11. ~~How should prompt-injection detection be implemented and evaluated?~~ Resolved by
+    DEC-075 with DEC-062: detection surfaces as recorded observations and the
+    `injection_flag` routing reason; evaluation is the adversarial condition axis, measured
+    as per-class compliance rate plus quality-under-attack deltas.
 12. ~~Should LangGraph nodes correspond one-to-one with agents?~~ Moot: DEC-016 rejected
     LangGraph. Workflow nodes are plain functions, and a model-assisted agent is one kind of
     node among deterministic ones.
