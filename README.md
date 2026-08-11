@@ -426,6 +426,10 @@ and measures itself offline. Stage 5's demonstration half (M9), the demo-hardeni
 - **The adversarial condition** — DEC-075's poisoned-document variant with all five payload
   classes, run as an ordinary scenario condition, with the two-axis attack metrics (detection,
   and injected-instruction compliance with a target of zero) reported per payload class.
+- **The read-only view and the demo** — `trace view` renders a completed assessment over
+  localhost, GET-only, including the finding-lineage walk from a finding back to its hashed
+  evidence (DEC-078). The [demo script](docs/product/demo-script.md) stages the offline run as ten
+  timed beats with a recovery plan whose every fallback is a committed artifact.
 - **Test discipline** — unit tests run by default; integration and evaluation tests sit behind
   pytest markers that are deselected, so CI never needs a provider API key.
 - **The design corpus** — vision, scope, roadmap, architecture, agent design, data model,
@@ -447,8 +451,9 @@ and measures itself offline. Stage 5's demonstration half (M9), the demo-hardeni
   Anthropic adapter has run against a provider only in an opt-in integration test; cost,
   runtime, and run-to-run stability (DEC-077) are unmeasured, and every scorecard cost reads
   zero.
-- **The demonstration surface.** The read-only local interface, the finding lineage view, the
-  demo script, and the recovery plan are roadmap Stage 5's demo half, milestone M9.
+- **The portfolio narrative.** The read-only local interface, the finding-lineage view, the demo
+  script, and the recovery plan now exist (milestone M9); the ablation write-up that reads them
+  back as the Stage 6 portfolio story is the remaining piece.
 - **The recorded decisions of the M0 wave.** DEC-057 through DEC-072 — risk treatment, episodic
   revisit, routing reasons, the coverage baseline, the precedent feed, catalog-gap candidates,
   fingerprints, cache accounting, context extensions, profile overlays, parsers, the coverage
@@ -523,9 +528,10 @@ commands make live calls through the same seam. `uv run trace` with no arguments
 resolved environment, the log level, and which provider credentials are configured — names only,
 never key material.
 
-The command line is the interface through M4 (DEC-032), including both human checkpoints. A
-read-only local view may follow in Stage 5 for the demonstration; no review interaction moves to a
-browser in the MVP.
+The command line is the interface (DEC-032), including both human checkpoints. `trace view` serves
+a read-only local view for the demonstration (DEC-078) — the overview, context, findings, and the
+finding-lineage walk, rendered from persisted state over `127.0.0.1`, GET-only; it drives nothing
+and no review interaction moves to a browser.
 
 ### Repository layout
 
@@ -665,6 +671,61 @@ Trace — across schema-validity, evidence-linked claims, false positives, injec
 compliance, and run-to-run stability. Every cell is a number from a committed evaluation feed or an
 explicit "not measured" with its reason; it regenerates offline from the recorded runs, and the
 per-scenario detail behind it is the [scorecard](docs/eval/scorecard.html).
+
+## Limitations and failure modes
+
+Stated because a project about not overstating conclusions has to hold itself to the same rule.
+
+**What Trace does not analyze.** It reads the documents it is given and nothing else. It does not
+read source code, run a program, connect to a cloud account, or inspect a running system, so a
+weakness present in the implementation but absent from the documentation is outside its reach. It
+assesses what a system is described to be, and a description can be wrong.
+
+**What the evaluation does not prove.** Eight scenarios are registered; three carry an
+authoritative Trace run scored against a truth set (contradictory-docs and unsigned-webhooks in
+full, forgeflow as a slice), and the rest carry a truth set or threat seeds with no recording yet.
+Every truth set is authored by one person, so the numbers are a single annotator's judgment
+measured against itself — self-agreement, not an inter-annotator kappa, and not a claim of external
+ground truth. No live-model run has been measured: every committed recording is deterministic and
+offline, so the scorecard's costs read zero and run-to-run stability (DEC-077) is unmeasured, not
+zero. The [scorecard](docs/eval/scorecard.html) carries the current numbers; they are small by
+construction and the sample is stated on the page rather than rounded away.
+
+**Where it still fails despite the architecture.** The pipeline is designed to prevent false
+*conclusions* — a documented control it cannot see becomes a question, not a finding — but it
+cannot manufacture a finding a run did not produce. The flagship forgeflow recording is the
+standing example: it is an authored slice that predates the full truth set, and it matches none of
+the three expected findings. The architecture keeps a wrong answer out; it does not supply a right
+one the model missed.
+
+**Deliberate non-uses of agents.** Three places use no model on purpose, each a recorded decision:
+
+- **Report rendering is deterministic** (DEC-035). Twelve of the sixteen report sections are
+  rendered from approved objects with no model in the path, so the report cannot introduce a claim
+  no reviewer approved. Only four sections are model-written prose.
+- **No severity agent** (DEC-030). Severity is assigned by the reviewer at checkpoint 2, and a
+  finding cannot be approved while its severity is unassigned. A proposed seventh agent was
+  excluded because four of its six outputs already existed as `Finding` fields.
+- **No orchestration framework** (DEC-016). The pipeline is fourteen ordered phases with two pause
+  points and no analytical branching; a framework checkpointer would be a second authoritative
+  store beside the domain objects. Orchestration is a node protocol, a transition table, and a
+  persisted run row.
+
+### Failure taxonomy
+
+From reading the per-item match sets of all twelve committed evaluation runs — four authoritative
+Trace runs and eight baseline runs, regenerated offline. Two failure categories appear; because no
+live-model run has been analyzed, no live-model failure mode is listed, and this table is over the
+deterministic recordings named in each row. The live view is the [scorecard](docs/eval/scorecard.html).
+
+| Failure mode | Frequency | Observed in |
+|---|---|---|
+| **Recorded slice misses its truth set** — Trace produces a finding that matches none of the three expected, for 0 of 3 matched. The recording is an authored slice, not a scored full run. | 1 of 4 authoritative Trace runs | forgeflow (clean) |
+| **Silence read as a weakness** — the generic-prompt baseline invents a finding where the documentation is simply quiet: missing MFA and password policy an inherited identity provider covers, an encryption detail a managed database supplies, absent replay protection, unencrypted exports. This is the DEC-009 failure the pipeline exists to prevent. | 5 spurious findings across 4 runs | baseline-generic on oidc-portal (2), managed-db-service (1), contradictory-docs (1), unsigned-webhooks (1) |
+
+The structured single-pass baseline and the three other authoritative Trace runs produced no
+spurious finding, which is why the second row is a baseline failure and not Trace's — the
+comparison exists to measure that difference, not to assert it.
 
 ## Documentation
 
