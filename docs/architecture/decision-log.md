@@ -5115,3 +5115,75 @@ Open Questions:
 
 - Should the flickering-item set feed the prompt-evaluation loop (section 12) as its highest-
   value regression fixtures?
+
+## DEC-078: The Stage 5 read-only view is stdlib `http.server`, localhost-only, GET-only, and read-only — re-introducing the browser boundary bounded, not defended
+
+Date: 2026-08-11
+
+Status: Accepted
+
+Decision:
+
+**The demonstration view (`trace view`) is a local HTTP server built on Python's stdlib
+`http.server`, and no web framework is adopted.** This answers `current-architecture.md` section
+19 question 1 — "which local web-interface framework should be used?" — with *none*, consistent
+with DEC-016's no-orchestration-framework stance and the same supply-chain reasoning DEC-032
+applied to the CLI. `fastapi`, `flask`, `django`, `starlette`, and `uvicorn` stay undeclared, and
+`tests/unit/test_interface_decision.py` fails if one appears.
+
+**The view is read-only by construction, and read-only is enforced as a discipline the tests
+audit, not a file mode.** SQLite offers no read-only handle here, so the guarantee is that the
+`trace_ai.interface` package calls no store write method — `save`, `allocate`, `transaction`,
+`delete` — asserted by scanning the package source. The view consumes the section 32 lineage walk
+and the persisted objects; it drives no phase and holds no checkpoint interaction. Reviewer
+decisions stay on the command line (DEC-032): the browser reads, the CLI writes.
+
+**Shipping it re-introduces the browser-to-application boundary that DEC-032 had removed, and the
+threat model records it as present rather than absent.** `threat-model.md` section 5 is rewritten
+from "this boundary does not exist" to a mitigation table: the server binds `127.0.0.1` only
+(DEC-004); every method other than `GET` is refused with `405`, so the request-forgery threat has
+no state-changing endpoint to forge against; every source-derived value is HTML-escaped on render,
+because a browser is not the inert terminal and an untrusted excerpt must not inject markup; and
+responses carry `X-Frame-Options: DENY`. The review trigger in section 9 fired exactly as written,
+and this is its resolution.
+
+Why:
+
+**A rendering surface over persisted objects needs neither routing, templating, nor an ASGI
+server, and each of those would be a dependency on a project whose subject is architectural risk.**
+The seven views are static HTML the store already has the data for; `http.server` plus a pure
+render module is the whole stack, and the render module is testable without binding a port. The
+differentiating view — the lineage walk from a finding back to its hashed evidence — is the reason
+the view exists at all, and it is pure computation over the object model, not a UI framework's
+concern.
+
+**Making the request-forgery mitigation structural rather than a token means it cannot be edited
+away.** A read-only surface has nothing to forge; that is a property of what the view *is*, not a
+check bolted onto a mutable endpoint. It is the same move DEC-005 makes for checkpoints — the unsafe
+state is unrepresentable rather than guarded against.
+
+Alternatives Considered:
+
+- A local web framework (FastAPI/Flask): more machinery than a read-only view needs, and a
+  dependency and supply-chain surface DEC-016 and DEC-032 both argue against.
+- A static-site export instead of a server: loses the lineage view's live navigation over a real
+  store, and would need a separate render path from the one the CLI already exercises.
+- Leaving the boundary "absent" in the threat model and treating the view as out of scope: the view
+  ships, the port listens, and a threat model that denied it would be false.
+- A read-only SQLite handle to enforce read-only at the storage layer: not available through the
+  store's open path here, so the discipline is enforced by the package-scan audit instead.
+
+Tradeoffs:
+
+- `http.server` is single-threaded and unhardened; it is acceptable only because DEC-004 bounds it
+  to one local reviewer on `127.0.0.1`, and it must never be exposed off the machine.
+- Read-only is enforced by a source scan rather than the type system or a file mode, so a write
+  method reached through an alias the scan does not spell would slip past — the mitigation is that
+  the package is small and the scan is part of the suite.
+- The store opens read-write, so a bug elsewhere in a shared process could write; the view itself
+  does not, and the audit pins that.
+
+Open Questions:
+
+- If the view ever needs to trigger a re-render of the scorecard or a verify pass, does that cross
+  into "driving the pipeline", and does it therefore belong on the CLI rather than a POST route?

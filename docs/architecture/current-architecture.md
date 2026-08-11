@@ -290,9 +290,11 @@ a command: creating an assessment, adding sources, approving context, approving 
 assigning severity all run at the command line and write the same `ReviewerDecision` rows an
 interface of any other shape would (DEC-017).
 
-Stage 5 may add a **read-only local view** for the demonstration, rendering persisted state —
-notably the lineage view. It is not a second way to drive the pipeline, and no review interaction
-moves to a browser in the MVP.
+Stage 5 adds a **read-only local view** for the demonstration (`trace view`, DEC-078), rendering
+persisted state — notably the lineage view that walks a finding back to its hashed evidence. It is
+stdlib `http.server` bound to `127.0.0.1`, GET-only, and calls only the repository's read methods;
+it is not a second way to drive the pipeline, and no review interaction moves to a browser in the
+MVP.
 
 Any interface, present or future, calls application services rather than containing core analysis
 logic. That constraint is what makes the ordering safe: the services are built first, so a later
@@ -1398,7 +1400,9 @@ These limitations should be discussed openly in presentations and interviews.
 
 The following questions require decisions or implementation experiments:
 
-1. Which local web-interface framework should be used?
+1. ~~Which local web-interface framework should be used?~~ Resolved by DEC-078: none. The Stage 5
+   read-only view is stdlib `http.server` bound to `127.0.0.1`, GET-only and read-only, consistent
+   with DEC-016's no-framework stance and DEC-032's command-line interface.
 2. ~~Which model provider and model should be used initially?~~ Resolved by DEC-014: Anthropic as the default adapter, `claude-opus-5` as the primary model, behind a provider-agnostic seam.
 3. ~~Is a separate model abstraction library needed for the MVP?~~ Resolved by DEC-014: no. The seam is the project's own; provider SDKs sit behind it in adapters.
 4. ~~How should evidence chunks and source locations be represented?~~ Resolved by DEC-015.

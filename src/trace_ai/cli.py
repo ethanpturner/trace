@@ -475,6 +475,24 @@ def build_parser() -> argparse.ArgumentParser:
         help="actually remove; without it the command lists what would go and exits non-zero",
     )
 
+    view = commands.add_parser(
+        "view",
+        help="serve a read-only local view of the assessments in the data root",
+        description=(
+            "Serves a read-only rendering of the persisted assessments on localhost for the "
+            "Stage 5 demonstration (DEC-032): the overview, context, workflow, questions, "
+            "findings, the finding-lineage walk, and the evaluation scorecard. It drives nothing "
+            "-- review stays on the command line -- serves GET only, and binds to 127.0.0.1. "
+            "Closing it loses nothing; everything it shows comes from the store."
+        ),
+    )
+    view.add_argument(
+        "--port",
+        type=int,
+        default=8765,
+        help="the localhost port to serve on (default: 8765)",
+    )
+
     return parser
 
 
@@ -548,6 +566,14 @@ def run(argv: Sequence[str] | None = None) -> int:
         # would first recreate the thing it is about to delete.
         try:
             return _reset(args)
+        except EXPECTED_ERRORS as error:
+            print(f"error: {error}", file=sys.stderr)
+            return 1
+    if args.group == "view":
+        # The view holds its store open for the server's lifetime; it opens its own rather than
+        # borrowing the request-scoped one the dispatch below would close immediately.
+        try:
+            return _view(args)
         except EXPECTED_ERRORS as error:
             print(f"error: {error}", file=sys.stderr)
             return 1
@@ -1614,4 +1640,16 @@ def _evaluate_stability(args: argparse.Namespace) -> int:
     print(f"unanimous items:  {', '.join(summary.unanimous) or '-'}")
     print(f"flickering items: {', '.join(summary.flickering) or '-'}")
     print(f"defaulted decisions: {summary.defaulted_decisions}")
+    return 0
+
+
+def _view(args: argparse.Namespace) -> int:
+    """Serve the read-only interface over the data root until interrupted (DEC-032).
+
+    The server is `trace_ai.interface`'s; this reads the flags and hands off. It opens its own
+    store for the server's lifetime, which is why it is dispatched before the request-scoped store.
+    """
+    from trace_ai.interface.server import serve
+
+    serve(args.data_root, port=args.port)
     return 0
