@@ -676,7 +676,9 @@ Priority views:
 
 ### Demo script
 
-Create a reliable 5–10 minute walkthrough.
+Create a reliable 5–10 minute walkthrough. The script is written: [demo-script.md](demo-script.md)
+stages the offline ForgeFlow run as ten timed beats with a per-beat fallback, and the recovery plan
+below maps to committed artifacts.
 
 The demonstration should show:
 
