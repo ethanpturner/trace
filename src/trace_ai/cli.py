@@ -59,6 +59,7 @@ from trace_ai.services.findings.review_package import (
     render_markdown,
 )
 from trace_ai.services.ingestion.loader import DocumentLoader, DocumentLoadError
+from trace_ai.services.verification import verify_assessment
 from trace_ai.workflow.checkpoint import load_state
 from trace_ai.workflow.context_review import (
     ApprovalRefusedError,
@@ -335,6 +336,18 @@ def build_parser() -> argparse.ArgumentParser:
     )
     findings_approve.add_argument("assessment_id")
 
+    verify = commands.add_parser(
+        "verify",
+        help="re-hash stored documents and evidence, and check the report manifest",
+        description=(
+            "Walks the evidence chain: every stored document against its recorded hash, every "
+            "evidence reference against its source, and the report manifest against the store. "
+            "Exit 0 when everything verifies; exit 1 with each drift named — identifier, "
+            "expected hash, found hash — and never the content that changed."
+        ),
+    )
+    verify.add_argument("assessment_id")
+
     report = commands.add_parser("report", help="inspect the rendered report")
     report_commands = report.add_subparsers(dest="command")
 
@@ -404,6 +417,7 @@ def run(argv: Sequence[str] | None = None) -> int:
         ("context", "approve"): _context_approve,
         ("run", None): _run,
         ("resume", None): _resume,
+        ("verify", None): _verify,
         ("findings", "show"): _findings_show,
         ("findings", "review"): _findings_review,
         ("findings", "approve"): _findings_approve,
@@ -1122,6 +1136,38 @@ def _findings_approve(args: argparse.Namespace, service: AssessmentService) -> i
     print(f"finding review concluded; assessment {assessment.id} is {assessment.status.value}")
     print("Continue the run with `trace resume`.")
     return 0
+
+
+def _verify(args: argparse.Namespace, service: AssessmentService) -> int:
+    """Walk the evidence chain and exit non-zero on any drift, each one named.
+
+    The walk is `services/verification.py`'s; nothing here reads a file or computes a hash. A
+    drift line carries identifiers and hashes only — the changed content is exactly what must not
+    be printed.
+    """
+    outcome = verify_assessment(service.handle(args.assessment_id))
+
+    if outcome.ok:
+        manifest = "1 manifest" if outcome.manifest_checked else "no manifest yet"
+        print(
+            f"verified: {outcome.document_count} document(s), "
+            f"{outcome.evidence_count} evidence reference(s), {manifest}"
+        )
+        return 0
+
+    for drift in outcome.document_drift:
+        print(f"  {drift.line()}", file=sys.stderr)
+    for failure in outcome.evidence_failures:
+        print(
+            f"  {failure.evidence_id}  {failure.outcome}  {failure.detail or ''}", file=sys.stderr
+        )
+    for drift in outcome.manifest_drift:
+        print(f"  {drift.line()}", file=sys.stderr)
+    total = (
+        len(outcome.document_drift) + len(outcome.evidence_failures) + len(outcome.manifest_drift)
+    )
+    print(f"{total} item(s) no longer verify", file=sys.stderr)
+    return 1
 
 
 def _report_show(args: argparse.Namespace, service: AssessmentService) -> int:
