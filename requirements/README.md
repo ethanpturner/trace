@@ -85,11 +85,13 @@ Sources used in version 0.1:
 
 | Framework | Role |
 |---|---|
-| OWASP ASVS 5.0.0 | Primary. Version 5.0 gives every domain chapter an explicit `X.1 Documentation` section, so those requirements are assessable from design documentation rather than from a running application. |
+| OWASP ASVS 5.0.0 | Primary. Version 5.0 gives 11 of its 17 chapters an explicit `X.1 Documentation` section, so those requirements are assessable from design documentation rather than from a running application. The other six — V1, V4, V9, V10, V12, V17 — open with sections that are not documentation requirements; anyone extending this catalog into their territory does not get a documentation anchor for free. Every chapter version 0.1 cites is among the eleven. |
 | NIST SP 800-53 Release 5.2.0 | Secondary. Covers ground ASVS leaves out of scope: segmentation, availability, retention, external system services. Public domain. |
 | OWASP Top 10 for LLM Applications 2025 | The AI-provider surface, which neither of the above addresses. **An archived release**: the 2026 list was published 2026-08-04 under the [GenAI Security Project organisation](https://github.com/GenAI-Security-Project/GenAI-LLM-Top10), and the original OWASP repository is now a legacy archive. The 2026 release renumbers two of the categories this catalog cites — Improper Output Handling moves LLM05:2025 to LLM10:2026, Unbounded Consumption moves LLM10:2025 to LLM06:2026 — so the version-pinned 2025 citations below remain correct provenance, and a bare `LLMxx` with no year is ambiguous. Whether catalog 0.2 adopts the 2026 identifiers is a separate decision. |
 
-Requirement text in this catalog is **written originally**. ASVS is licensed CC BY-SA 4.0, so
+Requirement text in this catalog is **written originally**. ASVS 5.0 is licensed CC BY-SA 4.0 —
+the version matters, since ASVS 4.x shipped under CC BY-SA 3.0, and the vendored export's
+`LICENSE.txt` in [`_external/asvs/`](_external/asvs/) carries the 4.0 text — so
 reproducing its wording would place this catalog under a share-alike obligation; citing identifiers
 while writing an original `statement` does not. This also satisfies the clean-room expectation in
 [`design-principles.md`](../docs/product/design-principles.md) that the project use public standards
@@ -105,6 +107,10 @@ Three limits worth stating rather than hiding:
   covers documenting communication needs; the placement expectation itself cites `SC-7`.
 - **ASVS 5.0.0 removed its CWE mappings**, and its published NIST mapping still targets SP 800-63-3
   though Revision 4 is final. Citations here are made directly and are not chained through it.
+- **Never source ASVS crosswalks through OpenCRE.** As of 2026-08-10 its public ASVS mapping still
+  resolves to v4.0.3 blob URLs, one major version behind what this catalog cites. Trace cites
+  5.0.0 directly, ahead of the mapping ecosystem; a crosswalk pulled through OpenCRE would silently
+  reintroduce 4.x identifiers, which do not survive the 5.0 renumbering.
 
 ## Validation
 

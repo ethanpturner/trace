@@ -181,7 +181,7 @@ Five things are easy to get wrong:
   requirement does not apply; the former says what not to conclude when it *does* apply and the
   documentation is silent.
 - **`source_frameworks` is provenance, not compliance mapping.** Broad compliance-framework mapping is
-  deferred. Requirement text is written originally — ASVS is CC BY-SA, so its wording is cited by
+  deferred. Requirement text is written originally — ASVS 5.0 is CC BY-SA 4.0, so its wording is cited by
   identifier and never reproduced.
 - **A requirement identifier is authored, and a caller names the catalog version it wants.**
   `req-AUTH-001`, not `req-001`: a counter-numbered identifier is one no person assigned, and the
