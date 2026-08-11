@@ -4,6 +4,12 @@
 is the context slice's half of that. The command line calls it; so would anything else. A CLI that
 composed the nodes itself would be a second place the pipeline lives, and the two would drift.
 
+**This is deliberately the narrow path.** `services/driver.py` drives all fourteen phases through
+the orchestrator; this module remains the context slice alone — extraction through checkpoint 1 —
+for the caller that wants exactly that and nothing after it (`trace context extract`). It stays a
+hand-rolled walk of four phases because a second orchestrator composition for a strict prefix of
+the same table would be the drift the paragraph above warns about, in the other direction.
+
 **The run stops at the checkpoint because the checkpoint is a phase.** Nothing here decides to
 pause: the transition table's successor to `context_validation` is `human_context_review`, and the
 state written at the end of this function is the paused one. `run_context_slice` cannot be asked to
