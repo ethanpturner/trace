@@ -373,6 +373,11 @@ The ingestion component converts source material into normalized document artifa
 
 PDF, Microsoft Office, repository, and web-page ingestion are deferred unless implementation proves simple enough to include safely.
 
+Post-MVP, machine-readable artifacts — compose manifests first, then OpenAPI, then IaC — may be
+parsed deterministically into documented claims with verifiable excerpt hashes (DEC-070). Parser
+output enters the same proposal path, validation, and checkpoint as agent-extracted context;
+determinism earns no bypass, and a parsed artifact is still untrusted text.
+
 ### Responsibilities
 
 - Accept input files
@@ -672,6 +677,13 @@ that section 7 is a rendered list of threats rather than a mixture of prose and 
 The report generator should not invent new findings during prose generation.
 
 It should render approved structured data.
+
+Section 14 also owns the per-source coverage ledger (DEC-071): every source document in exactly
+one bucket — `reviewed`, `reviewed_with_exclusions` with the excluded excerpts named,
+`could_not_process`, `excluded_by_rule` — each with its stored justification, derived at render
+time from persisted state. The limitations section may interpret the ledger and never restates
+it. Exports — TM-BOM, SARIF, the Mermaid DFD — are a separate post-MVP serializer family, not
+report formats (DEC-072); nothing in this section governs them.
 
 Each report is written to `outputs/report-<workflow_run_id>.md` in the assessment's artifact
 directory, beside a JSON manifest carrying the report's hash, the version pins `evaluation-plan.md`

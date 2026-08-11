@@ -978,18 +978,16 @@ The executive report must remain traceable to the technical assessment.
 
 ## 13.5 Export Formats
 
-**Status:** Idea
+**Status:** Decided in part (DEC-072)
 
-Support formats beyond Markdown, potentially including:
+Markdown remains the report's only MVP format. DEC-072 separates *exports* from report formats:
+a post-MVP family of deterministic serializers over approved objects — TM-BOM first, SARIF
+second (approved findings only, reviewer-assigned severity only), a standalone Mermaid DFD
+third, CycloneDX for the catalog deferred until a consumer exists. No export contains prose or
+a model call.
 
-- PDF
-- HTML
-- JSON
-- SARIF
-- Ticketing-system formats
-- Audit packages
-
-Markdown remains sufficient for the MVP.
+Still ideas, not decided: PDF, HTML, ticketing-system formats, audit packages, and any
+executive-report format.
 
 # 14. Potential Research Questions
 

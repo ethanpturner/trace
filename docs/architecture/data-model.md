@@ -361,6 +361,9 @@ reviewer_edit
 
 external_tool
 
+`structured_input` covers authored structured architecture input and, per DEC-070, anything
+parsed deterministically from a machine-readable source; `generated_by` names the parser.
+
 ## 4.5 Severity
 
 Initial severity classification.
