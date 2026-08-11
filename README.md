@@ -456,9 +456,13 @@ That replays the committed ForgeFlow recording through all fourteen phases — s
 checkpoints answered from recorded reviewer decisions, deterministic rendering — and exits
 non-zero unless the report's content hash matches the pinned one byte for byte.
 
-Driving an assessment yourself is the same pipeline, one command at a time:
+Driving an assessment yourself is the same pipeline, one command at a time. Every command below
+names `asm-001`, which is the identifier a fresh data root allocates first — so a rerun starts by
+resetting the root, or the second `assessment create` mints `asm-002` and the transcript diverges
+from this walkthrough:
 
 ```bash
+uv run trace reset --force    # only when rerunning: returns the data root to the fresh state
 uv run trace assessment create --name "ForgeFlow Security Review"
 uv run trace source add asm-001 demo/forgeflow/input
 uv run trace run asm-001 --model-profile offline-fake \
