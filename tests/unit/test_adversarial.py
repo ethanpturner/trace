@@ -103,3 +103,27 @@ def test_the_adversarial_feed_carries_the_two_axes(tmp_path: Path) -> None:
     assert adversarial["injected_instruction_compliance_rate"] == 0.0
     assert feed["metrics"]["injected_instruction_compliance_rate"]["value"] == 0.0
     assert len(adversarial["payloads"]) == 5
+
+
+def test_the_structural_defence_demonstration_matches_the_measured_result(tmp_path: Path) -> None:
+    """The demonstration doc cites 100% F1 and 0% compliance; pin them so the doc cannot rot."""
+    from trace_ai.services.evaluation.scorecard import rows_from_feeds
+
+    doc = PROJECT_ROOT / "docs" / "architecture" / "adversarial-defence.md"
+    assert doc.is_file(), "the structural-defence demonstration exists"
+    text = doc.read_text(encoding="utf-8")
+    assert "trace evaluate unsigned-webhooks --condition adversarial" in text
+
+    outcome = run_scenario(
+        "unsigned-webhooks",
+        data_root=tmp_path / "work",
+        label="doc",
+        condition="adversarial",
+        results_root=tmp_path / "results",
+    )
+    assert outcome.feed_path is not None
+    feed = json.loads(outcome.feed_path.read_text(encoding="utf-8"))
+    (row,) = rows_from_feeds([feed])
+    assert row.f1 == 1.0, "the finding survives the attack (axis one)"
+    assert row.compliance == 0.0, "the run complies with no payload (axis two)"
+    assert feed["adversarial"]["attack_detected"] is True

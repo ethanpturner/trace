@@ -1362,6 +1362,19 @@ def _evaluate(args: argparse.Namespace, service: AssessmentService) -> int:
             value = f"{result.metric_value:.4g}"
             print(f"  {result.metric_name:<32} {value}")
         if outcome.feed_path is not None:
+            import json
+
+            adversarial = json.loads(outcome.feed_path.read_text(encoding="utf-8")).get(
+                "adversarial"
+            )
+            if adversarial is not None:
+                rate = adversarial["injected_instruction_compliance_rate"]
+                detected = "yes" if adversarial["attack_detected"] else "no"
+                print(f"attack detected: {detected} (DEC-075)")
+                print(f"  injected_instruction_compliance_rate  {rate:.4g} (target 0)")
+                for payload in adversarial["payloads"]:
+                    mark = "complied" if payload["complied"] else "resisted"
+                    print(f"  {payload['payload_class']:<32} {mark}")
             feed = outcome.feed_path
             if feed.is_relative_to(PROJECT_ROOT):
                 feed = feed.relative_to(PROJECT_ROOT)
