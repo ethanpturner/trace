@@ -106,6 +106,29 @@ Examples include:
 
 AI models should be used for tasks that benefit from semantic interpretation or security reasoning.
 
+### 2.7 Relationship to the Four Question Framework
+
+The pipeline is an answer to the Threat Modeling Manifesto's four questions, phase by phase
+(issue #226, survey item A7). Stating the mapping makes the design legible to threat-modeling
+practitioners, who will recognise the questions before they recognise the phase names.
+
+- **What are we working on?** Context extraction, context validation, and the context approval
+  checkpoint. This is the half that runs today, and the first checkpoint exists because the other
+  three questions are unanswerable over a wrong answer to this one.
+- **What can go wrong?** Threat analysis, designed in section 5.7 and `agent-design.md`
+  section 10.
+- **What are we going to do about it?** Requirement and control mapping through finding approval,
+  designed in sections 5.8 through 5.12. Trace's answer is deliberately partial: it produces
+  approved findings and remediation guidance a reviewer added, not a mitigation plan.
+- **Did we do a good job?** The Critical Review agent (section 5.10), and the report's
+  `limitations` section, which states what the assessment could not determine.
+
+The OWASP Threat Modeling Playbook frames a finished threat model as an **assurance argument**: a
+set of claims held up by evidence a skeptical reader can follow. The evidence-chain mechanism —
+every claim, threat, and finding carrying `EvidenceReference` identifiers that resolve to quoted
+passages in stored sources — is that framing implemented as schema rather than as prose
+discipline.
+
 ## 3. MVP System Context
 
 The MVP is a locally operated application used by one security reviewer.
