@@ -1,0 +1,67 @@
+name: scorecard
+
+# Regenerates the evaluation scorecard from the recorded runs and fails if the committed page has
+# drifted from what the current code and truth sets produce (DEC-076). The feeds are the real
+# input and are regenerable; the rendered page is committed so its history is the git history, and
+# this check keeps the two in agreement. Offline throughout: the recorded runs need no provider
+# key, which the CI constraint requires.
+#
+# A committed page cannot be pushed back by CI on a protected branch, so this checks rather than
+# writes; a stale page is a red check with the regeneration command in the failure. The uploaded
+# artifact is the freshly rendered page for anyone who wants to read it before merging.
+
+on:
+  pull_request:
+    paths:
+      - src/trace_ai/services/evaluation/**
+      - benchmarks/**
+      - demo/forgeflow/expected/**
+      - demo/forgeflow/recorded/**
+      - scripts/build_scorecard.py
+      - docs/eval/scorecard.html
+      - .github/workflows/scorecard.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: scorecard-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  UV_LOCKED: "1"
+
+jobs:
+  check:
+    name: the scorecard is current
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v9.0.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Install dependencies
+        run: uv sync --locked --all-groups
+
+      - name: The committed scorecard matches the recorded runs
+        run: uv run python scripts/build_scorecard.py --check
+
+      - name: Render a fresh copy for review
+        if: ${{ !cancelled() }}
+        run: uv run python scripts/build_scorecard.py
+
+      - name: Upload the rendered scorecard
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: evaluation-scorecard
+          path: docs/eval/scorecard.html
+          if-no-files-found: error
+          retention-days: 30
