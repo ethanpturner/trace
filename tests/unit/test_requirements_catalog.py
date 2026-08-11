@@ -17,20 +17,25 @@ Two halves, deliberately kept apart:
   one a code change.
 
 Neither half checks judgment. Whether a requirement is *correct* is a review question; whether
-it is *well-formed* is this file's. In particular **nothing verifies that a cited control
-identifier exists** in the framework it names -- the frameworks are not vendored, and a plausible
-but wrong identifier passes.
+it is *well-formed* is this file's. ASVS citation identifiers are now resolved against a cached
+v5.0.0 export (issue #221, survey item A1); NIST and OWASP Top 10 for LLM citations remain
+unresolved because those frameworks are not vendored, and a plausible but wrong identifier
+there still passes.
 """
 
 from __future__ import annotations
 
+import json
 import shutil
+import subprocess
+import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 import pytest
 import yaml
 
+from trace_ai.config import PROJECT_ROOT
 from trace_ai.domain.enums import Severity
 from trace_ai.domain.requirement import CatalogStatus, Requirement
 from trace_ai.services.requirements.loader import (
@@ -423,6 +428,82 @@ class TestRequirement:
                 "Citing a new framework is a provenance decision; add it to FRAMEWORKS."
             )
             assert control.strip(), f"{requirement.id} citation {citation!r} has no control id"
+
+
+# --------------------------------------------------------------------------------------------
+# ASVS citation resolution (issue #221, survey item A1)
+# --------------------------------------------------------------------------------------------
+#
+# ASVS publishes a stable flat JSON export at each release tag, keyed by `req_id` like `V6.1.3`.
+# The catalog cites the same identifier without the `V` prefix (e.g. `6.1.3`), so resolution is a
+# lookup after prefixing. The export is cached under `requirements/_external/asvs/` so CI needs no
+# network. `scripts/asvs_resolver.py` is the CLI for the same check; it is run here as a subprocess
+# so the test exercises the script's entry point and not just its logic.
+
+ASVS_EXPORT = CATALOG_ROOT / "_external" / "asvs" / "v5.0.0.flat.json"
+ASVS_FRAMEWORK = "OWASP ASVS 5.0.0"
+ASVS_ROW_COUNT = 345  # v5.0.0; the survey verified the row count by hand.
+
+
+def _asvs_req_ids() -> frozenset[str]:
+    document = json.loads(ASVS_EXPORT.read_text(encoding="utf-8"))
+    return frozenset(str(row["req_id"]) for row in document["requirements"])
+
+
+def _asvs_citations() -> list[tuple[str, str]]:
+    """Every (requirement id, citation) pair that names ASVS, drawn from the loaded catalog."""
+    pairs: list[tuple[str, str]] = []
+    for requirement in ALL_REQUIREMENTS:
+        for citation in requirement.source_frameworks:
+            framework, separator, _control = citation.partition(": ")
+            if separator and framework == ASVS_FRAMEWORK:
+                pairs.append((requirement.id, citation))
+    return pairs
+
+
+def test_the_cached_asvs_export_is_the_expected_release() -> None:
+    """A guard before the resolution check. A truncated or swapped export fails here, not below."""
+    assert ASVS_EXPORT.is_file(), f"cached ASVS export missing at {ASVS_EXPORT}"
+    ids = _asvs_req_ids()
+    assert len(ids) == ASVS_ROW_COUNT, (
+        f"ASVS v5.0.0 export has {len(ids)} rows, expected {ASVS_ROW_COUNT}. The cache at "
+        f"{ASVS_EXPORT} may have been replaced with a different release."
+    )
+    # First and last `req_id` in the v5.0.0 export, checked by membership rather than min/max
+    # because string ordering puts "V9.2.4" above "V17.3.2".
+    assert "V1.1.1" in ids
+    assert "V17.3.2" in ids
+
+
+@pytest.mark.parametrize(
+    "requirement_id, citation",
+    _asvs_citations(),
+    ids=[f"{rid}::{citation}" for rid, citation in _asvs_citations()],
+)
+def test_every_asvs_citation_resolves_against_the_pinned_export(
+    requirement_id: str, citation: str
+) -> None:
+    """A typo'd or stale ASVS identifier is currently silent; this resolves it by lookup."""
+    _framework, _separator, control = citation.partition(": ")
+    assert f"V{control}" in _asvs_req_ids(), (
+        f"{requirement_id} cites {citation!r}, and `V{control}` is not a `req_id` in the pinned "
+        f"ASVS v5.0.0 export at {ASVS_EXPORT}. The identifier is typo'd or stale."
+    )
+
+
+def test_the_asvs_resolver_script_reports_no_unresolved_citations() -> None:
+    """`scripts/asvs_resolver.py --check` exits zero when every ASVS citation resolves."""
+    result = subprocess.run(
+        [sys.executable, "scripts/asvs_resolver.py", "--check"],
+        cwd=PROJECT_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, (
+        f"asvs_resolver.py --check exited {result.returncode}.\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
 
 
 # --------------------------------------------------------------------------------------------

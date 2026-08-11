@@ -137,8 +137,10 @@ conventions rather than schema:
 
 None of it checks judgment. That a requirement is well-formed says nothing about whether it is
 right, whether its citation is apt, or whether it belongs in the catalog at all; those stay review
-questions. In particular **nothing verifies that a cited control identifier exists** in the framework
-it names — the frameworks are not vendored, and a plausible but wrong identifier passes.
+questions. **ASVS citations are resolved against a cached v5.0.0 export** by
+`scripts/asvs_resolver.py` and tested in `tests/unit/test_requirements_catalog.py` (issue #221,
+survey item A1); NIST SP 800-53 and OWASP Top 10 for LLM Applications are not vendored, so a
+plausible but wrong identifier for either of those still passes.
 
 Adding a field to a requirement fails validation by design. The Requirement object is
 defined in the data model, so extending it is a design change and belongs in the decision log

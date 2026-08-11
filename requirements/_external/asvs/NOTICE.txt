@@ -1,0 +1,17 @@
+OWASP Application Security Verification Standard 5.0.0 (flat JSON export)
+=========================================================================
+
+Source: https://github.com/OWASP/ASVS/tree/v5.0.0/5.0/docs_en
+       (OWASP_Application_Security_Verification_Standard_5.0.0_en.flat.json)
+Pinned tag: v5.0.0
+Cached here so citation resolution runs without network access (issue #221).
+
+License: Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0).
+         Full text in ./LICENSE.txt, mirrored from the source repository.
+
+Attribution: The OWASP Application Security Verification Standard (ASVS) Project,
+             https://owasp.org/www-project-application-security-verification-standard/
+
+The requirements catalog in requirements/0.1/ cites ASVS identifiers only and reproduces no
+ASVS wording; see requirements/README.md ("Citing external frameworks"). This cached export is
+the full ASVS document and remains under CC BY-SA 4.0.
