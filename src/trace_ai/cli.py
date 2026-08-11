@@ -359,6 +359,14 @@ def build_parser() -> argparse.ArgumentParser:
         help="the condition axis for the results feed (default: clean)",
     )
     evaluate.add_argument(
+        "--baseline",
+        choices=["generic", "structured"],
+        help=(
+            "score a single-pass baseline instead of the pipeline (DEC-074): one model call over "
+            "the same documents, replayed from the scenario's recorded baseline response"
+        ),
+    )
+    evaluate.add_argument(
         "--ablate",
         action="append",
         dest="ablations",
@@ -1259,6 +1267,12 @@ def _evaluate(args: argparse.Namespace, service: AssessmentService) -> int:
         print("error: name one scenario or pass --all", file=sys.stderr)
         return 1
 
+    if args.baseline is not None:
+        if not args.scenario:
+            print("error: --baseline scores one named scenario, not --all", file=sys.stderr)
+            return 1
+        return _evaluate_baseline(args)
+
     if args.all_scenarios:
         slugs = []
         for entry in load_registry():
@@ -1319,3 +1333,57 @@ def _evaluate(args: argparse.Namespace, service: AssessmentService) -> int:
         print()
 
     return 1 if failures else 0
+
+
+def _evaluate_baseline(args: argparse.Namespace) -> int:
+    """Score a single-pass baseline over one scenario, replayed from its recorded response.
+
+    The baseline is a measurement, not an assessment: it opens no store, prints metrics and the
+    feed path only, and its feed is marked non-authoritative. Exit 1 when the scored scenario has
+    no baseline recording or no truth set, so a comparison cannot silently score nothing.
+    """
+    from trace_ai.config import PROJECT_ROOT
+    from trace_ai.domain.proposals.baseline import BaselineFindings
+    from trace_ai.services.evaluation.baselines import BaselineError, run_baseline
+    from trace_ai.services.evaluation.registry import scenario as load_scenario
+
+    condition = f"baseline-{args.baseline}"
+    entry = load_scenario(args.scenario)
+    recording = entry.recorded_dir / "baselines" / f"{condition}.json"
+    if not recording.is_file():
+        print(
+            f"error: scenario {args.scenario!r} has no recorded {condition} response at "
+            f"{recording.relative_to(PROJECT_ROOT)}",
+            file=sys.stderr,
+        )
+        return 1
+    response = BaselineFindings.model_validate_json(recording.read_text(encoding="utf-8"))
+
+    try:
+        outcome = run_baseline(
+            args.scenario,
+            condition,
+            label=args.label,
+            response=response,
+            results_root=args.results_root,
+        )
+    except BaselineError as refused:
+        print(f"error: {refused}", file=sys.stderr)
+        return 1
+
+    print(f"scenario:     {outcome.scenario} ({outcome.baseline}, label {outcome.label})")
+    print(f"schema valid: {outcome.schema_valid}")
+    print(f"  false_negative_rate              {outcome.metrics['false_negative_rate']:.4g}")
+    print(f"  spurious_finding_count           {int(outcome.metrics['spurious_finding_count'])}")
+    if outcome.spurious:
+        print("spurious (findings the truth set does not expect):")
+        for spurious in outcome.spurious:
+            print(
+                f"  {spurious['requirement_id']}  {spurious['affected_component']}: {spurious['title']}"
+            )
+    if outcome.feed_path is not None:
+        feed = outcome.feed_path
+        if feed.is_relative_to(PROJECT_ROOT):
+            feed = feed.relative_to(PROJECT_ROOT)
+        print(f"feed:         {feed}")
+    return 0
