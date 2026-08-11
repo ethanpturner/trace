@@ -468,6 +468,7 @@ def test_the_command_surface_is_the_one_dec_032_confirms() -> None:
         "verify",
         "evaluate",
         "reset",
+        "view",
     }
     assert _subcommands("source") == {"add", "list"}
     assert _subcommands("evidence") == {"list", "show", "verify"}

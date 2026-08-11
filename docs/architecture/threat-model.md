@@ -40,12 +40,14 @@ Nothing here describes it.
 ## 2. What Trace is, for the purposes of this document
 
 DEC-004 makes the MVP a local, single-user application. There is no deployment, no multi-tenancy,
-no authentication, and no network service. DEC-032 makes the interface a command line through M4,
-so there is no browser and no listening port.
+no authentication, and no cloud service. The command line drives everything the pipeline does
+(DEC-032); the Stage 5 read-only view (DEC-078) adds a localhost-only listening port that renders
+persisted state and drives nothing — see section 5.
 
-That shapes the whole analysis. The adversary is **not** a remote attacker; there is nothing
-remote to attack. The adversary is **the content Trace is asked to read**, and the party at risk is
-**the reviewer**, who may act on a conclusion Trace produced.
+That shapes the whole analysis. The adversary is **not** a remote attacker; the one listening port
+binds `127.0.0.1` and changes no state. The adversary is **the content Trace is asked to read**, and
+the party at risk is **the reviewer**, who may act on a conclusion Trace produced — including reading
+that conclusion in a browser, which section 5 covers.
 
 Three assets are worth naming:
 
@@ -100,22 +102,31 @@ today is: the configured model provider, and an external tracing provider only i
 
 ## 5. Browser-to-application boundary
 
-**This boundary does not exist in the MVP.** DEC-032 makes the command line the interface through
-M4: there is no browser, no listening port, and no server process holding assessment data.
+**This boundary exists as of the Stage 5 read-only view** (`trace view`, DEC-032, DEC-078). Through
+M8 it did not: the command line was the whole interface, and the row was removed rather than
+mitigated. The view re-introduces a listening port and a server process holding assessment data, so
+the row returns — but bounded by what the view is, not defended by a token bolted onto a mutable
+surface.
 
-Section 12 lists it because earlier drafts preferred a local web application. The boundary was not
-mitigated; it was removed, which is the cheaper outcome and worth stating as such rather than
-quietly dropping the row.
+The design is that the request-forgery threat has nothing to forge. The view renders persisted
+state and drives nothing; there is no state-changing endpoint, so the classic cross-site request
+against a mutating URL has no target. That is a structural property, not a filter, which is why it
+is stated as the boundary's shape rather than a mitigation row that could be edited away.
 
-It returns if a Stage 5 read-only view is built. That view is a rendering of persisted state and
-not a way to drive the pipeline, so the surface would be narrow — but a local HTTP server on a
-reviewer's machine is reachable by any page they have open, and request forgery against a
-state-changing endpoint would be the first thing to analyse. **This document is revisited before
-any such view ships**, per section 9.
+| Risk | Mitigation | Where | Status |
+|---|---|---|---|
+| A page the reviewer has open reaches the server across the network | The server binds `127.0.0.1` only, so it is not reachable off the machine (DEC-004, single-user local) | `trace_ai.interface.server.HOST`, `tests/unit/test_interface.py` | **Enforced** |
+| A cross-site request forges a state change | There is no state-changing endpoint to forge against: every method other than `GET` is refused with `405`, and no route calls a store write method — audited by scanning the package for `save`/`allocate`/`transaction`/`delete` | `trace_ai.interface.server`, `tests/unit/test_interface.py` | **Enforced** |
+| An untrusted excerpt injects markup or script into the reviewer's browser | Every source-derived value is HTML-escaped on render, and lineage excerpts are additionally labelled as quoted untrusted content; a browser is not the inert terminal, so this is where the source-document boundary reaches the screen | `trace_ai.interface.render`, `tests/unit/test_interface.py` | **Enforced** |
+| Another origin frames the view to read assessment data | Responses carry `X-Frame-Options: DENY` | `trace_ai.interface.server` | **Enforced** |
+| The view becomes a way to drive the pipeline | It is read-only by construction: it consumes the section 32 lineage walk and the persisted objects, and there is no review interaction — checkpoint decisions stay on the command line (DEC-032) | `trace_ai.interface`, DEC-078 | **Enforced** |
 
-Input validation, which section 12 attaches to this boundary, is not deferred with it. Every input
-reaching workflow or storage is validated by the schema regardless of what supplied it — a command
-line, a file, or a future view all construct the same objects through the same models.
+The store opens read-write because SQLite offers no read-only handle here; read-only is a discipline
+the audit test enforces, not a file mode. Input validation, which `current-architecture.md` section
+12 attaches to this boundary, was never deferred with the boundary: every input reaching workflow or
+storage is validated by the schema regardless of what supplied it — a command line, a file, or the
+view all construct the same objects through the same models. The view supplies none, because it
+writes nothing.
 
 ## 6. Assessment-data boundary
 
@@ -178,8 +189,9 @@ Per the roadmap's cross-cutting workstream, this document is revisited when:
 
 - an agent gains data or capability it did not have, including any new tool or retrieval interface;
 - a new external service is introduced, including a tracing provider;
-- an interface is added that accepts input over a network, which under DEC-032 means before any
-  Stage 5 view ships;
+- an interface is added that accepts input over a network. The Stage 5 read-only view (DEC-078) was
+  the trigger for section 5's rewrite; it accepts no input beyond a `GET` path and changes no state,
+  and a view that ever did would re-trigger this review;
 - a boundary's `Designed` or `Open` row becomes `Enforced`, so the status column stays true.
 
 The first of those triggers arrives in M2, with the first outbound model call. This document was
