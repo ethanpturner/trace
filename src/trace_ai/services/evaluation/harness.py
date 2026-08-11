@@ -213,12 +213,14 @@ def run_scenario(
         run = handle.objects.get(WorkflowRun, outcome.state.workflow_run_id)
         metrics = _metrics_for(handle, run, entry, condition=condition)
         items = _items_for(handle, entry, condition=condition)
+        adversarial = _adversarial_for(handle, entry, condition)
         feed_path = _export_feed(
             entry,
             handle,
             run,
             metrics=metrics,
             items=items,
+            adversarial=adversarial,
             condition=condition,
             label=label,
             stopped_because=outcome.stopped_because,
@@ -396,6 +398,51 @@ def _items_for(
     }
 
 
+def _adversarial_for(
+    handle: AssessmentHandle, entry: Scenario, condition: str
+) -> dict[str, Any] | None:
+    """The two-axis adversarial result for a condition carrying a payload manifest (DEC-075).
+
+    Axis one lives in the finding metrics already recorded, read as deltas against clean. Axis two
+    is the injected-instruction compliance rate scored here against `expected-adversarial.yaml`.
+    """
+    manifest = entry.expected_dir_for(condition) / "expected-adversarial.yaml"
+    if not manifest.is_file():
+        return None
+    from trace_ai.domain.component import Component as ComponentModel
+    from trace_ai.domain.source_observation import ObservationKind, SourceObservation
+    from trace_ai.services.evaluation.adversarial import score_compliance
+    from trace_ai.services.findings.approved import approved_findings
+
+    expected_findings = yaml.safe_load(
+        (entry.expected_dir_for(condition) / "expected-findings.yaml").read_text(encoding="utf-8")
+    )["findings"]
+    component_names = {
+        component.id: normalized_name(component.name)
+        for component in handle.objects.list(ComponentModel)
+    }
+    attack_detected = any(
+        observation.kind is ObservationKind.INJECTION_ATTEMPT
+        for observation in handle.objects.list(SourceObservation)
+    )
+    score = score_compliance(
+        manifest,
+        approved_findings=approved_findings(handle),
+        expected_findings=expected_findings,
+        component_names=component_names,
+        attack_detected=attack_detected,
+    )
+    return {
+        "attack_detected": score.attack_detected,
+        "injected_instruction_compliance_rate": score.compliance_rate,
+        "compliance_by_class": score.compliance_by_class(),
+        "payloads": [
+            {"key": p.key, "payload_class": p.payload_class, "complied": p.complied}
+            for p in score.payloads
+        ],
+    }
+
+
 def _export_feed(
     entry: Scenario,
     handle: AssessmentHandle,
@@ -403,13 +450,14 @@ def _export_feed(
     *,
     metrics: list[EvaluationResult],
     items: dict[str, Any] | None,
+    adversarial: dict[str, Any] | None = None,
     condition: str,
     label: str,
     stopped_because: str,
     results_root: Path,
 ) -> Path:
     assessment = handle.objects.get(Assessment, handle.assessment_id)
-    feed = {
+    feed: dict[str, Any] = {
         "feed_version": FEED_VERSION,
         "scenario": entry.slug,
         "condition": condition,
@@ -431,6 +479,11 @@ def _export_feed(
         },
         "items": items,
     }
+    if adversarial is not None:
+        feed["adversarial"] = adversarial
+        feed["metrics"]["injected_instruction_compliance_rate"] = {
+            "value": adversarial["injected_instruction_compliance_rate"]
+        }
     target = results_root / entry.slug / condition / f"{label}.json"
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(json.dumps(feed, indent=2, sort_keys=True) + "\n", encoding="utf-8")
