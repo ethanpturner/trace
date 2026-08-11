@@ -727,6 +727,10 @@ Represents the structured architecture baseline used for downstream analysis.
 | approved_by | string | No | Reviewer identifier |
 | version | integer | Yes | Context revision number |
 
+DEC-068 adds `access_model` — a closed enum `deny_by_default`, `allow_by_default`, `mixed`,
+`unknown`, required and defaulting to `unknown`, because an authorization posture nobody stated
+must never read as an answer. The row lands with the implementing change.
+
 # 10. ContextClaim
 
 ## Purpose
@@ -915,6 +919,10 @@ object_storage
 
 administrative_interface
 
+DEC-068 adds `entry_point_types` — an optional open-vocabulary list (`login`,
+`admin_interface`, `file_upload`, `webhook`, `api`, `inter_system_interface`, and peers),
+normalized through `domain/vocabulary.py`. The row lands with the implementing change.
+
 # 12. Asset
 
 ## Purpose
@@ -966,6 +974,12 @@ business_process
 
 organizational_reputation
 
+DEC-068 adds two things on the usual terms, rows landing with the implementing change:
+`data_classification` normalizes against a new `KNOWN_DATA_CLASSIFICATIONS` vocabulary (open,
+per DEC-036, against TM-BOM's closed enum), and an optional `stored_in_component_ids` names the
+subset of `component_ids` that holds the asset at rest — where encryption-at-rest and retention
+requirements attach. `component_ids` keeps meaning "holds or processes."
+
 # 13. Actor
 
 ## Purpose
@@ -1003,6 +1017,12 @@ external_attacker
 malicious_insider
 
 compromised_dependency
+
+DEC-068 adds optional persona fields, rows landing with the implementing change: `skill_level`
+and `access_level`, open vocabularies normalized through `domain/vocabulary.py` (starting sets:
+`opportunist`, `skilled`, `organized_group`; `anonymous`, `authenticated`, `privileged`,
+`physical`). They exist so a threat's preliminary likelihood is auditable against who it
+presumes; no formula computes with them.
 
 # 14. DataFlow
 
@@ -1551,6 +1571,11 @@ DEC-060 adds a second, softer reviewer judgment: `risk_treatment` (closed vocabu
 the change that implements them, alongside the model, per the conformance test's
 both-directions rule.
 
+DEC-066 adds `content_fingerprint` on the same terms: a derived SHA-256 over the sorted
+`requirement_ids` and the sorted, normalized affected-component names — structural fields only,
+no prose — for cross-run identity alongside the allocated identifier, never instead of it.
+`DocumentationGap` gets the same treatment through the requirement its mapping reaches.
+
 ## Example
 
 id: fnd-003
@@ -1956,6 +1981,15 @@ Represents one workflow node execution or deterministic processing step.
 | output_tokens | integer | No | Model output tokens |
 | estimated_cost | decimal | No | Estimated call cost |
 | metadata | map[string, any] | No | Additional execution details |
+
+## Note on cache accounting
+
+DEC-067 adds `cache_read_tokens` and `cache_creation_tokens` here, with rollups
+`total_cache_read_tokens` and `total_cache_creation_tokens` on `WorkflowRun`; the rows land
+with the implementing change. The three input spans are disjoint — `input_tokens` means
+uncached input at the full rate — and `estimated_cost` is the weighted sum at the model
+profile's rates. Absent cache fields mean "not reported," readable against the capability
+record DEC-014 keeps on this object.
 
 # 28. EvaluationResult
 
