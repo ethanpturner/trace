@@ -477,7 +477,10 @@ Tradeoffs:
 Open Questions:
 
 - ~~Should the per-scenario `requirements.json` in the evaluation plan reference catalog identifiers rather than restate requirements?~~ Answered by DEC-027 by removing the file. DEC-024 puts the whole catalog in every mapping call, so a per-scenario requirement list could only narrow what the pipeline sees. A scenario pins `catalog_version` and expected control mappings reference catalog identifiers directly.
-- When should catalog version 0.1 become 0.2 rather than being edited in place?
+- ~~When should catalog version 0.1 become 0.2 rather than being edited in place?~~ Answered by
+  DEC-057: while a version is `draft` it is edited in place; once released its directory is
+  immutable and any content change is the next minor version. 0.1 releases when the recorded
+  ForgeFlow fixture (#263) lands.
 - ~~What computes and verifies `content_hash`, and at what point in the workflow?~~ Answered by DEC-019: one SHA-256 utility, with a stated input per object type and defined compute and verify points. The catalog's hash is computed by the loader.
 
 ## DEC-011: Record common false positives on each requirement
@@ -3620,3 +3623,238 @@ Open Questions:
 
 - Should the consolidation count become a named metric with a target, or stay metadata on the false-negative computation?
 - When scenario two arrives, does component-name matching survive a scenario whose truth set names components differently from its own context file?
+
+## DEC-057: Catalog versions are immutable once released; lifecycle is minor-or-major, retirement is a status, and cross-version fates are authored data
+
+Date: 2026-08-10
+
+Status: Accepted
+
+Decision:
+
+**A catalog version is `<major>.<minor>`, and there is no patch level.** The classes of change are
+two. A *minor* version may add requirements, revise wording, and retire entries; every identifier
+that exists in the prior version is either present or accounted for, and no identifier is renumbered
+or reused. A *major* version may renumber, and a fate map is then mandatory. The class ASVS calls
+patch — edits compatible with an existing assessment — is empty here by construction: DEC-019's
+content hash covers the parsed catalog, so any change a parser can see moves the hash and breaks
+verification against recorded runs. The version semantics ratify what the hash already enforces;
+a fix, however small, is a new minor version.
+
+**A released version directory is immutable, and the freeze is enforced at PR time.** A version is
+`draft` until released and may be edited in place freely — which answers DEC-010's open question
+about when 0.1 becomes 0.2: while 0.1 is `draft`, edit it; after release, any content change is
+0.2. Version 0.1 releases when the recorded ForgeFlow fixture (#263) lands, because a replayable
+recorded run is the first artifact whose requirement references outlive an edit. On release, CI
+fails any pull request that touches a file under that version's directory (the AISVS `LOCKED`
+pattern): the loader's hash check refuses a drifted catalog at read time, but the CI guard fails
+at review time and documents the freeze in-repo rather than in a stack trace.
+
+**Governance metadata lives outside the frozen, hashed content.** A top-level
+`requirements/versions.yaml` records, per version: lifecycle status (`draft`, `active`,
+`retired`), maintainer, release date, and last-reviewed date (RaD-TM's "owned, not orphaned"
+fields). It sits outside the version directories and outside the content hash, so retiring a
+version does not alter content whose hash a recorded assessment verifies. The manifest keeps its
+section 30 shape; the loader sources lifecycle status from the registry when both exist, and the
+mechanics land with the 0.2 implementation.
+
+**A requirement retires by status, never by deletion, within a major lineage.** The next minor
+version ships the entry in its category file with `status: retired` (section 17 already carries
+the vocabulary; pytm's `DEPRECATED` marker maps onto it and no new marker is invented), so old
+assessment references resolve for the lineage's lifetime. Removal happens only at a major
+version, recorded as a fate.
+
+**Cross-version fate maps are authored data, shipped with the newer version.** When 0.2 ships,
+`requirements/mappings/0.1-to-0.2.yaml` records one fate per 0.1 identifier — `unchanged`,
+`revised`, `retired`, and at a major boundary also `moved_to`, `merged_to`, `split_to`, and
+`deleted` with a reason (ASVS's mapping-file vocabulary). Tests hold it referentially complete in
+both directions: every old identifier has a fate, every named target exists. The loader never
+reads it; its consumers are people and the longitudinal tooling the cross-run finding-identity
+decision (#236) reaches toward.
+
+Why:
+
+**The content hash cannot express change-compatibility, only change.** DEC-010 and DEC-019 pin
+what a version contains; nothing stated which kinds of change are compatible with an assessment
+already made against it. Version pinning (`load_catalog(version)`) protects an in-flight run;
+this contract protects everything downstream of a finished one — recorded runs, benchmark truth
+sets that pin `catalog_version` (DEC-027), and any report citing a requirement identifier.
+
+**Immutability-at-PR-time fails faster than immutability-at-read-time.** The hash already makes
+silent in-place edits unreadable, but the failure surfaces at the next load, in whatever process
+happens to load it, with a hash mismatch as the only message. A CI guard names the violation at
+the moment someone proposes it.
+
+Alternatives Considered:
+
+- Three-part semver with in-place patch releases, hash regenerated each time
+- Editing a released 0.1 in place with `catalog_hash.py --write` as the ritual
+- A `deprecated` boolean or marker field alongside `status`, per pytm's convention
+- Keeping governance fields inside the hashed manifest
+- OpenCRE identifiers as renumbering-proof anchors instead of fate maps
+
+Tradeoffs:
+
+- A new directory per fix is heavier than a patch: every minor version copies eleven-plus files.
+  The cost buys the property that a version, once cited, means one thing forever.
+- Fate maps are authored, so they can be wrong in ways referential-integrity tests cannot see; a
+  `revised` that should have been `split_to` misleads exactly the tooling it exists to serve.
+- The CI guard binds the repository, not a local clone; a locally edited released catalog still
+  fails only at load. The two guards are complementary, not redundant.
+- `versions.yaml` is a second file that can disagree with the manifests it describes; the same
+  both-directions test posture that holds `catalog.yaml` to the category files applies.
+
+Open Questions:
+
+- Does the maintainer field carry weight while DEC-004's single-user scope holds, or is it a
+  placeholder for the multi-user future?
+- What first forces a major version — a category taxonomy change, or an identifier-scheme change?
+
+## DEC-058: Catalog 0.2 provenance — AISVS and the AI Exchange are adopted with stated caveats, the 2026 LLM Top 10 identifiers are used, and `source_frameworks` stays strings
+
+Date: 2026-08-10
+
+Status: Accepted
+
+Decision:
+
+**AISVS 1.0 is adopted as a citable framework for catalog 0.2's agentic and AI categories**, cited
+as `"OWASP AISVS: v1.0-C9.4.3"` — the reference form AISVS itself prescribes, framework segment
+unversioned, exactly parallel to the ASVS rule `requirements/README.md` already records. The
+caveat is binding, not advisory: AISVS wording is runtime-test phrased ("Verify that X is
+enforced") with near-zero documentation-assessable wording, so a Trace requirement grounded in C9
+(Orchestration/Agentic) or C10 (MCP) adopts the *substance* and is rewritten into the
+documentation register, so that silence resolves to `unverified`. A requirement that imports AISVS
+phrasing unrewritten is a DEC-009 violation whatever it cites. AISVS is CC BY-SA 4.0 like ASVS:
+cited by identifier, wording never reproduced.
+
+**The OWASP AI Exchange is citable as a living document, and the accessed date is mandatory.**
+It has no versioned releases, so permalink-plus-accessed-date is the only stable handle:
+`"OWASP AI Exchange: <topic anchor>, accessed YYYY-MM-DD"`. It may stand as a requirement's sole
+citation — refusing that would only push authors to launder the same grounding through a versioned
+framework that fits worse — but the date makes the staleness visible rather than silent.
+
+**Catalog 0.2 cites the LLM Top 10 under the 2026 release**, as `LLMxx:2026` with the GenAI
+Security Project as publisher, applying the renumbering (Improper Output Handling LLM05:2025 →
+LLM10:2026; Unbounded Consumption LLM10:2025 → LLM06:2026). Version 0.1's 2025-pinned strings
+remain correct archived provenance and are not edited — DEC-057 freezes them anyway once 0.1
+releases.
+
+**OpenCRE identifiers are rejected as citation anchors.** The argument for them is renumbering
+resistance; the observed state is the caution — their public ASVS mapping still resolves to
+v4.0.3, one major version behind what this catalog cites. An anchor whose own mappings lag is a
+crosswalk liability wearing a stability costume, and `requirements/README.md` already forbids
+sourcing ASVS crosswalks through it.
+
+**`source_frameworks` stays `list[string]` for 0.2.** The structural alternative —
+`{framework, version, source_url, accessed}` objects, per the 2026 release's mapping sidecars —
+is rejected for now: section 17 is authoritative and implemented, the string grammar
+`<framework>: <version-qualified reference>` is parsed and tested, the one new need (an accessed
+date) fits the grammar, and the field has no machine consumer — compliance mapping is deferred,
+and provenance's readers are a person and the citation test. The revisit trigger is named: the
+first machine consumer, which the interop-export decision (#231) would supply if a serializer
+wants structured citations.
+
+Why:
+
+**Each source earns its place by covering ground the current three do not.** AISVS C9/C10 covers
+agentic orchestration and MCP, which the 2025 LLM Top 10 predates; the AI Exchange feeds ISO/IEC
+27090 and covers AI-specific ground between releases. Adopting them as provenance keeps 0.2's new
+requirements grounded in public work rather than invented, which is the entire function of the
+field.
+
+**The register caveat is the decision's load-bearing half.** Every surveyed verification standard
+phrases for a running system; Trace assesses documentation. The difference is exactly DEC-009 —
+absence of evidence must resolve to `unverified` — and it is easier to import a phrasing violation
+than to notice one.
+
+Alternatives Considered:
+
+- Adopting AISVS wording as-is and accepting the runtime register
+- Refusing living documents as sole citations
+- Keeping 2025 LLM identifiers in 0.2 for continuity with 0.1
+- OpenCRE ids as primary anchors with framework citations secondary
+- Graduating `source_frameworks` to structured objects now, ahead of a consumer
+
+Tradeoffs:
+
+- An accessed-date citation is honest about staleness but does not prevent it; nothing re-checks
+  the Exchange's content against the date.
+- Staying with strings means a future structured consumer parses the grammar out of prose; the
+  grammar is tested, so the parse is stable, but it is still a parse.
+- Skipping OpenCRE keeps the catalog ahead of the mapping ecosystem at the cost of doing its own
+  crosswalk maintenance forever, one fate map at a time (DEC-057).
+
+Open Questions:
+
+- Does the citation test vendor an AISVS export for resolution, as #221 did for ASVS, or accept
+  unresolved AISVS identifiers the way it accepts NIST ones?
+
+## DEC-059: Catalog 0.2 gains a cloud-operations category mined from Cumulus, adapted under CC BY 4.0 with attribution
+
+Date: 2026-08-10
+
+Status: Accepted
+
+Decision:
+
+**Catalog 0.2 adds a cloud-operations primary category**: file `cloud-operations.yaml`, identifier
+prefix `req-OPS-`. Its ground is mined from OWASP Cumulus, whose 55 cards name operational
+security expectations the current catalog does not cover: separation between backup access and
+delete permissions, cost-anomaly alerting, environment separation including indirect connection
+through CI/CD, visibility of pipeline definition changes, and alert actionability against alert
+fatigue. Each phrases naturally in the documentation register — silence resolves to `unverified`
+— which is the admission test DEC-009 sets. The exact requirement set and count are authoring
+work in the 0.2 implementation, guided by this named ground; this decision fixes the category,
+the prefix, and the source posture.
+
+**The licensing posture differs from ASVS and AISVS, and both postures are stated side by side.**
+Cumulus content is CC BY 4.0 (the GitHub license API misreports it as null because of the REUSE
+layout), so wording may be *adapted with attribution* — unlike the CC BY-SA sources, which are
+cited by identifier with wording never reproduced. `requirements/README.md` records the two
+postures adjacently so the share-alike rule is not accidentally applied to Cumulus or, worse, the
+adaptation freedom accidentally applied to ASVS.
+
+**Citations use the version-in-framework-segment form**, since Cumulus prescribes no reference
+format: `"OWASP Cumulus <release>: <card identifier>"`, with the concrete release pinned against
+the source as fetched when 0.2 is authored.
+
+**This is minor-version content under DEC-057** — a new category and new requirements, no
+renumbering — and the provenance table gains its row under DEC-058's process.
+
+Why:
+
+**The gap is real and the source is apt.** The current catalog is application- and
+architecture-shaped; nothing in it asks whether backups can be deleted by the credentials that
+write them, whether cost anomalies alert anyone, or whether a pipeline change is visible. These
+are architecture-level, documentation-assessable questions — precisely Trace's register — and
+Cumulus is the one surveyed source that treats operations as first-class threat-modeling ground.
+
+**Stating the licensing posture now prevents the quiet failure later.** The catalog's standing
+rule is written for share-alike sources. A future author extending the cloud-ops category who
+applies that rule to Cumulus loses harmless freedom; one who assumes Cumulus's freedom applies to
+ASVS creates a licensing obligation. The pair is only safe when both are explicit.
+
+Alternatives Considered:
+
+- Folding the operational requirements into existing categories (cicd-trust, logging) rather than
+  adding one
+- Citing Cumulus by card identifier only, share-alike style, ignoring the adaptation freedom
+- Deferring cloud-ops entirely until a scenario demands it
+- A broader `operations` category not scoped to cloud
+
+Tradeoffs:
+
+- A new category built from one source starts single-sourced; ASVS and NIST cross-citations will
+  be thinner here than elsewhere in the catalog, and the provenance table will show it.
+- Card names are not stable identifiers the way `v5.0.0-2.1.1` is; a Cumulus release that renames
+  cards strands the citations, mitigated by pinning the release in the framework segment.
+- Requirements this operational sit at the edge of "assessable from design documentation"; the
+  authoring test is whether ForgeFlow-class input can evidence them, and some candidates will
+  fail it and be dropped.
+
+Open Questions:
+
+- Which scenario exercises the category first — none of the four seeded benchmarks is
+  operations-heavy, and a requirement no scenario can exercise is exactly what DEC-010's
+  "small on purpose" posture argues against shipping.

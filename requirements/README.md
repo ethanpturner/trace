@@ -28,6 +28,30 @@ category only** — `req-WEBHOOK-001` lives in `webhook-validation.yaml` while a
 A new catalog version gets a new directory. Requirement identifiers are stable across versions; a
 requirement that is replaced rather than edited records the identifier it replaces in `supersedes_id`.
 
+## Lifecycle
+
+DEC-057 governs how versions change. The short form:
+
+- **Versions are `<major>.<minor>`, and there is no patch level.** A minor version may add,
+  revise, and retire requirements but never renumbers or reuses an identifier; a major version may
+  renumber and then ships a fate map. The patch class is empty by construction: the content hash
+  covers the parsed catalog, so any change a parser can see breaks verification against recorded
+  runs. A fix, however small, is a new minor version.
+- **A version is editable while `draft` and immutable once released.** Version 0.1 is `draft`
+  until the recorded ForgeFlow fixture (#263) lands. After release, CI fails any pull request
+  touching a file under the released directory; the loader's hash check remains the read-time
+  backstop.
+- **Governance metadata lives outside the frozen content**, in a top-level `versions.yaml`
+  (lifecycle status, maintainer, release date, last-reviewed date), so retiring a version does not
+  move a hash a recorded assessment verifies. The file arrives with the 0.2 implementation.
+- **A requirement retires by `status: retired`, never by deletion, within a major lineage.** The
+  entry stays in its category file so old references resolve. Removal happens only at a major
+  version, recorded as a fate.
+- **Cross-version fate maps are authored data**: `mappings/0.1-to-0.2.yaml` records one fate per
+  old identifier (`unchanged`, `revised`, `retired`; at a major boundary also `moved_to`,
+  `merged_to`, `split_to`, `deleted` with a reason). Tests hold them referentially complete in
+  both directions. The loader never reads them.
+
 ## How to read a requirement
 
 Four fields carry most of the meaning, and three of them exist to prevent a requirement from being
@@ -95,7 +119,21 @@ Sources used in version 0.1:
 |---|---|
 | OWASP ASVS 5.0.0 | Primary. Version 5.0 gives 11 of its 17 chapters an explicit `X.1 Documentation` section, so those requirements are assessable from design documentation rather than from a running application. The other six — V1, V4, V9, V10, V12, V17 — open with sections that are not documentation requirements; anyone extending this catalog into their territory does not get a documentation anchor for free. Every chapter version 0.1 cites is among the eleven. |
 | NIST SP 800-53 Release 5.2.0 | Secondary. Covers ground ASVS leaves out of scope: segmentation, availability, retention, external system services. Public domain. |
-| OWASP Top 10 for LLM Applications 2025 | The AI-provider surface, which neither of the above addresses. **An archived release**: the 2026 list was published 2026-08-04 under the [GenAI Security Project organisation](https://github.com/GenAI-Security-Project/GenAI-LLM-Top10), and the original OWASP repository is now a legacy archive. The 2026 release renumbers two of the categories this catalog cites — Improper Output Handling moves LLM05:2025 to LLM10:2026, Unbounded Consumption moves LLM10:2025 to LLM06:2026 — so the version-pinned 2025 citations below remain correct provenance, and a bare `LLMxx` with no year is ambiguous. Whether catalog 0.2 adopts the 2026 identifiers is a separate decision. |
+| OWASP Top 10 for LLM Applications 2025 | The AI-provider surface, which neither of the above addresses. **An archived release**: the 2026 list was published 2026-08-04 under the [GenAI Security Project organisation](https://github.com/GenAI-Security-Project/GenAI-LLM-Top10), and the original OWASP repository is now a legacy archive. The 2026 release renumbers two of the categories this catalog cites — Improper Output Handling moves LLM05:2025 to LLM10:2026, Unbounded Consumption moves LLM10:2025 to LLM06:2026 — so the version-pinned 2025 citations below remain correct provenance, and a bare `LLMxx` with no year is ambiguous. DEC-058 decides it: catalog 0.2 cites `LLMxx:2026`; 0.1's 2025-pinned strings stand as archived provenance. |
+
+Sources adopted for version 0.2 (DEC-058, DEC-059), stated here so the citation test's adopted
+list has its provenance record when 0.2 is authored:
+
+| Framework | Role and posture |
+|---|---|
+| OWASP AISVS 1.0 | Agentic and MCP ground (chapters C9 and C10) for 0.2's AI categories. Cited as `"OWASP AISVS: v1.0-C9.4.3"` — AISVS prescribes the reference form, so the framework segment carries no version. **The register caveat is binding**: AISVS phrases for runtime verification, so a requirement grounded in it adopts the substance rewritten into the documentation register — silence resolves to `unverified`, never `unmet`. CC BY-SA 4.0: cited by identifier, wording never reproduced. |
+| OWASP AI Exchange | A living document with no versioned releases; permalink plus accessed date is the only stable handle, and the date is mandatory: `"OWASP AI Exchange: <topic anchor>, accessed YYYY-MM-DD"`. May stand as a sole citation. |
+| OWASP Cumulus | Ground for the 0.2 cloud-operations category (DEC-059). Prescribes no reference format, so the version stays in the framework segment: `"OWASP Cumulus <release>: <card identifier>"`, release pinned when 0.2 is authored. **CC BY 4.0, not share-alike** (the GitHub license API misreports it as null because of the REUSE layout): wording may be adapted with attribution, unlike the ASVS and AISVS posture. Do not apply either source's posture to the other. |
+
+OpenCRE identifiers were considered as renumbering-proof anchors and rejected (DEC-058): their
+public ASVS mapping still resolves to v4.0.3, and an anchor whose own mappings lag reintroduces
+the crosswalk problem it claims to solve. `source_frameworks` also stays `list[string]` for 0.2 —
+the structured-object alternative waits for a machine consumer (DEC-058).
 
 Requirement text in this catalog is **written originally**. ASVS 5.0 is licensed CC BY-SA 4.0 —
 the version matters, since ASVS 4.x shipped under CC BY-SA 3.0, and the vendored export's
