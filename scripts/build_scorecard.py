@@ -40,11 +40,14 @@ def build(results_root: Path) -> str:
     feeds: list[dict[str, object]] = []
 
     for entry in load_registry():
-        if entry.has_recording:
+        for condition in ("clean", *entry.conditions):
+            if not entry.has_recording_for(condition):
+                continue
             outcome = run_scenario(
                 entry.slug,
-                data_root=results_root / "work" / entry.slug,
+                data_root=results_root / "work" / entry.slug / condition,
                 label="scorecard",
+                condition=condition,
                 results_root=results_root / "feeds",
             )
             if outcome.feed_path is not None:

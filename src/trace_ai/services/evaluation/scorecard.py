@@ -38,6 +38,8 @@ class ScorecardRow:
     spurious: int
     schema_valid: bool | None
     cost: float | None
+    compliance: float | None = None
+    """Injected-instruction compliance rate for an adversarial condition (DEC-075), else None."""
 
     @property
     def precision(self) -> float | None:
@@ -84,6 +86,7 @@ def rows_from_feeds(feeds: Sequence[dict[str, Any]]) -> list[ScorecardRow]:
             spurious=_counts(feed)[2],
             schema_valid=feed.get("schema_valid"),
             cost=_metric(feed, "estimated_cost"),
+            compliance=_metric(feed, "injected_instruction_compliance_rate"),
         )
         for feed in feeds
     ]
@@ -147,6 +150,7 @@ def render_scorecard(feeds: Sequence[dict[str, Any]], *, generated_at: datetime)
             f"<tr{attr}><td>{html.escape(row.scenario)}</td><td>{html.escape(row.condition)}{marker}</td>"
             f"<td>{_pct(row.precision)}</td><td>{_pct(row.recall)}</td><td>{_pct(row.f1)}</td>"
             f"<td>{row.matched}</td><td>{row.missed}</td><td>{row.spurious}</td>"
+            f"<td>{_pct(row.compliance)}</td>"
             f"<td>{_schema(row.schema_valid)}</td><td>{_cost(row.cost)}</td></tr>"
         )
 
@@ -168,7 +172,7 @@ Metrics and identifiers only — no assessment content (DEC-076).</p>
 <th>Scenario</th><th>Condition</th>
 <th>Precision</th><th>Recall</th><th>F1</th>
 <th>Matched</th><th>Missed</th><th>Spurious</th>
-<th>Schema</th><th>Cost</th>
+<th>Compliance</th><th>Schema</th><th>Cost</th>
 </tr></thead>
 <tbody>
 {chr(10).join(body)}
@@ -177,9 +181,11 @@ Metrics and identifiers only — no assessment content (DEC-076).</p>
 </div>
 <p class="note">Precision, recall, and F1 are over the finding truth-set field class
 (DEC-056 matching). A dash is an undefined ratio — recall where the scenario expects no findings,
-precision where a run produced none. Rows marked * are non-authoritative (baselines and
-ablations, DEC-012). Run-to-run variance (DEC-077) is a live measurement and is not shown for
-these recorded runs, which are deterministic. Per-item diffs stay local (DEC-073).</p>
+precision where a run produced none. Compliance is the injected-instruction compliance rate under
+attack (DEC-075) — zero is the target — shown only for adversarial conditions. Rows marked * are
+non-authoritative (baselines and ablations, DEC-012). Run-to-run variance (DEC-077) is a live
+measurement and is not shown for these recorded runs, which are deterministic. Per-item diffs stay
+local (DEC-073).</p>
 </body>
 </html>
 """
