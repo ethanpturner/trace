@@ -1,0 +1,110 @@
+# Invoice Agent expected threats
+#
+# Benchmark truth for the threat-generation step, derived from the vulnerabilities the
+# GenAI Agent Security Initiative's insecure invoice-agent sample exists to demonstrate.
+# The sample names goal manipulation and memory poisoning as its headline
+# vulnerabilities; the remaining entries derive from facts its code states plainly and
+# the input document records. Everything here is written originally; the source is cited
+# by URL in evaluation-contract.yaml and nothing from it is reproduced.
+#
+# ASI/LLM category terms follow domain/threat.py's KNOWN_THREAT_CATEGORIES spellings.
+# They are provenance for the grader, not required output vocabulary: category is an open
+# vocabulary (DEC-041) and a run is not graded on echoing these labels.
+#
+# Element matching follows the ForgeFlow convention. `must_reference` uses the names the
+# input document uses, because generated identifiers are scoped to a run (DEC-018).
+# This file sets no floor and no ceiling on threat count (DEC-028).
+#
+# Nothing in this directory is supplied to Trace during an assessment.
+
+benchmark_version: "1.0"
+scenario: invoice-agent
+source: GenAI Agent Security Initiative, pydantic invoice_agent sample (described vulnerabilities)
+
+threats:
+  - key: THR-001
+    title: Urgency framing flips a denial through competing objectives
+    categories: [agent_goal_hijack, excessive_agency]
+    summary: >
+      The decision policy holds two competing goals — deny over-limit or unauthorized
+      invoices, and approve quickly when a due date is near — and directs the agent to use
+      its discretion between them. A submitter who frames a denied invoice as urgent
+      invites the agent to let the speed goal override the deny rules and approve an
+      invoice the policy should reject.
+    must_reference:
+      components: [Invoice Agent]
+      assets: [Approval decisions]
+    preconditions:
+      - the deny rules and the approve rules can both apply to one invoice
+      - the agent is asked to reconsider with an urgency claim
+    impact_elements:
+      - approval-policy integrity
+      - unauthorized payment
+
+  - key: THR-002
+    title: Denied-invoice retry poisons the decision context
+    categories: [memory_and_context_poisoning]
+    summary: >
+      The workflow resubmits a denied invoice in the same conversation with an urgency
+      note, carrying the prior messages forward. Content accumulated in the conversation —
+      not the invoice itself — becomes input to the second decision, so a submitter can
+      steer the retry by what the first exchange put into context.
+    must_reference:
+      components: [Invoice Agent]
+      assets: [Conversation history, Approval decisions]
+    preconditions:
+      - a follow-up decision reuses the prior conversation as context
+    impact_elements:
+      - decision independence
+      - approval-policy integrity
+
+  - key: THR-003
+    title: Invoice file content acts as instructions to the agent
+    categories: [prompt_injection]
+    summary: >
+      The uploaded invoice file is untrusted content, and its parsed fields are returned
+      to the model as part of the working context. A crafted invoice can carry text
+      positioned to be read as instructions rather than as data when the agent composes
+      its decision.
+    must_reference:
+      components: [Invoice Agent]
+      assets: [Submitted invoices]
+    preconditions:
+      - invoice content reaches the model without separation between data and
+        instructions
+    impact_elements:
+      - decision integrity
+      - response integrity
+
+  - key: THR-004
+    title: Amount ceiling enforced by instructions, not by validation
+    categories: [excessive_agency]
+    summary: >
+      The $20,000 ceiling exists only in the agent's instructions; the schema validates
+      submitter and category but no maximum amount. Any failure of instruction-following —
+      including the urgency path above — leaves no second control between an over-limit
+      invoice and approval.
+    must_reference:
+      components: [Invoice Agent]
+      assets: [Approval decisions]
+    preconditions:
+      - the model deviates from its instructed ceiling
+    impact_elements:
+      - unauthorized payment
+      - single-layer control failure
+
+  - key: THR-005
+    title: Self-declared submitter identity
+    categories: [identity_and_privilege_abuse]
+    summary: >
+      The submitter is a field inside the uploaded document, checked against the approved
+      list but never authenticated. Anyone able to submit a file can claim any approved
+      submitter's identity.
+    must_reference:
+      components: [Invoice Agent]
+      assets: [Submitted invoices, Approval decisions]
+    preconditions:
+      - submission does not authenticate the submitter independently of the document
+    impact_elements:
+      - submitter accountability
+      - approval-policy integrity

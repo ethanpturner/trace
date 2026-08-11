@@ -66,11 +66,12 @@ docs/architecture/   scope, current architecture, agent design, data model,
                      evaluation plan, decision log
 demo/forgeflow/      the ForgeFlow scenario: the demo and benchmark scenario one
 demo/forgeflow/input/      material supplied to Trace
-demo/forgeflow/expected/   the truth set; never supplied to Trace. The contract and
-                           expected-context.yaml are written; the rest are not
+demo/forgeflow/expected/   the truth set; never supplied to Trace. Fully authored;
+                           see its README for the file list
 requirements/        the requirements catalog; see Requirements catalog below
 journal/             dated session entries; see Journal below
-benchmarks/          scenarios two onward, same input/ + expected/ layout
+benchmarks/          scenarios two onward, same input/ + expected/ layout; husky-ai,
+                     crypto-wallet, and invoice-agent are seeded with threat truth sets
 benchmarks/scenarios.yaml  the scenario registry -- the authoritative list
 prompts/             prompt files; shared/ holds the blocks composed into agent prompts
 templates/           report-v1.md, the report template; see Report shape below
