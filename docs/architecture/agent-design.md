@@ -481,6 +481,10 @@ Validate and normalize the output of the Context Extraction Agent before human r
 - Normalize enumerated values
 - Identify missing required fields
 - Confirm `confidence` is a valid `ConfidenceLevel` member. There is no numeric score and no range to check (DEC-022).
+- Record a warn-only observation when a flow connects components whose `deployment_zone`
+  values differ and the flow crosses no declared trust boundary (DEC-068)
+- Emit a Question when the approved context represents no anonymous-or-external actor, or no
+  administrative-or-privileged one — the privilege-extremes check (DEC-068)
 - Prevent invalid workflow transitions
 
 ## Outputs
@@ -1723,6 +1727,12 @@ intent to that instead.
 A wrong mapping is invisible: an agent given the wrong latitude produces plausible output rather
 than an error. The mapping belongs in the adapter, is recorded on the `ExecutionRecord`, and is
 covered by the adapter's own tests.
+
+A model profile may additionally carry a per-agent overlay mapping the six agent names to
+model-and-settings overrides, resolved at load and refused for any other key (DEC-069).
+Creativity intent is orthogonal to the overlay: the profile picks the model and limits; the
+intent maps to that model's controls inside the adapter. Shipped profiles stay uniform until
+the evaluation harness measures what a mixed profile costs in quality.
 
 # 30. Caching
 

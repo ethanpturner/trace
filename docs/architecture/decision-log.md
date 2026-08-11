@@ -1003,6 +1003,8 @@ The input differs by object type, deliberately, and each is stated:
 | `EvidenceReference` | The UTF-8 bytes of `quoted_text` | At evidence indexing | By the evidence resolver, before evidence reaches an agent |
 | `PromptDefinition` | The UTF-8 bytes of the **composed** prompt, after shared blocks are merged in | At prompt load | At prompt load |
 | `RequirementsCatalog` | A canonical re-serialization of the parsed catalog: keys sorted, comments and formatting discarded | At catalog load | At catalog load |
+| `Finding` (added by DEC-066) | Sorted `requirement_ids` plus sorted, normalized affected-component names | At creation; recomputed when an identity input changes | By longitudinal consumers |
+| `DocumentationGap` (added by DEC-066) | The requirement reached through its mapping, plus that mapping's normalized component names | At creation; recomputed when an identity input changes | By longitudinal consumers |
 
 A source document is hashed over raw bytes rather than normalized text because its hash exists to detect that the file changed, and normalization would mask exactly the changes it is meant to catch. Evidence is hashed over `quoted_text` because DEC-015 makes that field the verbatim excerpt from the original and forbids modifying it after creation. A prompt is hashed after composition because the composed text is what the model receives; hashing the file alone would miss a change to a shared block, which is the change most likely to alter behaviour without anyone noticing.
 
@@ -4296,3 +4298,289 @@ Open Questions:
   DEC-018's to extend?
 - Should `trace assessment show` grow a flag that lists candidates, ahead of any aggregation
   surface?
+
+## DEC-066: `Finding` gains a structural content fingerprint for cross-run identity, alongside the allocated identifier and never instead of it
+
+Date: 2026-08-10
+
+Status: Accepted
+
+Decision:
+
+**`Finding` gains `content_fingerprint`**: SHA-256 through DEC-019's single utility, rendered
+`sha256:<hex>`, computed by the application when the finding is created and recomputed whenever
+an identity input changes. The DEC-019 table gains the row, because a hash over an unstated
+input is not verifiable. The stated input: the sorted `requirement_ids`, plus the sorted
+affected-component *names* resolved from `affected_component_ids` and normalized under DEC-056's
+rule — case-insensitive, whitespace-normalized. Nothing else: no title, no description, no
+evidence text.
+
+**The tuple is structural because the fingerprint exists to survive rewording.** appsec-agent
+hashes cwe + file + normalized snippet, which is right for a code scanner — the snippet is the
+location. Trace's findings are prose over architecture; the excerpt an extraction cites flickers
+across runs and document edits, and DEC-056 already established that requirement and component
+are the fields that survive rewording. The fingerprint is DEC-056's benchmark matching rule
+promoted to an object property, so evaluation matching and longitudinal identity cannot drift
+apart. Requirement identifiers are stable across catalog versions (DEC-057) and component names
+are the cross-run handle because DEC-018 identifiers are run-scoped.
+
+**Reviewer edits change identity only when they change identity fields.** An edit to
+description, severity, or treatment leaves the fingerprint alone; an edit that changes the
+affected components or cited requirements recomputes it, because it is then a claim about
+different ground. The fingerprint is derived, so recomputation is a rebuild, not a mutation
+with history.
+
+**`DocumentationGap` gets the same treatment**: a fingerprint over the requirement it bears on
+— reached through its related mapping, DEC-056's own path — plus the normalized component names
+of that mapping. The implementing change fixes the exact resolution; the principle fixed here is
+structural fields only, no prose.
+
+Why:
+
+**DEC-018 identifiers cannot answer "same finding, still open."** They are per-assessment and
+allocation-ordered, so a re-assessment after revision re-mints everything and the longitudinal
+question has no handle. Every consumer that wants one — the run-diff in the harness decision
+(#255), precedent maturation beyond DEC-064's within-assessment scope, a future "resolved since
+last assessment" view — needs the same identity, and computing it ad hoc in each place is how
+three subtly different identities happen.
+
+Alternatives Considered:
+
+- Including a normalized evidence excerpt in the tuple, appsec-agent style
+- Title-similarity identity, DEC-043-style normalization
+- No stored fingerprint: compute structural matches ad hoc where needed
+- Letting the reviewer assign a stable cross-run key by hand
+
+Tradeoffs:
+
+- The identity is deliberately coarse: two genuinely distinct weaknesses citing the same
+  requirements against the same components share a fingerprint. DEC-056 accepted the same
+  coarseness for scoring, and the consumers here want "the same ground re-examined," which
+  coarse identity serves; anything finer re-imports prose.
+- A component rename between runs silently breaks identity — DEC-056's recorded tradeoff, now
+  inherited by every longitudinal consumer. The fate-map convention (DEC-057) covers
+  requirement renames; nothing yet covers component renames.
+- A recomputed-on-edit fingerprint means longitudinal tooling must treat identity as
+  time-varying, not immutable.
+
+Open Questions:
+
+- Should `EvaluationResult`'s run-diff persist fingerprint pairs (prior, current) so identity
+  changes are themselves observable?
+
+## DEC-067: `ExecutionRecord` accounts cache tokens as their own spans, and `estimated_cost` weights them at the profile's rates
+
+Date: 2026-08-10
+
+Status: Accepted
+
+Decision:
+
+**`ExecutionRecord` gains `cache_read_tokens` and `cache_creation_tokens`**, optional integers,
+provider-neutral names at the seam; `WorkflowRun` gains the matching rollups
+`total_cache_read_tokens` and `total_cache_creation_tokens`. The adapter maps its provider's
+usage report into them and omits them where the capability is unused or unreported — absent
+means "not reported," and the capability record DEC-014 already keeps on `ExecutionRecord` says
+which.
+
+**The three input spans are disjoint.** `input_tokens` means uncached input actually processed
+at the full rate; cache reads and cache writes are their own counts, never folded in. Folding
+them in is exactly how "cost and tokens described different spans of work."
+
+**`estimated_cost` is the weighted sum**, with the weights owned by the model profile: cache
+reads at the provider's discounted rate, cache creation at its premium, uncached input and
+output at list. The cost ceiling and the `WorkflowRun` totals compare against this
+billed-equivalent number, not against raw token counts.
+
+**The table rows land with the implementing change**, per the conformance test's
+both-directions rule; the fields and their semantics are fixed here.
+
+Why:
+
+**The design leans on caching on purpose, so the divergence lands exactly where the system
+works hardest.** DEC-024 passes the whole catalog on every mapping call *because* it is a
+stable cacheable prefix; a cost ceiling that prices those tokens at the full input rate
+overstates spend most on the runs the design optimizes, and a ceiling comparing against the
+wrong number either trips early or licenses overruns. appsec-agent retrofitted the same fields
+in v3.7.0 for the same reason; the retrofit is cheaper before the numbers exist.
+
+**Profile-owned weights keep the seam provider-agnostic.** Rates are a property of the
+provider-model bundle, which is what a `model_profile` already names (DEC-014). The adapter
+reports counts; the profile prices them; nothing behind the seam does arithmetic the
+application owns.
+
+Alternatives Considered:
+
+- Folding cache reads into `input_tokens` at a discount factor
+- A single `cached: boolean` per call instead of counts
+- Pricing inside the adapter, next to the provider that knows its rates
+- Leaving the divergence until live runs make it measurable
+
+Tradeoffs:
+
+- Two more optional fields whose absence is meaningful ("not reported") — readable only
+  alongside the capability record, which is one join more than obvious.
+- Profile-owned rates go stale when a provider reprices; `estimated_cost` is named *estimated*
+  for exactly this, and the profile is one file to update.
+- Rollups on `WorkflowRun` widen an already-wide totals row; the alternative of computing them
+  by summing records on read was rejected once already for the other totals.
+
+Open Questions:
+
+- Should `scripts/estimate_cost.py` grow the same weighting so pre-run estimates and recorded
+  spend stay comparable?
+
+## DEC-068: Context-model extensions — one pass: sensitivity vocabulary, at-rest placement, personas, entry points, and an access-model claim; no trust-zone object
+
+Date: 2026-08-10
+
+Status: Accepted
+
+Decision:
+
+One pass over the five surveyed extensions, three adopted as fields, one adopted as a check, one
+rejected. Every adopted field lands with its implementing change, document and registry first,
+conformance test holding both directions.
+
+**No named trust-zone object, and no per-component zone field beyond what exists.** The context
+model already says where a component runs (`deployment_zone`, open vocabulary) and which
+boundaries separate what (`TrustBoundary` inside/outside sets, `DataFlow.crosses_trust_boundary_ids`).
+A first-class zone object would be a third representation of the same fact, and two
+representations of containment already have to agree; adding a reconciliation problem to gain a
+name is TM-BOM's shape, not Trace's need. What the survey actually wants from zones — boundary
+crossings as the highest-signal threat locations — is adopted as a **Context Validation
+cross-claim check**: a flow between components whose `deployment_zone` values differ and that
+crosses no declared boundary yields a warn-only observation. Report-and-route holds; nothing is
+corrected.
+
+**`Asset` gains a sensitivity vocabulary and an at-rest split.** `data_classification` stays
+free text but normalizes against a new `KNOWN_DATA_CLASSIFICATIONS` vocabulary (`pii`, `phi`,
+`financial`, `credentials`, `intellectual_property`, `telemetry`, `public`, and peers) — the
+DEC-036 treatment, explicitly against TM-BOM's closed enum, for DEC-036's reasons. `Asset` also
+gains optional `stored_in_component_ids`: `component_ids` keeps meaning "holds or processes,"
+and the subset that *stores at rest* is where encryption-at-rest and retention requirements
+attach; without the split, every at-rest mapping over-applies to processors.
+
+**`Actor` gains persona fields**: optional `skill_level` and `access_level`, open vocabularies
+normalized through `domain/vocabulary.py`, with `KNOWN_*` starting sets (`opportunist`,
+`skilled`, `organized_group`; `anonymous`, `authenticated`, `privileged`, `physical`). Their
+purpose is auditability: a threat's free-text preliminary likelihood becomes checkable against
+who it presumes — a threat presuming an organized attacker with physical access should read
+differently from one an opportunist can execute.
+
+**`Component` gains `entry_point_types`**: an optional list, open vocabulary (`login`,
+`admin_interface`, `file_upload`, `webhook`, `api`, `inter_system_interface`, and peers),
+normalized. With it comes the **privilege-extremes check**: when the approved context
+represents no anonymous-or-external actor, or no administrative-or-privileged one, Context
+Validation emits a Question — the attack surface's extremes are where analysis most often goes
+silent, and a Question is the DEC-009 outlet for exactly that silence.
+
+**`SystemContext` gains `access_model`**: a **closed** enum — `deny_by_default`,
+`allow_by_default`, `mixed`, `unknown` — required, defaulting to `unknown`. Closed because the
+values are named rather than illustrated, like `DataFlow.direction`; `unknown` because an
+authorization posture nobody stated must never be readable as an answer (the never-`False`,
+never-`None` rule applied to the single highest-leverage authorization fact).
+
+Why:
+
+**One pass, because five drive-by field additions would each re-litigate the same principles.**
+Every choice above is an existing principle applied: open-vocabulary-with-normalization where
+the document illustrates (DEC-036), closed where it names, `unknown` where silence would read
+as an answer, warn-only observation where a check could otherwise become a corrector, and a
+Question where absence needs a human. The survey's value is naming the ground; the corpus
+already owned the rules.
+
+Alternatives Considered:
+
+- A first-class TrustZone object with per-component zone assignment, TM-BOM style
+- TM-BOM's closed sensitivity enum
+- A first-class EntryPoint object with counts, per the Attack Surface cheat sheet
+- Making `access_model` an open vocabulary like its neighbours
+- Deferring all five until the threat agent demonstrably misses what they would carry
+
+Tradeoffs:
+
+- The zone-crossing check keys on `deployment_zone` string equality after normalization; two
+  spellings of one zone that normalization does not unify yield a false observation. Warn-only
+  makes that annoying rather than wrong.
+- `stored_in_component_ids` as a subset of `component_ids` is an invariant validation must
+  hold, and a modeling question ("does a cache store?") the extraction agent will answer
+  inconsistently; the reviewer sees both lists at checkpoint 1.
+- Persona fields on `Actor` invite exactly the pseudo-precision DEC-030 refused for severity;
+  they are inputs a human audits a likelihood narrative against, never factors anything
+  computes with, and no scoring formula may consume them.
+- The privilege-extremes Question fires on legitimate single-privilege systems (a batch
+  pipeline with no anonymous surface); a Question is answerable and closes, which is the cost
+  of a check that cannot be silenced.
+
+Open Questions:
+
+- Does the zone-crossing observation deserve promotion to a DEC-062 routing reason once it has
+  run against real extractions?
+- `data-model.md` question 5 (structured applicability) may eventually want
+  `KNOWN_DATA_CLASSIFICATIONS` as one of its axes; nothing here commits that.
+
+## DEC-069: A model profile may carry a per-agent overlay; resolution fails at load, and attribution rides the existing snapshot
+
+Date: 2026-08-10
+
+Status: Accepted
+
+Decision:
+
+**A `ModelProfile` may map agent names to model-and-settings overrides.** The overlay is
+optional; a profile without one behaves exactly as today. Keys are the six agent names the cap
+pins (`tests/unit/test_agent_cap.py`'s inventory); an overlay naming anything else — a
+misspelling, a deterministic node, a seventh agent — is a configuration error refused when the
+profile resolves, at load, not mid-run. Deterministic nodes make no model calls and can carry
+no override.
+
+**Nothing else moves.** The seam is untouched: resolution happens in
+`infrastructure/model/profiles.py` before a call reaches an adapter, and the adapter still sees
+one resolved bundle. The agent cap is untouched: six agents with different models are six
+agents. `ExecutionRecord.model_name` already snapshots the resolved model per call, so
+attribution and evaluation interpretability survive without a schema change. `Creativity`
+stays per-agent provider-neutral intent, orthogonal to the overlay: the profile says which
+model and limits; the intent maps to that model's controls inside the adapter.
+
+**The default profiles stay uniform.** No shipped profile routes agents to different models
+until the evaluation harness can measure what a cheaper model costs in quality — the ablation
+machinery (#256's baseline protocol is the nearest instrument) is where an overlay earns its
+values. The mechanism lands decided so that the measurement, when it runs, is a config edit
+rather than a design change.
+
+Why:
+
+**The cost case is real and the shape is small.** lets-threat-model routes triage to a cheap
+model and analysis to a strong one, and the win in their demos is genuine. Trace's version is a
+closed six-key map resolved in one module — deciding it now costs a page; retrofitting it after
+`model_profile` strings leak into recorded runs and evaluation baselines would cost a
+migration.
+
+**Fail-at-load is the part worth writing down.** An overlay error surfacing mid-run — after
+checkpoint 1, three agents in — wastes a run and a reviewer's time; profiles are configuration,
+and configuration errors belong at the moment configuration is read (the loader's own posture,
+applied to profiles).
+
+Alternatives Considered:
+
+- Per-agent `model_profile` on `AssessmentConfiguration` instead of an overlay inside the profile
+- Free-form overlay keys, validated only against "is a known agent" at call time
+- Extending the overlay to deterministic nodes for symmetry
+- Shipping a cost-optimized default profile now, ahead of measurement
+
+Tradeoffs:
+
+- A run's `WorkflowRun.model_profile` no longer implies one model for every call; anything that
+  assumed so must read `ExecutionRecord.model_name`, which was always the honest source.
+- Six keys is a small closed surface, but it is coupled to the agent inventory; renaming an
+  agent now touches profiles, and the load-time check is what turns that from silent to loud.
+- Deferring shipped overlays means the mechanism carries no default benefit; it is
+  infrastructure for a measurement not yet run, and infrastructure ahead of measurement is the
+  pattern DEC-030 warns about — mitigated by the mechanism being configuration rather than a
+  component.
+
+Open Questions:
+
+- When the measurement runs, is the right comparison per-agent model ablation against the
+  uniform baseline, or a small set of curated mixed profiles?
