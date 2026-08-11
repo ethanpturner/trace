@@ -38,7 +38,7 @@ from trace_ai.domain.evidence import EvidenceReference
 from trace_ai.domain.execution import RunStatus, WorkflowRun
 from trace_ai.domain.finding import Finding
 from trace_ai.domain.proposals import ContextExtractionProposal
-from trace_ai.domain.source_document import SourceDocument, TrustLevel
+from trace_ai.domain.source_document import IngestionStatus, SourceDocument, TrustLevel
 from trace_ai.infrastructure.database.store import AssessmentStore, StoreError
 from trace_ai.infrastructure.filesystem.artifact_store import DEFAULT_ROOT, ArtifactStoreError
 from trace_ai.infrastructure.model.factory import UnknownProviderError, build_model
@@ -640,8 +640,15 @@ def _assessment_archive(args: argparse.Namespace, service: AssessmentService) ->
 
 
 def _source_add(args: argparse.Namespace, service: AssessmentService) -> int:
+    """Register documents, reporting what was new and what was already there.
+
+    Registration is idempotent in the loader (#320), so a repeated `source add` returns the
+    existing documents; this handler tells the difference by identifier and does not count a
+    skipped document as registered — the numbers a reviewer quotes must not move on a rerun.
+    """
     handle = service.handle(args.assessment_id)
     loader = DocumentLoader(handle)
+    before = {document.id for document in handle.objects.list(SourceDocument)}
 
     if args.path.is_dir():
         documents = loader.load_directory(
@@ -655,13 +662,19 @@ def _source_add(args: argparse.Namespace, service: AssessmentService) -> int:
                 trust_level=TrustLevel.UNTRUSTED,
             )
         ]
+    skipped = [document for document in documents if document.id in before]
 
+    # Index whatever is still unindexed, which is every new document and any earlier
+    # `--no-index` registration this command is now completing.
     references = 0
     if not args.no_index:
         for document in documents:
-            references += len(index_document(handle, document))
+            if document.ingestion_status is IngestionStatus.REGISTERED:
+                references += len(index_document(handle, document))
 
-    print(f"registered {len(documents)} document(s)")
+    print(f"registered {len(documents) - len(skipped)} document(s)")
+    for document in skipped:
+        print(f"already registered: {document.id}  {document.filename}")
     if not args.no_index:
         print(f"indexed {references} evidence reference(s)")
     return 0

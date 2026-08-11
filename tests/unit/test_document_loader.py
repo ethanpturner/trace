@@ -73,6 +73,36 @@ def test_every_forgeflow_input_loads(loader: DocumentLoader) -> None:
     assert all(document.assessment_id == "asm-001" for document in documents)
 
 
+def test_registering_the_same_directory_twice_registers_nothing_new(
+    loader: DocumentLoader,
+) -> None:
+    """Registration is idempotent per (filename, content) (#320). A rerun that minted eight more
+    documents would silently double every count a reviewer quotes."""
+    first = loader.load_directory(FORGEFLOW_INPUT)
+    second = loader.load_directory(FORGEFLOW_INPUT)
+
+    assert [document.id for document in second] == [document.id for document in first]
+    assert len(loader.handle.objects.list(SourceDocument)) == 8
+
+
+def test_the_same_name_with_different_bytes_is_still_refused(
+    loader: DocumentLoader, tmp_path: Path
+) -> None:
+    """Idempotency covers identical bytes only. Different content under a registered name falls
+    through to the artifact store's refusal, because every EvidenceReference into the original
+    carries a hash that would no longer verify."""
+    original = tmp_path / "notes.md"
+    original.write_text("# original\n", encoding="utf-8")
+    load(loader, original)
+
+    changed = tmp_path / "changed" / "notes.md"
+    changed.parent.mkdir()
+    changed.write_text("# changed\n", encoding="utf-8")
+    with pytest.raises(Exception, match=r"notes\.md"):
+        load(loader, changed)
+    assert len(loader.handle.objects.list(SourceDocument)) == 1
+
+
 def test_the_media_types_are_what_the_extensions_say(loader: DocumentLoader) -> None:
     documents = {d.filename: d.media_type for d in loader.load_directory(FORGEFLOW_INPUT)}
 
