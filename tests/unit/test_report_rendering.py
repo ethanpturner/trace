@@ -206,6 +206,26 @@ def test_two_renders_over_identical_state_are_byte_identical(handle: AssessmentH
     assert rendered(handle) == rendered(handle)
 
 
+def test_the_scope_names_the_run_profile_not_the_configured_default(
+    handle: AssessmentHandle,
+) -> None:
+    """The report is the run's record, and the run's profile comes from the caller that ran —
+    `assemble_report_input`'s `model_configuration`. The configured default differs on every
+    offline replay, and rendering it would put a profile nobody used into the one document that
+    exists to carry provenance (#322)."""
+    seed(handle)
+    assembly = assemble_report_input(
+        handle,
+        prompt_versions={"generate-report-sections": "generate-report-sections-v1"},
+        model="deterministic-fake",
+        model_configuration="offline-fake",
+    )
+    assert assembly.assessment.configuration.model_profile != "offline-fake"
+    report = render_report(assembly, sections(assembly), generated_at=STAMP)
+    assert "- Model profile: offline-fake" in report
+    assert f"- Model profile: {assembly.assessment.configuration.model_profile}" not in report
+
+
 # ------------------------------------------------------------------------------------------
 # Findings: approved exactly once, cited, quoted verbatim
 # ------------------------------------------------------------------------------------------
