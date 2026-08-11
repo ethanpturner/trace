@@ -422,7 +422,7 @@ def test_the_banner_still_reports_credentials_as_names_only(
     assert run([]) == 0
     output = capsys.readouterr().out
 
-    assert "Hello from trace!" in output
+    assert "context-aware security architecture analysis" in output
     assert "anthropic" in output
     assert FAKE_KEY not in output
 

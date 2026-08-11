@@ -237,7 +237,10 @@ def build_parser() -> argparse.ArgumentParser:
 
     review = context_commands.add_parser("review", help="record reviewer decisions")
     review.add_argument("assessment_id")
-    review.add_argument("--reviewer", help="who the decisions are attributed to")
+    review.add_argument(
+        "--reviewer",
+        help="who the decisions are attributed to (default: the operating-system username)",
+    )
     review.add_argument("--export", type=_path, help="write an editable review file to this path")
     review.add_argument("--apply", type=_path, help="apply an edited review file")
     review.add_argument("--approve", action="append", dest="approved", default=[], metavar="ID")
@@ -267,7 +270,10 @@ def build_parser() -> argparse.ArgumentParser:
 
     approve = context_commands.add_parser("approve", help="approve the context baseline")
     approve.add_argument("assessment_id")
-    approve.add_argument("--reviewer", help="who the approval is attributed to")
+    approve.add_argument(
+        "--reviewer",
+        help="who the approval is attributed to (default: the operating-system username)",
+    )
     approve.add_argument("--note", help="why the baseline was approved")
 
     running = commands.add_parser(
@@ -306,7 +312,10 @@ def build_parser() -> argparse.ArgumentParser:
 
     findings_review = findings_commands.add_parser("review", help="record reviewer decisions")
     findings_review.add_argument("assessment_id")
-    findings_review.add_argument("--reviewer", help="who the decisions are attributed to")
+    findings_review.add_argument(
+        "--reviewer",
+        help="who the decisions are attributed to (default: the operating-system username)",
+    )
     findings_review.add_argument(
         "--severity",
         action="append",
@@ -570,7 +579,7 @@ def _banner() -> int:
         for name in ("anthropic_api_key", "openai_api_key", "langsmith_api_key")
         if getattr(settings, name) is not None
     ]
-    print("Hello from trace!")
+    print("trace: context-aware security architecture analysis")
     print(f"env: {settings.app_env}  log level: {settings.log_level}")
     print(f"credentials configured: {', '.join(configured) if configured else 'none'}")
     return 0
