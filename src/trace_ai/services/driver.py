@@ -102,6 +102,7 @@ from trace_ai.workflow.threat_validation import validate_threats
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
+    from datetime import datetime
     from typing import Any
 
     from trace_ai.domain.base import DomainModel
@@ -794,10 +795,16 @@ class ReportGenerationAdapter:
 
 @dataclass(slots=True)
 class ReportRenderingAdapter:
-    """Phase 12, second node: deterministic render, validation, and the manifest (DEC-035)."""
+    """Phase 12, second node: deterministic render, validation, and the manifest (DEC-035).
+
+    `generated_at` pins the one timestamp the rendered document carries. A replayed run passes
+    the recording's stamp so two replays produce byte-identical reports; a live run leaves it
+    unset and gets `now()`.
+    """
 
     ledger: ExecutionLedger
     handoff: _ReportHandoff
+    generated_at: datetime | None = None
     version: str = "0.1"
 
     name: ClassVar[str] = "report-rendering"
@@ -820,6 +827,7 @@ class ReportRenderingAdapter:
                 sections,
                 ledger=self.ledger,
                 workflow_run_id=context.state.workflow_run_id,
+                generated_at=self.generated_at,
             )
         except ReportValidationFailedError as error:
             raise WorkflowError(
@@ -866,6 +874,7 @@ def build_nodes(
     profile: ModelProfile,
     budget: Budget | None = None,
     structured_input: dict[str, Any] | None = None,
+    generated_at: datetime | None = None,
 ) -> list[Node]:
     """Every node the fourteen phases declare, constructed against one run's dependencies."""
     registry = PromptRegistry()
@@ -920,7 +929,7 @@ def build_nodes(
         ReportGenerationAdapter(
             ledger=ledger, profile=profile, registry=registry, handoff=report_handoff, budget=budget
         ),
-        ReportRenderingAdapter(ledger=ledger, handoff=report_handoff),
+        ReportRenderingAdapter(ledger=ledger, handoff=report_handoff, generated_at=generated_at),
         EvaluationAdapter(),
     ]
 
@@ -975,6 +984,7 @@ def resume_assessment(
     profile: ModelProfile,
     workflow_run_id: str | None = None,
     budget: Budget | None = None,
+    generated_at: datetime | None = None,
 ) -> RunOutcome:
     """Resume a paused run in a fresh process (DEC-017: resuming is a read).
 
@@ -998,7 +1008,9 @@ def resume_assessment(
     orchestrator = Orchestrator(
         handle,
         ledger=ledger,
-        nodes=build_nodes(handle, ledger=ledger, profile=profile, budget=spend),
+        nodes=build_nodes(
+            handle, ledger=ledger, profile=profile, budget=spend, generated_at=generated_at
+        ),
         budget=spend,
         model=model,
         on_pause=_begin_review_on_pause(service, assessment_id),

@@ -1,0 +1,21 @@
+{
+  "assessments": [
+    {
+      "subject_type": "control_mapping",
+      "subject_id": "map-001",
+      "evidence_ids": [
+        "evd-001"
+      ],
+      "evidence_strengths": {
+        "evd-001": "direct"
+      },
+      "validation_status": "supported",
+      "rationale": "The cited passage describes validation structurally and names no signature verification for incoming deliveries.",
+      "missing_evidence": [],
+      "contradictions": [],
+      "confidence": "medium",
+      "recommendation": "continue",
+      "quoted_text": {}
+    }
+  ]
+}
