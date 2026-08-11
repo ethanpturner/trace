@@ -11,12 +11,14 @@ Trace is a system for producing security architecture assessments in which every
 traceable back to a specific passage in a specific source document — and in which missing
 documentation is treated as a question to ask, not a vulnerability to report.
 
-> **Project status: the pipeline runs end to end; the evaluation layer does not exist.** All six
-> agents are built, all fourteen phases run under the orchestrator, and both structural human
-> checkpoints hold. A person can register documents, run the pipeline, review and approve the
-> context, review the candidate findings and assign severities, and render the report — from the
-> command line, with a provider or from recorded responses. The fastest verifiable claim in the
-> repository is one command:
+> **Project status: the pipeline runs end to end and measures itself offline.** All six agents
+> are built, all fourteen phases run under the orchestrator, both structural human checkpoints
+> hold, and the evaluation harness replays registered benchmark scenarios against authored truth
+> sets — baselines, ablations, the adversarial condition, and a CI-checked scorecard included. A
+> person can register documents, run the pipeline, review and approve the context, review the
+> candidate findings and assign severities, and render the report — from the command line, with a
+> provider or from recorded responses. The fastest verifiable claim in the repository is one
+> command:
 >
 > ```bash
 > uv run python scripts/replay_forgeflow.py
@@ -24,8 +26,8 @@ documentation is treated as a question to ask, not a vulnerability to report.
 >
 > It replays a committed ForgeFlow run through every phase with no API key and exits non-zero if
 > the rendered report's content hash stops matching the pinned one. What does not exist is the
-> layer that measures quality — the evaluation harness, the additional benchmark scenarios, the
-> baselines and ablations. [Status](#status) gives a precise breakdown.
+> demonstration surface, and no live provider run has been measured — every committed recording
+> is authored offline and its provenance says so. [Status](#status) gives a precise breakdown.
 
 ![The pipeline replayed offline: both checkpoints, the report, and the evidence walk](demo/forgeflow/assets/pipeline-demo.gif)
 
@@ -89,8 +91,9 @@ designed to assist that person rather than replace them.
 
 ## Architecture
 
-> Everything in this section is design. None of the pipeline below is implemented — see
-> [Status](#status) for what actually runs today.
+> Everything in this section runs today. It was designed before it was built, and the corpus
+> under `docs/` remains the authoritative specification — see [Status](#status) for what is still
+> open around the pipeline.
 
 Trace is designed as a fixed pipeline, not a free-form agent conversation. Model-assisted reasoning
 is used only where a step genuinely requires semantic judgment; everything decidable by rules is a
@@ -223,10 +226,11 @@ Throughout this README:
 **Designed** — fully specified in the design documents; no code.
 **Planned** — on the roadmap; not yet specified in detail.
 
-Against the seven-stage [roadmap](#roadmap) below, Trace has completed Stage 4 and the assembly
-milestone (M6) that Stage 5 builds on: the pipeline the earlier stages specified now runs end to
-end from the command line. Stage 5's evaluation and demonstration work is decomposed into
-milestones M7 through M9 and has not begun.
+Against the seven-stage [roadmap](#roadmap) below, Trace has completed Stage 4 and, of Stage 5's
+decomposition into milestones M6 through M9, the assembly (M6), evaluation (M7), and adversarial
+(M8) milestones: the pipeline the earlier stages specified runs end to end from the command line
+and measures itself offline. Stage 5's demonstration half (M9), the demo-hardening milestone
+(M10), and the evaluation, decision, and surface debt milestones (M11 through M13) are open.
 
 ### What exists today
 
@@ -412,6 +416,14 @@ milestones M7 through M9 and has not begun.
   eight model responses, both checkpoints' reviewer decisions, provenance with version pins, and
   the pinned content hash of the report. `scripts/replay_forgeflow.py` replays it byte-for-byte
   with no provider, and the default test suite replays it on every run.
+- **The evaluation harness** — `trace evaluate` replays any registered scenario offline from its
+  committed recording, scores it against the authored truth set, runs the DEC-074 baselines
+  through the same seam, applies the DEC-012 ablations with the run marked non-authoritative,
+  and writes a results feed under `benchmarks/results/`. `scripts/build_scorecard.py` renders
+  the committed scorecard and CI fails if it drifts.
+- **The adversarial condition** — DEC-075's poisoned-document variant with all five payload
+  classes, run as an ordinary scenario condition, with the two-axis attack metrics (detection,
+  and injected-instruction compliance with a target of zero) reported per payload class.
 - **Test discipline** — unit tests run by default; integration and evaluation tests sit behind
   pytest markers that are deselected, so CI never needs a provider API key.
 - **The design corpus** — vision, scope, roadmap, architecture, agent design, data model,
@@ -420,26 +432,25 @@ milestones M7 through M9 and has not begun.
 
 ### What does not exist yet
 
-- **The evaluation harness.** `benchmarks/scenarios.yaml` is the authoritative scenario registry
-  and nothing reads it. `EvaluationResult` and its metrics exist and are computed per run; what
-  does not exist is the runner that executes a registered scenario against its truth set, applies
-  ablations (DEC-012, DEC-073), and aggregates across runs. That is milestone M7.
-- **Scenarios two through five.** The husky-ai, crypto-wallet, and invoice-agent scenarios are
-  seeded with threat truth sets; none is authored to the full input-plus-expected standard
-  ForgeFlow sets, and none can run until the harness exists.
-- **Baselines, ablations, and the scorecard.** The single proof point — approved context and
-  evidence avoid the false conclusions a generic review produces — has never been measured,
-  because the generic review has never been run. The baseline protocol, the ablation runs, and
-  the published scorecard are designed (DEC-074 through DEC-077) and unbuilt.
-- **The adversarial suite.** One prompt-injection fixture is planted in the ForgeFlow input and
-  regression-tested; the poisoned-document corpus and the two-axis attack metrics DEC-075
-  specifies are milestone M8.
+- **A scored flagship recording.** `demo/forgeflow/recorded/` is a representative slice authored
+  offline; it replays end to end but does not score against the full truth set in
+  `demo/forgeflow/expected/`, and the scorecard says so rather than hiding it. Capturing a full
+  run from a live model is milestone M10's closing step.
+- **Recordings for five of eight scenarios.** invoice-agent, oidc-portal, and managed-db-service
+  carry full outcome truth sets and no recording; husky-ai and crypto-wallet carry threat seeds
+  only. Until each has a recording, `trace evaluate --all` names them skipped. That is
+  milestone M11.
 - **No live run has been measured.** Every committed recording — including the end-to-end replay
   — is authored offline against the deterministic model, and says so in its provenance. The
-  Anthropic adapter has run against a provider only in an opt-in integration test. Live captures
-  and their cost and quality numbers are evaluation work, not assembly work.
+  Anthropic adapter has run against a provider only in an opt-in integration test; cost,
+  runtime, and run-to-run stability (DEC-077) are unmeasured, and every scorecard cost reads
+  zero.
 - **The demonstration surface.** The read-only local interface, the finding lineage view, the
   demo script, and the recovery plan are roadmap Stage 5's demo half, milestone M9.
+- **The recorded decisions of the M0 wave.** DEC-057 through DEC-072 — risk treatment, episodic
+  revisit, routing reasons, the coverage baseline, the precedent feed, catalog-gap candidates,
+  fingerprints, cache accounting, context extensions, profile overlays, parsers, the coverage
+  ledger, exports, and catalog 0.2 — are decided, issued as milestone M12, and unbuilt.
 
 ### Running it today
 
@@ -580,8 +591,9 @@ provider, and results land in a database and object storage before an optional c
 back to the pull request. There is a web frontend behind a CDN and WAF, managed data services, an
 admin interface, and external dependencies on GitHub, an AI provider, and email.
 
-**The demo does not run yet.** No code reads these fixtures. What exists is the corpus itself, and
-it was built to be hard on purpose.
+**The demo runs offline today.** `scripts/replay_forgeflow.py` replays the committed recording
+through all fourteen phases and both checkpoints, and [Running it today](#running-it-today)
+drives the same run one command at a time. The corpus was built to be hard on purpose.
 
 ### The fixture set
 
