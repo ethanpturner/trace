@@ -97,11 +97,16 @@ def start_run(
     workflow_version: str,
     model_profile: str,
     prompt_versions: dict[str, str] | None = None,
+    ablations: Sequence[str] = (),
 ) -> WorkflowRun:
     """Open a workflow run for this assessment.
 
     `total_model_calls` starts at zero and stays there for a run that calls no model, which is
     every run in this milestone. It is the correct value, not a placeholder.
+
+    `ablations` is the evaluation harness's to pass (DEC-073): a run created with any is marked
+    non-authoritative from birth rather than reclassified later, so no window exists in which an
+    ablated run looks ordinary.
     """
     repository = handle.objects
     with repository.transaction():
@@ -114,6 +119,7 @@ def start_run(
             model_profile=model_profile,
             prompt_versions=prompt_versions or {},
             total_model_calls=0,
+            ablations=list(ablations),
         )
         repository.save(run)
     return run

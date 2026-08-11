@@ -1931,6 +1931,15 @@ An assessment may have multiple workflow runs due to retries, revisions, or eval
 | total_output_tokens | integer | No | Output-token count |
 | estimated_cost | decimal | No | Estimated cost |
 | error_summary | string | No | Final error if failed |
+| ablations | list[string] | No | Ablations the evaluation harness applied; empty for an ordinary run |
+
+## Note on ablation marking
+
+An ablated run names its ablations here, and a run with a non-empty list is non-authoritative
+(DEC-012, DEC-031, DEC-073). The field is written at run creation by the evaluation harness —
+the only caller that constructs an ablated run — and never by assessment configuration, which
+carries no ablation switch. Replaying recorded reviewer decisions is not an ablation and leaves
+the list empty.
 
 ## Note on failure
 

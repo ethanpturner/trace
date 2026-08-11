@@ -10,9 +10,9 @@
 # than a fact about the filesystem.
 #
 # Each scenario directory holds input/ and expected/, per evaluation-plan.md section 5.
-# Nothing under expected/ is supplied to Trace during an assessment.
-#
-# Nothing reads this file yet. The evaluation harness is not built.
+# Nothing under expected/ is supplied to Trace during an assessment. A scenario with a
+# recorded/ directory can be replayed by the harness (services/evaluation/harness.py);
+# one without cannot run until a recording exists, and the harness says so by name.
 
 registry_version: "1.0"
 

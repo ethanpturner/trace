@@ -375,6 +375,7 @@ def test_the_command_surface_is_the_one_dec_032_confirms() -> None:
         "findings",
         "report",
         "verify",
+        "evaluate",
     }
     assert _subcommands("source") == {"add", "list"}
     assert _subcommands("evidence") == {"list", "show", "verify"}
@@ -1328,3 +1329,59 @@ def test_an_unreadable_recording_is_refused_by_name(
         == 1
     )
     assert "empty.json" in capsys.readouterr().err
+
+
+def test_evaluate_replays_a_scenario_and_prints_its_metrics(
+    data_root: Path, capsys: pytest.CaptureFixture[str], tmp_path: Path
+) -> None:
+    """`trace evaluate` is the harness's surface (#266): offline, metrics printed, feed named."""
+    assert (
+        invoke(
+            data_root,
+            "evaluate",
+            "forgeflow",
+            "--label",
+            "cli-test",
+            "--work-root",
+            str(tmp_path / "work"),
+            "--results-root",
+            str(tmp_path / "results"),
+        )
+        == 0
+    )
+    output = capsys.readouterr().out
+    assert "scenario:     forgeflow (clean, label cli-test)" in output
+    assert "false_negative_rate" in output
+    assert "feed:" in output
+
+
+def test_evaluate_requires_a_scenario_or_all(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    assert invoke(data_root, "evaluate") == 1
+    assert "name one scenario or pass --all" in capsys.readouterr().err
+
+
+def test_evaluate_all_names_the_scenarios_it_skips(
+    data_root: Path, capsys: pytest.CaptureFixture[str], tmp_path: Path
+) -> None:
+    """No silent caps: a scenario without a recording is reported, never quietly dropped."""
+    assert (
+        invoke(
+            data_root,
+            "evaluate",
+            "--all",
+            "--label",
+            "cli-all",
+            "--work-root",
+            str(tmp_path / "work"),
+            "--results-root",
+            str(tmp_path / "results"),
+        )
+        == 0
+    )
+    output = capsys.readouterr().out
+    assert "skipped husky-ai: no recording" in output
+    assert "skipped crypto-wallet: no recording" in output
+    assert "skipped invoice-agent: no recording" in output
+    assert "scenario:     forgeflow" in output

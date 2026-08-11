@@ -30,7 +30,7 @@ behave under `run_context_slice`.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, ClassVar, Final
 
 from trace_ai.domain.assessment import Assessment
 from trace_ai.domain.context_claim import ContextClaim
@@ -114,9 +114,20 @@ if TYPE_CHECKING:
     from trace_ai.services.report.input_assembly import ReportInput
     from trace_ai.workflow.nodes import Node
 
-__all__ = ["build_nodes", "resume_assessment", "run_assessment"]
+__all__ = ["KNOWN_ABLATIONS", "build_nodes", "resume_assessment", "run_assessment"]
 
 WORKFLOW_VERSION = "0.1"
+
+KNOWN_ABLATIONS: Final = frozenset(
+    {"no-evidence-validation", "no-critical-review", "no-context-approval"}
+)
+"""DEC-074's ablation family, closed. An unknown name is refused rather than ignored.
+
+Ablations are the evaluation harness's (DEC-012, DEC-073): they arrive as an argument from the
+one caller that constructs ablated runs, never from assessment configuration, and the run they
+produce is marked non-authoritative from birth. Replaying recorded reviewer decisions is not an
+ablation and needs no entry here.
+"""
 
 
 def _blocking_stop(what: str, blocking: Sequence[object]) -> WorkflowError:
@@ -864,6 +875,111 @@ class EvaluationAdapter:
         )
 
 
+# -- ablation stand-ins ------------------------------------------------------------------------
+
+
+@dataclass(slots=True)
+class AblatedNode:
+    """A declared node's stand-in under an ablation: same name, same phase, no work.
+
+    The table still requires every declared name registered — an ablation is a *named removal on
+    a marked run*, not a silent skip — so the stand-in exists to be registered and to record that
+    the phase's work did not happen.
+    """
+
+    name: str
+    phase: Phase
+    ablation: str
+    version: str = "0.1"
+
+    execution_type: ClassVar[ExecutionType] = ExecutionType.DETERMINISTIC
+
+    def run(self, context: NodeContext) -> NodeResult:
+        return NodeResult(metadata={"ablated_by": self.ablation})
+
+
+@dataclass(slots=True)
+class AblatedContextApprovalNode:
+    """Checkpoint 1 under `no-context-approval`: approve as generated, recorded as such.
+
+    The extracted context is approved verbatim with every object decided by the ablation's named
+    reviewer, because downstream structure makes an unapproved context impossible to analyse
+    (`UnapprovedContextError`) — the ablation removes the human filter, not the approval record.
+    A blocking validation error still refuses: an ablation does not overrule a blocker, it only
+    removes the person who would have read it.
+    """
+
+    version: str = "0.1"
+
+    name: ClassVar[str] = "human-context-review"
+    phase: ClassVar[Phase] = Phase.HUMAN_CONTEXT_REVIEW
+    execution_type: ClassVar[ExecutionType] = ExecutionType.DETERMINISTIC
+    REVIEWER: ClassVar[str] = "ablation:no-context-approval"
+
+    def run(self, context: NodeContext) -> NodeResult:
+        from trace_ai.workflow.context_review import (
+            ApprovalRefusedError,
+            approve_context,
+            build_context_review_package,
+            decide_object,
+        )
+        from trace_ai.workflow.context_validation import validate_context
+
+        handle = context.handle
+        from trace_ai.domain.enums import ReviewDisposition
+
+        decided: list[str] = []
+        for obj in context_objects(handle):
+            _, decision = decide_object(
+                handle, obj, ReviewDisposition.APPROVE, reviewer_id=self.REVIEWER
+            )
+            decided.append(decision.subject_id)
+        validation = validate_context(
+            current_system_context(handle),
+            context_objects(handle),
+            available_evidence={ref.id for ref in handle.objects.list(EvidenceReference)},
+        )
+        package = build_context_review_package(
+            handle, index=EvidenceIndex(handle), validation=validation
+        )
+        try:
+            approved, _decision = approve_context(handle, package, reviewer_id=self.REVIEWER)
+        except ApprovalRefusedError as refused:
+            raise WorkflowError(
+                ErrorClass.REVIEWER_INPUT_REQUIRED,
+                f"the ablated approval was refused with {len(refused.blockers)} blocker(s); "
+                f"an ablation removes the reviewer, not the blockers",
+            ) from refused
+        return NodeResult(
+            consumed_object_ids=decided,
+            state_changes={"system_context_version": approved.version},
+            metadata={"ablated_by": "no-context-approval", "approved_as_generated": len(decided)},
+        )
+
+
+def _apply_ablations(nodes: list[Node], ablations: Sequence[str]) -> list[Node]:
+    """Substitute stand-ins for the nodes each ablation removes. Unknown names were refused."""
+    removed_names = {
+        "no-evidence-validation": {"evidence-validation", "evidence-assessment-validation"},
+        "no-critical-review": {"critical-review", "critique-validation"},
+    }
+    replaced: list[Node] = []
+    for node in nodes:
+        substituted = False
+        for ablation in ablations:
+            if node.name in removed_names.get(ablation, set()):
+                replaced.append(AblatedNode(name=node.name, phase=node.phase, ablation=ablation))
+                substituted = True
+                break
+            if ablation == "no-context-approval" and node.name == "human-context-review":
+                replaced.append(AblatedContextApprovalNode())
+                substituted = True
+                break
+        if not substituted:
+            replaced.append(node)
+    return replaced
+
+
 # -- composition -------------------------------------------------------------------------------
 
 
@@ -875,14 +991,20 @@ def build_nodes(
     budget: Budget | None = None,
     structured_input: dict[str, Any] | None = None,
     generated_at: datetime | None = None,
+    ablations: Sequence[str] = (),
 ) -> list[Node]:
-    """Every node the fourteen phases declare, constructed against one run's dependencies."""
+    """Every node the fourteen phases declare, constructed against one run's dependencies.
+
+    With `ablations`, the removed nodes are substituted by named stand-ins rather than omitted —
+    the table still sees every declared name, and the removal is a property of a marked run, not
+    a silent gap in registration (DEC-012, DEC-073).
+    """
     registry = PromptRegistry()
     assessment = handle.objects.get(Assessment, handle.assessment_id)
     evidence_handoff = _EvidenceHandoff()
     critique_handoff = _CritiqueHandoff()
     report_handoff = _ReportHandoff()
-    return [
+    nodes: list[Node] = [
         AssessmentInitializationNode(),
         DocumentIngestionNode(),
         EvidenceIndexingNode(),
@@ -932,6 +1054,15 @@ def build_nodes(
         ReportRenderingAdapter(ledger=ledger, handoff=report_handoff, generated_at=generated_at),
         EvaluationAdapter(),
     ]
+    if ablations:
+        unknown = sorted(set(ablations) - KNOWN_ABLATIONS)
+        if unknown:
+            raise ValueError(
+                f"unknown ablation(s) {unknown}; the family is closed (DEC-074): "
+                f"{', '.join(sorted(KNOWN_ABLATIONS))}"
+            )
+        nodes = _apply_ablations(nodes, ablations)
+    return nodes
 
 
 def run_assessment(
@@ -942,6 +1073,8 @@ def run_assessment(
     profile: ModelProfile,
     budget: Budget | None = None,
     structured_input: dict[str, Any] | None = None,
+    generated_at: datetime | None = None,
+    ablations: Sequence[str] = (),
 ) -> RunOutcome:
     """Run a fresh assessment from initialization until it pauses, completes, or stops.
 
@@ -955,7 +1088,12 @@ def run_assessment(
     handle = service.handle(assessment_id)
     assessment = handle.objects.get(Assessment, assessment_id)
     spend = budget if budget is not None else Budget.from_configuration(assessment.configuration)
-    run = start_run(handle, workflow_version=WORKFLOW_VERSION, model_profile=profile.name)
+    run = start_run(
+        handle,
+        workflow_version=WORKFLOW_VERSION,
+        model_profile=profile.name,
+        ablations=ablations,
+    )
     ledger = ExecutionLedger(handle, run)
     orchestrator = Orchestrator(
         handle,
@@ -966,6 +1104,8 @@ def run_assessment(
             profile=profile,
             budget=spend,
             structured_input=structured_input,
+            generated_at=generated_at,
+            ablations=ablations,
         ),
         budget=spend,
         model=model,
@@ -1009,7 +1149,12 @@ def resume_assessment(
         handle,
         ledger=ledger,
         nodes=build_nodes(
-            handle, ledger=ledger, profile=profile, budget=spend, generated_at=generated_at
+            handle,
+            ledger=ledger,
+            profile=profile,
+            budget=spend,
+            generated_at=generated_at,
+            ablations=run.ablations,
         ),
         budget=spend,
         model=model,

@@ -97,6 +97,18 @@ class WorkflowRun(DomainModel):
     total_output_tokens: int | None = Field(default=None, ge=0)
     estimated_cost: Decimal | None = Field(default=None, ge=0)
     error_summary: str | None = None
+    ablations: list[str] = Field(default_factory=list)
+    """Ablations the evaluation harness applied; empty for an ordinary run.
+
+    A non-empty list marks the run non-authoritative (DEC-012, DEC-031, DEC-073). Written at run
+    creation by the harness — the only caller that constructs an ablated run — and never by
+    assessment configuration. Replaying recorded reviewer decisions is not an ablation and
+    leaves this empty.
+    """
+
+    @property
+    def is_authoritative(self) -> bool:
+        return not self.ablations
 
     @model_validator(mode="after")
     def _timestamps_are_ordered(self) -> Self:
