@@ -1234,6 +1234,23 @@ Only approved findings may appear in the final findings section.
 
 Rejected candidates may remain available in debug and evaluation views.
 
+## Severity rubric references
+
+DEC-030 gives severity to the reviewer and blocks approval while it is `unassigned`; no node
+proposes one. The references below are aids for that judgment, cited by name and link only. None
+is wired into a node, and anything that computes a severity stays refused under DEC-030.
+
+- [OWASP Threat Severity Chart](https://github.com/OWASP/www-project-threat-modeling/blob/main/resources/threat-severity-chart.md)
+  — factor dimensions derived from the SDL Bug Bar, for weighing impact and exploitability across
+  finding types.
+- [LLM08:2026 Hidden Context Exposure](https://github.com/GenAI-Security-Project/GenAI-LLM-Top10/blob/main/2026/final/LLM08_HiddenContextExposure.md)
+  — carries a severity ladder for prompt- and context-exposure findings specifically.
+- AIVSS v0.8 ([OWASP AIVSS](https://github.com/OWASP/www-project-artificial-intelligence-vulnerability-scoring-system))
+  — ten agentic amplification factors, for findings whose subject is an agentic system. Two
+  cautions: the repository's license is an unfilled TODO (NOASSERTION), so it is cited by name
+  and URL only and nothing from it is reproduced here; and its own section 3.2 flags the scoring
+  arithmetic as ordinal-scale, so it is a thinking aid, not a formula.
+
 # 19. Report Generation Agent
 
 ## Purpose
