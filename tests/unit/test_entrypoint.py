@@ -32,7 +32,7 @@ def test_main_reports_environment_without_leaking_secrets(
     run([])
 
     out = capsys.readouterr().out
-    assert "Hello from trace!" in out
+    assert "context-aware security architecture analysis" in out
     assert "anthropic" in out
     assert "sk-ant-do-not-print-me" not in out
 
