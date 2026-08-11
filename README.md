@@ -240,13 +240,15 @@ milestones M7 through M9 and has not begun.
   than an argument to pass wrong. Original filenames are treated as untrusted input: traversal is
   refused by shape and again by resolution, because a clean name still lands wherever a symlinked
   directory points. Content is stored byte-identical.
-- **The command line** — assessments, sources, and evidence (`trace assessment`, `trace source`,
-  `trace evidence`); the context checkpoint (`trace context extract|show|review|approve`); the
-  pipeline (`trace run`, `trace resume`); the finding checkpoint
-  (`trace findings show|review|approve`); the report (`trace report show`); and the evidence walk
-  (`trace verify`). Every command calls a service and contains no pipeline logic, and the exit
-  codes are documented answers: a pause and a completion are 0, a failed run is 1, a refused
-  approval is 1 and names every blocker.
+- **The command line** — `trace assessment create`, `trace assessment list`,
+  `trace assessment status`, and `trace assessment archive`; `trace source add` and
+  `trace source list`; `trace evidence list`, `trace evidence show`, and `trace evidence verify`;
+  the context checkpoint as `trace context extract`, `trace context show`,
+  `trace context review`, and `trace context approve`; the pipeline as `trace run` and
+  `trace resume`; the finding checkpoint as `trace findings show`, `trace findings review`, and
+  `trace findings approve`; `trace report show`; and `trace verify`. Every command calls a
+  service and contains no pipeline logic, and the exit codes are documented answers: a pause and
+  a completion are 0, a failed run is 1, a refused approval is 1 and names every blocker.
 - **Structured logging with redaction** — JSON records carrying scoped context, and a filter on
   the handler that strips two things: provider credentials, by value type and by field name, and
   source-document content, which is replaced by a length and the identifier of the object it came
