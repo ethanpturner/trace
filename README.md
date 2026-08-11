@@ -420,7 +420,9 @@ and measures itself offline. Stage 5's demonstration half (M9), the demo-hardeni
   committed recording, scores it against the authored truth set, runs the DEC-074 baselines
   through the same seam, applies the DEC-012 ablations with the run marked non-authoritative,
   and writes a results feed under `benchmarks/results/`. `scripts/build_scorecard.py` renders
-  the committed scorecard and CI fails if it drifts.
+  the committed per-scenario [scorecard](docs/eval/scorecard.html) and
+  `scripts/build_comparison.py` the per-tool [comparison table](docs/eval/comparison.md); CI fails
+  if either drifts from the recorded runs.
 - **The adversarial condition** — DEC-075's poisoned-document variant with all five payload
   classes, run as an ordinary scenario condition, with the two-axis attack metrics (detection,
   and injected-instruction compliance with a target of zero) reported per payload class.
@@ -655,7 +657,12 @@ means the system will be measured against it rather than assumed safe from it.
 
 Stage 5 expands this to eight to twelve benchmark scenarios and runs each against a baseline — a
 generic language-model security prompt over the same documents. The comparison is the deliverable,
-not the report.
+not the report. The [comparison table](docs/eval/comparison.md) is that deliverable in its current
+state: one row per tool — the generic-prompt baseline, the structured single-pass baseline, and
+Trace — across schema-validity, evidence-linked claims, false positives, injected-instruction
+compliance, and run-to-run stability. Every cell is a number from a committed evaluation feed or an
+explicit "not measured" with its reason; it regenerates offline from the recorded runs, and the
+per-scenario detail behind it is the [scorecard](docs/eval/scorecard.html).
 
 ## Documentation
 

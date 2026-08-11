@@ -18,7 +18,9 @@ on:
       - demo/forgeflow/expected/**
       - demo/forgeflow/recorded/**
       - scripts/build_scorecard.py
+      - scripts/build_comparison.py
       - docs/eval/scorecard.html
+      - docs/eval/comparison.md
       - .github/workflows/scorecard.yml
   workflow_dispatch:
 
@@ -34,7 +36,7 @@ env:
 
 jobs:
   check:
-    name: the scorecard is current
+    name: the scorecard and comparison are current
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -53,15 +55,22 @@ jobs:
       - name: The committed scorecard matches the recorded runs
         run: uv run python scripts/build_scorecard.py --check
 
-      - name: Render a fresh copy for review
-        if: ${{ !cancelled() }}
-        run: uv run python scripts/build_scorecard.py
+      - name: The committed comparison matches the recorded runs
+        run: uv run python scripts/build_comparison.py --check
 
-      - name: Upload the rendered scorecard
+      - name: Render fresh copies for review
+        if: ${{ !cancelled() }}
+        run: |
+          uv run python scripts/build_scorecard.py
+          uv run python scripts/build_comparison.py
+
+      - name: Upload the rendered artifacts
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v7
         with:
           name: evaluation-scorecard
-          path: docs/eval/scorecard.html
+          path: |
+            docs/eval/scorecard.html
+            docs/eval/comparison.md
           if-no-files-found: error
           retention-days: 30

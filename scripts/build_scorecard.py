@@ -36,7 +36,13 @@ def _baseline_response(scenario_path: Path, condition: str) -> Path | None:
     return recording if recording.is_file() else None
 
 
-def build(results_root: Path) -> str:
+def collect_feeds(results_root: Path) -> list[dict[str, object]]:
+    """Run every recorded scenario and baseline into `results_root`, and return their feeds.
+
+    This is the one sweep both committed artifacts read: the scorecard renders it per scenario and
+    condition, and the comparison table (`scripts/build_comparison.py`) collapses it per tool. Both
+    stay in step because they consume the same feeds from the same runs.
+    """
     feeds: list[dict[str, object]] = []
 
     for entry in load_registry():
@@ -72,7 +78,11 @@ def build(results_root: Path) -> str:
             if baseline.feed_path is not None:
                 feeds.append(json.loads(baseline.feed_path.read_text(encoding="utf-8")))
 
-    return render_scorecard(feeds, generated_at=GENERATED_AT)
+    return feeds
+
+
+def build(results_root: Path) -> str:
+    return render_scorecard(collect_feeds(results_root), generated_at=GENERATED_AT)
 
 
 def main(argv: list[str] | None = None) -> int:
