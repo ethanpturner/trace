@@ -3,20 +3,29 @@
 **Context-Aware Security Architecture Analysis**
 
 [![CI](https://github.com/ethanpturner/trace/actions/workflows/ci.yml/badge.svg)](https://github.com/ethanpturner/trace/actions/workflows/ci.yml)
-![Status: context slice built](https://img.shields.io/badge/status-context%20slice%20built-yellow)
+![Status: pipeline assembled](https://img.shields.io/badge/status-pipeline%20assembled-brightgreen)
 ![Python 3.14+](https://img.shields.io/badge/python-3.14%2B-blue)
 ![License: MIT](https://img.shields.io/badge/license-MIT-green)
 
-Trace is a system, partly built, for producing security architecture assessments in which every
-conclusion is traceable back to a specific passage in a specific source document — and in which
-missing documentation is treated as a question to ask, not a vulnerability to report.
+Trace is a system for producing security architecture assessments in which every conclusion is
+traceable back to a specific passage in a specific source document — and in which missing
+documentation is treated as a question to ask, not a vulnerability to report.
 
-> **Project status: the context slice runs; the analysis half does not.** One of six agents is
-> built — Context Extraction — along with the validation node behind it, the first of the two
-> structural human checkpoints, and a command line that drives all of it. A person can register
-> documents, extract a context, read every claim with the passage it rests on, edit it, and approve
-> a baseline. What that baseline feeds — threat analysis, control mapping, findings, and the report
-> — is specified and not built. [Status](#status) gives a precise breakdown.
+> **Project status: the pipeline runs end to end; the evaluation layer does not exist.** All six
+> agents are built, all fourteen phases run under the orchestrator, and both structural human
+> checkpoints hold. A person can register documents, run the pipeline, review and approve the
+> context, review the candidate findings and assign severities, and render the report — from the
+> command line, with a provider or from recorded responses. The fastest verifiable claim in the
+> repository is one command:
+>
+> ```bash
+> uv run python scripts/replay_forgeflow.py
+> ```
+>
+> It replays a committed ForgeFlow run through every phase with no API key and exits non-zero if
+> the rendered report's content hash stops matching the pinned one. What does not exist is the
+> layer that measures quality — the evaluation harness, the additional benchmark scenarios, the
+> baselines and ablations. [Status](#status) gives a precise breakdown.
 
 ## Problem
 
@@ -208,7 +217,10 @@ Throughout this README:
 **Designed** — fully specified in the design documents; no code.
 **Planned** — on the roadmap; not yet specified in detail.
 
-Against the seven-stage [roadmap](#roadmap) below, Trace has completed Stage 2.
+Against the seven-stage [roadmap](#roadmap) below, Trace has completed Stage 4 and the assembly
+milestone (M6) that Stage 5 builds on: the pipeline the earlier stages specified now runs end to
+end from the command line. Stage 5's evaluation and demonstration work is decomposed into
+milestones M7 through M9 and has not begun.
 
 ### What exists today
 
@@ -229,10 +241,14 @@ Against the seven-stage [roadmap](#roadmap) below, Trace has completed Stage 2.
   refused by shape and again by resolution, because a clean name still lands wherever a symlinked
   directory points. Content is stored byte-identical.
 - **The command line** — `trace assessment create`, `trace assessment list`,
-  `trace assessment status`, `trace assessment archive`, `trace source add`, `trace source list`,
-  `trace evidence list`, `trace evidence show`, and `trace evidence verify`. Every command calls a
-  service and contains no pipeline logic. `trace context extract` and `trace context show` are absent rather than stubbed,
-  because they need an agent that does not exist and `--help` is a promise.
+  `trace assessment status`, and `trace assessment archive`; `trace source add` and
+  `trace source list`; `trace evidence list`, `trace evidence show`, and `trace evidence verify`;
+  the context checkpoint as `trace context extract`, `trace context show`,
+  `trace context review`, and `trace context approve`; the pipeline as `trace run` and
+  `trace resume`; the finding checkpoint as `trace findings show`, `trace findings review`, and
+  `trace findings approve`; `trace report show`; and `trace verify`. Every command calls a
+  service and contains no pipeline logic, and the exit codes are documented answers: a pause and
+  a completion are 0, a failed run is 1, a refused approval is 1 and names every blocker.
 - **Structured logging with redaction** — JSON records carrying scoped context, and a filter on
   the handler that strips two things: provider credentials, by value type and by field name, and
   source-document content, which is replaced by a length and the identifier of the object it came
@@ -303,7 +319,8 @@ Against the seven-stage [roadmap](#roadmap) below, Trace has completed Stage 2.
 - **The workflow runtime** — the fourteen phases as an explicit transition table, the node
   protocol covering all three execution types, and the five ceilings `agent-design.md` section 27
   requires, checked before a step rather than after it. There is no orchestration framework
-  (DEC-016). Five of the fourteen phases have a node registered against it.
+  (DEC-016). Every phase runs the nodes the table declares for it, in the table's order, and a
+  declared node left unregistered stops the run rather than being skipped.
 - **The checkpoint machinery** — both structural checkpoints share it: pause by persisting and
   exiting, resume by reading in a new process, and a review package derived from the run rather
   than stored in it. There is no way to express skipping a checkpoint, which is the property
@@ -326,8 +343,9 @@ Against the seven-stage [roadmap](#roadmap) below, Trace has completed Stage 2.
   identifier cannot be assigned to a finding's field, and the single SHA-256 utility DEC-019
   requires. The scheme governs objects an assessment produces (DEC-034); authored configuration —
   the requirements catalog, a prompt definition — carries a name rather than an identifier.
-  Identifier allocation is a store operation, so what exists is the protocol and an in-memory
-  implementation for tests; the store-backed one arrives with the persistence layer.
+  Identifier allocation is a store operation: a monotonic per-`(assessment, prefix)` counter whose
+  increment commits with the insert that consumes it, so a resumed run cannot re-mint an
+  identifier that already exists.
 - **Checkpoint 1** — the context approval gate, and it is a return value rather than a check.
   `ContextReviewNode` names the `SystemContext` among the objects awaiting a decision whenever it
   is not approved, and the orchestrator advances only on an empty list — so there is no path to
@@ -352,13 +370,42 @@ Against the seven-stage [roadmap](#roadmap) below, Trace has completed Stage 2.
   waiting at. `context review` takes flags or round-trips an editable YAML file; both write
   identical decision rows, because both call the same functions. A refused approval exits non-zero
   and names every blocker.
-- **The ForgeFlow context truth set** — `demo/forgeflow/expected/expected-context.yaml`, derived
-  from the eight input documents and nothing else. The scenario narrative knows more than the
-  documents do, and grading against that would reward invention; so every entry cites the document
-  and section it rests on, and a test resolves the citation.
+- **The ForgeFlow truth set** — `demo/forgeflow/expected/`, fully authored: the expected context,
+  threats, control mappings, findings, documentation gaps, questions, observations, and
+  rejections, derived from the eight input documents and nothing else. The scenario narrative
+  knows more than the documents do, and grading against that would reward invention; so every
+  entry cites the document and section it rests on, and a test resolves the citation. Nothing
+  under `expected/` is ever supplied to Trace, and three tests enforce it.
 - **The prompt-injection regression tests** — one per planted instruction, each crafting the
   response a compliant model would return and asserting the application refuses it. The defence
   does not rest on the model behaving.
+- **The four reasoning agents and their validators** — Threat Analysis, Requirement and Control
+  Mapping (one call per threat, the whole catalog every call per DEC-024), Evidence Validation,
+  and Critical Review, each paired with a deterministic validator that reports and routes rather
+  than corrects. Mapping validation applies DEC-025's and DEC-046's downgrades; a blocking
+  validation error stops the run under its own error class, because the conclusion is never
+  retried.
+- **Findings and checkpoint 2** — DEC-013's thirty-cell outcome table routes every mapping;
+  consolidation, duplicate detection with traceable merge records, and critique application
+  preserve lineage rather than deleting it. Severity is the reviewer's to assign (DEC-030), and
+  approval runs a deterministic gate whose override is recorded, never silent (DEC-055). The
+  assessment's lifecycle moves with the run: `pending_review` commits with the pause,
+  `draft` returns with the resume (DEC-031).
+- **The report** — assembled from approved objects only, four prose sections from the Report
+  Generation agent, twelve rendered deterministically from the template (DEC-035), the whole
+  document checked by a consistency validator before a byte reaches `outputs/`, and a manifest
+  pinning the content hash and every version the run depended on.
+- **The pipeline driver** — `services/driver.py` composes a node for every name the transition
+  table declares and the orchestrator walks all fourteen phases, pausing at the two checkpoints
+  by persisting the state and exiting (DEC-017). Resuming is a read in a new process; a
+  checkpoint with undecided subjects pauses again.
+- **`trace verify`** — re-hashes every stored document, re-checks every evidence reference, and
+  verifies the report manifest against the store. Drift is reported as identifier, expected hash,
+  found hash — never content.
+- **The recorded ForgeFlow replay** — `demo/forgeflow/recorded/` holds a complete offline run:
+  eight model responses, both checkpoints' reviewer decisions, provenance with version pins, and
+  the pinned content hash of the report. `scripts/replay_forgeflow.py` replays it byte-for-byte
+  with no provider, and the default test suite replays it on every run.
 - **Test discipline** — unit tests run by default; integration and evaluation tests sit behind
   pytest markers that are deselected, so CI never needs a provider API key.
 - **The design corpus** — vision, scope, roadmap, architecture, agent design, data model,
@@ -367,76 +414,91 @@ Against the seven-stage [roadmap](#roadmap) below, Trace has completed Stage 2.
 
 ### What does not exist yet
 
-- **Five of the six agents.** Threat Analysis, Requirement and Control Mapping, Evidence
-  Validation, Critical Review, and Report Generation are specified and not built. So the pipeline
-  runs its first five phases of fourteen and stops at the checkpoint, which is where it is supposed
-  to stop — but nothing resumes past it yet.
-- **No threat, no finding, no report, no evaluation harness.** The report template exists and fixes
-  the sixteen sections and their owners; nothing renders it.
-- **No live extraction has been measured.** Every test drives the seam through its deterministic
-  substitute, and the Anthropic adapter has run against a provider only in an opt-in integration
-  test that asks it the colour of the sky. `tests/evaluation/test_context_extraction_live.py`
-  exists and carries the `evaluation` marker, so it is deselected by default and has not been run
-  in anger.
-- **Roughly seventeen domain objects of twenty-nine.** The context half is complete —
-  `SystemContext`, `ContextClaim`, `Question`, `SourceObservation`, `ReviewerDecision`, and the
-  five architecture objects. `Threat`, `Requirement`, `Control`, `ControlMapping`, `Finding`,
-  `DocumentationGap`, `Critique`, `EvidenceAssessment`, and `EvaluationResult` are not implemented.
-- **Four of the eight expected-output files.** `expected-context.yaml` is authored;
-  `expected-questions.yaml`, `expected-observations.yaml`, and everything M3 and M4 grade are not.
-- **The demo produces a context, not an assessment.** ForgeFlow can be ingested and extracted end
-  to end; what it cannot yet do is produce the findings the scenario was built to test.
+- **The evaluation harness.** `benchmarks/scenarios.yaml` is the authoritative scenario registry
+  and nothing reads it. `EvaluationResult` and its metrics exist and are computed per run; what
+  does not exist is the runner that executes a registered scenario against its truth set, applies
+  ablations (DEC-012, DEC-073), and aggregates across runs. That is milestone M7.
+- **Scenarios two through five.** The husky-ai, crypto-wallet, and invoice-agent scenarios are
+  seeded with threat truth sets; none is authored to the full input-plus-expected standard
+  ForgeFlow sets, and none can run until the harness exists.
+- **Baselines, ablations, and the scorecard.** The single proof point — approved context and
+  evidence avoid the false conclusions a generic review produces — has never been measured,
+  because the generic review has never been run. The baseline protocol, the ablation runs, and
+  the published scorecard are designed (DEC-074 through DEC-077) and unbuilt.
+- **The adversarial suite.** One prompt-injection fixture is planted in the ForgeFlow input and
+  regression-tested; the poisoned-document corpus and the two-axis attack metrics DEC-075
+  specifies are milestone M8.
+- **No live run has been measured.** Every committed recording — including the end-to-end replay
+  — is authored offline against the deterministic model, and says so in its provenance. The
+  Anthropic adapter has run against a provider only in an opt-in integration test. Live captures
+  and their cost and quality numbers are evaluation work, not assembly work.
+- **The demonstration surface.** The read-only local interface, the finding lineage view, the
+  demo script, and the recovery plan are roadmap Stage 5's demo half, milestone M9.
 
 ### Running it today
+
+The one-command demonstration first — a fresh clone, no API key, the whole pipeline:
 
 ```bash
 git clone https://github.com/ethanpturner/trace.git
 cd trace
 uv sync
-
-uv run trace assessment create --name "ForgeFlow Security Review"
-uv run trace source add asm-001 demo/forgeflow/input
-uv run trace assessment status asm-001
-uv run trace evidence show evd-001 --assessment asm-001
-uv run trace evidence verify asm-001
+uv run python scripts/replay_forgeflow.py
 ```
 
-That ingests the eight ForgeFlow documents, normalizes them, and produces the evidence references
-every later conclusion would have to cite — 153 of them, each verifiable against the original file.
-No API key is required for any of it.
+That replays the committed ForgeFlow recording through all fourteen phases — six agents, two
+checkpoints answered from recorded reviewer decisions, deterministic rendering — and exits
+non-zero unless the report's content hash matches the pinned one byte for byte.
 
-Extracting a context does need a model, and there are two ways to supply one:
+Driving an assessment yourself is the same pipeline, one command at a time:
 
 ```bash
-# with a provider
-uv run trace context extract asm-001
-
-# without one, replaying a recorded response
-uv run trace context extract asm-001 --model-profile offline-fake --response recorded.json
+uv run trace assessment create --name "ForgeFlow Security Review"
+uv run trace source add asm-001 demo/forgeflow/input
+uv run trace run asm-001 --model-profile offline-fake \
+    --response demo/forgeflow/recorded/01-context-extraction.json
 ```
 
-Either way the run stops at the checkpoint, because the checkpoint is a phase in the transition
-table rather than a conditional something could skip. From there:
+The run stops at checkpoint 1, because the checkpoint is a phase in the transition table rather
+than a conditional something could skip. Review and approve the context:
 
 ```bash
 uv run trace context show asm-001 --evidence
 uv run trace context review asm-001 --export review.yaml   # edit it, then --apply it
 uv run trace context approve asm-001
+uv run trace resume asm-001 --model-profile offline-fake \
+    --response demo/forgeflow/recorded/02-threat-analysis.json \
+    --response demo/forgeflow/recorded/03-mapping-thr-001.json \
+    --response demo/forgeflow/recorded/04-mapping-thr-002.json \
+    --response demo/forgeflow/recorded/05-evidence-validation.json \
+    --response demo/forgeflow/recorded/06-critical-review-thr-001.json \
+    --response demo/forgeflow/recorded/07-critical-review-thr-002.json
 ```
 
-`context show` prints every context object, each claim with its status and confidence, and — with
-`--evidence` — the passage it rests on, labelled `quoted untrusted source content`. A reviewer
-meeting the ForgeFlow prompt-injection fixture meets it framed as data, verbatim, because judging an
-injection attempt means reading the instruction.
+The run pauses again at checkpoint 2. Review the candidate findings, assign severity — the
+reviewer's to give, no node proposes one (DEC-030) — and finish:
 
-`context approve` exits non-zero and names what is outstanding while a blocking question or a
-blocking validation error remains, so it is usable from a script without parsing prose.
+```bash
+uv run trace findings show asm-001
+uv run trace findings review asm-001 --severity fnd-001=high --approve fnd-001
+uv run trace findings approve asm-001
+uv run trace resume asm-001 --model-profile offline-fake \
+    --response demo/forgeflow/recorded/08-report-sections.json
+uv run trace report show asm-001
+uv run trace verify asm-001
+```
 
-`uv run trace` with no arguments still prints the resolved environment, the log level, and which
-provider credentials are configured — names only, never key material.
+`context show` and `findings show` print every claim and finding with the passages they rest on,
+labelled `quoted untrusted source content`. A reviewer meeting the ForgeFlow prompt-injection
+fixture meets it framed as data, verbatim, because judging an injection attempt means reading the
+instruction. Both approval commands exit non-zero and name what is outstanding, so a script can
+act on them without parsing prose. `trace verify` re-hashes everything the assessment stored and
+checks the report manifest, and says which identifier drifted if anything did.
 
-What it cannot do is analyse anything past the context. There is no threat analysis, no finding, and
-no report: those need the other five agents.
+With a provider configured, drop `--model-profile offline-fake` and every `--response`: the same
+commands make live calls through the same seam. `uv run trace` with no arguments still prints the
+resolved environment, the log level, and which provider credentials are configured — names only,
+never key material.
 
 The command line is the interface through M4 (DEC-032), including both human checkpoints. A
 read-only local view may follow in Stage 5 for the demonstration; no review interaction moves to a
@@ -445,18 +507,21 @@ browser in the MVP.
 ### Repository layout
 
 ```
-src/trace_ai/                    configuration and process bootstrap
-src/trace_ai/domain/             domain objects and shared types
-src/trace_ai/services/           ingestion/ and evidence/ -- operations on those objects
+src/trace_ai/                    configuration, process bootstrap, and cli.py
+src/trace_ai/domain/             domain objects, identifiers, hashing, and proposals/
+src/trace_ai/services/           ingestion/, evidence/, context/, threats/, mapping/, critique/,
+                                 findings/, report/, evaluation/, requirements/, prompts/,
+                                 the execution ledger, verification.py, and driver.py --
+                                 the composition point that runs all fourteen phases
 src/trace_ai/infrastructure/     filesystem/, database/, and model/ -- stores and the model seam
-src/trace_ai/workflow/           phases, transitions, limits, and the node protocol
+src/trace_ai/workflow/           phases, transitions, limits, the node protocol, and the nodes
 tests/               unit tests; integration/ and evaluation/ are opt-in and deselected
 docs/product/        vision, design principles, roadmap, future features
 docs/architecture/   scope, current architecture, agent design, data model,
                      evaluation plan, decision log
-demo/forgeflow/      the demo scenario and its input fixtures
+demo/forgeflow/      the demo scenario: input/, expected/ (the truth set), recorded/ (the replay)
 requirements/        the requirements catalog -- version-controlled YAML, read at load and hashed
-scripts/             repository utilities
+scripts/             repository utilities, including replay_forgeflow.py
 benchmarks/          scenarios two onward, plus scenarios.yaml, the scenario registry
 templates/           report-v1.md -- the report's sixteen sections and their owners
 prompts/             prompt files -- shared/ blocks composed into agent prompts
@@ -482,9 +547,9 @@ The sequencing is deliberate: prove the thesis before expanding the platform.
 | 0 | Product and architecture foundation | Built |
 | 1 | Development and repository foundation — tooling, first domain models, SQLite persistence, a minimal CLI | Built |
 | 2 | Context extraction vertical slice — the first meaningful product milestone | Built |
-| 3 | Threat, requirement, and control analysis — the core false-positive-reduction mechanism | Planned |
-| 4 | Evidence-driven findings and human review | Planned |
-| 5 | Evaluation and demo hardening | Planned |
+| 3 | Threat, requirement, and control analysis — the core false-positive-reduction mechanism | Built |
+| 4 | Evidence-driven findings and human review | Built |
+| 5 | Evaluation and demo hardening — decomposed into milestones M7 Evaluation, M8 Adversarial, and M9 Demo and Portfolio, after the M6 assembly milestone wired the pipeline end to end | In progress |
 | 6 | Public portfolio release | Planned |
 
 The explicit non-instructions matter as much as the stages. Do not begin with the web interface. Do
