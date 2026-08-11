@@ -1,0 +1,18 @@
+{
+  "findings": [
+    {
+      "requirement_id": "req-DATA-002",
+      "affected_component": "Export Worker",
+      "title": "Exports are retained longer than the temporary need",
+      "rationale": "The lifecycle policy retains export objects for 30 days.",
+      "evidence_quote": "A storage lifecycle policy retains export objects for 30 days"
+    },
+    {
+      "requirement_id": "req-DATA-001",
+      "affected_component": "Export Worker",
+      "title": "Retained exports are stored unencrypted",
+      "rationale": "No encryption is described.",
+      "evidence_quote": "the result is written to object storage"
+    }
+  ]
+}

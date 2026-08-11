@@ -1,0 +1,11 @@
+{
+  "findings": [
+    {
+      "requirement_id": "req-DATA-001",
+      "affected_component": "Managed Metrics Database",
+      "title": "Encryption at rest is not described in detail",
+      "rationale": "No cipher suites or key lengths are documented.",
+      "evidence_quote": "The platform encrypts the database at rest by default"
+    }
+  ]
+}

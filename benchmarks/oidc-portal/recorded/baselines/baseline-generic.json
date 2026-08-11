@@ -1,0 +1,18 @@
+{
+  "findings": [
+    {
+      "requirement_id": "req-AUTH-001",
+      "affected_component": "Portal Web Application",
+      "title": "No password complexity policy is enforced",
+      "rationale": "The portal does not describe a password policy.",
+      "evidence_quote": "The portal maintains no password store of its own."
+    },
+    {
+      "requirement_id": "req-AUTH-002",
+      "affected_component": "Portal Web Application",
+      "title": "Multi-factor authentication is not implemented",
+      "rationale": "The application does not implement MFA.",
+      "evidence_quote": "identity is the identity provider's responsibility"
+    }
+  ]
+}
