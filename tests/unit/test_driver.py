@@ -399,6 +399,27 @@ def test_the_assessment_lifecycle_moves_with_the_run(prepared: tuple[Path, str])
         assert assessment.status is ObjectStatus.DRAFT, "approval is a person's verb, not a run's"
 
 
+def test_stop_before_halts_cleanly_without_the_named_phase(prepared: tuple[Path, str]) -> None:
+    """A clean early stop is neither a failure nor a checkpoint pause; the named phase never runs.
+
+    The evaluation harness uses this to measure the finding set without the report. Here it stops
+    before context extraction, so the run never calls the model."""
+    root, assessment_id = prepared
+    with _Stage(root, assessment_id) as stage:
+        outcome = run_assessment(
+            stage.service,
+            assessment_id,
+            model=DeterministicModel(),
+            profile=PROFILE,
+            stop_before=Phase.CONTEXT_EXTRACTION,
+        )
+        assert not outcome.completed
+        assert not outcome.paused
+        assert outcome.stopped_because == "stopped_before_context_extraction"
+        assert outcome.state.status is RunStatus.RUNNING, "a clean stop is not a failure"
+        assert outcome.state.current_phase is Phase.DOCUMENT_INGESTION
+
+
 def test_the_run_records_one_execution_per_node_execution(prepared: tuple[Path, str]) -> None:
     """The agent nodes account for themselves; the orchestrator must not double them.
 

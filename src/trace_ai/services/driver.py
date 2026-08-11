@@ -1075,6 +1075,7 @@ def run_assessment(
     structured_input: dict[str, Any] | None = None,
     generated_at: datetime | None = None,
     ablations: Sequence[str] = (),
+    stop_before: Phase | None = None,
 ) -> RunOutcome:
     """Run a fresh assessment from initialization until it pauses, completes, or stops.
 
@@ -1112,7 +1113,8 @@ def run_assessment(
         on_pause=_begin_review_on_pause(service, assessment_id),
     )
     return orchestrator.run(
-        AssessmentState.begin(assessment_id=assessment_id, workflow_run_id=run.id)
+        AssessmentState.begin(assessment_id=assessment_id, workflow_run_id=run.id),
+        stop_before=stop_before,
     )
 
 
@@ -1125,6 +1127,7 @@ def resume_assessment(
     workflow_run_id: str | None = None,
     budget: Budget | None = None,
     generated_at: datetime | None = None,
+    stop_before: Phase | None = None,
 ) -> RunOutcome:
     """Resume a paused run in a fresh process (DEC-017: resuming is a read).
 
@@ -1160,7 +1163,7 @@ def resume_assessment(
         model=model,
         on_pause=_begin_review_on_pause(service, assessment_id),
     )
-    return orchestrator.run(state)
+    return orchestrator.run(state, stop_before=stop_before)
 
 
 def _begin_review_on_pause(

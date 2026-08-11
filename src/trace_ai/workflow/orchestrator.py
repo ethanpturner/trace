@@ -111,8 +111,14 @@ class Orchestrator:
             )
         slots[node.name] = node
 
-    def run(self, state: AssessmentState) -> RunOutcome:
-        """Execute from the state's current phase until the run pauses, completes, or stops."""
+    def run(self, state: AssessmentState, *, stop_before: Phase | None = None) -> RunOutcome:
+        """Execute from the state's current phase until the run pauses, completes, or stops.
+
+        `stop_before` halts cleanly the moment the run is about to advance into that phase — the
+        evaluation harness uses it to measure the finding set without running the report, which
+        the pipeline itself never needs (there is no analytical reason to stop early). The run's
+        status stays what it was; a clean early stop is neither a failure nor a checkpoint pause.
+        """
         started_at = self.ledger.run.started_at or now()
         current = state
 
@@ -164,6 +170,10 @@ class Orchestrator:
             destination = successor(phase)
             if destination is None:  # pragma: no cover - completion is handled above
                 return self._stop(current, f"{phase.value} is terminal and did not complete")
+            if destination is stop_before:
+                return RunOutcome(
+                    state=current, stopped_because=f"stopped_before_{destination.value}"
+                )
             current = current.advance(destination)
 
     # -- one node --------------------------------------------------------------------------

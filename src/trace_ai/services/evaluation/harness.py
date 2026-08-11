@@ -137,12 +137,19 @@ def run_scenario(
     profile_name: str = "offline-fake",
     registry_path: Path | None = None,
     results_root: Path | None = None,
+    stop_after_findings: bool = False,
 ) -> HarnessOutcome:
     """Replay one registered scenario through the ordinary pipeline and export its feed.
 
     `label` names the run in the results tree — a commit hash, a date, or `local`. The caller
     supplies it because the harness computes nothing about its environment; a feed's identity is
     stated, never inferred.
+
+    `stop_after_findings` ends the run at the finding checkpoint rather than resuming into the
+    report, and the finding-quality metrics are computed there. The ablation set (DEC-012) uses
+    it: an ablation that changes the finding set is measured on the findings, and the report's
+    recorded sections — authored for the authoritative findings — would not fit the ablated ones.
+    The report is not what the decision gate asks about.
     """
     entry = load_scenario(slug, registry_path=registry_path)
     if not entry.has_recording:
@@ -169,6 +176,7 @@ def run_scenario(
                     path, origin=SourceOrigin.UPLOADED_DOCUMENT, trust_level=TrustLevel.UNTRUSTED
                 )
 
+        stop_before = Phase.REPORT_GENERATION if stop_after_findings else None
         outcome = run_assessment(
             service,
             assessment_id,
@@ -176,6 +184,7 @@ def run_scenario(
             profile=profile,
             generated_at=GENERATED_AT,
             ablations=ablations,
+            stop_before=stop_before,
         )
 
         previously_paused_at: Phase | None = None
@@ -199,6 +208,7 @@ def run_scenario(
                 model=model,
                 profile=profile,
                 generated_at=GENERATED_AT,
+                stop_before=stop_before,
             )
 
         run = handle.objects.get(WorkflowRun, outcome.state.workflow_run_id)
