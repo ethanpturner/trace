@@ -367,6 +367,29 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     evaluate.add_argument(
+        "--ablation-set",
+        action="store_true",
+        dest="ablation_set",
+        help=(
+            "run the authoritative pipeline and each section-14 ablation for one scenario, and "
+            "report what each removed component changed (DEC-012)"
+        ),
+    )
+    evaluate.add_argument(
+        "--stability",
+        type=int,
+        metavar="N",
+        help=(
+            "run one scenario N times live and report per-metric variance and per-item agreement "
+            "(DEC-077); refuses the offline profile, which would measure nothing"
+        ),
+    )
+    evaluate.add_argument(
+        "--model-profile",
+        default="offline-fake",
+        help="the model profile for a stability run (default: offline-fake, which it refuses)",
+    )
+    evaluate.add_argument(
         "--ablate",
         action="append",
         dest="ablations",
@@ -1273,6 +1296,18 @@ def _evaluate(args: argparse.Namespace, service: AssessmentService) -> int:
             return 1
         return _evaluate_baseline(args)
 
+    if args.ablation_set:
+        if not args.scenario:
+            print("error: --ablation-set runs one named scenario, not --all", file=sys.stderr)
+            return 1
+        return _evaluate_ablation_set(args)
+
+    if args.stability is not None:
+        if not args.scenario:
+            print("error: --stability runs one named scenario, not --all", file=sys.stderr)
+            return 1
+        return _evaluate_stability(args)
+
     if args.all_scenarios:
         slugs = []
         for entry in load_registry():
@@ -1386,4 +1421,73 @@ def _evaluate_baseline(args: argparse.Namespace) -> int:
         if feed.is_relative_to(PROJECT_ROOT):
             feed = feed.relative_to(PROJECT_ROOT)
         print(f"feed:         {feed}")
+    return 0
+
+
+def _evaluate_ablation_set(args: argparse.Namespace) -> int:
+    """Run the ablation set for one scenario and report what each removal changed."""
+    import tempfile
+
+    from trace_ai.services.evaluation.harness import HarnessError
+    from trace_ai.services.evaluation.stability import ABLATION_SET, run_ablation_set
+
+    work_root = args.work_root or _path(tempfile.mkdtemp(prefix=f"trace-ablate-{args.scenario}-"))
+    try:
+        comparison = run_ablation_set(
+            args.scenario,
+            data_root=work_root,
+            label=args.label,
+            results_root=args.results_root,
+        )
+    except HarnessError as refused:
+        print(f"error: {refused}", file=sys.stderr)
+        return 1
+
+    metrics = sorted(comparison.authoritative)
+    print(f"scenario:     {comparison.scenario} (ablation set, label {comparison.label})")
+    print("authoritative (DEC-012 baseline):")
+    for metric in metrics:
+        print(f"  {metric:<32} {comparison.authoritative[metric]:.4g}")
+    for ablation in ABLATION_SET:
+        print(f"{ablation} (non-authoritative):")
+        for metric in metrics:
+            delta = comparison.delta(ablation, metric)
+            shown = "-" if delta is None else f"{delta:+.4g}"
+            value = comparison.ablations.get(ablation, {}).get(metric)
+            value_shown = "-" if value is None else f"{value:.4g}"
+            print(f"  {metric:<32} {value_shown:>8}  (delta {shown})")
+    return 0
+
+
+def _evaluate_stability(args: argparse.Namespace) -> int:
+    """Run one scenario N times live and report variance; refuse the offline profile (DEC-077)."""
+    import tempfile
+
+    from trace_ai.services.evaluation.stability import StabilityError, run_stability
+
+    work_root = args.work_root or _path(
+        tempfile.mkdtemp(prefix=f"trace-stability-{args.scenario}-")
+    )
+    try:
+        summary = run_stability(
+            args.scenario,
+            n=args.stability,
+            data_root=work_root,
+            label=args.label,
+            profile_name=args.model_profile,
+            results_root=args.results_root,
+        )
+    except StabilityError as refused:
+        print(f"error: {refused}", file=sys.stderr)
+        return 1
+
+    print(f"scenario:     {summary.scenario} (stability, n={summary.n})")
+    for metric in sorted(summary.metric_mean):
+        print(
+            f"  {metric:<32} mean {summary.metric_mean[metric]:.4g}  "
+            f"stdev {summary.metric_stdev[metric]:.4g}"
+        )
+    print(f"unanimous items:  {', '.join(summary.unanimous) or '-'}")
+    print(f"flickering items: {', '.join(summary.flickering) or '-'}")
+    print(f"defaulted decisions: {summary.defaulted_decisions}")
     return 0
