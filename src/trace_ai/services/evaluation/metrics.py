@@ -45,6 +45,7 @@ from trace_ai.domain.evidence import EvidenceReference
 from trace_ai.domain.execution import ExecutionRecord, ExecutionStatus
 from trace_ai.domain.finding import Finding
 from trace_ai.domain.reviewer_decision import ReviewerDecision
+from trace_ai.services.evaluation.matching import match_findings, match_gaps
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -52,7 +53,7 @@ if TYPE_CHECKING:
     from trace_ai.domain.execution import WorkflowRun
     from trace_ai.services.assessment import AssessmentHandle
 
-__all__ = ["compute_metrics", "persist_metrics"]
+__all__ = ["compute_benchmark_metrics", "compute_metrics", "persist_metrics"]
 
 _AUTOMATED_METHOD: Final = "deterministic computation over persisted objects"
 
@@ -266,27 +267,9 @@ def _benchmark_metrics(
     }
 
     expected_findings = _expected_entries(expected_dir, "expected-findings.yaml", "findings")
-    matches_by_finding: dict[str, list[str]] = {}
-    unmatched_expected: list[str] = []
-    for entry in expected_findings:
-        wanted_requirement = str(entry["requirement_id"])
-        wanted_component = _normalized(str(entry["affected_component"]))
-        matched = [
-            finding
-            for finding in approved
-            if wanted_requirement in finding.requirement_ids
-            and any(
-                component_names.get(component_id) == wanted_component
-                for component_id in finding.affected_component_ids
-            )
-        ]
-        if matched:
-            for finding in matched:
-                matches_by_finding.setdefault(finding.id, []).append(str(entry["key"]))
-        else:
-            unmatched_expected.append(str(entry["key"]))
-
-    consolidated = sum(1 for keys in matches_by_finding.values() if len(keys) > 1)
+    finding_matches = match_findings(approved, expected_findings, component_names=component_names)
+    unmatched_expected = finding_matches.missed
+    consolidated = finding_matches.consolidated_count
     results = [
         _metric(
             handle,
@@ -317,23 +300,15 @@ def _benchmark_metrics(
         for gap in repository.list(DocumentationGap)
         if gap.status is not ObjectStatus.SUPERSEDED
     ]
-
-    def gap_requirements(gap: DocumentationGap) -> set[str]:
-        return {
-            requirement_by_mapping[related]
-            for related in gap.related_object_ids
-            if related in requirement_by_mapping
-        }
-
-    matching_gaps = [
-        gap for gap in produced_gaps if gap_requirements(gap) & expected_gap_requirements
-    ]
+    gap_matches = match_gaps(
+        produced_gaps, expected_gap_requirements, requirement_by_mapping=requirement_by_mapping
+    )
     results.append(
         _metric(
             handle,
             run.id,
             "documentation_gap_precision",
-            _ratio(len(matching_gaps), len(produced_gaps)),
+            _ratio(len(gap_matches.matching), len(produced_gaps)),
             unit="percentage",
             evaluator=EvaluatorType.BENCHMARK,
             method=(
@@ -345,6 +320,21 @@ def _benchmark_metrics(
         )
     )
     return results
+
+
+def compute_benchmark_metrics(
+    handle: AssessmentHandle, run: WorkflowRun, *, expected_dir: Path
+) -> list[EvaluationResult]:
+    """The truth-set metrics alone, for a run whose run-derived metrics already exist.
+
+    The evaluation node computes and persists the run-derived metrics inside the pipeline, where
+    no truth set is available (nothing under `expected/` reaches a run, DEC-027). The harness
+    tops the same run up with the benchmark metrics afterwards; computing everything again would
+    duplicate the rows the node already persisted.
+    """
+    from trace_ai.services.findings.approved import approved_findings
+
+    return _benchmark_metrics(handle, run, expected_dir, approved_findings(handle))
 
 
 def persist_metrics(

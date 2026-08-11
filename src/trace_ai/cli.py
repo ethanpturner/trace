@@ -336,6 +336,59 @@ def build_parser() -> argparse.ArgumentParser:
     )
     findings_approve.add_argument("assessment_id")
 
+    evaluate = commands.add_parser(
+        "evaluate",
+        help="replay a registered benchmark scenario through the harness",
+        description=(
+            "Runs a scenario from benchmarks/scenarios.yaml through the ordinary pipeline, "
+            "offline, from its committed recording (DEC-073). Metrics persist with the replayed "
+            "assessment; a derived feed lands under benchmarks/results/, keyed by scenario, "
+            "condition, and label. A scenario without a recording is refused by name."
+        ),
+    )
+    evaluate.add_argument("scenario", nargs="?", help="a registered scenario slug")
+    evaluate.add_argument(
+        "--all",
+        action="store_true",
+        dest="all_scenarios",
+        help="run every registered scenario that has a recording, naming the ones skipped",
+    )
+    evaluate.add_argument(
+        "--condition",
+        default="clean",
+        help="the condition axis for the results feed (default: clean)",
+    )
+    evaluate.add_argument(
+        "--ablate",
+        action="append",
+        dest="ablations",
+        default=[],
+        metavar="NAME",
+        help="apply an ablation (repeatable); the run is marked non-authoritative (DEC-012)",
+    )
+    evaluate.add_argument(
+        "--label",
+        default="local",
+        help="the run's name in the results tree (default: local)",
+    )
+    evaluate.add_argument(
+        "--work-root",
+        type=_path,
+        help="where the replayed assessment is written (default: a temporary directory)",
+    )
+    evaluate.add_argument(
+        "--diff-against",
+        dest="diff_against",
+        metavar="LABEL",
+        help="classify each expected item against a prior feed with this label (DEC-073)",
+    )
+    evaluate.add_argument(
+        "--results-root",
+        dest="results_root",
+        type=_path,
+        help="where the feed is written (default: benchmarks/results/)",
+    )
+
     verify = commands.add_parser(
         "verify",
         help="re-hash stored documents and evidence, and check the report manifest",
@@ -418,6 +471,7 @@ def run(argv: Sequence[str] | None = None) -> int:
         ("run", None): _run,
         ("resume", None): _resume,
         ("verify", None): _verify,
+        ("evaluate", None): _evaluate,
         ("findings", "show"): _findings_show,
         ("findings", "review"): _findings_review,
         ("findings", "approve"): _findings_approve,
@@ -1186,3 +1240,82 @@ def _report_show(args: argparse.Namespace, service: AssessmentService) -> int:
     handle = service.handle(args.assessment_id)
     print(handle.artifacts.read("outputs", filename).decode("utf-8"))
     return 0
+
+
+def _evaluate(args: argparse.Namespace, service: AssessmentService) -> int:
+    """Replay one scenario, or every recorded one, through the evaluation harness.
+
+    The harness opens its own store at the work root — a replayed assessment is a measurement,
+    not part of the user's assessment data — and everything printed is metrics, identifiers, and
+    repo-relative feed paths. Exit 0 when every attempted run completed; 1 when any did not.
+    """
+    import tempfile
+
+    from trace_ai.config import PROJECT_ROOT
+    from trace_ai.services.evaluation.harness import HarnessError, diff_feeds, run_scenario
+    from trace_ai.services.evaluation.registry import load_registry
+
+    if args.all_scenarios == bool(args.scenario):
+        print("error: name one scenario or pass --all", file=sys.stderr)
+        return 1
+
+    if args.all_scenarios:
+        slugs = []
+        for entry in load_registry():
+            if entry.recorded_dir.is_dir():
+                slugs.append(entry.slug)
+            else:
+                print(f"skipped {entry.slug}: no recording")
+    else:
+        slugs = [args.scenario]
+
+    failures = 0
+    for slug in slugs:
+        work_root = args.work_root or _path(tempfile.mkdtemp(prefix=f"trace-eval-{slug}-"))
+        try:
+            outcome = run_scenario(
+                slug,
+                data_root=work_root,
+                label=args.label,
+                condition=args.condition,
+                ablations=args.ablations,
+                results_root=args.results_root,
+            )
+        except HarnessError as refused:
+            print(f"error: {refused}", file=sys.stderr)
+            failures += 1
+            continue
+
+        print(f"scenario:     {outcome.scenario} ({outcome.condition}, label {outcome.label})")
+        print(f"workflow run: {outcome.workflow_run_id}  {outcome.run_status}")
+        if outcome.ablations:
+            print(f"ablations:    {', '.join(outcome.ablations)} (non-authoritative, DEC-012)")
+        for result in outcome.metrics:
+            value = f"{result.metric_value:.4g}"
+            print(f"  {result.metric_name:<32} {value}")
+        if outcome.feed_path is not None:
+            feed = outcome.feed_path
+            if feed.is_relative_to(PROJECT_ROOT):
+                feed = feed.relative_to(PROJECT_ROOT)
+            print(f"feed:         {feed}")
+        if not outcome.completed:
+            print(f"run stopped: {outcome.stopped_because}", file=sys.stderr)
+            failures += 1
+
+        if args.diff_against and outcome.feed_path is not None:
+            prior = outcome.feed_path.with_name(f"{args.diff_against}.json")
+            diff = diff_feeds(outcome.feed_path, prior)
+            print(f"diff against {args.diff_against}:")
+            for label, keys in (
+                ("matched", diff.matched),
+                ("changed", diff.changed),
+                ("missed", diff.missed),
+                ("regressed", diff.regressed),
+                ("recovered", diff.recovered),
+                ("spurious", diff.spurious),
+                ("new spurious", diff.new_spurious),
+            ):
+                print(f"  {label:<13} {', '.join(keys) if keys else '-'}")
+        print()
+
+    return 1 if failures else 0
