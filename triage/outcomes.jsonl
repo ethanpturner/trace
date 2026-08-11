@@ -1,3 +1,6 @@
 {"issue": 228, "tier": 3, "model": "claude-fable-5", "classified_by": "hard-rule", "outcome": "clean", "escalated_to": null, "date": "2026-08-10", "note": "DEC-057 catalog lifecycle governance"}
 {"issue": 229, "tier": 3, "model": "claude-fable-5", "classified_by": "hard-rule", "outcome": "clean", "escalated_to": null, "date": "2026-08-10", "note": "DEC-058 provenance expansion for 0.2"}
 {"issue": 240, "tier": 3, "model": "claude-fable-5", "classified_by": "hard-rule", "outcome": "clean", "escalated_to": null, "date": "2026-08-10", "note": "DEC-059 cloud-operations category"}
+{"issue": 227, "tier": 3, "model": "claude-fable-5", "classified_by": "hard-rule", "outcome": "clean", "escalated_to": null, "date": "2026-08-10", "note": "DEC-060 risk-treatment disposition"}
+{"issue": 239, "tier": 3, "model": "claude-fable-5", "classified_by": "hard-rule", "outcome": "clean", "escalated_to": null, "date": "2026-08-10", "note": "DEC-061 revisit semantics"}
+{"issue": 234, "tier": 3, "model": "claude-fable-5", "classified_by": "hard-rule", "outcome": "clean", "escalated_to": null, "date": "2026-08-10", "note": "DEC-062 typed routing reasons"}

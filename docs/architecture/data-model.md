@@ -410,7 +410,8 @@ There is deliberately no `change_severity` value. A severity change is an `edit`
 `prior_value` and `updated_value` on `ReviewerDecision` per DEC-023. `current-architecture.md`
 section 5.12 lists changing severity among the reviewer's actions; that list names actions a
 reviewer takes and this one names dispositions the system records, and the two do not
-correspond one to one (DEC-030).
+correspond one to one (DEC-030). A risk-treatment assignment is likewise an `edit`, not a new
+disposition (DEC-060).
 
 ## 4.7 ValidationStatus
 
@@ -1542,6 +1543,13 @@ This one is a hard rule rather than a general expectation. Severity is assigned 
 reviewer, so without it the field would stay `unassigned` on every finding and the report
 would have no ordering. It is what makes reviewer-assigned severity work instead of
 degrading into nobody assigning severity.
+
+DEC-060 adds a second, softer reviewer judgment: `risk_treatment` (closed vocabulary
+`undecided`, `mitigate`, `accept`, `transfer`, `avoid`), `treatment_rationale`, and
+`treatment_review_by`. Unlike severity, `undecided` may survive approval; the only gate is that
+`accept` without a `treatment_rationale` is refused. The table rows above gain these fields in
+the change that implements them, alongside the model, per the conformance test's
+both-directions rule.
 
 ## Example
 

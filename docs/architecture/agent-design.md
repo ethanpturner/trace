@@ -1210,6 +1210,7 @@ The reviewer may:
 - Reject
 - Edit
 - Change severity
+- Assign a risk treatment (DEC-060)
 - Merge
 - Defer
 - Request more analysis
@@ -1226,6 +1227,7 @@ The reviewer may:
 - Updated documentation gaps
 - ReviewerDecision records
 - Final severity values
+- Risk-treatment assignments, where the reviewer made them (DEC-060)
 - Report-ready assessment state
 
 ## Workflow rule

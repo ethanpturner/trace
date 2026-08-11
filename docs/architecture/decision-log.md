@@ -3858,3 +3858,216 @@ Open Questions:
 - Which scenario exercises the category first — none of the four seeded benchmarks is
   operations-heavy, and a requirement no scenario can exercise is exactly what DEC-010's
   "small on purpose" posture argues against shipping.
+
+## DEC-060: The reviewer may assign a risk treatment at checkpoint 2; `accept` requires a rationale, and treatment never blocks approval
+
+Date: 2026-08-10
+
+Status: Accepted
+
+Decision:
+
+**`Finding` gains a reviewer-assigned risk treatment.** Three fields, specified here; the table
+rows and code land together in the implementing change:
+
+- `risk_treatment` — a **closed** vocabulary: `undecided`, `mitigate`, `accept`, `transfer`,
+  `avoid`. Closed in the DEC-036 sense that the values are named rather than illustrated, like
+  `DataFlow.direction`; extending it is a design change. Findings are created `undecided`.
+- `treatment_rationale` — required when `risk_treatment` is `accept`; optional otherwise. For
+  accepted risk it is the residual-risk statement: what remains exposed and why that is
+  tolerable.
+- `treatment_review_by` — an optional date, meaningful for `accept`; DEC-061 gives it semantics.
+
+**The reviewer assigns treatment at checkpoint 2, and no node proposes one** — DEC-030's
+philosophy applied to the neighbouring judgment. Treatment is a risk decision in business
+context; the documents under review do not contain it, and an agent asked for it would produce a
+fluent answer from sources that cannot answer.
+
+**Unlike severity, treatment never blocks approval.** `undecided` may survive checkpoint 2.
+Severity is the reviewer's own security judgment and orders the report, so DEC-030 makes it
+mandatory; treatment is frequently the system owner's decision to make after reading the report,
+and a gate would manufacture defaults — a forced treatment is a fabricated business decision,
+which is DEC-009's failure relocated into a reviewer field. The gate that does exist: **an
+approval whose finding carries `accept` with no `treatment_rationale` is refused**, by the same
+mechanism as the severity gate.
+
+**Assignment is recorded as `edit`.** No `ReviewDisposition` value is added; `prior_value` and
+`updated_value` carry the change per DEC-023, exactly as severity does. Section 4.6's note
+generalizes.
+
+**The report renders treatment deterministically inside the existing findings sections.** An
+`accept` renders its rationale and review-by date with the finding. No section is added, no
+ownership changes, and the sixteen-section contract (DEC-035) is untouched; the Report Generation
+agent's `risk_summary` may reference treatment outcomes and never rewrites them.
+
+Why:
+
+**Five surveyed projects independently model a treatment outcome** — Threat Dragon's status
+vocabulary, pytm's `Finding.response`, the Threat Modeling Cheat Sheet's "each threat must have a
+response", ThreatAtlas's acceptance-with-approver-and-date, the playbook's residual-risk
+statement — which is the strongest convergence signal in the survey. A finding whose fate is
+recorded is a decision; a finding whose fate is a conversation after the report is a loose end.
+
+**The vocabulary is present-tense choice, not past-tense completion.** Threat Dragon's
+`Mitigated`/`Eliminated` describe work already done, which a documentation review cannot witness;
+Trace's values name the *chosen response*. There is no `eliminated`: a weakness that no longer
+exists produces no finding.
+
+Alternatives Considered:
+
+- Threat Dragon's five past-tense statuses verbatim
+- Requiring a treatment at approval, symmetrical with the severity gate
+- A new `accept_risk` disposition on `ReviewDisposition`
+- Recording treatment on `ControlMapping` rather than `Finding`
+- Leaving treatment entirely to post-report tooling
+
+Tradeoffs:
+
+- An approved report may carry findings with no treatment story. That is deliberate — honesty
+  over completeness theatre — but it will read as unfinished to audiences expecting a risk
+  register, and the report's authored wording should frame `undecided` as "not yet decided by the
+  system owner" rather than leaving the cell blank.
+- The `accept`-requires-rationale rule is a two-field validation coupling that the checkpoint
+  gate must enforce with the same care as the severity gate, and it is easier to forget because
+  it fires rarely.
+- Treatment on `Finding` means a merged finding (21a) carries one treatment for what were two
+  candidates; the merge record preserves lineage, but a treatment assigned before a merge is not
+  automatically revisited.
+
+Open Questions:
+
+- Does `transfer` need a named counterparty to be meaningful, or is that the rationale's job?
+- Should the report's deterministic findings sections group accepted-risk findings separately so
+  residual risk is legible at a glance?
+
+## DEC-061: Revisit is episodic — assumed claims are standing revisit subjects, and an expired acceptance re-routes to checkpoint 2 at the next run
+
+Date: 2026-08-10
+
+Status: Accepted
+
+Decision:
+
+**Nothing watches a clock.** DEC-004's system runs locally and episodically; re-check semantics
+attach to the triggers that already exist — the start of a new `WorkflowRun` on the assessment,
+and `begin_revision` (DEC-031's verb, DEC-038's mechanism). Display never triggers anything:
+`trace assessment status` may list overdue dates read-only, and nothing fires from being looked
+at.
+
+**Assumptions carry no date.** A `ContextClaim` with status `assumed` is a *standing* revisit
+subject: at the next revision's checkpoint 1 it is re-presented flagged with the `revisit_due`
+routing reason (DEC-062) rather than buried among unchanged claims. No `review_by` field is added
+to `ContextClaim`, because an assumption's shelf life is driven by landscape change rather than
+calendar, and an authored date would be a guess wearing a deadline's costume. The OWASP umbrella
+definition asks that assumptions be checkable or challengeable in the future; the status already
+makes them findable, and this makes them presented.
+
+**Accepted risk carries the one authored date.** `treatment_review_by` (DEC-060) passing changes
+nothing at rest. At the first run or revision that begins after the date, the finding routes back
+to checkpoint 2 as a review subject with reason `revisit_due`. **The prior decision is never
+reverted silently**: `accept` stands, with its recorded rationale, until the reviewer re-decides
+— a new `edit` on a new `ReviewerDecision`. An expiry that flips a field nobody touched would be
+the silent overwrite DEC-023 exists to prevent, performed by a calendar.
+
+Why:
+
+**Re-check semantics have to fit the execution model or they are theatre.** ThreatAtlas's expiry
+works because ThreatAtlas is a running service; Trace is a process that exits (DEC-017 — pausing
+is stopping). A review-by date in an episodic system can only mean "surface this when someone is
+next here," and saying so plainly is better than implying monitoring that does not exist.
+
+**The two outlets age differently.** An accepted risk was a *decision* with an owner who can
+name their own confidence horizon — a date is theirs to author. An assumption is a *gap* nobody
+chose; it has no owner to pick a date, and every revision is the right time to challenge it.
+
+Alternatives Considered:
+
+- A scheduler or daemon watching review-by dates
+- `review_by` on `ContextClaim`, symmetrical with accepted risk
+- Auto-expiring acceptance: `risk_treatment` reverts to `undecided` when the date passes
+- A single assessment-level review date instead of per-object semantics
+
+Tradeoffs:
+
+- An expired acceptance can sleep indefinitely if nobody starts a run — the honest cost of an
+  episodic tool, stated rather than hidden. The status display is the mitigation, and it is only
+  a display.
+- Re-presenting every assumed claim at every revision scales checkpoint-1 load with assumption
+  count; for a system whose assumptions grow, the reviewer pays for this decision each revision.
+  The routing reason at least makes the pile legible.
+- Two different revisit mechanisms (standing status versus authored date) is more to explain
+  than one; the difference is by cause, like DEC-023's three mechanisms.
+
+Open Questions:
+
+- Should `archive` — the one human-performed lifecycle verb — warn when overdue review-by dates
+  exist, or is archiving precisely the moment such warnings stop mattering?
+
+## DEC-062: Checkpoint subjects carry typed routing reasons, derived at package-build time from persisted state
+
+Date: 2026-08-10
+
+Status: Accepted
+
+Decision:
+
+**Every review-package subject may carry routing reasons from a closed `ReasonCode` vocabulary,
+at both checkpoints.** A subject may carry several; the initial vocabulary is `low_confidence`,
+`contradicted`, `no_evidence`, `injection_flag`, and `revisit_due`. Extending it is a design
+change, and each code's exact derivation — which persisted fields produce it — is fixed in the
+implementing change under one rule: **a code is a deterministic function of persisted state**,
+never a judgment made at build time. `injection_flag` derives from a recorded observation about a
+cited source (#274 implements the surfacing); `revisit_due` is DEC-061's.
+
+**Reasons are derived when the review package is built, never stored.** The package is derived
+from the run and never stored in it (DEC-005, DEC-017); reasons are part of the package. Nothing
+on validation output, the run, or the subject records a reason code.
+
+**Two guards are part of the decision, not the implementation.** First, reasons triage attention
+and never filter: every subject still requires a `ReviewerDecision` before the checkpoint
+advances (DEC-005), and a subject with no reasons is routine, not exempt. Second, a reason is a
+routing aid, not a verdict: the Context Validation node's report-and-route remit
+(`agent-design.md` section 8) is unchanged, and no node gains authority from a code.
+
+Why:
+
+**Derivation from persisted facts gets auditability without a second store.** The question the
+issue poses — derived and cheap, or recorded and auditable — is a false choice here, because the
+inputs to every code are already persisted domain data (a confidence field, a contradicted flag,
+an observation, a date against a run timestamp). A deterministic function of stored state is
+re-derivable at any time, which *is* the audit; storing its output would be a second copy of
+authoritative data, the exact shape section 31's state-design rule and DEC-016's
+checkpointer rejection both refuse, and the copy could drift from the fields it summarizes.
+OpenCRE's Librarian stores its reason codes because its review queue is its authoritative store;
+Trace's package is a view over one.
+
+**The reviewer should triage by machine-stated reason rather than re-deriving it.** The fields
+are all present on the objects, but "this claim is here because it is contradicted" currently
+has to be reconstructed by reading the object against the vocabulary in the reviewer's head.
+ThreatAtlas's defined-semantics confidence pill is the presentation-layer proof that stating the
+reason changes review behaviour.
+
+Alternatives Considered:
+
+- Recording reason codes on validation output as data, OpenCRE-Librarian style
+- Free-text reasons authored by the validation node
+- Separate vocabularies per checkpoint
+- A confidence pill in the CLI with no typed codes underneath
+
+Tradeoffs:
+
+- The vocabulary is bounded by what persisted fields can express. A reason like "the reasoning
+  seems thin" cannot be a code without a model call, so codes will under-describe why some
+  subjects deserve attention — and the absence of a code must not read as a clean bill, which is
+  why the never-filters guard is part of the decision.
+- Derivation logic lives in package assembly and grows with the vocabulary; each new code adds a
+  function that must stay deterministic and tested.
+- Deriving at build time means a reason reflects state at package construction; a reviewer
+  looking at a stale package sees stale reasons. Packages are rebuilt on resume (DEC-017), which
+  bounds the staleness to one pause.
+
+Open Questions:
+
+- Should the checkpoint CLI order subjects by reason, and if so in which precedence?
+- Do reason frequencies belong in the evaluation metrics as a reviewer-attention calibration
+  signal?
