@@ -35,7 +35,7 @@ from trace_ai.workflow.phases import NODES_BY_PHASE, PAUSE_PHASES, Phase, succes
 from trace_ai.workflow.state import AssessmentState
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Callable, Sequence
 
     from trace_ai.infrastructure.model.seam import StructuredModel
     from trace_ai.services.assessment import AssessmentHandle
@@ -73,11 +73,13 @@ class Orchestrator:
         nodes: Sequence[Node],
         budget: Budget | None = None,
         model: StructuredModel | None = None,
+        on_pause: Callable[[AssessmentState], None] | None = None,
     ) -> None:
         self.handle = handle
         self.ledger = ledger
         self.budget = budget if budget is not None else Budget()
         self.model = model
+        self._on_pause = on_pause
         self._nodes: dict[Phase, dict[str, Node]] = {}
         for node in nodes:
             self.register(node)
@@ -231,6 +233,14 @@ class Orchestrator:
         Both halves are DEC-017's: the run row says the run is paused and where, and the state file
         under `traces/` is the self-describing record a later process loads. A pause that wrote
         only the row would be one nobody could resume.
+
+        `on_pause` runs inside the same transaction as the run-row update. It exists for DEC-031,
+        which requires the assessment's move to `pending_review` to commit with the pause that
+        causes it — the driver supplies the callback because the deliverable's lifecycle belongs to
+        `AssessmentService`, not to this loop.
         """
         save_state(self.handle, state)
-        self.ledger.pause(current_node=state.current_phase.value)
+        with self.handle.objects.transaction():
+            self.ledger.pause(current_node=state.current_phase.value)
+            if self._on_pause is not None:
+                self._on_pause(state)
