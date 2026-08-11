@@ -10,9 +10,10 @@ assertion that a control is absent.
 
 **`category` is an open vocabulary** (DEC-041, applying DEC-036). Section 16 types it `list[string]`
 and illustrates two values in its example rather than enumerating a set, which is DEC-036's stated
-test. `KNOWN_THREAT_CATEGORIES` records STRIDE and the four OWASP LLM categories the ForgeFlow
-scenario exercises; it is documentation and validates nothing. The decisive case is ForgeFlow's own
-THR-001, prompt injection, which STRIDE has no category for -- a closed STRIDE enum would reject or
+test. `KNOWN_THREAT_CATEGORIES` records the terms the surveyed corpus uses -- STRIDE, the OWASP
+LLM lists, the ASI Agentic Top 10, Cumulus's operational suits, and NIST SP 800-30's threat-source
+split; it is documentation and validates nothing. The decisive case is ForgeFlow's own THR-001,
+prompt injection, which STRIDE has no category for -- a closed STRIDE enum would reject or
 mis-bucket the single threat the demo scenario is built around.
 
 **`affected_component_ids`, `affected_asset_ids`, and `impact` are non-empty, and section 16 does
@@ -46,9 +47,13 @@ from trace_ai.domain.identifiers import (
 from trace_ai.domain.vocabulary import VocabularyTerm
 
 __all__ = [
+    "AGENTIC_THREAT_CATEGORIES",
     "AI_THREAT_CATEGORIES",
     "KNOWN_THREAT_CATEGORIES",
+    "LLM_2026_THREAT_CATEGORIES",
+    "OPERATIONAL_THREAT_CATEGORIES",
     "STRIDE_CATEGORIES",
+    "THREAT_SOURCE_CATEGORIES",
     "Threat",
 ]
 
@@ -84,10 +89,81 @@ AI_THREAT_CATEGORIES: Final[frozenset[str]] = frozenset(
     }
 )
 
+# The GenAI LLM Top 10 2026 (issue #223, survey item A3), from the year-scoped entry titles at
+# https://github.com/GenAI-Security-Project/GenAI-LLM-Top10/tree/main/2026/final. Four terms are
+# shared with `AI_THREAT_CATEGORIES` because the titles are stable across the 2025 and 2026
+# releases even where the LLMxx numbers moved (see the renumbering note above).
+LLM_2026_THREAT_CATEGORIES: Final[frozenset[str]] = frozenset(
+    {
+        "prompt_injection",
+        "sensitive_information_disclosure",
+        "excessive_agency",
+        "supply_chain",
+        "data_and_model_poisoning",
+        "unbounded_consumption",
+        "misinformation",
+        "hidden_context_exposure",
+        "vector_and_embedding_weaknesses",
+        "improper_output_handling",
+    }
+)
+
+# The OWASP Top 10 for Agentic Applications (ASI) 2026, ASI01 through ASI10, from the published
+# titles ("Agent Goal Hijack", "Memory & Context Poisoning", ...) normalised to one spelling.
+# Agentic ground the LLM list treats as a single category (excessive_agency) split out here.
+AGENTIC_THREAT_CATEGORIES: Final[frozenset[str]] = frozenset(
+    {
+        "agent_goal_hijack",
+        "tool_misuse_and_exploitation",
+        "identity_and_privilege_abuse",
+        "agentic_supply_chain_vulnerabilities",
+        "unexpected_code_execution",
+        "memory_and_context_poisoning",
+        "insecure_inter_agent_communication",
+        "cascading_failures",
+        "human_agent_trust_exploitation",
+        "rogue_agents",
+    }
+)
+
+# OWASP Cumulus's five suits, naming the cloud and DevOps operational ground that neither STRIDE
+# nor the LLM lists cover: pipeline delivery, backup and restoration, detection, resource
+# configuration, and credential handling.
+OPERATIONAL_THREAT_CATEGORIES: Final[frozenset[str]] = frozenset(
+    {
+        "delivery",
+        "recovery",
+        "monitoring",
+        "resources",
+        "access_and_secrets",
+    }
+)
+
+# NIST SP 800-30's threat-source split, so a non-adversarial threat -- an operator mistake, a
+# disk failure, a regional outage -- is recorded as what it is rather than forced into
+# adversarial framing. TM-BOM cites the same source for its `sources` field.
+THREAT_SOURCE_CATEGORIES: Final[frozenset[str]] = frozenset(
+    {
+        "adversary",
+        "human_error",
+        "failure",
+        "events_beyond_org_control",
+    }
+)
+
 # Documentation, not a validation rule (DEC-036, DEC-041). The same relationship
 # `acceptable_implementations` has to the requirements catalog, for the same reason: a list of
-# examples treated as the set of allowed values decides cases it was never shown.
-KNOWN_THREAT_CATEGORIES: Final[frozenset[str]] = STRIDE_CATEGORIES | AI_THREAT_CATEGORIES
+# examples treated as the set of allowed values decides cases it was never shown. The validation
+# node reports a category outside this set as an observation and rejects nothing
+# (`workflow/threat_validation.py`).
+KNOWN_THREAT_CATEGORIES: Final[frozenset[str]] = (
+    STRIDE_CATEGORIES
+    | AI_THREAT_CATEGORIES
+    | LLM_2026_THREAT_CATEGORIES
+    | AGENTIC_THREAT_CATEGORIES
+    | OPERATIONAL_THREAT_CATEGORIES
+    | THREAT_SOURCE_CATEGORIES
+)
 
 
 class Threat(DomainModel):
