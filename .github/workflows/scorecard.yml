@@ -19,8 +19,10 @@ on:
       - demo/forgeflow/recorded/**
       - scripts/build_scorecard.py
       - scripts/build_comparison.py
+      - scripts/build_ablation.py
       - docs/eval/scorecard.html
       - docs/eval/comparison.md
+      - docs/eval/ablation.md
       - .github/workflows/scorecard.yml
   workflow_dispatch:
 
@@ -58,11 +60,15 @@ jobs:
       - name: The committed comparison matches the recorded runs
         run: uv run python scripts/build_comparison.py --check
 
+      - name: The committed ablation table matches the recorded runs
+        run: uv run python scripts/build_ablation.py --check
+
       - name: Render fresh copies for review
         if: ${{ !cancelled() }}
         run: |
           uv run python scripts/build_scorecard.py
           uv run python scripts/build_comparison.py
+          uv run python scripts/build_ablation.py
 
       - name: Upload the rendered artifacts
         if: ${{ !cancelled() }}
@@ -72,5 +78,6 @@ jobs:
           path: |
             docs/eval/scorecard.html
             docs/eval/comparison.md
+            docs/eval/ablation.md
           if-no-files-found: error
           retention-days: 30
