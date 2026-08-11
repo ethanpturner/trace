@@ -825,7 +825,8 @@ def _context_show(args: argparse.Namespace, service: AssessmentService) -> int:
         print()
         print(f"{group.replace('_', ' ')} ({len(objects)})")
         for obj in objects:
-            print(f"  {getattr(obj, 'id', '-')}  {_object_line(obj)}")
+            object_id = getattr(obj, "id", "-")
+            print(f"  {object_id}  {_object_line(obj)}{_reasons(package, object_id)}")
 
     for heading, presented in (
         ("documented claims", package.documented_claims),
@@ -837,7 +838,7 @@ def _context_show(args: argparse.Namespace, service: AssessmentService) -> int:
             claim = item.claim
             print(
                 f"  {claim.id}  {claim.status:<15} {claim.confidence:<7} "
-                f"{claim.predicate} = {claim.value!r}"
+                f"{claim.predicate} = {claim.value!r}{_reasons(package, claim.id)}"
             )
             if claim.rationale:
                 print(f"      rationale: {claim.rationale}")
@@ -850,6 +851,13 @@ def _context_show(args: argparse.Namespace, service: AssessmentService) -> int:
     for question in package.questions:
         marker = "blocking" if question.blocking else question.priority.value
         print(f"  {question.id}  {marker:<9} {question.question}")
+
+    if package.injection_attempts:
+        print()
+        print(f"injection attempts detected ({len(package.injection_attempts)})")
+        for observation in package.injection_attempts:
+            cited = ", ".join(observation.evidence_ids)
+            print(f"  {observation.id}  {observation.summary} [{cited}]")
 
     print()
     print(f"human-review triggers ({len(package.triggers)})")
@@ -871,6 +879,17 @@ def _context_show(args: argparse.Namespace, service: AssessmentService) -> int:
     for blocker in package.approval_blockers:
         print(f"  {blocker}", file=sys.stderr)
     return 1
+
+
+def _reasons(package: ContextReviewPackage, object_id: str) -> str:
+    """The routing reasons for one subject, appended to its line (DEC-062).
+
+    A subject with an `injection_flag` came from a document that tried to inject; the reviewer
+    sees the reason and looks closer. Reasons triage attention and never filter — every subject
+    still needs a decision — so this only annotates, never hides.
+    """
+    codes = package.reasons_for(object_id)
+    return f"  [{', '.join(codes)}]" if codes else ""
 
 
 def _object_line(obj: object) -> str:
