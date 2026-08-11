@@ -4,3 +4,6 @@
 {"issue": 227, "tier": 3, "model": "claude-fable-5", "classified_by": "hard-rule", "outcome": "clean", "escalated_to": null, "date": "2026-08-10", "note": "DEC-060 risk-treatment disposition"}
 {"issue": 239, "tier": 3, "model": "claude-fable-5", "classified_by": "hard-rule", "outcome": "clean", "escalated_to": null, "date": "2026-08-10", "note": "DEC-061 revisit semantics"}
 {"issue": 234, "tier": 3, "model": "claude-fable-5", "classified_by": "hard-rule", "outcome": "clean", "escalated_to": null, "date": "2026-08-10", "note": "DEC-062 typed routing reasons"}
+{"issue": 230, "tier": 3, "model": "claude-fable-5", "classified_by": "hard-rule", "outcome": "clean", "escalated_to": null, "date": "2026-08-10", "note": "DEC-063 warn-only coverage baseline"}
+{"issue": 235, "tier": 3, "model": "claude-fable-5", "classified_by": "hard-rule", "outcome": "clean", "escalated_to": null, "date": "2026-08-10", "note": "DEC-064 reviewer-precedent feed"}
+{"issue": 237, "tier": 3, "model": "claude-fable-5", "classified_by": "hard-rule", "outcome": "clean", "escalated_to": null, "date": "2026-08-10", "note": "DEC-065 catalog-gap-candidate channel"}

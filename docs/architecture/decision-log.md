@@ -2738,8 +2738,9 @@ Tradeoffs:
 
 Open Questions:
 
-- Should the Threat Validation node record an observation when a category falls outside
-  `KNOWN_THREAT_CATEGORIES`, so the drift is visible without being refused?
+- ~~Should the Threat Validation node record an observation when a category falls outside
+  `KNOWN_THREAT_CATEGORIES`, so the drift is visible without being refused?~~ Answered by
+  DEC-063: yes — an observation, warn-only, never an error.
 - At what point does `threat_methodology` need a registry — a second methodology, or the first
   cross-assessment comparison?
 
@@ -4071,3 +4072,227 @@ Open Questions:
 - Should the checkpoint CLI order subjects by reason, and if so in which precedence?
 - Do reason frequencies belong in the evaluation metrics as a reviewer-attention calibration
   signal?
+
+## DEC-063: Threat Validation gains a warn-only coverage baseline from authored applicability data; nothing retries or quotas against it
+
+Date: 2026-08-10
+
+Status: Accepted
+
+Decision:
+
+**Per-element-kind category applicability becomes authored data**, the Threat Dragon and OdTM
+convention: spoofing applies to actors and processes and never to flows or stores, tampering to
+stores and flows, and so on. The table keys on element kinds — `process`, `data_store`,
+`external_actor`, `data_flow`, `trust_boundary` — with a conservative classification from the
+open `component_type` vocabulary to a kind. It ships beside `STRIDE_CATEGORIES` as authored
+constants and covers only the categories it names; the open vocabulary (DEC-041) is untouched.
+A component whose type does not classify is `unclassified` and is *presented* as unclassified —
+where absence would read as an answer, say `unknown` explicitly (DEC-036); an unclassifiable
+component must never render as "no gaps".
+
+**The table has exactly two uses, both warn-only.**
+
+1. **Plausibility observations from the Threat Validation node.** A threat whose category and
+   affected elements the table calls inapplicable — spoofing whose only affected component is a
+   data store — is flagged as an observation, never rejected. The node also records an
+   observation when a category falls outside `KNOWN_THREAT_CATEGORIES`, which answers DEC-041's
+   open question: drift becomes visible without being refused. An observation is not an error:
+   it never enters the retry taxonomy and never routes anywhere.
+2. **A coverage listing in the checkpoint 2 review package**: per component, the applicable
+   categories in which zero threats name it. It is derived at package-build time from persisted
+   threats, the approved context, and the table — DEC-062's posture; nothing stores it.
+
+**The listing informs the reviewer and is structurally nothing else.** Zero threats in an
+applicable category is a legitimate outcome. A coverage gap is not an error class, so the
+orchestrator cannot retry the threat agent against it — retrying it would be retrying a
+conclusion (`agent-design.md` section 26), and an agent retried until a category is populated
+will populate it, which is the checklist failure sections 2.2 and 10 exist to prevent. It is
+also not an evaluation metric target: the volume principle holds, and no score improves by
+filling a cell.
+
+Why:
+
+**It converts an unverifiable model property into a checkable one at zero model cost.** "Did the
+agent cover the obvious structural threats" is today a question the reviewer answers by
+re-deriving STRIDE-per-element in their head across the whole context. The table is small,
+public, stable knowledge — both surveyed encodings agree on it — and checking against it is
+arithmetic.
+
+**Warn-only is what keeps it compatible with everything already decided.** Enforced
+applicability would close the vocabulary DEC-041 opened; a retry loop would manufacture threats;
+a metric would optimise for finding count. The one safe consumer of a checklist is the human it
+informs.
+
+Alternatives Considered:
+
+- Enforcing applicability: rejecting a spoofing threat against a data store
+- Feeding coverage gaps back to the threat agent as retry feedback
+- A per-category coverage metric in the evaluation plan
+- Leaving coverage entirely to the reviewer's unaided judgment
+
+Tradeoffs:
+
+- The kind classification is a judgment compressed into a lookup, and the open `component_type`
+  vocabulary guarantees unclassifiable components; the listing under-covers exactly the exotic
+  components where threats are least obvious, and says so via `unclassified` rather than hiding
+  it.
+- The baseline is STRIDE-shaped. No per-element applicability data exists for the AI-specific
+  categories, so the listing is silent about the categories ForgeFlow's most important threats
+  use; a reader who treats it as total coverage inverts its meaning. The package labels it as a
+  structural baseline, not a coverage claim.
+- The reviewer now sees a per-component grid at checkpoint 2, which is more to read; the
+  alternative was deriving the same grid mentally or not at all.
+
+Open Questions:
+
+- Does the plausibility observation ever earn a routing reason code (DEC-062) of its own, or
+  would that promote a heuristic to an authority?
+
+## DEC-064: Rationale-bearing dismissals feed the critic as marked context; matching is deterministic and scoped to the assessment
+
+Date: 2026-08-10
+
+Status: Accepted
+
+Decision:
+
+**The Critical Review input package gains a precedent block**: prior findings from the same
+assessment that a reviewer dismissed — disposition `reject`, `convert_to_question`, or
+`convert_to_documentation_gap` — **with the reviewer's recorded rationale**, matched to the
+lineage under review deterministically: the precedent shares a `requirement_id` with the
+lineage's mappings, or names an affected component whose name matches one of the lineage's,
+under DEC-056's normalization (identifier resolved to name, case-insensitive, whitespace
+normalized). No model call and no embedding computes similarity; a hidden model call here is the
+seventh agent the cap refuses.
+
+**Only rationale-bearing decisions qualify.** The question the block puts to the critic is "this
+was dismissed for reason X — does X apply here?", and a bare rejection supplies no X.
+`ReviewerDecision.rationale` is optional by schema; a dismissal without one is simply not
+precedent.
+
+**Precedent is context, never subject.** DEC-049 fixes the critic's unit of work as one threat's
+lineage, and this decision does not reopen it: precedent appears in a distinct, labelled package
+block, the critic may cite a precedent's rationale in a critique's explanation, and a critique
+may still target only the lineage's own subjects. The block is capped; when the cap excludes
+precedent, the package names what was excluded rather than truncating silently, the same rule
+the evidence fence follows.
+
+**Scope is the assessment.** Prior runs and revisions of the same assessment are readable
+through the scoped repository; other assessments are not — the `AssessmentHandle` boundary
+exists so one assessment's code cannot reach another's, and a cross-assessment precedent ledger
+would carve through it. That carve-out is deferred, not decided: appsec-agent's global ledger is
+the shape it would take, and the cross-run finding-identity decision (#236) is where the
+identity half lands.
+
+**Dismissal patterns are not distilled.** appsec-agent's second mechanism — summarising
+dismissals into reusable guidance — is a model call whose output becomes standing instruction,
+unreviewed authority in exactly the place agent output must stay challengeable. Raw precedent
+with a human's own words is the version of this that carries no invented generalisation.
+
+Why:
+
+**The data is already persisted and already trustworthy.** Every `ReviewerDecision` carries
+disposition and rationale (DEC-023); the rationale is the one text in the pipeline written by
+the human whose judgment the critic is meant to anticipate. Feeding it back is reading the
+record, not building a new mechanism.
+
+**The critic is the right consumer.** It already judges whether a finding survives challenge;
+"the reviewer dismissed the sibling of this for reason X" is exactly a challenge. Consolidation
+is mechanical and the checkpoint is the human's own view; neither benefits.
+
+Alternatives Considered:
+
+- Embedding or model-assisted similarity matching
+- Distilling dismissal patterns into reusable prompt guidance, appsec-agent style
+- A cross-assessment precedent ledger through a deliberate scoping carve-out
+- Feeding precedent to Finding Consolidation instead of the critic
+
+Tradeoffs:
+
+- Within-assessment scope makes the block empty until an assessment has revision history, so
+  the mechanism is dormant in every first run; its value arrives with longitudinal use.
+- Deterministic matching misses paraphrased precedent — a dismissal whose finding cited a
+  different requirement for the same underlying concern will not surface.
+- Precedent bias is real: a wrongly-dismissed finding now argues for dismissing its successor.
+  The mitigations are structural — the critic tests whether the rationale applies rather than
+  inheriting the verdict, and the reviewer at checkpoint 2 sees any critique that leaned on
+  precedent.
+
+Open Questions:
+
+- What is the right cap for the precedent block — and should recency or match tightness order
+  it?
+
+## DEC-065: A credible concern no requirement covers becomes a catalog-gap candidate, routed to the catalog owner and never into the assessment's conclusions
+
+Date: 2026-08-10
+
+Status: Accepted
+
+Decision:
+
+**`domain/proposals/` gains `CatalogGapCandidateProposal`, and the Threat Analysis and Mapping
+agents may return it.** The RaD-TM discipline, transplanted: never stretch the nearest
+requirement to cover a concern it does not cover, and never drop the observation — flag it as
+catalog-maintenance input. The proposal carries the concern, the evidence local keys that ground
+it, a suggested category, and — the quality gate — **the nearest requirements considered and why
+each does not fit**. DEC-024's whole-catalog posture is what makes "no requirement covers this"
+a claim the agent can actually make; the named-nearest-requirements field is what makes it
+falsifiable. Proposal rules apply unchanged: local keys, nothing authoritative, `extra="forbid"`.
+
+**A validated candidate persists with the assessment and is not a conclusion.** It is converted
+and allocated like any proposal (DEC-018), with provenance to the run that produced it. No
+report section renders it — the sixteen-section ownership table is unchanged, which is the
+structural guarantee that a candidate cannot become a finding-shaped object. It is not a
+checkpoint subject and requires no `ReviewerDecision`; it appears in the checkpoint 2 package as
+an informational block, because under DEC-004 the reviewer and the catalog owner are the same
+person.
+
+**The candidate feeds the next catalog version through a human.** DEC-057's lifecycle is the
+receiving end: a candidate is raw material for a 0.2 authoring decision, carrying no authority.
+Aggregating candidates across assessments stays manual — the scoped-repository boundary is not
+carved for this either (the DEC-064 posture).
+
+**This is not a seventh agent.** No new model call exists; two existing agents gain an optional
+output type. The cap inventory is unchanged.
+
+Why:
+
+**Both failure modes it replaces are silent.** An agent that stretches `req-AUTH-001` over an
+uncovered concern produces a mapping whose wrongness only a careful reviewer catches; an agent
+that drops the concern produces nothing at all. The typed channel makes the third path cheaper
+than either: flagging is easier than stretching, and the catalog grows from ground the analysis
+actually met — which is how a 23-requirement catalog scoped to one scenario gets honest
+extension pressure rather than invented breadth.
+
+**The DEC-009 pressure point is answered structurally, not by instruction.** A candidate is
+about the *catalog's* coverage, not the system's controls. Its schema carries no severity, no
+validation status, and no finding-shaped field, and no report section can render it; the shape
+that must not happen is unrepresentable rather than discouraged.
+
+Alternatives Considered:
+
+- The status quo: nearest-requirement stretching or silent drops
+- Filing uncovered concerns as low-confidence findings
+- A repo-side maintenance queue the agent writes directly (agents have no filesystem)
+- A standalone catalog-maintenance review agent
+
+Tradeoffs:
+
+- Candidates are model prose reaching a human with less validation pressure than findings get;
+  the volume principle applies and nothing rewards count, but junk candidates cost the catalog
+  owner reading time. The nearest-requirements justification is the filter, and an empty one is
+  a validation failure.
+- An informational block at checkpoint 2 is easy to skim past; a candidate nobody reads is a
+  dropped observation with more steps. The block is small and the alternative was a decision
+  burden on objects that need none.
+- Per-assessment persistence means the catalog owner assembles the cross-assessment picture by
+  hand until a deliberate aggregation surface exists.
+
+Open Questions:
+
+- Does the candidate deserve its own identifier prefix, and which — the prefix registry is
+  DEC-018's to extend?
+- Should `trace assessment show` grow a flag that lists candidates, ahead of any aggregation
+  surface?
