@@ -235,13 +235,63 @@ def test_a_node_registered_against_an_undeclared_phase_is_refused(ledger: Execut
         orchestrator(ledger, ScriptedNode("threat-analysis", Phase.CONTEXT_VALIDATION))
 
 
-def test_two_nodes_may_not_claim_one_phase(ledger: ExecutionLedger) -> None:
-    with pytest.raises(ValueError, match="already has node"):
+def test_two_nodes_may_not_claim_one_name(ledger: ExecutionLedger) -> None:
+    """A phase runs every node the table declares for it; a *name* is registered exactly once."""
+    with pytest.raises(ValueError, match="already has a node named"):
         orchestrator(
             ledger,
             ScriptedNode("document-ingestion", Phase.DOCUMENT_INGESTION),
-            ScriptedNode("evidence-indexing", Phase.DOCUMENT_INGESTION),
+            ScriptedNode("document-ingestion", Phase.DOCUMENT_INGESTION),
         )
+
+
+def test_a_two_node_phase_runs_both_in_the_declared_order(ledger: ExecutionLedger) -> None:
+    """`NODES_BY_PHASE` names the order, so registration order decides nothing — the same
+    reasoning that once refused a second node per phase, kept under the table's authority."""
+    order: list[str] = []
+
+    @dataclass(slots=True)
+    class Ordered:
+        name: str
+        phase: Phase
+        execution_type: ExecutionType = ExecutionType.DETERMINISTIC
+        version: str = "0.1"
+
+        def run(self, context: NodeContext) -> NodeResult:
+            order.append(self.name)
+            return NodeResult()
+
+    outcome = orchestrator(
+        ledger,
+        Ordered("evidence-indexing", Phase.DOCUMENT_INGESTION),  # registered backwards
+        Ordered("document-ingestion", Phase.DOCUMENT_INGESTION),
+    ).run(state_for(ledger, Phase.DOCUMENT_INGESTION))
+
+    assert order == ["document-ingestion", "evidence-indexing"]
+    assert outcome.state.errors == ["no node is registered for phase context_extraction"]
+
+
+def test_a_declared_node_left_unregistered_stops_the_run(ledger: ExecutionLedger) -> None:
+    """Half a phase is a skipped node wearing a completed phase's clothes."""
+    outcome = orchestrator(
+        ledger, ScriptedNode("document-ingestion", Phase.DOCUMENT_INGESTION)
+    ).run(state_for(ledger, Phase.DOCUMENT_INGESTION))
+
+    assert outcome.state.status is RunStatus.FAILED
+    assert "declares node 'evidence-indexing'" in outcome.state.errors[0]
+
+
+def test_a_later_node_sees_what_an_earlier_one_recorded(ledger: ExecutionLedger) -> None:
+    """`state_changes` are absorbed between the nodes of one phase, not held for the advance."""
+    first = ScriptedNode(
+        "document-ingestion",
+        Phase.DOCUMENT_INGESTION,
+        result=NodeResult(state_changes={"source_document_ids": ["src-001"]}),
+    )
+    second = ScriptedNode("evidence-indexing", Phase.DOCUMENT_INGESTION)
+    orchestrator(ledger, first, second).run(state_for(ledger, Phase.DOCUMENT_INGESTION))
+
+    assert second.seen[0].state.source_document_ids == ["src-001"]
 
 
 def test_a_deterministic_node_is_given_no_model(ledger: ExecutionLedger) -> None:

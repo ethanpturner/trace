@@ -50,7 +50,8 @@ src/trace_ai/        configuration, process bootstrap, and cli.py -- the command
 src/trace_ai/domain/           domain objects, identifiers, hashing, and proposals/
 src/trace_ai/domain/proposals/ what an agent returns: local keys, nothing authoritative
 src/trace_ai/services/         ingestion/, evidence/, context/, threats/, requirements/,
-                     prompts/, and the execution ledger
+                     prompts/, the execution ledger, and driver.py -- the composition
+                     point that runs all fourteen phases through the orchestrator
 src/trace_ai/services/context/ input_package.py, pipeline.py, review_file.py
 src/trace_ai/services/threats/ input_package.py -- what the threat agent sees
 src/trace_ai/services/requirements/ loader.py -- the only reader of requirements/
