@@ -152,13 +152,13 @@ def run_scenario(
     The report is not what the decision gate asks about.
     """
     entry = load_scenario(slug, registry_path=registry_path)
-    if not entry.has_recording:
+    if not entry.has_recording_for(condition):
         raise HarnessError(
-            f"scenario {slug!r} has no recording; the harness replays recordings (DEC-073) and "
-            f"cannot run a scenario whose recorded/ directory holds no response files"
+            f"scenario {slug!r} has no recording for condition {condition!r}; the harness "
+            f"replays recordings (DEC-073) and cannot run a variant that has none"
         )
 
-    recordings = _recordings_for(entry, ablations)
+    recordings = _recordings_for(entry, ablations, condition=condition)
     profile = resolve_profile(profile_name)
     model = build_model(profile, responses=load_recorded_responses(recordings))
 
@@ -170,11 +170,10 @@ def run_scenario(
         assessment_id = created.id
         handle = service.handle(assessment_id)
         loader = DocumentLoader(handle)
-        for path in sorted(entry.input_dir.iterdir()):
-            if path.is_file():
-                loader.load_document(
-                    path, origin=SourceOrigin.UPLOADED_DOCUMENT, trust_level=TrustLevel.UNTRUSTED
-                )
+        for path in entry.input_documents(condition):
+            loader.load_document(
+                path, origin=SourceOrigin.UPLOADED_DOCUMENT, trust_level=TrustLevel.UNTRUSTED
+            )
 
         stop_before = Phase.REPORT_GENERATION if stop_after_findings else None
         outcome = run_assessment(
@@ -199,9 +198,9 @@ def run_scenario(
                 )
             previously_paused_at = paused_at
             if paused_at is Phase.HUMAN_CONTEXT_REVIEW:
-                _apply_context_decisions(entry, service, assessment_id)
+                _apply_context_decisions(entry, service, assessment_id, condition=condition)
             elif paused_at is Phase.HUMAN_FINDING_REVIEW:
-                _apply_finding_decisions(entry, service, assessment_id)
+                _apply_finding_decisions(entry, service, assessment_id, condition=condition)
             outcome = resume_assessment(
                 service,
                 assessment_id,
@@ -212,8 +211,8 @@ def run_scenario(
             )
 
         run = handle.objects.get(WorkflowRun, outcome.state.workflow_run_id)
-        metrics = _metrics_for(handle, run, entry)
-        items = _items_for(handle, entry)
+        metrics = _metrics_for(handle, run, entry, condition=condition)
+        items = _items_for(handle, entry, condition=condition)
         feed_path = _export_feed(
             entry,
             handle,
@@ -240,23 +239,25 @@ def run_scenario(
     )
 
 
-def _recordings_for(entry: Scenario, ablations: Sequence[str]) -> list[Path]:
+def _recordings_for(
+    entry: Scenario, ablations: Sequence[str], *, condition: str = "clean"
+) -> list[Path]:
     """The scenario's response recordings, in consumption order, minus the ablated agents'."""
     skipped_markers = [
         marker for ablation in ablations for marker in _ABLATED_RECORDING_MARKERS.get(ablation, ())
     ]
     return [
         path
-        for path in sorted(entry.recorded_dir.glob("*.json"))
+        for path in sorted(entry.recorded_dir_for(condition).glob("*.json"))
         if not any(marker in path.name for marker in skipped_markers)
     ]
 
 
 def _apply_context_decisions(
-    entry: Scenario, service: AssessmentService, assessment_id: str
+    entry: Scenario, service: AssessmentService, assessment_id: str, *, condition: str = "clean"
 ) -> None:
     handle = service.handle(assessment_id)
-    decisions_path = entry.recorded_dir / "decisions-context.yaml"
+    decisions_path = entry.recorded_dir_for(condition) / "decisions-context.yaml"
     document = read_review_file(decisions_path.read_text(encoding="utf-8"))
     # The recorded file carries the authoring-time assessment id; rebind it to this run's.
     # A replay assigns a fresh identifier (asm-002 when a prior scenario took asm-001 in a shared
@@ -276,13 +277,13 @@ def _apply_context_decisions(
 
 
 def _apply_finding_decisions(
-    entry: Scenario, service: AssessmentService, assessment_id: str
+    entry: Scenario, service: AssessmentService, assessment_id: str, *, condition: str = "clean"
 ) -> None:
     from trace_ai.domain.enums import Severity
 
     handle = service.handle(assessment_id)
     recorded = yaml.safe_load(
-        (entry.recorded_dir / "decisions-findings.yaml").read_text(encoding="utf-8")
+        (entry.recorded_dir_for(condition) / "decisions-findings.yaml").read_text(encoding="utf-8")
     )
     # Findings are matched by the recording's order rather than by identifier: a shared store
     # gives this run's findings different identifiers than the recording captured, and the
@@ -306,8 +307,15 @@ def _apply_finding_decisions(
     conclude_finding_review(service, assessment_id)
 
 
+def _has_outcome_truth(entry: Scenario, condition: str) -> bool:
+    expected = entry.expected_dir_for(condition)
+    return (expected / "expected-findings.yaml").is_file() and (
+        expected / "expected-documentation-gaps.yaml"
+    ).is_file()
+
+
 def _metrics_for(
-    handle: AssessmentHandle, run: WorkflowRun, entry: Scenario
+    handle: AssessmentHandle, run: WorkflowRun, entry: Scenario, *, condition: str = "clean"
 ) -> list[EvaluationResult]:
     """This run's full metric set, topping up rather than duplicating the pipeline's rows.
 
@@ -316,48 +324,51 @@ def _metrics_for(
     reaches a run, DEC-027). A run that stopped before its evaluation node has no rows, and the
     harness computes everything it can.
     """
+    expected_dir = entry.expected_dir_for(condition)
+    has_truth = _has_outcome_truth(entry, condition)
     existing = [
         result
         for result in handle.objects.list(EvaluationResult)
         if result.workflow_run_id == run.id
     ]
     if not existing:
-        computed = compute_metrics(
-            handle, run, expected_dir=entry.expected_dir if entry.has_outcome_truth else None
-        )
+        computed = compute_metrics(handle, run, expected_dir=expected_dir if has_truth else None)
         persist_metrics(handle, run, computed)
         return computed
-    if not entry.has_outcome_truth:
+    if not has_truth:
         return existing
-    benchmark = compute_benchmark_metrics(handle, run, expected_dir=entry.expected_dir)
+    benchmark = compute_benchmark_metrics(handle, run, expected_dir=expected_dir)
     with handle.objects.transaction():
         for result in benchmark:
             handle.objects.save(result)
     return [*existing, *benchmark]
 
 
-def _items_for(handle: AssessmentHandle, entry: Scenario) -> dict[str, Any] | None:
+def _items_for(
+    handle: AssessmentHandle, entry: Scenario, *, condition: str = "clean"
+) -> dict[str, Any] | None:
     """The per-item match sets behind the rates, for the feed and the diff (DEC-073)."""
-    if not entry.has_outcome_truth:
+    if not _has_outcome_truth(entry, condition):
         return None
     from trace_ai.domain.component import Component as ComponentModel
     from trace_ai.domain.control_mapping import ControlMapping
     from trace_ai.domain.documentation_gap import DocumentationGap
     from trace_ai.services.findings.approved import approved_findings
 
+    expected_dir = entry.expected_dir_for(condition)
     component_names = {
         component.id: normalized_name(component.name)
         for component in handle.objects.list(ComponentModel)
     }
     expected_findings = yaml.safe_load(
-        (entry.expected_dir / "expected-findings.yaml").read_text(encoding="utf-8")
+        (expected_dir / "expected-findings.yaml").read_text(encoding="utf-8")
     )["findings"]
     finding_matches: FindingMatchOutcome = match_findings(
         approved_findings(handle), expected_findings, component_names=component_names
     )
 
     expected_gaps = yaml.safe_load(
-        (entry.expected_dir / "expected-documentation-gaps.yaml").read_text(encoding="utf-8")
+        (expected_dir / "expected-documentation-gaps.yaml").read_text(encoding="utf-8")
     )["documentation_gaps"]
     requirement_by_mapping = {
         mapping.id: mapping.requirement_id for mapping in handle.objects.list(ControlMapping)

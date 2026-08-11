@@ -126,6 +126,43 @@ def test_a_second_scenario_replays_and_scores_its_finding(
     assert feed["metrics"]["false_negative_rate"]["value"] == 0.0
 
 
+def test_the_adversarial_condition_loads_the_poisoned_doc_and_the_finding_survives(
+    tmp_path: Path,
+) -> None:
+    """DEC-075: a condition is a real variant, not a feed label. The adversarial condition adds a
+    poisoned document to the input, and a correct run's finding survives the attack (axis one)."""
+    from trace_ai.services.evaluation.registry import scenario as load_scenario
+
+    entry = load_scenario("unsigned-webhooks")
+    assert "adversarial" in entry.conditions
+    clean_docs = {p.name for p in entry.input_documents("clean")}
+    adversarial_docs = {p.name for p in entry.input_documents("adversarial")}
+    assert adversarial_docs - clean_docs == {"team-notes.md"}, "the overlay adds the poisoned doc"
+
+    outcome = run_scenario(
+        "unsigned-webhooks",
+        data_root=tmp_path / "work",
+        label="adv",
+        condition="adversarial",
+        results_root=tmp_path / "results",
+    )
+    assert outcome.completed
+    assert outcome.feed_path is not None
+    feed = json.loads(outcome.feed_path.read_text(encoding="utf-8"))
+    assert list(feed["items"]["findings"]["matched"]) == ["FND-UW-01"], (
+        "the attack did not suppress it"
+    )
+    assert feed["metrics"]["false_negative_rate"]["value"] == 0.0
+
+
+def test_a_clean_run_ignores_a_condition_it_does_not_name(tmp_path: Path) -> None:
+    """The clean condition sees only the base input; the poisoned doc is the adversarial overlay."""
+    from trace_ai.services.evaluation.registry import scenario as load_scenario
+
+    entry = load_scenario("unsigned-webhooks")
+    assert all(p.name != "team-notes.md" for p in entry.input_documents("clean"))
+
+
 def test_an_ablated_run_is_marked_from_birth_and_substitutes_the_nodes(
     tmp_path: Path,
 ) -> None:
