@@ -8,7 +8,7 @@
 
 **Status:** Proposed
 
-**Last updated:** 2026-08-05
+**Last updated:** 2026-08-10
 
 ## 1. Purpose
 
@@ -81,6 +81,26 @@ The current roadmap contains seven stages:
 Stages should generally be completed in order.
 
 Some research, documentation, and fixture preparation can occur in parallel.
+
+### Delivery milestones
+
+The repository tracks delivery in GitHub milestones. Stages 1 through 4 were delivered as
+milestones M1 Foundation through M4 Results. Design decisions are held in M0 Decisions, each
+closing with a decision-log entry, and citation and vocabulary alignment is held in M5
+Alignment. Stages 5 and 6 are decomposed into four further milestones:
+
+| Milestone | Scope |
+|---|---|
+| M6 Assembly | The orchestrator drives all fourteen phases end to end. CLI commands reach both checkpoints and the report. `trace verify` re-hashes evidence and the report manifest. A recorded ForgeFlow run replays offline, and the README describes the assembled state. |
+| M7 Evaluation | The evaluation harness over the scenario registry. The completed ForgeFlow truth set and scenarios two through five. Baseline comparisons, ablations, run-to-run variance, and the evaluation scorecard. |
+| M8 Adversarial | The poisoned-document corpus as scenario variants. Two-axis adversarial metrics. Typed injection routing at the context checkpoint. The structural-defence demonstration. |
+| M9 Demo and Portfolio | The read-only demonstration interface with the finding lineage view. The measured comparison table. The demo script and recovery plan. The limitations section, the failure taxonomy, and the ablation narrative. |
+
+M6 precedes the Stage 5 work because the demonstration measures a pipeline that must first
+run end to end from the command line; the stages assumed that assembly implicitly. Five
+design decisions gate the evaluation milestones and are held in M0: the harness design, the
+baseline comparison protocol, the adversarial evaluation design, the published scorecard,
+and run-to-run stability measurement.
 
 # Stage 0 — Product and Architecture Foundation
 

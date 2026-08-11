@@ -8,7 +8,7 @@
 
 **Status:** Proposed
 
-**Last updated:** 2026-08-05
+**Last updated:** 2026-08-10
 
 ## 1. Purpose
 
@@ -600,7 +600,11 @@ Model comparisons should use the versioned benchmark suite.
 
 ## 9.1 Evaluation Dashboard
 
-**Status:** Candidate
+**Status:** Promoted
+
+Promoted 2026-08-10 into milestone M7 Evaluation as the static evaluation scorecard
+(issue #271), gated on the published-scorecard decision (issue #258). The scorecard is the
+non-interactive form of this feature; interactive and longitudinal views remain future work.
 
 Display evaluation metrics across workflow and prompt versions.
 
@@ -621,7 +625,11 @@ This should be added after the underlying metrics are reliable.
 
 ## 9.2 Workflow Ablation Testing
 
-**Status:** Candidate
+**Status:** Promoted
+
+Promoted 2026-08-10 into milestone M7 Evaluation (issue #270), gated on the evaluation
+harness design decision (issue #255). Ablations are applied by the harness per DEC-012, and
+an ablated run is marked non-authoritative.
 
 Compare the full Trace workflow with individual stages removed.
 
@@ -922,6 +930,9 @@ The feature would need to avoid generating excessive or low-value requests.
 ## 13.1 Interactive Finding Lineage
 
 **Status:** Candidate
+
+The read-only demonstration form of this view is promoted into milestone M9 Demo and
+Portfolio (issue #276) under DEC-032. The interactive product form remains a candidate.
 
 Provide a visual “Why was this generated?” view.
 
