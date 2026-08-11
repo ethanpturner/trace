@@ -31,6 +31,7 @@ import argparse
 import sys
 from typing import TYPE_CHECKING, Any
 
+from trace_ai.config import MissingSettingError
 from trace_ai.domain.assessment import default_configuration
 from trace_ai.domain.enums import ReviewDisposition, Severity, SourceOrigin
 from trace_ai.domain.evidence import EvidenceReference
@@ -41,6 +42,7 @@ from trace_ai.domain.source_document import SourceDocument, TrustLevel
 from trace_ai.infrastructure.database.store import AssessmentStore, StoreError
 from trace_ai.infrastructure.filesystem.artifact_store import DEFAULT_ROOT, ArtifactStoreError
 from trace_ai.infrastructure.model.factory import UnknownProviderError, build_model
+from trace_ai.infrastructure.model.fake import ResponsesExhaustedError
 from trace_ai.infrastructure.model.profiles import UnknownModelProfileError, resolve_profile
 from trace_ai.infrastructure.model.recorded import load_recorded_responses
 from trace_ai.services.assessment import AssessmentService, AssessmentServiceError
@@ -102,7 +104,9 @@ DEFAULT_THREAT_METHODOLOGY = "stride-scenario-based"
 
 # Errors the services raise by name. These become a message and a non-zero exit code; anything
 # else is a bug and keeps its traceback, because hiding an unexpected failure is how a tool starts
-# lying about what happened.
+# lying about what happened. `MissingSettingError` and `ResponsesExhaustedError` are the two an
+# operator causes from the command line — an unset provider key, and fewer `--response` files than
+# the run makes model calls — so both are answered in a sentence rather than a traceback.
 EXPECTED_ERRORS = (
     AssessmentServiceError,
     DocumentLoadError,
@@ -116,6 +120,8 @@ EXPECTED_ERRORS = (
     UnknownProviderError,
     WorkflowError,
     LimitExceededError,
+    MissingSettingError,
+    ResponsesExhaustedError,
     FileNotFoundError,
     ValueError,
 )

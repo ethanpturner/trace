@@ -34,6 +34,7 @@ from trace_ai.infrastructure.model import (
     ModelFailure,
     ModelSuccess,
     ModelUsage,
+    ResponsesExhaustedError,
     StructuredModel,
     UnknownModelProfileError,
     resolve_profile,
@@ -267,7 +268,19 @@ def test_running_out_of_queued_outcomes_is_an_error() -> None:
     test never described. Repeating the last answer would hide it."""
     model = DeterministicModel([Proposal(summary="only")])
     model.generate(prompt="p", schema=Proposal, settings=GenerationSettings())
-    with pytest.raises(AssertionError, match="nothing queued"):
+    with pytest.raises(ResponsesExhaustedError, match="no response left"):
+        model.generate(prompt="p", schema=Proposal, settings=GenerationSettings())
+
+
+def test_running_out_after_a_mismatch_blames_the_order_not_the_count() -> None:
+    """Responses supplied out of order fail the schema, the retry consumes what was meant for the
+    next call, and the queue runs dry — three effects of one mistake. The exhaustion message names
+    the mismatch that started it, because 'supply more responses' is the wrong advice for a wrong
+    order."""
+    model = DeterministicModel([OtherShape(value=1)])
+    mismatch = model.generate(prompt="p", schema=Proposal, settings=GenerationSettings())
+    assert isinstance(mismatch, ModelFailure)
+    with pytest.raises(ResponsesExhaustedError, match="check the order"):
         model.generate(prompt="p", schema=Proposal, settings=GenerationSettings())
 
 
