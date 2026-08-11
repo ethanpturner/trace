@@ -41,7 +41,7 @@ requirements:
       - absent encryption detail for a managed service that encrypts by default
     default_severity: high
     source_frameworks:
-      - "OWASP ASVS 5.0.0: 14.1.2"
+      - "OWASP ASVS: v5.0.0-14.1.2"
       - "NIST SP 800-53 5.2.0: SC-8"
       - "NIST SP 800-53 5.2.0: SC-28"
     status: active
@@ -80,7 +80,7 @@ requirements:
       - absent deletion evidence where a platform lifecycle policy is documented
     default_severity: medium
     source_frameworks:
-      - "OWASP ASVS 5.0.0: 14.1.1"
+      - "OWASP ASVS: v5.0.0-14.1.1"
       - "NIST SP 800-53 5.2.0: SI-12"
     status: active
 
@@ -118,7 +118,7 @@ requirements:
       - absent per-tenant encryption keys, which are one implementation among several
     default_severity: high
     source_frameworks:
-      - "OWASP ASVS 5.0.0: 14.1.2"
+      - "OWASP ASVS: v5.0.0-14.1.2"
       - "NIST SP 800-53 5.2.0: SC-4"
       - "NIST SP 800-53 5.2.0: AC-3"
     status: active
@@ -155,6 +155,6 @@ requirements:
       - absent deletion path for data that is already lifecycle-expired
     default_severity: low
     source_frameworks:
-      - "OWASP ASVS 5.0.0: 14.1.1"
+      - "OWASP ASVS: v5.0.0-14.1.1"
       - "NIST SP 800-53 5.2.0: SI-12"
     status: active
