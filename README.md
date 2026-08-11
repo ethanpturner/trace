@@ -595,7 +595,9 @@ admin interface, and external dependencies on GitHub, an AI provider, and email.
 
 **The demo runs offline today.** `scripts/replay_forgeflow.py` replays the committed recording
 through all fourteen phases and both checkpoints, and [Running it today](#running-it-today)
-drives the same run one command at a time. The corpus was built to be hard on purpose.
+drives the same run one command at a time. The [demo script](docs/product/demo-script.md) stages
+that run as a timed ten-beat walkthrough with a recovery plan whose every fallback is a committed
+artifact. The corpus was built to be hard on purpose.
 
 ### The fixture set
 
@@ -674,6 +676,7 @@ version 0.1.
 | [Vision](docs/product/vision.md) | Problem, users, principles, what Trace is not |
 | [Design Principles](docs/product/design-principles.md) | The principles in full, with rationale |
 | [Roadmap](docs/product/roadmap.md) | Seven-stage sequencing and stop conditions |
+| [Demo Script](docs/product/demo-script.md) | The ten-beat offline walkthrough and its recovery plan |
 | [Future Features](docs/product/future-features.md) | Deferred ideas and what would promote them |
 | [Project Scope](docs/architecture/project-scope.md) | MVP boundaries, non-goals, constraints |
 | [Current Architecture](docs/architecture/current-architecture.md) | Pipeline, components, proposed technology |
