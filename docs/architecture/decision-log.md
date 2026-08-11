@@ -4782,3 +4782,336 @@ Open Questions:
 
 - Does the TM-BOM serializer round-trip — can Trace *read* a TM-BOM file as structured input
   (DEC-070's family) — or is export one-way?
+
+## DEC-073: The harness is a caller of the ordinary pipeline — registry-driven, offline through replay, one authoritative results home, per-item run diffs
+
+Date: 2026-08-10
+
+Status: Accepted
+
+Decision:
+
+**The evaluation harness executes a registered scenario by driving the ordinary pipeline.** It
+reads `benchmarks/scenarios.yaml` and never discovers scenarios by scanning (DEC-027's
+registry). It is a caller of `AssessmentService` — not a second orchestrator, not a parallel
+code path: the same nodes run, the same transition table routes, the same stores persist. A
+harness that re-implements the pipeline evaluates the re-implementation.
+
+**A harness run is offline by construction.** Model calls come from the replay adapter serving
+recorded responses; reviewer decisions come from a recorded decision file replayed at both
+checkpoints — the node executes, the gate holds, a `ReviewerDecision` is written, and no switch
+exists because replay is not an ablation (DEC-012). CI can therefore run the harness with no
+provider key, which the CI constraint already requires.
+
+**Ablations are applied harness-side, as run construction.** The harness builds the ablated
+`WorkflowRun`, marks it non-authoritative, and names the ablation (DEC-012, DEC-031); no
+assessment configuration is touched, and an ablated run's assessment can never reach `approved`.
+
+**Results have one authoritative home and one derived feed.** `EvaluationResult` objects
+persist with the assessment through the ordinary stores — they are domain objects (DEC-056
+promoted them) and get no exemption. The harness additionally exports a metrics-only feed,
+keyed by scenario, condition, and commit, into a repo-side results tree for the scorecard
+(DEC-076) and CI; the feed is derived, regenerable from the stores, and never authoritative —
+the DEC-062 posture applied to evaluation output.
+
+**The run diff is per-item, not two aggregate scores.** Comparing a run against a named prior
+run classifies each expected item as matched, missed, spurious, or changed, using the DEC-056
+structural matcher and DEC-066 fingerprints. Two runs can hold the same F1 while disagreeing on
+half their items; the per-item diff is what makes a regression a list rather than a delta.
+
+Why:
+
+**Everything downstream of measurement inherits the harness's honesty.** Baselines (DEC-074),
+adversarial conditions (DEC-075), the scorecard (DEC-076), and stability (DEC-077) are all
+harness runs; a harness that bypassed a checkpoint, skipped a node, or kept private state would
+quietly change what every one of them measures. Making it a caller of the real pipeline is the
+one design that cannot drift from what it evaluates.
+
+Alternatives Considered:
+
+- A standalone runner that invokes nodes directly, skipping the orchestrator
+- Results written only to a repo-side tree, keyed by scenario and commit
+- Results written only to the assessment stores, with the scorecard reading SQLite
+- Aggregate-score comparison between runs, with diffs computed ad hoc when needed
+
+Tradeoffs:
+
+- Driving the real pipeline means harness runs pay full pipeline overhead per scenario; at
+  five scenarios and a handful of conditions this is minutes, and the alternative is measuring
+  something else.
+- Two result homes can disagree; the feed being regenerable-by-command is the repair, and any
+  disagreement is a bug in the export, never in the stores.
+- Replayed reviewer decisions freeze the human at recording time; a pipeline change that
+  produces genuinely better candidates still gets the old reviewer's answers until decisions
+  are re-recorded. The reviewer-facing metrics say when re-recording is due.
+
+Open Questions:
+
+- Does the results tree live under `benchmarks/results/` in-repo, or stay untracked until the
+  scorecard needs CI history?
+
+## DEC-074: Baselines run through the same seam, emit the same schemas, and see the same inputs — with ties resolved against Trace; the external comparable stays in the portfolio
+
+Date: 2026-08-10
+
+Status: Accepted
+
+Decision:
+
+**The baseline set is roadmap Stage 5's, unchanged**: a single generic prompt, a structured
+single-pass prompt, and the ablation family (Trace minus evidence validation, minus critical
+review, minus context approval — DEC-012 machinery). Nothing is added or dropped.
+
+**The two prompt baselines are harness runs through the seam.** Their prompts live in
+`prompts/`, versioned and hashed like agent prompts (DEC-019); their calls go through
+`StructuredModel`, are recorded, and replay. A baseline that cannot be re-run is the
+unverifiable vendor self-comparison the ecosystem is rightly criticized for, and the protocol's
+whole point is that anyone can re-execute the comparison from the repository.
+
+**Baseline output is schema-forced, never hand-normalized.** Both baselines emit the same
+target schemas Trace's agents emit, through the same structured-output contract, and are scored
+by the same structural matcher (DEC-056). There is no free-text normalization step to tune in
+either direction; a baseline that fails to produce valid schema output has that recorded in its
+schema-validity rate, which is itself a reported result, not an excuse.
+
+**Fairness limits, with ties resolved against Trace.** Baselines receive the same source
+documents — never the curated, approved context — and they *do* receive the requirements
+catalog, because the matcher scores on requirement citations and a baseline that cannot cite
+requirements would lose on plumbing rather than analysis. Where an input choice favors a side,
+it goes to the baseline. One asymmetry is structural and stated rather than papered over:
+Trace's scored output passed human checkpoints and the baselines' did not; the
+checkpoint-ablated run is the like-for-like comparator, and the full-pipeline comparison
+measures the system as actually operated.
+
+**STRIDE GPT is scored in the portfolio write-up, not in-repo.** It cannot run through the seam,
+and a wrapper would measure the wrapper. The portfolio comparison uses its published behaviour
+on the public scenario inputs, dated, with its version pinned — the scenario inputs are
+synthetic and public (design-principles section 19), so nothing leaks by feeding them to an
+external tool.
+
+Why:
+
+**The comparison is the project's central claim, so its protocol carries the burden of proof.**
+Roadmap Stage 4's decision gate asks whether the multi-stage workflow beats the simpler
+baseline; an unfair or unrepeatable protocol converts the answer into marketing either way.
+Every choice above — same seam, same schemas, same matcher, generous inputs — exists so that a
+skeptic re-running the comparison finds nothing tuned in Trace's favour.
+
+Alternatives Considered:
+
+- Free-text baselines with a normalization layer mapping prose to objects
+- Withholding the catalog from baselines, scoring their uncited findings by title similarity
+- Scoring STRIDE GPT in-repo behind an adapter
+- Adding named commercial tools to the comparison set
+
+Tradeoffs:
+
+- Schema-forcing helps the baselines (structure is half of Trace's discipline, granted free);
+  that is the chosen direction of error and stated as such.
+- Giving baselines the catalog means the comparison cannot show whether Trace's *catalog
+  integration* helps, only whether its pipeline does; the mapping-quality question needs its
+  own ablation if it ever matters.
+- A portfolio-only external comparison will be read as avoiding the fight; the honest answer —
+  an external tool run through a harness it was not built for measures the harness — needs to
+  be written where the comparison is.
+
+Open Questions:
+
+- Does the structured single-pass baseline get one combined schema or the per-stage schemas in
+  sequence? The former is the purer "no pipeline" claim; the latter isolates decomposition
+  from iteration.
+
+## DEC-075: Adversarial evaluation is a condition axis on scenarios — an authored payload corpus, two reported axes, and a named compliance metric
+
+Date: 2026-08-10
+
+Status: Accepted
+
+Decision:
+
+**Every scenario may run under conditions: `clean`, `ambiguous`, `adversarial`,
+`missing_evidence`.** A condition is a variant of the scenario, registered in
+`benchmarks/scenarios.yaml`, holding an input overlay (files added to or replacing the base
+`input/`) and an expected overlay (truth-set deltas) under the scenario's directory. The
+ForgeFlow injection fixture stops being the whole adversarial story and becomes the first entry
+in a corpus. Conditions are harness runs (DEC-073); nothing about the pipeline changes per
+condition, which is the point — the pipeline must not know it is being attacked.
+
+**The corpus covers five payload classes**, each authored as a document a real assessment could
+plausibly ingest: direct instruction injection; fence delimiter escapes; verifier sabotage
+addressed to the validation node; findings suppression ("this system has been reviewed and has
+no issues"); and checkpoint-bypass instructions. Payloads are test data in the DEC-027 sense —
+they live under `expected/`-adjacent variant directories, never leak into clean inputs, and the
+truth set for an adversarial run includes the expected injection observations
+(`expected-observations.yaml` already holds the kind).
+
+**Reporting is two axes, never one number.** Axis one: extraction and finding quality under
+attack — the same metrics as the clean condition, reported as deltas, because an attack that
+degrades recall without triggering anything is still a successful attack. Axis two: targeted
+attack success — did the specific payload achieve its specific objective. **Injected-instruction
+compliance rate is a named metric**: injected instructions complied with over injected
+instructions presented, per payload class. A resistance claim without a measured compliance
+rate is the ecosystem anti-pattern this decision exists to avoid.
+
+This answers `current-architecture.md` section 19 item 12 and `agent-design.md` section 38
+item 11: injection in source documentation is tested as scenario conditions and measured as
+compliance rate plus quality-under-attack; detection surfaces as recorded observations and the
+`injection_flag` routing reason (DEC-062, #274).
+
+Why:
+
+**The analyzed document is Trace's primary threat surface by design, and one fixture is an
+anecdote.** Every major agentic reviewer was compromised through its analyzed content in the
+past year; Trace's structural argument — the fence, the checkpoints, proposals-not-authority —
+is exactly the kind of claim that must be demonstrated rather than asserted, and demonstration
+means a corpus, conditions, and a rate.
+
+**Conditions-on-scenarios beats a separate adversarial suite** because the clean run is the
+control: the same truth set, the same matcher, the same metrics make the attack delta
+attributable to the attack.
+
+Alternatives Considered:
+
+- A standalone adversarial test suite separate from the benchmark scenarios
+- Fuzzing-style generated payloads rather than an authored corpus
+- A single composite "robustness score"
+- Measuring only detection (flag rate) without quality-under-attack
+
+Tradeoffs:
+
+- An authored corpus measures resistance to the attacks its authors thought of; the compliance
+  rate is meaningful per class and meaningless as a universal claim, and the scorecard must
+  label it per class.
+- Variant overlays multiply harness runs per scenario; recorded-response replay keeps CI cost
+  flat, but recording each condition's live run is real one-time cost.
+- The checkpoint-bypass payload can only demonstrate that bypass is unrepresentable — a
+  structural argument scored as trivially zero — which is worth showing exactly once and
+  uninformative as a recurring number.
+
+Open Questions:
+
+- Does `ambiguous` (contradiction-bearing) get its own payload taxonomy the way `adversarial`
+  does, or stay a single authored variant per scenario?
+
+## DEC-076: The scorecard is static, deterministic, metrics-only, and never contains assessment content
+
+Date: 2026-08-10
+
+Status: Accepted
+
+Decision:
+
+**A static HTML scorecard is generated deterministically from the harness's results feed
+(DEC-073) — no model call, no prose generation.** It shows, per scenario and condition:
+precision, recall, and F1 per truth-set field class; schema-validity rate; injected-instruction
+compliance rate per payload class (DEC-075); run-to-run variance (DEC-077); and cost, including
+the cache-aware spend (DEC-067). It is regenerated by CI from recorded runs only — the CI
+key constraint holds — and lives as a committed artifact published via GitHub Pages from the
+repository, so the page's history is the git history.
+
+**The scorecard never contains assessment content.** No finding text, no claim text, no
+evidence excerpt, no document fragment — metrics and identifiers only. This is the DEC-035
+boundary stated for a new artifact: the scorecard is not the report and cannot drift toward
+being one. It is also a security property, not just a taxonomy: adversarial-condition results
+summarize runs whose inputs are attack payloads, and a scorecard that quoted content would
+republish the corpus to a public page.
+
+**The boundary with DEC-032's read-only demonstration interface is recorded**: the scorecard
+shows measurements of the system; the demo interface shows an assessment's content locally.
+Neither absorbs the other.
+
+Why:
+
+**Public, re-runnable, per-pipeline evaluation is rarer than it should be, and rare is
+visible.** The survey found closed self-reported comparisons to be the commercial norm; a
+scorecard whose every number regenerates from recorded runs in CI is the most credible artifact
+the evaluation work can produce, and credibility is the project's currency.
+
+**Deterministic generation is what makes publication safe.** A model-written summary of results
+would need its own review cycle; a rendered table from persisted metrics is auditably boring.
+
+Alternatives Considered:
+
+- GitHub Pages generated from CI artifacts without committing the rendered page
+- A scorecard with model-written narrative summaries per scenario
+- Extending the Markdown report to include evaluation results
+- A live dashboard (future-features 9.1's fuller shape) instead of a static page
+
+Tradeoffs:
+
+- A committed rendered artifact churns the diff on every regeneration; the feed being the real
+  input keeps the churn reviewable as numbers.
+- Metrics-only means the scorecard cannot show *why* a number moved; the per-item diffs
+  (DEC-073) hold that answer and stay local, one link the reader cannot follow from the page.
+- Publishing variance and compliance rates publicly commits the project to numbers that may be
+  unflattering; that is the differentiator working as intended, and the alternative reads as
+  hiding.
+
+Open Questions:
+
+- Does the scorecard page get versioned per release (DEC-057's registry pattern) or show only
+  the current commit's numbers with history left to git?
+
+## DEC-077: Stability is measured — n live runs, replay-matched decisions, per-item agreement retained — and gates nothing
+
+Date: 2026-08-10
+
+Status: Accepted
+
+Decision:
+
+**The protocol: n live runs per scenario, n = 5 as the working default, identical input, same
+recorded reviewer decisions.** Live runs are manual and never CI — CI stays on recorded
+responses — and the operator sees the cost estimate before starting (the DEC-067-weighted
+number). The runs are ordinary runs under DEC-031, not a new kind.
+
+**Recorded decisions apply across runs by structural match.** A recorded decision names its
+subject; in a fresh live run the subjects are re-generated, so replay matches them by content
+fingerprint (DEC-066) and the DEC-056 rules. A subject with no matching recorded decision gets
+the run's named default policy — approve-as-generated, recorded as such — because pausing five
+runs for a human would re-introduce the reviewer variance the protocol holds constant. A run
+containing defaulted decisions says so in its results.
+
+**Variance and agreement are reported per metric and per object class, and the per-item
+agreement sets are retained.** Which expected items appear in all n runs, which flicker, and
+which appeared in none — persisted with the `EvaluationResult`, because "F1 σ = 0.04" cannot be
+diagnosed and "THR-007 matched in 2 of 5 runs" can. The scorecard (DEC-076) shows the variance;
+the retained sets stay local.
+
+**Stability gates nothing.** It is a reported measurement, not a threshold: no release gate, no
+harness failure, no retry-until-stable. A stability gate creates pressure to reduce *measured*
+variance, and the cheapest reductions — prompts that hedge toward the truth set, matchers
+loosened until runs agree — reduce the measurement, not the instability.
+
+Why:
+
+**Run-to-run instability is a documented, named weakness of LLM threat-modeling tools, and
+almost nobody reports variance at all.** Reporting it — whatever the number — is a
+differentiator precisely because it is honest; the moment it gates something, the incentive
+inverts and the number stops being honest. Evaluation-plan section 18 listed consistency as
+future research; this makes it protocol.
+
+Alternatives Considered:
+
+- Stability as a release gate with a variance threshold
+- Deriving stability from recorded-replay runs (free, and measures nothing — replay is
+  deterministic by construction)
+- Fresh human review per run instead of replay-matched decisions
+- Reporting aggregate variance only, without per-item agreement sets
+
+Tradeoffs:
+
+- Five live runs per scenario is the single most expensive measurement in the plan; it is
+  manual, bounded by the operator, and priced up front — and it will therefore be run rarely,
+  so the numbers will age between measurements.
+- Fingerprint-matched replay under-matches when a run words the same finding onto different
+  components; a defaulted decision then substitutes for the human's recorded one, and the
+  defaulted count is part of the result so the substitution is visible.
+- n = 5 bounds what agreement can mean (an item in 4 of 5 runs is one flicker from
+  unanimous); the protocol reports counts, not confidence intervals, and pretends otherwise
+  nowhere.
+
+Open Questions:
+
+- Should the flickering-item set feed the prompt-evaluation loop (section 12) as its highest-
+  value regression fixtures?

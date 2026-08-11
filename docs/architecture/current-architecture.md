@@ -1409,7 +1409,9 @@ The following questions require decisions or implementation experiments:
 9. How should semantic duplicate detection work?
 10. Should LangSmith be used in the public demonstration?
 11. How much reasoning information should be exposed to users?
-12. How should prompt injection in source documentation be tested?
+12. ~~How should prompt injection in source documentation be tested?~~ Resolved by DEC-075: as
+    scenario conditions — an authored payload corpus run as input variants, reported on two
+    axes with injected-instruction compliance rate as a named metric.
 13. ~~How should requirement applicability be determined?~~ Resolved by DEC-024: by the mapping agent's judgment over the whole catalog. There is no deterministic pre-filter, because `applicable_technologies` — the only structured filter field — is populated on zero requirements.
 14. What data should be retained after an assessment?
 15. Which evaluation dataset should be used to compare workflow versions?
