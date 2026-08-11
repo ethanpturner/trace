@@ -568,6 +568,7 @@ The Threat Analysis Agent identifies:
 - Threat-related Question objects
 - Coverage metadata
 - Rejected or non-applicable threat-pattern records when useful
+- Catalog-gap candidates, for credible concerns no catalog requirement covers (DEC-065)
 
 ## Methodology
 
@@ -676,11 +677,25 @@ Validate candidate threats before control mapping.
 - Enforce required impact descriptions
 - Confirm threat categories use permitted values
 - Flag threats based entirely on unsupported assumptions
+- Record warn-only plausibility observations against the authored applicability table — a
+  spoofing threat whose only affected component is a data store is flagged, never rejected
+  (DEC-063)
+- Record an observation when a category falls outside `KNOWN_THREAT_CATEGORIES`, so vocabulary
+  drift is visible without being refused (DEC-063, closing DEC-041's open question)
 - Route invalid outputs for retry or review
 
 ## Important constraint
 
 Semantic duplicate detection may use embeddings or a model-assisted comparison, but the merge decision should remain explicit and traceable.
+
+## Coverage baseline
+
+The same applicability table feeds a coverage listing in the checkpoint 2 review package: per
+component, the applicable categories in which zero threats name it, derived at package-build
+time and never stored (DEC-063). An observation is not an error and a coverage gap is not an
+error class — nothing retries the threat agent against the listing, and no metric targets it.
+Zero threats in an applicable category is a legitimate outcome; the listing informs the
+reviewer and is structurally nothing else.
 
 # 12. Requirement and Control Mapping Agent
 
@@ -722,6 +737,7 @@ The Mapping Agent evaluates:
 - Question objects
 - DocumentationGap candidates
 - Mapping rationale
+- Catalog-gap candidates, for credible concerns no catalog requirement covers (DEC-065)
 
 ## Allowed operations
 
@@ -984,6 +1000,9 @@ The Critical Review Agent looks for:
 - Questions
 - Documentation gaps
 - Candidate finding material
+- A labelled precedent block: rationale-bearing reviewer dismissals from this assessment that
+  match the lineage deterministically — context the critic may cite, never a critique subject
+  (DEC-064)
 
 ## Outputs
 
