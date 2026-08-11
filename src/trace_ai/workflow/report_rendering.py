@@ -223,7 +223,11 @@ def render_report(
             [
                 f"- Assessment: {assessment.id} — {assessment.name}",
                 *([f"- Description: {assessment.description}"] if assessment.description else []),
-                f"- Model profile: {assessment.configuration.model_profile}",
+                # The run's profile, not the configured default: `versions` is assembled by the
+                # caller that ran, and the two differ whenever a run overrides the configuration —
+                # every offline replay does. A report claiming a profile nobody used is a
+                # provenance error in the one document that exists to carry provenance.
+                f"- Model profile: {versions.model_configuration}",
                 f"- Threat methodology: {assessment.configuration.threat_methodology}",
                 f"- Evidence threshold: {assessment.configuration.evidence_threshold.value}",
             ]

@@ -1370,6 +1370,46 @@ def test_an_unreadable_recording_is_refused_by_name(
     assert "empty.json" in capsys.readouterr().err
 
 
+def test_run_without_a_key_is_a_sentence_not_a_traceback(
+    data_root: Path, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The most likely operator slip: forgetting `--model-profile offline-fake`, so the default
+    profile builds the real adapter with no key configured. `MissingSettingError` is in
+    `EXPECTED_ERRORS`, so the answer is the fix in one line rather than a stack trace (#319)."""
+    from trace_ai.config import Settings
+
+    identifier = created(data_root, capsys)
+    assert invoke(data_root, "source", "add", identifier, str(FORGEFLOW_INPUT)) == 0
+    capsys.readouterr()
+
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.setattr(
+        "trace_ai.infrastructure.model.anthropic_adapter.get_settings",
+        lambda: Settings(_env_file=None),
+    )
+    assert invoke(data_root, "run", identifier) == 1
+    captured = capsys.readouterr()
+    assert "error: ANTHROPIC_API_KEY is not set" in captured.err
+    assert "Traceback" not in captured.err
+
+
+def test_an_offline_run_with_missing_responses_is_a_sentence_not_a_traceback(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """The second slip: `offline-fake` with no `--response`. The fake's exhaustion is typed and in
+    `EXPECTED_ERRORS`, and the message speaks to an operator — no test vocabulary (#319)."""
+    identifier = created(data_root, capsys)
+    assert invoke(data_root, "source", "add", identifier, str(FORGEFLOW_INPUT)) == 0
+    capsys.readouterr()
+
+    assert invoke(data_root, "run", identifier, "--model-profile", "offline-fake") == 1
+    captured = capsys.readouterr()
+    assert "error:" in captured.err
+    assert "no response left to serve" in captured.err
+    assert "Traceback" not in captured.err
+    assert "test" not in captured.err.split("error:")[1].lower()
+
+
 def test_evaluate_replays_a_scenario_and_prints_its_metrics(
     data_root: Path, capsys: pytest.CaptureFixture[str], tmp_path: Path
 ) -> None:
