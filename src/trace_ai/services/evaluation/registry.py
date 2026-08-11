@@ -32,14 +32,24 @@ class UnknownScenarioError(ValueError):
         )
 
 
+CLEAN_CONDITION = "clean"
+
+
 @dataclass(frozen=True, slots=True)
 class Scenario:
-    """One registry entry, with the paths the harness needs derived once."""
+    """One registry entry, with the paths the harness needs derived once.
+
+    A scenario may declare conditions (DEC-075) — `clean` is implicit, and each named condition is
+    a variant under `conditions/<name>/` holding an input overlay and, where the truth differs, an
+    expected overlay and its own recording. The base `input/`, `expected/`, and `recorded/` are the
+    clean condition.
+    """
 
     slug: str
     name: str
     path: Path
     status: str
+    conditions: tuple[str, ...] = ()
 
     @property
     def input_dir(self) -> Path:
@@ -53,6 +63,37 @@ class Scenario:
     def recorded_dir(self) -> Path:
         return self.path / "recorded"
 
+    def condition_dir(self, condition: str) -> Path:
+        return self.path / "conditions" / condition
+
+    def input_documents(self, condition: str = CLEAN_CONDITION) -> list[Path]:
+        """The documents a run under this condition sees: the clean set, overlaid by the
+        condition's own files (a same-named file replaces the clean one, DEC-075)."""
+        by_name = {path.name: path for path in sorted(self.input_dir.iterdir()) if path.is_file()}
+        if condition != CLEAN_CONDITION:
+            overlay = self.condition_dir(condition) / "input"
+            if overlay.is_dir():
+                for path in sorted(overlay.iterdir()):
+                    if path.is_file():
+                        by_name[path.name] = path
+        return [by_name[name] for name in sorted(by_name)]
+
+    def expected_dir_for(self, condition: str = CLEAN_CONDITION) -> Path:
+        """The truth-set directory for a condition: its own if authored, else the clean set."""
+        if condition != CLEAN_CONDITION:
+            overlay = self.condition_dir(condition) / "expected"
+            if overlay.is_dir():
+                return overlay
+        return self.expected_dir
+
+    def recorded_dir_for(self, condition: str = CLEAN_CONDITION) -> Path:
+        """The recording directory for a condition: its own if present, else the clean one."""
+        if condition != CLEAN_CONDITION:
+            overlay = self.condition_dir(condition) / "recorded"
+            if overlay.is_dir():
+                return overlay
+        return self.recorded_dir
+
     @property
     def has_recording(self) -> bool:
         """Whether the scenario carries response recordings the harness can replay.
@@ -61,6 +102,10 @@ class Scenario:
         harness refuses a scenario without one by name, and `--all` reports it skipped.
         """
         return self.recorded_dir.is_dir() and any(self.recorded_dir.glob("*.json"))
+
+    def has_recording_for(self, condition: str = CLEAN_CONDITION) -> bool:
+        recorded = self.recorded_dir_for(condition)
+        return recorded.is_dir() and any(recorded.glob("*.json"))
 
     @property
     def has_outcome_truth(self) -> bool:
@@ -80,6 +125,7 @@ def load_registry(registry_path: Path | None = None) -> list[Scenario]:
             name=str(entry["name"]),
             path=root / str(entry["path"]),
             status=str(entry["status"]),
+            conditions=tuple(str(name) for name in entry.get("conditions", ())),
         )
         for entry in parsed["scenarios"]
     ]

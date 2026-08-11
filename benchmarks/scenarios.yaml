@@ -68,8 +68,11 @@ scenarios:
     name: Deploy Notifier
     path: benchmarks/unsigned-webhooks
     # A documented-absent webhook signature check: the finding-versus-gap boundary from the
-    # documented-negative side. One finding, one gap.
+    # documented-negative side. One finding, one gap. Also carries the adversarial condition
+    # (DEC-075): a poisoned document with all five payload classes under conditions/adversarial/.
     status: authored
+    conditions:
+      - adversarial
 
   - slug: contradictory-docs
     name: Export Service
