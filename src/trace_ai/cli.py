@@ -142,7 +142,7 @@ def _default_reviewer() -> str:
 def build_parser() -> argparse.ArgumentParser:
     """The command surface DEC-032 confirms.
 
-    `context extract` and `context show` are absent rather than stubbed: `--help` is a promise.
+    `--help` is a promise: every command listed here works today, and nothing is stubbed.
     """
     parser = argparse.ArgumentParser(
         prog="trace",
