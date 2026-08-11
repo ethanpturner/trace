@@ -148,6 +148,45 @@ def test_registering_without_indexing_is_available(
     assert "registered" in capsys.readouterr().out
 
 
+def test_adding_the_same_directory_twice_changes_no_count(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A repeated `source add` — one rehearsal not wiped, one command run twice — must not move a
+    single number the reviewer is about to quote (#320). The skipped documents are named by
+    identifier, never re-registered and never re-indexed."""
+    identifier = created(data_root, capsys)
+    assert invoke(data_root, "source", "add", identifier, str(FORGEFLOW_INPUT)) == 0
+    first = capsys.readouterr().out
+    assert "registered 8 document(s)" in first
+
+    assert invoke(data_root, "source", "add", identifier, str(FORGEFLOW_INPUT)) == 0
+    second = capsys.readouterr().out
+    assert "registered 0 document(s)" in second
+    assert "already registered: src-001" in second
+    assert "indexed 0 evidence reference(s)" in second
+
+    assert invoke(data_root, "assessment", "status", identifier) == 0
+    status = capsys.readouterr().out
+    assert "source documents: 8" in status
+
+
+def test_a_no_index_registration_is_completed_by_the_next_add(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Rerunning without `--no-index` finishes the job rather than skipping it: the documents are
+    already registered, and the second add indexes what is still unindexed."""
+    identifier = created(data_root, capsys)
+    path = FORGEFLOW_INPUT / "product-overview.md"
+    assert invoke(data_root, "source", "add", identifier, str(path), "--no-index") == 0
+    capsys.readouterr()
+
+    assert invoke(data_root, "source", "add", identifier, str(path)) == 0
+    output = capsys.readouterr().out
+    assert "registered 0 document(s)" in output
+    assert "already registered: src-001" in output
+    assert "indexed 0 evidence reference(s)" not in output
+
+
 def test_source_list_reports_documents_without_their_content(
     data_root: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
