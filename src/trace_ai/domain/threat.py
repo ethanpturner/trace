@@ -44,7 +44,7 @@ from trace_ai.domain.identifiers import (
     QuestionId,
     ThreatId,
 )
-from trace_ai.domain.vocabulary import VocabularyTerm
+from trace_ai.domain.vocabulary import VocabularyTerm, normalize_term
 
 __all__ = [
     "AGENTIC_THREAT_CATEGORIES",
@@ -52,9 +52,12 @@ __all__ = [
     "KNOWN_THREAT_CATEGORIES",
     "LLM_2026_THREAT_CATEGORIES",
     "OPERATIONAL_THREAT_CATEGORIES",
+    "STRIDE_APPLICABILITY",
     "STRIDE_CATEGORIES",
     "THREAT_SOURCE_CATEGORIES",
+    "UNCLASSIFIED_KIND",
     "Threat",
+    "classify_element_kind",
 ]
 
 # STRIDE, in the snake_case spelling section 16's own example uses (`spoofing`,
@@ -164,6 +167,66 @@ KNOWN_THREAT_CATEGORIES: Final[frozenset[str]] = (
     | OPERATIONAL_THREAT_CATEGORIES
     | THREAT_SOURCE_CATEGORIES
 )
+
+# STRIDE-per-element applicability (DEC-063), the Threat Dragon / OdTM convention: a STRIDE
+# category applies to an element kind or it does not. Authored data, warn-only — it feeds a
+# plausibility observation and a coverage listing, and nothing rejects or retries against it. It
+# covers only the STRIDE categories; the open `category` vocabulary (DEC-041) is untouched, and a
+# category outside STRIDE is simply not judged here. A trust boundary is where you look rather than
+# an element threats attach to, so no category applies to it directly.
+STRIDE_APPLICABILITY: Final[dict[str, frozenset[str]]] = {
+    "external_actor": frozenset({"spoofing", "repudiation"}),
+    "process": STRIDE_CATEGORIES,
+    "data_store": frozenset(
+        {"tampering", "repudiation", "information_disclosure", "denial_of_service"}
+    ),
+    "data_flow": frozenset({"tampering", "information_disclosure", "denial_of_service"}),
+    "trust_boundary": frozenset(),
+}
+
+# The kind a component whose type does not classify is presented as. Never rendered as "no gaps":
+# where absence would read as an answer, say it explicitly (DEC-036).
+UNCLASSIFIED_KIND: Final = "unclassified"
+
+# A conservative classification from the open `component_type` vocabulary (DEC-041) to a STRIDE
+# element kind. Deliberately incomplete: a type it does not name is `unclassified`, which is
+# presented as such rather than assumed to have full or no coverage. The kind is a judgment
+# compressed into a lookup, which is the stated cost of the checklist being arithmetic.
+_TYPE_TO_KIND: Final[dict[str, str]] = {
+    "user_interface": "process",
+    "service": "process",
+    "api_gateway": "process",
+    "background_worker": "process",
+    "ci_cd_system": "process",
+    "administrative_interface": "process",
+    "web_application": "process",
+    "internal_application": "process",
+    "data_store": "data_store",
+    "message_queue": "data_store",
+    "object_storage": "data_store",
+    "secrets_manager": "data_store",
+    "managed_database": "data_store",
+    "managed_cache": "data_store",
+    "managed_storage": "data_store",
+    "identity_provider": "external_actor",
+    "external_service": "external_actor",
+    "repository_provider": "external_actor",
+    "managed_security_service": "external_actor",
+}
+
+
+def classify_element_kind(component_type: str) -> str:
+    """The STRIDE element kind a component type maps to, or `unclassified` (DEC-063).
+
+    Normalizes the type the DEC-036 way before the lookup, so a spelling the vocabulary would
+    fold reaches the same kind. An unrecognised type is `unclassified` — never silently treated as
+    covered or uncovered.
+    """
+    try:
+        normalized = normalize_term(component_type)
+    except ValueError:
+        return UNCLASSIFIED_KIND
+    return _TYPE_TO_KIND.get(normalized, UNCLASSIFIED_KIND)
 
 
 class Threat(DomainModel):

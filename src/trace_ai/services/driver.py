@@ -33,6 +33,7 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, ClassVar, Final
 
 from trace_ai.domain.assessment import Assessment
+from trace_ai.domain.component import Component
 from trace_ai.domain.context_claim import ContextClaim
 from trace_ai.domain.control import Control
 from trace_ai.domain.control_mapping import ControlMapping
@@ -366,9 +367,15 @@ class ThreatValidationAdapter:
             threats,
             context=current_system_context(handle),
             claims=handle.objects.list(ContextClaim),
+            components=handle.objects.list(Component),
         )
         if not outcome.valid:
             raise _blocking_stop("threat validation", outcome.blocking_errors)
+        # DEC-063: coverage is warn-only. It names the uncovered applicable categories per
+        # component and the run proceeds; nothing here retries the threat agent against it.
+        coverage = {
+            gap.component_id: list(gap.uncovered) for gap in outcome.coverage_gaps if gap.uncovered
+        }
         return NodeResult(
             consumed_object_ids=[threat.id for threat in threats],
             metadata={
@@ -376,6 +383,11 @@ class ThreatValidationAdapter:
                 "trigger_count": len(outcome.triggers),
                 "merge_proposal_count": len(outcome.merge_proposals),
                 "unfamiliar_categories": list(outcome.unfamiliar_categories),
+                "coverage_gaps": coverage,
+                "implausible_threats": [
+                    {"threat": observation.threat_id, "category": observation.category}
+                    for observation in outcome.implausible_threats
+                ],
             },
         )
 
