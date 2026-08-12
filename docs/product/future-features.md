@@ -934,6 +934,10 @@ The feature would need to avoid generating excessive or low-value requests.
 
 **Status:** Candidate
 
+The read-only demonstration form of this view is built: milestone M9's localhost interface
+(issue #276, DEC-078) renders finding lineage from persisted objects over stdlib `http.server`,
+GET-only and read-only. The interactive product form described below remains a candidate.
+
 Provide a visual “Why was this generated?” view.
 
 It should show:
