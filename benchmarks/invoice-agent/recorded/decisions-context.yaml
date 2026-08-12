@@ -1,0 +1,223 @@
+assessment_id: asm-001
+system_context_version: 1
+reviewer: recorded-reviewer
+components:
+- id: cmp-001
+  decision: approve
+  editable:
+    name: Invoice Agent
+    description: LLM-based finance assistant that reads a submitted invoice through its processing tool and answers with an approve or deny decision
+    component_type: agent
+    technology: []
+    ownership: null
+    deployment_zone: null
+    internet_accessible: null
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+- id: cmp-002
+  decision: approve
+  editable:
+    name: Submission Workflow
+    description: 'drives the agent: delivers the submitted file path and follows up on denials with an urgency note'
+    component_type: service
+    technology: []
+    ownership: null
+    deployment_zone: null
+    internet_accessible: null
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+- id: cmp-003
+  decision: approve
+  editable:
+    name: Model Provider
+    description: null
+    component_type: external_service
+    technology: []
+    ownership: null
+    deployment_zone: null
+    internet_accessible: null
+    externally_managed: true
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+- id: cmp-004
+  decision: approve
+  editable:
+    name: Observability Service
+    description: null
+    component_type: external_service
+    technology: []
+    ownership: null
+    deployment_zone: null
+    internet_accessible: null
+    externally_managed: true
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+actors:
+- id: act-001
+  decision: approve
+  editable:
+    name: Invoice submitter
+    actor_type: external_user
+    trust_level: null
+    capabilities: []
+    authentication_method: null
+assets:
+- id: ast-001
+  decision: approve
+  editable:
+    name: Submitted invoices
+    asset_type: financial_data
+    description: 'submitted invoice documents: amount, submitter, category, and due date'
+    confidentiality_impact: null
+    integrity_impact: null
+    availability_impact: null
+    data_classification: null
+    owner: null
+- id: ast-002
+  decision: approve
+  editable:
+    name: Provider credentials
+    asset_type: credentials
+    description: credentials for the model provider and the observability service, held by the agent runtime
+    confidentiality_impact: null
+    integrity_impact: null
+    availability_impact: null
+    data_classification: null
+    owner: null
+- id: ast-003
+  decision: approve
+  editable:
+    name: Request traces
+    asset_type: operational_data
+    description: request and tool-call traces, including HTTP request and response bodies
+    confidentiality_impact: null
+    integrity_impact: null
+    availability_impact: null
+    data_classification: null
+    owner: null
+data_flows:
+- id: df-001
+  decision: approve
+  editable:
+    name: Invoice submission
+    direction: one_way
+    protocol: null
+    data_types: []
+    authentication: unknown
+    encryption_in_transit: unknown
+    internet_exposed: null
+    source_component_id: cmp-002
+    destination_component_id: cmp-001
+- id: df-002
+  decision: approve
+  editable:
+    name: Model prompt and completion
+    direction: bidirectional
+    protocol: null
+    data_types: []
+    authentication: unknown
+    encryption_in_transit: unknown
+    internet_exposed: null
+    source_component_id: cmp-001
+    destination_component_id: cmp-003
+- id: df-003
+  decision: approve
+  editable:
+    name: Trace capture
+    direction: one_way
+    protocol: null
+    data_types: []
+    authentication: unknown
+    encryption_in_transit: unknown
+    internet_exposed: null
+    source_component_id: cmp-001
+    destination_component_id: cmp-004
+trust_boundaries:
+- id: tb-001
+  decision: approve
+  editable:
+    name: Untrusted submission content boundary
+    boundary_type: user_to_application
+    description: submitted invoice files carry submitter-authored content into the agent's model conversation
+    controls: []
+- id: tb-002
+  decision: approve
+  editable:
+    name: Third-party service boundary
+    boundary_type: application_to_external_service
+    description: null
+    controls: []
+claims:
+- id: ctx-001
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  evidence:
+  - evd-005
+  editable:
+    predicate: model_input_trust
+    value: the invoice file's contents are parsed and returned to the model as the invoice details
+    rationale: null
+- id: ctx-002
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  evidence:
+  - evd-002
+  editable:
+    predicate: denial_followup
+    value: a denied invoice is followed up in the same conversation with an urgency note asking the agent to reconsider, with the agent's prior messages carried in
+    rationale: null
+- id: ctx-003
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  evidence:
+  - evd-004
+  editable:
+    predicate: spending_ceiling_enforcement
+    value: the $20,000 ceiling is applied by the agent from its instructions; the schema does not enforce a maximum amount
+    rationale: null
+- id: ctx-004
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  evidence:
+  - evd-006
+  editable:
+    predicate: trace_capture
+    value: request and tool-call traces, including HTTP request and response bodies, are captured for debugging
+    rationale: null
+- id: ctx-005
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  evidence:
+  - evd-005
+  editable:
+    predicate: submitter_identity
+    value: the submitter field is a value in the uploaded document; submitters are not otherwise authenticated to the workflow
+    rationale: null
+- id: ctx-006
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  evidence:
+  - evd-006
+  editable:
+    predicate: credential_possession
+    value: the agent runs with credentials for the model provider and the observability service
+    rationale: null
+questions: []

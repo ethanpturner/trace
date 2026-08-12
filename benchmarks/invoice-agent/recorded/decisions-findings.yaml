@@ -1,0 +1,15 @@
+assessment_id: asm-001
+reviewer: recorded-reviewer
+findings:
+- id: fnd-001
+  severity: high
+  decision: approve
+  rationale: The documents affirmatively establish that submitted content reaches the model conversation and that the deny rules are negotiable by discretion; the weakness is documented, not inferred from silence.
+- id: fnd-002
+  severity: high
+  decision: approve
+  rationale: The ceiling is documented as applied by instruction while the schema enforces no maximum; the acted-on output has no deterministic validation layer.
+- id: fnd-003
+  severity: medium
+  decision: approve
+  rationale: Body-level trace capture is affirmatively documented, and the captured bodies carry submitted financial data to a third-party service.

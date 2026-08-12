@@ -1,0 +1,154 @@
+assessment_id: asm-001
+system_context_version: 1
+reviewer: recorded-reviewer
+components:
+- id: cmp-001
+  decision: approve
+  editable:
+    name: Portal Web Application
+    description: server-rendered web application that presents tickets, accepts comments, and calls the ticket service for data; it holds no local user accounts
+    component_type: web_application
+    technology: []
+    ownership: null
+    deployment_zone: null
+    internet_accessible: false
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms:
+    - openid_connect
+    authorization_mechanisms: []
+- id: cmp-002
+  decision: approve
+  editable:
+    name: Ticket Service
+    description: internal HTTP service that stores and retrieves tickets
+    component_type: service
+    technology: []
+    ownership: null
+    deployment_zone: null
+    internet_accessible: false
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+- id: cmp-003
+  decision: approve
+  editable:
+    name: Identity Provider
+    description: the enterprise OpenID Connect provider that authenticates employees and enforces the factor policy
+    component_type: external_service
+    technology: []
+    ownership: null
+    deployment_zone: null
+    internet_accessible: null
+    externally_managed: true
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+actors:
+- id: act-001
+  decision: approve
+  editable:
+    name: Employee
+    actor_type: internal_user
+    trust_level: null
+    capabilities: []
+    authentication_method: openid_connect
+assets:
+- id: ast-001
+  decision: approve
+  editable:
+    name: Support tickets
+    asset_type: customer_data
+    description: customer support correspondence, persisted in a managed relational database
+    confidentiality_impact: null
+    integrity_impact: null
+    availability_impact: null
+    data_classification: null
+    owner: null
+data_flows:
+- id: df-001
+  decision: approve
+  editable:
+    name: Ticket reads and comments
+    direction: bidirectional
+    protocol: null
+    data_types: []
+    authentication: unknown
+    encryption_in_transit: unknown
+    internet_exposed: false
+    source_component_id: cmp-001
+    destination_component_id: cmp-002
+- id: df-002
+  decision: approve
+  editable:
+    name: OpenID Connect authentication
+    direction: bidirectional
+    protocol: null
+    data_types: []
+    authentication: openid_connect
+    encryption_in_transit: unknown
+    internet_exposed: null
+    source_component_id: cmp-001
+    destination_component_id: cmp-003
+trust_boundaries:
+- id: tb-001
+  decision: approve
+  editable:
+    name: Corporate network boundary
+    boundary_type: network_perimeter
+    description: the portal is reachable only from the corporate network and the company VPN
+    controls: []
+- id: tb-002
+  decision: approve
+  editable:
+    name: Identity provider boundary
+    boundary_type: application_to_external_service
+    description: null
+    controls: []
+claims:
+- id: ctx-001
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  evidence:
+  - evd-003
+  editable:
+    predicate: authentication_delegation
+    value: all access is authenticated through the enterprise identity provider using OpenID Connect; the portal maintains no password store of its own and issues no credentials
+    rationale: null
+- id: ctx-002
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  evidence:
+  - evd-003
+  editable:
+    predicate: mfa_responsibility
+    value: multi-factor enrolment and factor policy are set at the identity provider organization level
+    rationale: null
+- id: ctx-003
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  evidence:
+  - evd-002
+  editable:
+    predicate: network_reachability
+    value: the ticket service is reachable only from the portal web application inside the application subnet
+    rationale: null
+- id: ctx-004
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  evidence:
+  - evd-001
+  editable:
+    predicate: network_exposure
+    value: the portal is served over HTTPS and reachable only from the corporate network and the company VPN
+    rationale: null
+questions: []

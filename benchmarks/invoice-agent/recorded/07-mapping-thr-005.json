@@ -1,0 +1,22 @@
+{
+  "controls": [],
+  "mappings": [
+    {
+      "threat_id": "thr-005",
+      "requirement_id": "req-AUTHZ-001",
+      "control_keys": [],
+      "existing_control_ids": [],
+      "applicability_status": "applicable",
+      "applicability_reason": "Approval authority is scoped to three approved submitters, so identity-aware authorization applies; the document states the submitter field is not otherwise authenticated to the workflow, and whether an upstream system establishes it is not described.",
+      "suppressed_conclusion": null,
+      "suppressed_by": null,
+      "satisfaction_status": "unverified",
+      "evidence_ids": [
+        "evd-005"
+      ],
+      "assumptions": [],
+      "confidence": "low"
+    }
+  ],
+  "documentation_gaps": []
+}

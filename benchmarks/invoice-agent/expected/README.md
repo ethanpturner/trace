@@ -23,6 +23,11 @@ which is the ground the ASI Agentic Top 10 covers and ForgeFlow only touches.
 | --- | --- |
 | `evaluation-contract.yaml` | The grading policy. Declares no counts (DEC-028). |
 | `expected-threats.yaml` | Authored — derived from the sample's described vulnerabilities. |
+| `expected-findings.yaml` | Authored (#268) — three findings, matched on requirement and component. |
+| `expected-documentation-gaps.yaml` | Authored (#268) — two gaps, each with a paired question. |
+| `expected-questions.yaml` | Authored (#268). |
+| `expected-rejections.yaml` | Authored (#268) — the claims a correct assessment does not make. |
+| `reviewer-notes.md` | The checkpoint-2 guidance for whoever plays the reviewer. |
 
-The remaining `expected-*.yaml` files from the DEC-027 derivation are not yet authored;
-each will be added here as it lands.
+The scenario also carries a recording (`../recorded/`, #326), so `trace evaluate
+invoice-agent` replays it offline and scores it against these files.
