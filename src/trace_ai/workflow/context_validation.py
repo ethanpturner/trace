@@ -56,8 +56,10 @@ if TYPE_CHECKING:
 __all__ = [
     "SECTION_7_TRIGGERS",
     "ContextValidationOutcome",
+    "PrivilegeExtreme",
     "ReviewTrigger",
     "ValidationError",
+    "ZoneMismatch",
     "validate_context",
 ]
 
@@ -121,6 +123,47 @@ class ReviewTrigger:
 
 
 @dataclass(frozen=True, slots=True)
+class ZoneMismatch:
+    """A flow between components in different zones that crosses no declared boundary (DEC-068).
+
+    Boundary crossings are the highest-signal threat locations, and this is the survey's zone
+    insight adopted as a check rather than as a third representation of containment. Warn-only by
+    construction: it lives outside `errors`, so it can neither block nor be retried against, and
+    nothing is corrected — report-and-route holds.
+    """
+
+    flow_id: str
+    source_component_id: str
+    destination_component_id: str
+    source_zone: str
+    destination_zone: str
+
+    @property
+    def detail(self) -> str:
+        return (
+            f"{self.flow_id} moves data from {self.source_component_id} "
+            f"(zone {self.source_zone!r}) to {self.destination_component_id} "
+            f"(zone {self.destination_zone!r}) and crosses no declared trust boundary. Either a "
+            f"boundary is undeclared or a zone label is wrong; a reviewer decides which."
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class PrivilegeExtreme:
+    """An attack-surface extreme the context does not represent (DEC-068).
+
+    The extremes are where analysis most often goes silent, and silence needs the DEC-009 outlet:
+    the driver raises a `Question` for each entry, because absence here needs a human answer
+    rather than an inferred one.
+    """
+
+    extreme: str
+    """`anonymous_or_external` or `administrative_or_privileged`."""
+
+    detail: str
+
+
+@dataclass(frozen=True, slots=True)
 class ContextValidationOutcome:
     """Section 8's outputs: what validated, what did not, what to retry, and why to look."""
 
@@ -133,6 +176,15 @@ class ContextValidationOutcome:
     duplicate_groups: tuple[tuple[str, ...], ...] = ()
     """Objects sharing a normalized name. Reported for a reviewer to merge or keep; merging here
     would be a correction, and section 8 forbids the node making them."""
+
+    zone_mismatches: tuple[ZoneMismatch, ...] = ()
+    """DEC-068's cross-claim check, warn-only: outside `errors` by construction, so
+    `blocking_errors` and `retry_instructions` cannot include one."""
+
+    privilege_extremes: tuple[PrivilegeExtreme, ...] = ()
+    """DEC-068's privilege-extremes check: attack-surface extremes no actor represents. The
+    driver raises a `Question` per entry — the DEC-009 outlet for exactly that silence — and
+    nothing here blocks."""
 
     @property
     def ready_for_review(self) -> bool:
@@ -302,7 +354,95 @@ def validate_context(
         triggers=tuple(_triggers(context, objects, previous=previous)),
         unfamiliar_terms=tuple(_unfamiliar_terms(objects)),
         duplicate_groups=tuple(duplicates),
+        zone_mismatches=tuple(_zone_mismatches(objects)),
+        privilege_extremes=tuple(_privilege_extremes(objects)),
     )
+
+
+def _zone_mismatches(objects: Sequence[DomainModel]) -> list[ZoneMismatch]:
+    """DEC-068's cross-claim check: differing zones with no declared crossing, reported.
+
+    Both endpoints must *state* a zone — a flow into a component whose zone is undocumented is
+    silence, and silence is not a mismatch. Zones are compared in DEC-056's normalized form so
+    `DMZ` and `dmz` are one zone, and nothing is written back.
+    """
+    components = {obj.id: obj for obj in objects if isinstance(obj, Component)}
+    mismatches: list[ZoneMismatch] = []
+    for flow in (obj for obj in objects if isinstance(obj, DataFlow)):
+        source = components.get(flow.source_component_id)
+        destination = components.get(flow.destination_component_id)
+        if source is None or destination is None:
+            continue
+        if not source.deployment_zone or not destination.deployment_zone:
+            continue
+        if _normalized_name(source.deployment_zone) == _normalized_name(
+            destination.deployment_zone
+        ):
+            continue
+        if flow.crosses_trust_boundary_ids:
+            continue
+        mismatches.append(
+            ZoneMismatch(
+                flow_id=flow.id,
+                source_component_id=source.id,
+                destination_component_id=destination.id,
+                source_zone=source.deployment_zone,
+                destination_zone=destination.deployment_zone,
+            )
+        )
+    return mismatches
+
+
+# What counts as each attack-surface extreme (DEC-068). An actor qualifies through its persona
+# where one is stated, or through what its type already says: an `external_attacker` is external
+# whatever its `access_level`, and an `administrator` is privileged. Deliberately narrow — a
+# check that guessed would mark the extreme represented when nobody represented it.
+_ANONYMOUS_OR_EXTERNAL_TYPES: Final[frozenset[str]] = frozenset(
+    {"external_attacker", "third_party_service"}
+)
+_ADMIN_OR_PRIVILEGED_TYPES: Final[frozenset[str]] = frozenset({"administrator"})
+
+
+def _privilege_extremes(objects: Sequence[DomainModel]) -> list[PrivilegeExtreme]:
+    """DEC-068's privilege-extremes check: which extreme no actor represents.
+
+    The extremes of the attack surface are where analysis most often goes silent. This does not
+    block and corrects nothing; each entry becomes a `Question`, because whether an unrepresented
+    extreme is genuinely out of scope is a judgment about the world.
+    """
+    actors = [obj for obj in objects if isinstance(obj, Actor)]
+    anonymous_or_external = any(
+        actor.access_level == "anonymous" or actor.actor_type in _ANONYMOUS_OR_EXTERNAL_TYPES
+        for actor in actors
+    )
+    admin_or_privileged = any(
+        actor.access_level == "privileged" or actor.actor_type in _ADMIN_OR_PRIVILEGED_TYPES
+        for actor in actors
+    )
+
+    extremes: list[PrivilegeExtreme] = []
+    if not anonymous_or_external:
+        extremes.append(
+            PrivilegeExtreme(
+                extreme="anonymous_or_external",
+                detail=(
+                    "No actor in the context is anonymous or external. If the system is "
+                    "reachable from outside, who reaches it? If it is not, what establishes "
+                    "that?"
+                ),
+            )
+        )
+    if not admin_or_privileged:
+        extremes.append(
+            PrivilegeExtreme(
+                extreme="administrative_or_privileged",
+                detail=(
+                    "No actor in the context is administrative or privileged. Who operates and "
+                    "configures the system, and through what?"
+                ),
+            )
+        )
+    return extremes
 
 
 def _duplicate_groups(objects: Sequence[DomainModel]) -> list[tuple[str, ...]]:
@@ -316,25 +456,41 @@ def _duplicate_groups(objects: Sequence[DomainModel]) -> list[tuple[str, ...]]:
 
 
 def _unfamiliar_terms(objects: Sequence[DomainModel]) -> list[str]:
-    """Vocabulary terms outside the documented examples. Reported, never rejected (DEC-036)."""
-    from trace_ai.domain.actor import KNOWN_ACTOR_TYPES
-    from trace_ai.domain.asset import KNOWN_ASSET_TYPES
-    from trace_ai.domain.component import KNOWN_COMPONENT_TYPES
+    """Vocabulary terms outside the documented examples. Reported, never rejected (DEC-036).
+
+    The DEC-068 fields are covered on the same terms as the original four: a persona, entry
+    point, or classification outside its `KNOWN_*` set is surfaced for a reader and refused for
+    nothing. `None` and an empty list are absence, not terms.
+    """
+    from trace_ai.domain.actor import (
+        KNOWN_ACCESS_LEVELS,
+        KNOWN_ACTOR_TYPES,
+        KNOWN_SKILL_LEVELS,
+    )
+    from trace_ai.domain.asset import KNOWN_ASSET_TYPES, KNOWN_DATA_CLASSIFICATIONS
+    from trace_ai.domain.component import KNOWN_COMPONENT_TYPES, KNOWN_ENTRY_POINT_TYPES
     from trace_ai.domain.trust_boundary import KNOWN_BOUNDARY_TYPES
 
     checks: list[tuple[type, str, frozenset[str]]] = [
         (Component, "component_type", KNOWN_COMPONENT_TYPES),
+        (Component, "entry_point_types", KNOWN_ENTRY_POINT_TYPES),
         (Actor, "actor_type", KNOWN_ACTOR_TYPES),
+        (Actor, "skill_level", KNOWN_SKILL_LEVELS),
+        (Actor, "access_level", KNOWN_ACCESS_LEVELS),
         (Asset, "asset_type", KNOWN_ASSET_TYPES),
+        (Asset, "data_classification", KNOWN_DATA_CLASSIFICATIONS),
         (TrustBoundary, "boundary_type", KNOWN_BOUNDARY_TYPES),
     ]
     found: set[str] = set()
     for obj in objects:
         for model, attribute, known in checks:
-            if isinstance(obj, model):
-                value = getattr(obj, attribute)
-                if value not in known:
-                    found.add(f"{attribute}={value}")
+            if not isinstance(obj, model):
+                continue
+            value = getattr(obj, attribute)
+            values = value if isinstance(value, list) else [value]
+            for term in values:
+                if term is not None and term not in known:
+                    found.add(f"{attribute}={term}")
     return sorted(found)
 
 

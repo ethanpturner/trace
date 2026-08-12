@@ -20,7 +20,7 @@ from trace_ai.domain.enums import ObjectStatus, SourceOrigin
 from trace_ai.domain.identifiers import AssessmentId, AssetId, ComponentId, EvidenceReferenceId
 from trace_ai.domain.vocabulary import VocabularyTerm
 
-__all__ = ["KNOWN_ASSET_TYPES", "Asset"]
+__all__ = ["KNOWN_ASSET_TYPES", "KNOWN_DATA_CLASSIFICATIONS", "Asset"]
 
 # Section 12's examples. Documentation, not a validation rule (DEC-036).
 KNOWN_ASSET_TYPES: Final[frozenset[str]] = frozenset(
@@ -36,6 +36,24 @@ KNOWN_ASSET_TYPES: Final[frozenset[str]] = frozenset(
         "service_availability",
         "business_process",
         "organizational_reputation",
+    }
+)
+
+# Section 12's sensitivity examples (DEC-068). The DEC-036 treatment, explicitly against TM-BOM's
+# closed enum: `data_classification` normalizes to one spelling and rejects nothing, and this set
+# documents what the corpus uses.
+KNOWN_DATA_CLASSIFICATIONS: Final[frozenset[str]] = frozenset(
+    {
+        "pii",
+        "phi",
+        "financial",
+        "credentials",
+        "intellectual_property",
+        "telemetry",
+        "public",
+        "internal",
+        "confidential",
+        "restricted",
     }
 )
 
@@ -58,10 +76,19 @@ class Asset(DomainModel):
     integrity_impact: str | None = None
     availability_impact: str | None = None
 
-    data_classification: str | None = None
+    data_classification: VocabularyTerm | None = None
+    """Sensitivity of the asset's data. Open vocabulary, normalized (DEC-068, DEC-036); see
+    `KNOWN_DATA_CLASSIFICATIONS`. `None` means the documentation does not classify it."""
+
     owner: str | None = None
     component_ids: list[ComponentId] = Field(default_factory=list)
     """Components that hold or process this asset."""
+
+    stored_in_component_ids: list[ComponentId] = Field(default_factory=list)
+    """The subset of `component_ids` that stores this asset *at rest* (DEC-068). This is where
+    encryption-at-rest and retention requirements attach; without the split, every at-rest
+    mapping over-applies to processors. Empty means the documentation does not say where the
+    asset rests, not that it rests nowhere."""
 
     evidence_ids: list[EvidenceReferenceId] = Field(default_factory=list)
 

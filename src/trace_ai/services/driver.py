@@ -295,6 +295,12 @@ class ContextValidationAdapter:
     and blocking errors do not stop the run, because the reviewer at checkpoint 1 is the person
     who decides what an error means. What blocking errors stop is approval, and that refusal is
     `workflow/context_review.py`'s.
+
+    The one thing this adapter does persist is DEC-068's privilege-extremes Questions: an
+    unrepresented attack-surface extreme is silence, a Question is the DEC-009 outlet for it, and
+    the question flows into checkpoint 1 through the same open-questions surface everything else
+    uses. Idempotent — a re-derived outcome raises no second copy of a question that is already
+    open.
     """
 
     version: str = "0.1"
@@ -303,19 +309,57 @@ class ContextValidationAdapter:
     phase: ClassVar[Phase] = Phase.CONTEXT_VALIDATION
     execution_type: ClassVar[ExecutionType] = ExecutionType.DETERMINISTIC
 
+    GENERATED_BY: ClassVar[str] = "context-validation-v1"
+
     def run(self, context: NodeContext) -> NodeResult:
+        from trace_ai.domain.question import Question, QuestionPriority, QuestionStatus
+
         handle = context.handle
         system_context = current_system_context(handle)
         available = {ref.id for ref in handle.objects.list(EvidenceReference)}
         outcome = validate_context(
             system_context, context_objects(handle), available_evidence=available
         )
+
+        raised: list[str] = []
+        existing = {
+            question.question
+            for question in handle.objects.list(Question)
+            if question.generated_by == self.GENERATED_BY
+        }
+        with handle.objects.transaction() as repository:
+            for extreme in outcome.privilege_extremes:
+                if extreme.detail in existing:
+                    continue
+                question = Question.model_validate(
+                    {
+                        "id": repository.allocate("qst"),
+                        "assessment_id": handle.assessment_id,
+                        "question": extreme.detail,
+                        "rationale": (
+                            f"The context represents no {extreme.extreme.replace('_', ' ')} "
+                            f"actor (DEC-068). The extremes of the attack surface are where "
+                            f"analysis most often goes silent, and whether this one is out of "
+                            f"scope is a judgment about the world, not the documents."
+                        ),
+                        "priority": QuestionPriority.MEDIUM,
+                        "blocking": False,
+                        "status": QuestionStatus.OPEN,
+                        "generated_by": self.GENERATED_BY,
+                    }
+                )
+                repository.save(question)
+                raised.append(question.id)
+
         return NodeResult(
+            produced_object_ids=raised,
             consumed_object_ids=[*context.state.context_claim_ids],
             metadata={
                 "blocking_error_count": len(outcome.blocking_errors),
                 "error_count": len(outcome.errors),
                 "trigger_count": len(outcome.triggers),
+                "zone_mismatch_count": len(outcome.zone_mismatches),
+                "privilege_extreme_questions": len(raised),
             },
         )
 

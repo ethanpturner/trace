@@ -131,8 +131,8 @@ source document or was confirmed by the reviewer.
 <a id="s11-open-questions"></a>
 ## 11. Open questions
 
-No questions remain open. Every question raised during the assessment was answered or dismissed
-before the findings were approved.
+- qst-001 (medium): No actor in the context is anonymous or external. If the system is reachable from outside, who reaches it? If it is not, what establishes that?
+- qst-002 (medium): No actor in the context is administrative or privileged. Who operates and configures the system, and through what?
 
 <!-- owner: rendered -->
 <a id="s12-existing-controls"></a>
