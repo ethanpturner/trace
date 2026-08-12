@@ -44,15 +44,18 @@ from trace_ai.domain.evidence import EvidenceReference
 from trace_ai.domain.evidence_assessment import EvidenceAssessment
 from trace_ai.domain.execution import ExecutionType, WorkflowRun
 from trace_ai.domain.finding import Finding
+from trace_ai.domain.reviewer_decision import ReviewerDecision
 from trace_ai.domain.source_document import IngestionStatus, SourceDocument
 from trace_ai.domain.source_observation import ObservationKind, SourceObservation
 from trace_ai.domain.threat import Threat
 from trace_ai.services.context.pipeline import context_objects
 from trace_ai.services.critique.input_package import select_review_group
+from trace_ai.services.critique.precedent import select_precedents
 from trace_ai.services.evaluation.metrics import compute_metrics, persist_metrics
 from trace_ai.services.evidence.index import EvidenceIndex
 from trace_ai.services.evidence.indexing import index_document
 from trace_ai.services.execution_ledger import ExecutionLedger, start_run
+from trace_ai.services.findings.fingerprints import component_name_index
 from trace_ai.services.prompts import PromptRegistry
 from trace_ai.services.report.input_assembly import assemble_report_input
 from trace_ai.services.requirements.loader import current_version, load_catalog
@@ -633,6 +636,13 @@ class CriticalReviewAdapter:
         assessments = handle.objects.list(EvidenceAssessment)
         gaps = handle.objects.list(DocumentationGap)
 
+        # DEC-064: rationale-bearing dismissals from this assessment's prior runs, matched per
+        # lineage below. Empty on a first run — findings are consolidated after this phase — and
+        # populated on a revision, which is the decided dormancy.
+        findings = handle.objects.list(Finding)
+        decisions = handle.objects.list(ReviewerDecision)
+        component_names = component_name_index(handle)
+
         consumed: list[str] = []
         self.handoff.outcomes.clear()
         for threat in _sorted_by_id(handle.objects.list(Threat)):
@@ -649,6 +659,12 @@ class CriticalReviewAdapter:
                 profile=self.profile,
                 registry=self.registry,
                 selected=selected,
+                precedents=select_precedents(
+                    selected=selected,
+                    findings=findings,
+                    decisions=decisions,
+                    component_names=component_names,
+                ),
                 budget=self.budget,
             )
             outcome = node.propose(context)
