@@ -199,3 +199,66 @@ def test_the_vocabulary_is_the_closed_dec_062_set() -> None:
         "injection_flag",
         "revisit_due",
     }
+
+
+def _assumed_claim(handle: AssessmentHandle, claim_id: str) -> Any:
+    from trace_ai.domain.base import now
+    from trace_ai.domain.context_claim import ClaimStatus, ContextClaim
+    from trace_ai.domain.enums import ConfidenceLevel, SourceOrigin
+
+    stamp = now()
+    claim = ContextClaim.model_validate(
+        {
+            "id": claim_id,
+            "assessment_id": handle.assessment_id,
+            "subject_type": "component",
+            "predicate": "authentication",
+            "value": "assumed to use the platform default",
+            "status": ClaimStatus.ASSUMED,
+            "confidence": ConfidenceLevel.LOW,
+            "source_origin": SourceOrigin.SYSTEM_GENERATED,
+            "rationale": "The documents do not describe the mechanism; assumed pending confirmation.",
+            "created_at": stamp,
+            "updated_at": stamp,
+        }
+    )
+    with handle.objects.transaction():
+        handle.objects.save(claim)
+    return claim
+
+
+def _decide(handle: AssessmentHandle, subject_id: str) -> None:
+    from trace_ai.domain.base import now
+    from trace_ai.domain.enums import ReviewDisposition
+    from trace_ai.domain.reviewer_decision import ReviewerDecision
+
+    decision = ReviewerDecision.model_validate(
+        {
+            "id": handle.objects.allocate("dec"),
+            "assessment_id": handle.assessment_id,
+            "subject_type": "context_claim",
+            "subject_id": subject_id,
+            "disposition": ReviewDisposition.APPROVE,
+            "reviewer_id": "reviewer",
+            "created_at": now(),
+        }
+    )
+    with handle.objects.transaction():
+        handle.objects.save(decision)
+
+
+def test_an_assumed_claim_is_revisit_due_only_after_it_has_been_decided(tmp_path: Path) -> None:
+    """DEC-061: an assumption is a standing subject, flagged when a later run re-presents it.
+
+    Before any decision it is a first-visit subject and carries no revisit reason; once it has been
+    decided and is still assumed, it is one a later run re-presents rather than buries."""
+    from trace_ai.workflow.reason_codes import revisit_due_claims
+
+    store_cm, _service, handle = _handle(tmp_path)
+    try:
+        claim = _assumed_claim(handle, "ctx-001")
+        assert claim.id not in revisit_due_claims(handle), "first visit is not a revisit"
+        _decide(handle, claim.id)
+        assert claim.id in revisit_due_claims(handle), "a decided, still-assumed claim is due"
+    finally:
+        store_cm.__exit__(None, None, None)

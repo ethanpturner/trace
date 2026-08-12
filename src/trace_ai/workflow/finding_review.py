@@ -40,7 +40,7 @@ from trace_ai.domain.finding import Finding
 from trace_ai.domain.finding_merge_record import MERGE_FEATURES, MergeDecision
 from trace_ai.domain.outcomes import FINDING_VALIDATION_STATUSES
 from trace_ai.domain.reviewer_decision import ReviewerDecision
-from trace_ai.workflow.checkpoint import CheckpointNode, decided_object_ids
+from trace_ai.workflow.checkpoint import CheckpointNode, decided_in_run, decided_object_ids
 from trace_ai.workflow.context_review import ReviewerActionError
 from trace_ai.workflow.finding_dedup import DuplicateGroup, merge_findings, shared_features
 from trace_ai.workflow.phases import Phase
@@ -287,14 +287,23 @@ def conclude_finding_review(service: AssessmentService, assessment_id: str) -> A
     provisional finding lacks a decision, which is the checkpoint's completion condition
     restated where the deliverable's lifecycle advances.
     """
+    from trace_ai.domain.base import now
+    from trace_ai.domain.execution import WorkflowRun
+    from trace_ai.workflow.reason_codes import revisit_due_findings
+
     handle = service.handle(assessment_id)
     provisional = [
         finding
         for finding in handle.objects.list(Finding, status=ObjectStatus.CANDIDATE.value)
         if finding.duplicate_of_id is None
     ]
-    decided = decided_object_ids(handle)
-    undecided = [finding.id for finding in provisional if finding.id not in decided]
+    # DEC-061/DEC-079: an expired accepted-risk finding is a subject this run too, and "decided" is
+    # the current run's decision — so an approval carried from a prior run does not conclude it. The
+    # subjects and the scoping match the checkpoint node's, or the two would disagree about done.
+    runs = handle.objects.list(WorkflowRun)
+    subjects = {finding.id for finding in provisional} | revisit_due_findings(handle, now().date())
+    decided = decided_in_run(handle, runs[-1].id) if runs else decided_object_ids(handle)
+    undecided = sorted(subjects - decided)
     if undecided:
         raise ReviewerActionError(
             f"the finding checkpoint is not complete: {undecided} await a ReviewerDecision. "

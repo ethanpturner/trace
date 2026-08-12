@@ -444,14 +444,20 @@ def build_context_review_package(
 def _routing_reasons(handle: AssessmentHandle) -> dict[str, tuple[str, ...]]:
     """The per-subject routing reasons (DEC-062), derived from persisted state at build time.
 
-    Only `injection_flag` is derived here (issue #274); the other codes attach as their inputs
-    are built. The reasons are computed, never read from storage.
+    `injection_flag` (issue #274) and `revisit_due` (DEC-061) are derived here; the other codes
+    attach as their inputs are built. The reasons are computed, never read from storage.
     """
-    from trace_ai.workflow.reason_codes import ReasonCode, injection_flagged_subjects
+    from trace_ai.workflow.reason_codes import (
+        ReasonCode,
+        injection_flagged_subjects,
+        revisit_due_claims,
+    )
 
     reasons: dict[str, list[str]] = {}
     for object_id in injection_flagged_subjects(handle):
         reasons.setdefault(object_id, []).append(ReasonCode.INJECTION_FLAG.value)
+    for object_id in revisit_due_claims(handle):
+        reasons.setdefault(object_id, []).append(ReasonCode.REVISIT_DUE.value)
     return {object_id: tuple(codes) for object_id, codes in reasons.items()}
 
 

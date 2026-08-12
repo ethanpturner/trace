@@ -736,11 +736,19 @@ class FindingConsolidationAdapter:
         )
         persist_application(handle, applied)
 
+        from trace_ai.domain.base import now
+        from trace_ai.workflow.reason_codes import revisit_due_findings
+
         candidates = [
             finding.id
             for finding in _sorted_by_id(handle.objects.list(Finding))
             if finding.duplicate_of_id is None and finding.status is ObjectStatus.CANDIDATE
         ]
+        # DEC-061/DEC-079: an approved finding whose accepted-risk review-by date has passed
+        # re-enters checkpoint 2 this run. Its `accept` stands until re-decided; the run-scoped
+        # completion is what re-prompts it. Expiry is evaluated here, against the run's date.
+        revisit = revisit_due_findings(handle, now().date())
+        candidates = candidates + sorted(revisit - set(candidates))
         return NodeResult(
             produced_object_ids=[finding.id for finding in stored.findings],
             state_changes={
