@@ -1,0 +1,182 @@
+# Husky AI expected threats
+#
+# Benchmark truth for the threat-generation step, derived from the threat list of the
+# peer-reviewed Husky AI model in the OWASP Threat Model Library (MIT license). The
+# source's symbolic name and its CWE/CAPEC links are recorded per entry as provenance;
+# titles and summaries are written for this file.
+#
+# Element matching follows the ForgeFlow convention: this file records the elements a
+# threat must contain rather than prose to string-match. `must_reference` uses the names
+# the input documents use, because generated identifiers are scoped to a run (DEC-018).
+#
+# This file sets no floor and no ceiling on threat count (DEC-028). Preconditions are
+# stated as preconditions, never as facts the input documents do not establish (DEC-009):
+# the input documents describe access control on the blobs, and say nothing either way
+# about integrity validation, access logging on storage, or backups.
+#
+# Nothing in this directory is supplied to Trace during an assessment.
+
+benchmark_version: "1.0"
+scenario: husky-ai
+source: OWASP Threat Model Library, husky-ai-threat-model.json (threats)
+
+threats:
+  - key: THR-001
+    title: Crafted image triggers a flaw in image processing
+    source_key: buffer-overflow-image-processing
+    cwe: [120]
+    capec: [100]
+    summary: >
+      An attacker submits a crafted image that exploits a memory-safety flaw in the image
+      processing path, leading to remote code execution or denial of service on the
+      serving path.
+    must_reference:
+      components: [Simple Python Web Server]
+      assets: [Uploaded images]
+    preconditions:
+      - image parsing occurs on the serving path without sandboxing or input hardening
+        the documents describe
+    impact_elements:
+      - service availability
+      - production host integrity
+
+  - key: THR-002
+    title: Compromised third-party library reaches training or serving
+    source_key: supply-chain-attack
+    cwe: [1104]
+    capec: [438]
+    summary: >
+      A poisoned third-party library or tool is pulled into the image-gathering or model
+      pipeline and compromises system outputs or the hosts that run it.
+    must_reference:
+      components: [Gather Images Application, Jupyter Notebook]
+      assets: [Training and validation images, Trained model]
+    preconditions:
+      - third-party tools and libraries are consumed without a verification step the
+        documents describe
+    impact_elements:
+      - training data integrity
+      - model integrity
+      - host compromise
+
+  - key: THR-003
+    title: Stored training images tampered with or deleted
+    source_key: image-tampering
+    cwe: [276, 285]
+    capec: [1]
+    summary: >
+      An attacker with write access to the training images blob alters or deletes stored
+      images to skew training results or deny service to the training pipeline.
+    must_reference:
+      components: [Jupyter Notebook]
+      assets: [Training and validation images]
+    preconditions:
+      - blob access control fails or is misconfigured
+      - image integrity is not validated before training
+    impact_elements:
+      - model accuracy
+      - training availability
+
+  - key: THR-004
+    title: Notebook modified to carry a backdoor
+    source_key: notebook-tampering
+    cwe: [276, 285]
+    capec: [1]
+    summary: >
+      An attacker modifies a notebook file so that training runs execute attacker code —
+      a keylogger, a data stealer, or a model backdoor.
+    must_reference:
+      components: [Jupyter Notebook]
+      assets: [Source code and configuration, Trained model]
+    preconditions:
+      - notebook content is not integrity-checked before execution
+    impact_elements:
+      - model integrity
+      - engineer credential exposure
+      - experimental environment compromise
+
+  - key: THR-005
+    title: Persisted model files read or modified
+    source_key: model-tampering
+    cwe: [276, 285]
+    capec: [1]
+    summary: >
+      An attacker or insider reads the serialized model to steal intellectual property, or
+      modifies it to degrade prediction accuracy in production.
+    must_reference:
+      components: [Simple Python Web Server, Deployment Service]
+      assets: [Trained model]
+    preconditions:
+      - access to the model blob is obtained despite the documented access control, or
+        through a path it does not cover
+    impact_elements:
+      - model confidentiality
+      - classification integrity
+
+  - key: THR-006
+    title: Systematic perturbation drives misclassification
+    source_key: perturbation-attack
+    cwe: [20]
+    capec: [28]
+    summary: >
+      An attacker probes the public classification API with systematically perturbed
+      images until inputs reliably produce wrong classifications.
+    must_reference:
+      components: [API Gateway, Simple Python Web Server]
+      assets: [Trained model, Classification results]
+    preconditions:
+      - the public API permits enough classification attempts for iterative probing
+    impact_elements:
+      - classification integrity
+      - trust in system output
+
+  - key: THR-007
+    title: Uploaded images exposed from the cache
+    source_key: sensitive-image-exposure
+    cwe: [20]
+    capec: [204]
+    summary: >
+      An attacker or malicious insider reads user-submitted images from the in-memory
+      cache before they expire.
+    must_reference:
+      components: [Simple Python Web Server]
+      assets: [Uploaded images]
+    preconditions:
+      - access to the Redis cache or to process memory on the serving host
+    impact_elements:
+      - user data confidentiality
+
+  - key: THR-008
+    title: SSH key theft from a developer machine
+    source_key: ssh-compromise-developer-machine
+    cwe: [522]
+    capec: [555]
+    summary: >
+      An attacker compromises an engineer's machine, steals SSH private keys, and uses
+      them to reach the Bastion as an authorized user.
+    must_reference:
+      components: [Bastion Server]
+      assets: [SSH authorized keys]
+    preconditions:
+      - a developer machine holding production SSH keys is compromised
+    impact_elements:
+      - production administrative access
+      - model and storage integrity
+
+  - key: THR-009
+    title: Bastion compromised through its exposed SSH surface
+    source_key: ssh-compromise-vulnerability
+    cwe: [200]
+    capec: [300]
+    summary: >
+      An attacker exploits a vulnerability in the Bastion's reachable SSH service to
+      escalate privileges or impersonate authorized users.
+    must_reference:
+      components: [Bastion Server]
+      assets: [SSH authorized keys, Bastion logs]
+    preconditions:
+      - the Bastion SSH surface is reachable by the attacker and carries an exploitable
+        weakness
+    impact_elements:
+      - production administrative access
+      - audit log integrity

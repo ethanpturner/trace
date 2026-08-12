@@ -222,20 +222,28 @@ class AnthropicModel:
         )
 
     def _usage(self, response: Any, duration: float) -> ModelUsage:
-        """The provider's usage figures, priced with this profile's published rates."""
+        """The provider's usage figures, priced with this profile's published rates.
+
+        The provider's `input_tokens` already excludes both cache spans, so the three input
+        counts arrive disjoint (DEC-067) and are kept that way: reads and writes are their own
+        fields and their own weights in the cost.
+        """
         reported = getattr(response, "usage", None)
         input_tokens = int(getattr(reported, "input_tokens", 0) or 0)
         output_tokens = int(getattr(reported, "output_tokens", 0) or 0)
-        cached = int(getattr(reported, "cache_read_input_tokens", 0) or 0)
+        cache_read = int(getattr(reported, "cache_read_input_tokens", 0) or 0)
+        cache_creation = int(getattr(reported, "cache_creation_input_tokens", 0) or 0)
         return ModelUsage(
             model=str(getattr(response, "model", self._profile.model)),
             input_tokens=input_tokens,
             output_tokens=output_tokens,
-            cached_input_tokens=cached,
+            cache_read_tokens=cache_read,
+            cache_creation_tokens=cache_creation,
             estimated_cost=self._profile.cost_of(
                 input_tokens=input_tokens,
                 output_tokens=output_tokens,
-                cached_input_tokens=cached,
+                cache_read_tokens=cache_read,
+                cache_creation_tokens=cache_creation,
             ),
             duration_seconds=duration,
         )

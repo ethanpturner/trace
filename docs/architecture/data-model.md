@@ -97,6 +97,8 @@ eval- Evaluation result
 
 mrg- Finding merge record
 
+cgc- Catalog gap candidate
+
 ## What the scheme governs
 
 The scheme governs **objects an assessment produces**. An object is inside it when all three hold:
@@ -361,6 +363,9 @@ reviewer_edit
 
 external_tool
 
+`structured_input` covers authored structured architecture input and, per DEC-070, anything
+parsed deterministically from a machine-readable source; `generated_by` names the parser.
+
 ## 4.5 Severity
 
 Initial severity classification.
@@ -410,7 +415,8 @@ There is deliberately no `change_severity` value. A severity change is an `edit`
 `prior_value` and `updated_value` on `ReviewerDecision` per DEC-023. `current-architecture.md`
 section 5.12 lists changing severity among the reviewer's actions; that list names actions a
 reviewer takes and this one names dispositions the system records, and the two do not
-correspond one to one (DEC-030).
+correspond one to one (DEC-030). A risk-treatment assignment is likewise an `edit`, not a new
+disposition (DEC-060).
 
 ## 4.7 ValidationStatus
 
@@ -427,6 +433,23 @@ contradicted
 requires_confirmation
 
 not_evaluated
+
+## 4.8 RiskTreatment
+
+The reviewer's chosen response to a finding's risk, assigned at checkpoint 2 (DEC-060). A closed
+vocabulary: the values are named, not illustrated, like `DataFlow.direction`. Findings are created
+`undecided`, and unlike severity `undecided` may survive approval; the only gate is that `accept`
+without a `treatment_rationale` is refused.
+
+undecided
+
+mitigate
+
+accept
+
+transfer
+
+avoid
 
 # 5. Assessment
 
@@ -716,6 +739,7 @@ Represents the structured architecture baseline used for downstream analysis.
 | environment | list[string] | No | Development, test, production, etc. |
 | deployment_model | string | No | Cloud, local, hybrid, managed |
 | data_classifications | list[string] | No | Relevant data classifications |
+| access_model | string | No | Deny by default, allow by default, mixed, unknown (DEC-068) |
 | context_claim_ids | list[string] | Yes | Context claims |
 | component_ids | list[string] | Yes | Components |
 | asset_ids | list[string] | Yes | Assets |
@@ -725,6 +749,11 @@ Represents the structured architecture baseline used for downstream analysis.
 | approved_at | datetime | No | Context-approval timestamp |
 | approved_by | string | No | Reviewer identifier |
 | version | integer | Yes | Context revision number |
+
+`access_model` (DEC-068) is a **closed** enum — `deny_by_default`, `allow_by_default`, `mixed`,
+`unknown` — always present, defaulting to `unknown` exactly as section 14's transport fields do,
+because an authorization posture nobody stated must never read as an answer. Closed because the
+values are named rather than illustrated, like `DataFlow.direction`.
 
 # 10. ContextClaim
 
@@ -879,6 +908,7 @@ Examples:
 | deployment_zone | string | No | Runtime environment or network zone |
 | internet_accessible | boolean | No | Exposure indicator |
 | externally_managed | boolean | No | Whether another party manages it |
+| entry_point_types | list[string] | No | How the component can be entered (DEC-068) |
 | data_classifications | list[string] | No | Data processed or stored |
 | authentication_mechanisms | list[string] | No | Authentication methods |
 | authorization_mechanisms | list[string] | No | Authorization methods |
@@ -914,6 +944,11 @@ object_storage
 
 administrative_interface
 
+`entry_point_types` (DEC-068) is an open-vocabulary list (`login`, `admin_interface`,
+`file_upload`, `webhook`, `api`, `inter_system_interface`, and peers), normalized through
+`domain/vocabulary.py`. Empty means the documentation names no entry points, not that the
+component has none.
+
 # 12. Asset
 
 ## Purpose
@@ -934,9 +969,10 @@ Assets may be technical, informational, or operational.
 | confidentiality_impact | string | No | Potential confidentiality impact |
 | integrity_impact | string | No | Potential integrity impact |
 | availability_impact | string | No | Potential availability impact |
-| data_classification | string | No | Classification |
+| data_classification | string | No | Sensitivity classification, open vocabulary (DEC-068) |
 | owner | string | No | Business or technical owner |
 | component_ids | list[string] | No | Components holding or processing asset |
+| stored_in_component_ids | list[string] | No | Subset of component_ids storing the asset at rest (DEC-068) |
 | evidence_ids | list[string] | No | Supporting evidence |
 | source_origin | SourceOrigin | Yes | Where the object originated (section 4.4) |
 | status | ObjectStatus | Yes | Lifecycle state |
@@ -965,6 +1001,13 @@ business_process
 
 organizational_reputation
 
+DEC-068 adds two things on the usual terms: `data_classification` normalizes against
+`KNOWN_DATA_CLASSIFICATIONS` (`pii`, `phi`, `financial`, `credentials`,
+`intellectual_property`, `telemetry`, `public`, and peers — open, per DEC-036, against TM-BOM's
+closed enum), and `stored_in_component_ids` names the subset of `component_ids` that holds the
+asset at rest — where encryption-at-rest and retention requirements attach. `component_ids`
+keeps meaning "holds or processes."
+
 # 13. Actor
 
 ## Purpose
@@ -980,6 +1023,8 @@ Represents a legitimate user, system identity, administrator, threat actor, or e
 | name | string | Yes | Actor name |
 | actor_type | string | Yes | Human, service, attacker, third party |
 | trust_level | string | No | Trust classification |
+| skill_level | string | No | Persona: presumed capability, open vocabulary (DEC-068) |
+| access_level | string | No | Persona: starting access, open vocabulary (DEC-068) |
 | capabilities | list[string] | No | Relevant actions or privileges |
 | authentication_method | string | No | Authentication method |
 | evidence_ids | list[string] | No | Supporting evidence |
@@ -1002,6 +1047,12 @@ external_attacker
 malicious_insider
 
 compromised_dependency
+
+The persona fields (DEC-068) — `skill_level` and `access_level` — are open vocabularies
+normalized through `domain/vocabulary.py` (starting sets: `opportunist`, `skilled`,
+`organized_group`; `anonymous`, `authenticated`, `privileged`, `physical`). They exist so a
+threat's preliminary likelihood is auditable against who it presumes; no formula computes with
+them.
 
 # 14. DataFlow
 
@@ -1514,6 +1565,10 @@ A finding is provisional until approved by a reviewer.
 | duplicate_of_id | string | No | Canonical finding if duplicate |
 | converted_from_id | string | No | The object this was converted from (DEC-051) |
 | reviewer_notes | string | No | Reviewer explanation |
+| risk_treatment | RiskTreatment | No | Reviewer-assigned response; `undecided` at creation (DEC-060) |
+| treatment_rationale | string | No | Residual-risk statement; required to approve `accept` (DEC-060) |
+| treatment_review_by | date | No | Optional date to revisit an accepted risk (DEC-060) |
+| content_fingerprint | string | No | Derived cross-run identity; set at persist, recomputed on identity-field change (DEC-066) |
 
 ## Minimum validation rules
 
@@ -1542,6 +1597,18 @@ This one is a hard rule rather than a general expectation. Severity is assigned 
 reviewer, so without it the field would stay `unassigned` on every finding and the report
 would have no ordering. It is what makes reviewer-assigned severity work instead of
 degrading into nobody assigning severity.
+
+DEC-060 adds a second, softer reviewer judgment: `risk_treatment` (closed vocabulary
+`undecided`, `mitigate`, `accept`, `transfer`, `avoid`), `treatment_rationale`, and
+`treatment_review_by`. Unlike severity, `undecided` may survive approval; the only gate is that
+`accept` without a `treatment_rationale` is refused. The table rows above carry these fields and
+the closed vocabulary is section 4.8, added alongside the model per the conformance test's
+both-directions rule.
+
+DEC-066 adds `content_fingerprint` on the same terms: a derived SHA-256 over the sorted
+`requirement_ids` and the sorted, normalized affected-component names — structural fields only,
+no prose — for cross-run identity alongside the allocated identifier, never instead of it.
+`DocumentationGap` gets the same treatment through the requirement its mapping reaches.
 
 ## Example
 
@@ -1745,6 +1812,7 @@ Represents missing or inadequate documentation without asserting that the implem
 | generated_by | string | Yes | Workflow node or reviewer |
 | evidence_ids | list[string] | No | Evidence showing ambiguity or contradiction |
 | converted_from_id | string | No | The object this was converted from (DEC-051) |
+| content_fingerprint | string | No | Derived cross-run identity, resolved through the related mapping (DEC-066) |
 
 ## Important distinction
 
@@ -1755,6 +1823,40 @@ Trace cannot determine whether a control exists or is effective.
 A finding means:
 
 Available evidence supports the conclusion that a meaningful security weakness exists.
+
+# 23a. CatalogGapCandidate
+
+## Purpose
+
+Represents a credible security concern that no requirement in the active catalog covers, flagged
+as catalog-maintenance input and routed to the catalog owner (DEC-065). Added by DEC-065 after
+the surrounding sections were numbered, the same way sections 10a and 21a were.
+
+A candidate is about the catalog's coverage, not the system's controls. It is not an assessment
+conclusion: no report section renders it, finding consolidation never reads it, and it is not a
+checkpoint subject. It feeds the next catalog version through a human authoring decision
+(DEC-057) and carries no authority of its own.
+
+The schema deliberately carries no severity, no validation status, and no recommendation. A
+shape that could be read as a finding would let the DEC-009 collapse happen through a side door,
+so that shape is unrepresentable.
+
+## Fields
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| id | string | Yes | Stable candidate identifier |
+| assessment_id | string | Yes | Parent assessment |
+| concern | string | Yes | The uncovered security concern, in prose |
+| suggested_category | string | Yes | Suggested primary category, open vocabulary (DEC-036) |
+| nearest_requirements | list[object] | Yes | Requirements considered and why each does not fit; non-empty (DEC-065) |
+| evidence_ids | list[string] | Yes | Evidence grounding the concern; non-empty |
+| generated_by | string | Yes | The agent that raised it |
+| created_at | datetime | Yes | Creation timestamp |
+
+Each `nearest_requirements` entry carries `requirement_id` and `why_not`, both required. The
+list is the quality gate: DEC-024's whole-catalog posture is what makes "no requirement covers
+this" a claim an agent can actually make, and the named near-misses are what make it falsifiable.
 
 # 24. Critique
 
@@ -1891,10 +1993,21 @@ An assessment may have multiple workflow runs due to retries, revisions, or eval
 | model_profile | string | Yes | Model configuration used |
 | prompt_versions | map[string, string] | Yes | Prompt versions |
 | total_model_calls | integer | Yes | Model-call count |
-| total_input_tokens | integer | No | Input-token count |
+| total_input_tokens | integer | No | Uncached input-token count |
 | total_output_tokens | integer | No | Output-token count |
-| estimated_cost | decimal | No | Estimated cost |
+| total_cache_read_tokens | integer | No | Sum of the records' cache reads (DEC-067) |
+| total_cache_creation_tokens | integer | No | Sum of the records' cache writes (DEC-067) |
+| estimated_cost | decimal | No | Estimated cost, cache-weighted (DEC-067) |
 | error_summary | string | No | Final error if failed |
+| ablations | list[string] | No | Ablations the evaluation harness applied; empty for an ordinary run |
+
+## Note on ablation marking
+
+An ablated run names its ablations here, and a run with a non-empty list is non-authoritative
+(DEC-012, DEC-031, DEC-073). The field is written at run creation by the evaluation harness —
+the only caller that constructs an ablated run — and never by assessment configuration, which
+carries no ablation switch. Replaying recorded reviewer decisions is not an ablation and leaves
+the list empty.
 
 ## Note on failure
 
@@ -1944,10 +2057,21 @@ Represents one workflow node execution or deterministic processing step.
 | error_type | string | No | Error classification |
 | error_message | string | No | Safe error message |
 | duration_ms | integer | No | Execution duration |
-| input_tokens | integer | No | Model input tokens |
+| input_tokens | integer | No | Uncached model input tokens at the full rate |
 | output_tokens | integer | No | Model output tokens |
-| estimated_cost | decimal | No | Estimated call cost |
+| cache_read_tokens | integer | No | Input served from the provider's cache (DEC-067) |
+| cache_creation_tokens | integer | No | Input written into the provider's cache (DEC-067) |
+| estimated_cost | decimal | No | Estimated call cost, cache-weighted (DEC-067) |
 | metadata | map[string, any] | No | Additional execution details |
+
+## Note on cache accounting
+
+DEC-067's fields, with rollups `total_cache_read_tokens` and `total_cache_creation_tokens` on
+`WorkflowRun`. The three input spans are disjoint — `input_tokens` means uncached input at the
+full rate — and `estimated_cost` is the weighted sum at the model profile's rates: cache reads
+at the provider's discount, cache creation at its premium, uncached input and output at list.
+Absent cache fields mean "not reported," readable against the capability record DEC-014 keeps
+on this object.
 
 # 28. EvaluationResult
 
@@ -2464,6 +2588,8 @@ Implement these first:
 25. Critique
 26. FindingMergeRecord
 27. EvaluationResult
+28. CatalogGapCandidate
+29. PromptDefinition
 
 `SourceObservation` (section 10a) was added by DEC-021 after this list was written, and the list
 was not updated with it. It is not optional: DEC-021 makes contradictions and detected
@@ -2475,6 +2601,10 @@ sits after `ContextClaim` because `subject_claim_ids` references claims.
 objects at all. DEC-037 answers it: they are, `SystemContext.actor_ids` references them, and the
 entry above places `Actor` after `Asset` and before `DataFlow`.
 
+`CatalogGapCandidate` (section 23a) was added by DEC-065 after this list was written. It sits
+last: the Threat Analysis and Mapping agents raise it as an optional output, nothing downstream
+consumes it, and the M12 decision-debt milestone is where it was built.
+
 `RequirementsCatalog` (section 30) was on the deferred list, on the grounds that it should arrive
 once the workflow operates. It arrives earlier than that, and not by preference: DEC-019 makes its
 `content_hash` a value computed and verified at catalog load, DEC-024 puts the whole catalog into
@@ -2482,7 +2612,11 @@ every mapping call, and the requirement-matcher step needs a loader before eithe
 without a manifest object is a catalog with no integrity marker and no single place that says what
 version was used, so it sits last on this list rather than on the next one.
 
-Add PromptDefinition once the main workflow begins operating.
+`PromptDefinition` (section 29) was the deferred entry — "add it once the main workflow begins
+operating" — and the workflow operates, so issue #349 implemented it: the model matches section
+29, and every composition a run makes snapshots its definition into the assessment's
+`traces/prompts/` area, giving an execution record's prompt identity a queryable counterpart.
+Nothing remains deferred.
 
 `EvaluationResult` (section 28) was on that deferred list and is promoted by DEC-056: the M4
 finding-quality metrics persist their results as rows, because `evaluation-plan.md` section 3

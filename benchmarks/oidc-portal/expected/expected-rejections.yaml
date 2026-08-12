@@ -1,0 +1,42 @@
+# OIDC Portal expected rejections
+#
+# The claims a correct assessment does not make, each with the mechanism that stops it. This
+# scenario's whole point is the first two: delegated authentication with no local credential
+# store, which a generic review reliably turns into password-policy findings.
+#
+# Nothing in this directory is supplied to Trace during an assessment.
+
+benchmark_version: "1.0"
+scenario: oidc-portal
+catalog_version: "0.1"
+source: system-overview.md
+
+rejections:
+  - key: REJ-OP-01
+    claim: The portal lacks a local password-complexity policy.
+    mechanism: common_false_positives
+    requirement_id: req-AUTH-001
+    entry: absent local password complexity policy
+    why: >
+      Authentication is delegated to the enterprise OpenID Connect provider and the portal
+      maintains no password store, so there is no local policy to lack. This is the regression
+      class evaluation-plan.md section 11 names first.
+
+  - key: REJ-OP-02
+    claim: The portal does not enforce account lockout.
+    mechanism: common_false_positives
+    requirement_id: req-AUTH-001
+    entry: absent account lockout threshold
+    why: >
+      Lockout is the identity provider's responsibility; the portal issues no credentials to
+      lock. A lockout claim asserts a local authentication surface the documents deny.
+
+  - key: REJ-OP-03
+    claim: The portal does not implement multi-factor authentication.
+    mechanism: non_applicable_conditions
+    requirement_id: req-AUTH-002
+    entry: authentication and its factor policy are entirely owned by an external provider and documented as such
+    why: >
+      The document states factor policy is set at the identity provider organization level.
+      An application-managed MFA claim asserts an enrolment flow the portal is documented not
+      to have.

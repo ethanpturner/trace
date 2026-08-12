@@ -31,11 +31,16 @@ from trace_ai.domain.proposals.threat_analysis import (
     promote_threat,
 )
 from trace_ai.domain.threat import (
+    AGENTIC_THREAT_CATEGORIES,
     AI_THREAT_CATEGORIES,
     KNOWN_THREAT_CATEGORIES,
+    LLM_2026_THREAT_CATEGORIES,
+    OPERATIONAL_THREAT_CATEGORIES,
     STRIDE_CATEGORIES,
+    THREAT_SOURCE_CATEGORIES,
     Threat,
 )
+from trace_ai.domain.vocabulary import normalize_term
 
 # `data-model.md` section 16's worked example, transcribed. The folded scalars are joined and the
 # referenced identifiers are the ones the document carries after section 2.1's form was applied to
@@ -146,11 +151,34 @@ def test_confidence_takes_only_the_three_values() -> None:
 # --------------------------------------------------------------------------------------------
 
 
-def test_the_known_categories_are_stride_plus_the_ai_set() -> None:
+def test_the_known_categories_union_the_surveyed_taxonomies() -> None:
     assert len(STRIDE_CATEGORIES) == 6
     assert "elevation_of_privilege" in STRIDE_CATEGORIES
     assert "prompt_injection" in AI_THREAT_CATEGORIES
-    assert KNOWN_THREAT_CATEGORIES == STRIDE_CATEGORIES | AI_THREAT_CATEGORIES
+    assert KNOWN_THREAT_CATEGORIES == (
+        STRIDE_CATEGORIES
+        | AI_THREAT_CATEGORIES
+        | LLM_2026_THREAT_CATEGORIES
+        | AGENTIC_THREAT_CATEGORIES
+        | OPERATIONAL_THREAT_CATEGORIES
+        | THREAT_SOURCE_CATEGORIES
+    )
+
+
+def test_the_surveyed_taxonomies_carry_their_published_sizes() -> None:
+    """Ten LLM 2026 entries, ten ASI entries, five Cumulus suits, four SP 800-30 sources."""
+    assert len(LLM_2026_THREAT_CATEGORIES) == 10
+    assert len(AGENTIC_THREAT_CATEGORIES) == 10
+    assert len(OPERATIONAL_THREAT_CATEGORIES) == 5
+    assert len(THREAT_SOURCE_CATEGORIES) == 4
+    # The four 2025 titles survive into the 2026 release even where their numbers moved.
+    assert AI_THREAT_CATEGORIES <= LLM_2026_THREAT_CATEGORIES
+
+
+def test_every_known_category_is_already_in_canonical_spelling() -> None:
+    """A constant that documents the canonical spelling must itself carry it."""
+    for term in sorted(KNOWN_THREAT_CATEGORIES):
+        assert normalize_term(term) == term
 
 
 def test_a_category_outside_the_known_set_is_accepted() -> None:

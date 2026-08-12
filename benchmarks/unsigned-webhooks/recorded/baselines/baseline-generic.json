@@ -1,0 +1,18 @@
+{
+  "findings": [
+    {
+      "requirement_id": "req-WEBHOOK-001",
+      "affected_component": "Event Receiver",
+      "title": "Inbound events are processed without signature verification",
+      "rationale": "The receiver processes any well-formed delivery and checks no signature.",
+      "evidence_quote": "the receiver accepts and processes any well-formed delivery and does not check a signature"
+    },
+    {
+      "requirement_id": "req-WEBHOOK-002",
+      "affected_component": "Event Receiver",
+      "title": "No replay protection is present",
+      "rationale": "The receiver does not prevent replays.",
+      "evidence_quote": "the receiver accepts and processes any well-formed delivery"
+    }
+  ]
+}

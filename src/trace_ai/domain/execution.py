@@ -95,8 +95,26 @@ class WorkflowRun(DomainModel):
     total_model_calls: int = Field(ge=0)
     total_input_tokens: int | None = Field(default=None, ge=0)
     total_output_tokens: int | None = Field(default=None, ge=0)
+    total_cache_read_tokens: int | None = Field(default=None, ge=0)
+    total_cache_creation_tokens: int | None = Field(default=None, ge=0)
+    """The DEC-067 rollups: each equals the sum of this run's records' cache fields, absent when
+    no record reported the span. `total_input_tokens` stays uncached input only — the three
+    input spans are disjoint."""
+
     estimated_cost: Decimal | None = Field(default=None, ge=0)
     error_summary: str | None = None
+    ablations: list[str] = Field(default_factory=list)
+    """Ablations the evaluation harness applied; empty for an ordinary run.
+
+    A non-empty list marks the run non-authoritative (DEC-012, DEC-031, DEC-073). Written at run
+    creation by the harness — the only caller that constructs an ablated run — and never by
+    assessment configuration. Replaying recorded reviewer decisions is not an ablation and
+    leaves this empty.
+    """
+
+    @property
+    def is_authoritative(self) -> bool:
+        return not self.ablations
 
     @model_validator(mode="after")
     def _timestamps_are_ordered(self) -> Self:
@@ -137,7 +155,18 @@ class ExecutionRecord(DomainModel):
 
     duration_ms: int | None = Field(default=None, ge=0)
     input_tokens: int | None = Field(default=None, ge=0)
+    """Uncached input at the full rate. The three input spans are disjoint (DEC-067): cache
+    reads and cache creation are never folded in."""
+
     output_tokens: int | None = Field(default=None, ge=0)
+    cache_read_tokens: int | None = Field(default=None, ge=0)
+    """Input served from the provider's cache at its discounted rate (DEC-067). Absent means
+    "not reported" — the capability record says whether caching was in play."""
+
+    cache_creation_tokens: int | None = Field(default=None, ge=0)
+    """Input written into the provider's cache at its premium (DEC-067). Absent means "not
+    reported"."""
+
     estimated_cost: Decimal | None = Field(default=None, ge=0)
     metadata: dict[str, Any] = Field(default_factory=dict)
 

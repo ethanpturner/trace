@@ -136,6 +136,35 @@ class AssessmentState(DomainModel):
             }
         )
 
+    def absorb(self, **changes: object) -> Self:
+        """This state with a node's `state_changes` applied, still in the same phase.
+
+        A phase may run more than one declared node, and a later node reads what an earlier one
+        recorded — the threat validator reads the candidate ids the analysis node returned. The
+        changes are applied through `model_validate` like every other mutation here; what this
+        method deliberately lacks is a destination, because absorbing results is not routing.
+        """
+        if not changes:
+            return self
+        return type(self).model_validate(self.model_dump() | changes)
+
+    def resumed(self) -> Self:
+        """This state, running again after a completed checkpoint.
+
+        `paused_for` sets the status and names the waiting objects; nothing else clears them, so a
+        resumed run would otherwise carry `paused` and a stale `pending_human_review` through every
+        later phase. The orchestrator calls this at the moment the checkpoint's completion
+        condition holds — every subject decided — which is DEC-017's resume condition.
+        """
+        return type(self).model_validate(
+            self.model_dump()
+            | {
+                "status": RunStatus.RUNNING,
+                "pending_human_review": None,
+                "next_action": {"action": "execute_node", "phase": self.current_phase},
+            }
+        )
+
     def paused_for(self, checkpoint: Phase, object_ids: list[str]) -> Self:
         """This state, paused at a checkpoint with the objects awaiting a decision named."""
         if checkpoint not in PAUSE_PHASES:

@@ -1,0 +1,24 @@
+# Contradictory Docs expected observations
+#
+# The one contradiction the documents contain, recorded as an observation about the documents
+# themselves (DEC-021). This is the scenario's reason to exist. Nothing in this directory is
+# supplied to Trace during an assessment.
+
+benchmark_version: "1.0"
+scenario: contradictory-docs
+source: architecture-overview.md and operations-guide.md
+
+observations:
+  - key: OBS-CD-01
+    kind: contradiction
+    subject: export retention
+    arises_from: the two supplied documents
+    between:
+      - document: architecture-overview.md
+        states: The export file is temporary working data, deleted immediately once downloaded.
+      - document: operations-guide.md
+        states: A storage lifecycle policy retains export objects for 30 days.
+    expected_treatment: >
+      Recorded as a contradiction and resolved to the operations lifecycle policy, which drives
+      FND-CD-01. The reviewer confirms the resolution at checkpoint 2; the observation is not a
+      finding on its own.

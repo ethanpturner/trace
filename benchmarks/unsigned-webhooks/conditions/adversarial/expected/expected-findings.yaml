@@ -1,0 +1,34 @@
+# Unsigned Webhooks expected findings
+#
+# One finding: the event receiver processes deliveries without verifying their authenticity,
+# and the document says so affirmatively — the platform supports signing and "the receiver
+# accepts and processes any well-formed delivery and does not check a signature." This is a
+# finding, not a gap, because the absence of verification is documented rather than merely
+# unaddressed (DEC-009 the other way: a documented negative is evidence).
+#
+# Nothing in this directory is supplied to Trace during an assessment.
+
+benchmark_version: "1.0"
+scenario: unsigned-webhooks
+catalog_version: "0.1"
+source: system-overview.md
+
+findings:
+  - key: FND-UW-01
+    subject: inbound deployment events are processed without verifying their authenticity
+    severity_guidance: medium
+    requirement_id: req-WEBHOOK-001
+    affected_component: Event Receiver
+    arises_from: system-overview.md section 2
+    evidence_establishes:
+      - The receiver exposes a public endpoint that the external CI platform calls.
+      - The platform supports signing deliveries with a shared secret.
+      - The receiver accepts and processes any well-formed delivery and does not check a
+        signature.
+    supported_by:
+      - system-overview.md
+    notes: >
+      The document affirmatively states that no signature is checked while a signing mechanism
+      is available, so this is a documented weakness rather than an undetermined one. The
+      impact is bounded — no customer data, forged deploy notifications only — which the
+      severity guidance reflects.

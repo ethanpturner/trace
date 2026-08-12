@@ -100,6 +100,16 @@ Metrics
 
 Historical Comparison
 
+DEC-073 fixes how this pipeline executes: the harness reads the scenario registry and drives
+the ordinary pipeline as a caller of `AssessmentService` — recorded model responses through the
+replay adapter, recorded reviewer decisions replayed at both checkpoints, ablations applied
+harness-side as non-authoritative run construction. `EvaluationResult` objects persist with the
+assessment as the authoritative home; a derived, regenerable metrics feed keyed by scenario,
+condition, and commit serves the scorecard and CI. Run comparison is per-item — matched,
+missed, spurious, changed — through the DEC-056 matcher and DEC-066 fingerprints. Scenario
+conditions (`clean`, `ambiguous`, `adversarial`, `missing_evidence`) are DEC-075's; the
+baseline protocol is DEC-074's; stability measurement is DEC-077's.
+
 # 5. Evaluation Dataset
 
 Every benchmark scenario should be stored in version control. The layout is fixed by DEC-027.
@@ -538,6 +548,12 @@ Do not switch models based solely on subjective impressions.
 
 Workflow changes should be evaluated independently.
 
+The baseline comparison protocol is DEC-074's: the two prompt baselines run through the same
+seam with versioned, hashed prompts, emit the same target schemas, and are scored by the same
+structural matcher; they receive the same source documents and the requirements catalog, with
+input-choice ties resolved against Trace. The external comparable is scored in the portfolio
+write-up, not in-repo.
+
 Examples:
 
 Single agent
@@ -641,7 +657,8 @@ Potential future evaluations include:
 - Evaluating chain-of-thought alternatives without storing reasoning
 - Measuring reviewer time savings
 - Comparing expert reviewers with Trace-assisted reviewers
-- Measuring consistency across multiple runs
+- ~~Measuring consistency across multiple runs~~ Moved from research to protocol by DEC-077:
+  n live runs with replay-matched decisions, per-item agreement sets retained, gating nothing
 - Benchmarking against traditional threat-model templates
 
 # 19. Open Questions

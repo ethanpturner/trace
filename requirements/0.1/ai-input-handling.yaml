@@ -43,7 +43,7 @@ requirements:
       - absent detection of specific injection phrasings, which is not a durable control
     default_severity: high
     source_frameworks:
-      - "OWASP ASVS 5.0.0: 2.1.1"
+      - "OWASP ASVS: v5.0.0-2.1.1"
       - "NIST SP 800-53 5.2.0: SI-10"
       - "OWASP Top 10 for LLM Applications 2025: LLM01"
     status: active
@@ -124,7 +124,7 @@ requirements:
       - absent minimization detail where the full scope is documented and justified
     default_severity: medium
     source_frameworks:
-      - "OWASP ASVS 5.0.0: 13.1.1"
+      - "OWASP ASVS: v5.0.0-13.1.1"
       - "NIST SP 800-53 5.2.0: SA-9"
     status: active
 
@@ -162,6 +162,6 @@ requirements:
       - absent content security policy, which is a defense in depth measure rather than this control
     default_severity: medium
     source_frameworks:
-      - "OWASP ASVS 5.0.0: 2.1.1"
+      - "OWASP ASVS: v5.0.0-2.1.1"
       - "NIST SP 800-53 5.2.0: SI-10"
     status: active

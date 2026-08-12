@@ -481,6 +481,10 @@ Validate and normalize the output of the Context Extraction Agent before human r
 - Normalize enumerated values
 - Identify missing required fields
 - Confirm `confidence` is a valid `ConfidenceLevel` member. There is no numeric score and no range to check (DEC-022).
+- Record a warn-only observation when a flow connects components whose `deployment_zone`
+  values differ and the flow crosses no declared trust boundary (DEC-068)
+- Emit a Question when the approved context represents no anonymous-or-external actor, or no
+  administrative-or-privileged one — the privilege-extremes check (DEC-068)
 - Prevent invalid workflow transitions
 
 ## Outputs
@@ -568,6 +572,7 @@ The Threat Analysis Agent identifies:
 - Threat-related Question objects
 - Coverage metadata
 - Rejected or non-applicable threat-pattern records when useful
+- Catalog-gap candidates, for credible concerns no catalog requirement covers (DEC-065)
 
 ## Methodology
 
@@ -676,11 +681,25 @@ Validate candidate threats before control mapping.
 - Enforce required impact descriptions
 - Confirm threat categories use permitted values
 - Flag threats based entirely on unsupported assumptions
+- Record warn-only plausibility observations against the authored applicability table — a
+  spoofing threat whose only affected component is a data store is flagged, never rejected
+  (DEC-063)
+- Record an observation when a category falls outside `KNOWN_THREAT_CATEGORIES`, so vocabulary
+  drift is visible without being refused (DEC-063, closing DEC-041's open question)
 - Route invalid outputs for retry or review
 
 ## Important constraint
 
 Semantic duplicate detection may use embeddings or a model-assisted comparison, but the merge decision should remain explicit and traceable.
+
+## Coverage baseline
+
+The same applicability table feeds a coverage listing in the checkpoint 2 review package: per
+component, the applicable categories in which zero threats name it, derived at package-build
+time and never stored (DEC-063). An observation is not an error and a coverage gap is not an
+error class — nothing retries the threat agent against the listing, and no metric targets it.
+Zero threats in an applicable category is a legitimate outcome; the listing informs the
+reviewer and is structurally nothing else.
 
 # 12. Requirement and Control Mapping Agent
 
@@ -722,6 +741,7 @@ The Mapping Agent evaluates:
 - Question objects
 - DocumentationGap candidates
 - Mapping rationale
+- Catalog-gap candidates, for credible concerns no catalog requirement covers (DEC-065)
 
 ## Allowed operations
 
@@ -984,6 +1004,9 @@ The Critical Review Agent looks for:
 - Questions
 - Documentation gaps
 - Candidate finding material
+- A labelled precedent block: rationale-bearing reviewer dismissals from this assessment that
+  match the lineage deterministically — context the critic may cite, never a critique subject
+  (DEC-064)
 
 ## Outputs
 
@@ -1210,6 +1233,7 @@ The reviewer may:
 - Reject
 - Edit
 - Change severity
+- Assign a risk treatment (DEC-060)
 - Merge
 - Defer
 - Request more analysis
@@ -1226,6 +1250,7 @@ The reviewer may:
 - Updated documentation gaps
 - ReviewerDecision records
 - Final severity values
+- Risk-treatment assignments, where the reviewer made them (DEC-060)
 - Report-ready assessment state
 
 ## Workflow rule
@@ -1233,6 +1258,23 @@ The reviewer may:
 Only approved findings may appear in the final findings section.
 
 Rejected candidates may remain available in debug and evaluation views.
+
+## Severity rubric references
+
+DEC-030 gives severity to the reviewer and blocks approval while it is `unassigned`; no node
+proposes one. The references below are aids for that judgment, cited by name and link only. None
+is wired into a node, and anything that computes a severity stays refused under DEC-030.
+
+- [OWASP Threat Severity Chart](https://github.com/OWASP/www-project-threat-modeling/blob/main/resources/threat-severity-chart.md)
+  — factor dimensions derived from the SDL Bug Bar, for weighing impact and exploitability across
+  finding types.
+- [LLM08:2026 Hidden Context Exposure](https://github.com/GenAI-Security-Project/GenAI-LLM-Top10/blob/main/2026/final/LLM08_HiddenContextExposure.md)
+  — carries a severity ladder for prompt- and context-exposure findings specifically.
+- AIVSS v0.8 ([OWASP AIVSS](https://github.com/OWASP/www-project-artificial-intelligence-vulnerability-scoring-system))
+  — ten agentic amplification factors, for findings whose subject is an agentic system. Two
+  cautions: the repository's license is an unfilled TODO (NOASSERTION), so it is cited by name
+  and URL only and nothing from it is reproduced here; and its own section 3.2 flags the scoring
+  arithmetic as ordinal-scale, so it is a thinking aid, not a formula.
 
 # 19. Report Generation Agent
 
@@ -1686,6 +1728,12 @@ A wrong mapping is invisible: an agent given the wrong latitude produces plausib
 than an error. The mapping belongs in the adapter, is recorded on the `ExecutionRecord`, and is
 covered by the adapter's own tests.
 
+A model profile may additionally carry a per-agent overlay mapping the six agent names to
+model-and-settings overrides, resolved at load and refused for any other key (DEC-069).
+Creativity intent is orthogonal to the overlay: the profile picks the model and limits; the
+intent maps to that model's controls inside the adapter. Shipped profiles stay uniform until
+the evaluation harness measures what a mixed profile costs in quality.
+
 # 30. Caching
 
 Model responses may be cached for development and evaluation when:
@@ -1999,7 +2047,10 @@ These agents would expand project scope without proving the MVP thesis.
 8. How should contradictory evidence be represented to agents?
 9. Should reviewers see agent rationales directly or only concise evidence-based explanations?
 10. Which agent outputs should be editable before the next stage?
-11. How should prompt-injection detection be implemented and evaluated?
+11. ~~How should prompt-injection detection be implemented and evaluated?~~ Resolved by
+    DEC-075 with DEC-062: detection surfaces as recorded observations and the
+    `injection_flag` routing reason; evaluation is the adversarial condition axis, measured
+    as per-class compliance rate plus quality-under-attack deltas.
 12. ~~Should LangGraph nodes correspond one-to-one with agents?~~ Moot: DEC-016 rejected
     LangGraph. Workflow nodes are plain functions, and a model-assisted agent is one kind of
     node among deterministic ones.

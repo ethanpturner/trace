@@ -381,7 +381,13 @@ def test_the_replay_claim_is_rejected_as_a_documentation_gap() -> None:
 
 
 def test_no_payload_assembler_reads_the_expected_directory() -> None:
-    """Scenario section 25: the whole directory is withheld during an assessment."""
+    """Scenario section 25: the whole directory is withheld during an assessment.
+
+    `services/evaluation/` is exempt by name: the evaluation layer is the grader, and DEC-073
+    has it read the truth set *after* a run to score it. What keeps the withholding real is the
+    input side — the packages agents receive are asserted elsewhere to carry no expected
+    content, and the harness supplies a scenario's `input/` directory and nothing else.
+    """
     assemblers = sorted((PROJECT_ROOT / "src" / "trace_ai" / "services").rglob("*.py"))
     assemblers += sorted((PROJECT_ROOT / "src" / "trace_ai" / "workflow").rglob("*.py"))
     assert assemblers, "the assembler sweep found no modules"
@@ -389,7 +395,10 @@ def test_no_payload_assembler_reads_the_expected_directory() -> None:
     # Path references, not prose. `services/requirements/loader.py` mentions
     # "expected-output files" in a docstring, which is a sentence about the benchmark rather
     # than a read of it, and a test that fired on the word would be testing the prose.
+    grader = PROJECT_ROOT / "src" / "trace_ai" / "services" / "evaluation"
     for path in assemblers:
+        if path.is_relative_to(grader):
+            continue
         text = path.read_text(encoding="utf-8")
         for forbidden in ("expected/", '"expected"', "'expected'", "forgeflow/expected"):
             assert forbidden not in text, f"{path} references the withheld truth set"

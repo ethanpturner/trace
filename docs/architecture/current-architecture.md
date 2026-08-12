@@ -106,6 +106,29 @@ Examples include:
 
 AI models should be used for tasks that benefit from semantic interpretation or security reasoning.
 
+### 2.7 Relationship to the Four Question Framework
+
+The pipeline is an answer to the Threat Modeling Manifesto's four questions, phase by phase
+(issue #226, survey item A7). Stating the mapping makes the design legible to threat-modeling
+practitioners, who will recognise the questions before they recognise the phase names.
+
+- **What are we working on?** Context extraction, context validation, and the context approval
+  checkpoint. This is the half that runs today, and the first checkpoint exists because the other
+  three questions are unanswerable over a wrong answer to this one.
+- **What can go wrong?** Threat analysis, designed in section 5.7 and `agent-design.md`
+  section 10.
+- **What are we going to do about it?** Requirement and control mapping through finding approval,
+  designed in sections 5.8 through 5.12. Trace's answer is deliberately partial: it produces
+  approved findings and remediation guidance a reviewer added, not a mitigation plan.
+- **Did we do a good job?** The Critical Review agent (section 5.10), and the report's
+  `limitations` section, which states what the assessment could not determine.
+
+The OWASP Threat Modeling Playbook frames a finished threat model as an **assurance argument**: a
+set of claims held up by evidence a skeptical reader can follow. The evidence-chain mechanism —
+every claim, threat, and finding carrying `EvidenceReference` identifiers that resolve to quoted
+passages in stored sources — is that framing implemented as schema rather than as prose
+discipline.
+
 ## 3. MVP System Context
 
 The MVP is a locally operated application used by one security reviewer.
@@ -267,9 +290,11 @@ a command: creating an assessment, adding sources, approving context, approving 
 assigning severity all run at the command line and write the same `ReviewerDecision` rows an
 interface of any other shape would (DEC-017).
 
-Stage 5 may add a **read-only local view** for the demonstration, rendering persisted state —
-notably the lineage view. It is not a second way to drive the pipeline, and no review interaction
-moves to a browser in the MVP.
+Stage 5 adds a **read-only local view** for the demonstration (`trace view`, DEC-078), rendering
+persisted state — notably the lineage view that walks a finding back to its hashed evidence. It is
+stdlib `http.server` bound to `127.0.0.1`, GET-only, and calls only the repository's read methods;
+it is not a second way to drive the pipeline, and no review interaction moves to a browser in the
+MVP.
 
 Any interface, present or future, calls application services rather than containing core analysis
 logic. That constraint is what makes the ordering safe: the services are built first, so a later
@@ -349,6 +374,11 @@ The ingestion component converts source material into normalized document artifa
 - YAML
 
 PDF, Microsoft Office, repository, and web-page ingestion are deferred unless implementation proves simple enough to include safely.
+
+Post-MVP, machine-readable artifacts — compose manifests first, then OpenAPI, then IaC — may be
+parsed deterministically into documented claims with verifiable excerpt hashes (DEC-070). Parser
+output enters the same proposal path, validation, and checkpoint as agent-extracted context;
+determinism earns no bypass, and a parsed artifact is still untrusted text.
 
 ### Responsibilities
 
@@ -449,6 +479,11 @@ The reviewer can:
 - Answer prioritized questions
 
 This review creates an approved context baseline for downstream analysis.
+
+An accepted assumption is not settled forever: every claim with status `assumed` is a standing
+revisit subject, re-presented at the next revision's checkpoint 1 under the `revisit_due`
+routing reason (DEC-061, DEC-062). Assumptions carry no review-by date; revisit is episodic,
+triggered by the next run or revision, because nothing in this system watches a clock.
 
 The threat-analysis phase should primarily reason from the approved context baseline rather than repeatedly reinterpreting all source documents independently.
 
@@ -582,6 +617,7 @@ The reviewer can:
 - Reject a finding
 - Edit a finding
 - Assign or change severity
+- Assign a risk treatment
 - Request additional analysis
 - Convert a finding to a question
 - Convert a finding to a documentation gap
@@ -590,6 +626,12 @@ The reviewer can:
 **Assigning severity is not optional.** Findings arrive carrying `unassigned`, and an
 approval whose finding still carries it is rejected by validation (DEC-030). The reviewer
 holds the business context that severity depends on; no earlier node does.
+
+**Assigning a treatment is optional.** Findings arrive with `risk_treatment: undecided`, the
+reviewer may choose `mitigate`, `accept`, `transfer`, or `avoid`, and `undecided` may survive
+approval — treatment is frequently the system owner's decision to make after reading the report,
+and a gate would manufacture defaults (DEC-060). The one hard rule: `accept` requires a
+`treatment_rationale`, the residual-risk statement, and an approval without one is refused.
 
 This list names actions a reviewer takes. `ReviewDisposition` in `data-model.md` section 4.6
 names dispositions the system records, and **the two lists do not correspond one to one**. A
@@ -637,6 +679,13 @@ that section 7 is a rendered list of threats rather than a mixture of prose and 
 The report generator should not invent new findings during prose generation.
 
 It should render approved structured data.
+
+Section 14 also owns the per-source coverage ledger (DEC-071): every source document in exactly
+one bucket — `reviewed`, `reviewed_with_exclusions` with the excluded excerpts named,
+`could_not_process`, `excluded_by_rule` — each with its stored justification, derived at render
+time from persisted state. The limitations section may interpret the ledger and never restates
+it. Exports — TM-BOM, SARIF, the Mermaid DFD — are a separate post-MVP serializer family, not
+report formats (DEC-072); nothing in this section governs them.
 
 Each report is written to `outputs/report-<workflow_run_id>.md` in the assessment's artifact
 directory, beside a JSON manifest carrying the report's hash, the version pins `evaluation-plan.md`
@@ -908,6 +957,12 @@ removing it, which DEC-012 requires.
 
 The review package is derived from the persisted run rather than stored with it, so the mechanism
 does not presuppose which interface renders it.
+
+Each subject in the package may carry typed routing reasons — `low_confidence`, `contradicted`,
+`no_evidence`, `injection_flag`, `revisit_due` — derived at package-build time as deterministic
+functions of persisted state, never stored (DEC-062). Reasons triage the reviewer's attention and
+never filter: a subject with no reasons is routine, not exempt, and every subject still requires
+a `ReviewerDecision` before the checkpoint advances.
 
 ### How a checkpoint is passed, and what rejection does
 
@@ -1345,7 +1400,9 @@ These limitations should be discussed openly in presentations and interviews.
 
 The following questions require decisions or implementation experiments:
 
-1. Which local web-interface framework should be used?
+1. ~~Which local web-interface framework should be used?~~ Resolved by DEC-078: none. The Stage 5
+   read-only view is stdlib `http.server` bound to `127.0.0.1`, GET-only and read-only, consistent
+   with DEC-016's no-framework stance and DEC-032's command-line interface.
 2. ~~Which model provider and model should be used initially?~~ Resolved by DEC-014: Anthropic as the default adapter, `claude-opus-5` as the primary model, behind a provider-agnostic seam.
 3. ~~Is a separate model abstraction library needed for the MVP?~~ Resolved by DEC-014: no. The seam is the project's own; provider SDKs sit behind it in adapters.
 4. ~~How should evidence chunks and source locations be represented?~~ Resolved by DEC-015.
@@ -1356,7 +1413,9 @@ The following questions require decisions or implementation experiments:
 9. How should semantic duplicate detection work?
 10. Should LangSmith be used in the public demonstration?
 11. How much reasoning information should be exposed to users?
-12. How should prompt injection in source documentation be tested?
+12. ~~How should prompt injection in source documentation be tested?~~ Resolved by DEC-075: as
+    scenario conditions — an authored payload corpus run as input variants, reported on two
+    axes with injected-instruction compliance rate as a named metric.
 13. ~~How should requirement applicability be determined?~~ Resolved by DEC-024: by the mapping agent's judgment over the whole catalog. There is no deterministic pre-filter, because `applicable_technologies` — the only structured filter field — is populated on zero requirements.
 14. What data should be retained after an assessment?
 15. Which evaluation dataset should be used to compare workflow versions?

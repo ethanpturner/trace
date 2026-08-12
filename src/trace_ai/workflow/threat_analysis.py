@@ -36,6 +36,7 @@ from typing import TYPE_CHECKING, Any, Final
 
 from trace_ai.domain.base import now
 from trace_ai.domain.execution import ExecutionType
+from trace_ai.domain.proposals.catalog_gap import promote_catalog_gap_candidate
 from trace_ai.domain.proposals.context_extraction import ProposalError
 from trace_ai.domain.proposals.threat_analysis import (
     THREAT_ANALYSIS_AGENT,
@@ -52,6 +53,7 @@ from trace_ai.workflow.retry import AttemptFailedError, RetryPolicy, run_with_re
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
+    from trace_ai.domain.catalog_gap_candidate import CatalogGapCandidate
     from trace_ai.domain.system_context import SystemContext
     from trace_ai.domain.threat import Threat
     from trace_ai.infrastructure.model.profiles import ModelProfile
@@ -228,41 +230,55 @@ class ThreatAnalysisNode:
                 ),
             )
 
-            threats = self._persist(context, proposal)
-            produced = [threat.id for threat in threats]
+            threats, candidates = self._persist(context, proposal)
+            threat_ids = [threat.id for threat in threats]
+            produced = [*threat_ids, *(candidate.id for candidate in candidates)]
             execution.produced(*produced)
             for usage in usages:
                 execution.record_usage(usage)
             execution.metadata["attempts"] = attempts
             execution.metadata["threats"] = len(threats)
+            execution.metadata["catalog_gap_candidates"] = len(candidates)
             execution.metadata["evidence_excluded"] = len(package.excluded_evidence_ids)
+            if package.excluded_evidence_ids:
+                # DEC-071: the fence rule names what a budget excluded; persisting the names is
+                # what lets the coverage ledger carry them to the reader instead of a count
+                # dying inside the run.
+                execution.metadata["excluded_evidence_ids"] = sorted(package.excluded_evidence_ids)
 
         return NodeResult(
             produced_object_ids=produced,
             consumed_object_ids=list(package.evidence_ids),
-            state_changes={"candidate_threat_ids": produced},
+            # Candidates are not in the state: section 31 keeps identifiers and *routing*, and a
+            # candidate routes nowhere — no later phase consumes it (DEC-065).
+            state_changes={"candidate_threat_ids": threat_ids},
             model_usages=list(usages),
             prompt_version=composed.reference,
             model_name=context.model.name,
             metadata={
                 "attempts": attempts,
                 "threats": len(threats),
+                "catalog_gap_candidates": len(candidates),
                 "excluded": len(package.excluded_evidence_ids),
                 "context_version": self.context.version,
             },
         )
 
-    def _persist(self, context: NodeContext, proposal: ThreatAnalysisProposal) -> list[Threat]:
-        """Allocate identifiers and store the threats, in one transaction.
+    def _persist(
+        self, context: NodeContext, proposal: ThreatAnalysisProposal
+    ) -> tuple[list[Threat], list[CatalogGapCandidate]]:
+        """Allocate identifiers and store the threats and candidates, in one transaction.
 
         Allocation and insert share a transaction because DEC-018 takes the number from a counter
         at insert: a promoted threat that was never saved would have consumed one, and the gap
         reads as a deleted object. Order follows the proposal, so a re-run over the same response
-        numbers them the same way.
+        numbers them the same way. Catalog-gap candidates persist beside the threats as routed
+        artifacts (DEC-065): allocated like anything else, consumed by no later phase.
         """
         repository = context.handle.objects
         stamped = now()
         threats: list[Threat] = []
+        candidates: list[CatalogGapCandidate] = []
         with repository.transaction():
             for proposed in proposal.threats:
                 threat = promote_threat(
@@ -274,4 +290,14 @@ class ThreatAnalysisNode:
                 )
                 repository.save(threat)
                 threats.append(threat)
-        return threats
+            for proposed_candidate in proposal.catalog_gap_candidates:
+                candidate = promote_catalog_gap_candidate(
+                    proposed_candidate,
+                    candidate_id=repository.allocate("cgc"),
+                    assessment_id=context.handle.assessment_id,
+                    generated_by=THREAT_ANALYSIS_AGENT,
+                    created_at=stamped,
+                )
+                repository.save(candidate)
+                candidates.append(candidate)
+        return threats, candidates

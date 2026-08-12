@@ -28,6 +28,7 @@ copy API validates nothing, and this is the path a reviewer's edits travel.
 from __future__ import annotations
 
 from datetime import datetime
+from enum import StrEnum
 from typing import TYPE_CHECKING, Final, Self
 
 from pydantic import Field
@@ -52,7 +53,23 @@ from trace_ai.domain.trust_boundary import TrustBoundary
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
-__all__ = ["FIRST_VERSION", "SystemContext"]
+__all__ = ["FIRST_VERSION", "AccessModel", "SystemContext"]
+
+
+class AccessModel(StrEnum):
+    """The system's stated authorization posture (section 9, DEC-068).
+
+    A **closed** enum, because the values are named rather than illustrated — the
+    `DataFlow.direction` rule, not the `component_type` one. `unknown` exists because an
+    authorization posture nobody stated must never be readable as an answer: the never-`False`,
+    never-`None` rule applied to the single highest-leverage authorization fact.
+    """
+
+    DENY_BY_DEFAULT = "deny_by_default"
+    ALLOW_BY_DEFAULT = "allow_by_default"
+    MIXED = "mixed"
+    UNKNOWN = "unknown"
+
 
 # The version an extracted context starts at. Revisions count up from here; there is no version 0,
 # because a context that has not been extracted does not exist rather than existing emptily.
@@ -81,6 +98,10 @@ class SystemContext(DomainModel):
     environment: list[str] = Field(default_factory=list)
     deployment_model: str | None = None
     data_classifications: list[str] = Field(default_factory=list)
+
+    access_model: AccessModel = AccessModel.UNKNOWN
+    """The stated authorization posture (DEC-068). Required with `unknown` as the default: a
+    posture nobody stated renders as `unknown`, never as an answer."""
 
     context_claim_ids: list[ContextClaimId]
     component_ids: list[ComponentId]

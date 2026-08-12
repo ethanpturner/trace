@@ -1,0 +1,13 @@
+benchmark_version: "1.0"
+scenario: managed-db-service
+source: system-overview.md
+
+questions:
+  - key: Q-MD-01
+    subject: metrics retention
+    asks: How long is metrics data retained, and does a lifecycle policy expire it?
+    arises_from: system-overview.md section 2
+    requirement_id: req-DATA-002
+    changes: whether GAP-MD-01 resolves to a satisfied requirement or a finding
+    priority: medium
+    blocking: false

@@ -1,0 +1,13 @@
+benchmark_version: "1.0"
+scenario: contradictory-docs
+source: architecture-overview.md and operations-guide.md
+
+questions:
+  - key: Q-CD-01
+    subject: export encryption at rest
+    asks: Does the managed object store encrypt retained export objects at rest, and who holds the keys?
+    arises_from: architecture-overview.md section 2
+    requirement_id: req-DATA-001
+    changes: whether GAP-CD-01 resolves to a satisfied requirement or a finding
+    priority: medium
+    blocking: false

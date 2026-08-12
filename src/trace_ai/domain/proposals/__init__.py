@@ -6,6 +6,11 @@ identifier, no status, no approval, and no severity, so the rule is a property o
 than something a reviewer of the code has to remember.
 """
 
+from trace_ai.domain.proposals.catalog_gap import (
+    CatalogGapCandidateProposal,
+    NearestRequirementConsidered,
+    promote_catalog_gap_candidate,
+)
 from trace_ai.domain.proposals.context_extraction import (
     ContextExtractionProposal,
     LocalKey,
@@ -56,6 +61,7 @@ __all__ = [
     "EVIDENCE_VALIDATION_AGENT",
     "MAPPING_AGENT",
     "THREAT_ANALYSIS_AGENT",
+    "CatalogGapCandidateProposal",
     "ContextExtractionProposal",
     "ControlProposal",
     "ConvertedContext",
@@ -67,6 +73,7 @@ __all__ = [
     "GenerationMetadata",
     "LocalKey",
     "MappingProposal",
+    "NearestRequirementConsidered",
     "ProposalError",
     "ProposedActor",
     "ProposedAsset",
@@ -81,6 +88,7 @@ __all__ = [
     "ThreatProposal",
     "convert_proposal",
     "promote_assessment",
+    "promote_catalog_gap_candidate",
     "promote_control",
     "promote_critique",
     "promote_documentation_gap",

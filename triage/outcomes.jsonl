@@ -1,0 +1,21 @@
+{"issue": 228, "tier": 3, "model": "claude-fable-5", "classified_by": "hard-rule", "outcome": "clean", "escalated_to": null, "date": "2026-08-10", "note": "DEC-057 catalog lifecycle governance"}
+{"issue": 229, "tier": 3, "model": "claude-fable-5", "classified_by": "hard-rule", "outcome": "clean", "escalated_to": null, "date": "2026-08-10", "note": "DEC-058 provenance expansion for 0.2"}
+{"issue": 240, "tier": 3, "model": "claude-fable-5", "classified_by": "hard-rule", "outcome": "clean", "escalated_to": null, "date": "2026-08-10", "note": "DEC-059 cloud-operations category"}
+{"issue": 227, "tier": 3, "model": "claude-fable-5", "classified_by": "hard-rule", "outcome": "clean", "escalated_to": null, "date": "2026-08-10", "note": "DEC-060 risk-treatment disposition"}
+{"issue": 239, "tier": 3, "model": "claude-fable-5", "classified_by": "hard-rule", "outcome": "clean", "escalated_to": null, "date": "2026-08-10", "note": "DEC-061 revisit semantics"}
+{"issue": 234, "tier": 3, "model": "claude-fable-5", "classified_by": "hard-rule", "outcome": "clean", "escalated_to": null, "date": "2026-08-10", "note": "DEC-062 typed routing reasons"}
+{"issue": 230, "tier": 3, "model": "claude-fable-5", "classified_by": "hard-rule", "outcome": "clean", "escalated_to": null, "date": "2026-08-10", "note": "DEC-063 warn-only coverage baseline"}
+{"issue": 235, "tier": 3, "model": "claude-fable-5", "classified_by": "hard-rule", "outcome": "clean", "escalated_to": null, "date": "2026-08-10", "note": "DEC-064 reviewer-precedent feed"}
+{"issue": 237, "tier": 3, "model": "claude-fable-5", "classified_by": "hard-rule", "outcome": "clean", "escalated_to": null, "date": "2026-08-10", "note": "DEC-065 catalog-gap-candidate channel"}
+{"issue": 236, "tier": 3, "model": "claude-fable-5", "classified_by": "hard-rule", "outcome": "clean", "escalated_to": null, "date": "2026-08-10", "note": "DEC-066 content fingerprint"}
+{"issue": 238, "tier": 3, "model": "claude-fable-5", "classified_by": "hard-rule", "outcome": "clean", "escalated_to": null, "date": "2026-08-10", "note": "DEC-067 cache-token accounting"}
+{"issue": 241, "tier": 3, "model": "claude-fable-5", "classified_by": "hard-rule", "outcome": "clean", "escalated_to": null, "date": "2026-08-10", "note": "DEC-068 context-model extensions"}
+{"issue": 242, "tier": 3, "model": "claude-fable-5", "classified_by": "hard-rule", "outcome": "clean", "escalated_to": null, "date": "2026-08-10", "note": "DEC-069 per-agent model profiles"}
+{"issue": 243, "tier": 3, "model": "claude-fable-5", "classified_by": "hard-rule", "outcome": "clean", "escalated_to": null, "date": "2026-08-10", "note": "DEC-070 deterministic artifact ingestion"}
+{"issue": 232, "tier": 3, "model": "claude-fable-5", "classified_by": "hard-rule", "outcome": "clean", "escalated_to": null, "date": "2026-08-10", "note": "DEC-071 per-source coverage ledger"}
+{"issue": 231, "tier": 3, "model": "claude-fable-5", "classified_by": "hard-rule", "outcome": "clean", "escalated_to": null, "date": "2026-08-10", "note": "DEC-072 interop export family"}
+{"issue": 255, "tier": 3, "model": "claude-fable-5", "classified_by": "hard-rule", "outcome": "clean", "escalated_to": null, "date": "2026-08-10", "note": "DEC-073 evaluation harness design"}
+{"issue": 256, "tier": 3, "model": "claude-fable-5", "classified_by": "hard-rule", "outcome": "clean", "escalated_to": null, "date": "2026-08-10", "note": "DEC-074 baseline comparison protocol"}
+{"issue": 257, "tier": 3, "model": "claude-fable-5", "classified_by": "hard-rule", "outcome": "clean", "escalated_to": null, "date": "2026-08-10", "note": "DEC-075 adversarial evaluation design"}
+{"issue": 258, "tier": 3, "model": "claude-fable-5", "classified_by": "hard-rule", "outcome": "clean", "escalated_to": null, "date": "2026-08-10", "note": "DEC-076 published scorecard"}
+{"issue": 259, "tier": 3, "model": "claude-fable-5", "classified_by": "hard-rule", "outcome": "clean", "escalated_to": null, "date": "2026-08-10", "note": "DEC-077 stability measurement"}

@@ -17,19 +17,37 @@ a supported way to run the pipeline rather than something only tests do.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any, Final
 
 from trace_ai.infrastructure.model.fake import DeterministicModel
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Mapping, Sequence
 
     from pydantic import BaseModel
 
     from trace_ai.infrastructure.model.profiles import ModelProfile
-    from trace_ai.infrastructure.model.seam import StructuredModel
+    from trace_ai.infrastructure.model.seam import (
+        GenerationSettings,
+        ModelOutcome,
+        StructuredModel,
+    )
 
-__all__ = ["UnknownProviderError", "build_model"]
+__all__ = ["AGENT_BY_SCHEMA", "OverlayRoutingModel", "UnknownProviderError", "build_model"]
+
+# Which agent a response schema belongs to. The schemas are mutually exclusive by construction —
+# `infrastructure/model/recorded.py` already relies on exactly that to infer a recording's agent —
+# so the schema a call asks for identifies the agent making it, and DEC-069's per-agent routing
+# needs no new parameter on the seam.
+AGENT_BY_SCHEMA: Final[Mapping[str, str]] = {
+    "ContextExtractionProposal": "context-extraction",
+    "ThreatAnalysisProposal": "threat-analysis",
+    "MappingProposal": "requirement-and-control-mapping",
+    "EvidenceValidationProposal": "evidence-validation",
+    "CriticalReviewProposal": "critical-review",
+    "ReportSections": "report-generation",
+}
 
 
 class UnknownProviderError(ValueError):
@@ -44,17 +62,64 @@ class UnknownProviderError(ValueError):
         self.provider = provider
 
 
+@dataclass(frozen=True, slots=True)
+class OverlayRoutingModel:
+    """DEC-069's routing, behind the seam: one resolved adapter per overlaid agent.
+
+    Resolution happened in `profiles.py` (`for_agent`) before anything here was built, so every
+    adapter this holds sees one resolved bundle. A schema no overlay's agent asks for goes to the
+    base adapter, and a schema outside `AGENT_BY_SCHEMA` — nothing in the pipeline produces one —
+    goes there too rather than failing a call configuration already accepted.
+    """
+
+    base: StructuredModel
+    by_agent: Mapping[str, StructuredModel]
+
+    @property
+    def name(self) -> str:
+        return self.base.name
+
+    @property
+    def capabilities(self) -> frozenset[Any]:
+        return self.base.capabilities
+
+    def generate[T: BaseModel](
+        self,
+        *,
+        prompt: str,
+        schema: type[T],
+        settings: GenerationSettings,
+        system: str | None = None,
+    ) -> ModelOutcome[T]:
+        agent = AGENT_BY_SCHEMA.get(schema.__name__)
+        model = self.by_agent.get(agent, self.base) if agent is not None else self.base
+        return model.generate(prompt=prompt, schema=schema, settings=settings, system=system)
+
+
 def build_model(profile: ModelProfile, *, responses: Sequence[BaseModel] = ()) -> StructuredModel:
     """The model this profile names.
 
     `responses` are the queued outcomes for the fake provider and are ignored by a real one — a
     recorded run is a property of the profile, not of the call site, and a caller that could feed
     responses to a live provider would be a caller that could silently stop calling it.
+
+    A profile carrying agent overlays (DEC-069) builds one adapter per distinct resolved bundle,
+    wrapped in `OverlayRoutingModel`; a profile without one builds exactly what it always did.
+    The fake provider replays recorded responses in order and reaches no provider, so an overlay
+    changes nothing it does — recorded runs stay recorded runs.
     """
     if profile.provider == "fake":
         return DeterministicModel(responses, name=profile.model)
     if profile.provider == "anthropic":
         from trace_ai.infrastructure.model.anthropic_adapter import AnthropicModel
 
+        if profile.agent_overlays:
+            return OverlayRoutingModel(
+                base=AnthropicModel(profile),
+                by_agent={
+                    agent: AnthropicModel(profile.for_agent(agent))
+                    for agent in profile.agent_overlays
+                },
+            )
         return AnthropicModel(profile.name)
     raise UnknownProviderError(profile.provider, ("anthropic", "fake"))

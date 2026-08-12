@@ -1,0 +1,69 @@
+# Wallet and Exchange expected threats
+#
+# Benchmark truth for the threat-generation step, derived from the threat list of the
+# cryptocurrency-wallet model in the OWASP Threat Model Library (MIT license). The
+# source's symbolic name is recorded per entry as provenance; titles and summaries are
+# written for this file. The source records no CWE/CAPEC links for these threats.
+#
+# Element matching follows the ForgeFlow convention. `must_reference` uses the names the
+# input document uses, because generated identifiers are scoped to a run (DEC-018).
+#
+# This file sets no floor and no ceiling on threat count (DEC-028). The input document
+# hedges wallet-file encryption ("should be encrypted; encryption is a wallet option") and
+# marks the TLS termination claim unverified; a good assessment surfaces both as questions
+# or assumptions rather than as facts (DEC-009).
+#
+# Nothing in this directory is supplied to Trace during an assessment.
+
+benchmark_version: "1.0"
+scenario: crypto-wallet
+source: OWASP Threat Model Library, cryptocurrency-wallet-threat-model.json (threats)
+
+threats:
+  - key: THR-001
+    title: Wallet file exfiltrated from a compromised device
+    source_key: wallet-file-theft
+    summary: >
+      Malware or a local attacker steals the wallet file from the user's device and
+      recovers the private keys it holds.
+    must_reference:
+      components: [Electrum Wallet Daemon]
+      assets: [Wallet file]
+    preconditions:
+      - the user device is compromised
+      - the wallet file is unencrypted, or its encryption is defeated
+    impact_elements:
+      - private key confidentiality
+      - loss of funds
+
+  - key: THR-002
+    title: Trading-bot API keys stolen and abused
+    source_key: api-key-theft-misuse
+    summary: >
+      An attacker obtains the trading bot's exchange API keys — through interception or
+      leakage into logs — and issues unauthorized trades or reads account data.
+    must_reference:
+      components: [Trading Bot, Exchange API]
+      assets: [Exchange API keys]
+    preconditions:
+      - API keys are exposed in transit or at rest
+      - the stolen keys carry more privilege than the bot's task requires
+    impact_elements:
+      - unauthorized trading
+      - account data confidentiality
+
+  - key: THR-003
+    title: Malicious ElectrumX server feeds false blockchain state
+    source_key: electrumx-data-tampering
+    summary: >
+      A rogue or spoofed ElectrumX server returns incorrect balances or headers, leading
+      the wallet to display or act on false blockchain state.
+    must_reference:
+      components: [Electrum Wallet Daemon, ElectrumX Server]
+      assets: [Blockchain state]
+    preconditions:
+      - the wallet daemon accepts blockchain data from a server the user does not control
+        without cross-validation
+    impact_elements:
+      - displayed balance integrity
+      - transaction decisions made on false state

@@ -4,15 +4,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-Trace is a context-aware security architecture analysis system. **The context slice is built; the
-analysis half is not.** One of the six model-assisted agents exists — Context Extraction — with the
-validation node behind it, checkpoint 1, the reviewer's actions, and a command line that drives all
-of it. The pipeline runs five of its fourteen phases and stops where it is supposed to. Threat
-analysis, control mapping, findings, and the report are specified and unbuilt.
+Trace is a context-aware security architecture analysis system. **The pipeline is built and runs
+end to end; the demonstration surface and the debt milestones around it are not done.** All six
+model-assisted agents exist, each with a deterministic validation node behind it; both human
+checkpoints are workflow-graph nodes; `trace run` and `trace resume` drive all fourteen phases
+from the command line through both checkpoints to a rendered report; and the evaluation harness
+(`trace evaluate`) replays registered benchmark scenarios against authored truth sets, with
+baselines, ablations, the adversarial condition, and a CI-checked scorecard.
 
-There is exactly one model call in `src/`, through the seam, and no test makes it: everything runs
+Every model call in `src/` goes through the seam, and no default test makes one: everything runs
 against `DeterministicModel`, and `--model-profile offline-fake --response recorded.json` is a
-supported way to run the pipeline without a provider.
+supported way to run the pipeline without a provider. No live provider run has been measured.
 
 Read `README.md` for the full picture. The authoritative design lives in `docs/architecture/` and
 `docs/product/` — all plain Markdown, all marked *Proposed, version 0.1*.
@@ -23,9 +25,11 @@ Read `README.md` for the full picture. The authoritative design lives in `docs/a
 uv sync                          # install runtime + dev dependencies from uv.lock
 uv run trace                     # no arguments: env, log level, configured credentials
 uv run trace assessment create --name X          # the command surface; --help lists it
-uv run trace context extract asm-001 --model-profile offline-fake --response recorded.json
+uv run trace run asm-001 --model-profile offline-fake --response recorded.json
 uv run trace context show asm-001 --evidence     # the review package, excerpts labelled
 uv run trace context approve asm-001             # non-zero while something blocking is open
+uv run trace evaluate --all                      # replay every recorded benchmark scenario
+uv run python scripts/replay_forgeflow.py        # the whole pipeline, hash-checked, no key
 
 uv run pytest                    # unit tests; integration and evaluation are deselected
 uv run pytest tests/unit/test_config.py::test_settings_are_frozen   # one test by node id
@@ -50,7 +54,8 @@ src/trace_ai/        configuration, process bootstrap, and cli.py -- the command
 src/trace_ai/domain/           domain objects, identifiers, hashing, and proposals/
 src/trace_ai/domain/proposals/ what an agent returns: local keys, nothing authoritative
 src/trace_ai/services/         ingestion/, evidence/, context/, threats/, requirements/,
-                     prompts/, and the execution ledger
+                     prompts/, the execution ledger, and driver.py -- the composition
+                     point that runs all fourteen phases through the orchestrator
 src/trace_ai/services/context/ input_package.py, pipeline.py, review_file.py
 src/trace_ai/services/threats/ input_package.py -- what the threat agent sees
 src/trace_ai/services/requirements/ loader.py -- the only reader of requirements/
@@ -66,11 +71,12 @@ docs/architecture/   scope, current architecture, agent design, data model,
                      evaluation plan, decision log
 demo/forgeflow/      the ForgeFlow scenario: the demo and benchmark scenario one
 demo/forgeflow/input/      material supplied to Trace
-demo/forgeflow/expected/   the truth set; never supplied to Trace. The contract and
-                           expected-context.yaml are written; the rest are not
+demo/forgeflow/expected/   the truth set; never supplied to Trace. Fully authored;
+                           see its README for the file list
 requirements/        the requirements catalog; see Requirements catalog below
 journal/             dated session entries; see Journal below
-benchmarks/          scenarios two onward, same input/ + expected/ layout
+benchmarks/          scenarios two onward, same input/ + expected/ layout; husky-ai,
+                     crypto-wallet, and invoice-agent are seeded with threat truth sets
 benchmarks/scenarios.yaml  the scenario registry -- the authoritative list
 prompts/             prompt files; shared/ holds the blocks composed into agent prompts
 templates/           report-v1.md, the report template; see Report shape below
@@ -181,7 +187,7 @@ Five things are easy to get wrong:
   requirement does not apply; the former says what not to conclude when it *does* apply and the
   documentation is silent.
 - **`source_frameworks` is provenance, not compliance mapping.** Broad compliance-framework mapping is
-  deferred. Requirement text is written originally — ASVS is CC BY-SA, so its wording is cited by
+  deferred. Requirement text is written originally — ASVS 5.0 is CC BY-SA 4.0, so its wording is cited by
   identifier and never reproduced.
 - **A requirement identifier is authored, and a caller names the catalog version it wants.**
   `req-AUTH-001`, not `req-001`: a counter-numbered identifier is one no person assigned, and the

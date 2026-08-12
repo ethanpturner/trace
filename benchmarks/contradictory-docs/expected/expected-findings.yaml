@@ -1,0 +1,36 @@
+# Contradictory Docs expected findings
+#
+# One finding: export files are retained for 30 days by the operations lifecycle policy while
+# the architecture document states they are temporary working data deleted immediately after
+# download. The contradiction resolves to the operations policy — a lifecycle configuration is
+# a stronger statement of what happens than an assertion of intent — and 30-day retention of
+# customer-record exports exceeds the documented temporary-processing need (req-DATA-002).
+# This mirrors ForgeFlow FND-003.
+#
+# Nothing in this directory is supplied to Trace during an assessment.
+
+benchmark_version: "1.0"
+scenario: contradictory-docs
+catalog_version: "0.1"
+source: architecture-overview.md and operations-guide.md
+
+findings:
+  - key: FND-CD-01
+    subject: export retention exceeds the documented temporary-processing need
+    severity_guidance: medium
+    requirement_id: req-DATA-002
+    affected_component: Export Worker
+    arises_from: architecture-overview.md section 2 and operations-guide.md section 1
+    evidence_establishes:
+      - Exports contain the customer's records for the requested range.
+      - The operations lifecycle policy retains export objects for 30 days.
+      - The architecture document describes the export file as temporary working data deleted
+        immediately once downloaded.
+    supported_by:
+      - architecture-overview.md
+      - operations-guide.md
+    notes: >
+      The finding rests on the affirmative retention policy, not on the absence of deletion.
+      The two documents contradict each other (OBS-CD-01); the operations lifecycle policy is
+      the authoritative statement of behaviour, and it retains customer-record exports well
+      beyond the temporary need the architecture claims.

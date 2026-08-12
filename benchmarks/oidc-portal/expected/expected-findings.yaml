@@ -1,0 +1,17 @@
+# OIDC Portal expected findings
+#
+# This scenario expects no findings. Authentication is delegated to an enterprise OpenID
+# Connect provider and the portal holds no credential store, so the requirement that a
+# generic review most often turns into a finding here — a missing local password policy — is
+# not met, it is inapplicable. A successful assessment may produce no findings (DEC-013), and
+# this scenario is the clean case of it: the negative cases in expected-rejections.yaml are
+# the graded content.
+#
+# Nothing in this directory is supplied to Trace during an assessment.
+
+benchmark_version: "1.0"
+scenario: oidc-portal
+catalog_version: "0.1"
+source: system-overview.md
+
+findings: []

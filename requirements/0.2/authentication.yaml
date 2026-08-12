@@ -1,0 +1,84 @@
+# Category: authentication
+# Requirements about how principals prove who they are, and about documenting
+# the boundary between this system and any provider it delegates that to.
+
+requirements:
+
+  - id: req-AUTH-001
+    catalog_version: "0.2"
+    title: Authentication delegation is documented
+    statement: >
+      A system that delegates user authentication to an external identity
+      provider must document the delegation, name the provider relied upon, and
+      state the boundary of what that provider is responsible for.
+    rationale: >
+      Delegated authentication is frequently omitted from architecture
+      documentation because the team considers it obvious. Treating that
+      omission as an absent authentication control is one of the most common
+      and most damaging false conclusions in automated architecture review. The
+      requirement asks for the delegation to be described, not for the system
+      to implement authentication itself.
+    category:
+      - authentication
+    applicable_conditions:
+      - user authentication is delegated to an external identity provider
+      - the system relies on federated or social identity
+    non_applicable_conditions:
+      - the system maintains its own credential store
+      - the component is not reachable by end users
+    acceptable_implementations:
+      - OpenID Connect through an enterprise identity provider
+      - OAuth 2.0 authorization code flow through an external provider
+      - SAML federation with an enterprise identity provider
+      - an identity-aware proxy that authenticates before traffic reaches the application
+    evidence_expectations:
+      - architecture documentation naming the identity provider
+      - identity provider configuration
+      - a structured system description recording the primary identity provider
+    common_false_positives:
+      - absent local password complexity policy
+      - absent local password rotation policy
+      - absent account lockout threshold
+      - absent credential storage or hashing description
+    default_severity: medium
+    source_frameworks:
+      - "OWASP ASVS: v5.0.0-6.1.3"
+      - "NIST SP 800-53 5.2.0: IA-8"
+    status: active
+
+  - id: req-AUTH-002
+    catalog_version: "0.2"
+    title: Multi-factor authentication responsibility is established
+    statement: >
+      Where multi-factor authentication is relied upon for administrative or
+      externally reachable access, the documentation must establish which party
+      enforces it and under what policy.
+    rationale: >
+      Multi-factor authentication is often enforced by an identity provider or
+      an organization policy rather than by the application. Recording which
+      party owns the control distinguishes an inherited control from an absent
+      one, and prevents a recommendation that the application build a factor
+      system it should not own.
+    category:
+      - authentication
+      - administrative_access
+    applicable_conditions:
+      - the system exposes administrative access
+      - privileged access crosses an untrusted network
+    non_applicable_conditions:
+      - authentication and its factor policy are entirely owned by an external provider and documented as such
+      - the system has no privileged interface
+    acceptable_implementations:
+      - factor enforcement by the enterprise identity provider
+      - factor enforcement by an identity-aware proxy in front of the application
+      - factor policy set at the external identity provider organization level
+    evidence_expectations:
+      - identity provider or organization policy documentation
+      - administrative access documentation
+    common_false_positives:
+      - absent application-managed enrolment or factor-registration flow
+      - absent application-side factor configuration setting
+    default_severity: medium
+    source_frameworks:
+      - "NIST SP 800-53 5.2.0: IA-2"
+    status: active

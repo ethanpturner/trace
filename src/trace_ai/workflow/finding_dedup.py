@@ -43,6 +43,10 @@ from trace_ai.domain.finding_merge_record import (
     FindingMergeRecord,
     MergeDecision,
 )
+from trace_ai.services.findings.fingerprints import (
+    component_name_index,
+    fingerprinted_finding,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
@@ -372,6 +376,11 @@ def persist_dedup(handle: AssessmentHandle, outcome: DedupOutcome) -> DedupOutco
     Findings keep the identifiers they already have — a merge changes content, never identity —
     so only the merge records are re-minted. Each record's finding references are already store
     identifiers, and the upserts and the counter increments commit together.
+
+    Identity here means the allocated identifier. The DEC-066 `content_fingerprint` is the other
+    identity, and a merge *does* move it where the survivor's unions widened the requirement or
+    component sets — so every merged-into or merged-away finding is re-fingerprinted before the
+    write, idempotently where nothing structural changed.
     """
     repository = handle.objects
     changed = {
@@ -379,10 +388,15 @@ def persist_dedup(handle: AssessmentHandle, outcome: DedupOutcome) -> DedupOutco
         for record in outcome.records
         for finding_id in (record.surviving_finding_id, *record.merged_finding_ids)
     }
+    names = component_name_index(handle)
+    stored_findings = tuple(
+        fingerprinted_finding(finding, names) if finding.id in changed else finding
+        for finding in outcome.findings
+    )
 
     stored_records: list[FindingMergeRecord] = []
     with repository.transaction():
-        for finding in outcome.findings:
+        for finding in stored_findings:
             if finding.id in changed:
                 repository.save(finding)
         for record in outcome.records:
@@ -393,7 +407,7 @@ def persist_dedup(handle: AssessmentHandle, outcome: DedupOutcome) -> DedupOutco
             stored_records.append(stored)
 
     return DedupOutcome(
-        findings=outcome.findings,
+        findings=stored_findings,
         records=tuple(stored_records),
         proposals=outcome.proposals,
     )

@@ -43,6 +43,7 @@ from trace_ai.domain.enums import ConfidenceLevel
 from trace_ai.domain.identifiers import EvidenceReferenceId
 from trace_ai.domain.question import QuestionPriority
 from trace_ai.domain.source_observation import ObservationKind
+from trace_ai.domain.system_context import AccessModel
 from trace_ai.domain.vocabulary import UNKNOWN, VocabularyTerm
 
 __all__ = [
@@ -107,6 +108,10 @@ class ProposedSystemContext(DomainModel):
     deployment_model: str | None = None
     data_classifications: list[str] = Field(default_factory=list)
 
+    access_model: AccessModel = AccessModel.UNKNOWN
+    """The stated authorization posture (DEC-068). Closed enum; `unknown` unless the material
+    states one, because a posture nobody stated must never be read as an answer."""
+
 
 class ProposedComponent(DomainModel):
     """A component the agent proposes (`data-model.md` section 11, minus what the application owns)."""
@@ -122,6 +127,10 @@ class ProposedComponent(DomainModel):
     """`None` where the documentation does not say — which is not `False` (DEC-009)."""
 
     externally_managed: bool | None = None
+    entry_point_types: list[VocabularyTerm] = Field(default_factory=list)
+    """How the component can be entered (DEC-068). Open vocabulary; empty where the material
+    names no entry points."""
+
     data_classifications: list[str] = Field(default_factory=list)
     authentication_mechanisms: list[str] = Field(default_factory=list)
     authorization_mechanisms: list[str] = Field(default_factory=list)
@@ -135,6 +144,12 @@ class ProposedActor(DomainModel):
     name: str = Field(min_length=1)
     actor_type: VocabularyTerm
     trust_level: str | None = None
+    skill_level: VocabularyTerm | None = None
+    """Persona (DEC-068): presumed capability. `None` where the material does not say."""
+
+    access_level: VocabularyTerm | None = None
+    """Persona (DEC-068): starting access. `None` where the material does not say."""
+
     capabilities: list[str] = Field(default_factory=list)
     authentication_method: str | None = None
     evidence_ids: list[EvidenceReferenceId] = Field(default_factory=list)
@@ -154,9 +169,15 @@ class ProposedAsset(DomainModel):
     confidentiality_impact: str | None = None
     integrity_impact: str | None = None
     availability_impact: str | None = None
-    data_classification: str | None = None
+    data_classification: VocabularyTerm | None = None
+    """Sensitivity, normalized against an open vocabulary (DEC-068, DEC-036)."""
+
     owner: str | None = None
     component_keys: list[LocalKey] = Field(default_factory=list)
+    stored_in_component_keys: list[LocalKey] = Field(default_factory=list)
+    """The subset of `component_keys` that stores this asset at rest (DEC-068). Local keys,
+    resolved at conversion like the rest."""
+
     evidence_ids: list[EvidenceReferenceId] = Field(default_factory=list)
 
 
@@ -376,6 +397,17 @@ class ContextExtractionProposal(DomainModel):
             for key in asset.component_keys:
                 if key not in {component.key for component in self.components}:
                     problems.append(f"asset {asset.key!r}: {key!r} is not a proposed component")
+            for key in asset.stored_in_component_keys:
+                if key not in {component.key for component in self.components}:
+                    problems.append(f"asset {asset.key!r}: {key!r} is not a proposed component")
+                elif key not in asset.component_keys:
+                    # DEC-068: at-rest placement is a *subset* of "holds or processes". A store
+                    # the asset never touches is a claim the two lists contradict.
+                    problems.append(
+                        f"asset {asset.key!r}: {key!r} is listed as storing the asset at rest "
+                        f"but not in component_keys; stored_in is a subset of holds-or-processes "
+                        f"(DEC-068)"
+                    )
 
         for boundary in self.trust_boundaries:
             for key in [*boundary.inside_component_keys, *boundary.outside_component_keys]:

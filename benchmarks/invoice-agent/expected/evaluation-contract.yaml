@@ -1,0 +1,28 @@
+# Invoice Agent evaluation contract
+#
+# Grading policy for the invoice-agent benchmark scenario. Layout is fixed by DEC-027 and
+# specified in docs/architecture/evaluation-plan.md section 5.
+#
+# This file declares no expected-output counts (DEC-028): the expected set is the
+# enumerated content of the expected-*.yaml files in this directory.
+#
+# Provenance: derived from the annotated insecure invoice-agent sample in the GenAI Agent
+# Security Initiative (code_samples/agentic_top_ten/frameworks/pydantic/invoice_agent,
+# https://github.com/GenAI-Security-Project/GenAI-Agent-Security-Initiative). The source
+# repository's license is unasserted, so everything here is written originally from the
+# sample's observable facts and described vulnerabilities; nothing is reproduced. The
+# input document describes the agent system; the expected threats derive from the
+# vulnerabilities the sample exists to demonstrate and are never supplied to Trace.
+#
+# Nothing in this directory is supplied to Trace during an assessment.
+
+benchmark_version: "1.0"
+
+# The requirements catalog version these expected outputs were authored against (DEC-027).
+catalog_version: "0.1"
+
+matching:
+  # Expected-to-actual matching is semantic, not numeric (DEC-028). Generated identifiers
+  # are scoped to a run and carry no meaning across runs (DEC-018).
+  findings_match_on: [requirement_id, affected_component]
+  allow_consolidation: true

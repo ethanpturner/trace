@@ -96,6 +96,7 @@ if TYPE_CHECKING:
         ContextValidationOutcome,
         ReviewTrigger,
         ValidationError,
+        ZoneMismatch,
     )
     from trace_ai.workflow.nodes import NodeContext
 
@@ -265,6 +266,28 @@ class ContextReviewPackage:
 
     triggers: tuple[ReviewTrigger, ...] = ()
     outstanding_errors: tuple[ValidationError, ...] = ()
+    zone_mismatches: tuple[ZoneMismatch, ...] = ()
+    """DEC-068's warn-only cross-claim check: flows between differing zones that cross no
+    declared boundary. Shown for the reviewer to resolve — declare the boundary or fix the zone
+    label — and blocking nothing."""
+
+    injection_attempts: tuple[SourceObservation, ...] = ()
+    """Injection attempts the extraction recorded about the supplied documents (DEC-075).
+
+    Surfacing them is detection made visible: the reviewer is told which document tried to inject
+    and what it attempted, framed as an observation about the document rather than an instruction
+    to anyone. An attempt here does not block approval — it triages attention — but a subject
+    extracted from a flagged document also carries an `injection_flag` reason."""
+
+    reasons_by_object_id: dict[str, tuple[str, ...]] = field(default_factory=dict)
+    """Routing reasons per subject (DEC-062), derived from persisted state and stored nowhere.
+
+    A subject absent from this map has no reasons, which is routine, not exempt: it still needs a
+    decision. The values are `ReasonCode` strings, kept as strings so the package carries no
+    import an interface has to resolve."""
+
+    def reasons_for(self, object_id: str) -> tuple[str, ...]:
+        return self.reasons_by_object_id.get(object_id, ())
 
     def claims_by_status(self) -> dict[ClaimStatus, tuple[ClaimPresentation, ...]]:
         """The claims grouped by what kind of assertion each is.
@@ -415,7 +438,37 @@ def build_context_review_package(
         questions=questions,
         triggers=validation.triggers,
         outstanding_errors=validation.blocking_errors,
+        zone_mismatches=validation.zone_mismatches,
+        injection_attempts=tuple(
+            observation
+            for observation in handle.objects.list(SourceObservation)
+            if observation.kind is ObservationKind.INJECTION_ATTEMPT
+        ),
+        reasons_by_object_id=_routing_reasons(handle),
     )
+
+
+def _routing_reasons(handle: AssessmentHandle) -> dict[str, tuple[str, ...]]:
+    """The per-subject routing reasons (DEC-062), derived from persisted state at build time.
+
+    `injection_flag` (issue #274) and `revisit_due` (DEC-061) are derived here; the other codes
+    attach as their inputs are built. The reasons are computed, never read from storage.
+    """
+    from trace_ai.workflow.reason_codes import (
+        ReasonCode,
+        injection_flagged_subjects,
+        low_confidence_subjects,
+        revisit_due_claims,
+    )
+
+    reasons: dict[str, list[str]] = {}
+    for object_id in injection_flagged_subjects(handle):
+        reasons.setdefault(object_id, []).append(ReasonCode.INJECTION_FLAG.value)
+    for object_id in low_confidence_subjects(handle):
+        reasons.setdefault(object_id, []).append(ReasonCode.LOW_CONFIDENCE.value)
+    for object_id in revisit_due_claims(handle):
+        reasons.setdefault(object_id, []).append(ReasonCode.REVISIT_DUE.value)
+    return {object_id: tuple(codes) for object_id, codes in reasons.items()}
 
 
 def context_review_subjects(context: NodeContext) -> list[str]:

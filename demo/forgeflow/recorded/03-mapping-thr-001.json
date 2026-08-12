@@ -1,0 +1,24 @@
+{
+  "controls": [],
+  "mappings": [
+    {
+      "threat_id": "thr-001",
+      "requirement_id": "req-WEBHOOK-001",
+      "control_keys": [],
+      "existing_control_ids": [],
+      "applicability_status": "applicable",
+      "applicability_reason": "The system exposes an endpoint accepting events from an external platform, and the threat is about forged events reaching it.",
+      "suppressed_conclusion": null,
+      "suppressed_by": null,
+      "satisfaction_status": "unmet",
+      "evidence_ids": [
+        "evd-001"
+      ],
+      "assumptions": [
+        "The documentation says requests are validated without naming a mechanism, which is this requirement's first common false positive; it does not apply because the threat concerns signature verification and none is documented."
+      ],
+      "confidence": "medium"
+    }
+  ],
+  "documentation_gaps": []
+}

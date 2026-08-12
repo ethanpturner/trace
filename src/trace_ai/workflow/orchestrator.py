@@ -27,13 +27,15 @@ from typing import TYPE_CHECKING
 
 from trace_ai.domain.base import now
 from trace_ai.domain.execution import ExecutionType, RunStatus
+from trace_ai.workflow.checkpoint import save_state
+from trace_ai.workflow.errors import WorkflowError
 from trace_ai.workflow.limits import Budget, LimitExceededError
 from trace_ai.workflow.nodes import NodeContext
 from trace_ai.workflow.phases import NODES_BY_PHASE, PAUSE_PHASES, Phase, successor
 from trace_ai.workflow.state import AssessmentState
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Callable, Sequence
 
     from trace_ai.infrastructure.model.seam import StructuredModel
     from trace_ai.services.assessment import AssessmentHandle
@@ -71,21 +73,27 @@ class Orchestrator:
         nodes: Sequence[Node],
         budget: Budget | None = None,
         model: StructuredModel | None = None,
+        on_pause: Callable[[AssessmentState], None] | None = None,
     ) -> None:
         self.handle = handle
         self.ledger = ledger
         self.budget = budget if budget is not None else Budget()
         self.model = model
-        self._nodes: dict[Phase, Node] = {}
+        self._on_pause = on_pause
+        self._nodes: dict[Phase, dict[str, Node]] = {}
         for node in nodes:
             self.register(node)
 
     def register(self, node: Node) -> None:
-        """Register a node against the phase it declares.
+        """Register a node against the phase and name it declares.
 
         A node whose name is not listed for that phase in `NODES_BY_PHASE` is refused. The mapping
         is the corpus's, so this is the orchestrator checking a registration against the documented
         pipeline rather than against a list it keeps for itself.
+
+        A phase may declare more than one node — six of them do — and each declared name may be
+        registered exactly once. Which of two nodes runs first is the table's order, never
+        registration order, so registering both nodes of a two-node phase decides nothing.
         """
         permitted = NODES_BY_PHASE[node.phase]
         if node.name not in permitted:
@@ -94,15 +102,23 @@ class Orchestrator:
                 f"node {node.name!r} declares phase {node.phase.value!r}, which runs {allowed}. "
                 f"A node in an undeclared phase runs correctly and in the wrong place."
             )
-        if node.phase in self._nodes:
+        slots = self._nodes.setdefault(node.phase, {})
+        if node.name in slots:
             raise ValueError(
-                f"phase {node.phase.value!r} already has node {self._nodes[node.phase].name!r}; "
-                f"which of two nodes runs is not something to leave to registration order"
+                f"phase {node.phase.value!r} already has a node named {node.name!r}; "
+                f"which of two same-named nodes runs is not something to leave to registration "
+                f"order"
             )
-        self._nodes[node.phase] = node
+        slots[node.name] = node
 
-    def run(self, state: AssessmentState) -> RunOutcome:
-        """Execute from the state's current phase until the run pauses, completes, or stops."""
+    def run(self, state: AssessmentState, *, stop_before: Phase | None = None) -> RunOutcome:
+        """Execute from the state's current phase until the run pauses, completes, or stops.
+
+        `stop_before` halts cleanly the moment the run is about to advance into that phase — the
+        evaluation harness uses it to measure the finding set without running the report, which
+        the pipeline itself never needs (there is no analytical reason to stop early). The run's
+        status stays what it was; a clean early stop is neither a failure nor a checkpoint pause.
+        """
         started_at = self.ledger.run.started_at or now()
         current = state
 
@@ -113,37 +129,64 @@ class Orchestrator:
                 completed = self._complete(current)
                 return RunOutcome(state=completed, stopped_because="completed")
 
-            node = self._nodes.get(phase)
-            if node is None:
+            slots = self._nodes.get(phase, {})
+            if not slots:
                 return self._stop(current, f"no node is registered for phase {phase.value}")
 
-            try:
-                self.budget.check_duration(started_at=started_at, at=now())
-                self.budget.check_node_execution()
-            except LimitExceededError as error:
-                return self._stop(current, str(error), kind=error.kind.value)
+            for name in NODES_BY_PHASE[phase]:
+                node = slots.get(name)
+                if node is None:
+                    return self._stop(
+                        current,
+                        f"phase {phase.value} declares node {name!r} and none is registered; "
+                        f"a run that continued would have skipped it",
+                    )
 
-            try:
-                result = self._execute(node, current)
-            except LimitExceededError as error:
-                return self._stop(current, str(error), kind=error.kind.value)
+                try:
+                    self.budget.check_duration(started_at=started_at, at=now())
+                    self.budget.check_node_execution()
+                except LimitExceededError as error:
+                    return self._stop(current, str(error), kind=error.kind.value)
 
-            current = current.with_limits(self.budget.remaining())
+                try:
+                    result = self._execute(node, current)
+                except LimitExceededError as error:
+                    return self._stop(current, str(error), kind=error.kind.value)
+                except WorkflowError as error:
+                    return self._stop(current, str(error), kind=error.error_class.value)
 
-            if phase in PAUSE_PHASES and result.awaiting_review:
-                paused = current.paused_for(phase, result.awaiting_review)
-                self._persist_pause(paused)
-                return RunOutcome(state=paused, stopped_because="paused")
+                current = current.absorb(**result.state_changes).with_limits(
+                    self.budget.remaining()
+                )
+
+                if phase in PAUSE_PHASES and result.awaiting_review:
+                    paused = current.paused_for(phase, result.awaiting_review)
+                    self._persist_pause(paused)
+                    return RunOutcome(state=paused, stopped_because="paused")
+
+            if phase in PAUSE_PHASES and current.pending_human_review is not None:
+                current = current.resumed()
 
             destination = successor(phase)
             if destination is None:  # pragma: no cover - completion is handled above
                 return self._stop(current, f"{phase.value} is terminal and did not complete")
-            current = current.advance(destination, **result.state_changes)
+            if destination is stop_before:
+                return RunOutcome(
+                    state=current, stopped_because=f"stopped_before_{destination.value}"
+                )
+            current = current.advance(destination)
 
     # -- one node --------------------------------------------------------------------------
 
     def _execute(self, node: Node, state: AssessmentState) -> NodeResult:
-        """Run one node, recording it, and account for what it spent."""
+        """Run one node, recording it, and account for what it spent.
+
+        A node that records its own executions — one that holds the ledger and writes a record per
+        model attempt, the way the agent nodes do — says so with a true `records_own_execution`
+        attribute, and the orchestrator neither records it again nor re-spends its usage. Recording
+        such a node here would double it: `counters()` counts model calls by record, so a wrapper
+        record is not harmless bookkeeping but a second call that never happened.
+        """
         context = NodeContext(
             handle=self.handle,
             state=state,
@@ -154,6 +197,10 @@ class Orchestrator:
             self.budget.check_model_call()
 
         self.budget.spend_node_execution()
+
+        if getattr(node, "records_own_execution", False):
+            return node.run(context)
+
         with self.ledger.record(
             node.name,
             node_version=node.version,
@@ -191,5 +238,19 @@ class Orchestrator:
         )
 
     def _persist_pause(self, state: AssessmentState) -> None:
-        """Record the pause on the run, so a resumed invocation reads it rather than infers it."""
-        self.ledger.pause(current_node=state.current_phase.value)
+        """Record the pause on the run and write the state file a resumed invocation reads.
+
+        Both halves are DEC-017's: the run row says the run is paused and where, and the state file
+        under `traces/` is the self-describing record a later process loads. A pause that wrote
+        only the row would be one nobody could resume.
+
+        `on_pause` runs inside the same transaction as the run-row update. It exists for DEC-031,
+        which requires the assessment's move to `pending_review` to commit with the pause that
+        causes it — the driver supplies the callback because the deliverable's lifecycle belongs to
+        `AssessmentService`, not to this loop.
+        """
+        save_state(self.handle, state)
+        with self.handle.objects.transaction():
+            self.ledger.pause(current_node=state.current_phase.value)
+            if self._on_pause is not None:
+                self._on_pause(state)

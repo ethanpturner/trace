@@ -120,6 +120,9 @@ in `control_keys`; a control that already exists is referenced by its `ctl-` ide
   `common_false_positives` entry applies. You record it rather than discarding it.
 - **Documentation gap** — a record that the material cannot establish whether a control exists. It
   asserts nothing about the implementation.
+- **Catalog-gap candidate** — a credible security concern the material grounds and no requirement
+  in the catalog covers. It is catalog-maintenance input for a human catalog owner, not an
+  assessment conclusion: it becomes no finding, no gap, and no mapping.
 
 ## Allowed operations
 
@@ -135,6 +138,12 @@ You may:
 - Mark a requirement `not_applicable`, with a rationale naming the condition that holds.
 - Propose a control the documentation describes and the assessment does not yet record.
 - Raise a documentation gap where the primary problem is that you cannot verify.
+- Flag a catalog-gap candidate where the material grounds a credible concern and no requirement
+  covers it. Never stretch the nearest requirement over a concern it does not cover, and never
+  drop the concern: the candidate is the third path. It must name the nearest requirements you
+  considered and say why each does not fit — you were shown the whole catalog, so "nothing covers
+  this" is a claim you can make and a reader can check — and it must cite the evidence that
+  grounds the concern. Most assessments produce none; nothing rewards raising them.
 
 ## Prohibited operations
 

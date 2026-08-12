@@ -106,13 +106,65 @@ def test_archive_is_the_only_transition_offered(
     assert "archived" in capsys.readouterr().out
 
     offered = _subcommands("assessment")
-    assert offered == {"create", "list", "status", "archive"}
+    assert offered == {"create", "list", "status", "candidates", "archive"}
     assert "approve" not in offered
 
 
 # ------------------------------------------------------------------------------------------
 # Sources and evidence
 # ------------------------------------------------------------------------------------------
+
+
+def test_reset_without_force_lists_and_removes_nothing(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """`reset` is the one destructive command, so its default is a preview and a refusal."""
+    identifier = created(data_root, capsys)
+
+    assert invoke(data_root, "reset") == 1
+    captured = capsys.readouterr()
+    assert "would remove" in captured.out
+    assert "pass --force" in captured.err
+
+    assert invoke(data_root, "assessment", "status", identifier) == 0
+
+
+def test_reset_with_force_returns_the_root_to_the_fresh_state(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """The rerun problem (#321): a used root mints asm-002 while every documented command names
+    asm-001. After a reset, the next create allocates asm-001 again — the property a scripted
+    demonstration depends on."""
+    identifier = created(data_root, capsys)
+    assert invoke(data_root, "source", "add", identifier, str(FORGEFLOW_INPUT)) == 0
+    capsys.readouterr()
+
+    assert invoke(data_root, "reset", "--force") == 0
+    assert "removed" in capsys.readouterr().out
+
+    assert invoke(data_root, "assessment", "list") == 0
+    assert "no assessments" in capsys.readouterr().out
+    assert created(data_root, capsys) == "asm-001"
+
+
+def test_reset_refuses_a_directory_that_is_not_a_data_root(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A flag that removes data, pointed at the wrong directory, must do nothing at all."""
+    other = tmp_path / "not-a-data-root"
+    other.mkdir()
+    (other / "keep.txt").write_text("not trace's", encoding="utf-8")
+
+    assert invoke(other, "reset", "--force") == 1
+    assert "does not look like a trace data root" in capsys.readouterr().err
+    assert (other / "keep.txt").exists()
+
+
+def test_reset_on_a_fresh_root_is_a_no_op(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    assert invoke(data_root, "reset", "--force") == 0
+    assert "already fresh" in capsys.readouterr().out
 
 
 def test_adding_a_directory_registers_and_indexes_the_corpus(
@@ -146,6 +198,45 @@ def test_registering_without_indexing_is_available(
 
     invoke(data_root, "source", "list", identifier)
     assert "registered" in capsys.readouterr().out
+
+
+def test_adding_the_same_directory_twice_changes_no_count(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A repeated `source add` — one rehearsal not wiped, one command run twice — must not move a
+    single number the reviewer is about to quote (#320). The skipped documents are named by
+    identifier, never re-registered and never re-indexed."""
+    identifier = created(data_root, capsys)
+    assert invoke(data_root, "source", "add", identifier, str(FORGEFLOW_INPUT)) == 0
+    first = capsys.readouterr().out
+    assert "registered 8 document(s)" in first
+
+    assert invoke(data_root, "source", "add", identifier, str(FORGEFLOW_INPUT)) == 0
+    second = capsys.readouterr().out
+    assert "registered 0 document(s)" in second
+    assert "already registered: src-001" in second
+    assert "indexed 0 evidence reference(s)" in second
+
+    assert invoke(data_root, "assessment", "status", identifier) == 0
+    status = capsys.readouterr().out
+    assert "source documents: 8" in status
+
+
+def test_a_no_index_registration_is_completed_by_the_next_add(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Rerunning without `--no-index` finishes the job rather than skipping it: the documents are
+    already registered, and the second add indexes what is still unindexed."""
+    identifier = created(data_root, capsys)
+    path = FORGEFLOW_INPUT / "product-overview.md"
+    assert invoke(data_root, "source", "add", identifier, str(path), "--no-index") == 0
+    capsys.readouterr()
+
+    assert invoke(data_root, "source", "add", identifier, str(path)) == 0
+    output = capsys.readouterr().out
+    assert "registered 0 document(s)" in output
+    assert "already registered: src-001" in output
+    assert "indexed 0 evidence reference(s)" not in output
 
 
 def test_source_list_reports_documents_without_their_content(
@@ -331,7 +422,7 @@ def test_the_banner_still_reports_credentials_as_names_only(
     assert run([]) == 0
     output = capsys.readouterr().out
 
-    assert "Hello from trace!" in output
+    assert "context-aware security architecture analysis" in output
     assert "anthropic" in output
     assert FAKE_KEY not in output
 
@@ -365,10 +456,26 @@ def test_the_command_surface_is_the_one_dec_032_confirms() -> None:
     groups = next(
         action for action in parser._actions if isinstance(action, argparse._SubParsersAction)
     )
-    assert set(groups.choices) == {"assessment", "source", "evidence", "context"}
+    assert set(groups.choices) == {
+        "assessment",
+        "source",
+        "evidence",
+        "context",
+        "run",
+        "resume",
+        "findings",
+        "report",
+        "verify",
+        "evaluate",
+        "export",
+        "reset",
+        "view",
+    }
     assert _subcommands("source") == {"add", "list"}
     assert _subcommands("evidence") == {"list", "show", "verify"}
-    assert _subcommands("assessment") == {"create", "list", "status", "archive"}
+    assert _subcommands("assessment") == {"create", "list", "status", "candidates", "archive"}
+    assert _subcommands("findings") == {"show", "review", "approve"}
+    assert _subcommands("report") == {"show"}
 
 
 def test_a_group_with_no_subcommand_prints_help() -> None:
@@ -1057,3 +1164,362 @@ def test_context_help_follows_the_corpus_prose_register() -> None:
         for word in banned:
             assert word not in lowered, f"{word!r} appears in help output"
         assert text == text.replace("  \n", "\n")
+
+
+# ------------------------------------------------------------------------------------------
+# The pipeline: run, resume, the finding checkpoint, and the report (#261)
+# ------------------------------------------------------------------------------------------
+
+
+def _recorded_file(path: Path, payload: object) -> str:
+    from pydantic import BaseModel
+
+    assert isinstance(payload, BaseModel)
+    path.write_text(payload.model_dump_json(indent=2), encoding="utf-8")
+    return str(path)
+
+
+def _pipeline_recordings(tmp_path: Path) -> dict[str, str]:
+    """The five agents' recorded responses, borrowed from the driver's end-to-end test."""
+    from test_driver import ASSESSMENT, EXTRACTION, MAPPING, THREAT
+
+    from trace_ai.domain.proposals import ContextExtractionProposal
+    from trace_ai.domain.proposals.critical_review import CriticalReviewProposal
+    from trace_ai.domain.proposals.evidence_validation import EvidenceValidationProposal
+    from trace_ai.domain.proposals.mapping import MappingProposal
+    from trace_ai.domain.proposals.threat_analysis import ThreatAnalysisProposal
+
+    return {
+        "extraction": _recorded_file(
+            tmp_path / "extraction.json", ContextExtractionProposal.model_validate(EXTRACTION)
+        ),
+        "threats": _recorded_file(
+            tmp_path / "threats.json", ThreatAnalysisProposal.model_validate({"threats": [THREAT]})
+        ),
+        "mapping": _recorded_file(
+            tmp_path / "mapping.json", MappingProposal.model_validate({"mappings": [MAPPING]})
+        ),
+        "evidence": _recorded_file(
+            tmp_path / "evidence.json",
+            EvidenceValidationProposal.model_validate({"assessments": [ASSESSMENT]}),
+        ),
+        "critique": _recorded_file(
+            tmp_path / "critique.json", CriticalReviewProposal.model_validate({"critiques": []})
+        ),
+    }
+
+
+def _approve_everything_in(review_file: Path) -> None:
+    import yaml
+
+    document = yaml.safe_load(review_file.read_text(encoding="utf-8"))
+    for group in ("components", "actors", "assets", "data_flows", "trust_boundaries", "claims"):
+        for entry in document.get(group) or []:
+            entry["decision"] = "approve"
+    review_file.write_text(yaml.safe_dump(document, sort_keys=False), encoding="utf-8")
+
+
+def _sections_file(data_root: Path, identifier: str, path: Path) -> str:
+    from trace_ai.domain.proposals.report_sections import LimitationEntry, ReportSections
+    from trace_ai.infrastructure.database.store import AssessmentStore
+    from trace_ai.services.assessment import AssessmentService
+    from trace_ai.services.report.input_assembly import assemble_report_input
+
+    with AssessmentStore.at_root(data_root) as store:
+        service = AssessmentService(store, artifact_root=data_root)
+        assembly = assemble_report_input(
+            service.handle(identifier),
+            prompt_versions={"generate-report-sections": "generate-report-sections-v1"},
+            model="deterministic-fake",
+            model_configuration="offline-fake",
+        )
+        sections = ReportSections.model_validate(
+            {
+                "executive_summary": "The assessment reviewed the webhook processing path.",
+                "system_overview": "The system accepts repository events and queues jobs.",
+                "risk_summary": "The approved findings concern unverified event ingestion.",
+                "limitations": [
+                    LimitationEntry.model_validate(
+                        {"limitation_id": limitation.limitation_id, "text": limitation.facts}
+                    )
+                    for limitation in assembly.required_limitations
+                ],
+            }
+        )
+    return _recorded_file(path, sections)
+
+
+def test_the_pipeline_runs_end_to_end_from_the_command_line(
+    data_root: Path, capsys: pytest.CaptureFixture[str], tmp_path: Path
+) -> None:
+    """#261's acceptance criterion: create, run, review both checkpoints, and render the report
+    using only documented commands and recorded responses. No provider key exists in this test."""
+    identifier = created(data_root, capsys)
+    assert (
+        invoke(
+            data_root,
+            "source",
+            "add",
+            identifier,
+            str(FORGEFLOW_INPUT / "architecture-overview.md"),
+        )
+        == 0
+    )
+    recordings = _pipeline_recordings(tmp_path)
+    capsys.readouterr()
+
+    # Run to checkpoint 1.
+    assert (
+        invoke(
+            data_root,
+            "run",
+            identifier,
+            "--model-profile",
+            "offline-fake",
+            "--response",
+            recordings["extraction"],
+        )
+        == 0
+    )
+    output = capsys.readouterr().out
+    assert "paused at:    human_context_review" in output
+
+    # Resuming with nothing decided pauses again — partial progress, not an error.
+    assert invoke(data_root, "resume", identifier, "--model-profile", "offline-fake") == 0
+    assert "paused at:    human_context_review" in capsys.readouterr().out
+
+    # Checkpoint 1: export, approve everything, apply, approve the baseline.
+    review_file = tmp_path / "context-review.yaml"
+    assert invoke(data_root, "context", "review", identifier, "--export", str(review_file)) == 0
+    _approve_everything_in(review_file)
+    assert (
+        invoke(
+            data_root,
+            "context",
+            "review",
+            identifier,
+            "--reviewer",
+            "reviewer",
+            "--apply",
+            str(review_file),
+        )
+        == 0
+    )
+    assert invoke(data_root, "context", "approve", identifier, "--reviewer", "reviewer") == 0
+    capsys.readouterr()
+
+    # Resume to checkpoint 2.
+    assert (
+        invoke(
+            data_root,
+            "resume",
+            identifier,
+            "--model-profile",
+            "offline-fake",
+            "--response",
+            recordings["threats"],
+            "--response",
+            recordings["mapping"],
+            "--response",
+            recordings["evidence"],
+            "--response",
+            recordings["critique"],
+        )
+        == 0
+    )
+    output = capsys.readouterr().out
+    assert "paused at:    human_finding_review" in output
+
+    # Concluding with an undecided finding is refused, with the finding named.
+    assert invoke(data_root, "findings", "approve", identifier) == 1
+    assert "fnd-001" in capsys.readouterr().err
+
+    # The package prints; severity is assigned; the finding is approved; the review concludes.
+    assert invoke(data_root, "findings", "show", identifier) == 0
+    assert "fnd-001" in capsys.readouterr().out
+    assert (
+        invoke(
+            data_root,
+            "findings",
+            "review",
+            identifier,
+            "--reviewer",
+            "reviewer",
+            "--severity",
+            "fnd-001=medium",
+            "--approve",
+            "fnd-001",
+        )
+        == 0
+    )
+    output = capsys.readouterr().out
+    assert "2 decision(s) recorded as reviewer" in output
+    assert invoke(data_root, "findings", "approve", identifier) == 0
+    capsys.readouterr()
+
+    # Resume to completion, then print the report and its manifest.
+    sections = _sections_file(data_root, identifier, tmp_path / "sections.json")
+    assert (
+        invoke(
+            data_root,
+            "resume",
+            identifier,
+            "--model-profile",
+            "offline-fake",
+            "--response",
+            sections,
+        )
+        == 0
+    )
+    assert "completed" in capsys.readouterr().out
+
+    assert invoke(data_root, "report", "show", identifier) == 0
+    report = capsys.readouterr().out
+    assert "fnd-001" in report
+
+    assert invoke(data_root, "report", "show", identifier, "--manifest") == 0
+    manifest = capsys.readouterr().out
+    assert '"manifest_version"' in manifest
+
+    # The whole chain verifies from the command line, in one line of output.
+    assert invoke(data_root, "verify", identifier) == 0
+    verified = capsys.readouterr().out
+    assert "1 manifest" in verified
+
+
+def test_report_show_is_refused_while_no_report_exists(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    identifier = created(data_root, capsys)
+    assert invoke(data_root, "report", "show", identifier) == 1
+    assert "no report has been rendered" in capsys.readouterr().err
+
+
+def test_a_failed_run_exits_one_and_names_the_error(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """The documented exit codes: 0 for a pause or completion, 1 for a failed run."""
+    identifier = created(data_root, capsys)
+    assert invoke(data_root, "run", identifier, "--model-profile", "offline-fake") == 1
+    assert "no source documents" in capsys.readouterr().err
+
+
+def test_an_unreadable_recording_is_refused_by_name(
+    data_root: Path, capsys: pytest.CaptureFixture[str], tmp_path: Path
+) -> None:
+    identifier = created(data_root, capsys)
+    bad = tmp_path / "empty.json"
+    bad.write_text("{}", encoding="utf-8")
+    assert (
+        invoke(
+            data_root,
+            "run",
+            identifier,
+            "--model-profile",
+            "offline-fake",
+            "--response",
+            str(bad),
+        )
+        == 1
+    )
+    assert "empty.json" in capsys.readouterr().err
+
+
+def test_run_without_a_key_is_a_sentence_not_a_traceback(
+    data_root: Path, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The most likely operator slip: forgetting `--model-profile offline-fake`, so the default
+    profile builds the real adapter with no key configured. `MissingSettingError` is in
+    `EXPECTED_ERRORS`, so the answer is the fix in one line rather than a stack trace (#319)."""
+    from trace_ai.config import Settings
+
+    identifier = created(data_root, capsys)
+    assert invoke(data_root, "source", "add", identifier, str(FORGEFLOW_INPUT)) == 0
+    capsys.readouterr()
+
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.setattr(
+        "trace_ai.infrastructure.model.anthropic_adapter.get_settings",
+        lambda: Settings(_env_file=None),
+    )
+    assert invoke(data_root, "run", identifier) == 1
+    captured = capsys.readouterr()
+    assert "error: ANTHROPIC_API_KEY is not set" in captured.err
+    assert "Traceback" not in captured.err
+
+
+def test_an_offline_run_with_missing_responses_is_a_sentence_not_a_traceback(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """The second slip: `offline-fake` with no `--response`. The fake's exhaustion is typed and in
+    `EXPECTED_ERRORS`, and the message speaks to an operator — no test vocabulary (#319)."""
+    identifier = created(data_root, capsys)
+    assert invoke(data_root, "source", "add", identifier, str(FORGEFLOW_INPUT)) == 0
+    capsys.readouterr()
+
+    assert invoke(data_root, "run", identifier, "--model-profile", "offline-fake") == 1
+    captured = capsys.readouterr()
+    assert "error:" in captured.err
+    assert "no response left to serve" in captured.err
+    assert "Traceback" not in captured.err
+    assert "test" not in captured.err.split("error:")[1].lower()
+
+
+def test_evaluate_replays_a_scenario_and_prints_its_metrics(
+    data_root: Path, capsys: pytest.CaptureFixture[str], tmp_path: Path
+) -> None:
+    """`trace evaluate` is the harness's surface (#266): offline, metrics printed, feed named."""
+    assert (
+        invoke(
+            data_root,
+            "evaluate",
+            "forgeflow",
+            "--label",
+            "cli-test",
+            "--work-root",
+            str(tmp_path / "work"),
+            "--results-root",
+            str(tmp_path / "results"),
+        )
+        == 0
+    )
+    output = capsys.readouterr().out
+    assert "scenario:     forgeflow (clean, label cli-test)" in output
+    assert "false_negative_rate" in output
+    assert "feed:" in output
+
+
+def test_evaluate_requires_a_scenario_or_all(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    assert invoke(data_root, "evaluate") == 1
+    assert "name one scenario or pass --all" in capsys.readouterr().err
+
+
+def test_evaluate_all_names_the_scenarios_it_skips(
+    data_root: Path, capsys: pytest.CaptureFixture[str], tmp_path: Path
+) -> None:
+    """No silent caps: a scenario without a recording is reported, never quietly dropped."""
+    assert (
+        invoke(
+            data_root,
+            "evaluate",
+            "--all",
+            "--label",
+            "cli-all",
+            "--work-root",
+            str(tmp_path / "work"),
+            "--results-root",
+            str(tmp_path / "results"),
+        )
+        == 0
+    )
+    output = capsys.readouterr().out
+    assert "skipped husky-ai: no recording" in output
+    assert "skipped crypto-wallet: no recording" in output
+    assert "skipped invoice-agent: no recording" in output
+    assert "skipped oidc-portal: no recording" in output
+    assert "skipped managed-db-service: no recording" in output
+    assert "scenario:     forgeflow" in output
+    assert "scenario:     unsigned-webhooks" in output
+    assert "scenario:     contradictory-docs" in output

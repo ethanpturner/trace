@@ -1,0 +1,40 @@
+# Invoice Agent expected rejections
+#
+# The claims a correct assessment does not make, each with the mechanism that stops it.
+# Layout is fixed by DEC-027; the source is agent-overview.md. Nothing in this directory is
+# supplied to Trace during an assessment.
+
+benchmark_version: "1.0"
+scenario: invoice-agent
+catalog_version: "0.1"
+source: agent-overview.md
+
+rejections:
+  - key: REJ-IA-01
+    claim: The invoice agent lacks a password policy for its users.
+    mechanism: non_applicable_conditions
+    requirement_id: req-AUTH-001
+    entry: the component is not reachable by end users
+    why: >
+      No end-user authentication surface is described anywhere in the document; the agent is
+      driven by a submission workflow. A password-policy claim asserts a credential store the
+      documents never establish.
+
+  - key: REJ-IA-02
+    claim: The agent does not detect known prompt-injection phrasings.
+    mechanism: common_false_positives
+    requirement_id: req-AI-001
+    entry: absent detection of specific injection phrasings, which is not a durable control
+    why: >
+      The genuine weakness is structural — submitted content steering a discretionary decision
+      (FND-IA-01) — and phrasing detection would not close it. The catalog names this exact
+      conclusion as a false positive.
+
+  - key: REJ-IA-03
+    claim: Submitted invoices are stored unencrypted.
+    mechanism: documentation_gap
+    requirement_id: req-DATA-001
+    entry: absent encryption detail for a managed service that encrypts by default
+    why: >
+      No document describes where submitted files rest after processing, so nothing supports a
+      claim about how they are stored. Storage custody is undetermined, not insecure.

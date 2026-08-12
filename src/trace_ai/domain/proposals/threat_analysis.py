@@ -42,6 +42,7 @@ from trace_ai.domain.identifiers import (
     EvidenceReferenceId,
     QuestionId,
 )
+from trace_ai.domain.proposals.catalog_gap import CatalogGapCandidateProposal
 from trace_ai.domain.proposals.context_extraction import ProposalError
 from trace_ai.domain.threat import KNOWN_THREAT_CATEGORIES, Threat
 from trace_ai.domain.vocabulary import VocabularyTerm, normalize_term
@@ -120,6 +121,11 @@ class ThreatAnalysisProposal(DomainModel):
 
     threats: list[ThreatProposal] = Field(default_factory=list)
 
+    catalog_gap_candidates: list[CatalogGapCandidateProposal] = Field(default_factory=list)
+    """Concerns no requirement covers, flagged for the catalog owner (DEC-065). The third path
+    between stretching the nearest requirement and dropping the observation. Empty is the
+    ordinary case, and nothing rewards count."""
+
     def validate_specificity(self) -> None:
         """Refuse a threat that is a category label wearing a title.
 
@@ -183,6 +189,23 @@ class ThreatAnalysisProposal(DomainModel):
                 f"these identifiers were not in the input package: {detail}. A threat may only "
                 f"reference components, assets, actors, data flows, and evidence it was given; "
                 f"one it was not given describes a system it was not shown."
+            )
+
+        ungrounded: dict[int, list[str]] = {}
+        for position, candidate in enumerate(self.catalog_gap_candidates):
+            missing = sorted({value for value in candidate.evidence_ids if value not in available})
+            if missing:
+                ungrounded[position] = missing
+
+        if ungrounded:
+            detail = "; ".join(
+                f"candidate {position} ({self.catalog_gap_candidates[position].concern[:60]!r}) "
+                f"cites {missing}"
+                for position, missing in sorted(ungrounded.items())
+            )
+            raise ProposalError(
+                f"these evidence identifiers were not in the input package: {detail}. A "
+                f"catalog-gap candidate grounds its concern in evidence it was shown (DEC-065)."
             )
 
 

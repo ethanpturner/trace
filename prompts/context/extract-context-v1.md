@@ -96,6 +96,17 @@ You may:
 - Infer likely relationships, labelled as inferences with a rationale.
 - Identify missing context.
 - Propose components, actors, assets, data flows, and trust boundaries.
+- Record how a component can be entered (`entry_point_types` — login, admin interface, file
+  upload, webhook, API, inter-system interface) where the material describes it.
+- Record an actor's persona where the material characterises it: `skill_level` (how capable) and
+  `access_level` (what access it starts with — anonymous, authenticated, privileged, physical).
+  Leave both unset where the material does not say; an unstated persona is not `opportunist`.
+- Classify an asset's sensitivity (`data_classification`) and name which components store it at
+  rest (`stored_in_component_keys`, a subset of `component_keys`) where the material states
+  either. Holding or processing an asset is not storing it.
+- State the system's authorization posture (`access_model`) only where the material states one:
+  `deny_by_default`, `allow_by_default`, or `mixed`. Where it does not, leave the field at
+  `unknown` — an unstated posture is never an answer.
 - Create clarifying questions.
 - Mark contradictory evidence.
 - Assign confidence levels.

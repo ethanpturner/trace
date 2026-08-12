@@ -17,20 +17,26 @@ Two halves, deliberately kept apart:
   one a code change.
 
 Neither half checks judgment. Whether a requirement is *correct* is a review question; whether
-it is *well-formed* is this file's. In particular **nothing verifies that a cited control
-identifier exists** in the framework it names -- the frameworks are not vendored, and a plausible
-but wrong identifier passes.
+it is *well-formed* is this file's. ASVS citation identifiers are now resolved against a cached
+v5.0.0 export (issue #221, survey item A1); NIST and OWASP Top 10 for LLM citations remain
+unresolved because those frameworks are not vendored, and a plausible but wrong identifier
+there still passes.
 """
 
 from __future__ import annotations
 
+import json
+import re
 import shutil
+import subprocess
+import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 import pytest
 import yaml
 
+from trace_ai.config import PROJECT_ROOT
 from trace_ai.domain.enums import Severity
 from trace_ai.domain.requirement import CatalogStatus, Requirement
 from trace_ai.services.requirements.loader import (
@@ -51,15 +57,46 @@ if TYPE_CHECKING:
 
 VERSION = current_version()
 CATALOG = load_catalog(VERSION)
-ALL_REQUIREMENTS = CATALOG.requirements
 
-# Frameworks cited in catalog version 0.1. A new framework is a deliberate provenance decision
-# (requirements/README.md), so it is added here too.
+# Every version in the tree, so the per-requirement authoring conventions hold for 0.2 exactly
+# as they hold for 0.1. Discovered from the version directories rather than listed, so a 0.3
+# cannot ship un-checked.
+CATALOG_VERSIONS = tuple(
+    sorted(path.name for path in CATALOG_ROOT.iterdir() if path.is_dir() and path.name[0].isdigit())
+)
+ALL_REQUIREMENTS = tuple(
+    requirement
+    for version in CATALOG_VERSIONS
+    for requirement in load_catalog(version).requirements
+)
+
+# Frameworks the catalog has adopted, across versions. A new framework is a deliberate
+# provenance decision (requirements/README.md), so it is added here too. ASVS and AISVS carry no
+# version in the framework segment because each prescribes a version-qualified reference token
+# (`v5.0.0-2.1.1`, `v1.0-C9.4.3`); the others carry the version in the framework segment because
+# they prescribe no reference format — except the AI Exchange, a living document whose handle is
+# a permalink plus a mandatory accessed date (DEC-058), and the 2026 LLM Top 10, whose
+# identifiers are year-qualified by construction (`LLM01:2026`, DEC-058).
 FRAMEWORKS = (
-    "OWASP ASVS 5.0.0",
+    "OWASP ASVS",
     "NIST SP 800-53 5.2.0",
     "OWASP Top 10 for LLM Applications 2025",
+    # Adopted for 0.2 (DEC-058, DEC-059).
+    "OWASP AISVS",
+    "OWASP AI Exchange",
+    "OWASP Cumulus v1.2.0",
+    "GenAI Security Project LLM Top 10",
 )
+
+# The reference form ASVS's README prescribes for external documents: `v<release>-<requirement>`.
+ASVS_TOKEN = re.compile(r"^v\d+\.\d+\.\d+-\d+\.\d+\.\d+$")
+
+# The parallel form AISVS prescribes: `v1.0-C9.4.3` (DEC-058).
+AISVS_TOKEN = re.compile(r"^v\d+\.\d+-C\d+\.\d+\.\d+$")
+
+# An AI Exchange citation is a permalink anchor plus a mandatory accessed date (DEC-058): the
+# Exchange has no versioned releases, so the date is what makes staleness visible.
+AI_EXCHANGE_TOKEN = re.compile(r"^/go/[a-z0-9]+/, accessed \d{4}-\d{2}-\d{2}$")
 
 
 # --------------------------------------------------------------------------------------------
@@ -115,7 +152,8 @@ def test_the_whole_catalog_loads() -> None:
 
 def test_the_catalog_is_the_manifest_and_the_requirements_together() -> None:
     assert CATALOG.catalog.id == "core"
-    assert CATALOG.catalog.status is CatalogStatus.DRAFT
+    # 0.1's frozen manifest says `draft`; the DEC-057 registry says `active` and wins at load.
+    assert CATALOG.catalog.status is CatalogStatus.ACTIVE
     assert sorted(CATALOG.catalog.requirement_ids) == sorted(CATALOG.by_id())
 
 
@@ -129,9 +167,11 @@ def test_the_version_directory_exists() -> None:
 
 
 def test_every_requirement_is_reachable_by_identifier() -> None:
-    by_id = CATALOG.by_id()
-
-    assert len(by_id) == len(ALL_REQUIREMENTS), "two requirements share an identifier"
+    for version in CATALOG_VERSIONS:
+        loaded = load_catalog(version)
+        assert len(loaded.by_id()) == len(loaded.requirements), (
+            f"two requirements in {version} share an identifier"
+        )
 
 
 # --------------------------------------------------------------------------------------------
@@ -141,10 +181,9 @@ def test_every_requirement_is_reachable_by_identifier() -> None:
 
 def test_loading_requires_a_version_the_tree_holds(catalog_tree: Path) -> None:
     with pytest.raises(CatalogVersionError) as raised:
-        load_catalog("0.2", root=catalog_tree)
+        load_catalog("0.9", root=catalog_tree)
 
-    assert "0.2" in str(raised.value)
-    assert VERSION in str(raised.value)
+    assert "0.9" in str(raised.value)
 
 
 def test_a_version_directory_that_is_missing_is_named(catalog_tree: Path) -> None:
@@ -389,7 +428,9 @@ class TestRequirement:
         assert requirement.id == requirement.id.strip()
 
     def test_catalog_version_matches_the_manifest(self, requirement: Requirement) -> None:
-        assert requirement.catalog_version == VERSION
+        """Each requirement declares the version of the catalog it ships in — the loader's
+        agreement check, restated per requirement so a failure names the entry."""
+        assert requirement.catalog_version in CATALOG_VERSIONS
 
     def test_status_is_a_known_value(self, requirement: Requirement) -> None:
         assert requirement.status in set(CatalogStatus)
@@ -401,11 +442,14 @@ class TestRequirement:
         assert requirement.category
 
     def test_citations_name_a_known_framework_and_version(self, requirement: Requirement) -> None:
-        """`source_frameworks` entries are '<framework> <version>: <control id>'.
+        """`source_frameworks` entries are '<framework>: <version-qualified reference>'.
 
         The version lives inside the string because section 17 types the field as a list of
         strings, and control identifiers are not stable across releases
-        (`requirements/README.md`). A citation without one goes stale invisibly.
+        (`requirements/README.md`). A citation without one goes stale invisibly. Where the cited
+        framework prescribes a reference format, the reference segment uses it: ASVS prescribes
+        `v5.0.0-2.1.1` (issue #222), which carries the version itself. The other frameworks
+        prescribe none, so their version stays in the framework segment.
 
         This is an authoring convention rather than a schema rule, so it is checked here rather
         than in the loader: the adopted-framework list below is the thing being enforced, and
@@ -416,13 +460,113 @@ class TestRequirement:
 
             assert separator, (
                 f"{requirement.id} citation {citation!r} "
-                "is not '<framework> <version>: <control id>'"
+                "is not '<framework>: <version-qualified reference>'"
             )
             assert framework in FRAMEWORKS, (
                 f"{requirement.id} cites unknown framework {framework!r}. "
                 "Citing a new framework is a provenance decision; add it to FRAMEWORKS."
             )
             assert control.strip(), f"{requirement.id} citation {citation!r} has no control id"
+            if framework == "OWASP ASVS":
+                assert ASVS_TOKEN.fullmatch(control.strip()), (
+                    f"{requirement.id} citation {citation!r} does not use the reference form "
+                    "ASVS prescribes, 'v<release>-<requirement>' (e.g. 'v5.0.0-2.1.1')."
+                )
+            if framework == "OWASP AISVS":
+                assert AISVS_TOKEN.fullmatch(control.strip()), (
+                    f"{requirement.id} citation {citation!r} does not use the reference form "
+                    "AISVS prescribes, 'v<release>-C<chapter>.<section>.<requirement>' "
+                    "(e.g. 'v1.0-C9.4.3', DEC-058)."
+                )
+            if framework == "OWASP AI Exchange":
+                assert AI_EXCHANGE_TOKEN.fullmatch(control.strip()), (
+                    f"{requirement.id} citation {citation!r} lacks the permalink-plus-accessed-"
+                    "date form DEC-058 makes mandatory for a living document "
+                    "('/go/<anchor>/, accessed YYYY-MM-DD')."
+                )
+
+
+# --------------------------------------------------------------------------------------------
+# ASVS citation resolution (issue #221, survey item A1)
+# --------------------------------------------------------------------------------------------
+#
+# ASVS publishes a stable flat JSON export at each release tag, keyed by `req_id` like `V6.1.3`.
+# The catalog cites the reference token ASVS prescribes, `v5.0.0-6.1.3` (issue #222), so
+# resolution is a version check and a lookup after re-prefixing. The export is cached under
+# `requirements/_external/asvs/` so CI needs no network. `scripts/asvs_resolver.py` is the CLI for
+# the same check; it is run here as a subprocess so the test exercises the script's entry point
+# and not just its logic.
+
+ASVS_EXPORT = CATALOG_ROOT / "_external" / "asvs" / "v5.0.0.flat.json"
+ASVS_FRAMEWORK = "OWASP ASVS"
+ASVS_TOKEN_PREFIX = "v5.0.0-"
+ASVS_ROW_COUNT = 345  # v5.0.0; the survey verified the row count by hand.
+
+
+def _asvs_req_ids() -> frozenset[str]:
+    document = json.loads(ASVS_EXPORT.read_text(encoding="utf-8"))
+    return frozenset(str(row["req_id"]) for row in document["requirements"])
+
+
+def _asvs_citations() -> list[tuple[str, str]]:
+    """Every (requirement id, citation) pair that names ASVS, drawn from the loaded catalog."""
+    pairs: list[tuple[str, str]] = []
+    for requirement in ALL_REQUIREMENTS:
+        for citation in requirement.source_frameworks:
+            framework, separator, _control = citation.partition(": ")
+            if separator and framework == ASVS_FRAMEWORK:
+                pairs.append((requirement.id, citation))
+    return pairs
+
+
+def test_the_cached_asvs_export_is_the_expected_release() -> None:
+    """A guard before the resolution check. A truncated or swapped export fails here, not below."""
+    assert ASVS_EXPORT.is_file(), f"cached ASVS export missing at {ASVS_EXPORT}"
+    ids = _asvs_req_ids()
+    assert len(ids) == ASVS_ROW_COUNT, (
+        f"ASVS v5.0.0 export has {len(ids)} rows, expected {ASVS_ROW_COUNT}. The cache at "
+        f"{ASVS_EXPORT} may have been replaced with a different release."
+    )
+    # First and last `req_id` in the v5.0.0 export, checked by membership rather than min/max
+    # because string ordering puts "V9.2.4" above "V17.3.2".
+    assert "V1.1.1" in ids
+    assert "V17.3.2" in ids
+
+
+@pytest.mark.parametrize(
+    "requirement_id, citation",
+    _asvs_citations(),
+    ids=[f"{rid}::{citation}" for rid, citation in _asvs_citations()],
+)
+def test_every_asvs_citation_resolves_against_the_pinned_export(
+    requirement_id: str, citation: str
+) -> None:
+    """A typo'd or stale ASVS identifier is otherwise silent; this resolves it by lookup."""
+    _framework, _separator, token = citation.partition(": ")
+    assert token.startswith(ASVS_TOKEN_PREFIX), (
+        f"{requirement_id} cites {citation!r}, which does not pin the cached export's release "
+        f"({ASVS_TOKEN_PREFIX.rstrip('-')}). The resolver can only vouch for the release it holds."
+    )
+    req_id = f"V{token.removeprefix(ASVS_TOKEN_PREFIX)}"
+    assert req_id in _asvs_req_ids(), (
+        f"{requirement_id} cites {citation!r}, and `{req_id}` is not a `req_id` in the pinned "
+        f"ASVS v5.0.0 export at {ASVS_EXPORT}. The identifier is typo'd or stale."
+    )
+
+
+def test_the_asvs_resolver_script_reports_no_unresolved_citations() -> None:
+    """`scripts/asvs_resolver.py --check` exits zero when every ASVS citation resolves."""
+    result = subprocess.run(
+        [sys.executable, "scripts/asvs_resolver.py", "--check"],
+        cwd=PROJECT_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, (
+        f"asvs_resolver.py --check exited {result.returncode}.\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
 
 
 # --------------------------------------------------------------------------------------------

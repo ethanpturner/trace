@@ -4,9 +4,10 @@ DEC-032 settles a contradiction that survived because nobody had to read both ha
 `current-architecture.md` section 5.1 preferred a local web application, and the roadmap said the
 opposite in four places. Neither document was wrong on its own.
 
-These tests check documents and configuration rather than behaviour, because there is no interface
-yet — #58 builds it. They guard the two things a later edit could quietly undo: the corpus agreeing
-with itself, and `argparse` staying the answer without anyone deciding otherwise. Issue #35.
+These tests check documents and configuration rather than behaviour. The read-only view now exists
+(#276, DEC-078); its rendering and read-only discipline are tested in `test_interface.py`, and what
+remains here guards the corpus agreeing with itself and no CLI or web framework arriving by import.
+Issue #35.
 """
 
 from __future__ import annotations
@@ -104,21 +105,24 @@ def test_the_planned_command_surface_is_stated_the_same_way_twice() -> None:
         assert command in readme, f"README.md does not list {command!r}"
 
 
-def test_the_threat_model_records_that_the_boundary_is_absent() -> None:
-    """DEC-032 removes the browser-to-application boundary rather than mitigating it.
+def test_the_threat_model_records_the_read_only_view_boundary() -> None:
+    """The Stage 5 read-only view (DEC-078) re-introduced the browser-to-application boundary.
 
-    Asserted here rather than in a threat-model test file because the fact belongs to this
-    decision: if a Stage 5 view ships, this test fails and the threat model has to be revisited,
-    which is exactly the review trigger it states.
+    Through M8 the threat model recorded the boundary as absent, and this test was its trip-wire:
+    if a view shipped, the assertion failed and the threat model had to be revisited. It has been,
+    so the test now pins the boundary's presence — the review trigger fired and section 5 was
+    rewritten with the view's mitigations rather than dropped.
     """
     threat_model = (PROJECT_ROOT / "docs" / "architecture" / "threat-model.md").read_text(
         encoding="utf-8"
     )
-    assert "This boundary does not exist in the MVP" in threat_model
-    assert "DEC-032" in threat_model
+    assert "This boundary exists as of the Stage 5 read-only view" in threat_model
+    assert "DEC-078" in threat_model
+    # The read-only discipline is the request-forgery mitigation, not a token on a mutable surface.
+    assert "nothing to forge" in threat_model
 
 
 def test_no_web_framework_is_declared_either() -> None:
-    """Stage 5's read-only view is not built, and nothing should imply it is."""
+    """Stage 5's read-only view uses stdlib `http.server` (DEC-078); no web framework is declared."""
     web = {"fastapi", "flask", "django", "starlette", "uvicorn"}
     assert not (declared_dependencies() & web)
