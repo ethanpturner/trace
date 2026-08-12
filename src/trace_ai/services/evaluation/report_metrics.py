@@ -34,6 +34,7 @@ from trace_ai.domain.question import Question
 from trace_ai.domain.reviewer_decision import ReviewerDecision
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
     from pathlib import Path
 
     from trace_ai.domain.execution import WorkflowRun
@@ -94,6 +95,16 @@ def _metric(
     )
 
 
+_SENTENCE_SPLIT: Final = re.compile(r"[.!?]+(?:\s|$)")
+
+
+def _sentence_count(*passages: str) -> int:
+    """Naive sentence segmentation over the agent-authored prose, for the rate's denominator."""
+    return sum(
+        1 for passage in passages for piece in _SENTENCE_SPLIT.split(passage) if piece.strip()
+    )
+
+
 def compute_report_metrics(
     handle: AssessmentHandle,
     run: WorkflowRun,
@@ -102,12 +113,14 @@ def compute_report_metrics(
     rendered_outcome: ReportValidationOutcome,
     rendered_markdown: str,
     approved_count: int,
+    prose_passages: Sequence[str] = (),
 ) -> list[EvaluationResult]:
     """The computable half of section 7's report measures. Arithmetic over the validator.
 
     Readability is deliberately absent: it is a reviewer judgement (section 9's rubric) and no
     heuristic stands in for it.
     """
+    prose_sentences = _sentence_count(*prose_passages)
     violations = [*sections_outcome.violations, *rendered_outcome.violations]
     # Distinct identifiers, not violation rows: one invented `fnd-009` is flagged by both the
     # sections pass and the rendered-document pass, and counting it twice would report two
@@ -130,6 +143,30 @@ def compute_report_metrics(
             float(sections_outcome.unsupported_statement_count),
             unit="count",
             method="report consistency validator over the generated sections (#107)",
+        ),
+        *(
+            [
+                _metric(
+                    handle,
+                    run.id,
+                    "unsupported_claim_rate",
+                    (
+                        sections_outcome.unsupported_statement_count / prose_sentences
+                        if prose_sentences
+                        else 0.0
+                    ),
+                    unit="percentage",
+                    method=(
+                        "unsupported statements over the sentences of the agent-authored "
+                        "prose sections, naively segmented (#329); the count row carries the "
+                        "numerator alone"
+                    ),
+                    sample_size=prose_sentences,
+                    notes=None if prose_sentences else "no prose supplied",
+                )
+            ]
+            if prose_passages
+            else []
         ),
         _metric(
             handle,

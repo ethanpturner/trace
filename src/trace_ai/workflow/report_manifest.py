@@ -86,13 +86,19 @@ class ReportValidationFailedError(RuntimeError):
 
 @dataclass(frozen=True, slots=True)
 class PublishedReport:
-    """A validated report on disk, with its manifest and the updated assessment."""
+    """A validated report on disk, with its manifest and the updated assessment.
+
+    The two validation outcomes ride along so the caller can compute the report-quality
+    metrics (#329) from the same passes that gated publication, rather than re-validating.
+    """
 
     report: RenderedReport
     report_path: Path
     manifest: dict[str, Any]
     manifest_path: Path
     assessment: Assessment
+    sections_outcome: ReportValidationOutcome
+    rendered_outcome: ReportValidationOutcome
 
 
 def manifest_filename(workflow_run_id: str) -> str:
@@ -239,4 +245,6 @@ def publish_report(
         manifest=manifest,
         manifest_path=manifest_path,
         assessment=updated,
+        sections_outcome=sections_outcome,
+        rendered_outcome=rendered_outcome,
     )

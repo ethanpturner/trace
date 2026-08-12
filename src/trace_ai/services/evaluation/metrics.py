@@ -31,6 +31,7 @@ the rates are 0 with a stated zero sample, and nothing divides by zero or report
 from __future__ import annotations
 
 import json
+import re
 from typing import TYPE_CHECKING, Any, Final
 
 import yaml
@@ -45,7 +46,15 @@ from trace_ai.domain.evidence import EvidenceReference
 from trace_ai.domain.execution import ExecutionRecord, ExecutionStatus
 from trace_ai.domain.finding import Finding
 from trace_ai.domain.reviewer_decision import ReviewerDecision
-from trace_ai.services.evaluation.matching import match_findings, match_gaps
+from trace_ai.services.evaluation.matching import (
+    match_context,
+    match_expected_mappings,
+    match_findings,
+    match_gaps,
+    match_questions,
+    match_threats,
+    normalized_name,
+)
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -237,6 +246,27 @@ def compute_metrics(
             unit="dollars",
         )
     )
+    if run.total_input_tokens is not None or run.total_output_tokens is not None:
+        # Reported only when a provider actually reported spans (#329): an offline replay has
+        # no token truth, and a zero row would be a default wearing a measurement's clothes.
+        input_tokens = run.total_input_tokens or 0
+        output_tokens = run.total_output_tokens or 0
+        results.append(
+            _metric(
+                handle,
+                run.id,
+                "token_usage",
+                float(input_tokens + output_tokens),
+                unit="tokens",
+                method="WorkflowRun token totals as the provider reported them",
+                notes=(
+                    f"input {input_tokens}, output {output_tokens}, cache read "
+                    f"{run.total_cache_read_tokens if run.total_cache_read_tokens is not None else 'unreported'}, "
+                    f"cache creation "
+                    f"{run.total_cache_creation_tokens if run.total_cache_creation_tokens is not None else 'unreported'}"
+                ),
+            )
+        )
     results.append(
         _metric(
             handle,
@@ -319,6 +349,220 @@ def _benchmark_metrics(
             notes="no gaps produced" if not produced_gaps else None,
         )
     )
+    results.extend(_truth_metrics(handle, run, expected_dir))
+    return results
+
+
+def _truth_metrics(
+    handle: AssessmentHandle,
+    run: WorkflowRun,
+    expected_dir: Path,
+) -> list[EvaluationResult]:
+    """The reserved truth-set metrics (#329), each emitted only where its truth is authored.
+
+    A scenario without one of these files simply lacks the metric — absence is reported by the
+    scorecard as unmeasured, never defaulted to a value nobody computed.
+    """
+    from trace_ai.domain.actor import Actor
+    from trace_ai.domain.asset import Asset
+    from trace_ai.domain.context_claim import ContextClaim
+    from trace_ai.domain.data_flow import DataFlow
+    from trace_ai.domain.question import Question
+    from trace_ai.domain.threat import Threat
+    from trace_ai.domain.trust_boundary import TrustBoundary
+
+    repository = handle.objects
+    results: list[EvaluationResult] = []
+
+    component_names = {
+        component.id: normalized_name(component.name) for component in repository.list(Component)
+    }
+    actor_names = {actor.id: normalized_name(actor.name) for actor in repository.list(Actor)}
+    asset_names = {asset.id: normalized_name(asset.name) for asset in repository.list(Asset)}
+    subject_names = {**component_names, **actor_names, **asset_names}
+
+    context_file = expected_dir / "expected-context.yaml"
+    if context_file.is_file():
+        expected_document: dict[str, Any] = yaml.safe_load(context_file.read_text(encoding="utf-8"))
+        produced_names = {
+            "components": set(component_names.values()),
+            "actors": set(actor_names.values()),
+            "assets": set(asset_names.values()),
+            "trust_boundaries": {
+                normalized_name(boundary.name) for boundary in repository.list(TrustBoundary)
+            },
+        }
+        produced_flows = {
+            (
+                component_names.get(flow.source_component_id, ""),
+                component_names.get(flow.destination_component_id, ""),
+            )
+            for flow in repository.list(DataFlow)
+        }
+        produced_claims = {
+            (
+                subject_names.get(claim.subject_id or "", "system"),
+                claim.predicate,
+            )
+            for claim in repository.list(ContextClaim)
+        }
+        context = match_context(
+            expected_document,
+            produced_names=produced_names,
+            produced_flows=produced_flows,
+            produced_claims=produced_claims,
+        )
+        breakdown = "; ".join(
+            f"{name} {context.matched_by_type[name]}/{context.expected_by_type[name]}"
+            for name in sorted(context.expected_by_type)
+        )
+        results.append(
+            _metric(
+                handle,
+                run.id,
+                "context_accuracy",
+                _ratio(context.matched_count, context.expected_count)
+                if context.expected_count
+                else 1.0,
+                unit="percentage",
+                evaluator=EvaluatorType.BENCHMARK,
+                method=(
+                    "expected context entries matched over expected, by the truth file's own "
+                    "keys: names for components, actors, assets, and boundaries; endpoint "
+                    "names for flows; (subject, predicate) for claims. Extraction presence "
+                    "only — field agreement is the checkpoint-1 reviewer's judgment"
+                ),
+                sample_size=context.expected_count,
+                notes=breakdown,
+            )
+        )
+
+    threats_file = expected_dir / "expected-threats.yaml"
+    if threats_file.is_file():
+        expected_threats = _expected_entries(expected_dir, "expected-threats.yaml", "threats")
+        produced_references = [
+            (
+                {component_names.get(cid, "") for cid in threat.affected_component_ids},
+                {asset_names.get(aid, "") for aid in threat.affected_asset_ids},
+            )
+            for threat in repository.list(Threat)
+        ]
+        threats = match_threats(expected_threats, produced_references=produced_references)
+        results.append(
+            _metric(
+                handle,
+                run.id,
+                "threat_coverage",
+                _ratio(threats.matched_count, threats.expected_count)
+                if threats.expected_count
+                else 1.0,
+                unit="percentage",
+                evaluator=EvaluatorType.BENCHMARK,
+                method=(
+                    "expected threats matched over expected; a produced threat matches when "
+                    "its affected components and assets cover the entry's must_reference "
+                    "lists by normalized name. Structural only — wording is never compared "
+                    "(DEC-043 defers semantic comparison)"
+                ),
+                sample_size=threats.expected_count,
+                notes=f"missed: {threats.missed_keys or 'none'}",
+            )
+        )
+
+    mappings_file = expected_dir / "expected-control-mappings.yaml"
+    if mappings_file.is_file():
+        expected_mapping_doc: dict[str, Any] = yaml.safe_load(
+            mappings_file.read_text(encoding="utf-8")
+        )
+        expected_entries = [
+            (
+                f"{entry.get('threat_key', '?')}:{applicable['requirement_id']}",
+                str(applicable["requirement_id"]),
+                str(applicable["expected_satisfaction"]),
+            )
+            for entry in expected_mapping_doc.get("mappings") or []
+            for applicable in entry.get("applicable") or []
+        ]
+        produced_pairs = {
+            (mapping.requirement_id, mapping.satisfaction_status.value)
+            for mapping in repository.list(ControlMapping)
+        }
+        mappings_outcome = match_expected_mappings(expected_entries, produced=produced_pairs)
+        results.append(
+            _metric(
+                handle,
+                run.id,
+                "requirement_mapping_accuracy",
+                _ratio(mappings_outcome.matched_count, mappings_outcome.expected_count)
+                if mappings_outcome.expected_count
+                else 1.0,
+                unit="percentage",
+                evaluator=EvaluatorType.BENCHMARK,
+                method=(
+                    "expected (requirement, satisfaction) pairs matched by a produced mapping "
+                    "stating both, over expected pairs; threat identity is not bound and the "
+                    "must_not_conclude negatives are asserted by tests, not scored here"
+                ),
+                sample_size=mappings_outcome.expected_count,
+                notes=f"missed: {mappings_outcome.missed_keys or 'none'}",
+            )
+        )
+
+    questions_file = expected_dir / "expected-questions.yaml"
+    if questions_file.is_file():
+        expected_questions = _expected_entries(expected_dir, "expected-questions.yaml", "questions")
+        gaps_file = expected_dir / "expected-documentation-gaps.yaml"
+        paired_keys = (
+            {
+                str(entry["paired_question"])
+                for entry in _expected_entries(
+                    expected_dir, "expected-documentation-gaps.yaml", "documentation_gaps"
+                )
+                if entry.get("paired_question")
+            }
+            if gaps_file.is_file()
+            else set()
+        )
+        requirements_by_threat: dict[str, set[str]] = {}
+        for mapping in repository.list(ControlMapping):
+            requirements_by_threat.setdefault(mapping.threat_id, set()).add(mapping.requirement_id)
+        requirement_token = re.compile(r"req-[A-Z]+-\d+")
+        produced_requirement_sets = [
+            requirements_by_threat.get(question.related_object_id or "", set())
+            | set(requirement_token.findall(question.question))
+            for question in repository.list(Question)
+        ]
+        questions_outcome = match_questions(
+            expected_questions,
+            paired_keys=paired_keys,
+            produced_requirement_sets=produced_requirement_sets,
+        )
+        results.append(
+            _metric(
+                handle,
+                run.id,
+                "clarifying_question_usefulness",
+                _ratio(questions_outcome.matched_count, questions_outcome.expected_count)
+                if questions_outcome.expected_count
+                else 1.0,
+                unit="percentage",
+                evaluator=EvaluatorType.BENCHMARK,
+                method=(
+                    "expected questions a produced question bears on, over expected; a "
+                    "produced question bears on its related threat's mapped requirements plus "
+                    "any requirement its text names. Questions paired to a documentation gap "
+                    "are excluded: one mapping routes to a gap or a question, never both "
+                    "(DEC-013), and the pair documents the gap's conversion"
+                ),
+                sample_size=questions_outcome.expected_count,
+                notes=(
+                    "every expected question is a gap's paired question"
+                    if not questions_outcome.expected_count
+                    else f"missed: {questions_outcome.missed_keys or 'none'}"
+                ),
+            )
+        )
+
     return results
 
 
