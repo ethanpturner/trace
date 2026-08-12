@@ -23,7 +23,7 @@ from enum import StrEnum
 from typing import TYPE_CHECKING
 
 from trace_ai.domain.context_claim import ClaimStatus, ContextClaim
-from trace_ai.domain.enums import ObjectStatus
+from trace_ai.domain.enums import ConfidenceLevel, ObjectStatus
 from trace_ai.domain.evidence import EvidenceReference
 from trace_ai.domain.finding import Finding
 from trace_ai.domain.reviewer_decision import ReviewerDecision
@@ -37,6 +37,7 @@ if TYPE_CHECKING:
 __all__ = [
     "ReasonCode",
     "injection_flagged_subjects",
+    "low_confidence_subjects",
     "revisit_due_claims",
     "revisit_due_findings",
 ]
@@ -112,6 +113,27 @@ def revisit_due_findings(handle: AssessmentHandle, as_of: date) -> set[str]:
         and finding.treatment_review_by is not None
         and finding.treatment_review_by <= as_of
     }
+
+
+def low_confidence_subjects(handle: AssessmentHandle) -> set[str]:
+    """Every context claim or finding whose confidence is `low` (DEC-062).
+
+    The derivation is the field itself, categorical since DEC-022 removed the numeric score: a
+    subject the extractor or the pipeline rated low-confidence is one the reviewer looks at first.
+    A finding additionally carries a `low_confidence_justification` when it is low (DEC-050); the
+    code triages, the justification is what the reviewer then reads.
+    """
+    subjects = {
+        claim.id
+        for claim in handle.objects.list(ContextClaim)
+        if claim.confidence is ConfidenceLevel.LOW
+    }
+    subjects |= {
+        finding.id
+        for finding in handle.objects.list(Finding)
+        if finding.confidence is ConfidenceLevel.LOW
+    }
+    return subjects
 
 
 def revisit_due_claims(handle: AssessmentHandle) -> set[str]:
