@@ -74,6 +74,7 @@ from trace_ai.domain.execution import ExecutionRecord, WorkflowRun
 from trace_ai.domain.finding import Finding
 from trace_ai.domain.finding_merge_record import FindingMergeRecord
 from trace_ai.domain.identifiers import PREFIXES, parse_id
+from trace_ai.domain.prompt_definition import PromptDefinition
 from trace_ai.domain.question import Question
 from trace_ai.domain.requirement import Requirement
 from trace_ai.domain.requirements_catalog import RequirementsCatalog
@@ -183,7 +184,14 @@ def implementation_priority() -> tuple[list[str], list[str]]:
         for match in re.finditer(r"^\d+\.\s+(\S+)\s*$", section_40, flags=re.MULTILINE)
     ]
     sentence = re.search(r"^Add (.+?) once the main workflow", section_40, flags=re.MULTILINE)
-    assert sentence is not None, "section 40's deferred sentence changed shape"
+    if sentence is None:
+        # Issue #349 implemented the last deferred object; the document states so in prose and
+        # the deferred list is empty until something new earns a place on it.
+        assert "Nothing remains deferred" in section_40, (
+            "section 40 neither defers anything nor says nothing is deferred; one of the two "
+            "must hold"
+        )
+        return first, []
     # Split on commas *and* on a trailing "and", so the sentence reads naturally in the document
     # whether it lists two objects ("A and B") or four ("A, B, C, and D").
     later = [
@@ -266,7 +274,9 @@ REGISTRY: dict[str, Registration] = {
     # Was DEFERRED. DEC-056 promoted it: the M4 finding-quality metrics persist their results
     # as rows, and a metric with no persisted object is a print statement.
     "28": Registration("EvaluationResult", Status.IMPLEMENTED, EvaluationResult),
-    "29": Registration("PromptDefinition", Status.DEFERRED),
+    # Was DEFERRED — the one entry section 40 held back until the workflow operated. Issue #349
+    # implemented it: compositions snapshot their definition into traces/prompts/ at first use.
+    "29": Registration("PromptDefinition", Status.IMPLEMENTED, PromptDefinition),
     # Was DEFERRED. Section 40 moved it onto the build-first list, and states why there:
     # DEC-019 computes its `content_hash` at catalog load and DEC-024 sends the whole catalog to
     # every mapping call, so the loader in `services/requirements/` needed the object before the
@@ -350,8 +360,8 @@ def test_every_field_row_has_a_description() -> None:
 
 def test_section_forty_parses_into_two_lists() -> None:
     first, later = implementation_priority()
-    assert len(first) == 28, first
-    assert later == ["PromptDefinition"]
+    assert len(first) == 29, first
+    assert later == []
 
 
 # --------------------------------------------------------------------------------------------
