@@ -1090,7 +1090,7 @@ def build_nodes(
         EvidenceIndexingNode(),
         ContextExtractionAdapter(
             ledger=ledger,
-            profile=profile,
+            profile=profile.for_agent("context-extraction"),
             registry=registry,
             assessment_name=assessment.name,
             budget=budget,
@@ -1100,19 +1100,22 @@ def build_nodes(
         ContextReviewNode(),
         ThreatAnalysisAdapter(
             ledger=ledger,
-            profile=profile,
+            profile=profile.for_agent("threat-analysis"),
             registry=registry,
             assessment_name=assessment.name,
             budget=budget,
         ),
         ThreatValidationAdapter(),
         RequirementControlMappingAdapter(
-            ledger=ledger, profile=profile, registry=registry, budget=budget
+            ledger=ledger,
+            profile=profile.for_agent("requirement-and-control-mapping"),
+            registry=registry,
+            budget=budget,
         ),
         MappingValidationAdapter(),
         EvidenceValidationAdapter(
             ledger=ledger,
-            profile=profile,
+            profile=profile.for_agent("evidence-validation"),
             registry=registry,
             handoff=evidence_handoff,
             budget=budget,
@@ -1120,7 +1123,7 @@ def build_nodes(
         EvidenceAssessmentValidationAdapter(handoff=evidence_handoff),
         CriticalReviewAdapter(
             ledger=ledger,
-            profile=profile,
+            profile=profile.for_agent("critical-review"),
             registry=registry,
             handoff=critique_handoff,
             budget=budget,
@@ -1129,7 +1132,11 @@ def build_nodes(
         FindingConsolidationAdapter(),
         FindingReviewNode(),
         ReportGenerationAdapter(
-            ledger=ledger, profile=profile, registry=registry, handoff=report_handoff, budget=budget
+            ledger=ledger,
+            profile=profile.for_agent("report-generation"),
+            registry=registry,
+            handoff=report_handoff,
+            budget=budget,
         ),
         ReportRenderingAdapter(ledger=ledger, handoff=report_handoff, generated_at=generated_at),
         EvaluationAdapter(),
