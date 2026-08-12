@@ -69,6 +69,21 @@ def assemble_report_prompt_input(assembled: ReportInput) -> ReportPromptInput:
     referenceable.add(assessment.id)
 
     lines.append("")
+    lines.append("### Source coverage")
+    lines.append(
+        "What the analysis actually consumed (DEC-071). Your limitations prose may interpret "
+        "this ledger — bound the blind spots it shows — and must never restate it; the rendered "
+        "table is the authoritative one."
+    )
+    for entry in assembled.coverage:
+        lines.append(
+            f"- {entry.filename} ({entry.document_id}): {entry.bucket.value} — "
+            f"{entry.justification}"
+        )
+    if not assembled.coverage:
+        lines.append("No documents were supplied.")
+
+    lines.append("")
     lines.append("### Approved system context")
     if assembled.system_context is None:
         lines.append("No approved system context revision exists.")
