@@ -240,6 +240,11 @@ class ThreatAnalysisNode:
             execution.metadata["threats"] = len(threats)
             execution.metadata["catalog_gap_candidates"] = len(candidates)
             execution.metadata["evidence_excluded"] = len(package.excluded_evidence_ids)
+            if package.excluded_evidence_ids:
+                # DEC-071: the fence rule names what a budget excluded; persisting the names is
+                # what lets the coverage ledger carry them to the reader instead of a count
+                # dying inside the run.
+                execution.metadata["excluded_evidence_ids"] = sorted(package.excluded_evidence_ids)
 
         return NodeResult(
             produced_object_ids=produced,

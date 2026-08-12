@@ -226,6 +226,9 @@ class ContextExtractionNode:
                 execution.record_usage(usage)
             execution.metadata["attempts"] = attempts
             execution.metadata["evidence_excluded"] = len(package.excluded_evidence_ids)
+            if package.excluded_evidence_ids:
+                # DEC-071: persist the names, not just the count, for the coverage ledger.
+                execution.metadata["excluded_evidence_ids"] = sorted(package.excluded_evidence_ids)
             execution.metadata["carried_reviewer_feedback"] = bool(self.reviewer_feedback)
 
         return NodeResult(

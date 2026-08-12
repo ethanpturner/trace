@@ -132,6 +132,31 @@ def _cell(value: str) -> str:
     return value.replace("|", "\\|").replace("\n", " ")
 
 
+def _coverage_ledger_table(assembled: ReportInput) -> str:
+    """DEC-071's ledger as a table, refused when it does not account for every document.
+
+    A loud failure over a quiet omission: an exclusion path added without a recorded
+    justification would produce an unlisted document, and rendering around it would defeat the
+    ledger's whole purpose.
+    """
+    covered = {entry.document_id for entry in assembled.coverage}
+    supplied = {document.id for document in assembled.source_documents}
+    if covered != supplied:
+        unaccounted = sorted(supplied - covered) + sorted(covered - supplied)
+        raise ValueError(
+            f"the coverage ledger does not account for every source document: {unaccounted} "
+            f"(DEC-071). A document with no bucket is the silent omission the ledger exists "
+            f"to prevent; every disposition must be persisted somewhere derivable."
+        )
+    return _table(
+        ["Document", "Identifier", "Coverage", "Why"],
+        [
+            [entry.filename, entry.document_id, entry.bucket.value, entry.justification]
+            for entry in assembled.coverage
+        ],
+    )
+
+
 def _anchor(object_id: str) -> str:
     return f'<a id="{object_id.lower()}"></a>'
 
@@ -335,7 +360,10 @@ def render_report(
             "findings are consolidated and approved at a second human checkpoint before this "
             "report is rendered. Model-assisted steps propose; deterministic validation and "
             "human review decide. Absence of documentation is never treated as proof of a "
-            "vulnerability."
+            "vulnerability.\n\n"
+            "### Source coverage\n\n"
+            "Every supplied document appears in exactly one bucket (DEC-071); unexamined "
+            "material is listed, never silent.\n\n" + _coverage_ledger_table(assembled)
         ),
         "versions": "\n".join(
             [

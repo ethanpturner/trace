@@ -157,6 +157,21 @@ records rather than reporting as a weakness.
 
 This assessment was produced by Trace, a context-aware security architecture analysis pipeline: documents are ingested and indexed as evidence, an approved system context is extracted and reviewed at a human checkpoint, threats are analysed against it, requirements are mapped and their evidence validated, and findings are consolidated and approved at a second human checkpoint before this report is rendered. Model-assisted steps propose; deterministic validation and human review decide. Absence of documentation is never treated as proof of a vulnerability.
 
+### Source coverage
+
+Every supplied document appears in exactly one bucket (DEC-071); unexamined material is listed, never silent.
+
+| Document | Identifier | Coverage | Why |
+| --- | --- | --- | --- |
+| ai-analysis.md | src-001 | reviewed | ingested; its evidence was available to every stage |
+| architecture-overview.md | src-002 | reviewed | ingested; its evidence was available to every stage |
+| github-integration.md | src-003 | reviewed | ingested; its evidence was available to every stage |
+| operations-guide.md | src-004 | reviewed | ingested; its evidence was available to every stage |
+| product-overview.md | src-005 | reviewed | ingested; its evidence was available to every stage |
+| sample-repository-notes.md | src-006 | reviewed | ingested; its evidence was available to every stage |
+| security-overview.md | src-007 | reviewed | ingested; its evidence was available to every stage |
+| structured-system-input.yaml | src-008 | reviewed | ingested; its evidence was available to every stage |
+
 - Architecture version: 0.1
 - Workflow version: 0.1
 - Prompt versions: generate-report-sections generate-report-sections-v1

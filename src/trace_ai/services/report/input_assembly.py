@@ -39,12 +39,14 @@ from trace_ai.domain.data_flow import DataFlow
 from trace_ai.domain.documentation_gap import DocumentationGap
 from trace_ai.domain.enums import ObjectStatus, ValidationStatus
 from trace_ai.domain.evidence import EvidenceReference
+from trace_ai.domain.execution import ExecutionRecord
 from trace_ai.domain.question import Question, QuestionStatus, order_for_review
 from trace_ai.domain.source_document import IngestionStatus, SourceDocument
 from trace_ai.domain.system_context import SystemContext
 from trace_ai.domain.threat import Threat
 from trace_ai.domain.trust_boundary import TrustBoundary
 from trace_ai.services.findings.approved import approved_findings
+from trace_ai.services.report.coverage import CoverageEntry, coverage_ledger
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -135,6 +137,11 @@ class ReportInput:
     template: str
     versions: ReportVersions
     authoritative: bool
+
+    coverage: tuple[CoverageEntry, ...] = ()
+    """DEC-071's ledger: every source document in exactly one bucket with its justification.
+    Rendered in section 14 and given to the Report Generation agent so its limitations prose can
+    bound blind spots honestly; the authoritative table stays the rendered one."""
 
 
 def _by_id[ModelT](items: list[ModelT]) -> tuple[ModelT, ...]:
@@ -299,4 +306,9 @@ def assemble_report_input(
             model_configuration=model_configuration,
         ),
         authoritative=authoritative,
+        coverage=coverage_ledger(
+            documents=documents,
+            evidence_references=repository.list(EvidenceReference),
+            execution_records=repository.list(ExecutionRecord),
+        ),
     )

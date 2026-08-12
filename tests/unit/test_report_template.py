@@ -250,3 +250,29 @@ def test_agent_design_section_nineteen_names_the_four_prose_sections() -> None:
     for key in AGENT_KEYS:
         assert f"`{key}`" in body, f"section 19 does not name {key}"
     assert "template is **not** an input" in body
+
+
+def test_section_fourteen_owns_the_coverage_ledger() -> None:
+    """DEC-071: the ledger is deterministic content inside section 14, never a new section.
+
+    Held in agreement from both ends: the template's section 14 is rendered-owned and carries
+    the methodology block, and the renderer's methodology block is where the ledger heading
+    lives — so the ledger cannot drift into agent prose or into a seventeenth section without
+    failing here.
+    """
+    sections = template_sections()
+    fourteen = next(entry for entry in sections if entry[0] == 14)
+    assert fourteen[1] == "Methodology"
+    assert fourteen[3] == "rendered"
+
+    template_section = (
+        TEMPLATE.read_text(encoding="utf-8").split('<a id="s14-')[1].split('<a id="s15-')[0]
+    )
+    assert "{{ render.methodology }}" in template_section
+
+    renderer = (PROJECT_ROOT / "src" / "trace_ai" / "workflow" / "report_rendering.py").read_text(
+        encoding="utf-8"
+    )
+    methodology_block = renderer.split('"methodology": (')[1].split("),")[0]
+    assert "### Source coverage" in methodology_block
+    assert "_coverage_ledger_table" in methodology_block
