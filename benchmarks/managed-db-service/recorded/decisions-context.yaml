@@ -1,0 +1,129 @@
+assessment_id: asm-001
+system_context_version: 1
+reviewer: recorded-reviewer
+components:
+- id: cmp-001
+  decision: approve
+  editable:
+    name: Metrics API
+    description: internal HTTP service that accepts metric writes from product services and answers metric queries from the dashboard
+    component_type: service
+    technology: []
+    ownership: null
+    deployment_zone: null
+    internet_accessible: false
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+- id: cmp-002
+  decision: approve
+  editable:
+    name: Managed Metrics Database
+    description: managed relational database provided by the cloud platform, encrypted at rest by default with platform-held keys
+    component_type: managed_database
+    technology: []
+    ownership: null
+    deployment_zone: null
+    internet_accessible: false
+    externally_managed: true
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+actors:
+- id: act-001
+  decision: approve
+  editable:
+    name: Product service
+    actor_type: internal_service
+    trust_level: null
+    capabilities: []
+    authentication_method: null
+- id: act-002
+  decision: approve
+  editable:
+    name: Dashboard
+    actor_type: internal_service
+    trust_level: null
+    capabilities: []
+    authentication_method: null
+assets:
+- id: ast-001
+  decision: approve
+  editable:
+    name: Metrics records
+    asset_type: business_data
+    description: product account identifiers and usage counters, treated as confidential business data
+    confidentiality_impact: null
+    integrity_impact: null
+    availability_impact: null
+    data_classification: null
+    owner: null
+data_flows:
+- id: df-001
+  decision: approve
+  editable:
+    name: Metric writes
+    direction: bidirectional
+    protocol: null
+    data_types: []
+    authentication: unknown
+    encryption_in_transit: platform_transport_encryption
+    internet_exposed: false
+    source_component_id: cmp-001
+    destination_component_id: cmp-002
+trust_boundaries:
+- id: tb-001
+  decision: approve
+  editable:
+    name: Application subnet boundary
+    boundary_type: network_perimeter
+    description: the metrics store is reachable only from inside the application subnet
+    controls: []
+claims:
+- id: ctx-001
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  evidence:
+  - evd-002
+  editable:
+    predicate: encryption_at_rest
+    value: the platform encrypts the database at rest by default, and key management is handled by the platform's key management service
+    rationale: null
+- id: ctx-002
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  evidence:
+  - evd-002
+  editable:
+    predicate: encryption_in_transit
+    value: the connection from the metrics API to the database uses the platform's transport encryption terminated at the managed endpoint
+    rationale: null
+- id: ctx-003
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  evidence:
+  - evd-003
+  editable:
+    predicate: data_sensitivity
+    value: metrics records associate a product account with usage counters and are treated as confidential business data
+    rationale: null
+- id: ctx-004
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  evidence:
+  - evd-001
+  - evd-002
+  editable:
+    predicate: network_exposure
+    value: the metrics API is reachable only from inside the application subnet and is not reachable from the internet
+    rationale: null
+questions: []

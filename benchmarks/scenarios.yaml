@@ -30,7 +30,8 @@ scenarios:
   # Scenarios two through four are seeded from externally authored models (issue #225):
   # the truth sets arrive independently written rather than invented alongside the inputs.
   # For each, the source's system description became input/ and its threat list became
-  # expected-threats.yaml; the remaining expected files are not yet authored.
+  # expected-threats.yaml. Invoice-agent has since reached full outcome truth and a
+  # recording; husky-ai and crypto-wallet still carry threat truth only (#327).
 
   - slug: husky-ai
     name: Husky AI
@@ -52,17 +53,16 @@ scenarios:
     # GenAI Agent Security Initiative insecure invoice-agent sample (license unasserted;
     # everything authored originally, source cited by URL). The first scenario whose
     # subject is itself an LLM agent. Outcome-side truth (findings, gaps, questions,
-    # rejections) authored in #268; recording pending.
-    status: expected-outputs-authored
+    # rejections) authored in #268; recording authored in #326.
+    status: authored
 
   # Scenarios five through eight are original small architectures authored for this project
   # (issue #268, design-principles section 19), each built to exercise one catalog mechanism
   # cleanly from evaluation-plan.md section 6's list. Every one carries a full outcome-side
-  # truth set (findings, gaps, questions, rejections) the harness scores. The two
-  # finding-bearing scenarios also carry a recording and replay offline (status: authored);
-  # the two zero-finding scenarios exercise the inherited-control path and carry their truth
-  # sets while their recordings are authored (status: expected-outputs-authored), which the
-  # harness reports as skipped rather than running.
+  # truth set (findings, gaps, questions, rejections) the harness scores, and each carries
+  # a recording and replays offline (status: authored). The two zero-finding scenarios
+  # exercise the inherited-control path, and their recordings (#326) replay a successful
+  # assessment that approves no findings.
 
   - slug: unsigned-webhooks
     name: Deploy Notifier
@@ -85,16 +85,17 @@ scenarios:
     name: Support Portal
     path: benchmarks/oidc-portal
     # Delegated OpenID Connect authentication: the local-password-policy false-positive class.
-    # Expects zero findings; recording pending the inherited-control replay path.
-    status: expected-outputs-authored
+    # Expects zero findings; the recording (#326) replays the zero-finding path.
+    status: authored
 
   - slug: managed-db-service
     name: Metrics Store
     path: benchmarks/managed-db-service
     # Inherited managed-platform encryption: the encryption-detail false-positive class.
-    # Expects zero findings; recording pending the inherited-control replay path.
-    status: expected-outputs-authored
+    # Expects zero findings; the recording (#326) replays the inherited-control path.
+    status: authored
 
-# Roadmap Stage 5 calls for 8 to 12 scenarios. The three seeded scenarios above
-# (husky-ai, crypto-wallet, invoice-agent) reach the full outcome-side truth as recordings
-# are authored for them; further scenarios are added here with the same layout.
+# Roadmap Stage 5 calls for 8 to 12 scenarios. The two seeded scenarios above with only
+# threat truth (husky-ai, crypto-wallet) reach the full outcome-side truth as their truth
+# sets and recordings are authored (#327); further scenarios are added here with the same
+# layout.

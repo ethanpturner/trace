@@ -1517,12 +1517,12 @@ def test_evaluate_all_names_the_scenarios_it_skips(
     output = capsys.readouterr().out
     assert "skipped husky-ai: no recording" in output
     assert "skipped crypto-wallet: no recording" in output
-    assert "skipped invoice-agent: no recording" in output
-    assert "skipped oidc-portal: no recording" in output
-    assert "skipped managed-db-service: no recording" in output
     assert "scenario:     forgeflow" in output
     assert "scenario:     unsigned-webhooks" in output
     assert "scenario:     contradictory-docs" in output
+    assert "scenario:     invoice-agent" in output
+    assert "scenario:     oidc-portal" in output
+    assert "scenario:     managed-db-service" in output
 
 
 # ------------------------------------------------------------------------------------------
