@@ -1,6 +1,7 @@
 """Regenerate the evaluation scorecard from the recorded runs (DEC-076).
 
     uv run python scripts/build_scorecard.py
+    uv run python scripts/build_scorecard.py --snapshot 2026-08-12
 
 Runs every recorded scenario through the harness, every baseline over every scenario with an
 outcome truth set, writes the metrics-only feeds to a temporary results tree, and renders the
@@ -9,6 +10,11 @@ network, and a pinned generation date so the committed page changes only when a 
 
 The feeds are the real input and are regenerable (gitignored); the rendered page is committed so
 its history is the git history. CI regenerates it and fails if it drifts from the committed copy.
+
+`--snapshot` retains the build in docs/eval/history.jsonl, keyed by git ref, prompt-tree digest,
+and catalog version (DEC-081); the page renders that committed history alongside the current
+table. A plain build reads history and never writes it — that is what keeps `--check` and the
+snapshot step from fighting each other.
 """
 
 from __future__ import annotations
@@ -17,16 +23,24 @@ import argparse
 import json
 import sys
 import tempfile
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from pathlib import Path
 
 from trace_ai.config import PROJECT_ROOT
 from trace_ai.services.evaluation.baselines import BASELINES, run_baseline
 from trace_ai.services.evaluation.harness import run_scenario
+from trace_ai.services.evaluation.history import (
+    ScorecardSnapshot,
+    SnapshotRefusedError,
+    append_snapshot,
+    load_history,
+    snapshot_key,
+)
 from trace_ai.services.evaluation.registry import load_registry
-from trace_ai.services.evaluation.scorecard import render_scorecard
+from trace_ai.services.evaluation.scorecard import render_scorecard, rows_from_feeds
 
 OUTPUT = PROJECT_ROOT / "docs" / "eval" / "scorecard.html"
+HISTORY = PROJECT_ROOT / "docs" / "eval" / "history.jsonl"
 # Pinned so the committed page changes only when a metric does, never on the clock.
 GENERATED_AT = datetime(2026, 8, 11, 12, 0, 0, tzinfo=UTC)
 
@@ -81,8 +95,40 @@ def collect_feeds(results_root: Path) -> list[dict[str, object]]:
     return feeds
 
 
-def build(results_root: Path) -> str:
-    return render_scorecard(collect_feeds(results_root), generated_at=GENERATED_AT)
+def build(results_root: Path, *, snapshot_date: str | None = None) -> str:
+    """Render the page from a fresh sweep and the committed history (DEC-081).
+
+    With `snapshot_date` set, the sweep's rows are first retained as a history snapshot keyed by
+    the current git ref, prompt-tree digest, and catalog version — the deliberate step; a plain
+    build reads history and never writes it, which is what keeps `--check` deterministic.
+    """
+    feeds = collect_feeds(results_root)
+    if snapshot_date is not None:
+        prompt_digest, catalog_version = snapshot_key()
+        append_snapshot(
+            HISTORY,
+            ScorecardSnapshot(
+                recorded_at=snapshot_date,
+                git_ref=_git_ref(),
+                prompt_digest=prompt_digest,
+                catalog_version=catalog_version,
+                rows=tuple(rows_from_feeds(feeds)),
+            ),
+        )
+    return render_scorecard(feeds, generated_at=GENERATED_AT, history=load_history(HISTORY))
+
+
+def _git_ref() -> str:
+    import subprocess
+
+    found = subprocess.run(
+        ["git", "rev-parse", "--short", "HEAD"],  # noqa: S607
+        cwd=PROJECT_ROOT,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return found.stdout.strip()
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -92,10 +138,27 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="regenerate and fail if it differs from the committed page, without writing",
     )
+    parser.add_argument(
+        "--snapshot",
+        metavar="YYYY-MM-DD",
+        help=(
+            "retain this build in docs/eval/history.jsonl before rendering, dated as given and "
+            "keyed by git ref, prompt digest, and catalog version (DEC-081); refused when the "
+            "last snapshot has the same key"
+        ),
+    )
     args = parser.parse_args(argv)
+    if args.check and args.snapshot:
+        parser.error("--check reads the committed history and cannot also write a snapshot")
+    if args.snapshot:
+        date.fromisoformat(args.snapshot)
 
     results_root = Path(tempfile.mkdtemp(prefix="trace-scorecard-"))
-    rendered = build(results_root)
+    try:
+        rendered = build(results_root, snapshot_date=args.snapshot)
+    except SnapshotRefusedError as error:
+        print(f"error: {error}", file=sys.stderr)
+        return 1
 
     if args.check:
         current = OUTPUT.read_text(encoding="utf-8") if OUTPUT.is_file() else ""
@@ -110,6 +173,8 @@ def main(argv: list[str] | None = None) -> int:
 
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     OUTPUT.write_text(rendered, encoding="utf-8")
+    if args.snapshot:
+        print(f"retained snapshot {args.snapshot} in {HISTORY.relative_to(PROJECT_ROOT)}")
     print(f"wrote {OUTPUT.relative_to(PROJECT_ROOT)}")
     return 0
 
