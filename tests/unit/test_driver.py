@@ -396,7 +396,12 @@ def test_the_assessment_lifecycle_moves_with_the_run(prepared: tuple[Path, str])
         )
         assert outcome.completed
         assessment = stage.handle.objects.get(Assessment, assessment_id)
-        assert assessment.status is ObjectStatus.DRAFT, "approval is a person's verb, not a run's"
+        assert assessment.status is ObjectStatus.DRAFT, (
+            "approval is a person's verb, not a run's (DEC-082): completion leaves draft, and "
+            "the sign-off below is what moves it"
+        )
+        approved = stage.service.approve(assessment_id)
+        assert approved.status is ObjectStatus.APPROVED
 
 
 def test_stop_before_halts_cleanly_without_the_named_phase(prepared: tuple[Path, str]) -> None:

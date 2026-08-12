@@ -5376,3 +5376,63 @@ Tradeoffs:
   not a checkout target.
 - A deliberate step can be forgotten. Nothing prompts for a snapshot; a release checklist is the
   natural place for it, and section 17's release record is the natural trigger.
+
+## DEC-082: Approval is a person's sign-off on the rendered deliverable; phase fourteen stays a terminal marker
+
+Date: 2026-08-12
+
+Status: Accepted
+
+Decision:
+
+**The `draft` to `approved` transition is performed by a person, through `trace assessment
+approve`, and DEC-031's table is amended: the writer of that edge is the person, not the
+terminal node.** Phase fourteen (`assessment_completion`) declares no node and stays what it
+is today — the orchestrator's terminal marker. A completed run leaves its assessment in
+`draft`, which is what the driver test has asserted since the phase landed.
+
+**The verb is a sign-off, not a status setter, and the service enforces the difference.**
+`AssessmentService.approve()` refuses unless three facts hold: the assessment carries a
+rendered report (`final_report_path`); the run that rendered it — named by the report's
+filename, not whichever run is latest — completed; and that run is authoritative
+(DEC-012's rule, kept from the original verb). Each refusal names what is missing.
+`run_is_authoritative` is no longer caller-supplied: the run exists now, and a boolean the
+caller asserts is a bypass one keyword away.
+
+Why:
+
+**DEC-031's table and the implementation disagreed, and the implementation had the better
+argument.** The table assigned `draft → approved` to "the terminal node"; the code left phase
+fourteen empty and `tests/unit/test_driver.py` asserted that a completed run leaves `draft`,
+annotated "approval is a person's verb, not a run's". The contradiction sat unresolved
+because nothing drove the final verb at all — `approve()` had no caller in `src/` and its
+docstring still claimed `WorkflowRun` did not exist.
+
+**The terminal node cannot make the judgment approval records.** Checkpoint 2 approves
+findings before the report exists; report generation and rendering follow it. `approved`
+means "the conclusions are the reviewer's" (DEC-031) — and the conclusions a customer reads
+are the rendered document, which nobody has confirmed reading at the moment the run
+completes. An automatic terminal approval would mark the deliverable usable on the strength
+of a review that predates it.
+
+**Offering the verb on the surface is not the bypass DEC-031 rejected.** DEC-031 refused a
+user-settable `approved` as "a checkpoint bypass with extra steps" — correctly, for a bare
+setter. The guarded verb cannot bypass anything: no report exists without passing both
+checkpoints (DEC-005 makes them structural), so the earliest moment the verb succeeds is
+after every gate DEC-031 protects has held.
+
+Alternatives Considered:
+
+- A phase-fourteen node writing `approved` on completion, per DEC-031's table as written
+- Keeping `run_is_authoritative` caller-supplied and adding only the CLI verb
+- A separate `sign_off` verb beside `approve`, leaving DEC-031's table untouched
+
+Tradeoffs:
+
+- An operator can now forget the sign-off, leaving a finished assessment in `draft`
+  indefinitely — visible in `trace assessment status`, and preferable to an approval nobody
+  performed.
+- Binding the sign-off to the run named by the report means a later failed run does not
+  block approving the earlier finished one; whether that is generosity or correctness
+  depends on why the later run failed, and the reviewer holding the report is the right
+  judge of that.

@@ -31,11 +31,40 @@ from trace_ai.infrastructure.database.store import AssessmentStore
 from trace_ai.infrastructure.filesystem.artifact_store import AREAS
 from trace_ai.services.assessment import (
     ASSESSMENT_TRANSITIONS,
+    AssessmentNotApprovableError,
     AssessmentNotFoundError,
     AssessmentService,
     InvalidStatusTransitionError,
     NonAuthoritativeRunError,
 )
+
+
+def _completed_run(
+    service: AssessmentService, assessment_id: str, *, ablations: tuple[str, ...] = ()
+) -> str:
+    """A completed run whose report the assessment carries, so `approve` has a deliverable.
+
+    Built directly against the repository: these are lifecycle tests, and running the whole
+    pipeline to produce a real report would test the driver, not the transition.
+    """
+    from trace_ai.domain.execution import RunStatus, WorkflowRun
+    from trace_ai.services.execution_ledger import start_run
+
+    handle = service.handle(assessment_id)
+    run = start_run(handle, workflow_version="0.1", model_profile="offline-fake")
+    completed = WorkflowRun.model_validate(
+        run.model_dump()
+        | {"status": RunStatus.COMPLETED, "completed_at": now(), "ablations": list(ablations)}
+    )
+    assessment = service.get(assessment_id)
+    with handle.objects.transaction():
+        handle.objects.save(completed)
+        handle.objects.save(
+            Assessment.model_validate(
+                assessment.model_dump() | {"final_report_path": f"outputs/report-{completed.id}.md"}
+            )
+        )
+    return completed.id
 
 
 class SourceDocument(DomainModel):
@@ -330,7 +359,8 @@ def test_the_expected_lifecycle_is_allowed(service: AssessmentService) -> None:
     created = service.create("Review", a_configuration())
     service.begin_review(created.id)
     service.resume_from_review(created.id)
-    service.approve(created.id, run_is_authoritative=True)
+    _completed_run(service, created.id)
+    service.approve(created.id)
     final = service.archive(created.id)
     assert final.status is ObjectStatus.ARCHIVED
 
@@ -384,14 +414,16 @@ def test_an_assessment_can_be_archived_from_any_live_status(service: AssessmentS
     assert service.archive(waiting.id).status is ObjectStatus.ARCHIVED
 
     finished = service.create("Finished", a_configuration())
-    service.approve(finished.id, run_is_authoritative=True)
+    _completed_run(service, finished.id)
+    service.approve(finished.id)
     assert service.archive(finished.id).status is ObjectStatus.ARCHIVED
 
 
 def test_a_new_run_returns_an_approved_assessment_to_draft(service: AssessmentService) -> None:
     """Its conclusions no longer describe the current state."""
     created = service.create("Review", a_configuration())
-    service.approve(created.id, run_is_authoritative=True)
+    _completed_run(service, created.id)
+    service.approve(created.id)
     assert service.begin_revision(created.id).status is ObjectStatus.DRAFT
 
 
@@ -402,19 +434,39 @@ def test_a_non_authoritative_run_cannot_approve(service: AssessmentService) -> N
     rather than in the harness that produced the run.
     """
     created = service.create("Review", a_configuration())
+    _completed_run(service, created.id, ablations=("no-critical-review",))
     with pytest.raises(NonAuthoritativeRunError, match="non-authoritative"):
-        service.approve(created.id, run_is_authoritative=False)
+        service.approve(created.id)
 
     assert service.get(created.id).status is ObjectStatus.DRAFT
 
 
-def test_run_authority_must_be_stated_explicitly(service: AssessmentService) -> None:
-    """Keyword-only and no default: approving is never something that happens by omission."""
-    import inspect
+def test_approval_is_refused_while_no_report_exists(service: AssessmentService) -> None:
+    """DEC-082: the sign-off needs a deliverable; a bare assessment is refused in one line."""
+    created = service.create("Review", a_configuration())
+    with pytest.raises(AssessmentNotApprovableError, match="no report has been rendered"):
+        service.approve(created.id)
+    assert service.get(created.id).status is ObjectStatus.DRAFT
 
-    parameter = inspect.signature(AssessmentService.approve).parameters["run_is_authoritative"]
-    assert parameter.kind is inspect.Parameter.KEYWORD_ONLY
-    assert parameter.default is inspect.Parameter.empty
+
+def test_approval_is_refused_while_the_reports_run_is_not_completed(
+    service: AssessmentService,
+) -> None:
+    """A report naming a run that did not complete is not a finished deliverable."""
+    from trace_ai.services.execution_ledger import start_run
+
+    created = service.create("Review", a_configuration())
+    handle = service.handle(created.id)
+    run = start_run(handle, workflow_version="0.1", model_profile="offline-fake")
+    with handle.objects.transaction():
+        handle.objects.save(
+            Assessment.model_validate(
+                service.get(created.id).model_dump()
+                | {"final_report_path": f"outputs/report-{run.id}.md"}
+            )
+        )
+    with pytest.raises(AssessmentNotApprovableError, match="not completed"):
+        service.approve(created.id)
 
 
 def test_there_is_no_generic_status_setter(service: AssessmentService) -> None:
