@@ -1653,3 +1653,38 @@ def test_rubric_without_a_run_exits_non_zero(
     identifier = created(data_root, capsys)
     assert invoke(data_root, "report", "rubric", identifier, *_full_scores()) == 1
     assert "no workflow run" in capsys.readouterr().err
+
+
+# ------------------------------------------------------------------------------------------
+# The finding review file (issue #351)
+# ------------------------------------------------------------------------------------------
+
+
+def test_findings_review_exports_and_applies_a_file(
+    data_root: Path, capsys: pytest.CaptureFixture[str], tmp_path: Path
+) -> None:
+    """The round-trip surface: export writes the document, an unchanged apply records nothing."""
+    identifier = created(data_root, capsys)
+    path = tmp_path / "finding-review.yaml"
+    assert invoke(data_root, "findings", "review", identifier, "--export", str(path)) == 0
+    assert path.is_file()
+    assert "Fill in `decision:`" in path.read_text(encoding="utf-8")
+    capsys.readouterr()
+
+    assert invoke(data_root, "findings", "review", identifier, "--apply", str(path)) == 0
+    assert "no decisions recorded" in capsys.readouterr().out
+
+
+def test_findings_review_offers_defer_and_request_more_analysis() -> None:
+    parser = build_parser()
+    groups = next(
+        action for action in parser._actions if isinstance(action, argparse._SubParsersAction)
+    )
+    nested = next(
+        action
+        for action in groups.choices["findings"]._actions
+        if isinstance(action, argparse._SubParsersAction)
+    )
+    help_text = nested.choices["review"].format_help()
+    for flag in ("--defer", "--request-more-analysis", "--export", "--apply"):
+        assert flag in help_text, f"findings review lacks {flag}"

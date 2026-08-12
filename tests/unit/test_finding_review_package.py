@@ -484,6 +484,7 @@ def test_the_summary_counts_findings_awaiting_severity(handle: AssessmentHandle)
 def test_formatting_is_a_separate_step_over_the_structured_data() -> None:
     """`render_markdown` reads only the package: a hand-built one renders with no store at all."""
     package = FindingReviewPackage(
+        assessment_id="asm-001",
         summary=ReviewSummary(
             finding_count=0,
             documentation_gap_count=0,
