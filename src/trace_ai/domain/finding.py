@@ -36,13 +36,19 @@ minimum-rules wording reads as an either-or and DEC-013 is the authority that it
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from typing import TYPE_CHECKING, Self
 
 from pydantic import Field, model_validator
 
 from trace_ai.domain.base import DomainModel
-from trace_ai.domain.enums import ConfidenceLevel, ObjectStatus, Severity, ValidationStatus
+from trace_ai.domain.enums import (
+    ConfidenceLevel,
+    ObjectStatus,
+    RiskTreatment,
+    Severity,
+    ValidationStatus,
+)
 from trace_ai.domain.identifiers import (
     AssessmentId,
     AssetId,
@@ -116,6 +122,20 @@ class Finding(DomainModel):
     generated_by: str = Field(min_length=1)
     created_at: datetime
     updated_at: datetime
+
+    risk_treatment: RiskTreatment = RiskTreatment.UNDECIDED
+    """The reviewer's chosen response, assigned at checkpoint 2 and never proposed by a node
+    (DEC-060), the neighbouring judgment to severity (DEC-030). Findings are created `undecided`,
+    which unlike an unassigned severity may survive approval — the gate is only that `accept`
+    carries a `treatment_rationale`."""
+
+    treatment_rationale: str | None = None
+    """Required when `risk_treatment` is `accept` — the residual-risk statement, what remains
+    exposed and why that is tolerable — and optional otherwise. Enforced at the approval gate, not
+    here, exactly as severity's mandatory-on-approval rule is (DEC-060)."""
+
+    treatment_review_by: date | None = None
+    """An optional date to revisit an accepted risk; DEC-061 gives it semantics."""
 
     duplicate_of_id: FindingId | None = None
     reviewer_notes: str | None = None

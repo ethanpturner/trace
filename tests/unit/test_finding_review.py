@@ -21,6 +21,7 @@ from trace_ai.domain.enums import (
     ConfidenceLevel,
     ObjectStatus,
     ReviewDisposition,
+    RiskTreatment,
     Severity,
     ValidationStatus,
 )
@@ -37,6 +38,7 @@ from trace_ai.workflow.finding_review import (
     add_remediation_guidance,
     add_reviewer_rationale,
     approve_finding,
+    assign_risk_treatment,
     change_severity,
     convert_to_documentation_gap,
     convert_to_question,
@@ -207,6 +209,74 @@ def test_severity_cannot_be_unassigned_again(handle: AssessmentHandle) -> None:
     finding = a_finding(handle, severity=Severity.HIGH)
     with pytest.raises(ReviewerActionError, match="unassign"):
         change_severity(handle, finding, Severity.UNASSIGNED, reviewer_id=REVIEWER)
+
+
+# ------------------------------------------------------------------------------------------
+# Risk treatment (DEC-060): reviewer-assigned, undecided survives, accept needs a rationale
+# ------------------------------------------------------------------------------------------
+
+
+def test_a_finding_is_created_undecided(handle: AssessmentHandle) -> None:
+    assert a_finding(handle).risk_treatment is RiskTreatment.UNDECIDED
+
+
+def test_undecided_treatment_does_not_block_approval(handle: AssessmentHandle) -> None:
+    """Unlike severity, treatment never gates approval; an undecided finding still approves."""
+    finding = a_finding(handle, severity=Severity.HIGH)
+    approved, _ = approve_finding(handle, finding, reviewer_id=REVIEWER)
+    assert approved.status is ObjectStatus.APPROVED
+    assert approved.risk_treatment is RiskTreatment.UNDECIDED
+
+
+def test_approval_of_accept_without_a_rationale_is_refused(handle: AssessmentHandle) -> None:
+    finding = a_finding(handle, severity=Severity.HIGH, risk_treatment=RiskTreatment.ACCEPT)
+    with pytest.raises(ReviewerActionError, match="DEC-060"):
+        approve_finding(handle, finding, reviewer_id=REVIEWER)
+
+
+def test_a_non_accept_treatment_approves_without_a_rationale(handle: AssessmentHandle) -> None:
+    finding = a_finding(handle, severity=Severity.HIGH, risk_treatment=RiskTreatment.MITIGATE)
+    approved, _ = approve_finding(handle, finding, reviewer_id=REVIEWER)
+    assert approved.status is ObjectStatus.APPROVED
+
+
+def test_accept_with_a_rationale_is_assigned_as_an_edit_then_approves(
+    handle: AssessmentHandle,
+) -> None:
+    finding = a_finding(handle, severity=Severity.HIGH)
+    treated, decision = assign_risk_treatment(
+        handle,
+        finding,
+        RiskTreatment.ACCEPT,
+        rationale="Residual exposure is bounded to internal callers and accepted by the owner.",
+        reviewer_id=REVIEWER,
+        workflow_run_id="run-001",
+    )
+    assert decision.disposition is ReviewDisposition.EDIT
+    assert decision.prior_value is not None
+    assert decision.prior_value["risk_treatment"] == "undecided"
+    assert decision.updated_value is not None
+    assert decision.updated_value["risk_treatment"] == "accept"
+    assert treated.risk_treatment is RiskTreatment.ACCEPT
+
+    approved, approval = approve_finding(handle, treated, reviewer_id=REVIEWER)
+    assert approval.disposition is ReviewDisposition.APPROVE
+    assert approved.status is ObjectStatus.APPROVED
+
+
+def test_a_review_by_date_is_recorded_with_the_treatment(handle: AssessmentHandle) -> None:
+    from datetime import date
+
+    finding = a_finding(handle, severity=Severity.HIGH)
+    treated, _ = assign_risk_treatment(
+        handle,
+        finding,
+        RiskTreatment.ACCEPT,
+        rationale="Owner accepts the residual risk.",
+        review_by=date(2027, 1, 1),
+        reviewer_id=REVIEWER,
+    )
+    assert treated.treatment_review_by == date(2027, 1, 1)
 
 
 def test_a_merged_duplicate_cannot_be_approved(handle: AssessmentHandle) -> None:

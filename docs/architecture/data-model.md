@@ -432,6 +432,23 @@ requires_confirmation
 
 not_evaluated
 
+## 4.8 RiskTreatment
+
+The reviewer's chosen response to a finding's risk, assigned at checkpoint 2 (DEC-060). A closed
+vocabulary: the values are named, not illustrated, like `DataFlow.direction`. Findings are created
+`undecided`, and unlike severity `undecided` may survive approval; the only gate is that `accept`
+without a `treatment_rationale` is refused.
+
+undecided
+
+mitigate
+
+accept
+
+transfer
+
+avoid
+
 # 5. Assessment
 
 ## Purpose
@@ -1538,6 +1555,9 @@ A finding is provisional until approved by a reviewer.
 | duplicate_of_id | string | No | Canonical finding if duplicate |
 | converted_from_id | string | No | The object this was converted from (DEC-051) |
 | reviewer_notes | string | No | Reviewer explanation |
+| risk_treatment | RiskTreatment | No | Reviewer-assigned response; `undecided` at creation (DEC-060) |
+| treatment_rationale | string | No | Residual-risk statement; required to approve `accept` (DEC-060) |
+| treatment_review_by | date | No | Optional date to revisit an accepted risk (DEC-060) |
 
 ## Minimum validation rules
 
@@ -1570,8 +1590,8 @@ degrading into nobody assigning severity.
 DEC-060 adds a second, softer reviewer judgment: `risk_treatment` (closed vocabulary
 `undecided`, `mitigate`, `accept`, `transfer`, `avoid`), `treatment_rationale`, and
 `treatment_review_by`. Unlike severity, `undecided` may survive approval; the only gate is that
-`accept` without a `treatment_rationale` is refused. The table rows above gain these fields in
-the change that implements them, alongside the model, per the conformance test's
+`accept` without a `treatment_rationale` is refused. The table rows above carry these fields and
+the closed vocabulary is section 4.8, added alongside the model per the conformance test's
 both-directions rule.
 
 DEC-066 adds `content_fingerprint` on the same terms: a derived SHA-256 over the sorted

@@ -29,11 +29,12 @@ from __future__ import annotations
 
 import argparse
 import sys
+from datetime import date
 from typing import TYPE_CHECKING, Any
 
 from trace_ai.config import MissingSettingError
 from trace_ai.domain.assessment import default_configuration
-from trace_ai.domain.enums import ReviewDisposition, Severity, SourceOrigin
+from trace_ai.domain.enums import ReviewDisposition, RiskTreatment, Severity, SourceOrigin
 from trace_ai.domain.evidence import EvidenceReference
 from trace_ai.domain.execution import RunStatus, WorkflowRun
 from trace_ai.domain.finding import Finding
@@ -78,6 +79,7 @@ from trace_ai.workflow.context_validation import validate_context
 from trace_ai.workflow.errors import WorkflowError
 from trace_ai.workflow.finding_review import (
     approve_finding,
+    assign_risk_treatment,
     change_severity,
     conclude_finding_review,
     edit_finding,
@@ -332,6 +334,29 @@ def build_parser() -> argparse.ArgumentParser:
         default=[],
         metavar=("ID", "FIELD=VALUE"),
         help="change one field; validated in full and recorded with the delta (DEC-023)",
+    )
+    findings_review.add_argument(
+        "--treatment",
+        action="append",
+        dest="treatments",
+        default=[],
+        metavar="ID=VALUE",
+        help=(
+            "assign a risk treatment (undecided|mitigate|accept|transfer|avoid); the reviewer's "
+            "to give and recorded as an edit (DEC-060)"
+        ),
+    )
+    findings_review.add_argument(
+        "--treatment-rationale",
+        dest="treatment_rationale",
+        help="the residual-risk statement; required to approve a finding treated as 'accept'",
+    )
+    findings_review.add_argument(
+        "--treatment-review-by",
+        dest="treatment_review_by",
+        type=date.fromisoformat,
+        metavar="YYYY-MM-DD",
+        help="an optional date to revisit an accepted risk",
     )
     findings_review.add_argument(
         "--approve", action="append", dest="approved", default=[], metavar="ID"
@@ -1278,10 +1303,11 @@ def _findings_show(args: argparse.Namespace, service: AssessmentService) -> int:
 
 
 def _findings_review(args: argparse.Namespace, service: AssessmentService) -> int:
-    """Record finding decisions: severity and edits first, then rejections, then approvals.
+    """Record finding decisions: severity, treatment, and edits first, then rejections, approvals.
 
     The order inside one invocation is fixed so `--severity fnd-001=medium --approve fnd-001`
-    means what it reads as: the severity lands before the approval gate checks it.
+    means what it reads as: the severity and the treatment land before the approval gate checks
+    them, so `--treatment fnd-001=accept --treatment-rationale "..." --approve fnd-001` passes.
     """
     handle = service.handle(args.assessment_id)
     reviewer = args.reviewer or _default_reviewer()
@@ -1301,6 +1327,23 @@ def _findings_review(args: argparse.Namespace, service: AssessmentService) -> in
             Severity(level),
             reviewer_id=reviewer,
             rationale=args.note,
+            workflow_run_id=run_id,
+        )
+        findings[identifier] = updated
+        decisions.append(decision)
+
+    for entry in args.treatments:
+        identifier, separator, value = entry.partition("=")
+        if not separator:
+            raise ValueError(f"--treatment takes ID=VALUE, not {entry!r}")
+        finding = _require(findings, identifier, "a finding in this assessment")
+        updated, decision = assign_risk_treatment(
+            handle,
+            finding,
+            RiskTreatment(value),
+            rationale=args.treatment_rationale,
+            review_by=args.treatment_review_by,
+            reviewer_id=reviewer,
             workflow_run_id=run_id,
         )
         findings[identifier] = updated
