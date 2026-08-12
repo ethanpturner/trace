@@ -1,0 +1,109 @@
+{
+  "threats": [
+    {
+      "title": "Wallet file exfiltrated from a compromised device",
+      "description": "Malware or a local attacker steals the wallet file from the user's device and recovers the private keys it holds. The document states the file should be encrypted at rest and that encryption is a wallet option; whether it is enabled is not stated.",
+      "methodology": "stride-scenario-based",
+      "category": [
+        "information_disclosure"
+      ],
+      "threat_actor_ids": [],
+      "affected_component_ids": [
+        "cmp-002"
+      ],
+      "affected_asset_ids": [
+        "ast-001"
+      ],
+      "related_data_flow_ids": [],
+      "preconditions": [
+        "the user device is compromised",
+        "the wallet file is unencrypted, or its encryption is defeated"
+      ],
+      "attack_path": [
+        "compromise the user device",
+        "copy the wallet file",
+        "recover the keys it holds"
+      ],
+      "impact": "Private key confidentiality is lost, and with it the funds the keys control.",
+      "likelihood": null,
+      "confidence": "medium",
+      "evidence_ids": [
+        "evd-004"
+      ],
+      "assumption_ids": [],
+      "open_question_ids": []
+    },
+    {
+      "title": "Trading-bot API keys stolen and abused",
+      "description": "An attacker obtains the trading bot's exchange API keys — through interception or leakage into logs — and issues unauthorized trades or reads account data.",
+      "methodology": "stride-scenario-based",
+      "category": [
+        "spoofing",
+        "elevation_of_privilege"
+      ],
+      "threat_actor_ids": [],
+      "affected_component_ids": [
+        "cmp-008",
+        "cmp-006"
+      ],
+      "affected_asset_ids": [
+        "ast-002"
+      ],
+      "related_data_flow_ids": [
+        "df-006"
+      ],
+      "preconditions": [
+        "API keys are exposed in transit or at rest",
+        "the stolen keys carry more privilege than the bot's task requires"
+      ],
+      "attack_path": [
+        "obtain the bot's API keys from transit or a log store",
+        "trade or read account data against the exchange API with them"
+      ],
+      "impact": "Unauthorized trading and account data exposure under the user's identity.",
+      "likelihood": null,
+      "confidence": "medium",
+      "evidence_ids": [
+        "evd-003",
+        "evd-005"
+      ],
+      "assumption_ids": [],
+      "open_question_ids": []
+    },
+    {
+      "title": "Malicious ElectrumX server feeds false blockchain state",
+      "description": "A rogue or spoofed ElectrumX server returns incorrect balances or headers, leading the wallet to display or act on false blockchain state. ElectrumX servers are operated by third parties the user does not control.",
+      "methodology": "stride-scenario-based",
+      "category": [
+        "spoofing",
+        "tampering"
+      ],
+      "threat_actor_ids": [],
+      "affected_component_ids": [
+        "cmp-002",
+        "cmp-003"
+      ],
+      "affected_asset_ids": [
+        "ast-003"
+      ],
+      "related_data_flow_ids": [
+        "df-002"
+      ],
+      "preconditions": [
+        "the wallet daemon accepts blockchain data from a server the user does not control without cross-validation"
+      ],
+      "attack_path": [
+        "operate or spoof an ElectrumX server the wallet connects to",
+        "return altered balances or headers"
+      ],
+      "impact": "The wallet displays or acts on false blockchain state.",
+      "likelihood": null,
+      "confidence": "medium",
+      "evidence_ids": [
+        "evd-003"
+      ],
+      "assumption_ids": [],
+      "open_question_ids": []
+    }
+  ]
+}

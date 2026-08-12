@@ -22,8 +22,14 @@ absence-as-vulnerability (DEC-009).
 | --- | --- |
 | `evaluation-contract.yaml` | The grading policy. Declares no counts (DEC-028). |
 | `expected-threats.yaml` | Authored — derived from the source threat list. |
+| `expected-findings.yaml` | Authored (#327) — two findings resting on the documents' own affirmative statements. |
+| `expected-documentation-gaps.yaml` | Authored (#327) — two gaps, each with a paired question. |
+| `expected-questions.yaml` | Authored (#327). |
+| `expected-rejections.yaml` | Authored (#327) — the claims the documented controls contradict. |
+| `reviewer-notes.md` | The checkpoint guidance for whoever plays the reviewer. |
 
-The remaining `expected-*.yaml` files from the DEC-027 derivation are not yet authored.
-The layout allows a registered scenario whose `expected/` holds only its contract;
-authoring the context, mapping, and finding truth sets is follow-on work and each file
-will be added here as it lands.
+The scenario also carries a recording (`../recorded/`, #327), so `trace evaluate husky-ai`
+replays it offline and scores it against these files. The findings rest on affirmative
+statements — the password-only experimental boundary in a security-notes document that
+states its own completeness, and API keys placed in a storage account — never on the
+silences the threat-truth header lists, which resolve to the gaps.

@@ -1,0 +1,30 @@
+# Wallet and Exchange expected questions
+#
+# Benchmark truth for the clarifying questions a correct assessment asks. The source model
+# carries two unconfirmed assumptions, and both resolve to questions here: one about the
+# wallet file, one paired with the exchange-store gap.
+#
+# Nothing in this directory is supplied to Trace during an assessment.
+
+benchmark_version: "1.0"
+scenario: crypto-wallet
+source: system-overview.md
+
+questions:
+  - key: Q-CW-01
+    subject: wallet-file encryption
+    asks: Is wallet-file encryption enabled and enforced for deployed wallets, or left to each user as an option?
+    arises_from: system-overview.md section 3
+    requirement_id: req-DATA-001
+    changes: whether the wallet-file-theft threat requires only device compromise or also a defeated encryption layer
+    priority: high
+    blocking: false
+
+  - key: Q-CW-02
+    subject: transit and store encryption
+    asks: Do the MySQL and MongoDB stores encrypt at rest, and does TLS termination at the load balancer hold for the current deployment?
+    arises_from: system-overview.md sections 3 and 4
+    requirement_id: req-DATA-001
+    changes: whether GAP-CW-01 resolves to a satisfied requirement or a finding
+    priority: high
+    blocking: false

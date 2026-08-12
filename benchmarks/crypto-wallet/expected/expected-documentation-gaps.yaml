@@ -1,0 +1,28 @@
+# Wallet and Exchange expected documentation gaps
+#
+# One gap: how the exchange's stores and internal transit protect the business and
+# credential data the platform is stated to handle is not established by the document.
+# Nothing in this directory is supplied to Trace.
+
+benchmark_version: "1.0"
+scenario: crypto-wallet
+catalog_version: "0.1"
+source: system-overview.md
+
+documentation_gaps:
+  - key: GAP-CW-01
+    requirement_id: req-DATA-001
+    subject: encryption of the exchange stores and the current state of transit encryption are not established
+    arises_from: system-overview.md sections 3 and 4
+    missing:
+      - Whether the MySQL and MongoDB stores encrypt data at rest
+      - Whether TLS termination at the load balancer holds for the current deployment
+    supported_by:
+      - system-overview.md
+    paired_question: Q-CW-02
+    notes: >
+      The platform is stated to be business-critical and to handle business and credential
+      data; MySQL holds user accounts and configuration and MongoDB holds trading data and
+      logs. Nothing describes at-rest protection for either store, and the document itself
+      marks the TLS termination claim unverified. Both are undetermined, not absent —
+      concluding either way would be the DEC-009 failure.

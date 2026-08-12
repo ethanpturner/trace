@@ -1,0 +1,23 @@
+{
+  "controls": [],
+  "mappings": [
+    {
+      "threat_id": "thr-006",
+      "requirement_id": "req-TPI-002",
+      "control_keys": [],
+      "existing_control_ids": [],
+      "applicability_status": "applicable",
+      "applicability_reason": "Every classification request evaluates an image against the model — significant compute driven by end users — so bounding applies; the work is not initiated by an operator.",
+      "suppressed_conclusion": null,
+      "suppressed_by": null,
+      "satisfaction_status": "unverified",
+      "evidence_ids": [
+        "evd-010",
+        "evd-012"
+      ],
+      "assumptions": [],
+      "confidence": "low"
+    }
+  ],
+  "documentation_gaps": []
+}

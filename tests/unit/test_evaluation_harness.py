@@ -47,9 +47,30 @@ def test_an_unknown_slug_is_refused_with_the_known_list() -> None:
 
 
 def test_a_scenario_without_a_recording_is_refused_by_name(tmp_path: Path) -> None:
-    """Silent skipping is the failure mode; the refusal names the scenario and the reason."""
-    with pytest.raises(HarnessError, match=r"husky-ai.*no recording"):
-        run_scenario("husky-ai", data_root=tmp_path, label="test")
+    """Silent skipping is the failure mode; the refusal names the scenario and the reason.
+
+    Every registered scenario now carries a recording (#326, #327), so the unrecorded one is
+    fabricated: a registry whose scenario directory has input and truth but no recorded/.
+    """
+    scenario_dir = tmp_path / "bench" / "unrecorded"
+    (scenario_dir / "input").mkdir(parents=True)
+    (scenario_dir / "input" / "overview.md").write_text("# Overview\n", encoding="utf-8")
+    (scenario_dir / "expected").mkdir()
+    registry = tmp_path / "registry" / "scenarios.yaml"
+    registry.parent.mkdir()
+    registry.write_text(
+        "registry_version: '1.0'\n"
+        "scenarios:\n"
+        "  - slug: unrecorded\n"
+        "    name: Unrecorded\n"
+        "    path: bench/unrecorded\n"
+        "    status: expected-outputs-authored\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(HarnessError, match=r"unrecorded.*no recording"):
+        run_scenario(
+            "unrecorded", data_root=tmp_path / "data", label="test", registry_path=registry
+        )
 
 
 # ------------------------------------------------------------------------------------------

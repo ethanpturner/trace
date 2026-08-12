@@ -1,0 +1,389 @@
+assessment_id: asm-001
+system_context_version: 1
+reviewer: recorded-reviewer
+components:
+- id: cmp-001
+  decision: approve
+  editable:
+    name: Electrum Wallet GUI
+    description: desktop wallet graphical user interface
+    component_type: desktop_application
+    technology: []
+    ownership: null
+    deployment_zone: user_device
+    internet_accessible: null
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+- id: cmp-002
+  decision: approve
+  editable:
+    name: Electrum Wallet Daemon
+    description: local wallet backend exposing HTTP JSON-RPC on localhost; connects out to ElectrumX servers
+      for blockchain data
+    component_type: service
+    technology: []
+    ownership: null
+    deployment_zone: user_device
+    internet_accessible: false
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+- id: cmp-003
+  decision: approve
+  editable:
+    name: ElectrumX Server
+    description: third-party SPV server supplying balances, headers, and transaction broadcast; operated
+      by third parties
+    component_type: external_service
+    technology: []
+    ownership: null
+    deployment_zone: internet
+    internet_accessible: true
+    externally_managed: true
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+- id: cmp-004
+  decision: approve
+  editable:
+    name: Exchange Website
+    description: the front-end served to users; interacts with the exchange backend over HTTPS
+    component_type: web_application
+    technology: []
+    ownership: null
+    deployment_zone: internet
+    internet_accessible: true
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+- id: cmp-005
+  decision: approve
+  editable:
+    name: Exchange Backend
+    description: business logic, configuration, and user data; reads and writes the MySQL and MongoDB
+      stores and calls the blockchain integration module
+    component_type: service
+    technology: []
+    ownership: null
+    deployment_zone: exchange_internal
+    internet_accessible: false
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+- id: cmp-006
+  decision: approve
+  editable:
+    name: Exchange API
+    description: Node.js API server for programmatic trading and account access over a secure WebSocket
+      with API keys
+    component_type: service
+    technology: []
+    ownership: null
+    deployment_zone: exchange_internal
+    internet_accessible: true
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms:
+    - api_key
+    authorization_mechanisms: []
+- id: cmp-007
+  decision: approve
+  editable:
+    name: Blockchain Integration Module
+    description: reads and writes blockchain state on behalf of the backend
+    component_type: service
+    technology: []
+    ownership: null
+    deployment_zone: exchange_internal
+    internet_accessible: null
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+- id: cmp-008
+  decision: approve
+  editable:
+    name: Trading Bot
+    description: user-run bot holding exchange API keys and trading against the exchange API
+    component_type: user_agent
+    technology: []
+    ownership: null
+    deployment_zone: user_device
+    internet_accessible: null
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms:
+    - api_key
+    authorization_mechanisms: []
+- id: cmp-009
+  decision: approve
+  editable:
+    name: MySQL
+    description: user accounts and configuration
+    component_type: data_store
+    technology: []
+    ownership: null
+    deployment_zone: exchange_internal
+    internet_accessible: false
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+- id: cmp-010
+  decision: approve
+  editable:
+    name: MongoDB
+    description: trading data, logs, and operational metadata used by the exchange API
+    component_type: data_store
+    technology: []
+    ownership: null
+    deployment_zone: exchange_internal
+    internet_accessible: false
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+actors:
+- id: act-001
+  decision: approve
+  editable:
+    name: End user
+    actor_type: external_user
+    trust_level: null
+    capabilities: []
+    authentication_method: null
+assets:
+- id: ast-001
+  decision: approve
+  editable:
+    name: Wallet file
+    asset_type: key_material
+    description: the local wallet at rest, holding the wallet data and keys
+    confidentiality_impact: null
+    integrity_impact: null
+    availability_impact: null
+    data_classification: null
+    owner: null
+- id: ast-002
+  decision: approve
+  editable:
+    name: Exchange API keys
+    asset_type: credentials
+    description: API keys the user generates for the trading bot
+    confidentiality_impact: null
+    integrity_impact: null
+    availability_impact: null
+    data_classification: null
+    owner: null
+- id: ast-003
+  decision: approve
+  editable:
+    name: Blockchain state
+    asset_type: operational_data
+    description: balances, headers, and transaction broadcast data supplied by ElectrumX servers
+    confidentiality_impact: null
+    integrity_impact: null
+    availability_impact: null
+    data_classification: null
+    owner: null
+- id: ast-004
+  decision: approve
+  editable:
+    name: User accounts and configuration
+    asset_type: credential_data
+    description: null
+    confidentiality_impact: null
+    integrity_impact: null
+    availability_impact: null
+    data_classification: null
+    owner: null
+- id: ast-005
+  decision: approve
+  editable:
+    name: Trading data and logs
+    asset_type: business_data
+    description: null
+    confidentiality_impact: null
+    integrity_impact: null
+    availability_impact: null
+    data_classification: null
+    owner: null
+data_flows:
+- id: df-001
+  decision: approve
+  editable:
+    name: Wallet GUI to daemon
+    direction: bidirectional
+    protocol: http_jsonrpc
+    data_types: []
+    authentication: unknown
+    encryption_in_transit: localhost_only
+    internet_exposed: false
+    source_component_id: cmp-001
+    destination_component_id: cmp-002
+- id: df-002
+  decision: approve
+  editable:
+    name: Daemon to ElectrumX
+    direction: bidirectional
+    protocol: null
+    data_types: []
+    authentication: unknown
+    encryption_in_transit: unknown
+    internet_exposed: true
+    source_component_id: cmp-002
+    destination_component_id: cmp-003
+- id: df-003
+  decision: approve
+  editable:
+    name: Website to backend
+    direction: bidirectional
+    protocol: https
+    data_types: []
+    authentication: unknown
+    encryption_in_transit: https_expected_unverified
+    internet_exposed: true
+    source_component_id: cmp-004
+    destination_component_id: cmp-005
+- id: df-004
+  decision: approve
+  editable:
+    name: Backend to MySQL
+    direction: bidirectional
+    protocol: null
+    data_types: []
+    authentication: unknown
+    encryption_in_transit: unknown
+    internet_exposed: false
+    source_component_id: cmp-005
+    destination_component_id: cmp-009
+- id: df-005
+  decision: approve
+  editable:
+    name: Backend to MongoDB
+    direction: bidirectional
+    protocol: null
+    data_types: []
+    authentication: unknown
+    encryption_in_transit: unknown
+    internet_exposed: false
+    source_component_id: cmp-005
+    destination_component_id: cmp-010
+- id: df-006
+  decision: approve
+  editable:
+    name: Trading bot to exchange API
+    direction: bidirectional
+    protocol: websocket
+    data_types: []
+    authentication: api_key
+    encryption_in_transit: secure_websocket
+    internet_exposed: true
+    source_component_id: cmp-008
+    destination_component_id: cmp-006
+- id: df-007
+  decision: approve
+  editable:
+    name: Backend to blockchain integration
+    direction: bidirectional
+    protocol: null
+    data_types: []
+    authentication: unknown
+    encryption_in_transit: unknown
+    internet_exposed: false
+    source_component_id: cmp-005
+    destination_component_id: cmp-007
+trust_boundaries:
+- id: tb-001
+  decision: approve
+  editable:
+    name: User device to internet boundary
+    boundary_type: device_to_network
+    description: null
+    controls: []
+- id: tb-002
+  decision: approve
+  editable:
+    name: Internet to exchange-internal boundary
+    boundary_type: internet_to_application
+    description: null
+    controls: []
+claims:
+- id: ctx-001
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  evidence:
+  - evd-003
+  editable:
+    predicate: network_exposure
+    value: the wallet daemon exposes HTTP JSON-RPC on localhost; the GUI talks to the daemon, and the
+      daemon connects out to ElectrumX servers
+    rationale: null
+- id: ctx-002
+  status: documented
+  confidence: medium
+  decision: approve
+  confirm: false
+  evidence:
+  - evd-004
+  editable:
+    predicate: encryption_at_rest
+    value: the wallet file should be encrypted at rest and encryption is a wallet option; whether it is
+      enabled is not stated
+    rationale: the document hedges the statement rather than asserting the encryption state
+- id: ctx-003
+  status: documented
+  confidence: medium
+  decision: approve
+  confirm: false
+  evidence:
+  - evd-005
+  editable:
+    predicate: encryption_in_transit
+    value: TLS is expected to terminate at the load balancer with all front-end to backend communication
+      over HTTPS; this has not been re-verified for the current deployment
+    rationale: the document marks the claim as not re-verified
+- id: ctx-004
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  evidence:
+  - evd-003
+  - evd-005
+  editable:
+    predicate: api_authentication
+    value: user-run trading bots connect to the exchange API over a secure WebSocket using API keys the
+      user generates
+    rationale: null
+- id: ctx-005
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  evidence:
+  - evd-001
+  editable:
+    predicate: data_sensitivity
+    value: the platform is business-critical and externally exposed, and handles business and credential
+      data
+    rationale: null
+- id: ctx-006
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  evidence:
+  - evd-003
+  editable:
+    predicate: operational_ownership
+    value: ElectrumX servers are operated by third parties, not by the exchange
+    rationale: null
+questions: []

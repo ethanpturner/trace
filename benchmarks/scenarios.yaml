@@ -30,22 +30,24 @@ scenarios:
   # Scenarios two through four are seeded from externally authored models (issue #225):
   # the truth sets arrive independently written rather than invented alongside the inputs.
   # For each, the source's system description became input/ and its threat list became
-  # expected-threats.yaml. Invoice-agent has since reached full outcome truth and a
-  # recording; husky-ai and crypto-wallet still carry threat truth only (#327).
+  # expected-threats.yaml. All three have since reached full outcome truth and
+  # recordings (#326 for invoice-agent, #327 for husky-ai and crypto-wallet).
 
   - slug: husky-ai
     name: Husky AI
     path: benchmarks/husky-ai
     # OWASP Threat Model Library, husky-ai-threat-model.json (MIT). Peer-reviewed model
     # of an ML image classifier: 9 threats with CWE/CAPEC links, 22 controls, 3 risks.
-    status: expected-threats-authored
+    # Outcome truth and recording authored in #327: two findings, two gaps.
+    status: authored
 
   - slug: crypto-wallet
     name: Wallet and Exchange
     path: benchmarks/crypto-wallet
     # OWASP Threat Model Library, cryptocurrency-wallet-threat-model.json (MIT), ported
-    # there from the Threat Modeling Cookbook.
-    status: expected-threats-authored
+    # there from the Threat Modeling Cookbook. Outcome truth and recording authored in
+    # #327: the hedged-statement zero-finding path — a question and a gap, no findings.
+    status: authored
 
   - slug: invoice-agent
     name: Invoice Agent
@@ -95,7 +97,7 @@ scenarios:
     # Expects zero findings; the recording (#326) replays the inherited-control path.
     status: authored
 
-# Roadmap Stage 5 calls for 8 to 12 scenarios. The two seeded scenarios above with only
-# threat truth (husky-ai, crypto-wallet) reach the full outcome-side truth as their truth
-# sets and recordings are authored (#327); further scenarios are added here with the same
+# Roadmap Stage 5 calls for 8 to 12 scenarios. Every registered scenario is now fully
+# authored — outcome truth and recording — and replays under `trace evaluate --all`.
+# The categories still missing a scenario are #328's; each is added here with the same
 # layout.

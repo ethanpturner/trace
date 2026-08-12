@@ -1,0 +1,42 @@
+# Wallet and Exchange expected rejections
+#
+# The claims a correct assessment does not make, each with the mechanism that stops it. The
+# scenario's whole point is the first two: the source hedges both statements, and treating
+# either hedge as a fact — in either direction — is the failure being measured.
+#
+# Nothing in this directory is supplied to Trace during an assessment.
+
+benchmark_version: "1.0"
+scenario: crypto-wallet
+catalog_version: "0.1"
+source: system-overview.md
+
+rejections:
+  - key: REJ-CW-01
+    claim: The wallet file is stored unencrypted.
+    mechanism: documentation_gap
+    requirement_id: req-DATA-001
+    entry: >
+      The document states the wallet file should be encrypted at rest and that encryption is
+      a wallet option; whether it is enabled is not established either way.
+    why: >
+      A hedged statement supports a question, not a conclusion. Asserting the file is
+      unencrypted — or encrypted — states what the document deliberately does not.
+
+  - key: REJ-CW-02
+    claim: Front-end to backend traffic is unencrypted.
+    mechanism: no_evidence
+    requirement_id: req-DATA-001
+    entry: >
+      The document states TLS is expected to terminate at the load balancer with front-end
+      to backend communication over HTTPS, and that this has not been re-verified.
+    why: >
+      Unverified is not absent. The correct output is the re-verification question, not an
+      asserted exposure.
+
+  - key: REJ-CW-03
+    claim: The wallet daemon's JSON-RPC interface is exposed to the network.
+    mechanism: no_evidence
+    requirement_id: req-NET-001
+    entry: The document states the daemon exposes HTTP JSON-RPC on localhost.
+    why: The claim asserts the opposite of the documented placement.

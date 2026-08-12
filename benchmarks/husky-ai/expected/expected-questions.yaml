@@ -1,0 +1,29 @@
+# Husky AI expected questions
+#
+# Benchmark truth for the clarifying questions a correct assessment asks. Each pairs with a
+# documentation gap; the answers are obtainable from the platform team.
+#
+# Nothing in this directory is supplied to Trace during an assessment.
+
+benchmark_version: "1.0"
+scenario: husky-ai
+source: system-overview.md, security-notes.md
+
+questions:
+  - key: Q-HA-01
+    subject: pipeline supply-chain control
+    asks: How are third-party tools and libraries entering the experimental environment identified and controlled before the deployment service ships their output to production?
+    arises_from: system-overview.md sections 1 and 4
+    requirement_id: req-CICD-001
+    changes: whether GAP-HA-01 resolves to a satisfied requirement or a finding
+    priority: high
+    blocking: false
+
+  - key: Q-HA-02
+    subject: classification volume bound
+    asks: Is the public classification path rate-limited or otherwise bounded per user?
+    arises_from: system-overview.md section 4
+    requirement_id: req-TPI-002
+    changes: whether GAP-HA-02 resolves to a satisfied requirement or a finding, and how far the perturbation-probing threat is practical
+    priority: medium
+    blocking: false
