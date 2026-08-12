@@ -67,7 +67,7 @@ def documented_prefixes() -> dict[str, str]:
 
 def test_the_prefix_list_was_found() -> None:
     """Guard the parser: an empty parse would make the comparison below vacuous."""
-    assert len(documented_prefixes()) == 24
+    assert len(documented_prefixes()) == 25
 
 
 def test_the_registry_matches_section_two_point_one() -> None:

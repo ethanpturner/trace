@@ -46,6 +46,7 @@ from trace_ai.domain.identifiers import (
     RequirementId,
     ThreatId,
 )
+from trace_ai.domain.proposals.catalog_gap import CatalogGapCandidateProposal
 from trace_ai.domain.proposals.context_extraction import LocalKey, ProposalError
 
 if TYPE_CHECKING:
@@ -159,6 +160,12 @@ class MappingProposal(DomainModel):
     mappings: list[RequirementMappingProposal] = Field(default_factory=list)
     documentation_gaps: list[DocumentationGapProposal] = Field(default_factory=list)
 
+    catalog_gap_candidates: list[CatalogGapCandidateProposal] = Field(default_factory=list)
+    """Concerns no requirement covers, flagged for the catalog owner (DEC-065). Raised here
+    rather than stretched over the nearest requirement — the misfit this agent is best placed
+    to notice, since DEC-024 puts the whole catalog in front of it. Empty is the ordinary
+    case."""
+
     def validate_references(self, available: Set[str]) -> None:
         """Every identifier a mapping names must be one the input package supplied.
 
@@ -194,6 +201,19 @@ class MappingProposal(DomainModel):
         offset = -1 - len(self.controls)
         for position, gap in enumerate(self.documentation_gaps):
             referenced = [*gap.related_object_ids, *gap.evidence_ids]
+            missing = sorted({value for value in referenced if value not in available})
+            if missing:
+                unknown[offset - position] = missing
+
+        # A candidate's evidence and its named nearest requirements are checked the same way:
+        # this agent has the whole catalog in front of it (DEC-024), so a requirement it names
+        # as a near-miss must be one it was given (DEC-065's falsifiability gate).
+        offset -= len(self.documentation_gaps)
+        for position, candidate in enumerate(self.catalog_gap_candidates):
+            referenced = [
+                *candidate.evidence_ids,
+                *(considered.requirement_id for considered in candidate.nearest_requirements),
+            ]
             missing = sorted({value for value in referenced if value not in available})
             if missing:
                 unknown[offset - position] = missing

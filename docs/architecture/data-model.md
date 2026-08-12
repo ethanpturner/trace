@@ -97,6 +97,8 @@ eval- Evaluation result
 
 mrg- Finding merge record
 
+cgc- Catalog gap candidate
+
 ## What the scheme governs
 
 The scheme governs **objects an assessment produces**. An object is inside it when all three hold:
@@ -1814,6 +1816,40 @@ A finding means:
 
 Available evidence supports the conclusion that a meaningful security weakness exists.
 
+# 23a. CatalogGapCandidate
+
+## Purpose
+
+Represents a credible security concern that no requirement in the active catalog covers, flagged
+as catalog-maintenance input and routed to the catalog owner (DEC-065). Added by DEC-065 after
+the surrounding sections were numbered, the same way sections 10a and 21a were.
+
+A candidate is about the catalog's coverage, not the system's controls. It is not an assessment
+conclusion: no report section renders it, finding consolidation never reads it, and it is not a
+checkpoint subject. It feeds the next catalog version through a human authoring decision
+(DEC-057) and carries no authority of its own.
+
+The schema deliberately carries no severity, no validation status, and no recommendation. A
+shape that could be read as a finding would let the DEC-009 collapse happen through a side door,
+so that shape is unrepresentable.
+
+## Fields
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| id | string | Yes | Stable candidate identifier |
+| assessment_id | string | Yes | Parent assessment |
+| concern | string | Yes | The uncovered security concern, in prose |
+| suggested_category | string | Yes | Suggested primary category, open vocabulary (DEC-036) |
+| nearest_requirements | list[object] | Yes | Requirements considered and why each does not fit; non-empty (DEC-065) |
+| evidence_ids | list[string] | Yes | Evidence grounding the concern; non-empty |
+| generated_by | string | Yes | The agent that raised it |
+| created_at | datetime | Yes | Creation timestamp |
+
+Each `nearest_requirements` entry carries `requirement_id` and `why_not`, both required. The
+list is the quality gate: DEC-024's whole-catalog posture is what makes "no requirement covers
+this" a claim an agent can actually make, and the named near-misses are what make it falsifiable.
+
 # 24. Critique
 
 ## Purpose
@@ -2540,6 +2576,7 @@ Implement these first:
 25. Critique
 26. FindingMergeRecord
 27. EvaluationResult
+28. CatalogGapCandidate
 
 `SourceObservation` (section 10a) was added by DEC-021 after this list was written, and the list
 was not updated with it. It is not optional: DEC-021 makes contradictions and detected
@@ -2550,6 +2587,10 @@ sits after `ContextClaim` because `subject_claim_ids` references claims.
 `Actor` (section 13) was on neither list, and open question 4 asked whether actors are first-class
 objects at all. DEC-037 answers it: they are, `SystemContext.actor_ids` references them, and the
 entry above places `Actor` after `Asset` and before `DataFlow`.
+
+`CatalogGapCandidate` (section 23a) was added by DEC-065 after this list was written. It sits
+last: the Threat Analysis and Mapping agents raise it as an optional output, nothing downstream
+consumes it, and the M12 decision-debt milestone is where it was built.
 
 `RequirementsCatalog` (section 30) was on the deferred list, on the grounds that it should arrive
 once the workflow operates. It arrives earlier than that, and not by preference: DEC-019 makes its

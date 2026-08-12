@@ -106,7 +106,7 @@ def test_archive_is_the_only_transition_offered(
     assert "archived" in capsys.readouterr().out
 
     offered = _subcommands("assessment")
-    assert offered == {"create", "list", "status", "archive"}
+    assert offered == {"create", "list", "status", "candidates", "archive"}
     assert "approve" not in offered
 
 
@@ -472,7 +472,7 @@ def test_the_command_surface_is_the_one_dec_032_confirms() -> None:
     }
     assert _subcommands("source") == {"add", "list"}
     assert _subcommands("evidence") == {"list", "show", "verify"}
-    assert _subcommands("assessment") == {"create", "list", "status", "archive"}
+    assert _subcommands("assessment") == {"create", "list", "status", "candidates", "archive"}
     assert _subcommands("findings") == {"show", "review", "approve"}
     assert _subcommands("report") == {"show"}
 

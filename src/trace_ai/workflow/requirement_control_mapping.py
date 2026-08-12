@@ -37,6 +37,7 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Final
 
 from trace_ai.domain.execution import ExecutionType
+from trace_ai.domain.proposals.catalog_gap import promote_catalog_gap_candidate
 from trace_ai.domain.proposals.context_extraction import ProposalError
 from trace_ai.domain.proposals.mapping import (
     MAPPING_AGENT,
@@ -55,6 +56,7 @@ from trace_ai.workflow.retry import AttemptFailedError, RetryPolicy, run_with_re
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
+    from trace_ai.domain.catalog_gap_candidate import CatalogGapCandidate
     from trace_ai.domain.control import Control
     from trace_ai.domain.control_mapping import ControlMapping
     from trace_ai.domain.documentation_gap import DocumentationGap
@@ -101,6 +103,8 @@ class MappingOutcome:
     controls: tuple[Control, ...]
     mappings: tuple[ControlMapping, ...]
     documentation_gaps: tuple[DocumentationGap, ...]
+    catalog_gap_candidates: tuple[CatalogGapCandidate, ...] = ()
+    """Routed to the catalog owner and consumed by no later phase (DEC-065)."""
 
     @property
     def object_ids(self) -> list[str]:
@@ -108,6 +112,7 @@ class MappingOutcome:
             *(control.id for control in self.controls),
             *(mapping.id for mapping in self.mappings),
             *(gap.id for gap in self.documentation_gaps),
+            *(candidate.id for candidate in self.catalog_gap_candidates),
         ]
 
 
@@ -291,6 +296,7 @@ class RequirementControlMappingNode:
             execution.metadata["mappings"] = len(outcome.mappings)
             execution.metadata["controls"] = len(outcome.controls)
             execution.metadata["documentation_gaps"] = len(outcome.documentation_gaps)
+            execution.metadata["catalog_gap_candidates"] = len(outcome.catalog_gap_candidates)
             execution.metadata["suppressions"] = sum(
                 1 for mapping in outcome.mappings if mapping.suppressed_by
             )
@@ -315,6 +321,7 @@ class RequirementControlMappingNode:
                 "mappings": len(outcome.mappings),
                 "controls": len(outcome.controls),
                 "documentation_gaps": len(outcome.documentation_gaps),
+                "catalog_gap_candidates": len(outcome.catalog_gap_candidates),
                 "requirements_offered": len(package.requirement_ids),
             },
         )
@@ -333,6 +340,7 @@ class RequirementControlMappingNode:
         controls: list[Control] = []
         mappings: list[ControlMapping] = []
         gaps: list[DocumentationGap] = []
+        candidates: list[CatalogGapCandidate] = []
 
         with repository.transaction():
             allocated: dict[str, str] = {}
@@ -368,8 +376,19 @@ class RequirementControlMappingNode:
                 repository.save(gap)
                 gaps.append(gap)
 
+            for proposed_candidate in proposal.catalog_gap_candidates:
+                candidate = promote_catalog_gap_candidate(
+                    proposed_candidate,
+                    candidate_id=repository.allocate("cgc"),
+                    assessment_id=assessment_id,
+                    generated_by=MAPPING_AGENT,
+                )
+                repository.save(candidate)
+                candidates.append(candidate)
+
         return MappingOutcome(
             controls=tuple(controls),
             mappings=tuple(mappings),
             documentation_gaps=tuple(gaps),
+            catalog_gap_candidates=tuple(candidates),
         )
