@@ -45,6 +45,7 @@ __all__ = [
     "ActorId",
     "AssessmentId",
     "AssetId",
+    "CatalogGapCandidateId",
     "ComponentId",
     "ContextClaimId",
     "ControlId",
@@ -108,6 +109,7 @@ PREFIXES: dict[str, str] = {
     "exe": "ExecutionRecord",
     "eval": "EvaluationResult",
     "mrg": "FindingMergeRecord",
+    "cgc": "CatalogGapCandidate",
 }
 
 
@@ -269,6 +271,7 @@ WorkflowRunId = Annotated[str, _validator("run")]
 ExecutionRecordId = Annotated[str, _validator("exe")]
 EvaluationResultId = Annotated[str, _validator("eval")]
 FindingMergeRecordId = Annotated[str, _validator("mrg")]
+CatalogGapCandidateId = Annotated[str, _validator("cgc")]
 
 
 class IdentifierAllocator(Protocol):

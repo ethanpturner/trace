@@ -171,6 +171,11 @@ def build_parser() -> argparse.ArgumentParser:
     status = assessment_commands.add_parser("status", help="report an assessment's state")
     status.add_argument("assessment_id")
 
+    candidates = assessment_commands.add_parser(
+        "candidates", help="list catalog-gap candidates for the catalog owner"
+    )
+    candidates.add_argument("assessment_id")
+
     archive = assessment_commands.add_parser("archive", help="retire an assessment")
     archive.add_argument("assessment_id")
 
@@ -564,6 +569,7 @@ def run(argv: Sequence[str] | None = None) -> int:
         ("assessment", "create"): _assessment_create,
         ("assessment", "list"): _assessment_list,
         ("assessment", "status"): _assessment_status,
+        ("assessment", "candidates"): _assessment_candidates,
         ("assessment", "archive"): _assessment_archive,
         ("source", "add"): _source_add,
         ("source", "list"): _source_list,
@@ -754,6 +760,36 @@ def _pending_review(handle: AssessmentHandle, workflow_run_id: str) -> PendingHu
         return load_state(handle, workflow_run_id).pending_human_review
     except FileNotFoundError:
         return None
+
+
+def _assessment_candidates(args: argparse.Namespace, service: AssessmentService) -> int:
+    """The DEC-065 listing surface: catalog-gap candidates, for the catalog owner.
+
+    Answers DEC-065's open question about a listing surface ahead of any aggregation: one
+    assessment's candidates, read from the scoped repository. Cross-assessment assembly stays
+    manual, which is the recorded tradeoff.
+    """
+    from trace_ai.domain.catalog_gap_candidate import CatalogGapCandidate
+
+    handle = service.handle(args.assessment_id)
+    candidates = handle.objects.list(CatalogGapCandidate)
+    if not candidates:
+        print("no catalog-gap candidates")
+        return 0
+
+    print(
+        f"{len(candidates)} catalog-gap candidate{'s' if len(candidates) != 1 else ''} "
+        f"(DEC-065): concerns no requirement covers, raw material for the next catalog version. "
+        f"None is a finding."
+    )
+    for candidate in candidates:
+        print()
+        print(f"{candidate.id}  [{candidate.suggested_category}]  {candidate.concern}")
+        print(f"  raised by: {candidate.generated_by}")
+        print(f"  evidence:  {', '.join(candidate.evidence_ids)}")
+        for considered in candidate.nearest_requirements:
+            print(f"  nearest:   {considered.requirement_id} — {considered.why_not}")
+    return 0
 
 
 def _assessment_archive(args: argparse.Namespace, service: AssessmentService) -> int:

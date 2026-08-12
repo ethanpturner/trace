@@ -31,6 +31,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, ClassVar
 
+from trace_ai.domain.catalog_gap_candidate import CatalogGapCandidate
 from trace_ai.domain.control_mapping import ControlMapping
 from trace_ai.domain.critique import Critique
 from trace_ai.domain.documentation_gap import DocumentationGap
@@ -145,6 +146,11 @@ class FindingReviewPackage:
     documentation_gaps: tuple[GapPresentation, ...]
     questions: tuple[Question, ...]
     """Open questions across the assessment, blocking first (`order_for_review`)."""
+
+    catalog_gap_candidates: tuple[CatalogGapCandidate, ...] = ()
+    """Informational only (DEC-065): concerns no requirement covers, shown because under DEC-004
+    the reviewer and the catalog owner are the same person. Not subjects — the checkpoint's
+    completion condition never counts them and no `ReviewerDecision` is asked for."""
 
     reasons_by_object_id: dict[str, tuple[str, ...]] = field(default_factory=dict)
     """Routing reasons per finding (DEC-062), derived from persisted state and stored nowhere. The
@@ -360,6 +366,7 @@ def build_finding_review_package(
         findings=tuple(presented),
         documentation_gaps=gap_presentations,
         questions=tuple(open_questions),
+        catalog_gap_candidates=tuple(repository.list(CatalogGapCandidate)),
         reasons_by_object_id=_finding_routing_reasons(
             handle, {presentation.finding.id for presentation in presented}
         ),
@@ -505,5 +512,28 @@ def render_markdown(package: FindingReviewPackage) -> str:
             marker = "blocking" if question.blocking else question.priority.value
             lines.append(f"- {question.id} ({marker}): {question.question}")
         lines.append("")
+
+    if package.catalog_gap_candidates:
+        lines.append("## Catalog-gap candidates (informational — no decision required)")
+        lines.append("")
+        lines.append(
+            "Concerns the analysis met that no requirement in the active catalog covers "
+            "(DEC-065). Raw material for the next catalog version; none is a finding and none "
+            "awaits a decision here. `trace assessment candidates` lists them any time."
+        )
+        lines.append("")
+        for candidate in package.catalog_gap_candidates:
+            lines.append(f"### {candidate.id}: {candidate.concern}")
+            lines.extend(
+                [
+                    "",
+                    f"- Suggested category: {candidate.suggested_category}",
+                    f"- Raised by: {candidate.generated_by}",
+                    f"- Evidence: {', '.join(candidate.evidence_ids)}",
+                ]
+            )
+            for considered in candidate.nearest_requirements:
+                lines.append(f"- Nearest: {considered.requirement_id} — {considered.why_not}")
+            lines.append("")
 
     return "\n".join(lines).rstrip() + "\n"

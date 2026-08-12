@@ -49,6 +49,7 @@ from trace_ai.domain.actor import Actor
 from trace_ai.domain.assessment import Assessment, AssessmentConfiguration
 from trace_ai.domain.asset import Asset
 from trace_ai.domain.base import DomainModel
+from trace_ai.domain.catalog_gap_candidate import CatalogGapCandidate
 from trace_ai.domain.component import Component
 from trace_ai.domain.context_claim import ContextClaim
 from trace_ai.domain.control import Control
@@ -253,6 +254,9 @@ REGISTRY: dict[str, Registration] = {
     "21a": Registration("FindingMergeRecord", Status.IMPLEMENTED, FindingMergeRecord),
     "22": Registration("Question", Status.IMPLEMENTED, Question),
     "23": Registration("DocumentationGap", Status.IMPLEMENTED, DocumentationGap),
+    # Documented as `23a` for the same reason `10a` and `21a` are: DEC-065 added it after the
+    # rest were numbered. Catalog-maintenance input, never an assessment conclusion.
+    "23a": Registration("CatalogGapCandidate", Status.IMPLEMENTED, CatalogGapCandidate),
     # Was DEFERRED. Section 40 moved it, and states why there: roadmap Stage 4 gates the
     # critic on whether it improves results, and the gate needs the object.
     "24": Registration("Critique", Status.IMPLEMENTED, Critique),
@@ -280,7 +284,10 @@ OBJECT_SECTIONS = [
     "10a",
     *(str(number) for number in range(11, 22)),
     "21a",
-    *(str(number) for number in range(22, 32)),
+    "22",
+    "23",
+    "23a",
+    *(str(number) for number in range(24, 32)),
 ]
 
 
@@ -343,7 +350,7 @@ def test_every_field_row_has_a_description() -> None:
 
 def test_section_forty_parses_into_two_lists() -> None:
     first, later = implementation_priority()
-    assert len(first) == 27, first
+    assert len(first) == 28, first
     assert later == ["PromptDefinition"]
 
 
