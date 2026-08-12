@@ -76,6 +76,9 @@ PACKAGES = (
     # persisted objects, with benchmark matching against the authored truth sets. No model on
     # the default path.
     "trace_ai.services.evaluation",
+    # The interop exports (DEC-072, issue #347): post-approval serializers of approved objects,
+    # TM-BOM first. Not report formats — no prose, no model call, `outputs/` artifacts only.
+    "trace_ai.services.export",
     "trace_ai.infrastructure",
     "trace_ai.infrastructure.filesystem",
     "trace_ai.infrastructure.database",

@@ -176,6 +176,13 @@ def build_parser() -> argparse.ArgumentParser:
     )
     candidates.add_argument("assessment_id")
 
+    export = commands.add_parser("export", help="serialize approved objects to interop formats")
+    export_commands = export.add_subparsers(dest="command")
+    tm_bom = export_commands.add_parser(
+        "tm-bom", help="export the approved model as a TM-BOM document (DEC-072)"
+    )
+    tm_bom.add_argument("assessment_id")
+
     archive = assessment_commands.add_parser("archive", help="retire an assessment")
     archive.add_argument("assessment_id")
 
@@ -571,6 +578,7 @@ def run(argv: Sequence[str] | None = None) -> int:
         ("assessment", "status"): _assessment_status,
         ("assessment", "candidates"): _assessment_candidates,
         ("assessment", "archive"): _assessment_archive,
+        ("export", "tm-bom"): _export_tm_bom,
         ("source", "add"): _source_add,
         ("source", "list"): _source_list,
         ("evidence", "list"): _evidence_list,
@@ -789,6 +797,24 @@ def _assessment_candidates(args: argparse.Namespace, service: AssessmentService)
         print(f"  evidence:  {', '.join(candidate.evidence_ids)}")
         for considered in candidate.nearest_requirements:
             print(f"  nearest:   {considered.requirement_id} — {considered.why_not}")
+    return 0
+
+
+def _export_tm_bom(args: argparse.Namespace, service: AssessmentService) -> int:
+    """DEC-072's first export: approved objects as a TM-BOM document, to `outputs/`.
+
+    The path is printed relative to the assessment's own area, per the output discipline: no
+    absolute paths on screen.
+    """
+    from trace_ai.services.export import ExportError, write_tm_bom
+
+    handle = service.handle(args.assessment_id)
+    try:
+        written = write_tm_bom(handle)
+    except ExportError as refused:
+        print(f"error: {refused}", file=sys.stderr)
+        return 1
+    print(f"wrote {written.name} to the assessment's outputs area")
     return 0
 
 

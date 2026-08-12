@@ -35,6 +35,7 @@ module-name = "trace_ai"
 
 [dependency-groups]
 dev = [
+    "jsonschema>=4.26.0",
     "mypy>=2.3.0",
     "pre-commit>=4.6.1",
     "pytest>=9.1.1",
@@ -43,6 +44,7 @@ dev = [
     "ruff>=0.16.2",
     # types-pyyaml because PyYAML ships no stubs and mypy runs strict. PyYAML itself moved to
     # the runtime dependencies when the document loader began parsing YAML input.
+    "types-jsonschema>=4.26.0.20260518",
     "types-pyyaml>=6.0.12",
 ]
 
