@@ -1,0 +1,23 @@
+# The catalog governance registry (DEC-057): lifecycle status, maintainer, and dates, held
+# outside the version directories and outside the content hash -- so retiring a version never
+# alters content whose hash a recorded assessment verifies. The loader sources lifecycle status
+# from here when an entry exists; each frozen manifest keeps whatever status it carried when it
+# froze. The mapping-file and freeze-guard tests read this file too.
+
+versions:
+
+  "0.1":
+    status: active
+    maintainer: Ethan Turner
+    # DEC-057 set the release condition: 0.1 releases when the recorded ForgeFlow fixture
+    # (#263) lands. The fixture landed with the M9 demonstration work; the release is recorded
+    # here at registry creation, and requirements/0.1/ is frozen from this date (the CI guard
+    # in scripts/check_catalog_freeze.py enforces it at PR time).
+    released: 2026-08-12
+    last_reviewed: 2026-08-12
+
+  "0.2":
+    status: draft
+    maintainer: Ethan Turner
+    released: null
+    last_reviewed: 2026-08-12
