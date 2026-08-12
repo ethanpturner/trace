@@ -43,6 +43,15 @@ class ScorecardRow:
     compliance: float | None = None
     """Injected-instruction compliance rate for an adversarial condition (DEC-075), else None."""
 
+    context_accuracy: float | None = None
+    threat_coverage: float | None = None
+    mapping_accuracy: float | None = None
+    question_usefulness: float | None = None
+    unsupported_claim_rate: float | None = None
+    token_usage: float | None = None
+    """The reserved truth-set and run metrics (#329). None where the scenario authors no
+    truth for the metric or the run reported no measurement — unmeasured, never zero."""
+
     @property
     def precision(self) -> float | None:
         produced = self.matched + self.spurious
@@ -89,6 +98,12 @@ def rows_from_feeds(feeds: Sequence[dict[str, Any]]) -> list[ScorecardRow]:
             schema_valid=feed.get("schema_valid"),
             cost=_metric(feed, "estimated_cost"),
             compliance=_metric(feed, "injected_instruction_compliance_rate"),
+            context_accuracy=_metric(feed, "context_accuracy"),
+            threat_coverage=_metric(feed, "threat_coverage"),
+            mapping_accuracy=_metric(feed, "requirement_mapping_accuracy"),
+            question_usefulness=_metric(feed, "clarifying_question_usefulness"),
+            unsupported_claim_rate=_metric(feed, "unsupported_claim_rate"),
+            token_usage=_metric(feed, "token_usage"),
         )
         for feed in feeds
     ]
@@ -137,6 +152,74 @@ tbody tr.scenario-start td { border-top: 2px solid var(--line); }
 
 def _short_digest(digest: str) -> str:
     return digest.removeprefix("sha256:")[:12]
+
+
+def _count(value: float | None) -> str:
+    return "—" if value is None else f"{value:.0f}"
+
+
+def _truth_section(rows: Sequence[ScorecardRow]) -> str:
+    """The reserved truth-set and run metrics (#329), for the rows that carry any.
+
+    A dash is unmeasured, never zero: the scenario authors no truth for that metric, or the
+    run reported no measurement (offline replays report no tokens). Rows carrying none of the
+    six are omitted — baselines run one model call and author nothing these measure.
+    """
+    carrying = [
+        row
+        for row in rows
+        if any(
+            value is not None
+            for value in (
+                row.context_accuracy,
+                row.threat_coverage,
+                row.mapping_accuracy,
+                row.question_usefulness,
+                row.unsupported_claim_rate,
+                row.token_usage,
+            )
+        )
+    ]
+    if not carrying:
+        return ""
+    lines = []
+    previous_scenario: str | None = None
+    for row in carrying:
+        classes = []
+        if row.scenario != previous_scenario:
+            classes.append("scenario-start")
+            previous_scenario = row.scenario
+        if not row.authoritative:
+            classes.append("ablated")
+        attr = f' class="{" ".join(classes)}"' if classes else ""
+        marker = "" if row.authoritative else " *"
+        lines.append(
+            f"<tr{attr}><td>{html.escape(row.scenario)}</td>"
+            f"<td>{html.escape(row.condition)}{marker}</td>"
+            f"<td>{_pct(row.context_accuracy)}</td><td>{_pct(row.threat_coverage)}</td>"
+            f"<td>{_pct(row.mapping_accuracy)}</td><td>{_pct(row.question_usefulness)}</td>"
+            f"<td>{_pct(row.unsupported_claim_rate)}</td><td>{_count(row.token_usage)}</td></tr>"
+        )
+    return f"""
+<h2>Truth-set coverage</h2>
+<p class="meta">The reserved metrics (#329), each computed only where the scenario authors its
+truth source. Context accuracy, threat coverage, and mapping accuracy are recall against the
+expected-context, expected-threats, and expected-control-mappings files; question usefulness
+covers the expected questions not paired to a documentation gap; the unsupported-claim rate is
+over the report's prose sentences. A dash is unmeasured, never zero — tokens are unreported by
+offline replays and populate on the first live run.</p>
+<div class="scroll">
+<table>
+<thead><tr>
+<th>Scenario</th><th>Condition</th>
+<th>Context</th><th>Threats</th><th>Mappings</th><th>Questions</th>
+<th>Unsupported</th><th>Tokens</th>
+</tr></thead>
+<tbody>
+{chr(10).join(lines)}
+</tbody>
+</table>
+</div>"""
 
 
 def _history_section(history: Sequence[ScorecardSnapshot]) -> str:
@@ -234,6 +317,7 @@ attack (DEC-075) — zero is the target — shown only for adversarial condition
 non-authoritative (baselines and ablations, DEC-012). Run-to-run variance (DEC-077) is a live
 measurement and is not shown for these recorded runs, which are deterministic. Per-item diffs stay
 local (DEC-073).</p>
+{_truth_section(rows)}
 {_history_section(history)}
 </body>
 </html>

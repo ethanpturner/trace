@@ -53,6 +53,7 @@ from trace_ai.services.context.pipeline import context_objects
 from trace_ai.services.critique.input_package import select_review_group
 from trace_ai.services.critique.precedent import select_precedents
 from trace_ai.services.evaluation.metrics import compute_metrics, persist_metrics
+from trace_ai.services.evaluation.report_metrics import compute_report_metrics
 from trace_ai.services.evidence.index import EvidenceIndex
 from trace_ai.services.evidence.indexing import index_document
 from trace_ai.services.execution_ledger import ExecutionLedger, start_run
@@ -933,7 +934,32 @@ class ReportRenderingAdapter:
                 "the rendered report failed its consistency validation; the failed sections are "
                 "preserved under traces/",
             ) from error
+
+        # The report-quality metrics (#329), from the same validation passes that gated
+        # publication. Persisted here rather than in the evaluation node because the outcomes
+        # are in hand now and are not persisted state; the evaluation node's summary lists its
+        # own rows, and the harness reads every row from the repository.
+        run = context.handle.objects.get(WorkflowRun, context.state.workflow_run_id)
+        report_results = compute_report_metrics(
+            context.handle,
+            run,
+            sections_outcome=published.sections_outcome,
+            rendered_outcome=published.rendered_outcome,
+            rendered_markdown=published.report.markdown,
+            approved_count=len(assembled.approved_findings),
+            prose_passages=(
+                sections.executive_summary,
+                sections.system_overview,
+                sections.risk_summary,
+                *(entry.text for entry in sections.limitations),
+            ),
+        )
+        with context.handle.objects.transaction():
+            for result in report_results:
+                context.handle.objects.save(result)
+
         return NodeResult(
+            produced_object_ids=[result.id for result in report_results],
             metadata={
                 "report_path": published.manifest["report"]["path"],
                 "report_hash": published.manifest["report"]["content_hash"],
