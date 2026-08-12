@@ -445,10 +445,10 @@ and measures itself offline. Stage 5's demonstration half (M9), the demo-hardeni
   offline; it replays end to end but does not score against the full truth set in
   `demo/forgeflow/expected/`, and the scorecard says so rather than hiding it. Capturing a full
   run from a live model is milestone M10's closing step.
-- **Recordings for five of eight scenarios.** invoice-agent, oidc-portal, and managed-db-service
-  carry full outcome truth sets and no recording; husky-ai and crypto-wallet carry threat seeds
-  only. Until each has a recording, `trace evaluate --all` names them skipped. That is
-  milestone M11.
+- **Every registered scenario is authored and replays.** All twelve scenarios carry full
+  outcome truth sets and offline recordings (#326, #327, #328), every roadmap Stage 5
+  coverage category has a scenario, and `trace evaluate --all` runs the register with
+  nothing skipped.
 - **No live run has been measured.** Every committed recording — including the end-to-end replay
   — is authored offline against the deterministic model, and says so in its provenance. The
   Anthropic adapter has run against a provider only in an opt-in integration test; cost,

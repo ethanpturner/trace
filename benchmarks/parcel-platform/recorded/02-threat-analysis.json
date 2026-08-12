@@ -1,0 +1,140 @@
+{
+  "threats": [
+    {
+      "title": "Admin functions reached through the customer sign-in path",
+      "description": "Staff reach the admin console with the same SSO accounts and the same sign-in path customers use, with an is_admin flag on the user record enabling functions that can read and edit any customer account, order, and address. An attacker who compromises a staff account — or flips the flag — crosses from the customer path to full customer-data reach with no stronger barrier documented.",
+      "methodology": "stride-scenario-based",
+      "category": [
+        "elevation_of_privilege"
+      ],
+      "threat_actor_ids": [
+        "act-003"
+      ],
+      "affected_component_ids": [
+        "cmp-012"
+      ],
+      "affected_asset_ids": [
+        "ast-001"
+      ],
+      "related_data_flow_ids": [
+        "df-013"
+      ],
+      "preconditions": [
+        "a staff account is compromised through the shared customer sign-in path, or the is_admin flag is set on a compromised record"
+      ],
+      "attack_path": [
+        "compromise an account on the shared sign-in path",
+        "reach the console's functions through the is_admin flag",
+        "read or edit any customer account, order, and address"
+      ],
+      "impact": "Every customer account and address is readable and editable through the customer sign-in path.",
+      "likelihood": null,
+      "confidence": "high",
+      "evidence_ids": [
+        "evd-003"
+      ],
+      "assumption_ids": [],
+      "open_question_ids": []
+    },
+    {
+      "title": "Delivery details exposed through the shared application log",
+      "description": "The notification templates log the full rendered message body — the recipient's name, delivery address, and delivery window — to the shared application log for debugging. Everyone and everything with log access holds customer delivery details, and a delivery window plus an address is a burglary itinerary.",
+      "methodology": "stride-scenario-based",
+      "category": [
+        "information_disclosure"
+      ],
+      "threat_actor_ids": [],
+      "affected_component_ids": [
+        "cmp-009"
+      ],
+      "affected_asset_ids": [
+        "ast-004"
+      ],
+      "related_data_flow_ids": [
+        "df-008"
+      ],
+      "preconditions": [
+        "log access is broader than the set of people who should see delivery details"
+      ],
+      "attack_path": [
+        "read the shared application log",
+        "collect names, addresses, and delivery windows"
+      ],
+      "impact": "Customer names, addresses, and delivery windows are exposed to log readers.",
+      "likelihood": null,
+      "confidence": "high",
+      "evidence_ids": [
+        "evd-003"
+      ],
+      "assumption_ids": [],
+      "open_question_ids": []
+    },
+    {
+      "title": "Warehouse copies accumulate without a stated bound",
+      "description": "The warehouse receives a nightly copy of the orders database, including customer names and full delivery addresses, and how long the copies are kept has not been written down anywhere the team could point to. Every retained copy widens what a warehouse compromise discloses.",
+      "methodology": "stride-scenario-based",
+      "category": [
+        "information_disclosure"
+      ],
+      "threat_actor_ids": [],
+      "affected_component_ids": [
+        "cmp-017"
+      ],
+      "affected_asset_ids": [
+        "ast-001"
+      ],
+      "related_data_flow_ids": [
+        "df-012"
+      ],
+      "preconditions": [
+        "copies are retained without a bound",
+        "an attacker reaches the warehouse"
+      ],
+      "attack_path": [
+        "reach the data warehouse",
+        "read the accumulated nightly copies"
+      ],
+      "impact": "The accumulated history of customer addresses is disclosed at once.",
+      "likelihood": null,
+      "confidence": "medium",
+      "evidence_ids": [
+        "evd-004"
+      ],
+      "assumption_ids": [],
+      "open_question_ids": []
+    },
+    {
+      "title": "Direct access to the data zone bypassing the core services",
+      "description": "The orders database and tracking store are stated to be reachable only from the core zone; what enforces that — network policy or assumed topology — is not described. A workload elsewhere that can reach the data zone bypasses every authorization the core services apply.",
+      "methodology": "stride-scenario-based",
+      "category": [
+        "elevation_of_privilege"
+      ],
+      "threat_actor_ids": [],
+      "affected_component_ids": [
+        "cmp-014"
+      ],
+      "affected_asset_ids": [
+        "ast-001"
+      ],
+      "related_data_flow_ids": [
+        "df-005"
+      ],
+      "preconditions": [
+        "the stated core-zone-only reachability is not enforced by network policy"
+      ],
+      "attack_path": [
+        "reach the data zone from outside the core services",
+        "query the orders database directly"
+      ],
+      "impact": "Customer bookings and addresses are reachable without the services' authorization.",
+      "likelihood": null,
+      "confidence": "medium",
+      "evidence_ids": [
+        "evd-004"
+      ],
+      "assumption_ids": [],
+      "open_question_ids": []
+    }
+  ]
+}

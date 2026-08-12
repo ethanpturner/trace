@@ -1,0 +1,50 @@
+# Helpdesk Translate expected findings
+#
+# Benchmark truth for the findings a correct assessment approves. Both rest on the input
+# document's own affirmative statements — the third-party-integration scenario's point is
+# that the documented shortfalls are about the *relationship* with the provider, not about
+# the provider's own security, which the documents establish nothing about.
+#
+# Nothing in this directory is supplied to Trace during an assessment.
+
+benchmark_version: "1.0"
+scenario: translation-gateway
+catalog_version: "0.1"
+source: system-overview.md
+
+findings:
+  - key: FND-TG-01
+    subject: customer content leaves under unreviewed terms with no retention agreement
+    severity_guidance: high
+    requirement_id: req-TPI-001
+    affected_component: Translation Connector
+    arises_from: system-overview.md sections 1 and 3
+    evidence_establishes:
+      - The full ticket body, including customer-written text and attachment text, is sent
+        to the translation provider.
+      - No agreement covering the provider's retention or secondary use has been
+        established; the provider's standard terms apply and have not been reviewed.
+    supported_by:
+      - system-overview.md
+    notes: >
+      What is sent is documented; what governs it afterwards is documented as nonexistent.
+      The finding asserts the missing agreement the document itself states, never anything
+      about what the provider actually does with the text — which is unknown, and which
+      REJ-TG-01 keeps out of the finding.
+
+  - key: FND-TG-02
+    subject: the connector's helpdesk token is scoped to the whole workspace by convenience
+    severity_guidance: medium
+    requirement_id: req-AUTHZ-002
+    affected_component: Translation Connector
+    arises_from: system-overview.md section 2
+    evidence_establishes:
+      - The workspace API token grants full workspace access, scoped that way during setup
+        because it was convenient.
+      - The integration only reads tickets and writes notes.
+    supported_by:
+      - system-overview.md
+    notes: >
+      A documented over-grant against a stated narrower need. The catalog's false positive —
+      absent per-permission justification over a narrow documented scope — is the opposite
+      case and does not apply.

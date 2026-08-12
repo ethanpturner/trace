@@ -1,0 +1,46 @@
+# Parcelworks expected rejections
+#
+# The claims a correct assessment does not make. A nineteen-component input offers many
+# more silences than a small one, and every one of these asserts an answer the document
+# does not give — scale is the temptation this scenario grades.
+#
+# Nothing in this directory is supplied to Trace during an assessment.
+
+benchmark_version: "1.0"
+scenario: parcel-platform
+catalog_version: "0.1"
+source: platform-overview.md
+
+rejections:
+  - key: REJ-PP-01
+    claim: The data stores are unencrypted at rest.
+    mechanism: common_false_positives
+    requirement_id: req-DATA-001
+    entry: absent encryption detail for a managed service that encrypts by default
+    why: >
+      The object store is documented as managed, and nothing states any store's encryption
+      posture in either direction; the catalog names the at-rest conclusion as a false
+      positive.
+
+  - key: REJ-PP-02
+    claim: The platform lacks a local password policy.
+    mechanism: common_false_positives
+    requirement_id: req-AUTH-001
+    entry: absent local password complexity policy
+    why: >
+      All interactive sign-in is documented as delegated to the company SSO provider; there
+      is no local credential store to have a policy.
+
+  - key: REJ-PP-03
+    claim: Services share a single account on the message bus.
+    mechanism: no_evidence
+    requirement_id: req-SECRET-001
+    entry: The document states services authenticate with per-service credentials issued at deploy time.
+    why: The claim asserts the opposite of the documented mechanism.
+
+  - key: REJ-PP-04
+    claim: Carrier Link exchanges manifests insecurely.
+    mechanism: no_evidence
+    requirement_id: req-DATA-001
+    entry: The document states the exchange runs over the carriers' HTTPS APIs and nothing more.
+    why: Silence about the connector's internals is not evidence of a weakness.

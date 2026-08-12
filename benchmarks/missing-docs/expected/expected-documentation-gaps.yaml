@@ -1,0 +1,54 @@
+# Kiosk Sync Service expected documentation gaps
+#
+# The scenario's graded content: what the note establishes (customer order records, who
+# calls the service) makes three requirements applicable, and the note answers none of them
+# in either direction. Each is a gap, never a finding (DEC-009).
+#
+# Nothing in this directory is supplied to Trace during an assessment.
+
+benchmark_version: "1.0"
+scenario: missing-docs
+catalog_version: "0.1"
+source: service-note.md
+
+documentation_gaps:
+  - key: GAP-KS-01
+    requirement_id: req-DATA-001
+    subject: protection of order records in transit and at rest is not described
+    arises_from: service-note.md
+    missing:
+      - Whether kiosk-to-service traffic is encrypted
+      - Whether stored order records are encrypted at rest
+    supported_by:
+      - service-note.md
+    paired_question: Q-KS-01
+    notes: >
+      The note establishes the records carry customer name, delivery address, and order
+      contents — which makes the requirement applicable — and says nothing about protection.
+
+  - key: GAP-KS-02
+    requirement_id: req-AUTHZ-001
+    subject: how callers are identified and what they may do is not described
+    arises_from: service-note.md
+    missing:
+      - How the service identifies the kiosks and the fulfillment system
+      - Whether anything besides network placement limits who can submit or read records
+    supported_by:
+      - service-note.md
+    paired_question: Q-KS-02
+    notes: >
+      The note names the callers and their network; it does not establish any authentication
+      or authorization, and it does not establish their absence either.
+
+  - key: GAP-KS-03
+    requirement_id: req-DATA-002
+    subject: how long stored order records are kept is not described
+    arises_from: service-note.md
+    missing:
+      - How long order records are retained after fulfillment reads them
+    supported_by:
+      - service-note.md
+    paired_question: Q-KS-03
+    notes: >
+      Records are persisted for an hourly poll; whether they are removed afterwards is not
+      addressed either way.

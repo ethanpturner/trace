@@ -5,7 +5,7 @@ Each scenario's recording replayed with one component removed at a time, against
 run. Regenerated offline from the recorded runs by `scripts/build_ablation.py`; a parenthesised
 number is the change from the authoritative run in points, and a blank means the metric did not
 move. Rows marked `*` are non-authoritative (DEC-012). Metrics and identifiers only — no assessment
-content (DEC-076). Generated 2026-08-11 over 8 scenarios (registry 1.0, catalog 0.1).
+content (DEC-076). Generated 2026-08-11 over 12 scenarios (registry 1.0, catalog 0.1).
 
 | Scenario | Run | False-negative rate | Evidence coverage | False-positive rate | Duplicate rate |
 | --- | --- | --- | --- | --- | --- |
@@ -33,8 +33,24 @@ content (DEC-076). Generated 2026-08-11 over 8 scenarios (registry 1.0, catalog 
 |  | no evidence validation * | 0% | 100% | 0% | 0% |
 |  | no critical review * | 0% | 100% | 0% | 0% |
 |  | no context approval * | 0% | 100% | 0% | 0% |
+| missing-docs | authoritative | 0% | 100% | 0% | 0% |
+|  | no evidence validation * | 0% | 100% | 0% | 0% |
+|  | no critical review * | 0% | 100% | 0% | 0% |
+|  | no context approval * | 0% | 100% | 0% | 0% |
 | oidc-portal | authoritative | 0% | 100% | 0% | 0% |
 |  | no evidence validation * | 0% | 100% | 0% | 0% |
+|  | no critical review * | 0% | 100% | 0% | 0% |
+|  | no context approval * | 0% | 100% | 0% | 0% |
+| order-notifier | authoritative | 0% | 100% | 0% | 50% |
+|  | no evidence validation * | 100% (+100) | 100% | 0% | 0% (-50) |
+|  | no critical review * | 0% | 100% | 0% | 50% |
+|  | no context approval * | 0% | 100% | 0% | 50% |
+| parcel-platform | authoritative | 0% | 100% | 0% | 0% |
+|  | no evidence validation * | 100% (+100) | 100% | 0% | 0% |
+|  | no critical review * | 0% | 100% | 0% | 0% |
+|  | no context approval * | 0% | 100% | 0% | 0% |
+| translation-gateway | authoritative | 0% | 100% | 0% | 0% |
+|  | no evidence validation * | 100% (+100) | 100% | 0% | 0% |
 |  | no critical review * | 0% | 100% | 0% | 0% |
 |  | no context approval * | 0% | 100% | 0% | 0% |
 | unsigned-webhooks | authoritative | 0% | 100% | 0% | 0% |

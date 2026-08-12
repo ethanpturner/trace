@@ -41,6 +41,28 @@ def test_the_registry_parses_and_carries_forgeflow() -> None:
     assert scenarios["forgeflow"].recorded_dir.is_dir()
 
 
+def test_every_scenario_declares_a_category_and_the_stage_5_list_is_covered() -> None:
+    """Issue #328: the registry states which roadmap Stage 5 categories are covered.
+
+    Prompt injection is deliberately absent from the category values: it is carried by the
+    unsigned-webhooks adversarial *condition* (M8), not by a scenario of its own.
+    """
+    scenarios = load_registry()
+    assert all(entry.category for entry in scenarios)
+    covered = {entry.category for entry in scenarios}
+    assert {
+        "delegated-authentication",
+        "managed-platform-controls",
+        "genuine-missing-controls",
+        "contradictory-documentation",
+        "missing-documentation",
+        "ai-service-risks",
+        "third-party-integrations",
+        "duplicate-threats",
+        "large-architecture-input",
+    } <= covered
+
+
 def test_an_unknown_slug_is_refused_with_the_known_list() -> None:
     with pytest.raises(UnknownScenarioError, match="forgeflow"):
         scenario("no-such-scenario")

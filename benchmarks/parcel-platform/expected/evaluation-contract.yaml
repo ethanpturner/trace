@@ -1,0 +1,19 @@
+# Parcelworks evaluation contract
+#
+# Grading policy for the parcel-platform benchmark scenario. Layout is fixed by DEC-027 and
+# specified in docs/architecture/evaluation-plan.md section 5. This file declares no
+# expected-output counts (DEC-028): the expected set is the enumerated content of the
+# expected-*.yaml files in this directory.
+#
+# Nothing in this directory is supplied to Trace during an assessment.
+
+benchmark_version: "1.0"
+
+# The requirements catalog version these expected outputs were authored against (DEC-027).
+catalog_version: "0.1"
+
+matching:
+  # Expected-to-actual matching is semantic, not numeric (DEC-028). Generated identifiers
+  # are scoped to a run and carry no meaning across runs (DEC-018).
+  findings_match_on: [requirement_id, affected_component]
+  allow_consolidation: true

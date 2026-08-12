@@ -1,0 +1,25 @@
+# Order Notifier expected documentation gaps
+#
+# One gap: replay handling. The notes record safe retries during outages and nothing about
+# repeated deliveries of the same callback.
+# Nothing in this directory is supplied to Trace.
+
+benchmark_version: "1.0"
+scenario: order-notifier
+catalog_version: "0.1"
+source: integration-guide.md, operations-notes.md
+
+documentation_gaps:
+  - key: GAP-ON-01
+    requirement_id: req-WEBHOOK-002
+    subject: whether re-processing a repeated callback is prevented or harmless is not described
+    arises_from: operations-notes.md sections 1 and 2
+    missing:
+      - Whether re-processing a previously delivered callback is prevented or idempotent
+    supported_by:
+      - operations-notes.md
+    paired_question: Q-ON-01
+    notes: >
+      With no signature on intake, a captured callback can be re-submitted; whether that
+      repeats the processing is not established either way, and concluding it does would be
+      the DEC-009 failure.

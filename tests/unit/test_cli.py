@@ -1519,6 +1519,10 @@ def test_evaluate_all_names_the_scenarios_it_skips(
     assert "scenario:     forgeflow" in output
     assert "scenario:     husky-ai" in output
     assert "scenario:     crypto-wallet" in output
+    assert "scenario:     missing-docs" in output
+    assert "scenario:     order-notifier" in output
+    assert "scenario:     translation-gateway" in output
+    assert "scenario:     parcel-platform" in output
     assert "scenario:     unsigned-webhooks" in output
     assert "scenario:     contradictory-docs" in output
     assert "scenario:     invoice-agent" in output

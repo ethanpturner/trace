@@ -50,6 +50,10 @@ class Scenario:
     path: Path
     status: str
     conditions: tuple[str, ...] = ()
+    category: str | None = None
+    """The roadmap Stage 5 coverage category this scenario exercises (issue #328). Informative:
+    nothing routes on it, and scenarios may share one — the registry states which categories are
+    covered rather than the filesystem implying it."""
 
     @property
     def input_dir(self) -> Path:
@@ -126,6 +130,7 @@ def load_registry(registry_path: Path | None = None) -> list[Scenario]:
             path=root / str(entry["path"]),
             status=str(entry["status"]),
             conditions=tuple(str(name) for name in entry.get("conditions", ())),
+            category=str(entry["category"]) if entry.get("category") else None,
         )
         for entry in parsed["scenarios"]
     ]

@@ -1,0 +1,24 @@
+{
+  "controls": [],
+  "mappings": [
+    {
+      "threat_id": "thr-002",
+      "requirement_id": "req-LOG-001",
+      "control_keys": [],
+      "existing_control_ids": [],
+      "applicability_status": "applicable",
+      "applicability_reason": "The shared application log receives rendered notification bodies carrying customer delivery details, so keeping sensitive data out of logs applies.",
+      "suppressed_conclusion": null,
+      "suppressed_by": null,
+      "satisfaction_status": "unmet",
+      "evidence_ids": [
+        "evd-003"
+      ],
+      "assumptions": [
+        "No common false positive applies: full message bodies are documented as logged, which is not an absent field-level redaction list where identifier-only logging is documented, nor an absent retention period — the false positives the catalog names."
+      ],
+      "confidence": "high"
+    }
+  ],
+  "documentation_gaps": []
+}

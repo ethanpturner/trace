@@ -1,0 +1,23 @@
+# Helpdesk Translate expected documentation gaps
+#
+# One gap: token custody. Nothing in this directory is supplied to Trace.
+
+benchmark_version: "1.0"
+scenario: translation-gateway
+catalog_version: "0.1"
+source: system-overview.md
+
+documentation_gaps:
+  - key: GAP-TG-01
+    requirement_id: req-SECRET-001
+    subject: where the workspace token is held is not described
+    arises_from: system-overview.md section 2
+    missing:
+      - Where the workspace API token is stored
+      - Whether the token is rotated
+    supported_by:
+      - system-overview.md
+    paired_question: Q-TG-01
+    notes: >
+      That the token exists and what it grants is documented; its custody is not addressed
+      either way.
