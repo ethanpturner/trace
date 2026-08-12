@@ -48,6 +48,7 @@ from trace_ai.workflow.retry import AttemptFailedError, RetryPolicy, run_with_re
 if TYPE_CHECKING:
     from trace_ai.infrastructure.model.profiles import ModelProfile
     from trace_ai.services.critique.input_package import SelectedObjects
+    from trace_ai.services.critique.precedent import PrecedentSelection
     from trace_ai.services.evidence.index import EvidenceIndex
     from trace_ai.services.execution_ledger import ExecutionLedger
     from trace_ai.services.prompts import PromptRegistry
@@ -94,6 +95,11 @@ class CriticalReviewNode:
     profile: ModelProfile
     registry: PromptRegistry
     selected: SelectedObjects
+    precedents: PrecedentSelection | None = None
+    """DEC-064's precedent block for this lineage: context in the package, never a subject —
+    precedent identifiers stay out of `referenceable_ids`, so a critique targeting one fails
+    reference validation like any other out-of-group target."""
+
     budget: Budget | None = None
     retry_policy: RetryPolicy = field(default_factory=RetryPolicy)
 
@@ -127,6 +133,7 @@ class CriticalReviewNode:
             selected=self.selected,
             index=self.index,
             profile=profile,
+            precedents=self.precedents,
         )
         composed = self.registry.compose(
             PROMPT_ID,

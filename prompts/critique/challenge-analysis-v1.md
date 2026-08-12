@@ -65,6 +65,9 @@ You receive one review group:
 - **Evidence assessments** — each with its validation status, its rationale, per-evidence strength,
   and a recommendation.
 - **Documentation gaps** — what could not be verified, and why it matters.
+- **Reviewer precedent** — present only when this assessment has review history: prior findings a
+  reviewer dismissed with a stated reason, matched to this lineage because they share a
+  requirement or an affected component. Context, never subjects — see the precedent rules below.
 - **Evidence references** — the passages behind all of it, fenced below.
 
 This is one threat's chain and it is deliberately all you are given. Objects belonging to other
@@ -138,6 +141,23 @@ indistinguishable from not having looked.
 that stopped it is recorded. If it carries a `downgrade_reason`, validation already lowered it. Do
 not raise a critique that recommends what the pipeline has already done. Read both fields before
 raising `documentation_gap_only` or `unsupported_claim`.
+
+## Handling of reviewer precedent
+
+The package may carry a block labelled `Reviewer precedent (context, not subjects)`. Each entry is
+a finding this assessment's reviewer dismissed — rejected or reclassified — with the reviewer's own
+recorded reason, and it is in front of you because it shares a requirement or an affected component
+with this lineage.
+
+**Test whether the reason applies; never inherit the verdict.** The question a precedent puts to
+you is "this was dismissed for reason X — does X apply here?". If it does, raise the critique and
+cite the reason in your explanation. If it does not, the precedent tells you nothing: a dismissal
+is not evidence, and an analysis is not wrong because its sibling was.
+
+**Precedent identifiers are not targets.** A critique's `subject_id` names an object from this
+lineage. The dismissed finding and its decision are outside the group; naming one as a subject is a
+reference error. If the block lists entries excluded by its cap, that is a statement about what you
+were not shown, not something to act on.
 
 ## Handling of uncertainty
 

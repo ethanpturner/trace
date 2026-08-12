@@ -5255,3 +5255,57 @@ Tradeoffs:
   DEC-061 named.
 - Run-less decisions counting as current means a file-applied decision cannot itself be revisited by
   run; no path needs that today, and the recorded-replay compatibility is worth more.
+
+## DEC-080: The precedent block holds at most ten dismissals, ordered by match tightness then decision recency, and the cap names what it excluded
+
+Date: 2026-08-12
+
+Status: Accepted
+
+Decision:
+
+DEC-064 decided that rationale-bearing dismissals feed the critic as a capped, marked block, and
+left open what the cap is and whether recency or match tightness orders the block. This decides
+both, for the implementing change.
+
+**The cap is ten precedents per review group.** The block exists to put "this was dismissed for
+reason X — does X apply here?" in front of the critic, and ten rationales is already more standing
+challenge than any one lineage can absorb; past that the block stops being precedent and starts
+being a second corpus. The number is a constant in `services/critique/precedent.py`, not
+configuration — DEC-012's reasoning: a knob nobody has evidence to turn is a knob that will be
+turned without evidence.
+
+**Match tightness orders first, recency second.** A precedent sharing a `requirement_id` with the
+lineage's mappings is a tighter match than one matching only on an affected component's name — the
+requirement is the claim's ground, the component is its neighbourhood — so requirement-sharing
+precedents precede name-only ones. Within each class, the most recent dismissal decision comes
+first, because the latest expression of the reviewer's judgment is the one the critic should meet
+first when the cap bites. Ordering is deterministic: decision timestamp, then decision identifier.
+
+**The cap names what it excluded.** When more than ten precedents match, the block carries the
+excluded findings' identifiers — the same rule the evidence fence follows under DEC-064: silent
+truncation reads as "this is everything" when it is not.
+
+Why:
+
+**The open question had to close for the block to be buildable**, and both halves close on
+grounds already in the corpus: the cap follows DEC-012's no-ungoverned-knobs posture, the naming
+of exclusions follows DEC-064's own budget rule, and tightness-first follows from what the block
+is for — the critic tests whether a rationale applies, and a rationale about the same requirement
+applies more often than one about the same component.
+
+Alternatives Considered:
+
+- A character budget instead of a count (the evidence fence's mechanism)
+- Pure recency ordering
+- A configurable cap on `AssessmentConfiguration`
+
+Tradeoffs:
+
+- Any fixed count is arguable; ten is a judgment, not a measurement, and the Stage 4 critic gate
+  is where evidence about it would surface.
+- Tightness-first means a very recent name-only dismissal can be displaced by an old
+  requirement-sharing one. That is intended — but it does mean recency is not a reliable reading
+  of the block's order across match classes.
+- A count cap ignores rationale length, so ten long rationales cost more context than ten short
+  ones. The package's character metadata still reports the real size.
