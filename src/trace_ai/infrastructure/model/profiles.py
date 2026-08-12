@@ -18,15 +18,17 @@ what records them.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from decimal import Decimal
 from typing import Final
 
 from trace_ai.infrastructure.model.seam import Creativity, GenerationSettings
 
 __all__ = [
+    "AGENT_NAMES",
     "DEFAULT_PROFILE",
     "PROFILES",
+    "AgentOverlay",
     "ModelProfile",
     "UnknownModelProfileError",
     "resolve_profile",
@@ -34,6 +36,39 @@ __all__ = [
 
 # Tokens per unit of the published price. Rates are quoted per million tokens.
 _PER_MILLION: Final = Decimal(1_000_000)
+
+# The six model-assisted agents, by node name — the cap's inventory (DEC-030,
+# `tests/unit/test_agent_cap.py`) in the spelling the workflow nodes use. Overlay keys are
+# validated against this set when a profile is constructed (DEC-069): a misspelling, a
+# deterministic node, or a seventh agent is a configuration error refused at load, not mid-run.
+AGENT_NAMES: Final[frozenset[str]] = frozenset(
+    {
+        "context-extraction",
+        "threat-analysis",
+        "requirement-and-control-mapping",
+        "evidence-validation",
+        "critical-review",
+        "report-generation",
+    }
+)
+
+
+@dataclass(frozen=True, slots=True)
+class AgentOverlay:
+    """One agent's model-and-rates override inside a profile (DEC-069).
+
+    The four rates are required alongside the model, never inherited: a substituted model priced
+    at the base model's rates would make `estimated_cost` describe a call that never happened.
+    `settings` overrides the profile's generation settings when given; `Creativity` stays the
+    agent's own declared intent either way and is applied on top by the node.
+    """
+
+    model: str
+    input_cost_per_million: Decimal
+    output_cost_per_million: Decimal
+    cache_read_cost_per_million: Decimal
+    cache_creation_cost_per_million: Decimal
+    settings: GenerationSettings | None = None
 
 
 class UnknownModelProfileError(KeyError):
@@ -77,6 +112,47 @@ class ModelProfile:
     Conservative because the consequence of being wrong is asymmetric: too low drops evidence and
     says which, too high produces a request the provider refuses after the assembly work is done.
     """
+
+    agent_overlays: dict[str, AgentOverlay] = field(default_factory=dict)
+    """Per-agent model-and-settings overrides (DEC-069). Optional; a profile without one behaves
+    exactly as before. Keys are validated against `AGENT_NAMES` at construction — fail at load,
+    never mid-run — and deterministic nodes make no model calls and can carry no override. No
+    shipped profile routes agents to different models until the evaluation harness has measured
+    what a cheaper model costs in quality; the mechanism lands so that measurement is a config
+    edit rather than a design change."""
+
+    def __post_init__(self) -> None:
+        unknown = sorted(set(self.agent_overlays) - AGENT_NAMES)
+        if unknown:
+            known = ", ".join(sorted(AGENT_NAMES))
+            raise ValueError(
+                f"profile {self.name!r} carries overlays for {unknown}, which are not "
+                f"model-assisted agents. The six agents are: {known} (DEC-069, DEC-030's cap). "
+                f"A deterministic node makes no model calls and can carry no override."
+            )
+
+    def for_agent(self, agent_name: str) -> ModelProfile:
+        """The bundle one agent's calls resolve to (DEC-069).
+
+        Without an overlay for `agent_name` this is the profile itself. With one, the model, its
+        rates, and optionally its settings are replaced, and the returned bundle carries no
+        overlays of its own — the adapter sees one resolved bundle, exactly as before. The
+        profile `name` is kept: attribution of *which model answered* rides
+        `ExecutionRecord.model_name`, which snapshots the resolved model per call.
+        """
+        overlay = self.agent_overlays.get(agent_name)
+        if overlay is None:
+            return self
+        return replace(
+            self,
+            model=overlay.model,
+            input_cost_per_million=overlay.input_cost_per_million,
+            output_cost_per_million=overlay.output_cost_per_million,
+            cache_read_cost_per_million=overlay.cache_read_cost_per_million,
+            cache_creation_cost_per_million=overlay.cache_creation_cost_per_million,
+            settings=overlay.settings if overlay.settings is not None else self.settings,
+            agent_overlays={},
+        )
 
     def cost_of(
         self,
