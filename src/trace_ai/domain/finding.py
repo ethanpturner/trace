@@ -137,6 +137,15 @@ class Finding(DomainModel):
     treatment_review_by: date | None = None
     """An optional date to revisit an accepted risk; DEC-061 gives it semantics."""
 
+    content_fingerprint: str | None = None
+    """DEC-066's cross-run identity: `sha256:` over the sorted `requirement_ids` and the sorted,
+    normalized affected-component names — structural fields only, no prose, so it survives
+    rewording. Derived, never authored: the application sets it when the finding is persisted and
+    recomputes it when an identity field changes (`services/findings/fingerprints.py`, reading
+    `services/evaluation/matching.py`'s one implementation). It exists alongside the allocated
+    identifier and never instead of it — DEC-018 identifiers are per-assessment, so this is the
+    handle for "same finding, still open" across runs."""
+
     duplicate_of_id: FindingId | None = None
     reviewer_notes: str | None = None
 

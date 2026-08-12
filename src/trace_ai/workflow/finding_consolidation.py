@@ -50,6 +50,12 @@ from trace_ai.domain.evidence_assessment import EvidenceAssessment, Recommendati
 from trace_ai.domain.finding import Finding
 from trace_ai.domain.outcomes import Outcome, outcome_for
 from trace_ai.domain.question import Question, QuestionPriority, QuestionStatus
+from trace_ai.services.findings.fingerprints import (
+    component_name_index,
+    fingerprinted_finding,
+    fingerprinted_gap,
+    gap_identity_indexes,
+)
 from trace_ai.workflow.phases import Phase
 
 if TYPE_CHECKING:
@@ -498,11 +504,18 @@ def persist_consolidation(
     `consolidate` builds objects with provisional identifiers so it can be tested and reasoned
     about without a store. This is where they become the store's, from the per-assessment counter,
     in one transaction with the insert that consumes them.
+
+    The DEC-066 fingerprint is set here rather than in `consolidate`, because it hashes component
+    *names* and the names live in the store: `consolidate` holds identifiers only. Persist is
+    where DEC-066 says the value is computed, from the matcher's one implementation.
     """
     repository = handle.objects
     findings: list[Finding] = []
     questions: list[Question] = []
     gaps: list[DocumentationGap] = []
+
+    component_names = component_name_index(handle)
+    requirement_by_mapping, component_names_by_mapping = gap_identity_indexes(handle)
 
     with repository.transaction():
         for mapping in outcome.downgraded_mappings:
@@ -511,8 +524,9 @@ def persist_consolidation(
             repository.save(mapping)
 
         for finding in outcome.findings:
-            stored = Finding.model_validate(
-                {**finding.model_dump(), "id": repository.allocate("fnd")}
+            stored = fingerprinted_finding(
+                Finding.model_validate({**finding.model_dump(), "id": repository.allocate("fnd")}),
+                component_names,
             )
             repository.save(stored)
             findings.append(stored)
@@ -525,8 +539,12 @@ def persist_consolidation(
             questions.append(stored_question)
 
         for gap in outcome.documentation_gaps:
-            stored_gap = DocumentationGap.model_validate(
-                {**gap.model_dump(), "id": repository.allocate("gap")}
+            stored_gap = fingerprinted_gap(
+                DocumentationGap.model_validate(
+                    {**gap.model_dump(), "id": repository.allocate("gap")}
+                ),
+                requirement_by_mapping=requirement_by_mapping,
+                component_names_by_mapping=component_names_by_mapping,
             )
             repository.save(stored_gap)
             gaps.append(stored_gap)

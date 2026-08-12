@@ -12,8 +12,10 @@ full credit per matched expectation (DEC-056). Titles and wording are never comp
 The fingerprint is DEC-066's cross-run identity: the DEC-019 hash over the finding's sorted
 requirement identifiers and its affected components' normalized *names* — names rather than
 identifiers, because identifiers are allocated per run and the fingerprint exists to say two runs
-produced the same finding. It is derived from the identity fields whenever needed; it never
-replaces the allocated identifier.
+produced the same finding. It is derived from the identity fields and persisted on the object as
+`content_fingerprint` (`services/findings/fingerprints.py` is the persistence-side caller); it
+never replaces the allocated identifier. This module stays the one implementation, so the stored
+value and the evaluation matcher cannot drift apart.
 """
 
 from __future__ import annotations
@@ -34,6 +36,7 @@ __all__ = [
     "FindingMatchOutcome",
     "GapMatchOutcome",
     "finding_fingerprint",
+    "gap_fingerprint",
     "match_findings",
     "match_gaps",
     "normalized_name",
@@ -58,6 +61,40 @@ def finding_fingerprint(finding: Finding, component_names: Mapping[str, str]) ->
         for component_id in finding.affected_component_ids
     )
     material = "\n".join(["finding", *requirements, *components])
+    return content_hash(material.encode("utf-8"))
+
+
+def gap_fingerprint(
+    gap: DocumentationGap,
+    *,
+    requirement_by_mapping: Mapping[str, str],
+    component_names_by_mapping: Mapping[str, Sequence[str]],
+) -> str:
+    """DEC-066 for a gap: the requirements its related mappings reach, plus their component names.
+
+    A gap carries no requirement or component fields of its own, so identity is resolved the way
+    `match_gaps` already resolves it — through the related mapping (DEC-056's path). A mapping
+    carries no components directly either; `component_names_by_mapping` maps each mapping
+    identifier to the already-normalized component names of the threat it evaluates, which is the
+    resolution DEC-066 left to the implementing change. Related identifiers that are not mappings
+    (threats, components, assets — a converted gap carries all of them) contribute nothing here,
+    because the mapping is what ties a requirement to the ground it was evaluated against.
+    """
+    requirements = sorted(
+        {
+            requirement_by_mapping[related]
+            for related in gap.related_object_ids
+            if related in requirement_by_mapping
+        }
+    )
+    components = sorted(
+        {
+            name
+            for related in gap.related_object_ids
+            for name in component_names_by_mapping.get(related, ())
+        }
+    )
+    material = "\n".join(["gap", *requirements, *components])
     return content_hash(material.encode("utf-8"))
 
 

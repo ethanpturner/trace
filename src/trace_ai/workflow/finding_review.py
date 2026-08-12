@@ -40,6 +40,12 @@ from trace_ai.domain.finding import Finding
 from trace_ai.domain.finding_merge_record import MERGE_FEATURES, MergeDecision
 from trace_ai.domain.outcomes import FINDING_VALIDATION_STATUSES
 from trace_ai.domain.reviewer_decision import ReviewerDecision
+from trace_ai.services.findings.fingerprints import (
+    component_name_index,
+    fingerprinted_finding,
+    fingerprinted_gap,
+    gap_identity_indexes,
+)
 from trace_ai.workflow.checkpoint import CheckpointNode, decided_in_run, decided_object_ids
 from trace_ai.workflow.context_review import ReviewerActionError
 from trace_ai.workflow.finding_dedup import DuplicateGroup, merge_findings, shared_features
@@ -350,9 +356,19 @@ def edit_finding(
     the original is recoverable after the object has moved on, and reviewer edit rate stays
     computable per field. The delta is captured by `ReviewerDecision.capture_edit`, which takes
     both states — a call site cannot record that nothing changed.
+
+    An edit that changes an identity field — the cited requirements or the affected components —
+    recomputes `content_fingerprint`, because it is then a claim about different ground (DEC-066).
+    Every other edit leaves the fingerprint alone, and the recomputation lands in the captured
+    delta like any other consequence of the edit, so an identity change is itself observable.
     """
     stamp = at if at is not None else now()
     edited = _edited(finding, changes, stamp)
+    if (edited.requirement_ids, edited.affected_component_ids) != (
+        finding.requirement_ids,
+        finding.affected_component_ids,
+    ):
+        edited = fingerprinted_finding(edited, component_name_index(handle))
     with handle.objects.transaction() as repository:
         decision = ReviewerDecision.capture_edit(
             decision_id=repository.allocate("dec"),
@@ -605,6 +621,7 @@ def convert_to_documentation_gap(
     finding's own severity is `unassigned` or rates something else entirely.
     """
     stamp = at if at is not None else now()
+    requirement_by_mapping, component_names_by_mapping = gap_identity_indexes(handle)
     with handle.objects.transaction() as repository:
         gap, superseded = finding_to_documentation_gap(
             finding,
@@ -613,6 +630,14 @@ def convert_to_documentation_gap(
             severity=severity,
             requested_evidence=requested_evidence,
             generated_by=GENERATED_BY,
+        )
+        # A conversion creates the gap, and creation is where DEC-066 sets the fingerprint. The
+        # converted gap's related identifiers carry the finding's mappings, so the same
+        # mapping-based resolution applies.
+        gap = fingerprinted_gap(
+            gap,
+            requirement_by_mapping=requirement_by_mapping,
+            component_names_by_mapping=component_names_by_mapping,
         )
         decision = _decision_about(
             handle,
@@ -701,6 +726,10 @@ def merge_by_reviewer(
             generated_by=GENERATED_BY,
             stamped=stamp,
         )
+        # The survivor took the unions, so its identity fields may have widened; the fingerprint
+        # follows them (DEC-066). Idempotent on the marked duplicates, whose identity is unchanged.
+        names = component_name_index(handle)
+        changed = [fingerprinted_finding(finding, names) for finding in changed]
         decisions: list[ReviewerDecision] = []
         for finding in changed:
             repository.save(finding)

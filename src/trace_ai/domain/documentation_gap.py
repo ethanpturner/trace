@@ -92,6 +92,13 @@ class DocumentationGap(DomainModel):
     have been a documentation gap and a gap may have been a finding. `supersedes_id` is the
     same-type mechanism DEC-023 gives for regeneration and does not reach across the boundary."""
 
+    content_fingerprint: str | None = None
+    """DEC-066's cross-run identity, on the same terms as `Finding.content_fingerprint`: `sha256:`
+    over the requirements the gap's related mappings reach and those mappings' normalized
+    component names — resolved through the mapping because a gap asserts nothing structural of
+    its own (DEC-056's path). Derived, set by the application at persist, and never a substitute
+    for the allocated identifier."""
+
     @field_validator("related_object_ids")
     @classmethod
     def _related_ids_are_identifiers(cls, value: list[str]) -> list[str]:

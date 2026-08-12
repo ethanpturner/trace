@@ -1558,6 +1558,7 @@ A finding is provisional until approved by a reviewer.
 | risk_treatment | RiskTreatment | No | Reviewer-assigned response; `undecided` at creation (DEC-060) |
 | treatment_rationale | string | No | Residual-risk statement; required to approve `accept` (DEC-060) |
 | treatment_review_by | date | No | Optional date to revisit an accepted risk (DEC-060) |
+| content_fingerprint | string | No | Derived cross-run identity; set at persist, recomputed on identity-field change (DEC-066) |
 
 ## Minimum validation rules
 
@@ -1801,6 +1802,7 @@ Represents missing or inadequate documentation without asserting that the implem
 | generated_by | string | Yes | Workflow node or reviewer |
 | evidence_ids | list[string] | No | Evidence showing ambiguity or contradiction |
 | converted_from_id | string | No | The object this was converted from (DEC-051) |
+| content_fingerprint | string | No | Derived cross-run identity, resolved through the related mapping (DEC-066) |
 
 ## Important distinction
 
