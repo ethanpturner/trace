@@ -475,7 +475,7 @@ def test_the_command_surface_is_the_one_dec_032_confirms() -> None:
     assert _subcommands("evidence") == {"list", "show", "verify"}
     assert _subcommands("assessment") == {"create", "list", "status", "candidates", "archive"}
     assert _subcommands("findings") == {"show", "review", "approve"}
-    assert _subcommands("report") == {"show"}
+    assert _subcommands("report") == {"show", "rubric"}
 
 
 def test_a_group_with_no_subcommand_prints_help() -> None:
@@ -1523,3 +1523,116 @@ def test_evaluate_all_names_the_scenarios_it_skips(
     assert "scenario:     forgeflow" in output
     assert "scenario:     unsigned-webhooks" in output
     assert "scenario:     contradictory-docs" in output
+
+
+# ------------------------------------------------------------------------------------------
+# The reviewer rubric (issue #334)
+# ------------------------------------------------------------------------------------------
+
+
+def _seed_run(data_root: Path) -> str:
+    """An assessment with a started run, seeded directly: the rubric attaches to a run."""
+    from trace_ai.domain.assessment import default_configuration
+    from trace_ai.infrastructure.database.store import AssessmentStore
+    from trace_ai.services.assessment import AssessmentService
+    from trace_ai.services.execution_ledger import start_run
+
+    with AssessmentStore.at_root(data_root) as store:
+        service = AssessmentService(store, artifact_root=data_root)
+        created = service.create(
+            "Rubric", default_configuration("primary-development", "stride-scenario-based")
+        )
+        start_run(
+            service.handle(created.id),
+            workflow_version="0.1",
+            model_profile="primary-development",
+        )
+        return created.id
+
+
+def _full_scores(**changes: str) -> list[str]:
+    from trace_ai.services.evaluation.report_metrics import RUBRIC_CATEGORIES
+
+    scores = dict.fromkeys(RUBRIC_CATEGORIES, "4") | changes
+    arguments: list[str] = []
+    for category, value in scores.items():
+        arguments += ["--score", f"{category}={value}"]
+    return arguments
+
+
+def test_rubric_records_all_seven_scores_as_reviewer_judgement(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    from trace_ai.domain.evaluation_result import EvaluationResult, EvaluatorType
+    from trace_ai.infrastructure.database.store import AssessmentStore
+    from trace_ai.services.assessment import AssessmentService
+    from trace_ai.services.evaluation.report_metrics import RUBRIC_CATEGORIES
+
+    identifier = _seed_run(data_root)
+    assert (
+        invoke(
+            data_root,
+            "report",
+            "rubric",
+            identifier,
+            "--reviewer",
+            "reviewer-local",
+            "--comments",
+            "readable throughout",
+            *_full_scores(),
+        )
+        == 0
+    )
+    assert "recorded 7 rubric score(s)" in capsys.readouterr().out
+
+    with AssessmentStore.at_root(data_root) as store:
+        service = AssessmentService(store, artifact_root=data_root)
+        rows = service.handle(identifier).objects.list(EvaluationResult)
+    assert {row.metric_name for row in rows} == {
+        f"rubric_{category}" for category in RUBRIC_CATEGORIES
+    }
+    assert all(row.evaluator_type is EvaluatorType.REVIEWER for row in rows)
+    assert all("reviewer-local" in (row.notes or "") for row in rows)
+
+
+def test_rubric_refuses_an_unknown_dimension_in_one_line(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    identifier = _seed_run(data_root)
+    arguments = [*_full_scores()[:-2], "--score", "vibes=3"]
+    assert invoke(data_root, "report", "rubric", identifier, *arguments) == 1
+    error = capsys.readouterr().err.strip()
+    assert error.startswith("error:")
+    assert "vibes" in error
+    assert "\n" not in error
+
+
+def test_rubric_refuses_an_out_of_range_score_in_one_line(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    identifier = _seed_run(data_root)
+    assert invoke(data_root, "report", "rubric", identifier, *_full_scores(report_quality="6")) == 1
+    error = capsys.readouterr().err.strip()
+    assert error.startswith("error:")
+    assert "one to five" in error
+    assert "\n" not in error
+
+
+def test_rubric_refuses_a_malformed_or_duplicated_score(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    identifier = _seed_run(data_root)
+    assert invoke(data_root, "report", "rubric", identifier, "--score", "report_quality") == 1
+    assert "CATEGORY=N" in capsys.readouterr().err
+
+    arguments = [*_full_scores(), "--score", "report_quality=2"]
+    assert invoke(data_root, "report", "rubric", identifier, *arguments) == 1
+    assert "scored twice" in capsys.readouterr().err
+
+
+def test_rubric_without_a_run_exits_non_zero(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    identifier = created(data_root, capsys)
+    assert invoke(data_root, "report", "rubric", identifier, *_full_scores()) == 1
+    assert "no workflow run" in capsys.readouterr().err

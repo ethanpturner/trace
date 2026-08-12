@@ -55,6 +55,7 @@ from trace_ai.services.context.review_file import (
     write_review_file,
 )
 from trace_ai.services.driver import resume_assessment, run_assessment
+from trace_ai.services.evaluation.report_metrics import RUBRIC_CATEGORIES, record_rubric
 from trace_ai.services.evidence.index import EvidenceIndex, EvidenceNotFoundError
 from trace_ai.services.evidence.indexing import IndexingError, index_document
 from trace_ai.services.findings.review_package import (
@@ -495,6 +496,37 @@ def build_parser() -> argparse.ArgumentParser:
         help="print the report's manifest instead of the report",
     )
 
+    report_rubric = report_commands.add_parser(
+        "rubric",
+        help="record the reviewer rubric for the assessment's report",
+        description=(
+            "Records the evaluation plan's section 9 reviewer rubric: seven categories, each "
+            "scored one to five by a person, all in one invocation so a stored rubric is never "
+            "partial. Scores persist as evaluation results marked as reviewer judgement; no "
+            "rubric value is ever computed (design-principles.md section 15)."
+        ),
+    )
+    report_rubric.add_argument("assessment_id")
+    report_rubric.add_argument(
+        "--score",
+        action="append",
+        dest="scores",
+        default=[],
+        metavar="CATEGORY=N",
+        help=(
+            "one category scored one to five, repeatable; the seven categories are "
+            + ", ".join(RUBRIC_CATEGORIES)
+        ),
+    )
+    report_rubric.add_argument(
+        "--comments",
+        help="qualitative comments recorded with every rubric row",
+    )
+    report_rubric.add_argument(
+        "--reviewer",
+        help="who scored the report (default: the operating-system username, DEC-023)",
+    )
+
     reset = commands.add_parser(
         "reset",
         help="return the data root to the fresh-clone state",
@@ -596,6 +628,7 @@ def run(argv: Sequence[str] | None = None) -> int:
         ("findings", "review"): _findings_review,
         ("findings", "approve"): _findings_approve,
         ("report", "show"): _report_show,
+        ("report", "rubric"): _report_rubric,
     }
 
     if args.group is None:
@@ -1512,6 +1545,47 @@ def _report_show(args: argparse.Namespace, service: AssessmentService) -> int:
         filename = filename.removesuffix(".md") + ".manifest.json"
     handle = service.handle(args.assessment_id)
     print(handle.artifacts.read("outputs", filename).decode("utf-8"))
+    return 0
+
+
+def _report_rubric(args: argparse.Namespace, service: AssessmentService) -> int:
+    """Record the section 9 reviewer rubric against the assessment's latest run.
+
+    Parsing stops at `CATEGORY=N`. Which categories exist, that all seven are present, and that
+    every value is one to five are `record_rubric`'s refusals — they surface here as one-line
+    errors rather than being duplicated.
+    """
+    handle = service.handle(args.assessment_id)
+    run = _latest_run(handle)
+    if run is None:
+        print(
+            "error: no workflow run exists to attach the rubric to; run the pipeline first",
+            file=sys.stderr,
+        )
+        return 1
+
+    scores: dict[str, int] = {}
+    for entry in args.scores:
+        category, separator, value = entry.partition("=")
+        if not separator or not category or not value:
+            raise ValueError(f"a score is written CATEGORY=N: {entry!r}")
+        if category in scores:
+            raise ValueError(f"category {category!r} is scored twice")
+        try:
+            scores[category] = int(value)
+        except ValueError:
+            raise ValueError(f"a rubric score is a whole number one to five: {entry!r}") from None
+
+    results = record_rubric(
+        handle,
+        run,
+        scores,
+        reviewer_id=args.reviewer or _default_reviewer(),
+        comments=args.comments,
+    )
+    print(f"recorded {len(results)} rubric score(s) for run {run.id}")
+    for result in results:
+        print(f"  {result.metric_name:<28} {result.metric_value:.0f}")
     return 0
 
 
