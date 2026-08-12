@@ -28,7 +28,7 @@ requires seeing both kinds on one surface with the distinction stated.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, ClassVar
 
 from trace_ai.domain.control_mapping import ControlMapping
@@ -145,6 +145,14 @@ class FindingReviewPackage:
     documentation_gaps: tuple[GapPresentation, ...]
     questions: tuple[Question, ...]
     """Open questions across the assessment, blocking first (`order_for_review`)."""
+
+    reasons_by_object_id: dict[str, tuple[str, ...]] = field(default_factory=dict)
+    """Routing reasons per finding (DEC-062), derived from persisted state and stored nowhere. The
+    same substrate checkpoint 1 carries: a subject absent from the map has no reasons, which is
+    routine rather than exempt, and the values are `ReasonCode` strings."""
+
+    def reasons_for(self, object_id: str) -> tuple[str, ...]:
+        return self.reasons_by_object_id.get(object_id, ())
 
 
 def _location(index: EvidenceIndex, evidence_ids: Sequence[str]) -> tuple[QuotedExcerpt, ...]:
@@ -352,7 +360,36 @@ def build_finding_review_package(
         findings=tuple(presented),
         documentation_gaps=gap_presentations,
         questions=tuple(open_questions),
+        reasons_by_object_id=_finding_routing_reasons(
+            handle, {presentation.finding.id for presentation in presented}
+        ),
     )
+
+
+def _finding_routing_reasons(
+    handle: AssessmentHandle, finding_ids: set[str]
+) -> dict[str, tuple[str, ...]]:
+    """The per-finding routing reasons (DEC-062), derived from persisted state at build time.
+
+    `low_confidence` and `revisit_due` are the codes a finding carries; `injection_flag` derives
+    from the cited source and attaches to the context objects (issue #274), not here. Restricted to
+    the presented findings so a reason never appears for a finding the reviewer is not shown.
+    """
+    from trace_ai.domain.base import now
+    from trace_ai.workflow.reason_codes import (
+        ReasonCode,
+        low_confidence_subjects,
+        revisit_due_findings,
+    )
+
+    reasons: dict[str, list[str]] = {}
+    low_confidence = low_confidence_subjects(handle) & finding_ids
+    revisit: set[str] = revisit_due_findings(handle, now().date()) & finding_ids
+    for object_id in low_confidence:
+        reasons.setdefault(object_id, []).append(ReasonCode.LOW_CONFIDENCE.value)
+    for object_id in revisit:
+        reasons.setdefault(object_id, []).append(ReasonCode.REVISIT_DUE.value)
+    return {object_id: tuple(codes) for object_id, codes in reasons.items()}
 
 
 def render_markdown(package: FindingReviewPackage) -> str:
@@ -373,6 +410,9 @@ def render_markdown(package: FindingReviewPackage) -> str:
     for item in package.findings:
         finding = item.finding
         lines.append(f"## {finding.id}: {finding.title}")
+        reasons = package.reasons_for(finding.id)
+        if reasons:
+            lines.append(f"*Routing: {', '.join(reasons)}* (DEC-062)")
         lines.append("")
         severity = (
             "unassigned — assignment required before approval (DEC-030)"

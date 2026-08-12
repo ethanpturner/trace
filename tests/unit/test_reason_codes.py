@@ -247,6 +247,18 @@ def _decide(handle: AssessmentHandle, subject_id: str) -> None:
         handle.objects.save(decision)
 
 
+def test_low_confidence_flags_a_low_confidence_claim(tmp_path: Path) -> None:
+    """DEC-062: the confidence field derives a typed `low_confidence` reason, no model call."""
+    from trace_ai.workflow.reason_codes import low_confidence_subjects
+
+    store_cm, _service, handle = _handle(tmp_path)
+    try:
+        claim = _assumed_claim(handle, "ctx-001")  # built with confidence LOW
+        assert claim.id in low_confidence_subjects(handle)
+    finally:
+        store_cm.__exit__(None, None, None)
+
+
 def test_an_assumed_claim_is_revisit_due_only_after_it_has_been_decided(tmp_path: Path) -> None:
     """DEC-061: an assumption is a standing subject, flagged when a later run re-presents it.
 
