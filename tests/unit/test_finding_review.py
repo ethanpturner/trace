@@ -279,6 +279,100 @@ def test_a_review_by_date_is_recorded_with_the_treatment(handle: AssessmentHandl
     assert treated.treatment_review_by == date(2027, 1, 1)
 
 
+# ------------------------------------------------------------------------------------------
+# Episodic revisit (DEC-061, DEC-079): an expired acceptance re-enters, run-scoped completion
+# ------------------------------------------------------------------------------------------
+
+
+def _prior_decision(handle: AssessmentHandle, subject_id: str, run_id: str | None) -> None:
+    from trace_ai.domain.reviewer_decision import ReviewerDecision
+
+    decision = ReviewerDecision.model_validate(
+        {
+            "id": handle.objects.allocate("dec"),
+            "assessment_id": handle.assessment_id,
+            "subject_type": "finding",
+            "subject_id": subject_id,
+            "disposition": ReviewDisposition.APPROVE,
+            "reviewer_id": REVIEWER,
+            "created_at": now(),
+            "workflow_run_id": run_id,
+        }
+    )
+    with handle.objects.transaction():
+        handle.objects.save(decision)
+
+
+def test_decided_is_scoped_to_the_current_run(handle: AssessmentHandle) -> None:
+    from trace_ai.workflow.checkpoint import decided_in_run
+
+    finding = a_finding(handle, severity=Severity.HIGH)
+    _prior_decision(handle, finding.id, run_id="run-000")
+    assert finding.id not in decided_in_run(handle, "run-001"), "a prior run's decision is history"
+    assert finding.id in decided_in_run(handle, "run-000"), "its own run counts it"
+
+    other = a_finding(handle, id="fnd-002", severity=Severity.HIGH)
+    _prior_decision(handle, other.id, run_id=None)
+    assert other.id in decided_in_run(handle, "run-001"), "a run-less decision stays current"
+
+
+def test_an_expired_acceptance_is_revisit_due_and_re_enters(handle: AssessmentHandle) -> None:
+    from datetime import date, timedelta
+
+    from trace_ai.workflow.reason_codes import revisit_due_findings
+
+    finding = a_finding(
+        handle,
+        severity=Severity.HIGH,
+        status=ObjectStatus.APPROVED,
+        risk_treatment=RiskTreatment.ACCEPT,
+        treatment_rationale="Owner accepted the residual risk last quarter.",
+        treatment_review_by=date.today() - timedelta(days=1),
+    )
+    _prior_decision(handle, finding.id, run_id="run-000")
+
+    assert finding.id in revisit_due_findings(handle, date.today())
+    # On a new run the finding is a subject again, and its prior-run approval does not satisfy it.
+    state = a_state(handle, [finding.id], run_id="run-001")
+    result = FindingReviewNode().run(NodeContext(handle=handle, state=state))
+    assert result.awaiting_review == [finding.id]
+
+
+def test_an_unexpired_acceptance_does_not_re_prompt(handle: AssessmentHandle) -> None:
+    from datetime import date, timedelta
+
+    from trace_ai.workflow.reason_codes import revisit_due_findings
+
+    finding = a_finding(
+        handle,
+        severity=Severity.HIGH,
+        status=ObjectStatus.APPROVED,
+        risk_treatment=RiskTreatment.ACCEPT,
+        treatment_rationale="Accepted, revisit next year.",
+        treatment_review_by=date.today() + timedelta(days=90),
+    )
+    assert finding.id not in revisit_due_findings(handle, date.today())
+
+
+def test_re_deciding_in_the_current_run_completes_the_revisit(handle: AssessmentHandle) -> None:
+    from datetime import date, timedelta
+
+    finding = a_finding(
+        handle,
+        severity=Severity.HIGH,
+        status=ObjectStatus.APPROVED,
+        risk_treatment=RiskTreatment.ACCEPT,
+        treatment_rationale="Prior acceptance.",
+        treatment_review_by=date.today() - timedelta(days=1),
+    )
+    _prior_decision(handle, finding.id, run_id="run-000")
+    # A fresh decision in the current run satisfies the checkpoint; the prior accept still stands.
+    reject_finding(handle, finding, reviewer_id=REVIEWER, workflow_run_id="run-001")
+    state = a_state(handle, [finding.id], run_id="run-001")
+    result = FindingReviewNode().run(NodeContext(handle=handle, state=state))
+    assert result.awaiting_review == []
+
+
 def test_a_merged_duplicate_cannot_be_approved(handle: AssessmentHandle) -> None:
     a_finding(handle)
     duplicate = a_finding(handle, id="fnd-002", severity=Severity.HIGH, duplicate_of_id="fnd-001")

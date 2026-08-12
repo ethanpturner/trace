@@ -271,12 +271,25 @@ def build_finding_review_package(
     `application` carries the DEC-053 records so each critique can be shown with its outcome;
     without it the critiques still appear, marked as lacking one.
     """
+    from trace_ai.domain.base import now
+    from trace_ai.workflow.reason_codes import revisit_due_findings
+
     repository = handle.objects
 
     provisional = [
         finding
         for finding in repository.list(Finding, status=ObjectStatus.CANDIDATE.value)
         if finding.duplicate_of_id is None
+    ]
+    # DEC-061/DEC-079: an approved finding whose accepted-risk review-by date has passed is a
+    # subject again this run, so it is shown here to be re-decided. It keeps its `accept` until the
+    # reviewer acts; presenting it is what stops the pause being a dead end at `findings show`.
+    shown = {finding.id for finding in provisional}
+    revisit_ids = revisit_due_findings(handle, now().date())
+    provisional += [
+        finding
+        for finding in repository.list(Finding)
+        if finding.id in revisit_ids and finding.id not in shown
     ]
     gaps = repository.list(DocumentationGap, status=ObjectStatus.CANDIDATE.value)
     open_questions = order_for_review(

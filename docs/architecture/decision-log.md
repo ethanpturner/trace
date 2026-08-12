@@ -5187,3 +5187,71 @@ Open Questions:
 
 - If the view ever needs to trigger a re-render of the scorecard or a verify pass, does that cross
   into "driving the pipeline", and does it therefore belong on the CLI rather than a POST route?
+
+## DEC-079: Revisit re-prompts by scoping a checkpoint's completion to the current run; a revisit subject with only prior-run decisions re-enters, its prior decision standing until re-decided
+
+Date: 2026-08-11
+
+Status: Accepted
+
+Decision:
+
+DEC-061 decided that an expired accepted risk "re-routes to checkpoint 2 at the next run" and that
+the prior `accept` decision "is never reverted silently." It did not say how a subject that already
+carries a `ReviewerDecision` re-enters a checkpoint whose completion condition (DEC-005) is a
+decision per subject — an already-decided subject would be skipped. This decides the mechanism.
+
+**A checkpoint's completion is scoped to the current run.** A subject is satisfied when it carries a
+`ReviewerDecision` whose `workflow_run_id` is the run now executing, or a decision with no
+`workflow_run_id` at all — the run-less form recorded replays and file-applied decisions write, kept
+current so those paths are unaffected. A decision made in a *different* run no longer satisfies the
+checkpoint. This changes nothing for an ordinary subject: a candidate object is generated fresh each
+run and decided within it, and a paused run resumes under the same run identifier, so its
+before-pause decisions still count. It changes exactly one thing: a subject carried over from a
+prior run, whose only decisions belong to that prior run, is not treated as decided.
+
+**A revisit subject is added to the checkpoint's subject list, and re-prompts by that scoping.** At
+the finding phase, an approved `Finding` whose `treatment_review_by` (DEC-060) falls on or before the
+run's date joins `candidate_finding_ids`. It is already approved, so its only decision is the prior
+run's `accept`; the current-run scoping means it re-enters checkpoint 2 rather than passing as
+decided. The same holds at checkpoint 1 for a context subject carried across a revision.
+
+**The prior decision is never reverted.** The finding stays `approved` with its recorded `accept`
+and rationale; re-deciding writes a new `ReviewerDecision` in the current run (a new edit or
+approval, DEC-023). Nothing a calendar touches flips a field a person set — the expiry only
+re-presents.
+
+**Every revisit subject carries the `revisit_due` reason (DEC-062).** The reason is derived at
+package-build time: a finding whose `treatment_review_by` has passed, and an assumed `ContextClaim`
+carried across a revision (one already bearing a `ReviewerDecision` and still `assumed`). The reason
+triages attention and never filters; the completion scoping is what makes the subject re-enter.
+
+Why:
+
+**The alternative — a global "any decision ever" rule with a separate re-open marker — needs new
+state on every pause and a second place the completion condition is evaluated.** Run scoping is one
+rule in one place, and it reads naturally: a checkpoint is about *this* run's decisions, and a
+decision from a run that has since been revised is history, not a standing answer. Keeping run-less
+decisions current means the recorded-replay path, which never sets a run identifier, is untouched.
+
+**Expiry is evaluated when the finding phase builds its subjects, not by a clock.** DEC-061 already
+settled that nothing watches time in an episodic local tool (DEC-004, DEC-017); this places the one
+evaluation at the point the run assembles what the reviewer will see, against the run's own date.
+
+Alternatives Considered:
+
+- A global "any decision ever" completion rule plus a `revisit_object_ids` marker on the pause state
+- Reverting `risk_treatment` to `undecided` when the date passes (rejected by DEC-061 already)
+- A scheduler evaluating review-by dates between runs (rejected by DEC-061 already)
+- Scoping completion by decision timestamp rather than run identifier
+
+Tradeoffs:
+
+- Run scoping means a decision genuinely made in a prior run never counts toward a later run's
+  checkpoint. For ordinary subjects this is invisible (they are regenerated per run); the one place
+  it bites is intentional — the revisit.
+- A revisit subject that no reviewer ever re-decides keeps the checkpoint open, which is the point:
+  an expired acceptance surfaces and stays surfaced until a person acts, the honest episodic cost
+  DEC-061 named.
+- Run-less decisions counting as current means a file-applied decision cannot itself be revisited by
+  run; no path needs that today, and the recorded-replay compatibility is worth more.
