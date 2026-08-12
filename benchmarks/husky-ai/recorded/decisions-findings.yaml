@@ -1,0 +1,11 @@
+assessment_id: asm-001
+reviewer: recorded-reviewer
+findings:
+- id: fnd-001
+  severity: medium
+  decision: approve
+  rationale: Where the image-service keys live is affirmatively documented — a blob storage account, not a secret store. The conclusion rests on the stated mechanism, not on silence.
+- id: fnd-002
+  severity: medium
+  decision: approve
+  rationale: The authentication summary names password authentication alone for the boundary in a document that states its own completeness; the environment behind it trains and ships the model production serves.

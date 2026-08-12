@@ -1,0 +1,24 @@
+{
+  "controls": [],
+  "mappings": [
+    {
+      "threat_id": "thr-002",
+      "requirement_id": "req-DATA-001",
+      "control_keys": [],
+      "existing_control_ids": [],
+      "applicability_status": "applicable",
+      "applicability_reason": "The exchange stores hold user accounts, configuration, trading data, and logs — the business and credential data the platform is stated to handle — so encryption in transit and at rest applies.",
+      "suppressed_conclusion": null,
+      "suppressed_by": null,
+      "satisfaction_status": "unverified",
+      "evidence_ids": [
+        "evd-001",
+        "evd-004",
+        "evd-005"
+      ],
+      "assumptions": [],
+      "confidence": "low"
+    }
+  ],
+  "documentation_gaps": []
+}

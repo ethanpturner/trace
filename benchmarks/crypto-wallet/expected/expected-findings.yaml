@@ -1,0 +1,17 @@
+# Wallet and Exchange expected findings
+#
+# This scenario expects no findings. Its two load-bearing statements are hedged by the
+# source itself — wallet-file encryption "should be encrypted at rest; encryption is a
+# wallet option", and TLS termination "has not been re-verified for the current deployment"
+# — and surfacing each as a question or a gap rather than concluding a weakness is what the
+# scenario measures (DEC-009). A successful assessment may produce no findings (DEC-013);
+# the negative cases in expected-rejections.yaml are the graded content.
+#
+# Nothing in this directory is supplied to Trace during an assessment.
+
+benchmark_version: "1.0"
+scenario: crypto-wallet
+catalog_version: "0.1"
+source: system-overview.md
+
+findings: []

@@ -21,6 +21,11 @@ as facts is part of what the scenario measures (DEC-009).
 | --- | --- |
 | `evaluation-contract.yaml` | The grading policy. Declares no counts (DEC-028). |
 | `expected-threats.yaml` | Authored — derived from the source threat list. |
+| `expected-findings.yaml` | Authored (#327) — empty by design: both load-bearing statements are hedged. |
+| `expected-documentation-gaps.yaml` | Authored (#327) — the exchange-store gap. |
+| `expected-questions.yaml` | Authored (#327) — the two unconfirmed assumptions, as questions. |
+| `expected-rejections.yaml` | Authored (#327) — treating either hedge as a fact is the graded failure. |
+| `reviewer-notes.md` | The checkpoint guidance for whoever plays the reviewer. |
 
-The remaining `expected-*.yaml` files from the DEC-027 derivation are not yet authored;
-each will be added here as it lands.
+The scenario also carries a recording (`../recorded/`, #327), so `trace evaluate
+crypto-wallet` replays it offline and scores it against these files.

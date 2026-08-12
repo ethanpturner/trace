@@ -1,0 +1,47 @@
+{
+  "assessments": [
+    {
+      "subject_type": "control_mapping",
+      "subject_id": "map-001",
+      "evidence_ids": [
+        "evd-004"
+      ],
+      "evidence_strengths": {
+        "evd-004": "direct"
+      },
+      "validation_status": "unsupported",
+      "rationale": "The cited passage states encryption should be applied and is a wallet option; it establishes neither that it is enabled nor that it is absent. The answer is obtainable from the wallet's deployment configuration.",
+      "missing_evidence": [
+        "whether wallet-file encryption is enabled and enforced for deployed wallets"
+      ],
+      "contradictions": [],
+      "confidence": "low",
+      "recommendation": "downgrade_to_question",
+      "quoted_text": {}
+    },
+    {
+      "subject_type": "control_mapping",
+      "subject_id": "map-002",
+      "evidence_ids": [
+        "evd-001",
+        "evd-004",
+        "evd-005"
+      ],
+      "evidence_strengths": {
+        "evd-001": "indirect",
+        "evd-004": "indirect",
+        "evd-005": "indirect"
+      },
+      "validation_status": "unsupported",
+      "rationale": "The cited passages establish what the stores hold and that the platform handles business and credential data; nothing describes at-rest protection for either store, and the document itself marks the TLS termination claim as not re-verified.",
+      "missing_evidence": [
+        "whether the MySQL and MongoDB stores encrypt data at rest",
+        "whether TLS termination at the load balancer holds for the current deployment"
+      ],
+      "contradictions": [],
+      "confidence": "low",
+      "recommendation": "documentation_gap",
+      "quoted_text": {}
+    }
+  ]
+}

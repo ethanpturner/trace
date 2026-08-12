@@ -1,0 +1,53 @@
+# Husky AI expected rejections
+#
+# The claims a correct assessment does not make, each with the mechanism that stops it. The
+# security notes document the deployed controls, so most of these are claims the documents
+# affirmatively contradict.
+#
+# Nothing in this directory is supplied to Trace during an assessment.
+
+benchmark_version: "1.0"
+scenario: husky-ai
+catalog_version: "0.1"
+source: system-overview.md, security-notes.md
+
+rejections:
+  - key: REJ-HA-01
+    claim: The training images blob lacks access control.
+    mechanism: no_evidence
+    requirement_id: req-AUTHZ-001
+    entry: >
+      The storage access-control notes affirmatively state access control and authorization
+      on the training, model, and source stores, granted per environment.
+    why: >
+      The claim is contradicted by the documents, not merely unsupported. The tampering
+      threat's precondition — access control fails or is misconfigured — stays a
+      precondition.
+
+  - key: REJ-HA-02
+    claim: The storage accounts are unencrypted at rest.
+    mechanism: common_false_positives
+    requirement_id: req-DATA-001
+    entry: absent encryption detail for a managed service that encrypts by default
+    why: >
+      The stores are Azure storage accounts, a managed service that encrypts by default; the
+      catalog names absent encryption detail for such a service as a false positive.
+
+  - key: REJ-HA-03
+    claim: Administrative access to production is unlogged.
+    mechanism: no_evidence
+    requirement_id: req-LOG-002
+    entry: >
+      The notes affirmatively state that all SSH access attempts through the Bastion are
+      logged to the Bastion Logs storage, successful or not, and that the Bastion is the only
+      administrative path.
+    why: The claim is contradicted by a documented control.
+
+  - key: REJ-HA-04
+    claim: Uploaded user images are written to disk unprotected.
+    mechanism: no_evidence
+    requirement_id: req-DATA-001
+    entry: >
+      The notes affirmatively state uploaded images are held in memory in the Redis cache and
+      not written to disk, chosen to make them difficult to access after the request.
+    why: The claim asserts the opposite of what the documents establish.
