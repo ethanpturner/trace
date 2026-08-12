@@ -36,6 +36,7 @@ from trace_ai.domain.execution import (
 )
 from trace_ai.domain.source_document import SourceDocument, TrustLevel
 from trace_ai.infrastructure.database.store import AssessmentStore
+from trace_ai.infrastructure.model.seam import ModelUsage
 from trace_ai.services.assessment import AssessmentService
 from trace_ai.services.evidence.indexing import index_document
 from trace_ai.services.execution_ledger import (
@@ -487,3 +488,91 @@ def test_evidence_references_are_not_confused_with_execution_records(
     assert ledger.handle.objects.list(EvidenceReference) == []
     assert ledger.handle.objects.list(SourceDocument) == []
     assert len(ledger.handle.objects.list(ExecutionRecord)) == 1
+
+
+# ------------------------------------------------------------------------------------------
+# Cache accounting (DEC-067, issue #342)
+# ------------------------------------------------------------------------------------------
+
+
+def _cached_usage(cache_read: int, cache_creation: int) -> ModelUsage:
+    return ModelUsage(
+        model="claude-opus-5",
+        input_tokens=1_000,
+        output_tokens=200,
+        cache_read_tokens=cache_read,
+        cache_creation_tokens=cache_creation,
+        estimated_cost=Decimal("0.01"),
+    )
+
+
+def test_cache_spans_land_on_the_record_as_their_own_fields(ledger: ExecutionLedger) -> None:
+    """The three input spans are disjoint (DEC-067): nothing folds a cache span into input."""
+    with ledger.record(
+        "extract", node_version="0.1", execution_type=ExecutionType.MODEL
+    ) as execution:
+        execution.record_usage(_cached_usage(5_000, 700))
+        execution.record_usage(_cached_usage(3_000, 300))
+
+    record = ledger.records()[0]
+    assert record.input_tokens == 2_000
+    assert record.cache_read_tokens == 8_000
+    assert record.cache_creation_tokens == 1_000
+
+
+def test_the_rollups_equal_the_sum_of_the_records(ledger: ExecutionLedger) -> None:
+    """Issue #342's first acceptance criterion, for both cache fields."""
+    with ledger.record(
+        "extract", node_version="0.1", execution_type=ExecutionType.MODEL
+    ) as execution:
+        execution.record_usage(_cached_usage(5_000, 700))
+    with ledger.record(
+        "threats", node_version="0.1", execution_type=ExecutionType.MODEL
+    ) as execution:
+        execution.record_usage(_cached_usage(11_000, 0))
+
+    completed = ledger.complete()
+    records = ledger.records()
+    assert completed.total_cache_read_tokens == sum(r.cache_read_tokens or 0 for r in records)
+    assert completed.total_cache_creation_tokens == sum(
+        r.cache_creation_tokens or 0 for r in records
+    )
+    assert completed.total_cache_read_tokens == 16_000
+    assert completed.total_cache_creation_tokens == 700
+
+
+def test_unreported_cache_spans_stay_absent(ledger: ExecutionLedger) -> None:
+    """Absent means "not reported" (DEC-067): a run with no cache activity rolls up to None."""
+    with ledger.record(
+        "extract", node_version="0.1", execution_type=ExecutionType.MODEL
+    ) as execution:
+        execution.record_usage(_cached_usage(0, 0))
+
+    completed = ledger.complete()
+    record = ledger.records()[0]
+    assert record.cache_read_tokens is None
+    assert record.cache_creation_tokens is None
+    assert completed.total_cache_read_tokens is None
+    assert completed.total_cache_creation_tokens is None
+
+
+def test_estimated_cost_applies_the_decided_cache_weights() -> None:
+    """Issue #342's second acceptance criterion: reads at the discount, creation at the premium,
+    uncached input and output at list — the DEC-067 weighted sum, owned by the profile."""
+    from trace_ai.infrastructure.model.profiles import resolve_profile
+
+    profile = resolve_profile("primary-development")
+    cost = profile.cost_of(
+        input_tokens=1_000_000,
+        output_tokens=1_000_000,
+        cache_read_tokens=1_000_000,
+        cache_creation_tokens=1_000_000,
+    )
+    assert cost == (
+        profile.input_cost_per_million
+        + profile.output_cost_per_million
+        + profile.cache_read_cost_per_million
+        + profile.cache_creation_cost_per_million
+    )
+    assert profile.cache_read_cost_per_million < profile.input_cost_per_million
+    assert profile.cache_creation_cost_per_million > profile.input_cost_per_million

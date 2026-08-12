@@ -165,11 +165,18 @@ class ModelUsage:
 
     model: str
     input_tokens: int = 0
+    """Uncached input processed at the full rate. The three input spans are disjoint (DEC-067):
+    cache reads and cache writes are their own counts, never folded in — folding them in is
+    exactly how cost and tokens come to describe different spans of work."""
+
     output_tokens: int = 0
-    cached_input_tokens: int = 0
+    cache_read_tokens: int = 0
     """Input tokens served from a provider-side cache, where the adapter reports them. They are
     counted separately because they are priced separately and because a cache that silently stops
     working looks exactly like one that is working."""
+
+    cache_creation_tokens: int = 0
+    """Input tokens written into the provider's cache, priced at its premium (DEC-067)."""
 
     estimated_cost: Decimal = Decimal(0)
     """Estimated, and named so. It is computed from published rates the adapter holds, not returned
