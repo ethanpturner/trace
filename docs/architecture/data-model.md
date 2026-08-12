@@ -2589,6 +2589,7 @@ Implement these first:
 26. FindingMergeRecord
 27. EvaluationResult
 28. CatalogGapCandidate
+29. PromptDefinition
 
 `SourceObservation` (section 10a) was added by DEC-021 after this list was written, and the list
 was not updated with it. It is not optional: DEC-021 makes contradictions and detected
@@ -2611,7 +2612,11 @@ every mapping call, and the requirement-matcher step needs a loader before eithe
 without a manifest object is a catalog with no integrity marker and no single place that says what
 version was used, so it sits last on this list rather than on the next one.
 
-Add PromptDefinition once the main workflow begins operating.
+`PromptDefinition` (section 29) was the deferred entry — "add it once the main workflow begins
+operating" — and the workflow operates, so issue #349 implemented it: the model matches section
+29, and every composition a run makes snapshots its definition into the assessment's
+`traces/prompts/` area, giving an execution record's prompt identity a queryable counterpart.
+Nothing remains deferred.
 
 `EvaluationResult` (section 28) was on that deferred list and is promoted by DEC-056: the M4
 finding-quality metrics persist their results as rows, because `evaluation-plan.md` section 3

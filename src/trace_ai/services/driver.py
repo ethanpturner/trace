@@ -57,7 +57,7 @@ from trace_ai.services.evidence.index import EvidenceIndex
 from trace_ai.services.evidence.indexing import index_document
 from trace_ai.services.execution_ledger import ExecutionLedger, start_run
 from trace_ai.services.findings.fingerprints import component_name_index
-from trace_ai.services.prompts import PromptRegistry
+from trace_ai.services.prompts.definitions import PersistingPromptRegistry
 from trace_ai.services.report.input_assembly import assemble_report_input
 from trace_ai.services.requirements.loader import current_version, load_catalog
 from trace_ai.workflow.checkpoint import resume
@@ -116,6 +116,7 @@ if TYPE_CHECKING:
     from trace_ai.infrastructure.model.seam import StructuredModel
     from trace_ai.services.assessment import AssessmentHandle, AssessmentService
     from trace_ai.services.critique.input_package import SelectedObjects
+    from trace_ai.services.prompts import PromptRegistry
     from trace_ai.services.report.input_assembly import ReportInput
     from trace_ai.workflow.nodes import Node
 
@@ -1085,7 +1086,10 @@ def build_nodes(
     the table still sees every declared name, and the removal is a property of a marked run, not
     a silent gap in registration (DEC-012, DEC-073).
     """
-    registry = PromptRegistry()
+    # Issue #349: every composition a run makes snapshots its PromptDefinition into the
+    # assessment's traces/prompts/, so an execution record's prompt identity resolves to a
+    # persisted definition. The nodes see an ordinary registry.
+    registry = PersistingPromptRegistry(handle)
     assessment = handle.objects.get(Assessment, handle.assessment_id)
     evidence_handoff = _EvidenceHandoff()
     critique_handoff = _CritiqueHandoff()
