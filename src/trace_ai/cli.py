@@ -58,6 +58,12 @@ from trace_ai.services.driver import resume_assessment, run_assessment
 from trace_ai.services.evaluation.report_metrics import RUBRIC_CATEGORIES, record_rubric
 from trace_ai.services.evidence.index import EvidenceIndex, EvidenceNotFoundError
 from trace_ai.services.evidence.indexing import IndexingError, index_document
+from trace_ai.services.findings.review_file import (
+    FindingReviewFileError,
+    apply_finding_review_file,
+    read_finding_review_file,
+    write_finding_review_file,
+)
 from trace_ai.services.findings.review_package import (
     build_finding_review_package,
     render_markdown,
@@ -83,8 +89,10 @@ from trace_ai.workflow.finding_review import (
     assign_risk_treatment,
     change_severity,
     conclude_finding_review,
+    defer_finding,
     edit_finding,
     reject_finding,
+    request_more_analysis,
 )
 from trace_ai.workflow.limits import LimitExceededError
 from trace_ai.workflow.phases import Phase
@@ -117,6 +125,7 @@ EXPECTED_ERRORS = (
     EvidenceNotFoundError,
     ArtifactStoreError,
     StoreError,
+    FindingReviewFileError,
     ReviewFileError,
     ReviewerActionError,
     UnknownModelProfileError,
@@ -394,6 +403,33 @@ def build_parser() -> argparse.ArgumentParser:
         "--override-rationale",
         dest="override_rationale",
         help="approve past the deterministic gate, with the override recorded (DEC-055)",
+    )
+    findings_review.add_argument(
+        "--defer",
+        action="append",
+        dest="deferred",
+        default=[],
+        metavar="ID",
+        help="defer the decision; the finding stays a candidate and the deferral is the record",
+    )
+    findings_review.add_argument(
+        "--request-more-analysis",
+        action="append",
+        dest="more_analysis",
+        default=[],
+        metavar="ID",
+        help="ask for more analysis; requires --note saying what is missing (section 26)",
+    )
+    findings_review.add_argument(
+        "--export", type=_path, help="write an editable review file to this path"
+    )
+    findings_review.add_argument(
+        "--apply",
+        type=_path,
+        help=(
+            "apply an edited review file; the file reaches every reviewer action — "
+            "conversions, merges, rationale, and remediation included"
+        ),
     )
 
     findings_approve = findings_commands.add_parser(
@@ -1428,6 +1464,28 @@ def _findings_review(args: argparse.Namespace, service: AssessmentService) -> in
     reviewer = args.reviewer or _default_reviewer()
     run = _latest_run(handle)
     run_id = run.id if run is not None else None
+
+    if args.export:
+        package = build_finding_review_package(handle, index=EvidenceIndex(handle))
+        args.export.write_text(write_finding_review_file(package), encoding="utf-8")
+        print(f"wrote {args.export}")
+        print("Edit it, then apply it with `trace findings review --apply`.")
+        return 0
+    if args.apply:
+        document = read_finding_review_file(args.apply.read_text(encoding="utf-8"))
+        if document.get("reviewer"):
+            reviewer = str(document["reviewer"])
+        applied = apply_finding_review_file(
+            handle, document, reviewer_id=reviewer, workflow_run_id=run_id
+        )
+        if not applied:
+            print("no decisions recorded; the file matches what was exported")
+            return 0
+        for decision in applied:
+            print(f"{decision.id}  {decision.disposition:<22} {decision.subject_id}")
+        print(f"{len(applied)} decision(s) recorded as {reviewer}")
+        return 0
+
     findings = {finding.id: finding for finding in handle.objects.list(Finding)}
     decisions = []
 
@@ -1475,6 +1533,26 @@ def _findings_review(args: argparse.Namespace, service: AssessmentService) -> in
             {field: value},
             reviewer_id=reviewer,
             rationale=args.note,
+            workflow_run_id=run_id,
+        )
+        findings[identifier] = updated
+        decisions.append(decision)
+
+    for identifier in args.deferred:
+        finding = _require(findings, identifier, "a finding in this assessment")
+        updated, decision = defer_finding(
+            handle, finding, reviewer_id=reviewer, rationale=args.note, workflow_run_id=run_id
+        )
+        findings[identifier] = updated
+        decisions.append(decision)
+
+    for identifier in args.more_analysis:
+        finding = _require(findings, identifier, "a finding in this assessment")
+        updated, decision = request_more_analysis(
+            handle,
+            finding,
+            reviewer_id=reviewer,
+            rationale=args.note or "",
             workflow_run_id=run_id,
         )
         findings[identifier] = updated

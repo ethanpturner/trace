@@ -39,6 +39,7 @@ from trace_ai.domain.enums import ObjectStatus, Severity
 from trace_ai.domain.evidence_assessment import EvidenceAssessment, SubjectType
 from trace_ai.domain.finding import Finding
 from trace_ai.domain.question import Question, QuestionStatus, order_for_review
+from trace_ai.domain.reviewer_decision import ReviewerDecision
 from trace_ai.domain.source_document import SourceDocument
 from trace_ai.domain.source_observation import SourceObservation
 from trace_ai.domain.threat import Threat
@@ -92,6 +93,10 @@ class FindingPresentation:
     mappings: tuple[ControlMapping, ...]
     critiques: tuple[CritiquePresentation, ...]
     questions: tuple[Question, ...]
+    decisions: tuple[ReviewerDecision, ...] = ()
+    """Decisions already recorded about this finding, oldest first (#351). A deferral or a
+    request for more analysis leaves the finding a subject, and a reviewer returning to it
+    should see what was already said rather than rediscover it."""
 
     @property
     def awaiting_severity(self) -> bool:
@@ -141,6 +146,7 @@ class ReviewSummary:
 class FindingReviewPackage:
     """Everything checkpoint 2 shows, derived from the run and stored nowhere (DEC-017)."""
 
+    assessment_id: str
     summary: ReviewSummary
     findings: tuple[FindingPresentation, ...]
     documentation_gaps: tuple[GapPresentation, ...]
@@ -315,6 +321,10 @@ def build_finding_review_package(
     threats = {threat.id: threat for threat in repository.list(Threat)}
     mappings = {mapping.id: mapping for mapping in repository.list(ControlMapping)}
     outcomes = _outcomes_by_critique(application)
+    decisions_by_subject: dict[str, list[ReviewerDecision]] = {}
+    for recorded in repository.list(ReviewerDecision):
+        if recorded.subject_type == "finding":
+            decisions_by_subject.setdefault(recorded.subject_id, []).append(recorded)
 
     presented: list[FindingPresentation] = []
     for finding in provisional:
@@ -334,6 +344,7 @@ def build_finding_review_package(
                     for question in open_questions
                     if question.related_object_id in related_ids
                 ),
+                decisions=tuple(decisions_by_subject.get(finding.id, ())),
             )
         )
 
@@ -356,6 +367,7 @@ def build_finding_review_package(
         )
 
     return FindingReviewPackage(
+        assessment_id=handle.assessment_id,
         summary=ReviewSummary(
             finding_count=len(presented),
             documentation_gap_count=len(gap_presentations),
@@ -448,6 +460,15 @@ def render_markdown(package: FindingReviewPackage) -> str:
         ):
             if entries:
                 lines.append(f"- {label}: " + "; ".join(entries))
+        if item.decisions:
+            lines.append(
+                "- Decisions recorded: "
+                + "; ".join(
+                    f"{decision.disposition.value} by {decision.reviewer_id}"
+                    + (f" — {decision.rationale}" if decision.rationale else "")
+                    for decision in item.decisions
+                )
+            )
         lines.append("")
 
         for threat in item.threats:
