@@ -61,9 +61,13 @@ class ModelProfile:
     settings: GenerationSettings
     input_cost_per_million: Decimal
     output_cost_per_million: Decimal
-    cached_input_cost_per_million: Decimal
+    cache_read_cost_per_million: Decimal
     """Cache reads are priced at a fraction of input. Separate because prompt caching is the
     capability DEC-014 kept the seam capability-aware for."""
+
+    cache_creation_cost_per_million: Decimal
+    """Cache writes are priced at a premium over input (DEC-067). The profile owns the weight so
+    `estimated_cost` stays a billed-equivalent number, not a raw token count."""
 
     max_input_characters: int = 400_000
     """A conservative ceiling on assembled input, in characters rather than tokens.
@@ -75,18 +79,25 @@ class ModelProfile:
     """
 
     def cost_of(
-        self, *, input_tokens: int, output_tokens: int, cached_input_tokens: int = 0
+        self,
+        *,
+        input_tokens: int,
+        output_tokens: int,
+        cache_read_tokens: int = 0,
+        cache_creation_tokens: int = 0,
     ) -> Decimal:
-        """The estimated cost of one call, from this profile's published rates.
+        """The estimated cost of one call: DEC-067's weighted sum at this profile's rates.
 
-        `cached_input_tokens` is counted separately rather than as a discount on `input_tokens`,
-        because the provider reports them as separate figures and adding them together would make a
-        working cache indistinguishable from a broken one in the ledger.
+        The cache spans are counted separately rather than folded into `input_tokens`, because
+        the provider reports them as separate figures and adding them together would make a
+        working cache indistinguishable from a broken one in the ledger. `input_tokens` here
+        means uncached input at the full rate — the three input spans are disjoint.
         """
         return (
             Decimal(input_tokens) * self.input_cost_per_million
             + Decimal(output_tokens) * self.output_cost_per_million
-            + Decimal(cached_input_tokens) * self.cached_input_cost_per_million
+            + Decimal(cache_read_tokens) * self.cache_read_cost_per_million
+            + Decimal(cache_creation_tokens) * self.cache_creation_cost_per_million
         ) / _PER_MILLION
 
     def with_creativity(self, creativity: Creativity) -> ModelProfile:
@@ -109,7 +120,8 @@ PROFILES: Final[dict[str, ModelProfile]] = {
         settings=GenerationSettings(creativity=Creativity.LOW),
         input_cost_per_million=Decimal("5.00"),
         output_cost_per_million=Decimal("25.00"),
-        cached_input_cost_per_million=Decimal("0.50"),
+        cache_read_cost_per_million=Decimal("0.50"),
+        cache_creation_cost_per_million=Decimal("6.25"),
     ),
     "economy": ModelProfile(
         name="economy",
@@ -118,7 +130,8 @@ PROFILES: Final[dict[str, ModelProfile]] = {
         settings=GenerationSettings(creativity=Creativity.LOW),
         input_cost_per_million=Decimal("3.00"),
         output_cost_per_million=Decimal("15.00"),
-        cached_input_cost_per_million=Decimal("0.30"),
+        cache_read_cost_per_million=Decimal("0.30"),
+        cache_creation_cost_per_million=Decimal("3.75"),
     ),
     "offline-fake": ModelProfile(
         name="offline-fake",
@@ -127,7 +140,8 @@ PROFILES: Final[dict[str, ModelProfile]] = {
         settings=GenerationSettings(creativity=Creativity.LOW),
         input_cost_per_million=Decimal(0),
         output_cost_per_million=Decimal(0),
-        cached_input_cost_per_million=Decimal(0),
+        cache_read_cost_per_million=Decimal(0),
+        cache_creation_cost_per_million=Decimal(0),
     ),
 }
 

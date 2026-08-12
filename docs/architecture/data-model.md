@@ -1985,9 +1985,11 @@ An assessment may have multiple workflow runs due to retries, revisions, or eval
 | model_profile | string | Yes | Model configuration used |
 | prompt_versions | map[string, string] | Yes | Prompt versions |
 | total_model_calls | integer | Yes | Model-call count |
-| total_input_tokens | integer | No | Input-token count |
+| total_input_tokens | integer | No | Uncached input-token count |
 | total_output_tokens | integer | No | Output-token count |
-| estimated_cost | decimal | No | Estimated cost |
+| total_cache_read_tokens | integer | No | Sum of the records' cache reads (DEC-067) |
+| total_cache_creation_tokens | integer | No | Sum of the records' cache writes (DEC-067) |
+| estimated_cost | decimal | No | Estimated cost, cache-weighted (DEC-067) |
 | error_summary | string | No | Final error if failed |
 | ablations | list[string] | No | Ablations the evaluation harness applied; empty for an ordinary run |
 
@@ -2047,19 +2049,21 @@ Represents one workflow node execution or deterministic processing step.
 | error_type | string | No | Error classification |
 | error_message | string | No | Safe error message |
 | duration_ms | integer | No | Execution duration |
-| input_tokens | integer | No | Model input tokens |
+| input_tokens | integer | No | Uncached model input tokens at the full rate |
 | output_tokens | integer | No | Model output tokens |
-| estimated_cost | decimal | No | Estimated call cost |
+| cache_read_tokens | integer | No | Input served from the provider's cache (DEC-067) |
+| cache_creation_tokens | integer | No | Input written into the provider's cache (DEC-067) |
+| estimated_cost | decimal | No | Estimated call cost, cache-weighted (DEC-067) |
 | metadata | map[string, any] | No | Additional execution details |
 
 ## Note on cache accounting
 
-DEC-067 adds `cache_read_tokens` and `cache_creation_tokens` here, with rollups
-`total_cache_read_tokens` and `total_cache_creation_tokens` on `WorkflowRun`; the rows land
-with the implementing change. The three input spans are disjoint — `input_tokens` means
-uncached input at the full rate — and `estimated_cost` is the weighted sum at the model
-profile's rates. Absent cache fields mean "not reported," readable against the capability
-record DEC-014 keeps on this object.
+DEC-067's fields, with rollups `total_cache_read_tokens` and `total_cache_creation_tokens` on
+`WorkflowRun`. The three input spans are disjoint — `input_tokens` means uncached input at the
+full rate — and `estimated_cost` is the weighted sum at the model profile's rates: cache reads
+at the provider's discount, cache creation at its premium, uncached input and output at list.
+Absent cache fields mean "not reported," readable against the capability record DEC-014 keeps
+on this object.
 
 # 28. EvaluationResult
 

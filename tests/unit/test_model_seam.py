@@ -183,14 +183,18 @@ def test_a_profile_prices_a_call_from_its_published_rates() -> None:
     assert profile.cost_of(input_tokens=0, output_tokens=0) == Decimal(0)
 
 
-def test_cached_input_is_priced_separately_rather_than_discounted() -> None:
+def test_cache_spans_are_priced_separately_rather_than_discounted() -> None:
     """Adding cache reads into `input_tokens` would make a working cache indistinguishable from a
     broken one in the ledger — and prompt caching is the capability DEC-014 kept the seam
-    capability-aware for."""
+    capability-aware for. DEC-067: reads at the discount, creation at the premium."""
     profile = resolve_profile("primary-development")
-    cost = profile.cost_of(input_tokens=0, output_tokens=0, cached_input_tokens=1_000_000)
-    assert cost == Decimal("0.50")
-    assert cost < profile.cost_of(input_tokens=1_000_000, output_tokens=0)
+    read = profile.cost_of(input_tokens=0, output_tokens=0, cache_read_tokens=1_000_000)
+    assert read == Decimal("0.50")
+    assert read < profile.cost_of(input_tokens=1_000_000, output_tokens=0)
+
+    creation = profile.cost_of(input_tokens=0, output_tokens=0, cache_creation_tokens=1_000_000)
+    assert creation == Decimal("6.25")
+    assert creation > profile.cost_of(input_tokens=1_000_000, output_tokens=0)
 
 
 def test_creativity_is_the_agent_s_and_the_profile_is_the_run_s() -> None:
@@ -298,3 +302,35 @@ def test_the_fake_declares_no_capabilities_by_default() -> None:
     """A test that depends on prompt caching should have to say so."""
     assert DeterministicModel().capabilities == frozenset()
     assert DeterministicModel(capabilities=frozenset({ModelCapability.PROMPT_CACHING})).capabilities
+
+
+def test_the_adapter_maps_both_cache_spans_disjoint() -> None:
+    """DEC-067's adapter wiring: the provider's cache figures land in their own fields, and the
+    cost is the weighted sum — nothing folds a cache span into `input_tokens`."""
+    from types import SimpleNamespace
+
+    from trace_ai.infrastructure.model.anthropic_adapter import AnthropicModel
+
+    adapter = AnthropicModel("primary-development", client=object())
+    response = SimpleNamespace(
+        model="claude-opus-5",
+        usage=SimpleNamespace(
+            input_tokens=1_000,
+            output_tokens=500,
+            cache_read_input_tokens=20_000,
+            cache_creation_input_tokens=4_000,
+        ),
+    )
+
+    usage = adapter._usage(response, duration=1.0)
+    assert usage.input_tokens == 1_000
+    assert usage.cache_read_tokens == 20_000
+    assert usage.cache_creation_tokens == 4_000
+
+    profile = resolve_profile("primary-development")
+    assert usage.estimated_cost == profile.cost_of(
+        input_tokens=1_000,
+        output_tokens=500,
+        cache_read_tokens=20_000,
+        cache_creation_tokens=4_000,
+    )
