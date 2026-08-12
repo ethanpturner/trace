@@ -1,0 +1,16 @@
+# Kiosk Sync Service expected findings
+#
+# This scenario expects no findings, and that is its entire point: the input is a one-page
+# note that establishes what the system does and almost nothing about its protections.
+# Missing documentation is never proof of a vulnerability (DEC-009) — every silence resolves
+# to a documentation gap and its paired question in this directory, and a run that produces
+# any finding from this input has failed the scenario.
+#
+# Nothing in this directory is supplied to Trace during an assessment.
+
+benchmark_version: "1.0"
+scenario: missing-docs
+catalog_version: "0.1"
+source: service-note.md
+
+findings: []

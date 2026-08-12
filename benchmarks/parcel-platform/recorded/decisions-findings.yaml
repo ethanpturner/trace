@@ -1,0 +1,11 @@
+assessment_id: asm-001
+reviewer: recorded-reviewer
+findings:
+- id: fnd-001
+  severity: high
+  decision: approve
+  rationale: The shared sign-in path and the console's full customer-data reach are both documented; the requirement asks for a stronger path than customer access and the document states there is none.
+- id: fnd-002
+  severity: medium
+  decision: approve
+  rationale: Body-level logging of names, addresses, and delivery windows to the shared log is affirmatively documented.

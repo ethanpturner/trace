@@ -26,6 +26,7 @@ scenarios:
     narrative: demo/forgeflow/forgeflow-scenario.md
     # The full truth set landed across M2 through M4; see demo/forgeflow/expected/README.md.
     status: authored
+    category: baseline
 
   # Scenarios two through four are seeded from externally authored models (issue #225):
   # the truth sets arrive independently written rather than invented alongside the inputs.
@@ -40,6 +41,7 @@ scenarios:
     # of an ML image classifier: 9 threats with CWE/CAPEC links, 22 controls, 3 risks.
     # Outcome truth and recording authored in #327: two findings, two gaps.
     status: authored
+    category: ai-service-risks
 
   - slug: crypto-wallet
     name: Wallet and Exchange
@@ -48,6 +50,7 @@ scenarios:
     # there from the Threat Modeling Cookbook. Outcome truth and recording authored in
     # #327: the hedged-statement zero-finding path — a question and a gap, no findings.
     status: authored
+    category: third-party-integrations
 
   - slug: invoice-agent
     name: Invoice Agent
@@ -57,6 +60,7 @@ scenarios:
     # subject is itself an LLM agent. Outcome-side truth (findings, gaps, questions,
     # rejections) authored in #268; recording authored in #326.
     status: authored
+    category: ai-service-risks
 
   # Scenarios five through eight are original small architectures authored for this project
   # (issue #268, design-principles section 19), each built to exercise one catalog mechanism
@@ -72,7 +76,9 @@ scenarios:
     # A documented-absent webhook signature check: the finding-versus-gap boundary from the
     # documented-negative side. One finding, one gap. Also carries the adversarial condition
     # (DEC-075): a poisoned document with all five payload classes under conditions/adversarial/.
+    # The adversarial condition is the prompt-injection category's coverage (M8, #272).
     status: authored
+    category: genuine-missing-controls
     conditions:
       - adversarial
 
@@ -82,6 +88,7 @@ scenarios:
     # Two supplied documents that disagree about retention: contradiction handling. One
     # finding, one observation, one gap.
     status: authored
+    category: contradictory-documentation
 
   - slug: oidc-portal
     name: Support Portal
@@ -89,6 +96,7 @@ scenarios:
     # Delegated OpenID Connect authentication: the local-password-policy false-positive class.
     # Expects zero findings; the recording (#326) replays the zero-finding path.
     status: authored
+    category: delegated-authentication
 
   - slug: managed-db-service
     name: Metrics Store
@@ -96,8 +104,51 @@ scenarios:
     # Inherited managed-platform encryption: the encryption-detail false-positive class.
     # Expects zero findings; the recording (#326) replays the inherited-control path.
     status: authored
+    category: managed-platform-controls
 
-# Roadmap Stage 5 calls for 8 to 12 scenarios. Every registered scenario is now fully
-# authored — outcome truth and recording — and replays under `trace evaluate --all`.
-# The categories still missing a scenario are #328's; each is added here with the same
-# layout.
+  # Scenarios ten through thirteen close the roadmap Stage 5 coverage list (issue #328):
+  # the categories that had no scenario. Each is an original small architecture in the
+  # #268 pattern — input, full outcome truth, and an offline recording.
+
+  - slug: missing-docs
+    name: Kiosk Sync Service
+    path: benchmarks/missing-docs
+    # A one-page note that establishes what the system does and almost nothing about its
+    # protections: the explicit missing-documentation scenario. Silence resolves to three
+    # gaps and their paired questions, never to a finding (DEC-009).
+    status: authored
+    category: missing-documentation
+
+  - slug: order-notifier
+    name: Order Notifier
+    path: benchmarks/order-notifier
+    # Two documents describe the same unsigned callback endpoint, and the recorded mapping
+    # draws the same conclusion once per document. Dedup merges the two provisional
+    # findings (DEC-052: shared threat, shared requirement); one finding is approved and
+    # the merged duplicate is retained with duplicate_of_id.
+    status: authored
+    category: duplicate-threats
+
+  - slug: translation-gateway
+    name: Helpdesk Translate
+    path: benchmarks/translation-gateway
+    # A connector sending full ticket bodies to an external translation SaaS with no
+    # retention agreement and an admittedly over-scoped workspace token: two documented
+    # findings, one custody gap.
+    status: authored
+    category: third-party-integrations
+
+  - slug: parcel-platform
+    name: Parcelworks
+    path: benchmarks/parcel-platform
+    # The large-architecture input: four zones, eighteen components, six actors. Two
+    # documented findings (admin path, notification logging), two gaps (data-zone
+    # enforcement, warehouse retention) — the size is in the context, not the finding
+    # count.
+    status: authored
+    category: large-architecture-input
+
+# Roadmap Stage 5 calls for 8 to 12 scenarios across its ten coverage categories. Every
+# registered scenario is fully authored — outcome truth and recording — and replays under
+# `trace evaluate --all`; every category is covered, with prompt injection carried by the
+# unsigned-webhooks adversarial condition (M8).

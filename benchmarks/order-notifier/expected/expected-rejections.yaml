@@ -1,0 +1,28 @@
+# Order Notifier expected rejections
+#
+# Nothing in this directory is supplied to Trace during an assessment.
+
+benchmark_version: "1.0"
+scenario: order-notifier
+catalog_version: "0.1"
+source: integration-guide.md, operations-notes.md
+
+rejections:
+  - key: REJ-ON-01
+    claim: The order notifier has two unsigned intake weaknesses, one per document.
+    mechanism: duplicate_consolidation
+    requirement_id: req-WEBHOOK-001
+    entry: >
+      Both documents describe the same endpoint and the same documented absence; DEC-052
+      merges findings sharing a threat and a requirement.
+    why: >
+      Double-reporting one weakness inflates finding count without adding information —
+      the exact volume failure the quality-over-volume principle names. The duplicate is
+      retained with its merge record, not silently dropped.
+
+  - key: REJ-ON-02
+    claim: Channel posting to the operations platform is insecure.
+    mechanism: no_evidence
+    requirement_id: req-DATA-001
+    entry: Posting is documented as using the channel platform's HTTPS API.
+    why: The claim contradicts the one thing the documents establish about posting.

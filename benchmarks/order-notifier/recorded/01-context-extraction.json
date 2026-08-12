@@ -1,0 +1,157 @@
+{
+  "system": {
+    "system_name": "Order Notifier",
+    "system_purpose": "receive order-status callbacks from the payment provider and post updates to the operations channel",
+    "business_criticality": null,
+    "environment": [],
+    "deployment_model": null,
+    "data_classifications": []
+  },
+  "claims": [
+    {
+      "key": "unsigned-guide",
+      "subject_type": "component",
+      "subject_key": "receiver",
+      "predicate": "callback_authenticity",
+      "value": "the receiver processes any well-formed callback; callbacks are not signed, and the provider's optional callback-signing feature is not enabled",
+      "status": "documented",
+      "confidence": "high",
+      "rationale": null,
+      "evidence_ids": [
+        "evd-002"
+      ]
+    },
+    {
+      "key": "unsigned-review",
+      "subject_type": "component",
+      "subject_key": "receiver",
+      "predicate": "callback_intake_review",
+      "value": "the incident review confirmed the callback endpoint accepts unsigned requests from anywhere, and enabling provider signing is tracked in the backlog and not yet scheduled",
+      "status": "documented",
+      "confidence": "high",
+      "rationale": null,
+      "evidence_ids": [
+        "evd-005"
+      ]
+    },
+    {
+      "key": "posting",
+      "subject_type": "component",
+      "subject_key": "poster",
+      "predicate": "channel_posting",
+      "value": "the channel poster posts order status to the operations channel over the channel platform's HTTPS API, and has retried safely during provider outages",
+      "status": "documented",
+      "confidence": "high",
+      "rationale": null,
+      "evidence_ids": [
+        "evd-003",
+        "evd-006"
+      ]
+    }
+  ],
+  "components": [
+    {
+      "key": "receiver",
+      "name": "Callback Receiver",
+      "component_type": "service",
+      "description": "the endpoint registered with the payment provider; processes any well-formed callback it receives",
+      "technology": [],
+      "ownership": null,
+      "deployment_zone": null,
+      "internet_accessible": true,
+      "externally_managed": null,
+      "data_classifications": [],
+      "authentication_mechanisms": [],
+      "authorization_mechanisms": [],
+      "evidence_ids": [
+        "evd-002",
+        "evd-005"
+      ]
+    },
+    {
+      "key": "poster",
+      "name": "Channel Poster",
+      "component_type": "service",
+      "description": "formats the order status and posts it to the operations channel over HTTPS",
+      "technology": [],
+      "ownership": null,
+      "deployment_zone": null,
+      "internet_accessible": null,
+      "externally_managed": null,
+      "data_classifications": [],
+      "authentication_mechanisms": [],
+      "authorization_mechanisms": [],
+      "evidence_ids": [
+        "evd-003"
+      ]
+    }
+  ],
+  "actors": [
+    {
+      "key": "provider",
+      "name": "Payment provider",
+      "actor_type": "external_service",
+      "trust_level": null,
+      "capabilities": [],
+      "authentication_method": null,
+      "evidence_ids": [
+        "evd-001"
+      ]
+    }
+  ],
+  "assets": [
+    {
+      "key": "callbacks",
+      "name": "Order-status callbacks",
+      "asset_type": "operational_data",
+      "description": null,
+      "confidentiality_impact": null,
+      "integrity_impact": null,
+      "availability_impact": null,
+      "data_classification": null,
+      "owner": null,
+      "component_keys": [
+        "receiver"
+      ],
+      "evidence_ids": [
+        "evd-002"
+      ]
+    }
+  ],
+  "data_flows": [
+    {
+      "key": "intake",
+      "name": "Callback intake",
+      "source_component_key": "receiver",
+      "destination_component_key": "poster",
+      "direction": "one_way",
+      "protocol": null,
+      "data_types": [],
+      "authentication": "unknown",
+      "encryption_in_transit": "unknown",
+      "crosses_trust_boundary_keys": [],
+      "internet_exposed": null,
+      "evidence_ids": [
+        "evd-002"
+      ]
+    }
+  ],
+  "trust_boundaries": [
+    {
+      "key": "internet",
+      "name": "Public internet boundary",
+      "boundary_type": "internet_to_application",
+      "description": "the callback endpoint accepts requests from anywhere",
+      "inside_component_keys": [
+        "receiver"
+      ],
+      "outside_component_keys": [],
+      "controls": [],
+      "evidence_ids": [
+        "evd-005"
+      ]
+    }
+  ],
+  "questions": [],
+  "observations": []
+}

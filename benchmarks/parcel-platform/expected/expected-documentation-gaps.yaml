@@ -1,0 +1,39 @@
+# Parcelworks expected documentation gaps
+#
+# Nothing in this directory is supplied to Trace during an assessment.
+
+benchmark_version: "1.0"
+scenario: parcel-platform
+catalog_version: "0.1"
+source: platform-overview.md
+
+documentation_gaps:
+  - key: GAP-PP-01
+    requirement_id: req-DATA-002
+    subject: how long the warehouse's nightly copies are kept is not established
+    arises_from: platform-overview.md section 3
+    missing:
+      - How long the nightly warehouse copies are kept
+      - Whether a lifecycle policy expires old copies
+    supported_by:
+      - platform-overview.md
+    paired_question: Q-PP-01
+    notes: >
+      The document itself states the retention has not been written down anywhere the team
+      could point to. That admission is the gap stated in the team's own words — whether a
+      retention practice exists cannot be determined, and concluding the copies are kept
+      forever would still be the DEC-009 failure.
+
+  - key: GAP-PP-02
+    requirement_id: req-NET-001
+    subject: enforcement of the data zone's core-only reachability is not described
+    arises_from: platform-overview.md section 3
+    missing:
+      - How the data zone is restricted to the core services
+      - Whether the restriction is enforced by network policy or assumed by topology
+    supported_by:
+      - platform-overview.md
+    paired_question: Q-PP-02
+    notes: >
+      Placement is stated; the enforcing mechanism is not addressed either way, and the
+      catalog names concluding from that silence as a false positive.

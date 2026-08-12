@@ -1,0 +1,24 @@
+{
+  "controls": [],
+  "mappings": [
+    {
+      "threat_id": "thr-001",
+      "requirement_id": "req-ADMIN-001",
+      "control_keys": [],
+      "existing_control_ids": [],
+      "applicability_status": "applicable",
+      "applicability_reason": "The admin console is an administrative interface whose reach over customer data is documented, so the requirement's stronger-access-path expectation applies.",
+      "suppressed_conclusion": null,
+      "suppressed_by": null,
+      "satisfaction_status": "unmet",
+      "evidence_ids": [
+        "evd-003"
+      ],
+      "assumptions": [
+        "No common false positive applies: the console's access path is documented as the same SSO accounts and same sign-in path customers use, which is not a stronger path — the conclusion rests on that statement, not on an absent role-based permission matrix or absent operator-onboarding description, which the catalog names as false positives."
+      ],
+      "confidence": "high"
+    }
+  ],
+  "documentation_gaps": []
+}

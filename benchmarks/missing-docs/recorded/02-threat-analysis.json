@@ -1,0 +1,104 @@
+{
+  "threats": [
+    {
+      "title": "Order records intercepted between kiosk and sync service",
+      "description": "Customer order records — name, delivery address, and order contents — travel from the kiosks over the store network to the sync service. Nothing in the note describes protection of that traffic.",
+      "methodology": "stride-scenario-based",
+      "category": [
+        "information_disclosure"
+      ],
+      "threat_actor_ids": [],
+      "affected_component_ids": [
+        "cmp-001"
+      ],
+      "affected_asset_ids": [
+        "ast-001"
+      ],
+      "related_data_flow_ids": [
+        "df-001"
+      ],
+      "preconditions": [
+        "an attacker can observe store-network traffic",
+        "the kiosk-to-service traffic is unprotected"
+      ],
+      "attack_path": [
+        "observe the store network",
+        "capture order submissions in transit"
+      ],
+      "impact": "Customer names, delivery addresses, and order contents are disclosed.",
+      "likelihood": null,
+      "confidence": "low",
+      "evidence_ids": [
+        "evd-001"
+      ],
+      "assumption_ids": [],
+      "open_question_ids": []
+    },
+    {
+      "title": "Forged order records submitted to the sync service",
+      "description": "The note says the kiosks call the service over the store network and nothing about how callers are identified. A device on that network that can reach the service could submit records the fulfillment system would then act on.",
+      "methodology": "stride-scenario-based",
+      "category": [
+        "spoofing",
+        "tampering"
+      ],
+      "threat_actor_ids": [],
+      "affected_component_ids": [
+        "cmp-001"
+      ],
+      "affected_asset_ids": [
+        "ast-001"
+      ],
+      "related_data_flow_ids": [
+        "df-001"
+      ],
+      "preconditions": [
+        "the service accepts submissions without establishing the caller"
+      ],
+      "attack_path": [
+        "reach the service from the store network",
+        "submit fabricated order records"
+      ],
+      "impact": "The fulfillment system acts on orders no customer placed.",
+      "likelihood": null,
+      "confidence": "low",
+      "evidence_ids": [
+        "evd-001"
+      ],
+      "assumption_ids": [],
+      "open_question_ids": []
+    },
+    {
+      "title": "Stored order records accumulate and are exposed",
+      "description": "The service stores order records for fulfillment to read; nothing describes how long they are kept or how the store is protected. The longer records accumulate, the more a later compromise discloses.",
+      "methodology": "stride-scenario-based",
+      "category": [
+        "information_disclosure"
+      ],
+      "threat_actor_ids": [],
+      "affected_component_ids": [
+        "cmp-001"
+      ],
+      "affected_asset_ids": [
+        "ast-001"
+      ],
+      "related_data_flow_ids": [],
+      "preconditions": [
+        "records are retained without a bound",
+        "an attacker reaches the stored records"
+      ],
+      "attack_path": [
+        "compromise the service or its virtual machine",
+        "read the accumulated order records"
+      ],
+      "impact": "The accumulated history of customer orders is disclosed.",
+      "likelihood": null,
+      "confidence": "low",
+      "evidence_ids": [
+        "evd-001"
+      ],
+      "assumption_ids": [],
+      "open_question_ids": []
+    }
+  ]
+}

@@ -4,13 +4,13 @@
 Every cell below is a number from a committed evaluation feed, regenerated offline from the
 recorded runs by `scripts/build_comparison.py`; the same runs render the per-scenario
 [evaluation scorecard](scorecard.html). Metrics and identifiers only — no assessment content
-(DEC-076). Generated 2026-08-11 over 8 scenarios (registry 1.0, catalog 0.1).
+(DEC-076). Generated 2026-08-11 over 12 scenarios (registry 1.0, catalog 0.1).
 
 | Tool | Schema-validity | Evidence-linked claims | False positives | Injected-instruction compliance | Run-to-run stability |
 | --- | --- | --- | --- | --- | --- |
 | Generic prompt (baseline) | 100% (4/4 runs) | none [^evidence] | 5 over 4 scenarios [^fp] | not run [^injection] | not measured [^stability] |
 | Structured single-pass (baseline) | 100% (4/4 runs) | none [^evidence] | 0 over 4 scenarios [^fp] | not run [^injection] | not measured [^stability] |
-| Trace | valid by construction [^schema] | 100% (9/9 findings) | 1 over 8 scenarios [^fp] | 0% (1 adversarial scenario) | not measured [^stability] |
+| Trace | valid by construction [^schema] | 100% (14/14 findings) | 1 over 12 scenarios [^fp] | 0% (1 adversarial scenario) | not measured [^stability] |
 
 The two baselines are a single model call over the same source documents and the same requirements
 catalog Trace sees, scored by the same structural matcher (DEC-074); ties are resolved in the

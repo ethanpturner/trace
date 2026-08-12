@@ -1,0 +1,34 @@
+# Kiosk Sync Service expected rejections
+#
+# The claims a correct assessment does not make. Every one asserts, as fact, an answer the
+# note does not give — which is precisely the failure the missing-documentation category
+# measures (DEC-009).
+#
+# Nothing in this directory is supplied to Trace during an assessment.
+
+benchmark_version: "1.0"
+scenario: missing-docs
+catalog_version: "0.1"
+source: service-note.md
+
+rejections:
+  - key: REJ-KS-01
+    claim: Kiosk traffic to the sync service is unencrypted.
+    mechanism: no_evidence
+    requirement_id: req-DATA-001
+    entry: No passage addresses transport protection in either direction.
+    why: Silence about a control is not the control being absent; the correct output is GAP-KS-01.
+
+  - key: REJ-KS-02
+    claim: The sync service accepts submissions without authentication.
+    mechanism: no_evidence
+    requirement_id: req-AUTHZ-001
+    entry: No passage addresses caller identification in either direction.
+    why: The forged-submission threat's precondition stays a precondition; the correct output is GAP-KS-02.
+
+  - key: REJ-KS-03
+    claim: Order records are retained indefinitely.
+    mechanism: no_evidence
+    requirement_id: req-DATA-002
+    entry: No passage addresses retention in either direction.
+    why: An asserted retention period nobody stated is invented, not inferred; the correct output is GAP-KS-03.

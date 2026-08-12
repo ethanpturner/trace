@@ -1,0 +1,22 @@
+{
+  "controls": [],
+  "mappings": [
+    {
+      "threat_id": "thr-001",
+      "requirement_id": "req-DATA-001",
+      "control_keys": [],
+      "existing_control_ids": [],
+      "applicability_status": "applicable",
+      "applicability_reason": "Order records carry customer name, delivery address, and order contents — sensitive data in transit and at rest — so encryption applies.",
+      "suppressed_conclusion": null,
+      "suppressed_by": null,
+      "satisfaction_status": "unverified",
+      "evidence_ids": [
+        "evd-001"
+      ],
+      "assumptions": [],
+      "confidence": "low"
+    }
+  ],
+  "documentation_gaps": []
+}

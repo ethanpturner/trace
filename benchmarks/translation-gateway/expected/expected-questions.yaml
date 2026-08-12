@@ -1,0 +1,17 @@
+# Helpdesk Translate expected questions
+#
+# Nothing in this directory is supplied to Trace during an assessment.
+
+benchmark_version: "1.0"
+scenario: translation-gateway
+source: system-overview.md
+
+questions:
+  - key: Q-TG-01
+    subject: token custody
+    asks: Where is the workspace API token stored, and is it rotated?
+    arises_from: system-overview.md section 2
+    requirement_id: req-SECRET-001
+    changes: whether GAP-TG-01 resolves to a satisfied requirement or a finding
+    priority: medium
+    blocking: false

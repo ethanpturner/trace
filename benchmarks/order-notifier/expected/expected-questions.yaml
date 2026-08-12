@@ -1,0 +1,17 @@
+# Order Notifier expected questions
+#
+# Nothing in this directory is supplied to Trace during an assessment.
+
+benchmark_version: "1.0"
+scenario: order-notifier
+source: integration-guide.md, operations-notes.md
+
+questions:
+  - key: Q-ON-01
+    subject: replay handling
+    asks: Is re-processing of a previously delivered callback prevented, or is the processing idempotent?
+    arises_from: operations-notes.md section 2
+    requirement_id: req-WEBHOOK-002
+    changes: whether GAP-ON-01 resolves to a satisfied requirement or a finding
+    priority: medium
+    blocking: false
