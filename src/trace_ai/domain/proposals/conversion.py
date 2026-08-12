@@ -83,12 +83,17 @@ def convert_proposal(
     assessment_id: str,
     created_at: datetime,
     generated_by: str,
+    source_origin: SourceOrigin = SourceOrigin.UPLOADED_DOCUMENT,
 ) -> ConvertedContext:
     """Allocate identifiers and build domain objects from a validated proposal.
 
     `proposal.validate_references()` is called first: an unresolved key has to stop the conversion
     before any identifier is allocated, because a counter is monotonic and a half-converted proposal
     would leave gaps that read as deleted objects.
+
+    `source_origin` is `uploaded_document` for the extraction agent's proposals and
+    `structured_input` for a deterministic parser's (DEC-070): the distinction that matters —
+    mechanical versus model-extracted — is exactly the one section 4.4 already draws.
     """
     proposal.validate_references()
 
@@ -113,7 +118,7 @@ def convert_proposal(
             | {
                 "id": allocate(proposed.key, "cmp"),
                 "assessment_id": assessment_id,
-                "source_origin": SourceOrigin.UPLOADED_DOCUMENT,
+                "source_origin": source_origin,
                 "status": ObjectStatus.CANDIDATE,
             }
         )
@@ -126,7 +131,7 @@ def convert_proposal(
             | {
                 "id": allocate(proposed.key, "act"),
                 "assessment_id": assessment_id,
-                "source_origin": SourceOrigin.UPLOADED_DOCUMENT,
+                "source_origin": source_origin,
             }
         )
         for proposed in proposal.actors
@@ -138,7 +143,7 @@ def convert_proposal(
             | {
                 "id": allocate(proposed.key, "ast"),
                 "assessment_id": assessment_id,
-                "source_origin": SourceOrigin.UPLOADED_DOCUMENT,
+                "source_origin": source_origin,
                 "status": ObjectStatus.CANDIDATE,
                 "component_ids": [
                     resolve(key, described_as=f"asset {proposed.key!r}")
@@ -159,7 +164,7 @@ def convert_proposal(
             | {
                 "id": allocate(proposed.key, "tb"),
                 "assessment_id": assessment_id,
-                "source_origin": SourceOrigin.UPLOADED_DOCUMENT,
+                "source_origin": source_origin,
                 "status": ObjectStatus.CANDIDATE,
                 "inside_component_ids": [
                     resolve(key, described_as=f"trust boundary {proposed.key!r}")
@@ -187,7 +192,7 @@ def convert_proposal(
             | {
                 "id": allocate(proposed.key, "df"),
                 "assessment_id": assessment_id,
-                "source_origin": SourceOrigin.UPLOADED_DOCUMENT,
+                "source_origin": source_origin,
                 "status": ObjectStatus.CANDIDATE,
                 "source_component_id": resolve(
                     proposed.source_component_key, described_as=f"data flow {proposed.key!r}"
@@ -215,7 +220,7 @@ def convert_proposal(
                     if proposed.subject_key is None
                     else resolve(proposed.subject_key, described_as=f"claim {proposed.key!r}")
                 ),
-                "source_origin": SourceOrigin.UPLOADED_DOCUMENT,
+                "source_origin": source_origin,
                 "generated_by": generated_by,
                 "created_at": created_at,
                 "updated_at": created_at,
