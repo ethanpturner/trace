@@ -102,6 +102,27 @@ class Severity(StrEnum):
     UNASSIGNED = "unassigned"
 
 
+class RiskTreatment(StrEnum):
+    """The reviewer's chosen response to a finding's risk (section 4.8, DEC-060).
+
+    A closed vocabulary in the DEC-036 sense — the values are named, not illustrated, like
+    `DataFlow.direction` — so extending it is a design change. Findings are created `UNDECIDED`,
+    and unlike severity `UNDECIDED` may survive approval: treatment is often the system owner's
+    call to make after reading the report, and a gate would manufacture a business decision nobody
+    took (DEC-060). The one gate is that `ACCEPT` without a `treatment_rationale` is refused, the
+    residual-risk statement being the thing an accepted risk cannot be recorded without.
+
+    The values name the *chosen response*, present-tense, not work already done: there is no
+    `eliminated`, because a weakness that no longer exists produces no finding.
+    """
+
+    UNDECIDED = "undecided"
+    MITIGATE = "mitigate"
+    ACCEPT = "accept"
+    TRANSFER = "transfer"
+    AVOID = "avoid"
+
+
 class ReviewDisposition(StrEnum):
     """What the system records a reviewer as having done (section 4.6).
 

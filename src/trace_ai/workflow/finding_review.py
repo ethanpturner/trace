@@ -34,7 +34,7 @@ from typing import TYPE_CHECKING, Any, Final
 
 from trace_ai.domain.base import now
 from trace_ai.domain.conversions import finding_to_documentation_gap, finding_to_question
-from trace_ai.domain.enums import ObjectStatus, ReviewDisposition, Severity
+from trace_ai.domain.enums import ObjectStatus, ReviewDisposition, RiskTreatment, Severity
 from trace_ai.domain.execution import ExecutionType
 from trace_ai.domain.finding import Finding
 from trace_ai.domain.finding_merge_record import MERGE_FEATURES, MergeDecision
@@ -47,7 +47,7 @@ from trace_ai.workflow.phases import Phase
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
-    from datetime import datetime
+    from datetime import date, datetime
 
     from trace_ai.domain.assessment import Assessment
     from trace_ai.domain.documentation_gap import DocumentationGap
@@ -61,6 +61,7 @@ __all__ = [
     "add_remediation_guidance",
     "add_reviewer_rationale",
     "approve_finding",
+    "assign_risk_treatment",
     "change_severity",
     "conclude_finding_review",
     "convert_to_documentation_gap",
@@ -225,6 +226,15 @@ def approve_finding(
             f"{finding.id} carries severity 'unassigned' and cannot be approved (DEC-030). "
             f"The reviewer assigns severity at this checkpoint; change it first, then approve."
         )
+    if finding.risk_treatment is RiskTreatment.ACCEPT and not (
+        finding.treatment_rationale and finding.treatment_rationale.strip()
+    ):
+        raise ReviewerActionError(
+            f"{finding.id} accepts its risk with no treatment_rationale and cannot be approved "
+            f"(DEC-060). An accepted risk records the residual-risk statement: what remains "
+            f"exposed and why that is tolerable. Assign the rationale, then approve. Every other "
+            f"treatment, and an undecided one, approves without it."
+        )
     if finding.duplicate_of_id is not None:
         raise ReviewerActionError(
             f"{finding.id} was merged into {finding.duplicate_of_id}; the canonical finding is "
@@ -376,6 +386,41 @@ def change_severity(
         handle,
         finding,
         {"severity": severity},
+        reviewer_id=reviewer_id,
+        rationale=rationale,
+        workflow_run_id=workflow_run_id,
+        at=at,
+    )
+
+
+def assign_risk_treatment(
+    handle: AssessmentHandle,
+    finding: Finding,
+    treatment: RiskTreatment,
+    *,
+    rationale: str | None = None,
+    review_by: date | None = None,
+    reviewer_id: str,
+    workflow_run_id: str | None = None,
+    at: datetime | None = None,
+) -> tuple[Finding, ReviewerDecision]:
+    """Assign the reviewer's risk treatment — an `edit`, not a disposition of its own (DEC-060).
+
+    The neighbouring judgment to severity, and recorded the same way (DEC-023, DEC-030): the delta
+    carries the change, no `ReviewDisposition` value is added. The accept-needs-a-rationale rule
+    belongs to the approval gate, not here — a reviewer may set `accept` and supply the
+    residual-risk statement in the same call or a later one, and the approval is refused until it
+    is present, exactly as an unassigned severity refuses approval without blocking assignment.
+    """
+    changes: dict[str, Any] = {"risk_treatment": treatment}
+    if rationale is not None:
+        changes["treatment_rationale"] = rationale
+    if review_by is not None:
+        changes["treatment_review_by"] = review_by
+    return edit_finding(
+        handle,
+        finding,
+        changes,
         reviewer_id=reviewer_id,
         rationale=rationale,
         workflow_run_id=workflow_run_id,

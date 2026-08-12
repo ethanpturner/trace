@@ -61,6 +61,7 @@ from trace_ai.domain.enums import (
     EvidenceStrength,
     ObjectStatus,
     ReviewDisposition,
+    RiskTreatment,
     Severity,
     SourceOrigin,
     ValidationStatus,
@@ -630,11 +631,12 @@ ENUMS: dict[str, tuple[type[StrEnum], tuple[str, ...]]] = {
             "not_evaluated",
         ),
     ),
+    "4.8": (RiskTreatment, ("undecided", "mitigate", "accept", "transfer", "avoid")),
 }
 
-# 7 + 3 + 4 + 7 + 6 + 7 + 6, stated independently of the table above so that deleting an entry
+# 7 + 3 + 4 + 7 + 6 + 7 + 6 + 5, stated independently of the table above so that deleting an entry
 # from it cannot also lower the bar the parser has to clear.
-TOTAL_ENUM_MEMBERS = 40
+TOTAL_ENUM_MEMBERS = 45
 
 
 def test_the_enum_parser_found_section_four() -> None:
