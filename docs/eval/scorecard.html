@@ -16,6 +16,7 @@
 body { background: var(--bg); color: var(--fg); margin: 0; padding: 2rem;
        font: 15px/1.5 -apple-system, system-ui, sans-serif; }
 h1 { font-size: 1.4rem; margin: 0 0 0.25rem; }
+h2 { font-size: 1.15rem; margin: 2rem 0 0.25rem; }
 .meta { color: var(--muted); margin-bottom: 1.5rem; }
 .scroll { overflow-x: auto; }
 table { border-collapse: collapse; width: 100%; max-width: 100%; }
@@ -63,5 +64,21 @@ attack (DEC-075) — zero is the target — shown only for adversarial condition
 non-authoritative (baselines and ablations, DEC-012). Run-to-run variance (DEC-077) is a live
 measurement and is not shown for these recorded runs, which are deterministic. Per-item diffs stay
 local (DEC-073).</p>
+
+<h2>History</h2>
+<p class="meta">Retained snapshots (DEC-081), newest first. Precision, recall, and F1 are pooled
+over the authoritative rows of each snapshot; per-row detail is retained in
+<code>docs/eval/history.jsonl</code>.</p>
+<div class="scroll">
+<table>
+<thead><tr>
+<th>Recorded</th><th>Git ref</th><th>Prompts</th><th>Catalog</th>
+<th>Precision</th><th>Recall</th><th>F1</th><th>Cost</th>
+</tr></thead>
+<tbody>
+<tr><td>2026-08-12</td><td>654664d</td><td>f9be61e8ad61</td><td>0.1</td><td>75%</td><td>50%</td><td>60%</td><td>0.0000</td></tr>
+</tbody>
+</table>
+</div>
 </body>
 </html>

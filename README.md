@@ -423,7 +423,9 @@ and measures itself offline. Stage 5's demonstration half (M9), the demo-hardeni
   the committed per-scenario [scorecard](docs/eval/scorecard.html), `scripts/build_comparison.py`
   the per-tool [comparison table](docs/eval/comparison.md), and `scripts/build_ablation.py` the
   [ablation table](docs/eval/ablation.md); CI fails if any of the three drifts from the recorded
-  runs.
+  runs. `build_scorecard.py --snapshot` retains a build in `docs/eval/history.jsonl`, keyed by
+  git ref, prompt-tree digest, and catalog version, and the scorecard renders the retained
+  history alongside the current table (DEC-081).
 - **The adversarial condition** — DEC-075's poisoned-document variant with all five payload
   classes, run as an ordinary scenario condition, with the two-axis attack metrics (detection,
   and injected-instruction compliance with a target of zero) reported per payload class.

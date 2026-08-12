@@ -23,6 +23,8 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
     from datetime import datetime
 
+    from trace_ai.services.evaluation.history import ScorecardSnapshot
+
 __all__ = ["ScorecardRow", "render_scorecard", "rows_from_feeds"]
 
 
@@ -119,6 +121,7 @@ _STYLE = """
 body { background: var(--bg); color: var(--fg); margin: 0; padding: 2rem;
        font: 15px/1.5 -apple-system, system-ui, sans-serif; }
 h1 { font-size: 1.4rem; margin: 0 0 0.25rem; }
+h2 { font-size: 1.15rem; margin: 2rem 0 0.25rem; }
 .meta { color: var(--muted); margin-bottom: 1.5rem; }
 .scroll { overflow-x: auto; }
 table { border-collapse: collapse; width: 100%; max-width: 100%; }
@@ -132,7 +135,52 @@ tbody tr.scenario-start td { border-top: 2px solid var(--line); }
 """
 
 
-def render_scorecard(feeds: Sequence[dict[str, Any]], *, generated_at: datetime) -> str:
+def _short_digest(digest: str) -> str:
+    return digest.removeprefix("sha256:")[:12]
+
+
+def _history_section(history: Sequence[ScorecardSnapshot]) -> str:
+    """The retained snapshots (DEC-081), newest first: version keys and pooled numbers only.
+
+    Pooling is over authoritative rows — the history tracks the pipeline, so baselines and
+    ablations stay out of it. The per-row detail every snapshot retains lives in the committed
+    history file this section is rendered from.
+    """
+    if not history:
+        return ""
+    lines = [
+        f"<tr><td>{html.escape(snapshot.recorded_at)}</td>"
+        f"<td>{html.escape(snapshot.git_ref)}</td>"
+        f"<td>{html.escape(_short_digest(snapshot.prompt_digest))}</td>"
+        f"<td>{html.escape(snapshot.catalog_version)}</td>"
+        f"<td>{_pct(snapshot.precision)}</td><td>{_pct(snapshot.recall)}</td>"
+        f"<td>{_pct(snapshot.f1)}</td><td>{_cost(snapshot.cost)}</td></tr>"
+        for snapshot in reversed(list(history))
+    ]
+    return f"""
+<h2>History</h2>
+<p class="meta">Retained snapshots (DEC-081), newest first. Precision, recall, and F1 are pooled
+over the authoritative rows of each snapshot; per-row detail is retained in
+<code>docs/eval/history.jsonl</code>.</p>
+<div class="scroll">
+<table>
+<thead><tr>
+<th>Recorded</th><th>Git ref</th><th>Prompts</th><th>Catalog</th>
+<th>Precision</th><th>Recall</th><th>F1</th><th>Cost</th>
+</tr></thead>
+<tbody>
+{chr(10).join(lines)}
+</tbody>
+</table>
+</div>"""
+
+
+def render_scorecard(
+    feeds: Sequence[dict[str, Any]],
+    *,
+    generated_at: datetime,
+    history: Sequence[ScorecardSnapshot] = (),
+) -> str:
     """Render the scorecard HTML deterministically from the feeds. Metrics and identifiers only."""
     rows = rows_from_feeds(feeds)
     body: list[str] = []
@@ -186,6 +234,7 @@ attack (DEC-075) — zero is the target — shown only for adversarial condition
 non-authoritative (baselines and ablations, DEC-012). Run-to-run variance (DEC-077) is a live
 measurement and is not shown for these recorded runs, which are deterministic. Per-item diffs stay
 local (DEC-073).</p>
+{_history_section(history)}
 </body>
 </html>
 """

@@ -5309,3 +5309,70 @@ Tradeoffs:
   of the block's order across match classes.
 - A count cap ignores rationale length, so ten long rationales cost more context than ten short
   ones. The package's character metadata still reports the real size.
+
+## DEC-081: Scorecard history is committed, append-only, written deliberately, and keyed by git ref, prompt digest, and catalog version
+
+Date: 2026-08-12
+
+Status: Accepted
+
+Decision:
+
+**Scorecard builds can be retained as snapshots in `docs/eval/history.jsonl`, a committed
+append-only JSON-lines file, and the scorecard page renders the retained history alongside the
+current table.** A snapshot holds one build's rows and three identifiers naming what produced
+them: the short git ref the sweep ran on, a digest over the prompt tree, and the
+requirements-catalog version. Evaluation-plan sections 16 and 17 ask for metrics viewable across
+versions; this is the mechanism.
+
+**A snapshot is written deliberately — `build_scorecard.py --snapshot YYYY-MM-DD` — never as a
+side effect of a build.** A plain build reads the history and never writes it. The DEC-076 drift
+check depends on this: a page that stamped the current git ref on every regeneration would
+change on every commit, and the check would either fail permanently or stop meaning anything.
+The operator states the snapshot date rather than the script reading the clock, for the same
+reason the page's generation date is pinned.
+
+**Appending a snapshot whose version key equals the last one's is refused.** Equal git ref,
+prompt digest, and catalog version mean the same build re-run, and retaining both would leave
+two records nothing distinguishes. Any two retained snapshots therefore differ in what produced
+them, which is the property that makes the history a history.
+
+**The prompt identifier is a digest over the prompt tree's files, path-keyed, not a DEC-019
+composed hash.** DEC-019 hashes each composed prompt, and composition needs per-agent
+substitutions a version key should not depend on. Hashing every file under `prompts/` — shared
+blocks included — moves the digest on any edit that could move any composed hash, which is the
+property the key needs.
+
+**The DEC-076 content boundary applies to the history file unchanged**: metrics and identifiers
+only, no finding text, no claim text, no document fragment. The file is committed to a public
+repository; a snapshot that quoted content would republish it. The page's history section pools
+precision, recall, F1, and cost over each snapshot's authoritative rows — baselines and
+ablations are retained in the rows but stay out of the pooled line, because the history tracks
+the pipeline.
+
+Why:
+
+**The scorecard is regenerated in place, so the git history of the page answers "what changed"
+only one diff at a time.** Sections 16 and 17 want the longitudinal question answered directly:
+how a metric moved across prompt revisions, catalog versions, and code changes. A retained
+record keyed by those versions answers it without archaeology.
+
+**Append-only and committed beats a database or a CI artifact.** The history is small, one-line-per-snapshot
+diffs review cleanly, the CI key constraint is untouched, and the same skeptic who can
+re-run the scorecard can read every retained number in the repository.
+
+Alternatives Considered:
+
+- Stamping every build with its git ref and letting the page churn (breaks the drift check)
+- Deriving history from the git log of `scorecard.html` (archaeology, and unkeyed by prompt or
+  catalog version)
+- A separate history page rather than a section on the scorecard
+- Retaining pooled numbers only, without per-row detail
+
+Tradeoffs:
+
+- The snapshot's git ref names the commit the sweep ran on; the commit that adds the snapshot is
+  that ref's child, so the ref is one commit behind the history file's own history. Provenance,
+  not a checkout target.
+- A deliberate step can be forgotten. Nothing prompts for a snapshot; a release checklist is the
+  natural place for it, and section 17's release record is the natural trigger.
