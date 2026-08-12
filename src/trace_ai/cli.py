@@ -187,6 +187,18 @@ def build_parser() -> argparse.ArgumentParser:
     archive = assessment_commands.add_parser("archive", help="retire an assessment")
     archive.add_argument("assessment_id")
 
+    approve = assessment_commands.add_parser(
+        "approve",
+        help="sign off the completed deliverable (DEC-082)",
+        description=(
+            "Moves a completed assessment to approved: the person's statement that they have "
+            "read the rendered report and stand behind it. Refused while no report exists, "
+            "while the report's run is not completed, or when that run is non-authoritative "
+            "(DEC-012) — approval is a sign-off, never a status setter."
+        ),
+    )
+    approve.add_argument("assessment_id")
+
     source = commands.add_parser("source", help="register and inspect source documents")
     source_commands = source.add_subparsers(dest="command")
 
@@ -610,6 +622,7 @@ def run(argv: Sequence[str] | None = None) -> int:
         ("assessment", "status"): _assessment_status,
         ("assessment", "candidates"): _assessment_candidates,
         ("assessment", "archive"): _assessment_archive,
+        ("assessment", "approve"): _assessment_approve,
         ("export", "tm-bom"): _export_tm_bom,
         ("source", "add"): _source_add,
         ("source", "list"): _source_list,
@@ -848,6 +861,13 @@ def _export_tm_bom(args: argparse.Namespace, service: AssessmentService) -> int:
         print(f"error: {refused}", file=sys.stderr)
         return 1
     print(f"wrote {written.name} to the assessment's outputs area")
+    return 0
+
+
+def _assessment_approve(args: argparse.Namespace, service: AssessmentService) -> int:
+    """Sign off the deliverable. The service owns every refusal (DEC-082)."""
+    assessment = service.approve(args.assessment_id)
+    print(f"assessment {assessment.id} is {assessment.status.value}")
     return 0
 
 

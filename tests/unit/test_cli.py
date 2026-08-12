@@ -93,21 +93,26 @@ def test_status_reports_the_state_and_the_counts(
     assert "evidence:" in output
 
 
-def test_archive_is_the_only_transition_offered(
+def test_the_person_performs_archive_and_the_sign_off_and_nothing_else(
     data_root: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    """DEC-031: every other transition is written by a workflow node.
+    """DEC-031 as amended by DEC-082: a person archives, and signs off a finished deliverable.
 
-    A user-settable `approved` would be a checkpoint bypass with extra steps, so the surface does
-    not offer one.
+    `approve` is not a status setter: with no rendered report it is refused in one line, so
+    offering it on the surface is not the checkpoint bypass DEC-031 rejected — the service
+    refuses everything but a completed, authoritative, rendered run.
     """
     identifier = created(data_root, capsys)
+    assert invoke(data_root, "assessment", "approve", identifier) == 1
+    error = capsys.readouterr().err.strip()
+    assert error.startswith("error:")
+    assert "no report has been rendered" in error
+
     assert invoke(data_root, "assessment", "archive", identifier) == 0
     assert "archived" in capsys.readouterr().out
 
     offered = _subcommands("assessment")
-    assert offered == {"create", "list", "status", "candidates", "archive"}
-    assert "approve" not in offered
+    assert offered == {"create", "list", "status", "candidates", "archive", "approve"}
 
 
 # ------------------------------------------------------------------------------------------
@@ -473,7 +478,14 @@ def test_the_command_surface_is_the_one_dec_032_confirms() -> None:
     }
     assert _subcommands("source") == {"add", "list"}
     assert _subcommands("evidence") == {"list", "show", "verify"}
-    assert _subcommands("assessment") == {"create", "list", "status", "candidates", "archive"}
+    assert _subcommands("assessment") == {
+        "create",
+        "list",
+        "status",
+        "candidates",
+        "archive",
+        "approve",
+    }
     assert _subcommands("findings") == {"show", "review", "approve"}
     assert _subcommands("report") == {"show", "rubric"}
 
