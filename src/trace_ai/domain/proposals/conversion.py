@@ -134,7 +134,7 @@ def convert_proposal(
 
     assets = tuple(
         Asset.model_validate(
-            proposed.model_dump(exclude={"key", "component_keys"})
+            proposed.model_dump(exclude={"key", "component_keys", "stored_in_component_keys"})
             | {
                 "id": allocate(proposed.key, "ast"),
                 "assessment_id": assessment_id,
@@ -143,6 +143,10 @@ def convert_proposal(
                 "component_ids": [
                     resolve(key, described_as=f"asset {proposed.key!r}")
                     for key in proposed.component_keys
+                ],
+                "stored_in_component_ids": [
+                    resolve(key, described_as=f"asset {proposed.key!r}")
+                    for key in proposed.stored_in_component_keys
                 ],
             }
         )

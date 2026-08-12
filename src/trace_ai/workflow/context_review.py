@@ -96,6 +96,7 @@ if TYPE_CHECKING:
         ContextValidationOutcome,
         ReviewTrigger,
         ValidationError,
+        ZoneMismatch,
     )
     from trace_ai.workflow.nodes import NodeContext
 
@@ -265,6 +266,11 @@ class ContextReviewPackage:
 
     triggers: tuple[ReviewTrigger, ...] = ()
     outstanding_errors: tuple[ValidationError, ...] = ()
+    zone_mismatches: tuple[ZoneMismatch, ...] = ()
+    """DEC-068's warn-only cross-claim check: flows between differing zones that cross no
+    declared boundary. Shown for the reviewer to resolve — declare the boundary or fix the zone
+    label — and blocking nothing."""
+
     injection_attempts: tuple[SourceObservation, ...] = ()
     """Injection attempts the extraction recorded about the supplied documents (DEC-075).
 
@@ -432,6 +438,7 @@ def build_context_review_package(
         questions=questions,
         triggers=validation.triggers,
         outstanding_errors=validation.blocking_errors,
+        zone_mismatches=validation.zone_mismatches,
         injection_attempts=tuple(
             observation
             for observation in handle.objects.list(SourceObservation)

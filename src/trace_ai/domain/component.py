@@ -26,7 +26,19 @@ from trace_ai.domain.enums import ObjectStatus, SourceOrigin
 from trace_ai.domain.identifiers import AssessmentId, ComponentId, EvidenceReferenceId
 from trace_ai.domain.vocabulary import VocabularyTerm
 
-__all__ = ["KNOWN_COMPONENT_TYPES", "Component"]
+__all__ = ["KNOWN_COMPONENT_TYPES", "KNOWN_ENTRY_POINT_TYPES", "Component"]
+
+# Section 11's entry-point examples (DEC-068). Documentation, not a validation rule (DEC-036).
+KNOWN_ENTRY_POINT_TYPES: Final[frozenset[str]] = frozenset(
+    {
+        "login",
+        "admin_interface",
+        "file_upload",
+        "webhook",
+        "api",
+        "inter_system_interface",
+    }
+)
 
 # Section 11's thirteen examples, plus the six `demo/forgeflow/input/structured-system-input.yaml`
 # uses that section 11 does not list. Documentation, not a validation rule (DEC-036): the fixture
@@ -77,6 +89,11 @@ class Component(DomainModel):
 
     externally_managed: bool | None = None
     """Whether another party runs it. `None` means the documentation does not say."""
+
+    entry_point_types: list[VocabularyTerm] = Field(default_factory=list)
+    """How this component can be entered (DEC-068). Open vocabulary, normalized; see
+    `KNOWN_ENTRY_POINT_TYPES`. Empty means the documentation names no entry points, not that the
+    component has none."""
 
     data_classifications: list[str] = Field(default_factory=list)
     authentication_mechanisms: list[str] = Field(default_factory=list)

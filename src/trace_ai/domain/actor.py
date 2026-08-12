@@ -28,7 +28,7 @@ from trace_ai.domain.enums import SourceOrigin
 from trace_ai.domain.identifiers import ActorId, AssessmentId, EvidenceReferenceId
 from trace_ai.domain.vocabulary import VocabularyTerm
 
-__all__ = ["KNOWN_ACTOR_TYPES", "Actor"]
+__all__ = ["KNOWN_ACCESS_LEVELS", "KNOWN_ACTOR_TYPES", "KNOWN_SKILL_LEVELS", "Actor"]
 
 # Section 13's examples. Documentation, not a validation rule (DEC-036).
 KNOWN_ACTOR_TYPES: Final[frozenset[str]] = frozenset(
@@ -44,6 +44,13 @@ KNOWN_ACTOR_TYPES: Final[frozenset[str]] = frozenset(
     }
 )
 
+# Section 13's persona examples (DEC-068). Starting sets, documentation only: both fields are
+# open vocabularies for DEC-036's reasons.
+KNOWN_SKILL_LEVELS: Final[frozenset[str]] = frozenset({"opportunist", "skilled", "organized_group"})
+KNOWN_ACCESS_LEVELS: Final[frozenset[str]] = frozenset(
+    {"anonymous", "authenticated", "privileged", "physical"}
+)
+
 
 class Actor(DomainModel):
     """A party that interacts with the reviewed system (section 13)."""
@@ -57,6 +64,16 @@ class Actor(DomainModel):
 
     trust_level: str | None = None
     """How much privilege this actor holds. Free text, and unrelated to `SourceDocument`'s enum."""
+
+    skill_level: VocabularyTerm | None = None
+    """Persona field (DEC-068): how capable this actor is presumed to be. Open vocabulary,
+    normalized; see `KNOWN_SKILL_LEVELS`. Its purpose is auditability — a threat's free-text
+    preliminary likelihood becomes checkable against who it presumes. `None` means nobody
+    characterised the actor, which is not `opportunist`."""
+
+    access_level: VocabularyTerm | None = None
+    """Persona field (DEC-068): what access this actor starts with. Open vocabulary, normalized;
+    see `KNOWN_ACCESS_LEVELS`. `None` means the documentation does not say."""
 
     capabilities: list[str] = Field(default_factory=list)
     authentication_method: str | None = None

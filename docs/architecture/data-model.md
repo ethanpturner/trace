@@ -739,6 +739,7 @@ Represents the structured architecture baseline used for downstream analysis.
 | environment | list[string] | No | Development, test, production, etc. |
 | deployment_model | string | No | Cloud, local, hybrid, managed |
 | data_classifications | list[string] | No | Relevant data classifications |
+| access_model | string | No | Deny by default, allow by default, mixed, unknown (DEC-068) |
 | context_claim_ids | list[string] | Yes | Context claims |
 | component_ids | list[string] | Yes | Components |
 | asset_ids | list[string] | Yes | Assets |
@@ -749,9 +750,10 @@ Represents the structured architecture baseline used for downstream analysis.
 | approved_by | string | No | Reviewer identifier |
 | version | integer | Yes | Context revision number |
 
-DEC-068 adds `access_model` — a closed enum `deny_by_default`, `allow_by_default`, `mixed`,
-`unknown`, required and defaulting to `unknown`, because an authorization posture nobody stated
-must never read as an answer. The row lands with the implementing change.
+`access_model` (DEC-068) is a **closed** enum — `deny_by_default`, `allow_by_default`, `mixed`,
+`unknown` — always present, defaulting to `unknown` exactly as section 14's transport fields do,
+because an authorization posture nobody stated must never read as an answer. Closed because the
+values are named rather than illustrated, like `DataFlow.direction`.
 
 # 10. ContextClaim
 
@@ -906,6 +908,7 @@ Examples:
 | deployment_zone | string | No | Runtime environment or network zone |
 | internet_accessible | boolean | No | Exposure indicator |
 | externally_managed | boolean | No | Whether another party manages it |
+| entry_point_types | list[string] | No | How the component can be entered (DEC-068) |
 | data_classifications | list[string] | No | Data processed or stored |
 | authentication_mechanisms | list[string] | No | Authentication methods |
 | authorization_mechanisms | list[string] | No | Authorization methods |
@@ -941,9 +944,10 @@ object_storage
 
 administrative_interface
 
-DEC-068 adds `entry_point_types` — an optional open-vocabulary list (`login`,
-`admin_interface`, `file_upload`, `webhook`, `api`, `inter_system_interface`, and peers),
-normalized through `domain/vocabulary.py`. The row lands with the implementing change.
+`entry_point_types` (DEC-068) is an open-vocabulary list (`login`, `admin_interface`,
+`file_upload`, `webhook`, `api`, `inter_system_interface`, and peers), normalized through
+`domain/vocabulary.py`. Empty means the documentation names no entry points, not that the
+component has none.
 
 # 12. Asset
 
@@ -965,9 +969,10 @@ Assets may be technical, informational, or operational.
 | confidentiality_impact | string | No | Potential confidentiality impact |
 | integrity_impact | string | No | Potential integrity impact |
 | availability_impact | string | No | Potential availability impact |
-| data_classification | string | No | Classification |
+| data_classification | string | No | Sensitivity classification, open vocabulary (DEC-068) |
 | owner | string | No | Business or technical owner |
 | component_ids | list[string] | No | Components holding or processing asset |
+| stored_in_component_ids | list[string] | No | Subset of component_ids storing the asset at rest (DEC-068) |
 | evidence_ids | list[string] | No | Supporting evidence |
 | source_origin | SourceOrigin | Yes | Where the object originated (section 4.4) |
 | status | ObjectStatus | Yes | Lifecycle state |
@@ -996,11 +1001,12 @@ business_process
 
 organizational_reputation
 
-DEC-068 adds two things on the usual terms, rows landing with the implementing change:
-`data_classification` normalizes against a new `KNOWN_DATA_CLASSIFICATIONS` vocabulary (open,
-per DEC-036, against TM-BOM's closed enum), and an optional `stored_in_component_ids` names the
-subset of `component_ids` that holds the asset at rest — where encryption-at-rest and retention
-requirements attach. `component_ids` keeps meaning "holds or processes."
+DEC-068 adds two things on the usual terms: `data_classification` normalizes against
+`KNOWN_DATA_CLASSIFICATIONS` (`pii`, `phi`, `financial`, `credentials`,
+`intellectual_property`, `telemetry`, `public`, and peers — open, per DEC-036, against TM-BOM's
+closed enum), and `stored_in_component_ids` names the subset of `component_ids` that holds the
+asset at rest — where encryption-at-rest and retention requirements attach. `component_ids`
+keeps meaning "holds or processes."
 
 # 13. Actor
 
@@ -1017,6 +1023,8 @@ Represents a legitimate user, system identity, administrator, threat actor, or e
 | name | string | Yes | Actor name |
 | actor_type | string | Yes | Human, service, attacker, third party |
 | trust_level | string | No | Trust classification |
+| skill_level | string | No | Persona: presumed capability, open vocabulary (DEC-068) |
+| access_level | string | No | Persona: starting access, open vocabulary (DEC-068) |
 | capabilities | list[string] | No | Relevant actions or privileges |
 | authentication_method | string | No | Authentication method |
 | evidence_ids | list[string] | No | Supporting evidence |
@@ -1040,11 +1048,11 @@ malicious_insider
 
 compromised_dependency
 
-DEC-068 adds optional persona fields, rows landing with the implementing change: `skill_level`
-and `access_level`, open vocabularies normalized through `domain/vocabulary.py` (starting sets:
-`opportunist`, `skilled`, `organized_group`; `anonymous`, `authenticated`, `privileged`,
-`physical`). They exist so a threat's preliminary likelihood is auditable against who it
-presumes; no formula computes with them.
+The persona fields (DEC-068) — `skill_level` and `access_level` — are open vocabularies
+normalized through `domain/vocabulary.py` (starting sets: `opportunist`, `skilled`,
+`organized_group`; `anonymous`, `authenticated`, `privileged`, `physical`). They exist so a
+threat's preliminary likelihood is auditable against who it presumes; no formula computes with
+them.
 
 # 14. DataFlow
 
