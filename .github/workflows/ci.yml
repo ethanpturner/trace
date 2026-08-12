@@ -28,6 +28,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
+        with:
+          # The catalog freeze guard diffs against the pull request's base, which needs history
+          # beyond the merge commit the default shallow checkout provides.
+          fetch-depth: 0
 
       # Pinned to an exact patch: setup-uv publishes no floating major tag.
       - name: Install uv
@@ -57,6 +61,13 @@ jobs:
       - name: mypy
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: uv run mypy
+
+      # DEC-057: released catalog versions are immutable, and the guard fails the pull request
+      # that proposes an edit rather than leaving the hash check to fail at the next load. Runs
+      # only on pull requests — a push to a protected branch already passed it.
+      - name: catalog freeze guard
+        if: ${{ !cancelled() && steps.install.outcome == 'success' && github.event_name == 'pull_request' }}
+        run: uv run python scripts/check_catalog_freeze.py --base "origin/${{ github.base_ref }}"
 
       # Integration and evaluation markers are deselected by the addopts in
       # pyproject.toml, so this needs no provider API keys.

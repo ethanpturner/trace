@@ -1,0 +1,46 @@
+# Category: administrative_access
+# Requirements about the privileged interfaces an operator uses, which
+# typically bypass the tenant boundary the product enforces for customers.
+
+requirements:
+
+  - id: req-ADMIN-001
+    catalog_version: "0.2"
+    title: Privileged administrative access is restricted and its reach is documented
+    statement: >
+      An administrative interface must be restricted to a defined set of
+      operators through a stronger access path than customer access, and the
+      documentation must state what customer data that interface can reach.
+    rationale: >
+      An administrative interface usually holds the broadest access in a
+      system, because operating it requires crossing the tenant boundary the
+      product otherwise enforces. Two facts matter and are usually recorded
+      separately if at all: how access is restricted, and how far it reaches
+      once granted.
+    category:
+      - administrative_access
+      - authorization
+    applicable_conditions:
+      - the system exposes an administrative or operator interface
+      - operators can act on data belonging to customers
+    non_applicable_conditions:
+      - no administrative interface exists
+      - operator actions are limited to infrastructure and cannot reach customer data
+    acceptable_implementations:
+      - an identity-aware proxy requiring corporate identity before the interface is reachable
+      - a separate identity provider for operators with stronger requirements than customer access
+      - network restriction combined with a distinct operator identity
+      - just-in-time privilege elevation with an approval step
+    evidence_expectations:
+      - architecture documentation describing the administrative interface
+      - description of the operator access path
+      - a statement of what the interface can reach
+    common_false_positives:
+      - absent role-based permission matrix within the administrative interface
+      - absent description of operator onboarding, which is an organizational process
+    default_severity: high
+    source_frameworks:
+      - "NIST SP 800-53 5.2.0: AC-6"
+      - "NIST SP 800-53 5.2.0: AC-17"
+      - "NIST SP 800-53 5.2.0: IA-2"
+    status: active

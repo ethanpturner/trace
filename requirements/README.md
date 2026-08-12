@@ -13,8 +13,12 @@ is as much to establish when a requirement does not apply as when it does — se
 ## Layout
 
 ```
-catalog.yaml     the catalog manifest
-0.1/             requirements for catalog version 0.1, one file per primary category
+catalog.yaml         version 0.1's manifest (the root manifest; current_version() reads it)
+catalog-0.2.yaml     version 0.2's manifest -- each later version gets its own (DEC-057)
+versions.yaml        the governance registry: lifecycle status, maintainer, dates (DEC-057)
+mappings/            cross-version fate maps, one per version pair
+0.1/                 requirements for catalog version 0.1, one file per primary category
+0.2/                 requirements for catalog version 0.2
 ```
 
 Each file under `0.1/` holds a single `requirements:` list. Requirement objects follow
@@ -37,13 +41,14 @@ DEC-057 governs how versions change. The short form:
   renumber and then ships a fate map. The patch class is empty by construction: the content hash
   covers the parsed catalog, so any change a parser can see breaks verification against recorded
   runs. A fix, however small, is a new minor version.
-- **A version is editable while `draft` and immutable once released.** Version 0.1 is `draft`
-  until the recorded ForgeFlow fixture (#263) lands. After release, CI fails any pull request
-  touching a file under the released directory; the loader's hash check remains the read-time
-  backstop.
-- **Governance metadata lives outside the frozen content**, in a top-level `versions.yaml`
+- **A version is editable while `draft` and immutable once released.** Version 0.1 released when
+  the recorded ForgeFlow fixture (#263) landed and is recorded `active` in `versions.yaml`; its
+  directory is frozen. CI fails any pull request touching a file under a released directory
+  (`scripts/check_catalog_freeze.py`); the loader's hash check remains the read-time backstop.
+- **Governance metadata lives outside the frozen content**, in the top-level `versions.yaml`
   (lifecycle status, maintainer, release date, last-reviewed date), so retiring a version does not
-  move a hash a recorded assessment verifies. The file arrives with the 0.2 implementation.
+  move a hash a recorded assessment verifies. The loader sources lifecycle status from the
+  registry where an entry exists; each frozen manifest keeps the status it carried when it froze.
 - **A requirement retires by `status: retired`, never by deletion, within a major lineage.** The
   entry stays in its category file so old references resolve. Removal happens only at a major
   version, recorded as a fate.
@@ -121,14 +126,13 @@ Sources used in version 0.1:
 | NIST SP 800-53 Release 5.2.0 | Secondary. Covers ground ASVS leaves out of scope: segmentation, availability, retention, external system services. Public domain. |
 | OWASP Top 10 for LLM Applications 2025 | The AI-provider surface, which neither of the above addresses. **An archived release**: the 2026 list was published 2026-08-04 under the [GenAI Security Project organisation](https://github.com/GenAI-Security-Project/GenAI-LLM-Top10), and the original OWASP repository is now a legacy archive. The 2026 release renumbers two of the categories this catalog cites — Improper Output Handling moves LLM05:2025 to LLM10:2026, Unbounded Consumption moves LLM10:2025 to LLM06:2026 — so the version-pinned 2025 citations below remain correct provenance, and a bare `LLMxx` with no year is ambiguous. DEC-058 decides it: catalog 0.2 cites `LLMxx:2026`; 0.1's 2025-pinned strings stand as archived provenance. |
 
-Sources adopted for version 0.2 (DEC-058, DEC-059), stated here so the citation test's adopted
-list has its provenance record when 0.2 is authored:
+Sources adopted for version 0.2 (DEC-058, DEC-059) and cited by it:
 
 | Framework | Role and posture |
 |---|---|
 | OWASP AISVS 1.0 | Agentic and MCP ground (chapters C9 and C10) for 0.2's AI categories. Cited as `"OWASP AISVS: v1.0-C9.4.3"` — AISVS prescribes the reference form, so the framework segment carries no version. **The register caveat is binding**: AISVS phrases for runtime verification, so a requirement grounded in it adopts the substance rewritten into the documentation register — silence resolves to `unverified`, never `unmet`. CC BY-SA 4.0: cited by identifier, wording never reproduced. |
-| OWASP AI Exchange | A living document with no versioned releases; permalink plus accessed date is the only stable handle, and the date is mandatory: `"OWASP AI Exchange: <topic anchor>, accessed YYYY-MM-DD"`. May stand as a sole citation. |
-| OWASP Cumulus | Ground for the 0.2 cloud-operations category (DEC-059). Prescribes no reference format, so the version stays in the framework segment: `"OWASP Cumulus <release>: <card identifier>"`, release pinned when 0.2 is authored. **CC BY 4.0, not share-alike** (the GitHub license API misreports it as null because of the REUSE layout): wording may be adapted with attribution, unlike the ASVS and AISVS posture. Do not apply either source's posture to the other. |
+| OWASP AI Exchange | A living document with no versioned releases; permalink plus accessed date is the only stable handle, and the date is mandatory: `"OWASP AI Exchange: /go/<anchor>/, accessed YYYY-MM-DD"` — `/go/` is the site's canonical permalink prefix. May stand as a sole citation. |
+| OWASP Cumulus | Ground for the 0.2 cloud-operations category (DEC-059). Prescribes no reference format, so the version stays in the framework segment: `"OWASP Cumulus v1.2.0: <suit> <rank>"` — cards are identified suit-and-rank (`Recovery K`, `Monitoring 7`), and v1.2.0 (2025-10-27) is the release the 0.2 citations were verified against. **CC BY 4.0, not share-alike** (the GitHub license API misreports it as null because of the REUSE layout): wording may be adapted with attribution, unlike the ASVS and AISVS posture. Do not apply either source's posture to the other. |
 
 OpenCRE identifiers were considered as renumbering-proof anchors and rejected (DEC-058): their
 public ASVS mapping still resolves to v4.0.3, and an anchor whose own mappings lag reintroduces
@@ -258,3 +262,18 @@ every requirement has documentation to be exercised against.
 
 The catalog is small on purpose. A successful assessment may apply very few of these requirements, and
 none of them is intended to be applied to every component.
+
+## Version 0.2
+
+Thirty-two requirements: everything in 0.1 carried under its identifier (three entries `revised`
+for the LLM Top 10's 2026 renumbering — see `mappings/0.1-to-0.2.yaml` for every fate), plus two
+new categories:
+
+| Category file | Requirements | Ground |
+|---|---|---|
+| `agentic-orchestration.yaml` | `req-AGENT-001` … `req-AGENT-004` | AISVS C9/C10 and the AI Exchange (DEC-058), substance rewritten into the documentation register |
+| `cloud-operations.yaml` | `req-OPS-001` … `req-OPS-005` | Cumulus v1.2.0 (DEC-059), adapted with attribution under CC BY 4.0 |
+
+Version 0.2 also moves the LLM Top 10 citations to the 2026 identifiers under the GenAI Security
+Project publisher (`"GenAI Security Project LLM Top 10: LLM01:2026"`), per DEC-058. It is `draft`
+in `versions.yaml` and editable in place until released.

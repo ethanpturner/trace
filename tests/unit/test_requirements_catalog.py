@@ -57,21 +57,46 @@ if TYPE_CHECKING:
 
 VERSION = current_version()
 CATALOG = load_catalog(VERSION)
-ALL_REQUIREMENTS = CATALOG.requirements
 
-# Frameworks cited in catalog version 0.1. A new framework is a deliberate provenance decision
-# (requirements/README.md), so it is added here too. ASVS carries no version in the framework
-# segment because its reference token is version-qualified by construction (`v5.0.0-2.1.1`, the
-# form its README prescribes — issue #222); the other two carry the version in the framework
-# segment because neither prescribes a reference format of its own.
+# Every version in the tree, so the per-requirement authoring conventions hold for 0.2 exactly
+# as they hold for 0.1. Discovered from the version directories rather than listed, so a 0.3
+# cannot ship un-checked.
+CATALOG_VERSIONS = tuple(
+    sorted(path.name for path in CATALOG_ROOT.iterdir() if path.is_dir() and path.name[0].isdigit())
+)
+ALL_REQUIREMENTS = tuple(
+    requirement
+    for version in CATALOG_VERSIONS
+    for requirement in load_catalog(version).requirements
+)
+
+# Frameworks the catalog has adopted, across versions. A new framework is a deliberate
+# provenance decision (requirements/README.md), so it is added here too. ASVS and AISVS carry no
+# version in the framework segment because each prescribes a version-qualified reference token
+# (`v5.0.0-2.1.1`, `v1.0-C9.4.3`); the others carry the version in the framework segment because
+# they prescribe no reference format — except the AI Exchange, a living document whose handle is
+# a permalink plus a mandatory accessed date (DEC-058), and the 2026 LLM Top 10, whose
+# identifiers are year-qualified by construction (`LLM01:2026`, DEC-058).
 FRAMEWORKS = (
     "OWASP ASVS",
     "NIST SP 800-53 5.2.0",
     "OWASP Top 10 for LLM Applications 2025",
+    # Adopted for 0.2 (DEC-058, DEC-059).
+    "OWASP AISVS",
+    "OWASP AI Exchange",
+    "OWASP Cumulus v1.2.0",
+    "GenAI Security Project LLM Top 10",
 )
 
 # The reference form ASVS's README prescribes for external documents: `v<release>-<requirement>`.
 ASVS_TOKEN = re.compile(r"^v\d+\.\d+\.\d+-\d+\.\d+\.\d+$")
+
+# The parallel form AISVS prescribes: `v1.0-C9.4.3` (DEC-058).
+AISVS_TOKEN = re.compile(r"^v\d+\.\d+-C\d+\.\d+\.\d+$")
+
+# An AI Exchange citation is a permalink anchor plus a mandatory accessed date (DEC-058): the
+# Exchange has no versioned releases, so the date is what makes staleness visible.
+AI_EXCHANGE_TOKEN = re.compile(r"^/go/[a-z0-9]+/, accessed \d{4}-\d{2}-\d{2}$")
 
 
 # --------------------------------------------------------------------------------------------
@@ -127,7 +152,8 @@ def test_the_whole_catalog_loads() -> None:
 
 def test_the_catalog_is_the_manifest_and_the_requirements_together() -> None:
     assert CATALOG.catalog.id == "core"
-    assert CATALOG.catalog.status is CatalogStatus.DRAFT
+    # 0.1's frozen manifest says `draft`; the DEC-057 registry says `active` and wins at load.
+    assert CATALOG.catalog.status is CatalogStatus.ACTIVE
     assert sorted(CATALOG.catalog.requirement_ids) == sorted(CATALOG.by_id())
 
 
@@ -141,9 +167,11 @@ def test_the_version_directory_exists() -> None:
 
 
 def test_every_requirement_is_reachable_by_identifier() -> None:
-    by_id = CATALOG.by_id()
-
-    assert len(by_id) == len(ALL_REQUIREMENTS), "two requirements share an identifier"
+    for version in CATALOG_VERSIONS:
+        loaded = load_catalog(version)
+        assert len(loaded.by_id()) == len(loaded.requirements), (
+            f"two requirements in {version} share an identifier"
+        )
 
 
 # --------------------------------------------------------------------------------------------
@@ -153,10 +181,9 @@ def test_every_requirement_is_reachable_by_identifier() -> None:
 
 def test_loading_requires_a_version_the_tree_holds(catalog_tree: Path) -> None:
     with pytest.raises(CatalogVersionError) as raised:
-        load_catalog("0.2", root=catalog_tree)
+        load_catalog("0.9", root=catalog_tree)
 
-    assert "0.2" in str(raised.value)
-    assert VERSION in str(raised.value)
+    assert "0.9" in str(raised.value)
 
 
 def test_a_version_directory_that_is_missing_is_named(catalog_tree: Path) -> None:
@@ -401,7 +428,9 @@ class TestRequirement:
         assert requirement.id == requirement.id.strip()
 
     def test_catalog_version_matches_the_manifest(self, requirement: Requirement) -> None:
-        assert requirement.catalog_version == VERSION
+        """Each requirement declares the version of the catalog it ships in — the loader's
+        agreement check, restated per requirement so a failure names the entry."""
+        assert requirement.catalog_version in CATALOG_VERSIONS
 
     def test_status_is_a_known_value(self, requirement: Requirement) -> None:
         assert requirement.status in set(CatalogStatus)
@@ -442,6 +471,18 @@ class TestRequirement:
                 assert ASVS_TOKEN.fullmatch(control.strip()), (
                     f"{requirement.id} citation {citation!r} does not use the reference form "
                     "ASVS prescribes, 'v<release>-<requirement>' (e.g. 'v5.0.0-2.1.1')."
+                )
+            if framework == "OWASP AISVS":
+                assert AISVS_TOKEN.fullmatch(control.strip()), (
+                    f"{requirement.id} citation {citation!r} does not use the reference form "
+                    "AISVS prescribes, 'v<release>-C<chapter>.<section>.<requirement>' "
+                    "(e.g. 'v1.0-C9.4.3', DEC-058)."
+                )
+            if framework == "OWASP AI Exchange":
+                assert AI_EXCHANGE_TOKEN.fullmatch(control.strip()), (
+                    f"{requirement.id} citation {citation!r} lacks the permalink-plus-accessed-"
+                    "date form DEC-058 makes mandatory for a living document "
+                    "('/go/<anchor>/, accessed YYYY-MM-DD')."
                 )
 
 

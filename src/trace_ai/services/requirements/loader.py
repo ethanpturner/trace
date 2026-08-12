@@ -56,9 +56,19 @@ Prose in a YAML comment is invisible to all of this, even where that prose is do
 the last one: a directory listing sorts, and a `0.2/` added mid-assessment would silently change
 what an in-flight run is assessed against.
 
-The repository holds one manifest, which declares one version, so a pin that disagrees with it is
-refused by name rather than served a different edition. `current_version()` is the explicit way to
-ask what is in the tree, for tooling and tests that legitimately want whatever is there.
+Each version's manifest declares its own version, so a pin that disagrees with what the tree
+holds is refused by name rather than served a different edition. The root `catalog.yaml` is
+version 0.1's manifest; every later version carries its own `catalog-<version>.yaml` beside it
+(DEC-057), so releasing a new version never edits a frozen one. `current_version()` is the
+explicit way to ask what the root manifest declares, for tooling and tests that legitimately
+want whatever is there.
+
+## Lifecycle status (DEC-057)
+
+`versions.yaml` is the governance registry: lifecycle status, maintainer, release and review
+dates, all outside the hashed content. The loader verifies the hash against the manifest as
+frozen, then overrides `status` from the registry where an entry exists — so 0.1 can move from
+`draft` to `active` to `retired` without a byte of its frozen content changing.
 """
 
 from __future__ import annotations
@@ -82,6 +92,7 @@ if TYPE_CHECKING:
 __all__ = [
     "CATALOG_ROOT",
     "MANIFEST_FILE",
+    "VERSIONS_REGISTRY",
     "CatalogError",
     "CatalogHashError",
     "CatalogManifestError",
@@ -93,10 +104,12 @@ __all__ = [
     "compute_hash",
     "current_version",
     "load_catalog",
+    "registry_status",
 ]
 
 CATALOG_ROOT: Final = PROJECT_ROOT / "requirements"
 MANIFEST_FILE: Final = CATALOG_ROOT / "catalog.yaml"
+VERSIONS_REGISTRY: Final = CATALOG_ROOT / "versions.yaml"
 
 # Stands in for `content_hash` while the manifest is validated, and is removed before anything is
 # hashed. A real value cannot be supplied here -- it is what the validated object is needed to
@@ -159,8 +172,49 @@ def _read_yaml(path: Path) -> Any:
         raise CatalogSchemaError(f"{path} is not valid YAML: {error}") from error
 
 
-def _manifest_mapping(root: Path) -> dict[str, Any]:
-    manifest_file = root / "catalog.yaml"
+def _manifest_file(root: Path, version: str | None = None) -> Path:
+    """The manifest for `version`: its own file where one exists, the root manifest otherwise.
+
+    DEC-010 gave the repository one manifest when it held one version. DEC-057 gives every later
+    version its own — `catalog-0.2.yaml` beside `catalog.yaml` — so releasing 0.2 never edits the
+    frozen 0.1 manifest whose hash recorded runs verify. The per-version file lives at the root
+    rather than inside the version directory, because the loader treats every `*.yaml` under a
+    version directory as a category file.
+    """
+    if version is not None:
+        versioned = root / f"catalog-{version}.yaml"
+        if versioned.is_file():
+            return versioned
+    return root / "catalog.yaml"
+
+
+def registry_status(version: str, root: Path = CATALOG_ROOT) -> str | None:
+    """The lifecycle status `versions.yaml` records for `version`, if the registry exists.
+
+    DEC-057 puts governance metadata outside the frozen, hashed content: retiring a version must
+    not alter content whose hash a recorded assessment verifies. The registry is therefore the
+    authority on lifecycle where both it and the manifest speak, and absent entirely for a tree
+    that predates it.
+    """
+    if not (root / "versions.yaml").is_file():
+        return None
+    document = _read_yaml(root / "versions.yaml")
+    if not isinstance(document, dict) or not isinstance(document.get("versions"), dict):
+        raise CatalogSchemaError(
+            f"{root / 'versions.yaml'} has no top-level 'versions' mapping (DEC-057)"
+        )
+    entry = document["versions"].get(version)
+    if entry is None:
+        return None
+    if not isinstance(entry, dict) or not isinstance(entry.get("status"), str):
+        raise CatalogSchemaError(
+            f"{root / 'versions.yaml'} entry for {version!r} declares no status (DEC-057)"
+        )
+    return str(entry["status"])
+
+
+def _manifest_mapping(root: Path, version: str | None = None) -> dict[str, Any]:
+    manifest_file = _manifest_file(root, version)
     document = _read_yaml(manifest_file)
     if not isinstance(document, dict) or not isinstance(document.get("catalog"), dict):
         raise CatalogSchemaError(
@@ -290,14 +344,13 @@ def _build(
     reporting a vanished requirement are different jobs, and a repair tool that refuses to run
     until the catalog is already correct is not a repair tool.
     """
-    catalog_mapping = _manifest_mapping(root)
+    catalog_mapping = _manifest_mapping(root, version)
     declared_version = catalog_mapping.get("version")
     if declared_version != version:
         raise CatalogVersionError(
             f"catalog version {version!r} was requested and the manifest at "
-            f"{root / 'catalog.yaml'} declares {declared_version!r}. The repository holds one "
-            f"manifest; a pinned version that is not in the tree is refused rather than served "
-            f"a different edition."
+            f"{_manifest_file(root, version)} declares {declared_version!r}. A pinned version "
+            f"that is not in the tree is refused rather than served a different edition."
         )
 
     version_directory = root / version
@@ -364,7 +417,17 @@ def load_catalog(version: str, root: Path = CATALOG_ROOT) -> LoadedCatalog:
             f"catalog, so this is a change in content and not in formatting (DEC-019)."
         )
 
+    # DEC-057: lifecycle status is governance metadata, sourced from `versions.yaml` where both
+    # it and the manifest speak. Applied *after* the hash check on purpose — the manifest's own
+    # status is part of the hashed content and stays whatever it was when the version froze,
+    # while the registry's answer can change (draft → active → retired) without moving a hash a
+    # recorded assessment verifies.
+    lifecycle = registry_status(version, root)
     catalog = RequirementsCatalog.model_validate(
-        {**provisional.model_dump(), "content_hash": computed}
+        {
+            **provisional.model_dump(),
+            "content_hash": computed,
+            **({"status": lifecycle} if lifecycle is not None else {}),
+        }
     )
     return LoadedCatalog(catalog=catalog, requirements=requirements)
