@@ -116,10 +116,6 @@ class ThreatValidationError:
 
         return self.error_class in RETRYABLE
 
-    def retry_instruction(self) -> str:
-        """What to tell the next attempt, in terms the agent can act on."""
-        return f"{self.threat_id}.{self.field}: {self.message}"
-
 
 @dataclass(frozen=True, slots=True)
 class MergeProposal:
@@ -203,10 +199,6 @@ class ThreatValidationOutcome:
             for error in self.errors
             if error.error_class is not ErrorClass.INSUFFICIENT_EVIDENCE
         )
-
-    def retry_instructions(self) -> tuple[str, ...]:
-        """Feedback for the next attempt, for the errors another attempt could fix."""
-        return tuple(error.retry_instruction() for error in self.errors if error.retryable)
 
 
 def _normalized(value: str) -> str:

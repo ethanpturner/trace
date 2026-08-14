@@ -5563,3 +5563,49 @@ Tradeoffs:
 - The table's history is less visible: a reader of section 29 no longer sees that two rows
   were once broader. The note under the table names this entry, which is where the history
   belongs.
+
+## DEC-086: Validator retry instructions feed the re-extraction prompt; the four downstream validators drop the surface; the analysis error classes stay as vocabulary
+
+Date: 2026-08-13
+
+Status: Accepted
+
+Decision:
+
+**The Context Validation node's retry instructions are consumed by the re-extraction path.**
+`re_extraction_feedback` appends the validator's per-correctable-error instructions to the
+reviewer's rationale, and the extraction node already carries that feedback into its prompt.
+Re-extraction is the one path on which a generating agent runs again, so it is the consumer
+`agent-design.md` section 8's "retry instructions" output describes.
+
+**The four downstream validators — threat, mapping, evidence-assessment, and critique — lose
+their `retry_instruction`/`retry_instructions` surface.** No path re-runs their agents: a
+blocking validation failure stops the run under its own error class, the transition table has
+no backward edge, and section 26 forbids retrying a conclusion. The actionable content lives on
+the `ValidationError` itself, where the run's stop reporting reads it. Section 8 specifies the
+context validator; the other four surfaces were symmetry the corpus never asked for, produced
+by nothing-consumed-by-nothing since they landed.
+
+**`ErrorClass.INSUFFICIENT_EVIDENCE` and `ErrorClass.UNRESOLVED_CONTRADICTION` stay, without
+producers.** The pipeline expresses both conditions as the Question, gap, or observation they
+resolve to (DEC-009, DEC-021), so nothing is left to raise — a property of the routing, not an
+oversight. The members remain because the taxonomy is section 26's vocabulary: the non-retryable
+rule is stated where retry decisions read it, and a future producer inherits the classification
+instead of inventing one. Their docstrings now say so.
+
+Why:
+
+- The audit (#409) found the feedback loop produced twice and consumed never: five aggregate
+  methods with no caller, and two error classes no code constructs. A mechanism the docs
+  describe as active and nothing exercises is debt in the shape of a feature.
+- Wiring beats deleting exactly where a consumer exists with clear semantics. The re-extraction
+  prompt previously carried only the reviewer's reason; a reviewer who writes "the extraction
+  missed the queue" is not going to restate the validator's finding that a claim cites
+  unresolvable evidence, and the next attempt benefits from both.
+
+Tradeoffs:
+
+- The five validators are no longer shaped identically. Symmetry was the reason the dead
+  surface existed; the asymmetry is now the accurate statement of which agent can be re-run.
+- A future decision to re-run a downstream agent (a DEC-level routing change) reintroduces the
+  surface for that validator deliberately, with its consumer, rather than finding it waiting.

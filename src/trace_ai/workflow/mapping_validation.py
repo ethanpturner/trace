@@ -121,10 +121,6 @@ class MappingValidationError:
 
         return self.error_class in RETRYABLE
 
-    def retry_instruction(self) -> str:
-        """What to tell the next attempt, in terms the agent can act on."""
-        return f"{self.mapping_id}.{self.field}: {self.message}"
-
 
 @dataclass(frozen=True, slots=True)
 class Downgrade:
@@ -228,10 +224,6 @@ class MappingValidationOutcome:
             or self.conflicts
             or self.undiscriminated_threat_ids
         )
-
-    def retry_instructions(self) -> tuple[str, ...]:
-        """Feedback for the next attempt, for the errors another attempt could fix."""
-        return tuple(error.retry_instruction() for error in self.errors if error.retryable)
 
 
 def _wrong_catalog_version_error(

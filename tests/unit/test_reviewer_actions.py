@@ -1245,3 +1245,34 @@ def test_the_edited_file_applied_twice_applies_once(reviewed: Any) -> None:
         item for item in handle.objects.list(Component) if item.name == "Managed Redis Queue"
     ]
     assert len(namesakes) == 1
+
+
+def test_re_extraction_feedback_carries_the_validators_instructions(reviewed: Any) -> None:
+    """DEC-086: re-extraction is the one path on which the extracting agent runs again, so it is
+    the consumer of section 8's "retry instructions" output. The reviewer's rationale says why
+    the context was rejected; the validator's instructions say, per correctable error, what the
+    corrected extraction must fix — here, a claim citing evidence that resolves to nothing."""
+    handle, _ = reviewed
+    existing = claim(handle, "request_validation")
+    with handle.objects.transaction() as repository:
+        fabricated = ContextClaim.model_validate(
+            {
+                **existing.model_dump(),
+                "id": repository.allocate("ctx"),
+                "predicate": "invented_control",
+                "evidence_ids": ["evd-999"],
+            }
+        )
+        repository.save(fabricated)
+
+    request_re_extraction(
+        handle,
+        package_for(handle),
+        reviewer_id=REVIEWER,
+        rationale="The extraction missed the queue between the receiver and the worker.",
+    )
+
+    feedback = re_extraction_feedback(handle)
+    assert feedback is not None
+    assert "missed the queue" in feedback
+    assert "evd-999" in feedback, "the validator's correctable error did not reach the feedback"

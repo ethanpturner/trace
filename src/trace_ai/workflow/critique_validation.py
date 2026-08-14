@@ -123,9 +123,6 @@ class CritiqueValidationError:
 
         return self.error_class in RETRYABLE
 
-    def retry_instruction(self) -> str:
-        return f"critique {self.position} ({self.subject_id}).{self.field}: {self.message}"
-
 
 @dataclass(frozen=True, slots=True)
 class RoutedRecommendation:
@@ -181,9 +178,6 @@ class CritiqueValidationOutcome:
             for recommendation in self.recommendations
             if recommendation.reinvokes_phase is not None and not recommendation.executable
         )
-
-    def retry_instructions(self) -> tuple[str, ...]:
-        return tuple(error.retry_instruction() for error in self.errors if error.retryable)
 
 
 class UnvalidatedWriteError(RuntimeError):

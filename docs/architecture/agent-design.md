@@ -491,7 +491,8 @@ Validate and normalize the output of the Context Extraction Agent before human r
 
 - Validated context objects
 - Validation errors
-- Retry instructions
+- Retry instructions — carried into a re-extraction run's prompt alongside the reviewer's
+  rationale, which is the one path on which the extracting agent runs again (DEC-086)
 - Human-review package
 
 The node should not reinterpret architecture or invent corrections.
