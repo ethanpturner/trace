@@ -64,9 +64,12 @@ jobs:
 
       # DEC-057: released catalog versions are immutable, and the guard fails the pull request
       # that proposes an edit rather than leaving the hash check to fail at the next load. Runs
-      # only on pull requests — a push to a protected branch already passed it.
+      # only on pull requests — a push to a protected branch already passed it — and not on the
+      # release pull request (head `develop`), which proposes no edits: every commit riding it
+      # passed the guard in its own pull request into develop, and diffing the whole release
+      # span against main re-flags any catalog change that predates the version's freeze.
       - name: catalog freeze guard
-        if: ${{ !cancelled() && steps.install.outcome == 'success' && github.event_name == 'pull_request' }}
+        if: ${{ !cancelled() && steps.install.outcome == 'success' && github.event_name == 'pull_request' && github.head_ref != 'develop' }}
         run: uv run python scripts/check_catalog_freeze.py --base "origin/${{ github.base_ref }}"
 
       # The threat model's section 8 named the gap this closes (#407): gitleaks ran only as a
