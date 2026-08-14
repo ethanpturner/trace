@@ -328,7 +328,7 @@ def test_the_first_four_tables_have_the_row_counts_the_document_shows() -> None:
     wrong reason.
     """
     tables = documented_fields()
-    assert len(tables["5"]) == 15, "Assessment"
+    assert len(tables["5"]) == 16, "Assessment"
     assert len(tables["6"]) == 8, "AssessmentConfiguration"
     assert len(tables["7"]) == 14, "SourceDocument"
     assert len(tables["8"]) == 14, "EvidenceReference"
@@ -524,6 +524,7 @@ class Section5Shape(DomainModel):
     configuration: str
     active_workflow_run_id: str | None = None
     final_report_path: str | None = None
+    final_report_run_id: str | None = None
     tags: list[str] | None = None
 
 

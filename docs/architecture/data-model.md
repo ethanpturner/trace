@@ -476,6 +476,7 @@ Represents one complete security architecture analysis.
 | configuration | AssessmentConfiguration | Yes | Runtime configuration |
 | active_workflow_run_id | string | No | Current workflow run |
 | final_report_path | string | No | Generated report location |
+| final_report_run_id | string | No | Workflow run that rendered the report |
 | tags | list[string] | No | User-defined labels |
 
 ## Note on `status`

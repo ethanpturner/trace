@@ -228,6 +228,7 @@ def publish_report(
             {
                 **current.model_dump(),
                 "final_report_path": relative,
+                "final_report_run_id": workflow_run_id,
                 "updated_at": now(),
             }
         )

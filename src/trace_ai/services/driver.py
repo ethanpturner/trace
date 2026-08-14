@@ -1222,6 +1222,16 @@ def run_assessment(
     """
     handle = service.handle(assessment_id)
     assessment = handle.objects.get(Assessment, assessment_id)
+    # A fresh run reaches checkpoint 1 and, on pausing, moves the assessment to `pending_review`
+    # (DEC-031). That move is only valid from `draft`, so an assessment left at `pending_review` (a
+    # prior run abandoned mid-review) or `approved` (a revision) must return to `draft` first --
+    # otherwise the pause raised `InvalidStatusTransitionError` deep in the loop and left the run
+    # row, the state file, and the assessment disagreeing. `begin_revision` is the named verb for
+    # the approved case; `resume_from_review` for the pending case.
+    if assessment.status is ObjectStatus.PENDING_REVIEW:
+        service.resume_from_review(assessment_id)
+    elif assessment.status is ObjectStatus.APPROVED:
+        service.begin_revision(assessment_id)
     spend = budget if budget is not None else Budget.from_configuration(assessment.configuration)
     run = start_run(
         handle,
@@ -1274,14 +1284,32 @@ def resume_assessment(
     the re-pause moves it right back. `trace findings approve` concludes the review through the
     same verb, so an assessment already back in `draft` is left alone.
     """
+    from trace_ai.domain.execution import RunStatus
+    from trace_ai.workflow.checkpoint import load_state
+
     handle = service.handle(assessment_id)
-    run = _paused_run(handle, workflow_run_id)
-    state, _pending = resume(handle, run.id)
-    assessment = handle.objects.get(Assessment, assessment_id)
-    if assessment.status is ObjectStatus.PENDING_REVIEW:
-        service.resume_from_review(assessment_id)
+    run = _resumable_run(handle, workflow_run_id)
+    if run.status is RunStatus.PAUSED:
+        # A checkpoint pause: the checkpoint node re-runs and decides nothing new.
+        state, _pending = resume(handle, run.id)
+        assessment = handle.objects.get(Assessment, assessment_id)
+        if assessment.status is ObjectStatus.PENDING_REVIEW:
+            service.resume_from_review(assessment_id)
+    elif run.status is RunStatus.FAILED:
+        # A failed run: restart from the phase it stopped in. The phases before it completed, so
+        # their objects exist and are not re-run; only the failed phase re-executes.
+        state = load_state(handle, run.id).restarted()
+        assessment = handle.objects.get(Assessment, assessment_id)
+    else:
+        raise ValueError(
+            f"{run.id} is {run.status.value}, not paused or failed; there is nothing to resume"
+        )
     spend = budget if budget is not None else Budget.from_configuration(assessment.configuration)
     ledger = ExecutionLedger(handle, run)
+    if run.status is RunStatus.FAILED:
+        # Clear the failed run's completion stamp and error before it runs again, so its row is a
+        # running run's rather than a completed one carrying a `running` status.
+        ledger.reopen()
     orchestrator = Orchestrator(
         handle,
         ledger=ledger,
@@ -1311,12 +1339,24 @@ def _begin_review_on_pause(
     return on_pause
 
 
-def _paused_run(handle: AssessmentHandle, workflow_run_id: str | None) -> WorkflowRun:
+def _resumable_run(handle: AssessmentHandle, workflow_run_id: str | None) -> WorkflowRun:
+    """The run a resume acts on: a named one, or the most recent paused-or-failed one.
+
+    A paused run resumes at its checkpoint; a failed run restarts from the phase it stopped in
+    (DEC-017, both are a read in a new process). A named run is returned whatever its status, so a
+    caller that knows the identifier can inspect the refusal a resume would give it.
+    """
     from trace_ai.domain.execution import RunStatus
 
     if workflow_run_id is not None:
         return handle.objects.get(WorkflowRun, workflow_run_id)
-    paused = [run for run in handle.objects.list(WorkflowRun) if run.status is RunStatus.PAUSED]
-    if not paused:
-        raise ValueError(f"assessment {handle.assessment_id} has no paused workflow run to resume")
-    return paused[-1]
+    resumable = [
+        run
+        for run in handle.objects.list(WorkflowRun)
+        if run.status in (RunStatus.PAUSED, RunStatus.FAILED)
+    ]
+    if not resumable:
+        raise ValueError(
+            f"assessment {handle.assessment_id} has no paused or failed workflow run to resume"
+        )
+    return resumable[-1]

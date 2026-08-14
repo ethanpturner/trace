@@ -121,8 +121,15 @@ _MODEL_FAILURES: Final[dict[FailureReason, ErrorClass]] = {
 
 
 def classify_model_failure(reason: FailureReason) -> ErrorClass:
-    """The workflow's name for one model attempt's failure."""
-    return _MODEL_FAILURES[reason]
+    """The workflow's name for one model attempt's failure.
+
+    A `FailureReason` the seam adds but this map has not caught up with falls back to
+    `UNEXPECTED_APPLICATION_FAILURE` rather than raising `KeyError` inside a node's attempt loop --
+    non-retryable, so an unclassified provider condition cannot invite a fabricated third attempt.
+    `test_errors.py` asserts the map is total, so the fallback is a runtime safety net, not a
+    licence to leave a reason unmapped.
+    """
+    return _MODEL_FAILURES.get(reason, ErrorClass.UNEXPECTED_APPLICATION_FAILURE)
 
 
 class WorkflowError(RuntimeError):

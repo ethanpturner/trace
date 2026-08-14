@@ -302,13 +302,16 @@ class AssessmentService:
                 assessment_id,
                 "no report has been rendered; run the pipeline to completion first",
             )
-        # The report filename embeds the run that rendered it (report-<run-id>.md), so the
-        # sign-off binds to that run rather than to whichever run happens to be latest.
-        run_id = (
+        # The rendering run is recorded on the assessment, so the sign-off binds to that run rather
+        # than to whichever run happens to be latest. It is read from a field rather than parsed out
+        # of the report filename: a path separator or a filename change would otherwise silently
+        # yield a run identifier no run matches. A report rendered before the field existed falls
+        # back to the filename it embeds (report-<run-id>.md).
+        run_id = current.final_report_run_id or (
             current.final_report_path.rpartition("/")[2].removeprefix("report-").removesuffix(".md")
         )
         repository = self._store.repository(assessment_id)
-        run = next((run for run in repository.list(WorkflowRun) if run.id == run_id), None)
+        run = repository.find(WorkflowRun, run_id)
         if run is None:
             raise AssessmentNotApprovableError(
                 assessment_id, f"the report names run {run_id!r}, which this assessment lacks"
