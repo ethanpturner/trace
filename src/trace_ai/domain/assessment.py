@@ -136,6 +136,7 @@ class Assessment(DomainModel):
     configuration: AssessmentConfiguration
     active_workflow_run_id: WorkflowRunId | None = None
     final_report_path: str | None = None
+    final_report_run_id: WorkflowRunId | None = None
     tags: list[str] = Field(default_factory=list)
 
     @field_validator("created_at", "updated_at")

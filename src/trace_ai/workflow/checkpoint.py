@@ -36,6 +36,7 @@ from typing import TYPE_CHECKING, Any, Final
 
 from trace_ai.domain.execution import ExecutionType, RunStatus
 from trace_ai.domain.reviewer_decision import ReviewerDecision
+from trace_ai.infrastructure.filesystem.atomic import write_text_atomic
 from trace_ai.workflow.nodes import NodeResult
 from trace_ai.workflow.phases import PAUSE_PHASES, Phase
 from trace_ai.workflow.state import AssessmentState
@@ -71,9 +72,13 @@ def _state_filename(workflow_run_id: str) -> str:
 
 
 def save_state(handle: AssessmentHandle, state: AssessmentState) -> str:
-    """Persist the workflow state, returning its path relative to the assessment root."""
+    """Persist the workflow state, returning its path relative to the assessment root.
+
+    Written atomically: the state file is rewritten on every phase, and a crash mid-write would
+    otherwise leave a truncated file that `load_state` cannot parse, making the run unresumable.
+    """
     path = handle.artifacts.area(STATE_AREA) / _state_filename(state.workflow_run_id)
-    path.write_text(state.model_dump_json(indent=2), encoding="utf-8")
+    write_text_atomic(path, state.model_dump_json(indent=2))
     return str(path.relative_to(handle.artifacts.assessment_root))
 
 

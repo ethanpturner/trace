@@ -25,6 +25,7 @@ would not surface until an evidence hash failed to verify against a document nob
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Final
 
@@ -145,18 +146,37 @@ class ArtifactStore:
         Re-storing identical bytes is idempotent, which is what a re-run does. Storing *different*
         bytes under a name already used would silently replace material under review while every
         `EvidenceReference` into the old content kept its now-unverifiable hash, so it raises.
+
+        The write is atomic and the claim is exclusive: the bytes go to a sibling temporary and are
+        then hard-linked into place, which fails if the name already exists. A crash mid-write
+        leaves only the temporary (the target never half-appears, so it never fails its own hash),
+        and the link -- rather than a rename -- closes the gap between "does it exist?" and "write
+        it" in which two callers could each decide the name was free.
         """
         target = self._safe_path(area, filename)
         if target.exists():
-            existing = target.read_bytes()
-            if content_hash(existing) != content_hash(content):
-                raise ArtifactStoreError(
-                    f"{filename!r} is already stored in {area} for {self.assessment_id} with "
-                    f"different content. Storing over it would leave every evidence reference "
-                    f"into the original pointing at bytes that no longer exist."
-                )
-            return target
-        target.write_bytes(content)
+            return self._reconcile_existing(target, area, filename, content)
+        tmp = target.with_name(f".{target.name}.{os.getpid()}.tmp")
+        try:
+            tmp.write_bytes(content)
+            try:
+                os.link(tmp, target)
+            except FileExistsError:
+                # Another writer claimed the name between the exists() check and here.
+                return self._reconcile_existing(target, area, filename, content)
+        finally:
+            tmp.unlink(missing_ok=True)
+        return target
+
+    def _reconcile_existing(self, target: Path, area: str, filename: str, content: bytes) -> Path:
+        """The already-stored branch: identical bytes are idempotent, different bytes are refused."""
+        existing = target.read_bytes()
+        if content_hash(existing) != content_hash(content):
+            raise ArtifactStoreError(
+                f"{filename!r} is already stored in {area} for {self.assessment_id} with "
+                f"different content. Storing over it would leave every evidence reference "
+                f"into the original pointing at bytes that no longer exist."
+            )
         return target
 
     def store_source(self, filename: str, content: bytes) -> Path:

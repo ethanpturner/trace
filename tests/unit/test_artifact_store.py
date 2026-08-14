@@ -144,6 +144,35 @@ def test_storing_different_content_under_a_used_name_is_refused(store: ArtifactS
     assert store.read("sources", "overview.md") == DOCUMENT, "the original must survive"
 
 
+def test_an_interrupted_write_leaves_no_partial_artifact(
+    store: ArtifactStore, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A crash mid-write must not leave a truncated file whose bytes no longer match the recorded
+    content hash -- which would then be refused as `different content` and wedge the assessment.
+    The write goes to a sibling temporary and is linked into place; a failure before the link
+    leaves the target absent and cleans up the temporary."""
+    import os
+
+    def failing_link(src: object, dst: object) -> None:
+        raise OSError("simulated crash before the link")
+
+    # The store does `import os; os.link(...)`; the module object is shared, so patching it here
+    # patches the store's call too.
+    monkeypatch.setattr(os, "link", failing_link)
+
+    with pytest.raises(OSError, match="simulated crash"):
+        store.store_source("overview.md", DOCUMENT)
+
+    sources = store.area("sources")
+    assert not (sources / "overview.md").exists(), "a partial artifact was left behind"
+    assert list(sources.iterdir()) == [], "the temporary was not cleaned up"
+
+    # Recovery: with the fault gone, the same store call succeeds and reads back whole.
+    monkeypatch.undo()
+    store.store_source("overview.md", DOCUMENT)
+    assert store.read("sources", "overview.md") == DOCUMENT
+
+
 def test_two_assessments_do_not_collide_on_a_filename(tmp_path: Path) -> None:
     first = ArtifactStore("asm-001", root=tmp_path)
     second = ArtifactStore("asm-002", root=tmp_path)

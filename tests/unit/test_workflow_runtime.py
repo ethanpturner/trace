@@ -501,6 +501,79 @@ def test_a_run_reaching_completion_closes_the_run(ledger: ExecutionLedger) -> No
     assert ledger.run.status is RunStatus.COMPLETED
 
 
+# ------------------------------------------------------------------------------------------
+# Crash safety: an unclassified failure is recorded, and state is persisted
+# ------------------------------------------------------------------------------------------
+
+
+@dataclass(slots=True)
+class RaisingNode:
+    """A node that raises something the taxonomy does not classify."""
+
+    name: str
+    phase: Phase
+    error: BaseException
+    execution_type: ExecutionType = ExecutionType.DETERMINISTIC
+    version: str = "0.1"
+
+    def run(self, context: NodeContext) -> NodeResult:
+        raise self.error
+
+
+def test_an_unclassified_node_error_fails_the_run_rather_than_escaping(
+    ledger: ExecutionLedger,
+) -> None:
+    """A node raising a bare RuntimeError used to escape the loop and leave the run row `running`
+    forever. It is now `unexpected_application_failure`, recorded on the run and the state."""
+    node = RaisingNode(
+        "context-validation", Phase.CONTEXT_VALIDATION, RuntimeError("a bug, not a provider")
+    )
+    outcome = orchestrator(ledger, node).run(state_for(ledger, Phase.CONTEXT_VALIDATION))
+
+    assert outcome.state.status is RunStatus.FAILED
+    assert outcome.stopped_because == "unexpected_application_failure"
+    assert "a bug, not a provider" in outcome.state.errors[-1]
+    assert ledger.run.status is RunStatus.FAILED
+    assert ledger.run.error_summary is not None
+
+
+def test_a_failed_run_persists_a_resumable_state_file(ledger: ExecutionLedger) -> None:
+    """`_stop` writes the state so `resume_assessment` can restart from the failed phase rather than
+    re-running the whole pipeline."""
+    from trace_ai.workflow.checkpoint import load_state
+
+    node = RaisingNode("context-validation", Phase.CONTEXT_VALIDATION, RuntimeError("boom"))
+    orchestrator(ledger, node).run(state_for(ledger, Phase.CONTEXT_VALIDATION))
+
+    persisted = load_state(ledger.handle, ledger.run.id)
+    assert persisted.status is RunStatus.FAILED
+    assert persisted.current_phase is Phase.CONTEXT_VALIDATION
+
+
+def test_a_completed_run_persists_a_completed_state_file(ledger: ExecutionLedger) -> None:
+    """The state file used to be frozen at the last pause forever; a completed run says completed."""
+    from trace_ai.workflow.checkpoint import load_state
+
+    node = ScriptedNode("evaluation", Phase.EVALUATION)
+    orchestrator(ledger, node).run(state_for(ledger, Phase.EVALUATION))
+
+    persisted = load_state(ledger.handle, ledger.run.id)
+    assert persisted.status is RunStatus.COMPLETED
+
+
+def test_state_is_persisted_on_every_phase_transition(ledger: ExecutionLedger) -> None:
+    """A crash between phases leaves an accurate record of where the run reached."""
+    from trace_ai.workflow.checkpoint import load_state
+
+    first = ScriptedNode("context-validation", Phase.CONTEXT_VALIDATION)
+    # The phase after context validation is a checkpoint, which pauses; the persisted state then
+    # reflects the advance out of context validation rather than the initial phase.
+    orchestrator(ledger, first).run(state_for(ledger, Phase.CONTEXT_VALIDATION))
+
+    persisted = load_state(ledger.handle, ledger.run.id)
+    assert persisted.current_phase is not Phase.CONTEXT_VALIDATION
+
+
 def test_a_missing_node_stops_the_run_rather_than_skipping_the_phase(
     ledger: ExecutionLedger,
 ) -> None:

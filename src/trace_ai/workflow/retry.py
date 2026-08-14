@@ -28,6 +28,7 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Final
 
 from trace_ai.domain.base import now
+from trace_ai.infrastructure.filesystem.atomic import write_text_atomic
 from trace_ai.workflow.errors import RETRYABLE, ErrorClass, WorkflowError
 
 if TYPE_CHECKING:
@@ -132,7 +133,7 @@ def preserve_failed_output(
     stamp = now().strftime("%Y%m%dT%H%M%S%f")
     filename = f"{node_name}-attempt-{attempt_number}-{stamp}.txt"
     path = artifacts.area("traces") / filename
-    path.write_text(raw_output, encoding="utf-8")
+    write_text_atomic(path, raw_output)
     return str(path.relative_to(artifacts.assessment_root))
 
 

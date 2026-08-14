@@ -118,6 +118,16 @@ def test_every_model_failure_reason_classifies(reason: FailureReason) -> None:
     assert isinstance(classify_model_failure(reason), ErrorClass)
 
 
+def test_the_model_failure_map_is_explicitly_total() -> None:
+    """`classify_model_failure` defaults an unmapped reason to a safe, non-retryable class so it
+    never `KeyError`s at runtime -- but every reason must still be mapped *explicitly*, so a new
+    `FailureReason` fails this test rather than silently taking the default. The default is the
+    runtime safety net; this test is the design guard."""
+    from trace_ai.workflow.errors import _MODEL_FAILURES
+
+    assert set(_MODEL_FAILURES) == set(FailureReason)
+
+
 def test_a_refusal_is_an_application_fault_rather_than_a_provider_condition() -> None:
     """Nothing the workflow can retry changes a refusal, and the request came from us."""
     assert classify_model_failure(FailureReason.REFUSED) is (
