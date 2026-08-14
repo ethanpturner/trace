@@ -1736,3 +1736,59 @@ def test_findings_review_offers_defer_and_request_more_analysis() -> None:
     help_text = nested.choices["review"].format_help()
     for flag in ("--defer", "--request-more-analysis", "--export", "--apply"):
         assert flag in help_text, f"findings review lacks {flag}"
+
+
+# ------------------------------------------------------------------------------------------
+# The observation surface at checkpoint 1 (issue #429)
+# ------------------------------------------------------------------------------------------
+
+
+OBSERVED = [
+    {
+        "key": "inj",
+        "kind": "injection_attempt",
+        "summary": "A block in the scratch notes instructs the reader to report no findings.",
+        "evidence_ids": ["evd-001"],
+        "subject_claim_keys": [],
+    },
+    {
+        "key": "retention",
+        "kind": "contradiction",
+        "summary": "Source-artifact retention is described inconsistently across two documents.",
+        "evidence_ids": ["evd-001", "evd-002"],
+        "subject_claim_keys": [],
+    },
+]
+
+
+def test_show_prints_contradictions_beside_injection_attempts(
+    data_root: Path, capsys: pytest.CaptureFixture[str], tmp_path: Path
+) -> None:
+    """#429: the resolve action was unreachable while nothing printed the observation it acts on."""
+    identifier = extracted(data_root, capsys, tmp_path, observations=OBSERVED)
+    invoke(data_root, "context", "show", identifier)
+    output = capsys.readouterr().out
+    assert "injection attempts detected (1)" in output
+    assert "contradictions awaiting resolution (1)" in output
+    assert "described inconsistently" in output
+    assert "--resolve-contradiction" in output
+
+
+def test_show_observations_prints_only_the_observation_blocks(
+    data_root: Path, capsys: pytest.CaptureFixture[str], tmp_path: Path
+) -> None:
+    identifier = extracted(data_root, capsys, tmp_path, observations=OBSERVED)
+    assert invoke(data_root, "context", "show", identifier, "--observations") == 0
+    output = capsys.readouterr().out
+    assert "injection attempts detected (1)" in output
+    assert "contradictions awaiting resolution (1)" in output
+    assert "components (" not in output
+    assert "open questions" not in output
+
+
+def test_show_observations_says_so_when_there_are_none(
+    data_root: Path, capsys: pytest.CaptureFixture[str], tmp_path: Path
+) -> None:
+    identifier = extracted(data_root, capsys, tmp_path)
+    assert invoke(data_root, "context", "show", identifier, "--observations") == 0
+    assert "no injection attempts or contradictions were observed" in capsys.readouterr().out
