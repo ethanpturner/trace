@@ -275,3 +275,51 @@ def test_a_prompt_composed_with_an_unfilled_marker_is_refused() -> None:
         UnresolvedMarkerError, match=re.escape("schema.context_extraction_proposal")
     ):
         PromptRegistry().compose("extract-context", "v1")
+
+
+def test_a_marker_inside_a_substituted_value_is_not_read_as_unfilled(tmp_path: Path) -> None:
+    """Untrusted source content may legitimately contain `{{ x.y }}` — Helm values, a Jinja config
+    sample, `{{ site.url }}` in an architecture doc. Substituted into `input.source_content`, it
+    must be inserted verbatim, not mistaken for an unfilled application marker that fails the run
+    before any model call. The unfilled-marker check runs over the template, not the merged body."""
+    shared = tmp_path / "shared"
+    shared.mkdir()
+    for name in ("source-content-boundary-v1", "evidence-policy-v1", "uncertainty-policy-v1"):
+        (shared / f"{name}.md").write_text("policy", encoding="utf-8")
+    (tmp_path / "extract-context-v1.md").write_text(
+        FRONT_MATTER.replace(
+            "Extract context from the documents provided.",
+            "Documents:\n\n{{ input.source_content }}",
+        ),
+        encoding="utf-8",
+    )
+
+    composed = PromptRegistry(tmp_path).compose(
+        "extract-context",
+        "v1",
+        {"input.source_content": "image: {{ values.image }}\nhost: {{ site.url }}"},
+    )
+
+    assert "{{ values.image }}" in composed.text, "a marker in the value was consumed or rejected"
+    assert "{{ site.url }}" in composed.text
+
+
+def test_an_unfilled_template_marker_is_still_refused(tmp_path: Path) -> None:
+    """The fix narrows the check to the template, but a template marker with no substitution is
+    still a hole the prompt runs with — it must still be refused."""
+    shared = tmp_path / "shared"
+    shared.mkdir()
+    for name in ("source-content-boundary-v1", "evidence-policy-v1", "uncertainty-policy-v1"):
+        (shared / f"{name}.md").write_text("policy", encoding="utf-8")
+    (tmp_path / "extract-context-v1.md").write_text(
+        FRONT_MATTER.replace(
+            "Extract context from the documents provided.",
+            "Return {{ schema.context_extraction_proposal }}",
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(
+        UnresolvedMarkerError, match=re.escape("schema.context_extraction_proposal")
+    ):
+        PromptRegistry(tmp_path).compose("extract-context", "v1")
