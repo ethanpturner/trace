@@ -5,7 +5,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## What this is
 
 Trace is a context-aware security architecture analysis system. **The pipeline is built and runs
-end to end; the demonstration surface and the debt milestones around it are not done.** All six
+end to end, the demonstration surface exists, and the debt milestones are closed; what remains
+open is the Stage 6 portfolio material.** All six
 model-assisted agents exist, each with a deterministic validation node behind it; both human
 checkpoints are workflow-graph nodes; `trace run` and `trace resume` drive all fourteen phases
 from the command line through both checkpoints to a rendered report; and the evaluation harness

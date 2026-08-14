@@ -31,7 +31,7 @@ from trace_ai.services.requirements.loader import current_version
 
 OUTPUT = PROJECT_ROOT / "docs" / "eval" / "comparison.md"
 # Pinned so the committed table changes only when a metric does, never on the clock.
-GENERATED_AT = datetime(2026, 8, 11, 12, 0, 0, tzinfo=UTC)
+GENERATED_AT = datetime(2026, 8, 14, 12, 0, 0, tzinfo=UTC)
 
 
 def _pins() -> dict[str, str]:

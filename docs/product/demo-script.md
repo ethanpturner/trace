@@ -1,15 +1,15 @@
 # ForgeFlow demonstration script
 
-*Proposed, version 0.1.*
-
 A five-to-ten-minute walkthrough of the whole pipeline, offline, from the committed ForgeFlow
 recording. It runs on a fresh clone with no provider key and no network: every model response and
 every reviewer decision is replayed from `demo/forgeflow/recorded/`, so the demonstration is the
-same path the test suite runs on every commit, not a staged one.
+same path the test suite runs on every commit, not a staged one. The recording itself was captured
+from a live `claude-opus-5` run (`recorded/provenance.md`), so what replays is what the model
+actually said — including the four retried calls, replayed in position.
 
 It is the source for the roadmap Stage 6 presentation's demo segment as well as the live
-walkthrough. The live-model variant is the same commands with `--model-profile offline-fake` and
-every `--response` dropped; it is an option, never a dependency, and nothing below needs it.
+walkthrough. The live-model variant is the same commands with a live `--model-profile` and every
+`--response` dropped; it is an option, never a dependency, and nothing below needs it.
 
 ## Before the room
 
@@ -35,24 +35,25 @@ fall back to if a live command misbehaves — see the recovery plan for what eac
 
 | # | Beat | Command | Say | ≈ | Fallback |
 |---|---|---|---|---|---|
-| 1 | Input documentation | `uv run trace assessment create --name "ForgeFlow Security Review"`<br>`uv run trace source add asm-001 demo/forgeflow/input` | Eight untrusted documents describe an AI code-review product. Trace reads documents, not diagrams. | 0:45 | `demo/forgeflow/input/` |
-| 2 | Extracted context | `uv run trace run asm-001 --model-profile offline-fake --response demo/forgeflow/recorded/01-context-extraction.json`<br>`uv run trace context show asm-001 --evidence` | The run paused itself: checkpoint 1 is a phase in the transition table, not an option a flag can skip. Every extracted claim shows the passage it rests on, labelled quoted untrusted source content. | 1:30 | `recorded/01-context-extraction.json` |
-| 3 | Human correction | `uv run trace context review asm-001 --apply demo/forgeflow/recorded/decisions-context.yaml`<br>`uv run trace context approve asm-001` | A person decides each subject. The applied file is a recorded review; interactively it is `--export`, edit, `--apply`. The checkpoint advances only once every subject has a decision. | 0:45 | `recorded/decisions-context.yaml` |
-| 4 | Candidate threats | `uv run trace resume asm-001 --model-profile offline-fake --response demo/forgeflow/recorded/02-threat-analysis.json --response demo/forgeflow/recorded/03-mapping-thr-001.json --response demo/forgeflow/recorded/04-mapping-thr-002.json --response demo/forgeflow/recorded/05-evidence-validation.json --response demo/forgeflow/recorded/06-critical-review-thr-001.json --response demo/forgeflow/recorded/07-critical-review-thr-002.json` | Threat analysis, control mapping, evidence validation, and critical review run in order, then the run pauses again at checkpoint 2. | 0:45 | `recorded/02`–`07-*.json` |
-| 5 | A suppressed false positive | `uv run trace findings show asm-001` | One provisional finding, not a wall of them. An inherited control the documents describe means the obvious weakness is already covered, so it never becomes a finding. The cross-scenario version of this is in the comparison table at beat 10. | 0:45 | `demo/forgeflow/expected/expected-findings.yaml` |
-| 6 | A missing fact becomes a question | `uv run trace context show asm-001` | Where the documents are silent, Trace does not guess a weakness. Silence becomes a question or a documentation gap — never a finding (DEC-009). | 0:30 | `demo/forgeflow/expected/expected-questions.yaml` |
-| 7 | A supported finding | `uv run trace findings show asm-001` | The finding a reviewer would act on, with the evidence it rests on. Severity is the reviewer's to assign; no node proposes one (DEC-030). | 0:30 | `demo/forgeflow/expected/expected-findings.yaml` |
+| 1 | Input documentation | `uv run trace assessment create --name "ForgeFlow Security Review"`<br>`uv run trace source add asm-001 demo/forgeflow/input` | Eight untrusted documents describe an AI code-review product. Trace reads documents, not diagrams — and one of these documents carries a deliberate prompt-injection payload, which we will meet again. | 0:45 | `demo/forgeflow/input/` |
+| 2 | Extracted context | `uv run trace run asm-001 --model-profile offline-fake --response demo/forgeflow/recorded/extraction`<br>`uv run trace context show asm-001 \| head -40` | The run paused itself: checkpoint 1 is a phase in the transition table, not an option a flag can skip. Sixteen components, sixty-three claims — fourteen of them honestly `unknown` — each showing the passage it rests on, labelled quoted untrusted source content. Further down, the model has flagged the injection attempt in the scratch-notes document and named the four claims it tried to poison. | 1:30 | `recorded/extraction/01-context-extraction.json` |
+| 3 | Human correction | `uv run trace context review asm-001 --apply demo/forgeflow/recorded/decisions-context.yaml`<br>`uv run trace context approve asm-001` | A person decides each subject — 131 of them here. The applied file is a recorded review; interactively it is `--export`, edit, `--apply`. The checkpoint advances only once every subject has a decision. | 0:45 | `recorded/decisions-context.yaml` |
+| 4 | Reasoning | `uv run trace resume asm-001 --model-profile offline-fake --response demo/forgeflow/recorded/reasoning` | Thirty-five model calls replay in order: fifteen threats, two hundred twenty-five requirement mappings, seventy-four evidence assessments, sixty-three critiques — then the run pauses again at checkpoint 2. | 0:45 | `recorded/reasoning/` |
+| 5 | Quality over volume | `uv run trace findings show asm-001 \| head -30` | All of that reasoning collapsed to five provisional findings, not a wall of them. Requirements the documents satisfy through inherited controls never became findings; the false-positive classes the catalog names were addressed by name in the mappings. | 0:45 | `demo/forgeflow/assets/forgeflow-report.md` §8 |
+| 6 | Silence becomes questions | `uv run trace context show asm-001 \| grep -A3 "questions"` | Where the documents are silent, Trace does not guess a weakness. Silence becomes a question — twenty-six of them in the final report — never a finding (DEC-009). | 0:30 | `demo/forgeflow/expected/expected-questions.yaml` |
+| 7 | The reviewer's verbs | `uv run trace findings review asm-001 --severity fnd-001=high --severity fnd-002=high --severity fnd-004=medium --severity fnd-005=medium --approve fnd-001 --approve fnd-002 --approve fnd-004 --approve fnd-005`<br>`uv run trace findings review asm-001 --reject fnd-003 --note "inability to verify enforcement is a gap with a question, not a finding"` | Severity is the reviewer's to assign; no node proposes one (DEC-030). Four findings approved on their evidence — and one rejected, because it rested on silence rather than evidence. That rejection is the product's thesis exercised at its own checkpoint: the model proposed it, the DEC-009 discipline caught it. | 1:00 | `recorded/decisions-findings.yaml` |
 | 8 | Evidence and analysis lineage | `uv run trace view` — then open `http://127.0.0.1:8765/asm-001/lineage/fnd-001` | The differentiator: the finding walks back through its critique, evidence assessment, control mapping, threat, and context claim to the exact document excerpt and its content hash. Read-only; the browser drives nothing. | 1:00 | `demo/forgeflow/assets/pipeline-demo.gif` |
-| 9 | Final report | `uv run trace findings review asm-001 --severity fnd-001=high --approve fnd-001`<br>`uv run trace findings approve asm-001`<br>`uv run trace resume asm-001 --model-profile offline-fake --response demo/forgeflow/recorded/08-report-sections.json`<br>`uv run trace report show asm-001`<br>`uv run trace verify asm-001` | The report is assembled from approved objects; four sections are prose, twelve are rendered deterministically. `trace verify` re-hashes every stored document and evidence reference and checks the report manifest. | 1:00 | `demo/forgeflow/assets/forgeflow-report.md` |
-| 10 | Evaluation over the baseline | open `docs/eval/comparison.md` and `docs/eval/scorecard.html` | The comparison is the deliverable. One row per tool: Trace links every approved finding to hashed evidence and holds injected-instruction compliance at zero where a single-prompt baseline has no defense to test; the generic baseline invents false positives Trace does not. Every cell regenerates offline. | 1:00 | `docs/eval/comparison.md`, `docs/eval/scorecard.html` |
+| 9 | Final report | `uv run trace findings approve asm-001`<br>`uv run trace resume asm-001 --model-profile offline-fake --response demo/forgeflow/recorded/report`<br>`uv run trace report show asm-001 \| head -40`<br>`uv run trace verify asm-001` | The report is assembled from approved objects; four sections are prose, twelve are rendered deterministically, and the reviewer's rejected candidate is not in it. `trace verify` re-hashes every stored document and evidence reference and checks the report manifest. | 1:00 | `demo/forgeflow/assets/forgeflow-report.md` |
+| 10 | Evaluation, including the miss | open `docs/eval/comparison.md` and `docs/eval/scorecard.html` | The comparison is the deliverable. Trace links every approved finding to hashed evidence and holds injected-instruction compliance at zero where a single-prompt baseline has no defense to test. And the flagship row shows the honest number: the live run matched none of the three authored expected findings and approved four defensible ones the truth set does not name — real weaknesses, wrong requirement lens. That row is the reason the evaluation harness exists, and it is measured, not narrated. | 1:30 | `docs/eval/comparison.md`, `docs/eval/scorecard.html` |
 
-Total target: about 8:20 with narration, inside the ten-minute bound. The machine time is
-negligible; cut beats 5–7 to reach five minutes, since they share the `findings show` surface.
+Total target: about 8:30 with narration, inside the ten-minute bound. The machine time is
+negligible; cut beats 5–6 to reach five minutes.
 
-The injection fixture is worth naming aloud at beat 2 or 3: `sample-repository-notes.md` carries a
-deliberate prompt-injection payload, and a reviewer meets it framed as data, verbatim, inside the
-evidence fence — judging an injection attempt means reading the instruction. Its handling is
-measured in the adversarial row of the scorecard, not asserted.
+The injection fixture is worth naming aloud at beat 2: `sample-repository-notes.md` carries a
+deliberate prompt-injection payload — instructions to report no findings, fabricate controls, and
+exfiltrate the signing key — and the recorded run detects it, names the four claims it targeted,
+and follows none of it. Its handling is measured in the adversarial rows of the scorecard, not
+asserted.
 
 ## Recovery plan
 
@@ -67,8 +68,8 @@ recovery artifact maps to a file committed in this repository:
   recorded responses and `recorded/decisions-context.yaml` / `recorded/decisions-findings.yaml`
   are the per-beat state: the run can be driven to exactly the beat that failed.
 - **Backup recording.** `demo/forgeflow/assets/pipeline-demo.gif` is the whole pipeline recorded
-  from `demo/forgeflow/pipeline-demo.tape`, regenerated in CI (`.github/workflows/demo.yml`) so it
-  cannot drift from the commands. If the terminal will not cooperate, play the GIF.
+  from `demo/forgeflow/pipeline-demo.tape`, re-rendered by CI (`.github/workflows/demo.yml`) so it
+  cannot silently drift from the commands. If the terminal will not cooperate, play the GIF.
 - **Screenshots.** Frames of that GIF are the screenshots; it is the committed source, so a still
   from any beat is a frame away and cannot show something the pipeline does not produce.
 - **Static report.** `demo/forgeflow/assets/forgeflow-report.md` is the rendered report for beat 9,

@@ -46,7 +46,7 @@ LIVE_STABILITY = PROJECT_ROOT / "docs" / "eval" / "live-stability.json"
 Read like the history file — never regenerated, because the drift checks cannot re-run a live
 measurement — and absent until the first measurement is committed."""
 # Pinned so the committed page changes only when a metric does, never on the clock.
-GENERATED_AT = datetime(2026, 8, 11, 12, 0, 0, tzinfo=UTC)
+GENERATED_AT = datetime(2026, 8, 14, 12, 0, 0, tzinfo=UTC)
 
 
 def _baseline_response(scenario_path: Path, condition: str) -> Path | None:

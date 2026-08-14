@@ -25,8 +25,9 @@ documentation is treated as a question to ask, not a vulnerability to report.
 > ```
 >
 > It replays a committed ForgeFlow run through every phase with no API key and exits non-zero if
-> the rendered report's content hash stops matching the pinned one. What does not exist is the
-> demonstration surface. The flagship ForgeFlow recording was captured from a live
+> the rendered report's content hash stops matching the pinned one. The demonstration surface
+> exists too: the terminal recording below, the read-only `trace view`, and the committed demo
+> script all replay the same fixtures. The flagship ForgeFlow recording was captured from a live
 > `claude-opus-5` run on 2026-08-14 and replays offline byte-for-byte; the other scenario
 > recordings remain authored offline, and each provenance says which. [Status](#status) gives a
 > precise breakdown.
@@ -231,8 +232,11 @@ Throughout this README:
 Against the seven-stage [roadmap](#roadmap) below, Trace has completed Stage 4 and, of Stage 5's
 decomposition into milestones M6 through M9, the assembly (M6), evaluation (M7), and adversarial
 (M8) milestones: the pipeline the earlier stages specified runs end to end from the command line
-and measures itself offline. Stage 5's demonstration half (M9), the demo-hardening milestone
-(M10), and the evaluation, decision, and surface debt milestones (M11 through M13) are open.
+and measures itself offline. The demo-hardening (M10), decision-debt (M12), and
+surface-completion (M13) milestones are closed, and the evaluation milestone (M11) is closed but
+for the recorded prompt- and model-comparison protocols. What remains open is Stage 6's public
+portfolio half of M9: the demo video, the architecture image, the interview package, and the
+presentation folder.
 
 ### What exists today
 
