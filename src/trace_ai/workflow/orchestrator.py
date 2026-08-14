@@ -7,8 +7,10 @@ the nodes.
 
 **Every step is bounded before it runs.** A node execution checks the count and the elapsed time; a
 model call checks the call ceiling and the projected cost. `agent-design.md` section 27 lists five
-ceilings and this is where all five are enforced, because a limit checked in a node is a limit each
-node has to remember.
+ceilings; four are checks on the budget made here or at the call site, and the fifth — retries —
+is a policy the budget issues to each agent node's attempt loop (DEC-084), because a retry
+decision happens between a classified failure and the next attempt, where the orchestrator never
+stands. Either way the value is the configuration's, held in one budget.
 
 **A run stops rather than degrades.** Exceeding a ceiling records a classified error and marks the
 run failed. It does not skip a node, shrink a request, or continue with what it has: a limit that
@@ -181,11 +183,12 @@ class Orchestrator:
     def _execute(self, node: Node, state: AssessmentState) -> NodeResult:
         """Run one node, recording it, and account for what it spent.
 
-        A node that records its own executions — one that holds the ledger and writes a record per
-        model attempt, the way the agent nodes do — says so with a true `records_own_execution`
-        attribute, and the orchestrator neither records it again nor re-spends its usage. Recording
-        such a node here would double it: `counters()` counts model calls by record, so a wrapper
-        record is not harmless bookkeeping but a second call that never happened.
+        A node that records its own execution — one that holds the ledger and writes one record
+        for the node, carrying every attempt's usage and the retries consumed, the way the agent
+        nodes do — says so with a true `records_own_execution` attribute, and the orchestrator
+        neither records it again nor re-spends its usage. Recording such a node here would double
+        it: `counters()` counts model calls by record, so a wrapper record is not harmless
+        bookkeeping but a second call that never happened.
         """
         context = NodeContext(
             handle=self.handle,

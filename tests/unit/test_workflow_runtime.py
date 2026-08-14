@@ -348,14 +348,24 @@ def test_the_duration_ceiling_stops_a_run_that_is_stuck() -> None:
     assert caught.value.kind is LimitKind.DURATION
 
 
-def test_the_retry_ceiling_counts_from_zero() -> None:
-    """`retry_number` is zero for a first attempt, so a limit of two allows attempts 0, 1, and 2."""
-    budget = Budget(maximum_retries_per_node=2)
-    for retry_number in (0, 1, 2):
-        budget.check_retry(node_name="context-extraction", retry_number=retry_number)
-    with pytest.raises(LimitExceededError) as caught:
-        budget.check_retry(node_name="context-extraction", retry_number=3)
-    assert caught.value.kind is LimitKind.RETRIES
+def test_the_retry_ceiling_travels_as_the_budget_policy() -> None:
+    """DEC-084 / #397: the budget does not check retries; it issues the policy the node's attempt
+    loop runs under, so the configured value is the operative one and zero means zero. An explicit
+    policy still wins — a test that says "no retries" means it — and the built-in default applies
+    only when there is neither."""
+    from trace_ai.workflow import RetryPolicy
+    from trace_ai.workflow.errors import ErrorClass
+    from trace_ai.workflow.limits import resolve_retry_policy
+
+    budget = Budget(maximum_retries_per_node=0)
+    policy = budget.retry_policy()
+    assert policy.maximum_retries_per_node == 0
+    assert not policy.should_retry(ErrorClass.SCHEMA_VALIDATION_FAILURE, attempt_number=0)
+
+    assert resolve_retry_policy(None, budget).maximum_retries_per_node == 0
+    explicit = RetryPolicy(maximum_retries_per_node=5)
+    assert resolve_retry_policy(explicit, budget) is explicit
+    assert resolve_retry_policy(None, None).maximum_retries_per_node == 2
 
 
 def test_an_absent_ceiling_is_none_rather_than_a_large_number() -> None:

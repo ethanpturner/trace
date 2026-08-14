@@ -46,6 +46,7 @@ from trace_ai.domain.proposals.threat_analysis import (
 from trace_ai.infrastructure.model.seam import Creativity, ModelFailure, ModelSuccess
 from trace_ai.services.threats.input_package import assemble_threat_input
 from trace_ai.workflow.errors import ErrorClass, classify_model_failure
+from trace_ai.workflow.limits import resolve_retry_policy
 from trace_ai.workflow.nodes import NodeResult
 from trace_ai.workflow.phases import Phase
 from trace_ai.workflow.retry import AttemptFailedError, RetryPolicy, run_with_retries
@@ -95,7 +96,10 @@ class ThreatAnalysisNode:
     assessment_name: str
     threat_methodology: str
     budget: Budget | None = None
-    retry_policy: RetryPolicy = field(default_factory=RetryPolicy)
+    retry_policy: RetryPolicy | None = None
+    """The attempt loop's policy. `None` — the norm under the driver — defers to the
+    budget's `retry_policy()`, so the configuration's `maximum_retries_per_node` is the
+    operative ceiling (#397); the built-in default applies only when there is neither."""
 
     version: str = NODE_VERSION
     execution_type: ExecutionType = field(default=ExecutionType.MODEL, init=False)
@@ -142,6 +146,7 @@ class ThreatAnalysisNode:
         def attempt(state: Any) -> ThreatAnalysisProposal:
             nonlocal attempts
             attempts += 1
+            execution.retry_number = attempts - 1
 
             prompt = (
                 composed.text
@@ -221,7 +226,7 @@ class ThreatAnalysisNode:
             execution.prompt_version = composed.reference
             proposal = run_with_retries(
                 attempt,
-                policy=self.retry_policy,
+                policy=resolve_retry_policy(self.retry_policy, self.budget),
                 node_name=NODE_NAME,
                 artifacts=context.handle.artifacts,
                 on_attempt_failed=lambda number, failure, path: execution.metadata.update(

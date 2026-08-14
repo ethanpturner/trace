@@ -56,6 +56,11 @@ class Execution:
     output_object_ids: list[str] = field(default_factory=list)
     metadata: dict[str, object] = field(default_factory=dict)
 
+    retry_number: int = 0
+    """Retries this execution consumed — the final attempt's number, set by the node's attempt
+    loop as it runs (#398). Zero when the first attempt succeeded, and mutable because the count
+    is only known at exit: the record is written when the execution closes, not when it opens."""
+
     prompt_version: str | None = None
     model_name: str | None = None
     input_tokens: int = 0
@@ -155,7 +160,10 @@ class ExecutionLedger:
         """
         started = now()
         execution = Execution(
-            node_name=node_name, started_at=started, input_object_ids=list(consumes)
+            node_name=node_name,
+            started_at=started,
+            input_object_ids=list(consumes),
+            retry_number=retry_number,
         )
         try:
             yield execution
@@ -164,7 +172,6 @@ class ExecutionLedger:
                 execution,
                 node_version=node_version,
                 execution_type=execution_type,
-                retry_number=retry_number,
                 status=ExecutionStatus.FAILED,
                 error_type=type(error).__name__,
                 error_message=safe_message(error),
@@ -175,7 +182,6 @@ class ExecutionLedger:
                 execution,
                 node_version=node_version,
                 execution_type=execution_type,
-                retry_number=retry_number,
                 status=ExecutionStatus.COMPLETED,
             )
 
@@ -185,7 +191,6 @@ class ExecutionLedger:
         *,
         node_version: str,
         execution_type: ExecutionType,
-        retry_number: int,
         status: ExecutionStatus,
         error_type: str | None = None,
         error_message: str | None = None,
@@ -205,7 +210,7 @@ class ExecutionLedger:
                 started_at=execution.started_at,
                 completed_at=completed,
                 status=status,
-                retry_number=retry_number,
+                retry_number=execution.retry_number,
                 error_type=error_type,
                 error_message=error_message,
                 duration_ms=max(int((completed - execution.started_at).total_seconds() * 1000), 0),

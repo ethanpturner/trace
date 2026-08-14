@@ -2053,7 +2053,7 @@ Represents one workflow node execution or deterministic processing step.
 | started_at | datetime | Yes | Start time |
 | completed_at | datetime | No | Completion time |
 | status | string | Yes | Running, completed, failed, retried |
-| retry_number | integer | Yes | Retry count |
+| retry_number | integer | Yes | Retries this execution consumed; zero when the first attempt succeeded |
 | error_type | string | No | Error classification |
 | error_message | string | No | Safe error message |
 | duration_ms | integer | No | Execution duration |

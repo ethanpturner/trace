@@ -38,6 +38,7 @@ from trace_ai.services.report.prompt_input import (
     assemble_report_prompt_input,
 )
 from trace_ai.workflow.errors import ErrorClass, classify_model_failure
+from trace_ai.workflow.limits import resolve_retry_policy
 from trace_ai.workflow.nodes import NodeResult
 from trace_ai.workflow.phases import Phase
 from trace_ai.workflow.retry import AttemptFailedError, RetryPolicy, run_with_retries
@@ -109,7 +110,10 @@ class ReportGenerationNode:
     registry: PromptRegistry
     assembled: ReportInput
     budget: Budget | None = None
-    retry_policy: RetryPolicy = field(default_factory=RetryPolicy)
+    retry_policy: RetryPolicy | None = None
+    """The attempt loop's policy. `None` — the norm under the driver — defers to the
+    budget's `retry_policy()`, so the configuration's `maximum_retries_per_node` is the
+    operative ceiling (#397); the built-in default applies only when there is neither."""
 
     version: str = NODE_VERSION
     execution_type: ExecutionType = field(default=ExecutionType.MODEL, init=False)
@@ -151,6 +155,7 @@ class ReportGenerationNode:
         def attempt(state: Any) -> ReportSections:
             nonlocal attempts
             attempts += 1
+            execution.retry_number = attempts - 1
 
             prompt = (
                 composed.text
@@ -237,7 +242,7 @@ class ReportGenerationNode:
             execution.prompt_version = composed.reference
             sections = run_with_retries(
                 attempt,
-                policy=self.retry_policy,
+                policy=resolve_retry_policy(self.retry_policy, self.budget),
                 node_name=NODE_NAME,
                 artifacts=context.handle.artifacts,
                 on_attempt_failed=lambda number, failure, path: execution.metadata.update(
