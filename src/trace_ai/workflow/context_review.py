@@ -1222,7 +1222,15 @@ def re_extraction_feedback(handle: AssessmentHandle) -> str | None:
     trust levels put `reviewer_edit` among the origins that are *not* material under review, and
     the reviewer is the operator rather than a document being assessed. This closes DEC-038's open
     question about whether the rationale may reach a prompt.
+
+    The validation node's retry instructions ride along (DEC-086): re-extraction is the one path
+    on which the extracting agent runs again, so it is the consumer `agent-design.md` section 8's
+    "retry instructions" output was waiting for. The reviewer says why the context was rejected;
+    the validator says, per retryable error, what a corrected extraction must fix. Both are
+    application- or operator-authored and belong outside the fence.
     """
+    from trace_ai.workflow.context_validation import validate_context
+
     requests = [
         decision
         for decision in handle.objects.list(ReviewerDecision)
@@ -1231,4 +1239,19 @@ def re_extraction_feedback(handle: AssessmentHandle) -> str | None:
     ]
     if not requests:
         return None
-    return max(requests, key=lambda decision: (decision.created_at, decision.id)).rationale
+    rationale = max(requests, key=lambda decision: (decision.created_at, decision.id)).rationale
+
+    objects: list[DomainModel] = [
+        obj for _, model in CONTEXT_OBJECT_TYPES for obj in handle.objects.list(model)
+    ]
+    objects.extend(handle.objects.list(ContextClaim))
+    outcome = validate_context(
+        current_system_context(handle),
+        objects,
+        available_evidence={reference.id for reference in handle.objects.list(_reference())},
+    )
+    instructions = outcome.retry_instructions()
+    if not instructions:
+        return rationale
+    listed = "\n".join(f"- {instruction}" for instruction in instructions)
+    return f"{rationale}\n\nThe validation node reported, per correctable error:\n{listed}"

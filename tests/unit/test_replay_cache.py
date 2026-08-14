@@ -135,3 +135,76 @@ def test_re_recording_replaces_rather_than_accumulates() -> None:
     cache.put(key(), {"summary": "second"})
     assert len(cache) == 1
     assert cache.get(key()) == {"summary": "second"}
+
+
+# ------------------------------------------------------------------------------------------
+# The cache behind the seam (#408)
+# ------------------------------------------------------------------------------------------
+
+
+def test_a_hit_answers_from_the_recording_and_never_reaches_the_inner_model() -> None:
+    """The README's claim, made literal: the replay cache sits behind the same interface as
+    every other model. A recorded answer is served as a zero-cost `ModelSuccess` that says it
+    came from the cache, and the inner model is never consulted."""
+    from trace_ai.infrastructure.model import DeterministicModel, ModelSuccess
+    from trace_ai.infrastructure.model.profiles import resolve_profile
+    from trace_ai.infrastructure.model.replay import CachingModel, ReplayCache, cache_key
+
+    profile = resolve_profile("primary-development")
+    key = cache_key(prompt="the prompt", prompt_version="v1", schema=Proposal, profile=profile)
+    cache = ReplayCache({key.digest(): {"summary": "recorded"}})
+    inner = DeterministicModel()  # empty queue: any call would raise ResponsesExhaustedError
+
+    model = CachingModel(inner, cache, profile=profile, prompt_version="v1")
+    outcome = model.generate(prompt="the prompt", schema=Proposal)
+
+    assert isinstance(outcome, ModelSuccess)
+    assert outcome.value == Proposal(summary="recorded")
+    assert outcome.metadata["cache"] == "hit"
+    assert outcome.usage.estimated_cost == 0
+    assert cache.hits == 1
+
+
+def test_a_miss_delegates_and_records_the_answer_for_the_next_run() -> None:
+    """The capture shape (#324): run once against a real inner model and the cache fills with
+    exactly the recordings a later replay serves. The second call is a hit; the inner model's
+    queue proves it was consulted exactly once."""
+    from trace_ai.infrastructure.model import DeterministicModel, ModelSuccess
+    from trace_ai.infrastructure.model.profiles import resolve_profile
+    from trace_ai.infrastructure.model.replay import CachingModel, ReplayCache
+
+    profile = resolve_profile("primary-development")
+    cache = ReplayCache()
+    model = CachingModel(
+        DeterministicModel([Proposal(summary="live")]), cache, profile=profile, prompt_version="v1"
+    )
+
+    first = model.generate(prompt="the prompt", schema=Proposal)
+    assert isinstance(first, ModelSuccess)
+    assert len(cache) == 1
+
+    second = model.generate(prompt="the prompt", schema=Proposal)
+    assert isinstance(second, ModelSuccess)
+    assert second.value == Proposal(summary="live")
+    assert second.metadata["cache"] == "hit", "the recording was not served on the second call"
+
+
+def test_a_failure_is_never_recorded() -> None:
+    """A cached failure replayed as an answer would make a transient provider condition
+    permanent, so only a `ModelSuccess` is recorded."""
+    from trace_ai.infrastructure.model import DeterministicModel, ModelFailure
+    from trace_ai.infrastructure.model.profiles import resolve_profile
+    from trace_ai.infrastructure.model.replay import CachingModel, ReplayCache
+
+    class Other(BaseModel):
+        value: int
+
+    profile = resolve_profile("primary-development")
+    cache = ReplayCache()
+    model = CachingModel(
+        DeterministicModel([Other(value=1)]), cache, profile=profile, prompt_version="v1"
+    )
+
+    outcome = model.generate(prompt="the prompt", schema=Proposal)
+    assert isinstance(outcome, ModelFailure)
+    assert len(cache) == 0

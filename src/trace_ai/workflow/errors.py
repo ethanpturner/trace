@@ -57,11 +57,18 @@ class ErrorClass(StrEnum):
 
     INSUFFICIENT_EVIDENCE = "insufficient_evidence"
     """The material cannot support a conclusion. **Not a technical failure** (section 11): the
-    response is a question, an assumption, or a documentation gap (DEC-009)."""
+    response is a question, an assumption, or a documentation gap (DEC-009).
+
+    No code path constructs this class today, and that is a property of the routing rather than
+    an oversight (DEC-086): the pipeline expresses the condition as the Question or gap it
+    resolves to, so there is nothing left to raise. The member stays because the taxonomy is
+    section 26's vocabulary — the non-retryable rule is stated where retry decisions read it,
+    and a future producer inherits the classification instead of inventing one."""
 
     UNRESOLVED_CONTRADICTION = "unresolved_contradiction"
     """Two passages disagree and the answer would change the assessment. Retrying cannot resolve
-    it, and `SourceObservation` plus a `Question` is what does."""
+    it, and `SourceObservation` plus a `Question` is what does — which is also why nothing
+    raises it today (DEC-086, same reasoning as `INSUFFICIENT_EVIDENCE`)."""
 
     REVIEWER_INPUT_REQUIRED = "reviewer_input_required"
     """A human decision is needed. Not an error — the reason a run stopped (DEC-017)."""

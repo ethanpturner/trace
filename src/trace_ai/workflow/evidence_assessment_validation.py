@@ -143,9 +143,6 @@ class AssessmentValidationError:
 
         return self.error_class in RETRYABLE
 
-    def retry_instruction(self) -> str:
-        return f"assessment {self.position} ({self.subject_id}).{self.field}: {self.message}"
-
 
 @dataclass(frozen=True, slots=True)
 class StatusTransition:
@@ -186,9 +183,6 @@ class EvidenceAssessmentValidationOutcome:
     def clean(self) -> bool:
         """Nothing to report. The expected shape when the documents settle what they settle."""
         return not (self.errors or self.triggers or self.ignored_contradiction_ids)
-
-    def retry_instructions(self) -> tuple[str, ...]:
-        return tuple(error.retry_instruction() for error in self.errors if error.retryable)
 
 
 def _subject_errors(

@@ -180,11 +180,17 @@ def test_a_rejected_component_is_not_in_the_approved_context() -> None:
     assert "cmp-001" in outcome.errors[0].message
 
 
-def test_the_retry_instruction_names_the_threat_and_the_field() -> None:
+def test_a_reference_error_is_retryable_and_names_the_threat_and_the_field() -> None:
+    """The error itself carries what a correction needs — the threat, the field, and the message.
+    The aggregate retry-instruction surface was removed with DEC-086: no path re-runs this
+    validator's agent, so the actionable content lives on the error, where the run's stop
+    reporting reads it."""
     outcome = validate_threats([a_threat(affected_component_ids=["cmp-404"])], context=a_context())
 
-    (instruction,) = outcome.retry_instructions()
-    assert instruction.startswith("thr-001.affected_component_ids:")
+    (error,) = outcome.errors
+    assert error.retryable
+    assert error.threat_id == "thr-001"
+    assert error.field == "affected_component_ids"
 
 
 # ------------------------------------------------------------------------------------------
@@ -286,7 +292,7 @@ def test_an_unsupported_assumption_is_never_retried() -> None:
 
     outcome = validate_threats([threat], context=a_context(), claims=claims)
 
-    assert not outcome.retry_instructions()
+    assert not any(error.retryable for error in outcome.errors)
 
 
 def test_an_unsupported_assumption_does_not_block_the_threat_set() -> None:
@@ -556,7 +562,9 @@ def test_coverage_is_warn_only_and_never_blocks_or_retries() -> None:
 
     assert outcome.valid, "a coverage gap does not block the run"
     assert outcome.coverage_gaps, "the gap is named"
-    assert outcome.retry_instructions() == (), "nothing retries against a coverage gap"
+    assert not any(error.retryable for error in outcome.errors), (
+        "nothing retries against a coverage gap"
+    )
     assert all("coverage" not in error.rule.lower() for error in outcome.errors), (
         "coverage never becomes an error"
     )
@@ -573,7 +581,7 @@ def test_an_inapplicable_category_is_a_warn_only_observation() -> None:
         (observation.threat_id, observation.category) for observation in outcome.implausible_threats
     }
     assert ("thr-001", "spoofing") in flagged
-    assert outcome.retry_instructions() == ()
+    assert not any(error.retryable for error in outcome.errors)
 
 
 def test_a_category_applicable_to_any_affected_element_is_not_flagged() -> None:
