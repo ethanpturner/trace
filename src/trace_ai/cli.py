@@ -1311,9 +1311,10 @@ def _context_review(args: argparse.Namespace, service: AssessmentService) -> int
     if args.apply is not None:
         document = read_review_file(args.apply.read_text(encoding="utf-8"))
         reviewer = args.reviewer or document.get("reviewer") or _default_reviewer()
-        written.extend(
-            apply_review_file(handle, document, reviewer_id=reviewer, workflow_run_id=run_id)
-        )
+        applied = apply_review_file(handle, document, reviewer_id=reviewer, workflow_run_id=run_id)
+        written.extend(applied.decisions)
+        for name in applied.skipped_additions:
+            print(f"skipped addition {name!r}: an object with that name already exists")
 
     lookup: dict[str, Any] = {obj.id: obj for obj in context_objects(handle)}  # type: ignore[attr-defined]
     from trace_ai.domain.question import Question

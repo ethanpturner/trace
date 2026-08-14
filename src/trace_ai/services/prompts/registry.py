@@ -325,18 +325,21 @@ class PromptRegistry:
             parts.append(block)
             composed_from.append(f"{SHARED_DIRECTORY}/{name}")
 
-        body = found.body
-        for name, value in (substitutions or {}).items():
-            body = _MARKER.sub(
-                lambda match, name=name, value=value: (  # type: ignore[misc]
-                    value if match.group(1) == name else match.group(0)
-                ),
-                body,
-            )
+        # The unresolved-marker check runs over the *template body*, before any value is inserted.
+        # A source document -- an untrusted value substituted into `input.source_content` -- may
+        # legitimately contain `{{ x.y }}` (Helm values, a Jinja sample, `{{ site.url }}` in a doc),
+        # and scanning the merged body would read that as an unfilled application marker and fail the
+        # run before any model call. Only a marker the template itself carries and no substitution
+        # supplies is unresolved.
+        supplied = substitutions or {}
+        unfilled = sorted({name for name in _MARKER.findall(found.body) if name not in supplied})
+        if unfilled:
+            raise UnresolvedMarkerError(f"{prompt_id}-{version}", unfilled)
 
-        remaining = sorted(set(_MARKER.findall(body)))
-        if remaining:
-            raise UnresolvedMarkerError(f"{prompt_id}-{version}", remaining)
+        # One pass over the template: each marker is replaced by its value. `re.sub` does not
+        # re-scan replacement text, so a `{{ x.y }}` inside a substituted value is inserted verbatim
+        # rather than treated as a marker, and substitution is not order-dependent.
+        body = _MARKER.sub(lambda match: supplied.get(match.group(1), match.group(0)), found.body)
 
         parts.append(body)
         composed_from.append(str(found.path.relative_to(self.root)))
