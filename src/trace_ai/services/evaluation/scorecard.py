@@ -137,7 +137,31 @@ def _pct(value: float | None) -> str:
 
 
 def _cost(value: float | None) -> str:
-    return "—" if value is None else f"{value:.4f}"
+    """A dash for unmeasured cost (#431): offline replays estimate nothing, and a column of
+    0.0000 reads as instrumentation failure rather than as the deliberate absence it is."""
+    return "—" if not value else f"{value:.4f}"
+
+
+def _grade(value: float | None) -> str:
+    """F1 with the defined colors finally used (#431): the page's best and worst cells should
+    draw the eye, and a monochrome grid argues for nothing."""
+    if value is None:
+        return "—"
+    rendered = _pct(value)
+    if value >= 0.999:
+        return f'<span class="good">{rendered}</span>'
+    if value <= 0.001:
+        return f'<span class="bad">{rendered}</span>'
+    return rendered
+
+
+def _compliance(value: float | None) -> str:
+    """Injected-instruction compliance, where zero is the target (DEC-075)."""
+    if value is None:
+        return "—"
+    rendered = _pct(value)
+    css = "good" if value <= 0.001 else "bad"
+    return f'<span class="{css}">{rendered}</span>'
 
 
 def _schema(value: bool | None) -> str:
@@ -169,6 +193,8 @@ thead th { background: var(--head); position: sticky; top: 0; }
 tbody tr.scenario-start td { border-top: 2px solid var(--line); }
 .ablated { color: var(--muted); }
 .note { color: var(--muted); margin-top: 1.5rem; max-width: 60ch; }
+.good { color: var(--good); font-weight: 600; }
+.bad { color: var(--bad); font-weight: 600; }
 """
 
 
@@ -278,7 +304,11 @@ truth source. Context accuracy, threat coverage, and mapping accuracy are recall
 expected-context, expected-threats, and expected-control-mappings files; question usefulness
 covers the expected questions not paired to a documentation gap; the unsupported-claim rate is
 over the report's prose sentences. A dash is unmeasured, never zero — tokens are unreported by
-offline replays and populate on the first live run.</p>
+offline replays and populate from live runs. Context and threat matching are exact-name
+structural checks: forgeflow's context and threat rows reflect naming divergence between the
+live run and the independently authored truth set (its components and flows match fully;
+actors, assets, and claims differ by name), not extraction omission — the per-type breakdown
+is recorded in each metric's notes.</p>
 <div class="scroll">
 <table>
 <thead><tr>
@@ -401,9 +431,10 @@ def render_scorecard(
         marker = "" if row.authoritative else " *"
         body.append(
             f"<tr{attr}><td>{html.escape(row.scenario)}</td><td>{html.escape(row.condition)}{marker}</td>"
-            f"<td>{_pct(row.precision)}</td><td>{_pct(row.recall)}</td><td>{_pct(row.f1)}</td>"
+            f"<td>{_pct(row.precision)}</td><td>{_pct(row.recall)}</td>"
+            f"<td>{_grade(row.f1)}</td>"
             f"<td>{row.matched}</td><td>{row.missed}</td><td>{row.spurious}</td>"
-            f"<td>{_pct(row.compliance)}</td>"
+            f"<td>{_compliance(row.compliance)}</td>"
             f"<td>{_schema(row.schema_valid)}</td><td>{_cost(row.cost)}</td></tr>"
         )
 
@@ -437,8 +468,12 @@ Metrics and identifiers only — no assessment content (DEC-076).</p>
 precision where a run produced none. Compliance is the injected-instruction compliance rate under
 attack (DEC-075) — zero is the target — shown only for adversarial conditions. Rows marked * are
 non-authoritative (baselines and ablations, DEC-012). Run-to-run variance (DEC-077) is a live
-measurement and is not shown for these recorded runs, which are deterministic. Per-item diffs stay
-local (DEC-073).</p>
+measurement is recorded per DEC-077 where a live protocol ran; deterministic replays show none.
+Per-item diffs stay local (DEC-073). The forgeflow row is the live-model run scored against an
+independently authored truth set: it approved four defensible findings under different requirement
+identifiers than the truth set names and matched none of the three expected — real weaknesses,
+wrong requirement lens (<code>demo/forgeflow/recorded/provenance.md</code>). Cost shows a dash
+where the run was an offline replay that measured nothing.</p>
 {_adversarial_section(rows)}
 {_truth_section(rows)}
 {_live_stability_section(live_stability)}

@@ -65,6 +65,7 @@ VIEWS: tuple[tuple[str, str], ...] = (
     ("Workflow", "workflow"),
     ("Questions & decisions", "questions"),
     ("Findings", "findings"),
+    ("Lineage", "lineage"),
     ("Evaluation", "evaluation"),
 )
 
@@ -158,7 +159,7 @@ def render_index(assessments: Sequence[Assessment]) -> str:
                 _link(a.id, f"/{a.id}/overview"),
                 a.name,
                 a.status.value,
-                a.final_report_path is not None,
+                "rendered" if a.final_report_path else "—",
             ]
             for a in assessments
         ]
@@ -186,7 +187,10 @@ def render_overview(handle: AssessmentHandle, assessment: Assessment) -> str:
     body = (
         f"<table>{body}</table>"
         + "<h2>Objects</h2>"
-        + _table(["Type", "Count"], sorted(counts.items()))
+        + _table(
+            ["Type", "Count"],
+            [[_type_label(name), count] for name, count in sorted(counts.items())],
+        )
     )
     return render_page("Overview", assessment.id, "overview", body)
 
@@ -234,7 +238,7 @@ def render_workflow(handle: AssessmentHandle, assessment: Assessment) -> str:
             run.status.value,
             "authoritative" if run.is_authoritative else "ablated: " + ", ".join(run.ablations),
             run.total_model_calls,
-            run.estimated_cost or 0,
+            f"{run.estimated_cost:.4f}" if run.estimated_cost else "—",
         ]
         for run in runs
     ]
@@ -280,13 +284,15 @@ def render_findings(handle: AssessmentHandle, assessment: Assessment) -> str:
         rows = [
             [
                 _link(f.id, f"/{assessment.id}/lineage/{f.id}", css="finding"),
-                f.severity.value,
-                f.status.value,
-                f.title,
+                _e(f.severity.value),
+                _e(f.status.value),
+                _e(f.title),
+                _e(f.summary),
+                _e(len(f.evidence_ids)),
             ]
             for f in findings
         ]
-        body = _table_raw(["Finding", "Severity", "Status", "Title"], rows)
+        body = _table_raw(["Finding", "Severity", "Status", "Title", "Summary", "Evidence"], rows)
     return render_page("Findings", assessment.id, "findings", body)
 
 
@@ -383,7 +389,45 @@ def render_evaluation(scorecard_html: str | None) -> str:
             "<code>uv run python scripts/build_scorecard.py</code>.</p>"
         )
         return render_page("Evaluation", None, "evaluation", body)
-    return scorecard_html
+    # The committed page is served byte-for-byte apart from one navigation line injected after
+    # its <body>: without it the view was a dead end — the interface nav vanished and the
+    # browser's back button was the only exit.
+    back = '<p style="margin:0 0 1rem"><a href="/">&larr; assessments</a></p>'
+    return scorecard_html.replace("<body>", f"<body>\n{back}", 1)
+
+
+def render_lineage_index(handle: AssessmentHandle, assessment: Assessment) -> str:
+    """The lineage entry page: pick the finding whose walk to read.
+
+    The walk itself needs a finding identifier, and the differentiator view was unreachable from
+    the navigation without this page — a presenter had to hand-type the deep link.
+    """
+    findings = handle.objects.list(Finding)
+    if not findings:
+        body = '<p class="muted">No findings to walk. The lineage view follows a finding back to its hashed evidence.</p>'
+    else:
+        rows = [
+            [
+                _link(f.id, f"/{assessment.id}/lineage/{f.id}", css="finding"),
+                _e(f.severity.value),
+                _e(f.title),
+            ]
+            for f in findings
+        ]
+        body = (
+            "<p>Every finding links to its full walk: critique, evidence assessment, control "
+            "mapping, threat, context claim, and the exact hashed excerpts underneath.</p>"
+            + _table_raw(["Finding", "Severity", "Title"], rows)
+        )
+    return render_page("Lineage", assessment.id, "lineage", body)
+
+
+def _type_label(class_name: str) -> str:
+    """A stored class name as a reader-facing label: `ContextClaim` -> `Context claim`."""
+    import re as _re
+
+    spaced = _re.sub(r"(?<!^)(?=[A-Z])", " ", class_name)
+    return spaced[0].upper() + spaced[1:].lower()
 
 
 # -- helpers -----------------------------------------------------------------------------------

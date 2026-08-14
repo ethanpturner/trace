@@ -103,6 +103,11 @@ is used only where a step genuinely requires semantic judgment; everything decid
 deterministic node with no model in the loop. Agents propose structured, schema-validated objects.
 The application validates them, decides what to persist, and owns all authoritative state.
 
+![The fixed fourteen-phase pipeline: six model-assisted agents behind validation nodes, two structural human checkpoints, the provider-agnostic model seam, and the boundary between proposed and authoritative state](docs/assets/architecture.svg)
+
+The image is the committed source (`docs/assets/architecture.svg`, hand-authored SVG); the phase
+names in it are pinned to `workflow/phases.py` by `tests/unit/test_architecture_image.py`.
+
 ### Pipeline
 
 ```mermaid
