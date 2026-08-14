@@ -11,11 +11,11 @@ documents. `assemble_threat_input` raises `UnapprovedContextError` on an unappro
 this node does not catch it: a run that produced threats against a context nobody signed off would
 leave artifacts indistinguishable from a correct one.
 
-**Moderate creativity, and only here.** Section 29 gives this agent the one non-`low` creativity
-setting in the MVP, because threat generation benefits from breadth -- subject to that section's
-constraint that creativity must not override architectural grounding. The grounding is enforced by
-`validate_references`, not by the setting: a threat naming a component that was not supplied fails
-validation whatever latitude produced it.
+**Moderate creativity.** Section 29 gives this agent breadth because threat generation benefits
+from it -- subject to that section's constraint that creativity must not override architectural
+grounding. (Critical review runs at the same latitude for the same reason, DEC-085.) The
+grounding is enforced by `validate_references`, not by the setting: a threat naming a component
+that was not supplied fails validation whatever latitude produced it.
 
 **A reference to something the package did not contain is a retryable schema failure.** Section 10
 prohibits inventing components, and DEC-016's error taxonomy classifies a bad reference as
@@ -191,6 +191,12 @@ class ThreatAnalysisNode:
                 )
 
             usages.append(outcome.usage)
+
+            # Section 29: the conditions the call actually ran at, recorded where a reader of the
+            # ExecutionRecord can find them -- a wrong effort mapping is otherwise invisible (#401).
+            for condition_key in ("effort", "creativity"):
+                if condition_key in outcome.metadata:
+                    execution.metadata[condition_key] = outcome.metadata[condition_key]
             if self.budget is not None:
                 self.budget.spend_model_call(outcome.usage.estimated_cost)
 

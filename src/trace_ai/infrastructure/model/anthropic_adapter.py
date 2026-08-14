@@ -66,7 +66,6 @@ __all__ = ["EFFORT_BY_CREATIVITY", "AnthropicModel"]
 # wrong latitude produces plausible output rather than an error.
 EFFORT_BY_CREATIVITY: Final[dict[Creativity, str]] = {
     Creativity.LOW: "high",
-    Creativity.LOW_TO_MODERATE: "xhigh",
     Creativity.MODERATE: "max",
 }
 

@@ -51,19 +51,19 @@ __all__ = [
 class Creativity(StrEnum):
     """How much latitude an agent should have (`agent-design.md` section 29).
 
-    The three values are the ones the section 29 table uses. They are **provider-neutral intent**:
-    they say how much room the agent has to range beyond the obvious reading, and they name no
-    control. An adapter maps them; a caller does not.
+    The two values are the ones the section 29 table uses since DEC-085 resolved its "low to
+    moderate" rows to one value each. They are **provider-neutral intent**: they say how much
+    room the agent has to range beyond the obvious reading, and they name no control. An adapter
+    maps them; a caller does not.
     """
 
     LOW = "low"
-    """Structured analytical work: context extraction, mapping, evidence validation."""
-
-    LOW_TO_MODERATE = "low_to_moderate"
-    """Critical review and report generation: judgment, but grounded in approved objects."""
+    """Structured analytical work: context extraction, mapping, evidence validation — and report
+    generation, which summarises approved objects and invents nothing (DEC-085)."""
 
     MODERATE = "moderate"
-    """Threat analysis. Breadth helps, and must not override architectural grounding."""
+    """Threat analysis and critical review (DEC-085). Breadth helps both — proposing threats and
+    imagining how a conclusion fails — and must not override architectural grounding."""
 
 
 class ModelCapability(StrEnum):

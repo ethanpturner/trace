@@ -207,6 +207,11 @@ class ContextExtractionNode:
                     message=f"the model seam returned {type(outcome).__name__}",
                 )
             usages.append(outcome.usage)
+            # Section 29: the conditions the call actually ran at, recorded where a reader of the
+            # ExecutionRecord can find them -- a wrong effort mapping is otherwise invisible (#401).
+            for condition_key in ("effort", "creativity"):
+                if condition_key in outcome.metadata:
+                    execution.metadata[condition_key] = outcome.metadata[condition_key]
             if self.budget is not None:
                 self.budget.spend_model_call(outcome.usage.estimated_cost)
 

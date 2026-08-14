@@ -5523,3 +5523,43 @@ Tradeoffs:
   retry decision exists. This entry records that reading rather than leaving it implicit.
 - A closed `LimitKind` lost a member. Nothing ever raised or persisted it, so no stored run can
   reference it, but any external reader that enumerated the vocabulary sees four kinds now.
+
+## DEC-085: Section 29's "low to moderate" rows resolve to moderate for critical review and low for report generation; the enum member goes
+
+Date: 2026-08-13
+
+Status: Accepted
+
+Decision:
+
+**The critical review agent runs at `moderate` creativity and the report generation agent at
+`low`.** `agent-design.md` section 29's table is corrected to say so, replacing its two "low to
+moderate" rows. **`Creativity.LOW_TO_MODERATE` is removed from the seam**, together with the
+adapter's `xhigh` effort tier it mapped to; the mapping is now `low` to effort `high` and
+`moderate` to effort `max`.
+
+Why:
+
+- The split reading has been the implemented behavior since the two nodes landed, reasoned only
+  in module docstrings and pinned by tests — a silent divergence from the corpus, which this
+  project's own discipline says needs a decision entry, not improvisation (#402). The reasoning
+  those docstrings carried is sound and is adopted here: the critic is a search — imagining how
+  a conclusion fails benefits from the same breadth as proposing threats — while report
+  generation is a restatement of approved objects, and a restatement takes the conservative
+  reading.
+- An enum member no node can reach is a claim the seam makes and nothing keeps. Nothing
+  persists the value — no recording, no profile, no feed carries `low_to_moderate` — so removal
+  breaks no stored data, and the seam's docstring stops describing an assignment the table no
+  longer makes.
+- The side effect the audit flagged is corrected with it: `threat_analysis.py` claimed to hold
+  "the one non-`low` creativity setting in the MVP", which the critic's `moderate` made false.
+
+Tradeoffs:
+
+- The Anthropic effort ladder loses its middle rung: two intents, two tiers. A future agent
+  with a genuinely intermediate need reintroduces a value through a decision entry, which is
+  the correct friction — an intent is part of what section 29 promises about an agent's
+  behavior, and it should not widen silently.
+- The table's history is less visible: a reader of section 29 no longer sees that two rows
+  were once broader. The note under the table names this entry, which is where the history
+  belongs.

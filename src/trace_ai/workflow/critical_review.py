@@ -20,10 +20,10 @@ superficial criticism" a failure condition and its retry list contains no volume
 that retried an empty response would be the mechanism by which the critic learned to manufacture
 findings, which is the failure the same section names.
 
-**Low-to-moderate creativity** (section 29). The one thing latitude buys here is noticing an
-inconsistency nobody specified a check for; the one thing it costs is superficial volume. Moderate
-is the reading of "low to moderate" that treats the critic as a search rather than as a checklist,
-and it is the setting most worth revisiting at the Stage 4 gate.
+**Moderate creativity** (section 29, resolved by DEC-085). The one thing latitude buys here is
+noticing an inconsistency nobody specified a check for; the one thing it costs is superficial
+volume. Moderate treats the critic as a search rather than as a checklist, and it is the setting
+most worth revisiting once a live run is measured.
 """
 
 from __future__ import annotations
@@ -198,6 +198,12 @@ class CriticalReviewNode:
                 )
 
             usages.append(outcome.usage)
+
+            # Section 29: the conditions the call actually ran at, recorded where a reader of the
+            # ExecutionRecord can find them -- a wrong effort mapping is otherwise invisible (#401).
+            for condition_key in ("effort", "creativity"):
+                if condition_key in outcome.metadata:
+                    execution.metadata[condition_key] = outcome.metadata[condition_key]
             if self.budget is not None:
                 self.budget.spend_model_call(outcome.usage.estimated_cost)
 
