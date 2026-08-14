@@ -118,7 +118,22 @@ def test_the_server_serves_get_only() -> None:
 
 
 def test_the_evaluation_view_embeds_the_scorecard_not_assessment_content() -> None:
-    """DEC-076 boundary: the evaluation view shows the metrics scorecard, not findings text."""
+    """DEC-076 boundary: the evaluation view shows the metrics scorecard, not findings text.
+
+    One navigation line is injected after `<body>` so the view is not a dead end (#431); every
+    other byte is the committed page, so the embed-don't-absorb boundary holds.
+    """
     scorecard = (PROJECT_ROOT / "docs" / "eval" / "scorecard.html").read_text(encoding="utf-8")
     rendered = render.render_evaluation(scorecard)
-    assert rendered == scorecard, "the committed scorecard is embedded verbatim"
+    assert "&larr; assessments" in rendered
+    without_backlink = "\n".join(
+        line for line in rendered.splitlines() if "&larr; assessments" not in line
+    )
+    assert without_backlink == scorecard.rstrip("\n"), (
+        "apart from the injected navigation line, the committed scorecard embeds verbatim"
+    )
+
+
+def test_the_lineage_index_is_one_click_from_the_navigation() -> None:
+    """#431: the differentiator view was reachable only by hand-typed deep link."""
+    assert ("Lineage", "lineage") in render.VIEWS

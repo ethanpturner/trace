@@ -219,9 +219,18 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     data_root = args.data_root or Path(tempfile.mkdtemp(prefix="trace-replay-"))
+    import time
+
+    started = time.monotonic()
+    print("replaying the recorded ForgeFlow run (38 responses, no provider, no key):")
+    print("  ingestion + extraction: 8 documents in, checkpoint 1 answered from the recording")
+    print("  reasoning: threats, mappings, evidence, critiques; checkpoint 2 answered")
+    print("  report: generated, validated, rendered, manifested")
     produced = replay(data_root)
     expected = pinned_hash()
+    elapsed = time.monotonic() - started
 
+    print(f"replayed in {elapsed:.1f}s; assessment at {data_root}")
     print(f"report hash: {produced}")
     if produced != expected:
         print(f"expected:    {expected}", file=sys.stderr)

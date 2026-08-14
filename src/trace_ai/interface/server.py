@@ -86,6 +86,8 @@ def route(path: str, service: AssessmentService) -> Response:
         return Response(200, render.render_findings(handle, assessment))
     if view == "lineage" and len(segments) > 2:
         return Response(200, render.render_lineage(handle, assessment, segments[2]))
+    if view == "lineage":
+        return Response(200, render.render_lineage_index(handle, assessment))
     return Response(404, render.render_page("Not found", None, "", "<p>No such view.</p>"))
 
 
@@ -136,7 +138,12 @@ def serve(data_root: Path, *, port: int = 8765) -> None:
     with AssessmentStore.at_root(data_root) as store:
         service = AssessmentService(store, artifact_root=data_root)
         httpd = HTTPServer((HOST, port), _make_handler(service))
-        print(f"read-only view on http://{HOST}:{httpd.server_address[1]}  (Ctrl-C to stop)")
+        base = f"http://{HOST}:{httpd.server_address[1]}"
+        print(f"read-only view on {base}  (Ctrl-C to stop)")
+        for assessment in _assessments(service):
+            print(f"  {base}/{assessment.id}/overview")
+            print(f"  {base}/{assessment.id}/lineage")
+        print(f"  {base}/evaluation")
         try:
             httpd.serve_forever()
         except KeyboardInterrupt:
