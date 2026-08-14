@@ -1792,3 +1792,28 @@ def test_show_observations_says_so_when_there_are_none(
     identifier = extracted(data_root, capsys, tmp_path)
     assert invoke(data_root, "context", "show", identifier, "--observations") == 0
     assert "no injection attempts or contradictions were observed" in capsys.readouterr().out
+
+
+def test_a_closed_pipe_is_not_a_traceback(monkeypatch: pytest.MonkeyPatch) -> None:
+    """`trace report show | head` ends with the pager; rehearsal showed the resulting
+    BrokenPipeError traceback on screen, which is the one failure mode a scripted
+    demonstration cannot tolerate. The entry point flushes inside its guard and swallows
+    the pipe's closure, redirecting stdout only where a real descriptor exists."""
+    import sys as _sys
+
+    import trace_ai
+    import trace_ai.cli as cli_module
+
+    class _ClosedPipe:
+        def write(self, text: str) -> int:
+            return len(text)
+
+        def flush(self) -> None:
+            raise BrokenPipeError
+
+        def fileno(self) -> int:
+            raise ValueError("no descriptor under test capture")
+
+    monkeypatch.setattr(cli_module, "run", lambda: 0)
+    monkeypatch.setattr(_sys, "stdout", _ClosedPipe())
+    assert trace_ai.main() == 0
