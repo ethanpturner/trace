@@ -17,6 +17,11 @@ wheels/
 coverage.xml
 htmlcov/
 
+# macOS Finder metadata. Written into any directory the platform browses, including
+# tracked fixture trees under demo/ and benchmarks/; unanchored so it is caught wherever
+# it appears rather than at the root alone.
+.DS_Store
+
 # Secrets
 .env
 .env.*

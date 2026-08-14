@@ -15,12 +15,7 @@ import pytest
 from trace_ai import bootstrap, configure_logging
 from trace_ai.cli import run
 from trace_ai.config import Settings, get_settings
-
-
-@pytest.fixture(autouse=True)
-def _clear_settings_cache() -> None:
-    """Stop a cached Settings from leaking between tests."""
-    get_settings.cache_clear()
+from trace_ai.observability import RedactionFilter
 
 
 def test_main_reports_environment_without_leaking_secrets(
@@ -101,3 +96,35 @@ def test_bootstrap_returns_usable_settings(monkeypatch: pytest.MonkeyPatch, tmp_
     settings = bootstrap()
 
     assert settings.app_env == "ci"
+
+
+def _root_handler_has_redaction_filter() -> bool:
+    root = logging.getLogger()
+    return any(
+        any(isinstance(flt, RedactionFilter) for flt in handler.filters)
+        for handler in root.handlers
+    )
+
+
+def test_run_bootstraps_for_a_real_command_not_only_the_banner(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """The redaction filter must guard commands that process source documents, not just `trace`
+    with no arguments -- `run`, `resume`, and `evaluate` used to skip bootstrap entirely."""
+    monkeypatch.setattr("trace_ai.config.ENV_FILE", tmp_path / "absent.env")
+
+    exit_code = run(["--data-root", str(tmp_path / "data"), "assessment", "list"])
+
+    assert exit_code == 0
+    assert _root_handler_has_redaction_filter()
+
+
+def test_run_applies_the_configured_log_level(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    monkeypatch.setattr("trace_ai.config.ENV_FILE", tmp_path / "absent.env")
+    monkeypatch.setenv("LOG_LEVEL", "WARNING")
+
+    run([])
+
+    assert logging.getLogger().level == logging.WARNING

@@ -32,7 +32,7 @@ import sys
 from datetime import date
 from typing import TYPE_CHECKING, Any
 
-from trace_ai.config import MissingSettingError
+from trace_ai.config import MissingSettingError, Settings
 from trace_ai.domain.assessment import default_configuration
 from trace_ai.domain.enums import ReviewDisposition, RiskTreatment, Severity, SourceOrigin
 from trace_ai.domain.evidence import EvidenceReference
@@ -681,8 +681,18 @@ def _path(value: str) -> Path:
 def run(argv: Sequence[str] | None = None) -> int:
     """Parse and dispatch. Returns the exit code rather than calling `sys.exit`, so tests can
     drive it directly."""
+    from trace_ai import bootstrap
+
     parser = build_parser()
     args = parser.parse_args(argv)
+
+    # Once, before any command runs: load `.env` into `os.environ` for the provider SDKs, apply the
+    # configured log level, and install the redaction filter. It used to run only for the banner, so
+    # every real command -- `run`, `resume`, `evaluate`, the ones that actually process untrusted
+    # source documents -- left third-party log output unfiltered and `.env` unloaded. The deferred
+    # import mirrors `main`'s: `trace_ai.cli` is imported from within `trace_ai`, so a top-level
+    # import here would be circular.
+    settings = bootstrap()
 
     handlers = {
         ("assessment", "create"): _assessment_create,
@@ -713,7 +723,7 @@ def run(argv: Sequence[str] | None = None) -> int:
     }
 
     if args.group is None:
-        return _banner()
+        return _banner(settings)
     if args.group == "reset":
         # Before a store opens: `reset` removes the database, and `AssessmentStore.at_root`
         # would first recreate the thing it is about to delete.
@@ -744,15 +754,13 @@ def run(argv: Sequence[str] | None = None) -> int:
         return 1
 
 
-def _banner() -> int:
-    """The no-argument behaviour, unchanged: environment, log level, configured credentials.
+def _banner(settings: Settings) -> int:
+    """The no-argument behaviour: environment, log level, configured credentials.
 
-    Credentials are reported as names only. `Settings` holds them as `SecretStr`, and printing one
-    would defeat that at the last step.
+    The process is already bootstrapped by `run`, so this receives the settings rather than
+    reading them a second time. Credentials are reported as names only. `Settings` holds them as
+    `SecretStr`, and printing one would defeat that at the last step.
     """
-    from trace_ai import bootstrap
-
-    settings = bootstrap()
     configured = [
         name.removesuffix("_api_key")
         for name in ("anthropic_api_key", "openai_api_key", "langsmith_api_key")
