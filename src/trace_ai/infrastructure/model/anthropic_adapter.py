@@ -19,6 +19,16 @@ evidence rules, not by being given less room to think.
 retry budget belongs to the orchestrator, and an adapter that retried would break the
 `ExecutionRecord` retry count and the cost ceiling. Nothing in this module loops.
 
+**The adapter validates the response text itself, never the SDK.** `messages.parse` validates each
+text block client-side and raises `pydantic.ValidationError` when the text does not fit the schema
+— which is exactly the shape of a `max_tokens`-truncated response, and an exception the
+`anthropic.*` ladder cannot catch. Raised, it would discard the response and with it the raw output
+`data-model.md` section 33 requires preserved. So this adapter sends the same wire request through
+`messages.create` (the schema transformed by the SDK's own `transform_schema`, merged into
+`output_config` exactly as `parse` would merge it), checks `stop_reason` first so truncation
+reports as truncation, and only then validates the text — returning a `ModelFailure` that carries
+it either way.
+
 **The client is constructed on first use, never at import.** Building it at import time would make
 `import trace_ai` require a key, which is exactly what `Settings.require()` exists to avoid — and
 would break a bare `uv run pytest` on a machine with no `.env`.
@@ -30,6 +40,7 @@ import time
 from typing import TYPE_CHECKING, Any, Final
 
 import anthropic
+import pydantic
 
 from trace_ai.config import Settings, get_settings
 from trace_ai.infrastructure.model.profiles import ModelProfile, resolve_profile
@@ -135,25 +146,44 @@ class AnthropicModel:
         Every provider condition is caught and returned as a `ModelFailure`. That is not defensive
         breadth: the caller has to record a cost and a duration for the attempt either way, and an
         exception escaping here would leave the execution ledger with a node that started and never
-        finished.
+        finished. Validation runs here rather than in the SDK for the same reason — the SDK's
+        client-side parse raises past that guarantee and takes the raw output with it.
         """
         resolved = settings if settings is not None else self._profile.settings
         effort = EFFORT_BY_CREATIVITY[resolved.creativity]
+
+        # Built before the schema is touched, so an unconfigured key surfaces as
+        # `MissingSettingError` with its fix — the operator's most likely slip (#319) — rather
+        # than as whatever the schema transformation happens to say first.
+        client = self._api()
+        started = time.monotonic()
+
+        try:
+            wire_schema = anthropic.transform_schema(schema)
+        except ValueError as error:
+            return self._failed(
+                FailureReason.INVALID_REQUEST,
+                f"the schema {schema.__name__} could not be transformed for the provider's "
+                f"structured-output format: {error}",
+                started,
+            )
+
         request: dict[str, Any] = {
             "model": self._profile.model,
             "max_tokens": resolved.max_output_tokens,
             "messages": [{"role": "user", "content": prompt}],
-            "output_format": schema,
-            "output_config": {"effort": effort},
+            "output_config": {
+                "effort": effort,
+                "format": {"type": "json_schema", "schema": wire_schema},
+            },
             "thinking": {"type": "adaptive"},
         }
         if system is not None:
             request["system"] = system
 
-        started = time.monotonic()
         try:
-            response = (
-                self._api().with_options(timeout=resolved.timeout_seconds).messages.parse(**request)
+            response = client.with_options(timeout=resolved.timeout_seconds).messages.create(
+                **request
             )
         except anthropic.APITimeoutError as error:
             return self._failed(FailureReason.TIMEOUT, str(error), started)
@@ -186,8 +216,19 @@ class AnthropicModel:
                 raw_output=_text_of(response),
             )
 
-        parsed = getattr(response, "parsed_output", None)
-        if not isinstance(parsed, schema):
+        raw = _text_of(response)
+        if raw is None:
+            return ModelFailure(
+                reason=FailureReason.SCHEMA_VALIDATION_FAILURE,
+                message=f"the response carried no text block to validate as {schema.__name__}",
+                usage=usage,
+            )
+
+        try:
+            parsed = schema.model_validate_json(raw)
+        except pydantic.ValidationError:
+            # The validation error's own text embeds fragments of the model output, which is
+            # untrusted; the message stays safe (section 27) and the raw output carries the detail.
             return ModelFailure(
                 reason=FailureReason.SCHEMA_VALIDATION_FAILURE,
                 message=(
@@ -195,7 +236,7 @@ class AnthropicModel:
                     f"the raw output is preserved (data-model.md section 33)"
                 ),
                 usage=usage,
-                raw_output=_text_of(response),
+                raw_output=raw,
             )
 
         return ModelSuccess(
