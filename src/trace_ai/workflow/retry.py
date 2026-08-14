@@ -29,6 +29,7 @@ from typing import TYPE_CHECKING, Final
 
 from trace_ai.domain.base import now
 from trace_ai.infrastructure.filesystem.atomic import write_text_atomic
+from trace_ai.services.execution_ledger import safe_message
 from trace_ai.workflow.errors import RETRYABLE, ErrorClass, WorkflowError
 
 if TYPE_CHECKING:
@@ -100,6 +101,13 @@ class RetryPolicy:
     sleep: Callable[[float], None] = field(default=lambda _seconds: None)
     """How the loop waits. Injected so a test asserts the delays rather than serving them."""
 
+    jitter: Callable[[float], float] = field(default=lambda delay: delay)
+    """Applied to each computed delay. The default is identity -- no jitter -- so delays stay
+    deterministic for tests and for a single local process (DEC-004), where there is no fleet to
+    spread. A deployment with concurrent clients can inject randomised jitter to avoid retrying a
+    rate limit in lockstep; injected rather than hardwired so the determinism is the caller's
+    choice, not a coin this module flips."""
+
     def should_retry(self, error_class: ErrorClass, *, attempt_number: int) -> bool:
         """Whether another attempt is permitted after a failure of this class.
 
@@ -112,11 +120,11 @@ class RetryPolicy:
         return attempt_number < self.maximum_retries_per_node
 
     def delay_for(self, attempt_number: int) -> float:
-        """The backoff before attempt `attempt_number`, exponential and capped."""
+        """The backoff before attempt `attempt_number`, exponential, capped, and jittered."""
         if attempt_number <= 0:
             return 0.0
         exponential = self.base_delay_seconds * float(2 ** (attempt_number - 1))
-        return min(exponential, self.maximum_delay_seconds)
+        return self.jitter(min(exponential, self.maximum_delay_seconds))
 
 
 def preserve_failed_output(
@@ -152,22 +160,30 @@ def run_with_retries[T](
     `WorkflowRun.error_summary`; the last valid checkpoint is untouched, because nothing here
     writes state.
     """
+    # Imported here rather than at module scope: `limits` imports `RetryPolicy` from this module, so
+    # a top-level import would be circular. By call time every module below is fully loaded.
+    from trace_ai.config import MissingSettingError
+    from trace_ai.infrastructure.model.fake import ResponsesExhaustedError
+    from trace_ai.workflow.limits import LimitExceededError
+
+    # Errors that are already meaningful on their own and must not be re-wrapped as an application
+    # fault: a classified WorkflowError, a ceiling the orchestrator classifies, and the two
+    # operator-facing configuration errors -- an unset provider key and an exhausted recording --
+    # whose own message is the fix and which the orchestrator renders cleanly.
+    passthrough = (WorkflowError, LimitExceededError, MissingSettingError, ResponsesExhaustedError)
+
     attempt_number = 0
     feedback: str | None = None
+    prior_feedback: list[str] = []
     artifact_path: str | None = None
 
     while True:
         try:
             return attempt(AttemptContext(attempt_number=attempt_number, feedback=feedback))
         except AttemptFailedError as failure:
-            artifact_path = None
-            if artifacts is not None and failure.raw_output is not None:
-                artifact_path = preserve_failed_output(
-                    artifacts,
-                    node_name=node_name,
-                    attempt_number=attempt_number,
-                    raw_output=failure.raw_output,
-                )
+            artifact_path = _preserve_quietly(
+                artifacts, node_name=node_name, attempt_number=attempt_number, failure=failure
+            )
             if on_attempt_failed is not None:
                 on_attempt_failed(attempt_number, failure, artifact_path)
 
@@ -180,5 +196,52 @@ def run_with_retries[T](
                 ) from None
 
             attempt_number += 1
-            feedback = failure.feedback
+            # Feedback accumulates across attempts rather than being overwritten: attempt three must
+            # see what attempt one complained about, or a field it fixed on attempt two is free to
+            # regress on attempt three because nothing still asks it to hold. Deduplicated so a
+            # recurring complaint is stated once.
+            if failure.feedback and failure.feedback not in prior_feedback:
+                prior_feedback.append(failure.feedback)
+            feedback = "\n\n".join(prior_feedback) if prior_feedback else None
             policy.sleep(policy.delay_for(attempt_number))
+        except passthrough:
+            # Already classified or operator-facing; let it propagate with its own message.
+            raise
+        except Exception as unexpected:
+            # Anything the attempt raised that is not a classified AttemptFailedError -- a store
+            # error, a ResponsesExhaustedError, a recording-drift ValidationError that escaped the
+            # seam -- is a fault in this application, not a provider condition. It is non-retryable
+            # and stops the run with a bounded, safe message rather than escaping the loop (and the
+            # ledger) as the raw exception.
+            raise WorkflowError(
+                ErrorClass.UNEXPECTED_APPLICATION_FAILURE,
+                safe_message(unexpected),
+                attempts=attempt_number + 1,
+            ) from unexpected
+
+
+def _preserve_quietly(
+    artifacts: ArtifactStore | None,
+    *,
+    node_name: str,
+    attempt_number: int,
+    failure: AttemptFailedError,
+) -> str | None:
+    """Preserve a failed attempt's output, without letting a write failure mask the real failure.
+
+    `preserve_failed_output` writes to disk and can raise (a full disk, a permission error); inside
+    the except block that is handling the attempt's failure, an unguarded raise would replace the
+    classified failure with an incidental one. A failed preservation loses a debug artifact, which is
+    the lesser loss.
+    """
+    if artifacts is None or failure.raw_output is None:
+        return None
+    try:
+        return preserve_failed_output(
+            artifacts,
+            node_name=node_name,
+            attempt_number=attempt_number,
+            raw_output=failure.raw_output,
+        )
+    except OSError:
+        return None

@@ -121,5 +121,9 @@ def build_model(profile: ModelProfile, *, responses: Sequence[BaseModel] = ()) -
                     for agent in profile.agent_overlays
                 },
             )
-        return AnthropicModel(profile.name)
+        # The profile object, not its name: passing the name re-resolves it from the global
+        # registry, which reverts an ad-hoc profile (one built with `replace(...)` or
+        # `with_creativity(...)`) to whatever the registry holds under that name -- or raises
+        # `UnknownModelProfileError` if the name is not registered at all.
+        return AnthropicModel(profile)
     raise UnknownProviderError(profile.provider, ("anthropic", "fake"))
