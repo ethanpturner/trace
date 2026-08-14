@@ -25,7 +25,7 @@ mechanically to itself would be inconsistent with what the project argues.
 **Every mitigation below names where it is enforced, or says plainly that it is not implemented.**
 A threat model that lists mitigations without naming their enforcement point is the failure this
 project exists to criticize — a claim about a control with no evidence behind it. The status column
-uses three values:
+uses five values:
 
 | Status | Meaning |
 |---|---|
@@ -33,6 +33,7 @@ uses three values:
 | **Designed** | Specified in the corpus, not built. The issue that builds it is named. |
 | **Open** | Depends on a decision that has not been made. The issue that decides it is named. |
 | **Partial** | A control exists and does not cover every path. What it misses is stated. |
+| **Known gap** | No control exists and none is planned. The reason is stated where the row is. |
 
 ForgeFlow's threat model is scenario data and lives in `demo/forgeflow/forgeflow-scenario.md`.
 Nothing here describes it.
@@ -67,10 +68,10 @@ test data and is committed unaltered on purpose: sanitizing it would destroy the
 
 | Risk | Mitigation | Where | Status |
 |---|---|---|---|
-| Source content redefines an agent's role, schema, or tool grants | Every agent receiving source-derived content is instructed that source content is untrusted data, cannot modify its role, cannot redefine output schemas, and cannot authorize tools | `agent-design.md` section 25; the shared prompt block | **Designed** — #70 authors the block, #71 fences the content |
+| Source content redefines an agent's role, schema, or tool grants | Every agent receiving source-derived content is instructed that source content is untrusted data, cannot modify its role, cannot redefine output schemas, and cannot authorize tools | `prompts/shared/source-content-boundary-v1.md`, composed into every agent prompt; the fence in `services/context/input_package.py` | **Enforced** |
 | An agent-proposed object carries an invented field that a consumer later trusts | `extra="forbid"` on every domain object: an unknown key fails validation rather than being dropped | `trace_ai.domain.base.DomainModel` | **Enforced** |
 | A source filename escapes the assessment directory | Filenames are refused by shape (no separators, no `..`, not absolute) and again by resolution, so a clean name landing through a symlink is also refused | `ArtifactStore._safe_path` | **Enforced** |
-| Injected content is silently followed rather than recorded | Detection produces a `SourceObservation` of kind `injection_attempt` (DEC-021), which carries no severity and never becomes a `Finding` | `data-model.md` section 10a | **Designed** — #140 builds the object, #74 tests the fixture |
+| Injected content is silently followed rather than recorded | Detection produces a `SourceObservation` of kind `injection_attempt` (DEC-021), which carries no severity and never becomes a `Finding` | `domain/source_observation.py`; consumed by `workflow/reason_codes.py` and surfaced by the CLI and review package | **Enforced** |
 | Ingestion treats a document carrying an injection differently from one that does not | The loader is indifferent to content: format comes from the extension, metadata is size-derived, and the produced object is field-for-field identical to one for a benign document | `trace_ai.services.ingestion.loader`, `tests/unit/test_untrusted_source_boundary.py` | **Enforced** |
 | The loader is given a construct that could execute document content | No call to `eval`, `exec`, `compile`, `__import__`, `yaml.load`, `os.system`, or `subprocess`, and no import of `subprocess`, `importlib`, `pickle`, `shutil`, or `ctypes`. Asserted over the syntax tree, so prose explaining why is not mistaken for a use | `tests/unit/test_untrusted_source_boundary.py` | **Enforced** |
 | Source content is quoted into a log line, where it leaves the assessment's boundary | The redaction filter replaces a field whose name marks it as source-derived with a length and the identifier of the object it came from | `trace_ai.observability.RedactionFilter` | **Enforced** |
@@ -93,7 +94,7 @@ public data and avoids confidential information.
 | A credential is committed past the hooks | gitleaks scans locally as a pre-commit hook, and again in CI over the full history — the enforcement point `--no-verify` and an uninstalled clone cannot skip | `.pre-commit-config.yaml`; `.github/workflows/ci.yml` gitleaks step | Enforced |
 | CI spends money or needs a key | The `integration` and `evaluation` markers are deselected in `addopts`, so a bare `pytest` cannot make a provider call | `pyproject.toml` | **Enforced** |
 | Source content or prompts reach an external tracing provider | `enable_external_tracing` is off unless set, and section 5.17 requires a data-handling review before it is enabled | `AssessmentConfiguration`, default from `default_configuration()` | **Enforced** for the default; **Designed** for the tracing integration itself |
-| A run costs more than intended | `maximum_model_calls` and `maximum_cost` are optional limits, carried as `Decimal` so a comparison at the limit is exact | `AssessmentConfiguration` | **Designed** — the fields exist; nothing enforces them until the orchestrator does |
+| A run costs more than intended | `maximum_model_calls` and `maximum_cost` are optional limits, carried as `Decimal` so a comparison at the limit is exact | `AssessmentConfiguration`, enforced by `workflow/limits.py` and the orchestrator — the call count and projected cost are checked before the call that would cross them | **Enforced** |
 | A secret is interpolated into a log message before `logging` sees it | Nothing can catch this. A pre-formatted string has no field name and no type, and the module documents the gap rather than implying coverage | `trace_ai.observability` module docstring, and a test that proves it leaks | **Known gap**, deliberately unmitigated |
 
 **What leaves the machine is a design surface, not an accident.** Design principle 13 requires that
@@ -146,19 +147,19 @@ behind it, because it is the one an ordinary bug reaches.
 
 ## 7. Generated-output boundary
 
-Model-generated content is untrusted until validated and reviewed. This boundary is almost entirely
-unbuilt, because nothing generates yet.
+Model-generated content is untrusted until validated and reviewed. All six agents exist, each
+behind a deterministic validation node, and this boundary is where their output is held.
 
 | Risk | Mitigation | Where | Status |
 |---|---|---|---|
-| An agent writes authoritative state directly | Agents return proposed objects; the application validates and persists. Agents get no database writes, no filesystem, no shell, no internet, and no credentials | `agent-design.md` section 22, design principle 13 | **Designed** — no agent exists, and no module reachable from one touches a store |
-| An agent reads a file directly rather than through the retrieval interface | `EvidenceIndex` is that interface, and it exists before any agent so it has no exceptions. Its prompt-facing shape carries no path of any kind, asserted by searching the serialized output | `trace_ai.services.evidence.index` | **Enforced** for the interface; **Designed** for the agents that will use it |
+| An agent writes authoritative state directly | Agents return proposed objects; the application validates and persists. Agents get no database writes, no filesystem, no shell, no internet, and no credentials | `domain/proposals/` carries nothing authoritative and `extra="forbid"` refuses invented fields; agents reach the world only through `StructuredModel`, and `tests/unit/test_model_boundary.py` plus `test_package_layout.py` pin the boundary | **Enforced** |
+| An agent reads a file directly rather than through the retrieval interface | `EvidenceIndex` is that interface, and it exists before any agent so it has no exceptions. Its prompt-facing shape carries no path of any kind, asserted by searching the serialized output | `trace_ai.services.evidence.index`; every agent's input package assembles through it and carries no filesystem path | **Enforced** |
 | A conclusion cites a passage the document no longer contains | Verification re-reads the artifact at the recorded location and reports a changed quotation distinctly from a missing file | `EvidenceIndex.verify` | **Enforced** — nothing runs it on a schedule; see section 8 |
-| Missing documentation is reported as a weakness | A `Finding` asserts a weakness; a `DocumentationGap` says it cannot be determined. `EvidenceReference` cannot express absence at all — `quoted_text` is required and non-empty, so there is no way to cite silence | `trace_ai.domain.evidence`, DEC-009 | **Enforced** for the evidence half; **Designed** for the finding half (#96) |
-| Unapproved content reaches the report | The finding-approval checkpoint is a workflow node rather than a runtime conditional, and `AssessmentConfiguration` carries no setting that governs it | DEC-005, DEC-012, `AssessmentConfiguration` and its tests | **Enforced** for the absence of the switch; **Designed** for the gate (#102, #103) |
-| An ablated run produces an approved assessment | An assessment completed by a non-authoritative run cannot reach `approved` | `AssessmentService.approve` | **Enforced** — the authority flag is supplied by the caller until `WorkflowRun` exists (#57) |
+| Missing documentation is reported as a weakness | A `Finding` asserts a weakness; a `DocumentationGap` says it cannot be determined. `EvidenceReference` cannot express absence at all — `quoted_text` is required and non-empty, so there is no way to cite silence | `trace_ai.domain.evidence` and `trace_ai.domain.finding`, DEC-009; DEC-013's outcome table routes silence to gaps and questions, never findings | **Enforced** |
+| Unapproved content reaches the report | The finding-approval checkpoint is a workflow node rather than a runtime conditional, and `AssessmentConfiguration` carries no setting that governs it | DEC-005, DEC-012; `workflow/checkpoint.py` advances only on recorded decisions, and `finding_review.py` refuses approval at `unassigned` severity | **Enforced** |
+| An ablated run produces an approved assessment | An assessment completed by a non-authoritative run cannot reach `approved` | `AssessmentService.approve` reads `WorkflowRun.is_authoritative` from the run that rendered the report — no caller supplies the flag | **Enforced** |
 | A reviewer edit enters an object without validation | Edited objects are rebuilt through `model_validate`; `model_copy` validates nothing and is documented as the wrong API | `trace_ai.domain.base` docstring, `CLAUDE.md`, four pinning tests | **Enforced** by convention and tests, not by the type system |
-| Report rendering introduces content no model or reviewer produced | Rendering is deterministic and uses no model | `current-architecture.md` section 5.13 | **Designed** (#106) |
+| Report rendering introduces content no model or reviewer produced | Rendering is deterministic and uses no model | `workflow/report_rendering.py` imports no model client, and `templates/report-v1.md` fixes which four sections carry model prose (DEC-035) | **Enforced** |
 | A citation cannot be checked against the document it claims to come from | Every `EvidenceReference` carries a line range and a hash over its own verbatim quotation, and normalization cannot change line counts, so the recorded location addresses the original (DEC-015) | `trace_ai.services.evidence.indexing`, `trace_ai.services.ingestion.normalize` | **Enforced** |
 
 ## 8. Cross-cutting: what is not covered
@@ -194,8 +195,10 @@ Per the roadmap's cross-cutting workstream, this document is revisited when:
   and a view that ever did would re-trigger this review;
 - a boundary's `Designed` or `Open` row becomes `Enforced`, so the status column stays true.
 
-The first of those triggers arrives in M2, with the first outbound model call. This document was
-written before it rather than after.
+This document was written before the first outbound model call and has been revisited since: the
+2026-08-13 audit pass flipped every row whose enforcement had landed — the fence, the injection
+observation, the ceilings, the agent boundary, the finding gate, and rendering among them — and
+closed the gitleaks gap section 8 had named.
 
 ## 10. Open questions
 

@@ -47,7 +47,8 @@ Identifiers allow Trace to:
 
 Identifiers should not depend on mutable display names.
 
-Example identifier prefixes:
+The identifier prefixes — a closed registry, not examples; `domain/identifiers.py` refuses a
+prefix this list does not carry:
 
 asm- Assessment
 

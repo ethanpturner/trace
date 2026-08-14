@@ -79,11 +79,12 @@ __all__ = [
 # is carried rather than a bare set so that a validation error can name the object type, which is
 # the thing a reader of the error actually needs.
 #
-# There are twenty-four. The issue that asked for this module said nineteen and omitted `obs`,
+# There are twenty-five. The issue that asked for this module said nineteen and omitted `obs`,
 # which DEC-021 added along with SourceObservation after the backlog was written. DEC-034 added
 # `act`, `eas`, and `crq`: all three name assessment-scoped objects that carry an `id` and had no
 # prefix, which a rule saying what the scheme governs made visible. DEC-052 added `mrg` with
-# FindingMergeRecord. Section 2.1 is authoritative and lists them.
+# FindingMergeRecord, and DEC-065 added `cgc` with CatalogGapCandidate. Section 2.1 is
+# authoritative and lists them.
 PREFIXES: dict[str, str] = {
     "asm": "Assessment",
     "src": "SourceDocument",
@@ -245,7 +246,7 @@ def _validator(prefix: str) -> AfterValidator:
 
 # One annotated type per prefix, so a field is `AssessmentId` rather than `str` and a threat
 # identifier cannot be assigned to a finding's field without the schema noticing. Written out
-# rather than generated in a loop: twenty explicit names type-check, and a dict comprehension
+# rather than generated in a loop: twenty-five explicit names type-check, and a dict comprehension
 # producing them would be invisible to mypy and to anyone reading for the type they want.
 AssessmentId = Annotated[str, _validator("asm")]
 SourceDocumentId = Annotated[str, _validator("src")]
