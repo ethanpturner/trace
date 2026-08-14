@@ -121,7 +121,11 @@ class Orchestrator:
         the pipeline itself never needs (there is no analytical reason to stop early). The run's
         status stays what it was; a clean early stop is neither a failure nor a checkpoint pause.
         """
-        started_at = self.ledger.run.started_at or now()
+        # The ceiling bounds this process's active segment, not the wall clock since the run
+        # first began. DEC-017 pauses by exiting and waiting costs nothing — measured from the
+        # run row's started_at, a resume after an hour of review would stop on its first step
+        # with maximum_workflow_duration (#396).
+        started_at = now()
         current = state
 
         while True:

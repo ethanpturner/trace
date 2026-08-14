@@ -348,6 +348,27 @@ def test_the_duration_ceiling_stops_a_run_that_is_stuck() -> None:
     assert caught.value.kind is LimitKind.DURATION
 
 
+def test_a_resumed_run_does_not_inherit_the_paused_hours(ledger: ExecutionLedger) -> None:
+    """#396: DEC-017 pauses by exiting and waiting costs nothing, so the duration ceiling bounds
+    the active segment rather than the wall clock since the run first began. A ledger whose run
+    row started hours ago is exactly what a resume after a long review looks like; it must run,
+    not stop on its first step with maximum_workflow_duration."""
+    run = ledger.run
+    ledger.run = type(run).model_validate(
+        {**run.model_dump(), "started_at": now() - timedelta(hours=2)}
+    )
+
+    outcome = orchestrator(
+        ledger,
+        ScriptedNode("document-ingestion", Phase.DOCUMENT_INGESTION),
+        ScriptedNode("evidence-indexing", Phase.DOCUMENT_INGESTION),
+    ).run(state_for(ledger, Phase.DOCUMENT_INGESTION), stop_before=Phase.CONTEXT_EXTRACTION)
+
+    assert outcome.stopped_because == "stopped_before_context_extraction"
+    assert outcome.state.status is not RunStatus.FAILED
+    assert not outcome.state.errors
+
+
 def test_the_retry_ceiling_travels_as_the_budget_policy() -> None:
     """DEC-084 / #397: the budget does not check retries; it issues the policy the node's attempt
     loop runs under, so the configured value is the operative one and zero means zero. An explicit
