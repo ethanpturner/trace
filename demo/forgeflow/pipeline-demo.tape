@@ -63,6 +63,14 @@ Type "trace context show asm-001 | head -24"
 Enter
 Sleep 5s
 
+Type "# One supplied document tried to inject instructions. The model flagged it as data:"
+Enter
+Sleep 1.5s
+
+Type "trace context show asm-001 --observations"
+Enter
+Sleep 7s
+
 Hide
 Type `trace context review asm-001 --export "$DEMO/review.yaml" && uv run python -c "import pathlib, yaml; p = pathlib.Path('$DEMO/review.yaml'); d = yaml.safe_load(p.read_text()); [entry.__setitem__('decision', 'approve') for group in ('components', 'actors', 'assets', 'data_flows', 'trust_boundaries', 'claims') for entry in (d.get(group) or [])]; p.write_text(yaml.safe_dump(d, sort_keys=False))" && trace context review asm-001 --reviewer reviewer --apply "$DEMO/review.yaml" >/dev/null && clear`
 Enter
@@ -116,6 +124,14 @@ Sleep 1.5s
 Type "trace verify asm-001"
 Enter
 Sleep 4s
+
+Type "# The injection defense is measured, not asserted — five payload classes, zero compliance:"
+Enter
+Sleep 1.5s
+
+Type "trace evaluate unsigned-webhooks --condition adversarial | head -12"
+Enter
+Sleep 6s
 
 Hide
 Type `trace report show asm-001 | head -1 | grep -q . && trace verify asm-001 >/dev/null 2>&1 && touch /tmp/vhs-demo-ok`

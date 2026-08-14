@@ -273,6 +273,14 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="print the source excerpt behind each claim",
     )
+    show.add_argument(
+        "--observations",
+        action="store_true",
+        help=(
+            "print only what the extraction observed about the documents themselves: "
+            "injection attempts and contradictions awaiting resolution"
+        ),
+    )
 
     review = context_commands.add_parser("review", help="record reviewer decisions")
     review.add_argument("assessment_id")
@@ -1140,6 +1148,12 @@ def _context_show(args: argparse.Namespace, service: AssessmentService) -> int:
     print(f"revision: version {context.version}, {'approved' if context.is_approved else 'draft'}")
     print(f"purpose:  {context.system_purpose or '-'}")
 
+    if args.observations:
+        # The observation view (#429): what the extraction noticed about the documents
+        # themselves, short enough for a demonstration beat and never clipped by a pager.
+        _print_observations(package, empty_note=True)
+        return 0
+
     for group, objects in package.objects_by_type.items():
         print()
         print(f"{group.replace('_', ' ')} ({len(objects)})")
@@ -1171,12 +1185,7 @@ def _context_show(args: argparse.Namespace, service: AssessmentService) -> int:
         marker = "blocking" if question.blocking else question.priority.value
         print(f"  {question.id}  {marker:<9} {question.question}")
 
-    if package.injection_attempts:
-        print()
-        print(f"injection attempts detected ({len(package.injection_attempts)})")
-        for observation in package.injection_attempts:
-            cited = ", ".join(observation.evidence_ids)
-            print(f"  {observation.id}  {observation.summary} [{cited}]")
+    _print_observations(package)
 
     print()
     print(f"human-review triggers ({len(package.triggers)})")
@@ -1198,6 +1207,37 @@ def _context_show(args: argparse.Namespace, service: AssessmentService) -> int:
     for blocker in package.approval_blockers:
         print(f"  {blocker}", file=sys.stderr)
     return 1
+
+
+def _print_observations(package: ContextReviewPackage, *, empty_note: bool = False) -> None:
+    """The extraction's observations about the documents themselves (#429).
+
+    Injection attempts and contradictions are both `SourceObservation`s, and both exist to be
+    read by the reviewer: an attempt triages attention toward its flagged subjects, and a
+    contradiction names the identifier a `--resolve-contradiction` call needs — an action that
+    was unreachable while nothing printed the observation it acts on.
+    """
+    if package.injection_attempts:
+        print()
+        print(f"injection attempts detected ({len(package.injection_attempts)})")
+        for observation in package.injection_attempts:
+            cited = ", ".join(observation.evidence_ids)
+            print(f"  {observation.id}  {observation.summary} [{cited}]")
+
+    if package.contradictions:
+        print()
+        print(f"contradictions awaiting resolution ({len(package.contradictions)})")
+        for observation in package.contradictions:
+            cited = ", ".join(observation.evidence_ids)
+            print(f"  {observation.id}  {observation.summary} [{cited}]")
+        print(
+            "  settle one with `trace context review --resolve-contradiction ID=VALUE "
+            "--rationale ...`"
+        )
+
+    if empty_note and not package.injection_attempts and not package.contradictions:
+        print()
+        print("no injection attempts or contradictions were observed in the supplied documents")
 
 
 def _reasons(package: ContextReviewPackage, object_id: str) -> str:
