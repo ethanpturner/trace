@@ -293,6 +293,56 @@ offline replays and populate on the first live run.</p>
 </div>"""
 
 
+def _live_stability_section(live: dict[str, Any] | None) -> str:
+    """The DEC-077 measurement, rendered from the committed summary artifact.
+
+    Read, never regenerated: live runs are manual and priced (DEC-077), so the drift checks
+    cannot re-run them — the committed `docs/eval/live-stability.json` is the record, the way
+    the history file is. Absent artifact, absent section. Cost and runtime are the two cells
+    the offline table cannot carry (its replays cost nothing by construction), which is why
+    they render here with the profile named.
+    """
+    if not live:
+        return ""
+    means = live.get("metric_mean", {})
+    stdevs = live.get("metric_stdev", {})
+    shown = [
+        ("estimated_cost", "Cost (USD)"),
+        ("execution_duration", "Runtime (s)"),
+        ("model_call_count", "Model calls"),
+        ("token_usage", "Tokens"),
+        ("finding_evidence_coverage", "Evidence coverage"),
+        ("false_positive_rate", "False-positive rate"),
+        ("false_negative_rate", "False-negative rate"),
+    ]
+    rows = [
+        f"<tr><td>{label}</td><td>{means[name]:.4g}</td><td>{stdevs.get(name, 0.0):.4g}</td></tr>"
+        for name, label in shown
+        if name in means
+    ]
+    agreement = ", ".join(
+        f"{html.escape(str(key))} {count}/{live.get('n', 0)}"
+        for key, count in sorted((live.get("item_agreement") or {}).items())
+    )
+    failed = int(live.get("failed_runs", 0))
+    attempted = int(live.get("n", 0)) + failed
+    agreement_text = agreement or "no expected item matched in any run"
+    return f"""<h2>Live stability</h2>
+<p class="note">DEC-077's measurement: {live.get("n", 0)} live runs of
+{html.escape(str(live.get("scenario", "")))} on {html.escape(str(live.get("profile", "")))}
+({failed} of {attempted} attempts failed), identical input, checkpoint decisions from the named
+default policy with {int(live.get("defaulted_decisions", 0))} defaulted decisions across the
+runs. Reported, never gated. Item agreement: {agreement_text}.</p>
+<div class="scroll">
+<table>
+<thead><tr><th>Metric</th><th>Mean</th><th>Std dev</th></tr></thead>
+<tbody>
+{chr(10).join(rows)}
+</tbody>
+</table>
+</div>"""
+
+
 def _history_section(history: Sequence[ScorecardSnapshot]) -> str:
     """The retained snapshots (DEC-081), newest first: version keys and pooled numbers only.
 
@@ -334,6 +384,7 @@ def render_scorecard(
     *,
     generated_at: datetime,
     history: Sequence[ScorecardSnapshot] = (),
+    live_stability: dict[str, Any] | None = None,
 ) -> str:
     """Render the scorecard HTML deterministically from the feeds. Metrics and identifiers only."""
     rows = rows_from_feeds(feeds)
@@ -390,6 +441,7 @@ measurement and is not shown for these recorded runs, which are deterministic. P
 local (DEC-073).</p>
 {_adversarial_section(rows)}
 {_truth_section(rows)}
+{_live_stability_section(live_stability)}
 {_history_section(history)}
 </body>
 </html>

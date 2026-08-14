@@ -186,11 +186,23 @@ def _class_rates(feeds: Sequence[dict[str, Any]]) -> dict[str, float]:
     return {name: sum(rates) / len(rates) for name, rates in sorted(by_class.items())}
 
 
+def _stability_cell(summary: ToolSummary, live: Mapping[str, Any] | None) -> str:
+    """Measured for Trace once the DEC-077 artifact exists; the baselines are never run live."""
+    if summary.label != _TRACE_LABEL or not live:
+        return "not measured [^stability]"
+    agreement = live.get("item_agreement") or {}
+    n = int(live.get("n", 0))
+    matched = ", ".join(f"{key} {count}/{n}" for key, count in sorted(agreement.items()))
+    scenario = live.get("scenario", "")
+    return f"measured: {matched or f'0/{n} agreement'} ({scenario}, n={n}) [^stability]"
+
+
 def render_comparison(
     feeds: Sequence[dict[str, Any]],
     *,
     generated_at: datetime,
     pins: Mapping[str, str],
+    live_stability: Mapping[str, Any] | None = None,
 ) -> str:
     """Render the per-tool comparison as Markdown from the feeds. Metrics and identifiers only."""
     summaries = summaries_from_feeds(feeds)
@@ -204,9 +216,38 @@ def render_comparison(
         f"| {summary.label} | {_schema_cell(summary)} | {_evidence_cell(summary)} | "
         f"{_spurious_cell(summary)} | "
         f"{_compliance_cell(summary, labelled_per_class=bool(per_class))} | "
-        f"not measured [^stability] |"
+        f"{_stability_cell(summary, live_stability)} |"
         for summary in summaries
     ]
+    if live_stability:
+        n = int(live_stability.get("n", 0))
+        failed = int(live_stability.get("failed_runs", 0))
+        means = live_stability.get("metric_mean", {})
+        stdevs = live_stability.get("metric_stdev", {})
+        cost = means.get("estimated_cost")
+        cost_sd = stdevs.get("estimated_cost", 0.0)
+        duration = means.get("execution_duration")
+        stability_footnote = (
+            "[^stability]: Measured per DEC-077: "
+            f"{n} completed live runs of {live_stability.get('scenario', '')} on "
+            f"{live_stability.get('profile', '')} ({failed} further attempts failed and are "
+            "counted), identical input, checkpoint decisions from the protocol's named default "
+            "policy with the defaulted count disclosed. "
+            + (
+                f"Cost ${cost:.2f} ± {cost_sd:.2f} per run; runtime {duration:.0f}s mean. "
+                if cost is not None and duration is not None
+                else ""
+            )
+            + "The per-metric variance table is on the [scorecard](scorecard.html). The "
+            "baselines are never run live, so their variance stays unmeasured. Reported, "
+            "never gated."
+        )
+    else:
+        stability_footnote = (
+            "[^stability]: Run-to-run variance requires repeated live runs (DEC-077); these "
+            "are deterministic offline replays, whose zero variance measures the recording, "
+            "not the model. No live run has been measured."
+        )
     classes_footnote = ""
     if per_class:
         breakdown = ", ".join(f"{name} {_pct(rate)}" for name, rate in per_class.items())
@@ -265,7 +306,5 @@ would measure the wrapper, so it is scored in the portfolio write-up rather than
     baseline has neither, so the payload is not run through it — the result would measure the
     absence of a defense the baseline never claimed. Zero is the target (DEC-075).
 {classes_footnote}
-[^stability]: Run-to-run variance requires repeated live runs (DEC-077); these are deterministic
-    offline replays, whose zero variance measures the recording, not the model. No live run has
-    been measured.
+{stability_footnote}
 """

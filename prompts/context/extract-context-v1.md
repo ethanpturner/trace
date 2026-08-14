@@ -113,7 +113,9 @@ You may:
   digits joined by spaces, hyphens, or underscores, with no other punctuation. `github_oauth`,
   `hmac_signature`, `tls`, `restricted`. Write `unknown` where the documents name no mechanism.
   These fields are labels, not sentences: the sentence you wanted to write belongs in a claim,
-  a description, or a rationale, where prose is expected and evidence can back it.
+  a description, or a rationale, where prose is expected and evidence can back it. `none` is an
+  assertion — it says the documents *state* there is no mechanism — and an unstated mechanism is
+  `unknown`, never `none`: absence of a statement is not a statement of absence.
 - Create clarifying questions.
 - Mark contradictory evidence.
 - Assign confidence levels.

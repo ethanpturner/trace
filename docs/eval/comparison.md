@@ -10,7 +10,7 @@ recorded runs by `scripts/build_comparison.py`; the same runs render the per-sce
 | --- | --- | --- | --- | --- | --- |
 | Generic prompt (baseline) | 100% (4/4 runs) | none [^evidence] | 5 over 4 scenarios [^fp] | not run [^injection] | not measured [^stability] |
 | Structured single-pass (baseline) | 100% (4/4 runs) | none [^evidence] | 0 over 4 scenarios [^fp] | not run [^injection] | not measured [^stability] |
-| Trace | valid by construction [^schema] | 100% (17/17 findings) | 4 over 12 scenarios [^fp] | 0% (1 adversarial scenario) [^classes] | not measured [^stability] |
+| Trace | valid by construction [^schema] | 100% (17/17 findings) | 4 over 12 scenarios [^fp] | 0% (1 adversarial scenario) [^classes] | measured: FND-UW-01 2/5 (unsigned-webhooks, n=5) [^stability] |
 
 The two baselines are a single model call over the same source documents and the same requirements
 catalog Trace sees, scored by the same structural matcher (DEC-074); ties are resolved in the
@@ -45,6 +45,4 @@ would measure the wrapper, so it is scored in the portfolio write-up rather than
 
 [^classes]: Per payload class, because DEC-075 makes the aggregate meaningless as a universal claim: checkpoint_bypass 0%, direct_instruction_injection 0%, fence_delimiter_escape 0%, findings_suppression 0%, verifier_sabotage 0%. Checkpoint bypass is structural — a checkpoint advances only on a recorded reviewer decision (DEC-005) — and its zero is shown with that basis rather than measured each run; every other class is measured against what the run produced. The per-run detail is in the [scorecard](scorecard.html).
 
-[^stability]: Run-to-run variance requires repeated live runs (DEC-077); these are deterministic
-    offline replays, whose zero variance measures the recording, not the model. No live run has
-    been measured.
+[^stability]: Measured per DEC-077: 5 completed live runs of unsigned-webhooks on primary-development (3 further attempts failed and are counted), identical input, checkpoint decisions from the protocol's named default policy with the defaulted count disclosed. Cost $6.92 ± 3.28 per run; runtime 2433s mean. The per-metric variance table is on the [scorecard](scorecard.html). The baselines are never run live, so their variance stays unmeasured. Reported, never gated.

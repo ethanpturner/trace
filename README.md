@@ -452,12 +452,13 @@ and measures itself offline. Stage 5's demonstration half (M9), the demo-hardeni
 
 ### What does not exist yet
 
-- **Repeated live-run measurement.** One live run has been captured and scored — the flagship
-  recording, roughly $30 of provider spend including the discarded attempts its provenance
-  discloses — but cost, runtime, and run-to-run stability across repeated live runs (DEC-077,
-  milestone M11) are unmeasured, and the scorecard's cost cells read zero because its feeds
-  regenerate from offline replays. The eleven benchmark scenarios' recordings remain authored
-  offline against the deterministic model.
+- **Broader live measurement.** The flagship recording is a live capture and the DEC-077
+  stability protocol has run once — five completed `claude-opus-5` runs of one scenario
+  ($6.92 ± $3.28 and ~41 ± 15 minutes each; the expected finding matched in 2 of 5), on the
+  [scorecard](docs/eval/scorecard.html) with three failed attempts disclosed — but only one
+  scenario is measured, the offline table's cost cells still read zero because its feeds
+  regenerate from replays, and the eleven benchmark recordings remain authored offline. The
+  model and prompt comparisons (#331, #332) have no recorded run.
 - **The public release packaging.** Milestone M9's demonstration surface is built — the read-only
   view, the finding-lineage view, the demo script and its recovery plan, and the measured ablation
   narrative. What remains for Stage 6 is the public-facing packaging around it: a short video and
@@ -684,9 +685,12 @@ assesses what a system is described to be, and a description can be wrong.
 authoritative Trace run scored against its truth set, plus one adversarial condition. Every truth
 set is authored by one person, so the numbers are a single annotator's judgment measured against
 itself — self-agreement, not an inter-annotator kappa, and not a claim of external ground truth.
-One live-model run has been captured and scored (the flagship recording); the eleven benchmark
-recordings are deterministic and offline, the scorecard's costs read zero because its feeds
-regenerate from offline replays, and run-to-run stability (DEC-077) is unmeasured, not zero. The
+One live-model run has been captured and scored (the flagship recording), and run-to-run
+stability (DEC-077) has been measured once: over five completed live runs of one scenario, the
+expected finding matched in two — instability is real, reported, and gates nothing. The eleven
+benchmark recordings are deterministic and offline, and the scorecard's offline cost cells read
+zero because its feeds regenerate from replays; the measured live costs live in the scorecard's
+own live-stability section. The
 [scorecard](docs/eval/scorecard.html) carries the current numbers; they are small by construction
 and the sample is stated on the page rather than rounded away.
 

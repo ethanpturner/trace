@@ -148,6 +148,26 @@ class StabilitySummary:
     matched the run's regenerated subject (DEC-077). Part of the result so the substitution is
     visible."""
 
+    failed_runs: int = 0
+    """Runs that did not complete — a provider failure or a blocked checkpoint. Counted rather
+    than hidden: a protocol that only summarized the survivors would overstate stability."""
+
+    profile: str = ""
+    """The model profile the runs were driven with, named so the summary is interpretable."""
+
+    def to_payload(self) -> dict[str, Any]:
+        """The summary as the committed artifact the scorecard renders (DEC-076: metrics only)."""
+        return {
+            "scenario": self.scenario,
+            "profile": self.profile,
+            "n": self.n,
+            "failed_runs": self.failed_runs,
+            "defaulted_decisions": self.defaulted_decisions,
+            "metric_mean": dict(sorted(self.metric_mean.items())),
+            "metric_stdev": dict(sorted(self.metric_stdev.items())),
+            "item_agreement": dict(sorted(self.item_agreement.items())),
+        }
+
     @property
     def unanimous(self) -> list[str]:
         return sorted(key for key, count in self.item_agreement.items() if count == self.n)
@@ -210,15 +230,28 @@ def run_stability(
         )
     _ = load_scenario(slug)  # refuse an unknown slug before spending anything
     feeds: list[dict[str, Any]] = []
+    failed = 0
     for index in range(n):
-        outcome = run_scenario(
-            slug,
-            data_root=data_root / f"run-{index + 1}",
-            label=f"{label}-{index + 1}",
-            condition="stability",
-            profile_name=profile_name,
-            results_root=results_root,
-        )
+        # The clean condition: the same inputs and recorded question answers every run, which is
+        # the "identical input, same recorded reviewer decisions" half of the protocol. A run
+        # that fails is data, not a reason to abandon the runs already paid for — it is counted
+        # and the summary says so.
+        try:
+            outcome = run_scenario(
+                slug,
+                data_root=data_root / f"run-{index + 1}",
+                label=f"{label}-{index + 1}",
+                condition="clean",
+                profile_name=profile_name,
+                results_root=results_root,
+            )
+        except Exception as error:
+            failed += 1
+            print(f"  run {index + 1} of {n} failed: {str(error)[:200]}")
+            continue
         if outcome.feed_path is not None:
             feeds.append(json.loads(outcome.feed_path.read_text(encoding="utf-8")))
-    return summarize_runs(slug, feeds)
+    summary = summarize_runs(slug, feeds)
+    summary.failed_runs = failed
+    summary.profile = profile_name
+    return summary
