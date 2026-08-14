@@ -288,3 +288,47 @@ def test_assembly_makes_no_model_call() -> None:
     source = module.read_text(encoding="utf-8")
     assert "StructuredModel" not in source
     assert "anthropic" not in source
+
+
+def a_threat(handle: AssessmentHandle, identifier: str) -> None:
+    from trace_ai.domain.threat import Threat
+
+    stamped = now()
+    threat = Threat.model_validate(
+        {
+            "id": identifier,
+            "assessment_id": handle.assessment_id,
+            "title": f"Threat {identifier} exercises the receiver",
+            "description": "An attacker submits forged events the receiver processes.",
+            "methodology": "stride-scenario-based",
+            "category": ["spoofing"],
+            "affected_component_ids": ["cmp-001"],
+            "affected_asset_ids": ["ast-001"],
+            "impact": "Unauthorized work is performed.",
+            "confidence": ConfidenceLevel.MEDIUM,
+            "status": ObjectStatus.CANDIDATE,
+            "generated_by": "threat-analysis-v1",
+            "created_at": stamped,
+        }
+    )
+    with handle.objects.transaction():
+        handle.objects.save(threat)
+
+
+def test_section_seven_carries_the_approved_findings_threats(handle: AssessmentHandle) -> None:
+    """DEC-083: threats have no approval verb; the set the reviewer transitively validated by
+    approving the findings is what renders — and only that set."""
+    a_threat(handle, "thr-001")
+    a_threat(handle, "thr-002")
+    approved = a_finding(handle)  # references thr-001
+    approve_finding(handle, approved, reviewer_id=REVIEWER)
+
+    assembled = assemble(handle)
+    assert [threat.id for threat in assembled.threats] == ["thr-001"]
+
+
+def test_a_zero_finding_assembly_carries_no_threats(handle: AssessmentHandle) -> None:
+    a_threat(handle, "thr-001")
+    assembled = assemble(handle)
+    assert assembled.threats == ()
+    assert assembled.zero_approved_findings is True
