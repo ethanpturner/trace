@@ -2007,6 +2007,21 @@ def _evaluate_stability(args: argparse.Namespace) -> int:
     print(f"unanimous items:  {', '.join(summary.unanimous) or '-'}")
     print(f"flickering items: {', '.join(summary.flickering) or '-'}")
     print(f"defaulted decisions: {summary.defaulted_decisions}")
+    if summary.failed_runs:
+        print(f"failed runs: {summary.failed_runs} of {summary.failed_runs + summary.n}")
+
+    import json as _json
+
+    summary_path = (
+        args.results_root if args.results_root is not None else work_root
+    ) / f"stability-{summary.scenario}-{args.label}.json"
+    summary_path.parent.mkdir(parents=True, exist_ok=True)
+    summary_path.write_text(_json.dumps(summary.to_payload(), indent=2) + "\n", encoding="utf-8")
+    print(f"summary:      {summary_path}")
+    print(
+        "Commit it as docs/eval/live-stability.json to put the measurement on the scorecard "
+        "(DEC-077 reports it; nothing gates on it)."
+    )
     return 0
 
 

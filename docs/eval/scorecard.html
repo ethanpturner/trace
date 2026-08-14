@@ -127,6 +127,26 @@ offline replays and populate on the first live run.</p>
 </tbody>
 </table>
 </div>
+<h2>Live stability</h2>
+<p class="note">DEC-077's measurement: 5 live runs of
+unsigned-webhooks on primary-development
+(3 of 8 attempts failed), identical input, checkpoint decisions from the named
+default policy with 182 defaulted decisions across the
+runs. Reported, never gated. Item agreement: FND-UW-01 2/5.</p>
+<div class="scroll">
+<table>
+<thead><tr><th>Metric</th><th>Mean</th><th>Std dev</th></tr></thead>
+<tbody>
+<tr><td>Cost (USD)</td><td>6.922</td><td>3.279</td></tr>
+<tr><td>Runtime (s)</td><td>2433</td><td>922.1</td></tr>
+<tr><td>Model calls</td><td>15.4</td><td>6.375</td></tr>
+<tr><td>Tokens</td><td>5.84e+05</td><td>2.836e+05</td></tr>
+<tr><td>Evidence coverage</td><td>1</td><td>0</td></tr>
+<tr><td>False-positive rate</td><td>0</td><td>0</td></tr>
+<tr><td>False-negative rate</td><td>0.6</td><td>0.4899</td></tr>
+</tbody>
+</table>
+</div>
 
 <h2>History</h2>
 <p class="meta">Retained snapshots (DEC-081), newest first. Precision, recall, and F1 are pooled

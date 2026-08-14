@@ -41,6 +41,10 @@ from trace_ai.services.evaluation.scorecard import render_scorecard, rows_from_f
 
 OUTPUT = PROJECT_ROOT / "docs" / "eval" / "scorecard.html"
 HISTORY = PROJECT_ROOT / "docs" / "eval" / "history.jsonl"
+LIVE_STABILITY = PROJECT_ROOT / "docs" / "eval" / "live-stability.json"
+"""The committed DEC-077 summary, written by an operator after a manual live protocol run.
+Read like the history file — never regenerated, because the drift checks cannot re-run a live
+measurement — and absent until the first measurement is committed."""
 # Pinned so the committed page changes only when a metric does, never on the clock.
 GENERATED_AT = datetime(2026, 8, 11, 12, 0, 0, tzinfo=UTC)
 
@@ -115,7 +119,15 @@ def build(results_root: Path, *, snapshot_date: str | None = None) -> str:
                 rows=tuple(rows_from_feeds(feeds)),
             ),
         )
-    return render_scorecard(feeds, generated_at=GENERATED_AT, history=load_history(HISTORY))
+    live_stability = (
+        json.loads(LIVE_STABILITY.read_text(encoding="utf-8")) if LIVE_STABILITY.is_file() else None
+    )
+    return render_scorecard(
+        feeds,
+        generated_at=GENERATED_AT,
+        history=load_history(HISTORY),
+        live_stability=live_stability,
+    )
 
 
 def _git_ref() -> str:

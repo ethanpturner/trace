@@ -160,3 +160,37 @@ def test_the_thesis_contrast_is_visible() -> None:
     rows = {row.condition: row for row in rows_from_feeds(feeds)}
     assert rows["clean"].spurious == 0
     assert rows["baseline-generic"].spurious == 2
+
+
+def test_the_live_stability_section_renders_from_the_committed_artifact() -> None:
+    """DEC-077's measurement reaches the page from the committed summary — read, never
+    regenerated, because the drift checks cannot re-run a live protocol. Cost and runtime are
+    the cells the offline table cannot carry, so they render here with the profile named; an
+    absent artifact renders no section."""
+    live = {
+        "scenario": "unsigned-webhooks",
+        "profile": "primary-development",
+        "n": 5,
+        "failed_runs": 1,
+        "defaulted_decisions": 40,
+        "metric_mean": {
+            "estimated_cost": 2.31,
+            "execution_duration": 412.0,
+            "model_call_count": 9.2,
+        },
+        "metric_stdev": {
+            "estimated_cost": 0.4,
+            "execution_duration": 60.2,
+            "model_call_count": 1.3,
+        },
+        "item_agreement": {"FND-UW-01": 4},
+    }
+    page = render_scorecard([], generated_at=STAMP, live_stability=live)
+    assert "Live stability" in page
+    assert "primary-development" in page
+    assert "FND-UW-01 4/5" in page
+    assert "1 of 6 attempts failed" in page
+    assert "Cost (USD)" in page and "2.31" in page
+
+    without = render_scorecard([], generated_at=STAMP)
+    assert "Live stability" not in without

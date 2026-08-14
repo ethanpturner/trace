@@ -15,6 +15,7 @@ its history is the git history. CI regenerates it and fails if it drifts from th
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 import tempfile
 from datetime import UTC, datetime
@@ -43,7 +44,14 @@ def _pins() -> dict[str, str]:
 
 
 def build(results_root: Path) -> str:
-    return render_comparison(collect_feeds(results_root), generated_at=GENERATED_AT, pins=_pins())
+    live_path = PROJECT_ROOT / "docs" / "eval" / "live-stability.json"
+    live = json.loads(live_path.read_text(encoding="utf-8")) if live_path.is_file() else None
+    return render_comparison(
+        collect_feeds(results_root),
+        generated_at=GENERATED_AT,
+        pins=_pins(),
+        live_stability=live,
+    )
 
 
 def main(argv: list[str] | None = None) -> int:

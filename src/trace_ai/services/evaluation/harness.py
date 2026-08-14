@@ -42,6 +42,7 @@ from trace_ai.domain.evaluation_result import EvaluationResult
 from trace_ai.domain.evidence import EvidenceReference
 from trace_ai.domain.execution import RunStatus, WorkflowRun
 from trace_ai.domain.finding import Finding
+from trace_ai.domain.question import Question, QuestionStatus
 from trace_ai.domain.source_document import TrustLevel
 from trace_ai.infrastructure.database.store import AssessmentStore
 from trace_ai.infrastructure.model.factory import build_model
@@ -154,15 +155,21 @@ def run_scenario(
     The report is not what the decision gate asks about.
     """
     entry = load_scenario(slug, registry_path=registry_path)
-    if not entry.has_recording_for(condition):
-        raise HarnessError(
-            f"scenario {slug!r} has no recording for condition {condition!r}; the harness "
-            f"replays recordings (DEC-073) and cannot run a variant that has none"
-        )
-
-    recordings = _recordings_for(entry, ablations, condition=condition)
     profile = resolve_profile(profile_name)
-    model = build_model(profile, responses=load_recorded_responses(recordings))
+    live = profile.provider != "fake"
+    if live:
+        # A live run replays nothing: the provider answers, and the checkpoints are decided by
+        # DEC-077's named default policy (with recorded question answers matched by text). This
+        # path is manual and priced by the operator; CI never takes it.
+        model = build_model(profile)
+    else:
+        if not entry.has_recording_for(condition):
+            raise HarnessError(
+                f"scenario {slug!r} has no recording for condition {condition!r}; the harness "
+                f"replays recordings (DEC-073) and cannot run a variant that has none"
+            )
+        recordings = _recordings_for(entry, ablations, condition=condition)
+        model = build_model(profile, responses=load_recorded_responses(recordings))
 
     with AssessmentStore.at_root(data_root) as store:
         service = AssessmentService(store, artifact_root=data_root)
@@ -189,6 +196,7 @@ def run_scenario(
         )
 
         previously_paused_at: Phase | None = None
+        defaulted_decisions = 0
         while outcome.paused:
             paused_at = outcome.state.current_phase
             if paused_at is previously_paused_at:
@@ -200,9 +208,17 @@ def run_scenario(
                 )
             previously_paused_at = paused_at
             if paused_at is Phase.HUMAN_CONTEXT_REVIEW:
-                _apply_context_decisions(entry, service, assessment_id, condition=condition)
+                if live:
+                    defaulted_decisions += _apply_context_decisions_live(
+                        entry, service, assessment_id, condition=condition
+                    )
+                else:
+                    _apply_context_decisions(entry, service, assessment_id, condition=condition)
             elif paused_at is Phase.HUMAN_FINDING_REVIEW:
-                _apply_finding_decisions(entry, service, assessment_id, condition=condition)
+                if live:
+                    defaulted_decisions += _apply_finding_decisions_live(service, assessment_id)
+                else:
+                    _apply_finding_decisions(entry, service, assessment_id, condition=condition)
             outcome = resume_assessment(
                 service,
                 assessment_id,
@@ -225,6 +241,7 @@ def run_scenario(
             adversarial=adversarial,
             condition=condition,
             label=label,
+            defaulted_decisions=defaulted_decisions,
             stopped_because=outcome.stopped_because,
             results_root=results_root if results_root is not None else RESULTS_ROOT,
         )
@@ -318,6 +335,146 @@ def _apply_finding_decisions(
                 handle, finding, reviewer_id=HARNESS_REVIEWER, rationale=decided.get("rationale")
             )
     conclude_finding_review(service, assessment_id)
+
+
+STABILITY_REVIEWER = "stability-default-v1"
+"""DEC-077's named default policy, as the reviewer identity every defaulted decision carries."""
+
+_DEFAULT_ANSWER = (
+    "Stability protocol default (DEC-077): no recorded answer matches this question, and the "
+    "measurement holds the reviewer constant, so the run proceeds on the documents alone."
+)
+
+
+def _normalized_question(text: str) -> str:
+    return " ".join(text.lower().split())
+
+
+def _apply_context_decisions_live(
+    entry: Scenario, service: AssessmentService, assessment_id: str, *, condition: str
+) -> int:
+    """Checkpoint 1 under DEC-077's named default policy, returning the defaulted count.
+
+    Every context object is approved as generated. A blocking question whose text matches a
+    recorded answer (from the clean recording's review file) is answered with it — the
+    replay-matched half of the protocol — and one with no match gets the protocol's default
+    answer. The defaulted count is every decision that had no recorded counterpart, so the
+    substitution DEC-077 warns about is visible in the summary rather than silent. Structural
+    matching of object decisions by content fingerprint is not implemented; with the recorded
+    review files approving every object, the defaulted approval and the recorded one coincide,
+    and the count says how many decisions rest on the policy rather than on a person.
+    """
+    from trace_ai.workflow.context_review import answer_question, decide_object
+
+    handle = service.handle(assessment_id)
+    defaulted = 0
+    for obj in context_objects(handle):
+        decide_object(handle, obj, ReviewDisposition.APPROVE, reviewer_id=STABILITY_REVIEWER)
+        defaulted += 1
+
+    recorded_answers: dict[str, str] = {}
+    decisions_path = entry.recorded_dir_for(condition) / "decisions-context.yaml"
+    if decisions_path.is_file():
+        document = read_review_file(decisions_path.read_text(encoding="utf-8"))
+        for question_entry in document.get("questions") or []:
+            answer = (question_entry.get("answer") or "").strip()
+            if answer:
+                recorded_answers[_normalized_question(str(question_entry.get("question", "")))] = (
+                    answer
+                )
+
+    for question in handle.objects.list(Question):
+        if question.status is QuestionStatus.OPEN and question.blocking:
+            matched = recorded_answers.get(_normalized_question(question.question))
+            answer_question(
+                handle,
+                question,
+                response=matched or _DEFAULT_ANSWER,
+                reviewer_id=STABILITY_REVIEWER,
+            )
+            if matched is None:
+                defaulted += 1
+
+    def _package() -> Any:
+        reviewed = current_system_context(handle)
+        validation = validate_context(
+            reviewed,
+            context_objects(handle),
+            available_evidence={ref.id for ref in handle.objects.list(EvidenceReference)},
+            previous=previous_approved_context(handle, reviewed),
+        )
+        return build_context_review_package(
+            handle, index=EvidenceIndex(handle), validation=validation
+        )
+
+    package = _package()
+    # The one mechanical remediation the policy performs, because it is the edit any reviewer
+    # facing this validation error makes: a false-shaped transport label with nothing behind it
+    # becomes `unknown` (data-model.md section 14's own rule), through the same reviewer-edit
+    # path a person uses, and counted as a defaulted decision. Three of the first protocol's
+    # five runs died on exactly this slip; an analytical error is still the run's to fail on.
+    from trace_ai.domain.data_flow import DataFlow
+    from trace_ai.domain.vocabulary import UNKNOWN
+    from trace_ai.workflow.context_review import apply_edit
+
+    mechanical = [
+        error
+        for error in package.outstanding_errors
+        if error.field in ("authentication", "encryption_in_transit")
+        and "Absence of a statement" in error.message
+    ]
+    if mechanical:
+        for error in mechanical:
+            flow = handle.objects.find(DataFlow, error.object_id)
+            if flow is not None:
+                apply_edit(
+                    handle,
+                    flow,
+                    {error.field: UNKNOWN},
+                    reviewer_id=STABILITY_REVIEWER,
+                    rationale=(
+                        "Stability protocol default (DEC-077): the mechanical section-14 "
+                        "relabel a reviewer performs — unstated transport security is unknown."
+                    ),
+                )
+                defaulted += 1
+        package = _package()
+    approve_context(handle, package, reviewer_id=STABILITY_REVIEWER)
+    return defaulted
+
+
+def _apply_finding_decisions_live(service: AssessmentService, assessment_id: str) -> int:
+    """Checkpoint 2 under the default policy: approve as generated, protocol severity.
+
+    A finding cannot be approved at `unassigned` (DEC-030), and the documents cannot supply a
+    severity, so the policy assigns `medium` uniformly — the flattest choice, held constant
+    across runs so severity judgment contributes no variance. Every decision here is defaulted
+    by construction; the count keeps that visible.
+    """
+    from trace_ai.domain.enums import Severity
+    from trace_ai.workflow.finding_review import (
+        approve_finding,
+        change_severity,
+        conclude_finding_review,
+    )
+
+    handle = service.handle(assessment_id)
+    defaulted = 0
+    for finding in handle.objects.list(Finding):
+        if finding.duplicate_of_id is not None:
+            continue
+        decided, _ = change_severity(
+            handle, finding, Severity.MEDIUM, reviewer_id=STABILITY_REVIEWER
+        )
+        approve_finding(
+            handle,
+            decided,
+            reviewer_id=STABILITY_REVIEWER,
+            rationale="Stability protocol default (DEC-077): approved as generated.",
+        )
+        defaulted += 1
+    conclude_finding_review(service, assessment_id)
+    return defaulted
 
 
 def _has_outcome_truth(entry: Scenario, condition: str) -> bool:
@@ -466,6 +623,7 @@ def _export_feed(
     label: str,
     stopped_because: str,
     results_root: Path,
+    defaulted_decisions: int = 0,
 ) -> Path:
     assessment = handle.objects.get(Assessment, handle.assessment_id)
     feed: dict[str, Any] = {
@@ -478,6 +636,7 @@ def _export_feed(
         "run_status": run.status.value,
         "stopped_because": stopped_because,
         "ablations": list(run.ablations),
+        "defaulted_decisions": defaulted_decisions,
         "authoritative": run.is_authoritative,
         "metrics": {
             result.metric_name: {
