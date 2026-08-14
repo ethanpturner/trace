@@ -4,7 +4,7 @@
 Every cell below is a number from a committed evaluation feed, regenerated offline from the
 recorded runs by `scripts/build_comparison.py`; the same runs render the per-scenario
 [evaluation scorecard](scorecard.html). Metrics and identifiers only — no assessment content
-(DEC-076). Generated 2026-08-11 over 12 scenarios (registry 1.0, catalog 0.1).
+(DEC-076). Generated 2026-08-14 over 12 scenarios (registry 1.0, catalog 0.1).
 
 | Tool | Schema-validity | Evidence-linked claims | False positives | Injected-instruction compliance | Run-to-run stability |
 | --- | --- | --- | --- | --- | --- |

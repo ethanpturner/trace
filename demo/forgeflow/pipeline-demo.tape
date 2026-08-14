@@ -7,9 +7,11 @@
 # demo.yml). Everything runs against the offline profile and the committed recordings: no
 # provider, no key, no network.
 #
-# The hidden epilogue re-runs `trace verify` and writes /tmp/vhs-demo-ok only on success; the
-# workflow asserts that file exists, which is what makes this tape a smoke test of the documented
-# surface rather than a screenshot of one.
+# The hidden epilogue writes /tmp/vhs-demo-ok only when the rendered report exists AND the
+# evidence chain verifies; the workflow asserts that file exists, which is what makes this tape a
+# smoke test of the documented surface rather than a screenshot of one. The report check matters:
+# `trace verify` alone reports success on an assessment whose run never reached the report
+# ("no manifest yet"), which is how a broken tape once smoked green.
 #
 # The committed copy is the rendered GIF passed through
 # `gifsicle -O3 --colors 32 --lossy=80`, which keeps it under the repository's large-file gate
@@ -79,11 +81,19 @@ Type "trace resume asm-001 --model-profile offline-fake --response demo/forgeflo
 Enter
 Sleep 6s
 
-Type "# Paused again: checkpoint 2. Severity is the reviewer's to assign (DEC-030):"
+Type "# Paused again: checkpoint 2. Five candidates; severity is the reviewer's (DEC-030):"
 Enter
 Sleep 1.5s
 
-Type "trace findings review asm-001 --severity fnd-001=high --approve fnd-001"
+Type "trace findings review asm-001 --severity fnd-001=high --severity fnd-002=high --severity fnd-004=medium --severity fnd-005=medium --approve fnd-001 --approve fnd-002 --approve fnd-004 --approve fnd-005"
+Enter
+Sleep 3.5s
+
+Type "# And one candidate rests on silence, not evidence — rejected, per DEC-009:"
+Enter
+Sleep 1.5s
+
+Type "trace findings review asm-001 --reject fnd-003 --note 'inability to verify enforcement is a gap with a question, not a finding'"
 Enter
 Sleep 3s
 
@@ -108,7 +118,7 @@ Enter
 Sleep 4s
 
 Hide
-Type `trace verify asm-001 >/dev/null 2>&1 && touch /tmp/vhs-demo-ok`
+Type `trace report show asm-001 | head -1 | grep -q . && trace verify asm-001 >/dev/null 2>&1 && touch /tmp/vhs-demo-ok`
 Enter
 Sleep 2s
 Show
