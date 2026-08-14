@@ -40,8 +40,8 @@ a null result on three recordings. The bound is stated wherever a null appears b
 **Measured.** Removing the evidence-validation node raises the false-negative rate from 0% to 100%
 on both contradictory-docs and unsigned-webhooks: the pipeline stops producing the finding it
 otherwise reports and matches. On forgeflow the false-negative rate is already 100% in the
-authoritative run — the recording is an authored slice that misses its truth set — so its removal
-moves nothing there. The numbers are the `no evidence validation` rows of the
+authoritative run — the live capture found real weaknesses under different requirement
+identifiers than the authored truth set names — so its removal moves nothing there. The numbers are the `no evidence validation` rows of the
 [ablation table](../eval/ablation.md).
 
 **Interpretation.** Evidence validation is the node that decides whether the support behind a
