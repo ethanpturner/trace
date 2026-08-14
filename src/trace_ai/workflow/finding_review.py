@@ -34,20 +34,26 @@ from typing import TYPE_CHECKING, Any, Final
 
 from trace_ai.domain.base import now
 from trace_ai.domain.conversions import finding_to_documentation_gap, finding_to_question
-from trace_ai.domain.enums import ObjectStatus, ReviewDisposition, Severity
+from trace_ai.domain.enums import ObjectStatus, ReviewDisposition, RiskTreatment, Severity
 from trace_ai.domain.execution import ExecutionType
 from trace_ai.domain.finding import Finding
 from trace_ai.domain.finding_merge_record import MERGE_FEATURES, MergeDecision
 from trace_ai.domain.outcomes import FINDING_VALIDATION_STATUSES
 from trace_ai.domain.reviewer_decision import ReviewerDecision
-from trace_ai.workflow.checkpoint import CheckpointNode, decided_object_ids
+from trace_ai.services.findings.fingerprints import (
+    component_name_index,
+    fingerprinted_finding,
+    fingerprinted_gap,
+    gap_identity_indexes,
+)
+from trace_ai.workflow.checkpoint import CheckpointNode, decided_in_run, decided_object_ids
 from trace_ai.workflow.context_review import ReviewerActionError
 from trace_ai.workflow.finding_dedup import DuplicateGroup, merge_findings, shared_features
 from trace_ai.workflow.phases import Phase
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
-    from datetime import datetime
+    from datetime import date, datetime
 
     from trace_ai.domain.assessment import Assessment
     from trace_ai.domain.documentation_gap import DocumentationGap
@@ -61,6 +67,7 @@ __all__ = [
     "add_remediation_guidance",
     "add_reviewer_rationale",
     "approve_finding",
+    "assign_risk_treatment",
     "change_severity",
     "conclude_finding_review",
     "convert_to_documentation_gap",
@@ -225,6 +232,15 @@ def approve_finding(
             f"{finding.id} carries severity 'unassigned' and cannot be approved (DEC-030). "
             f"The reviewer assigns severity at this checkpoint; change it first, then approve."
         )
+    if finding.risk_treatment is RiskTreatment.ACCEPT and not (
+        finding.treatment_rationale and finding.treatment_rationale.strip()
+    ):
+        raise ReviewerActionError(
+            f"{finding.id} accepts its risk with no treatment_rationale and cannot be approved "
+            f"(DEC-060). An accepted risk records the residual-risk statement: what remains "
+            f"exposed and why that is tolerable. Assign the rationale, then approve. Every other "
+            f"treatment, and an undecided one, approves without it."
+        )
     if finding.duplicate_of_id is not None:
         raise ReviewerActionError(
             f"{finding.id} was merged into {finding.duplicate_of_id}; the canonical finding is "
@@ -277,14 +293,23 @@ def conclude_finding_review(service: AssessmentService, assessment_id: str) -> A
     provisional finding lacks a decision, which is the checkpoint's completion condition
     restated where the deliverable's lifecycle advances.
     """
+    from trace_ai.domain.base import now
+    from trace_ai.domain.execution import WorkflowRun
+    from trace_ai.workflow.reason_codes import revisit_due_findings
+
     handle = service.handle(assessment_id)
     provisional = [
         finding
         for finding in handle.objects.list(Finding, status=ObjectStatus.CANDIDATE.value)
         if finding.duplicate_of_id is None
     ]
-    decided = decided_object_ids(handle)
-    undecided = [finding.id for finding in provisional if finding.id not in decided]
+    # DEC-061/DEC-079: an expired accepted-risk finding is a subject this run too, and "decided" is
+    # the current run's decision — so an approval carried from a prior run does not conclude it. The
+    # subjects and the scoping match the checkpoint node's, or the two would disagree about done.
+    runs = handle.objects.list(WorkflowRun)
+    subjects = {finding.id for finding in provisional} | revisit_due_findings(handle, now().date())
+    decided = decided_in_run(handle, runs[-1].id) if runs else decided_object_ids(handle)
+    undecided = sorted(subjects - decided)
     if undecided:
         raise ReviewerActionError(
             f"the finding checkpoint is not complete: {undecided} await a ReviewerDecision. "
@@ -331,9 +356,19 @@ def edit_finding(
     the original is recoverable after the object has moved on, and reviewer edit rate stays
     computable per field. The delta is captured by `ReviewerDecision.capture_edit`, which takes
     both states — a call site cannot record that nothing changed.
+
+    An edit that changes an identity field — the cited requirements or the affected components —
+    recomputes `content_fingerprint`, because it is then a claim about different ground (DEC-066).
+    Every other edit leaves the fingerprint alone, and the recomputation lands in the captured
+    delta like any other consequence of the edit, so an identity change is itself observable.
     """
     stamp = at if at is not None else now()
     edited = _edited(finding, changes, stamp)
+    if (edited.requirement_ids, edited.affected_component_ids) != (
+        finding.requirement_ids,
+        finding.affected_component_ids,
+    ):
+        edited = fingerprinted_finding(edited, component_name_index(handle))
     with handle.objects.transaction() as repository:
         decision = ReviewerDecision.capture_edit(
             decision_id=repository.allocate("dec"),
@@ -376,6 +411,41 @@ def change_severity(
         handle,
         finding,
         {"severity": severity},
+        reviewer_id=reviewer_id,
+        rationale=rationale,
+        workflow_run_id=workflow_run_id,
+        at=at,
+    )
+
+
+def assign_risk_treatment(
+    handle: AssessmentHandle,
+    finding: Finding,
+    treatment: RiskTreatment,
+    *,
+    rationale: str | None = None,
+    review_by: date | None = None,
+    reviewer_id: str,
+    workflow_run_id: str | None = None,
+    at: datetime | None = None,
+) -> tuple[Finding, ReviewerDecision]:
+    """Assign the reviewer's risk treatment — an `edit`, not a disposition of its own (DEC-060).
+
+    The neighbouring judgment to severity, and recorded the same way (DEC-023, DEC-030): the delta
+    carries the change, no `ReviewDisposition` value is added. The accept-needs-a-rationale rule
+    belongs to the approval gate, not here — a reviewer may set `accept` and supply the
+    residual-risk statement in the same call or a later one, and the approval is refused until it
+    is present, exactly as an unassigned severity refuses approval without blocking assignment.
+    """
+    changes: dict[str, Any] = {"risk_treatment": treatment}
+    if rationale is not None:
+        changes["treatment_rationale"] = rationale
+    if review_by is not None:
+        changes["treatment_review_by"] = review_by
+    return edit_finding(
+        handle,
+        finding,
+        changes,
         reviewer_id=reviewer_id,
         rationale=rationale,
         workflow_run_id=workflow_run_id,
@@ -551,6 +621,7 @@ def convert_to_documentation_gap(
     finding's own severity is `unassigned` or rates something else entirely.
     """
     stamp = at if at is not None else now()
+    requirement_by_mapping, component_names_by_mapping = gap_identity_indexes(handle)
     with handle.objects.transaction() as repository:
         gap, superseded = finding_to_documentation_gap(
             finding,
@@ -559,6 +630,14 @@ def convert_to_documentation_gap(
             severity=severity,
             requested_evidence=requested_evidence,
             generated_by=GENERATED_BY,
+        )
+        # A conversion creates the gap, and creation is where DEC-066 sets the fingerprint. The
+        # converted gap's related identifiers carry the finding's mappings, so the same
+        # mapping-based resolution applies.
+        gap = fingerprinted_gap(
+            gap,
+            requirement_by_mapping=requirement_by_mapping,
+            component_names_by_mapping=component_names_by_mapping,
         )
         decision = _decision_about(
             handle,
@@ -647,6 +726,10 @@ def merge_by_reviewer(
             generated_by=GENERATED_BY,
             stamped=stamp,
         )
+        # The survivor took the unions, so its identity fields may have widened; the fingerprint
+        # follows them (DEC-066). Idempotent on the marked duplicates, whose identity is unchanged.
+        names = component_name_index(handle)
+        changed = [fingerprinted_finding(finding, names) for finding in changed]
         decisions: list[ReviewerDecision] = []
         for finding in changed:
             repository.save(finding)

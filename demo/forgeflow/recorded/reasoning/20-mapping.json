@@ -1,0 +1,581 @@
+{
+  "controls": [],
+  "mappings": [
+    {
+      "threat_id": "thr-015",
+      "requirement_id": "req-ADMIN-001",
+      "control_keys": [],
+      "existing_control_ids": [
+        "ctl-022"
+      ],
+      "applicability_status": "applicable",
+      "applicability_reason": "Both applicable conditions hold for this threat: ForgeFlow exposes an internal administrative interface (cmp-008) and its operators act on customer data by locating organizations, viewing job error metadata and supporting deletion requests (evd-035, evd-083).",
+      "suppressed_conclusion": "That administrative authorization is inadequate because no role-based permission matrix for the interface is described.",
+      "suppressed_by": "req-ADMIN-001 common_false_positives: 'absent role-based permission matrix within the administrative interface'.",
+      "satisfaction_status": "partially_satisfied",
+      "evidence_ids": [
+        "evd-035",
+        "evd-087",
+        "evd-132",
+        "evd-143",
+        "evd-054",
+        "evd-130"
+      ],
+      "assumptions": [],
+      "confidence": "medium"
+    },
+    {
+      "threat_id": "thr-015",
+      "requirement_id": "req-LOG-002",
+      "control_keys": [],
+      "existing_control_ids": [
+        "ctl-022"
+      ],
+      "applicability_status": "applicable",
+      "applicability_reason": "The threat turns on operator actions through a privileged interface that affect customer data (retry, disable integration, deletion support), which is exactly this requirement's applicable condition set (evd-035, evd-083).",
+      "suppressed_conclusion": "That the audit expectation is unmet because the documentation does not state that an operator viewing diagnostic artifacts (a read-only action) produces an audit record.",
+      "suppressed_by": "req-LOG-002 common_false_positives: 'absent audit trail for read-only operations'.",
+      "satisfaction_status": "satisfied",
+      "evidence_ids": [
+        "evd-132",
+        "evd-087",
+        "evd-036",
+        "evd-032"
+      ],
+      "assumptions": [],
+      "confidence": "medium"
+    },
+    {
+      "threat_id": "thr-015",
+      "requirement_id": "req-AUTH-002",
+      "control_keys": [],
+      "existing_control_ids": [
+        "ctl-022"
+      ],
+      "applicability_status": "applicable",
+      "applicability_reason": "The threat's entry point is administrative access reached through corporate identity, so the requirement's condition 'the system exposes administrative access' holds and the question of who enforces factor policy is live (evd-035, evd-087).",
+      "suppressed_conclusion": "That multi-factor authentication is unmet because ForgeFlow describes no application-side factor configuration or enrolment flow.",
+      "suppressed_by": "req-AUTH-002 common_false_positives: 'absent application-managed enrolment or factor-registration flow' and 'absent application-side factor configuration setting'.",
+      "satisfaction_status": "partially_satisfied",
+      "evidence_ids": [
+        "evd-143",
+        "evd-132",
+        "evd-123",
+        "evd-087"
+      ],
+      "assumptions": [
+        "The structured input's administrative_identity.mfa_required flag (evd-143) refers to the same corporate identity platform named in evd-132 and evd-087."
+      ],
+      "confidence": "medium"
+    },
+    {
+      "threat_id": "thr-015",
+      "requirement_id": "req-AUTHZ-001",
+      "control_keys": [],
+      "existing_control_ids": [
+        "ctl-010"
+      ],
+      "applicability_status": "applicable",
+      "applicability_reason": "ForgeFlow serves multiple organizations and holds their data in shared stores (evd-102, evd-032), and this threat is precisely a request path that may cross the organization boundary, so tenant-aware authorization is the control in question.",
+      "suppressed_conclusion": "That tenant-aware authorization is absent because no authorization library, middleware, or per-endpoint permission matrix is described.",
+      "suppressed_by": "req-AUTHZ-001 common_false_positives: 'absent description of an authorization library or framework' and 'absent per-endpoint permission matrix'.",
+      "satisfaction_status": "unverified",
+      "evidence_ids": [
+        "evd-032",
+        "evd-124",
+        "evd-130",
+        "evd-049",
+        "evd-138",
+        "evd-054"
+      ],
+      "assumptions": [],
+      "confidence": "medium"
+    },
+    {
+      "threat_id": "thr-015",
+      "requirement_id": "req-DATA-003",
+      "control_keys": [],
+      "existing_control_ids": [
+        "ctl-011"
+      ],
+      "applicability_status": "applicable",
+      "applicability_reason": "Artifacts from all customers share one managed object store under predictable, template-described paths (evd-033, evd-078), which is this requirement's condition set and the store this threat reaches through administrative troubleshooting.",
+      "suppressed_conclusion": "That artifact separation is inadequate because no physical separation or per-tenant encryption key is described.",
+      "suppressed_by": "req-DATA-003 common_false_positives: 'absent description of a physical separation mechanism where logical separation is enforced and documented' and 'absent per-tenant encryption keys, which are one implementation among several'.",
+      "satisfaction_status": "partially_satisfied",
+      "evidence_ids": [
+        "evd-033",
+        "evd-078",
+        "evd-130",
+        "evd-054"
+      ],
+      "assumptions": [],
+      "confidence": "medium"
+    },
+    {
+      "threat_id": "thr-015",
+      "requirement_id": "req-DATA-002",
+      "control_keys": [],
+      "existing_control_ids": [
+        "ctl-014"
+      ],
+      "applicability_status": "applicable",
+      "applicability_reason": "The material this threat reaches consists of by-product artifacts, including diagnostic artifacts for failed jobs, written to persistent storage (evd-033, evd-078), so the requirement's conditions on retained working data hold and retention bounds the exposure window.",
+      "suppressed_conclusion": "That retention enforcement is absent because no storage lifecycle policy object is described.",
+      "suppressed_by": "req-DATA-002 common_false_positives: 'absent deletion evidence where a platform lifecycle policy is documented' — the operations guide does describe scheduled cleanup (evd-079), so the shortfall recorded here is the stated inconsistency with the customer-facing statement (evd-099), not missing lifecycle detail.",
+      "satisfaction_status": "partially_satisfied",
+      "evidence_ids": [
+        "evd-079",
+        "evd-099",
+        "evd-033",
+        "evd-054"
+      ],
+      "assumptions": [],
+      "confidence": "medium"
+    },
+    {
+      "threat_id": "thr-015",
+      "requirement_id": "req-LOG-001",
+      "control_keys": [],
+      "existing_control_ids": [
+        "ctl-021"
+      ],
+      "applicability_status": "applicable",
+      "applicability_reason": "The threat includes operators reviewing error metadata and operational events (evd-083, evd-035) forwarded to a shared logging platform managed outside the application team (evd-036, evd-136), which is this requirement's condition set for restricted data reaching logs.",
+      "suppressed_conclusion": "That exclusion of customer source code from logs is absent because no field-level redaction list or masking mechanism is described.",
+      "suppressed_by": "req-LOG-001 common_false_positives: 'absent field-level redaction list where a policy of logging identifiers only is documented' — evd-036, evd-084 and evd-131 state such a policy.",
+      "satisfaction_status": "unverified",
+      "evidence_ids": [
+        "evd-036",
+        "evd-084",
+        "evd-131",
+        "evd-136"
+      ],
+      "assumptions": [],
+      "confidence": "medium"
+    },
+    {
+      "threat_id": "thr-015",
+      "requirement_id": "req-AUTH-001",
+      "control_keys": [],
+      "existing_control_ids": [
+        "ctl-022"
+      ],
+      "applicability_status": "applicable",
+      "applicability_reason": "The operator path in this threat delegates authentication to an external corporate identity provider (evd-035, evd-087), matching the requirement's condition that user authentication is delegated to an external identity provider.",
+      "suppressed_conclusion": "That authentication for the administrative path is inadequately documented because no local password, lockout, or credential-storage policy is described.",
+      "suppressed_by": "req-AUTH-001 common_false_positives: 'absent local password complexity policy', 'absent account lockout threshold', 'absent credential storage or hashing description'.",
+      "satisfaction_status": "satisfied",
+      "evidence_ids": [
+        "evd-035",
+        "evd-087",
+        "evd-123",
+        "evd-143"
+      ],
+      "assumptions": [],
+      "confidence": "medium"
+    },
+    {
+      "threat_id": "thr-015",
+      "requirement_id": "req-DATA-001",
+      "control_keys": [],
+      "existing_control_ids": [
+        "ctl-013"
+      ],
+      "applicability_status": "applicable",
+      "applicability_reason": "The stores this threat reaches hold restricted and confidential customer data (evd-033, evd-032), so the requirement's first applicable condition holds, though encryption bounds a different exposure than the authorized-path disclosure described here.",
+      "suppressed_conclusion": "That encryption is inadequate because no cipher suite, key length, or key custody detail is given.",
+      "suppressed_by": "req-DATA-001 common_false_positives: 'absent description of cipher suites or key lengths' and 'absent encryption detail for a managed service that encrypts by default'.",
+      "satisfaction_status": "satisfied",
+      "evidence_ids": [
+        "evd-126",
+        "evd-136",
+        "evd-053",
+        "evd-149"
+      ],
+      "assumptions": [],
+      "confidence": "medium"
+    },
+    {
+      "threat_id": "thr-015",
+      "requirement_id": "req-DATA-004",
+      "control_keys": [],
+      "existing_control_ids": [
+        "ctl-015",
+        "ctl-026"
+      ],
+      "applicability_status": "applicable",
+      "applicability_reason": "This threat's administrative path includes supporting data-deletion requests (evd-035) against data held in more than one store (evd-032, evd-033), which is the requirement's condition set; whether deletion reaches the artifact store bounds how long the reachable material exists.",
+      "suppressed_conclusion": "That deletion is inadequate because no customer self-service deletion interface is described.",
+      "suppressed_by": "req-DATA-004 common_false_positives: 'absent self-service deletion interface where an operator procedure exists'.",
+      "satisfaction_status": "unverified",
+      "evidence_ids": [
+        "evd-026",
+        "evd-096",
+        "evd-032",
+        "evd-033"
+      ],
+      "assumptions": [],
+      "confidence": "medium"
+    },
+    {
+      "threat_id": "thr-015",
+      "requirement_id": "req-NET-001",
+      "control_keys": [],
+      "existing_control_ids": [],
+      "applicability_status": "not_applicable",
+      "applicability_reason": "The requirement's non-applicable condition holds for this threat: the reach at issue is through the ForgeFlow API from an authenticated administrative session (evd-048, df-022), not direct network reachability of a data store from an untrusted network; object storage and PostgreSQL are reached via application workloads (evd-023).",
+      "suppressed_conclusion": null,
+      "suppressed_by": null,
+      "satisfaction_status": "not_applicable",
+      "evidence_ids": [
+        "evd-023",
+        "evd-048"
+      ],
+      "assumptions": [],
+      "confidence": "medium"
+    },
+    {
+      "threat_id": "thr-015",
+      "requirement_id": "req-WEBHOOK-001",
+      "control_keys": [],
+      "existing_control_ids": [],
+      "applicability_status": "not_applicable",
+      "applicability_reason": "This threat's path contains no inbound external event: it begins with an operator authenticating to the administrative interface (evd-087, evd-035), so the condition that the system acts on an event delivered by an external platform does not arise here.",
+      "suppressed_conclusion": null,
+      "suppressed_by": null,
+      "satisfaction_status": "not_applicable",
+      "evidence_ids": [
+        "evd-035",
+        "evd-087"
+      ],
+      "assumptions": [],
+      "confidence": "high"
+    },
+    {
+      "threat_id": "thr-015",
+      "requirement_id": "req-WEBHOOK-002",
+      "control_keys": [],
+      "existing_control_ids": [],
+      "applicability_status": "not_applicable",
+      "applicability_reason": "Replay of inbound events plays no part in this attack path, which relies on an authenticated administrative session rather than re-delivery of a platform event (evd-048, evd-083).",
+      "suppressed_conclusion": null,
+      "suppressed_by": null,
+      "satisfaction_status": "not_applicable",
+      "evidence_ids": [
+        "evd-048",
+        "evd-083"
+      ],
+      "assumptions": [],
+      "confidence": "high"
+    },
+    {
+      "threat_id": "thr-015",
+      "requirement_id": "req-AI-001",
+      "control_keys": [],
+      "existing_control_ids": [],
+      "applicability_status": "not_applicable",
+      "applicability_reason": "The requirement governs content passed into a model; this threat concerns an operator reading stored artifacts after the fact, and no model input is constructed anywhere in its attack path (evd-083, evd-033).",
+      "suppressed_conclusion": null,
+      "suppressed_by": null,
+      "satisfaction_status": "not_applicable",
+      "evidence_ids": [
+        "evd-033",
+        "evd-083"
+      ],
+      "assumptions": [],
+      "confidence": "high"
+    },
+    {
+      "threat_id": "thr-015",
+      "requirement_id": "req-AI-002",
+      "control_keys": [],
+      "existing_control_ids": [],
+      "applicability_status": "not_applicable",
+      "applicability_reason": "No model output is published to an external destination in this threat's path; the disclosure is to an internal operator viewing stored artifacts (evd-083, evd-078).",
+      "suppressed_conclusion": null,
+      "suppressed_by": null,
+      "satisfaction_status": "not_applicable",
+      "evidence_ids": [
+        "evd-078",
+        "evd-083"
+      ],
+      "assumptions": [],
+      "confidence": "high"
+    },
+    {
+      "threat_id": "thr-015",
+      "requirement_id": "req-AI-003",
+      "control_keys": [],
+      "existing_control_ids": [],
+      "applicability_status": "not_applicable",
+      "applicability_reason": "This threat involves no transmission of customer content to the external model provider; the boundary crossed is the administrative privilege boundary, not the AI-provider boundary (evd-049, evd-048).",
+      "suppressed_conclusion": null,
+      "suppressed_by": null,
+      "satisfaction_status": "not_applicable",
+      "evidence_ids": [
+        "evd-048",
+        "evd-049"
+      ],
+      "assumptions": [],
+      "confidence": "high"
+    },
+    {
+      "threat_id": "thr-015",
+      "requirement_id": "req-AI-004",
+      "control_keys": [],
+      "existing_control_ids": [],
+      "applicability_status": "not_applicable",
+      "applicability_reason": "Rendering of model output into a customer interface or external markup is not part of this attack path, which ends at operator viewing of stored diagnostic material (evd-083, evd-033).",
+      "suppressed_conclusion": null,
+      "suppressed_by": null,
+      "satisfaction_status": "not_applicable",
+      "evidence_ids": [
+        "evd-033",
+        "evd-083"
+      ],
+      "assumptions": [],
+      "confidence": "medium"
+    },
+    {
+      "threat_id": "thr-015",
+      "requirement_id": "req-SECRET-001",
+      "control_keys": [],
+      "existing_control_ids": [],
+      "applicability_status": "not_applicable",
+      "applicability_reason": "No credential or signing key custody question arises in this path: the operator's reach follows from administrative session authorization, not from possession of a stored external credential (evd-035, evd-048).",
+      "suppressed_conclusion": null,
+      "suppressed_by": null,
+      "satisfaction_status": "not_applicable",
+      "evidence_ids": [
+        "evd-035",
+        "evd-048"
+      ],
+      "assumptions": [],
+      "confidence": "medium"
+    },
+    {
+      "threat_id": "thr-015",
+      "requirement_id": "req-SECRET-002",
+      "control_keys": [],
+      "existing_control_ids": [],
+      "applicability_status": "not_applicable",
+      "applicability_reason": "The requirement addresses credentials used to reach customer resources on an external platform; this threat reaches ForgeFlow-held artifacts internally and mints no such credential (evd-083, evd-078).",
+      "suppressed_conclusion": null,
+      "suppressed_by": null,
+      "satisfaction_status": "not_applicable",
+      "evidence_ids": [
+        "evd-078",
+        "evd-083"
+      ],
+      "assumptions": [],
+      "confidence": "medium"
+    },
+    {
+      "threat_id": "thr-015",
+      "requirement_id": "req-AUTHZ-002",
+      "control_keys": [],
+      "existing_control_ids": [],
+      "applicability_status": "not_applicable",
+      "applicability_reason": "Delegated GitHub App privileges are not exercised in this path; the excess reach at issue is internal administrative reach into stored artifacts rather than an over-broad external grant (evd-035, evd-054).",
+      "suppressed_conclusion": null,
+      "suppressed_by": null,
+      "satisfaction_status": "not_applicable",
+      "evidence_ids": [
+        "evd-035",
+        "evd-054"
+      ],
+      "assumptions": [],
+      "confidence": "medium"
+    },
+    {
+      "threat_id": "thr-015",
+      "requirement_id": "req-TPI-001",
+      "control_keys": [],
+      "existing_control_ids": [],
+      "applicability_status": "not_applicable",
+      "applicability_reason": "No customer data crosses to an external processor in this threat; the requirement's non-applicable condition that no customer data leaves the trust boundary holds for this path (evd-048).",
+      "suppressed_conclusion": null,
+      "suppressed_by": null,
+      "satisfaction_status": "not_applicable",
+      "evidence_ids": [
+        "evd-048"
+      ],
+      "assumptions": [],
+      "confidence": "medium"
+    },
+    {
+      "threat_id": "thr-015",
+      "requirement_id": "req-TPI-002",
+      "control_keys": [],
+      "existing_control_ids": [],
+      "applicability_status": "not_applicable",
+      "applicability_reason": "The work in this path is initiated by an authenticated operator rather than by an external event, which is one of the requirement's stated non-applicable conditions (evd-083, evd-087).",
+      "suppressed_conclusion": null,
+      "suppressed_by": null,
+      "satisfaction_status": "not_applicable",
+      "evidence_ids": [
+        "evd-083",
+        "evd-087"
+      ],
+      "assumptions": [],
+      "confidence": "medium"
+    },
+    {
+      "threat_id": "thr-015",
+      "requirement_id": "req-CICD-001",
+      "control_keys": [],
+      "existing_control_ids": [],
+      "applicability_status": "not_applicable",
+      "applicability_reason": "The deployment pipeline and build dependencies play no part in this threat's attack path, which runs entirely through a live administrative session against production data (evd-048, evd-083).",
+      "suppressed_conclusion": null,
+      "suppressed_by": null,
+      "satisfaction_status": "not_applicable",
+      "evidence_ids": [
+        "evd-048",
+        "evd-083"
+      ],
+      "assumptions": [],
+      "confidence": "medium"
+    }
+  ],
+  "documentation_gaps": [
+    {
+      "title": "Administrative access to stored source artifacts is undefined",
+      "description": "The architecture names 'Administrative access to source artifacts' among its known documentation gaps (evd-054), and the security overview expresses administrative respect for tenant isolation as intent ('administrative tooling is intended to respect customer isolation requirements', evd-130). The administrative interface is described as able to review error metadata and retry failed jobs (evd-035, evd-083), while diagnostic artifacts for failed jobs are stored in object storage alongside repository files, diffs and prompt artifacts (evd-033, evd-078). Whether the interface can read those artifacts, and for which organizations, cannot be determined from the material.",
+      "importance": "This is the fact that decides whether one internal role can read customer source material for every organization, which is the core of the threat under evaluation and cannot be settled by the other administrative controls that are documented.",
+      "related_object_ids": [
+        "cmp-008",
+        "cmp-010",
+        "ast-001",
+        "ast-009",
+        "thr-015",
+        "req-ADMIN-001"
+      ],
+      "requested_evidence": [
+        "A statement of what customer data the administrative interface can reach, including object-storage artifacts",
+        "Description of whether administrative artifact access is scoped to a single organization per action",
+        "The separately maintained administrative permissions documentation referenced in evd-035"
+      ],
+      "evidence_ids": [
+        "evd-054",
+        "evd-130",
+        "evd-035",
+        "evd-083",
+        "evd-033",
+        "evd-078"
+      ],
+      "severity": "medium"
+    },
+    {
+      "title": "Object-storage authorization enforcement on read is not described",
+      "description": "Artifact paths embed the organization and job identifier and are given as a template (evd-033, evd-078, evd-130), but the architecture lists 'Object-storage authorization enforcement' as a detail requiring further clarification (evd-054). No reviewed passage states what check is applied when the API or the administrative path reads an object, or what conditions govern issuance of a time-limited link (evd-026).",
+      "importance": "Path layout organizes artifacts; it does not constrain reads. Without the enforcement point, neither tenant separation of stored artifacts nor the reach of an administrative session over them can be verified.",
+      "related_object_ids": [
+        "cmp-010",
+        "cmp-003",
+        "ast-009",
+        "req-DATA-003",
+        "req-AUTHZ-001"
+      ],
+      "requested_evidence": [
+        "Storage access policy configuration or a description of the server-side authorization check applied on artifact read",
+        "Description of the conditions under which a time-limited download link is issued and how organization membership is checked before issuance"
+      ],
+      "evidence_ids": [
+        "evd-054",
+        "evd-033",
+        "evd-078",
+        "evd-026",
+        "evd-130"
+      ],
+      "severity": "medium"
+    },
+    {
+      "title": "Administrative permission model and troubleshooting workflow are held outside the reviewed material",
+      "description": "The architecture states that detailed administrative permissions are maintained separately (evd-035) and the security overview intentionally omits internal authorization implementation and the administrative troubleshooting workflow (evd-138). The reviewed documents therefore establish how an operator authenticates (evd-087, evd-132, evd-143) but not what the resulting session is permitted to do.",
+      "importance": "req-ADMIN-001 asks for both the access restriction and the reach; only the first half can be checked against the available material, so the strength of the administrative privilege boundary is unverifiable.",
+      "related_object_ids": [
+        "cmp-008",
+        "act-003",
+        "req-ADMIN-001",
+        "req-AUTH-002"
+      ],
+      "requested_evidence": [
+        "The separately maintained administrative permission documentation",
+        "The administrative troubleshooting workflow document referenced in evd-138",
+        "A statement of the corporate identity platform factor policy applied to administrative sessions"
+      ],
+      "evidence_ids": [
+        "evd-035",
+        "evd-138",
+        "evd-087",
+        "evd-132"
+      ],
+      "severity": "medium"
+    },
+    {
+      "title": "Whether administrative reads of customer artifacts produce an audit record is not stated",
+      "description": "Administrative actions are recorded for audit purposes and forwarded to the centralized logging platform (evd-132, evd-087, evd-036), and administrative audit events are held in PostgreSQL (evd-032). No reviewed passage states whether viewing job error metadata or opening a diagnostic artifact — the read operations central to this threat — is among the recorded actions.",
+      "importance": "Where the reach of the administrative role is broad, the audit record is the compensating control; its coverage of read operations determines whether cross-organization viewing would be detectable after the fact.",
+      "related_object_ids": [
+        "cmp-008",
+        "ast-010",
+        "req-LOG-002"
+      ],
+      "requested_evidence": [
+        "A list of administrative action types that generate audit records, stating whether read and artifact-retrieval operations are included",
+        "Description of where administrative read records are retained and for how long"
+      ],
+      "evidence_ids": [
+        "evd-132",
+        "evd-087",
+        "evd-036",
+        "evd-032"
+      ],
+      "severity": "low"
+    },
+    {
+      "title": "Break-glass administrative route is maintained outside the reviewed material",
+      "description": "The operations guide states only that break-glass procedures are maintained separately (evd-087). The threat's attack path notes that an alternative route into an administrative session would carry the same reach as the normal one (evd-035, evd-132), and nothing in the reviewed documents describes the controls on that route.",
+      "importance": "An undocumented emergency access route bypasses the access path that the documented administrative controls describe, so the effective restriction on privileged access cannot be established from the reviewed material.",
+      "related_object_ids": [
+        "cmp-008",
+        "act-003",
+        "req-ADMIN-001"
+      ],
+      "requested_evidence": [
+        "The break-glass procedure documentation, including approval, scope, expiry and audit treatment"
+      ],
+      "evidence_ids": [
+        "evd-087",
+        "evd-035",
+        "evd-132"
+      ],
+      "severity": "low"
+    },
+    {
+      "title": "Stated artifact retention conflicts with the customer-facing statement about source files",
+      "description": "The operations guide gives a 30-day retention target for artifacts, with scheduled cleanup and support-requested extensions (evd-079), while the product overview tells customers that source files are treated as temporary processing data and deleted after analysis completes (evd-099). The architecture lists source-artifact retention as a known gap (evd-054).",
+      "importance": "Retention bounds how long the material this threat reaches remains reachable, and req-DATA-002 requires the enforced period and the customer-facing statement to agree. Which passage is authoritative is a reviewer's decision.",
+      "related_object_ids": [
+        "cmp-010",
+        "ast-001",
+        "ast-009",
+        "req-DATA-002"
+      ],
+      "requested_evidence": [
+        "The enforced retention configuration for source-derived and diagnostic artifacts",
+        "Confirmation of which statement governs customer-facing communication about source-file deletion"
+      ],
+      "evidence_ids": [
+        "evd-079",
+        "evd-099",
+        "evd-054",
+        "evd-033"
+      ],
+      "severity": "medium"
+    }
+  ],
+  "catalog_gap_candidates": []
+}

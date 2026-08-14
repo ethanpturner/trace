@@ -20,9 +20,9 @@ promotion traceback.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Final, Self
 
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from trace_ai.domain.base import DomainModel, now
 from trace_ai.domain.control import (
@@ -46,6 +46,7 @@ from trace_ai.domain.identifiers import (
     RequirementId,
     ThreatId,
 )
+from trace_ai.domain.proposals.catalog_gap import CatalogGapCandidateProposal
 from trace_ai.domain.proposals.context_extraction import LocalKey, ProposalError
 
 if TYPE_CHECKING:
@@ -121,6 +122,22 @@ class RequirementMappingProposal(DomainModel):
     assumptions: list[str] = Field(default_factory=list)
     confidence: ConfidenceLevel
 
+    @model_validator(mode="after")
+    def _suppression_is_recorded_in_both_halves(self) -> Self:
+        """`ControlMapping`'s DEC-025 pairing, applied one step earlier.
+
+        The duplication is deliberate, for the reason `ProposedContextClaim` states: caught here
+        it is a schema failure the retry policy can feed back with the field named; caught at
+        promotion it is a conversion crash after the call is already paid for — which is exactly
+        how the live ForgeFlow capture died (#324).
+        """
+        if bool(self.suppressed_conclusion) != bool(self.suppressed_by):
+            raise ValueError(
+                "suppressed_conclusion and suppressed_by are recorded together (DEC-025). One "
+                "without the other is a suppression nobody can check."
+            )
+        return self
+
 
 class DocumentationGapProposal(DomainModel):
     """A gap candidate the mapper raised (section 23, minus what the application owns).
@@ -159,6 +176,12 @@ class MappingProposal(DomainModel):
     mappings: list[RequirementMappingProposal] = Field(default_factory=list)
     documentation_gaps: list[DocumentationGapProposal] = Field(default_factory=list)
 
+    catalog_gap_candidates: list[CatalogGapCandidateProposal] = Field(default_factory=list)
+    """Concerns no requirement covers, flagged for the catalog owner (DEC-065). Raised here
+    rather than stretched over the nearest requirement — the misfit this agent is best placed
+    to notice, since DEC-024 puts the whole catalog in front of it. Empty is the ordinary
+    case."""
+
     def validate_references(self, available: Set[str]) -> None:
         """Every identifier a mapping names must be one the input package supplied.
 
@@ -194,6 +217,19 @@ class MappingProposal(DomainModel):
         offset = -1 - len(self.controls)
         for position, gap in enumerate(self.documentation_gaps):
             referenced = [*gap.related_object_ids, *gap.evidence_ids]
+            missing = sorted({value for value in referenced if value not in available})
+            if missing:
+                unknown[offset - position] = missing
+
+        # A candidate's evidence and its named nearest requirements are checked the same way:
+        # this agent has the whole catalog in front of it (DEC-024), so a requirement it names
+        # as a near-miss must be one it was given (DEC-065's falsifiability gate).
+        offset -= len(self.documentation_gaps)
+        for position, candidate in enumerate(self.catalog_gap_candidates):
+            referenced = [
+                *candidate.evidence_ids,
+                *(considered.requirement_id for considered in candidate.nearest_requirements),
+            ]
             missing = sorted({value for value in referenced if value not in available})
             if missing:
                 unknown[offset - position] = missing

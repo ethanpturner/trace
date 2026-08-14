@@ -341,6 +341,34 @@ def test_a_low_confidence_finding_states_its_justification(handle: AssessmentHan
     assert "receiver's configuration" in item.evidence_statement
 
 
+def test_a_low_confidence_finding_carries_the_low_confidence_routing_reason(
+    handle: AssessmentHandle,
+) -> None:
+    """DEC-062: the confidence field derives a typed `low_confidence` reason at build time."""
+    objects = seed(handle)
+    finding = objects["findings"][0]
+    low = Finding.model_validate(
+        {
+            **finding.model_dump(),
+            "confidence": ConfidenceLevel.LOW,
+            "low_confidence_justification": "More evidence on the receiver would raise confidence.",
+        }
+    )
+    with handle.objects.transaction():
+        handle.objects.save(low)
+
+    package = build(handle)
+    assert "low_confidence" in package.reasons_for(low.id)
+    assert "low_confidence" in render_markdown(package), "the reason renders in `findings show`"
+
+
+def test_a_medium_confidence_finding_carries_no_routing_reason(handle: AssessmentHandle) -> None:
+    """A subject with no reasons is routine, not exempt (DEC-062): absence reads as nothing said."""
+    objects = seed(handle)
+    package = build(handle)
+    assert package.reasons_for(objects["findings"][0].id) == ()
+
+
 # ------------------------------------------------------------------------------------------
 # Critiques, threats, mappings, questions
 # ------------------------------------------------------------------------------------------
@@ -456,6 +484,7 @@ def test_the_summary_counts_findings_awaiting_severity(handle: AssessmentHandle)
 def test_formatting_is_a_separate_step_over_the_structured_data() -> None:
     """`render_markdown` reads only the package: a hand-built one renders with no store at all."""
     package = FindingReviewPackage(
+        assessment_id="asm-001",
         summary=ReviewSummary(
             finding_count=0,
             documentation_gap_count=0,

@@ -32,12 +32,14 @@ from trace_ai.domain.base import now
 from trace_ai.domain.enums import Severity
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
     from datetime import datetime
     from pathlib import Path
 
     from trace_ai.domain.evidence import EvidenceReference
     from trace_ai.domain.finding import Finding
     from trace_ai.domain.proposals.report_sections import ReportSections
+    from trace_ai.domain.question import Question
     from trace_ai.services.assessment import AssessmentHandle
     from trace_ai.services.report.input_assembly import ReportInput
 
@@ -132,6 +134,58 @@ def _cell(value: str) -> str:
     return value.replace("|", "\\|").replace("\n", " ")
 
 
+def _coverage_ledger_table(assembled: ReportInput) -> str:
+    """DEC-071's ledger as a table, refused when it does not account for every document.
+
+    A loud failure over a quiet omission: an exclusion path added without a recorded
+    justification would produce an unlisted document, and rendering around it would defeat the
+    ledger's whole purpose.
+    """
+    covered = {entry.document_id for entry in assembled.coverage}
+    supplied = {document.id for document in assembled.source_documents}
+    if covered != supplied:
+        unaccounted = sorted(supplied - covered) + sorted(covered - supplied)
+        raise ValueError(
+            f"the coverage ledger does not account for every source document: {unaccounted} "
+            f"(DEC-071). A document with no bucket is the silent omission the ledger exists "
+            f"to prevent; every disposition must be persisted somewhere derivable."
+        )
+    return _table(
+        ["Document", "Identifier", "Coverage", "Why"],
+        [
+            [entry.filename, entry.document_id, entry.bucket.value, entry.justification]
+            for entry in assembled.coverage
+        ],
+    )
+
+
+def _question_lines(questions: Sequence[Question]) -> list[str]:
+    """Section 11's lines, with byte-identical asks collapsed onto one line (#430).
+
+    Two mappings contradicted on the same requirement each produce "Which statement is
+    authoritative for req-X?", and the section rendered both verbatim. The collapse happens at
+    render because the objects must survive as allocated: the recorded report prose enumerates
+    the question identifiers, and dropping a duplicate at creation would renumber the rest and
+    invalidate the recorded run's own response. Every identifier is still shown — the duplicate
+    rides its survivor's line — so nothing is silently absent.
+    """
+    lines: list[str] = []
+    first_by_text: dict[str, int] = {}
+    for question in questions:
+        normalized = " ".join(question.question.split()).casefold()
+        if normalized in first_by_text:
+            index = first_by_text[normalized]
+            lines[index] = f"{lines[index]} *(also asked as {question.id})*"
+            continue
+        first_by_text[normalized] = len(lines)
+        lines.append(
+            f"- {question.id} "
+            f"({'blocking' if question.blocking else question.priority.value}): "
+            f"{question.question}"
+        )
+    return lines
+
+
 def _anchor(object_id: str) -> str:
     return f'<a id="{object_id.lower()}"></a>'
 
@@ -223,7 +277,11 @@ def render_report(
             [
                 f"- Assessment: {assessment.id} — {assessment.name}",
                 *([f"- Description: {assessment.description}"] if assessment.description else []),
-                f"- Model profile: {assessment.configuration.model_profile}",
+                # The run's profile, not the configured default: `versions` is assembled by the
+                # caller that ran, and the two differ whenever a run overrides the configuration —
+                # every offline replay does. A report claiming a profile nobody used is a
+                # provenance error in the one document that exists to carry provenance.
+                f"- Model profile: {versions.model_configuration}",
                 f"- Threat methodology: {assessment.configuration.threat_methodology}",
                 f"- Evidence threshold: {assessment.configuration.evidence_threshold.value}",
             ]
@@ -304,12 +362,7 @@ def render_report(
                 for claim in assembled.assumption_claims
             ],
         ),
-        "open_questions": "\n".join(
-            f"- {question.id} "
-            f"({'blocking' if question.blocking else question.priority.value}): "
-            f"{question.question}"
-            for question in assembled.open_questions
-        ),
+        "open_questions": "\n".join(_question_lines(assembled.open_questions)),
         "controls": "\n\n".join(
             f"{_anchor(control.id)}\n### {control.id}: {control.name}\n\n{control.description}"
             for control in assembled.confirmed_controls
@@ -331,7 +384,10 @@ def render_report(
             "findings are consolidated and approved at a second human checkpoint before this "
             "report is rendered. Model-assisted steps propose; deterministic validation and "
             "human review decide. Absence of documentation is never treated as proof of a "
-            "vulnerability."
+            "vulnerability.\n\n"
+            "### Source coverage\n\n"
+            "Every supplied document appears in exactly one bucket (DEC-071); unexamined "
+            "material is listed, never silent.\n\n" + _coverage_ledger_table(assembled)
         ),
         "versions": "\n".join(
             [

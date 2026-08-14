@@ -43,6 +43,6 @@ requirements:
       - absent pipeline detail where deployment is manual and documented as such
     default_severity: medium
     source_frameworks:
-      - "OWASP ASVS 5.0.0: 15.1.2"
+      - "OWASP ASVS: v5.0.0-15.1.2"
       - "NIST SP 800-53 5.2.0: SA-10"
     status: active

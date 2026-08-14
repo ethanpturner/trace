@@ -1,0 +1,47 @@
+# Parcelworks expected findings
+#
+# Benchmark truth for the findings a correct assessment approves. The scenario is the
+# large-architecture input — four zones, nineteen components — and its graded property is
+# that scale does not change the rules: two findings rest on the document's affirmative
+# statements, and everything else the size might tempt an assessment to conclude resolves
+# to gaps or rejections.
+#
+# Nothing in this directory is supplied to Trace during an assessment.
+
+benchmark_version: "1.0"
+scenario: parcel-platform
+catalog_version: "0.1"
+source: platform-overview.md
+
+findings:
+  - key: FND-PP-01
+    subject: the admin console is reached through the customer sign-in path
+    severity_guidance: high
+    requirement_id: req-ADMIN-001
+    affected_component: Admin Console
+    arises_from: platform-overview.md section 2
+    evidence_establishes:
+      - Staff reach the console with the same SSO accounts and the same sign-in path
+        customers use, with an is_admin flag enabling its functions.
+      - The console can read and edit any customer account, order, and address.
+    supported_by:
+      - platform-overview.md
+    notes: >
+      The requirement asks for a stronger access path than customer access, and the
+      document states there is none. The reach is documented too, so the finding is about
+      the path, not the reach.
+
+  - key: FND-PP-02
+    subject: notification bodies with delivery details are logged to the shared application log
+    severity_guidance: medium
+    requirement_id: req-LOG-001
+    affected_component: Notification Service
+    arises_from: platform-overview.md section 2
+    evidence_establishes:
+      - The templates log the full rendered message body — recipient name, delivery
+        address, and delivery window — to the shared application log for debugging.
+    supported_by:
+      - platform-overview.md
+    notes: >
+      Affirmatively documented body-level logging of customer delivery details; an address
+      paired with a delivery window is more sensitive than either alone.

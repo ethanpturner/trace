@@ -1,0 +1,36 @@
+{
+  "threats": [
+    {
+      "title": "Retained customer-record exports persist beyond the documented need",
+      "description": "Exports containing customer records are retained for 30 days by the lifecycle policy, exceeding the documented temporary-processing intent.",
+      "methodology": "stride-scenario-based",
+      "category": [
+        "information_disclosure"
+      ],
+      "threat_actor_ids": [],
+      "affected_component_ids": [
+        "cmp-002"
+      ],
+      "affected_asset_ids": [
+        "ast-001"
+      ],
+      "related_data_flow_ids": [],
+      "preconditions": [
+        "exports contain customer records",
+        "a 30-day lifecycle policy is configured"
+      ],
+      "attack_path": [
+        "request an export",
+        "records persist for 30 days"
+      ],
+      "impact": "Customer-record exports available longer than the temporary need",
+      "likelihood": null,
+      "confidence": "medium",
+      "evidence_ids": [
+        "evd-001"
+      ],
+      "assumption_ids": [],
+      "open_question_ids": []
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+# Unsigned Webhooks expected documentation gaps
+#
+# One gap: whether replay of a captured delivery is prevented or made harmless is not
+# addressed. Nothing in this directory is supplied to Trace.
+
+benchmark_version: "1.0"
+scenario: unsigned-webhooks
+catalog_version: "0.1"
+source: system-overview.md
+
+documentation_gaps:
+  - key: GAP-UW-01
+    requirement_id: req-WEBHOOK-002
+    subject: whether replay of a captured delivery is handled is not described
+    arises_from: system-overview.md section 2
+    missing:
+      - Whether deliveries carry a nonce or timestamp
+      - Whether a replayed delivery would be reprocessed
+    supported_by:
+      - system-overview.md
+    paired_question: Q-UW-01
+    notes: >
+      Signature verification (FND-UW-01) and replay handling are distinct requirements. The
+      document establishes the first is absent and says nothing about the second, so replay is
+      a gap rather than a second finding — the DEC-009 line the scenario draws between a
+      documented negative and silence.

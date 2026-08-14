@@ -1,0 +1,52 @@
+{
+  "scenario": "unsigned-webhooks",
+  "profile": "primary-development",
+  "n": 5,
+  "failed_runs": 3,
+  "defaulted_decisions": 182,
+  "metric_mean": {
+    "clarifying_question_usefulness": 1.0,
+    "documentation_gap_precision": 0.0,
+    "duplicate_finding_rate": 0.0,
+    "estimated_cost": 6.921842,
+    "execution_duration": 2433.0324,
+    "false_negative_rate": 0.6,
+    "false_positive_rate": 0.0,
+    "finding_evidence_coverage": 1.0,
+    "model_call_count": 15.4,
+    "node_failure_rate": 0.02,
+    "report_finding_coverage": 1.0,
+    "report_invented_finding_count": 0.0,
+    "report_severity_inconsistency_count": 0.0,
+    "reviewer_acceptance_rate": 0.4,
+    "reviewer_edit_rate": 0.4,
+    "reviewer_rejection_rate": 0.0,
+    "token_usage": 583962.0,
+    "unsupported_claim_count": 0.0,
+    "unsupported_claim_rate": 0.0
+  },
+  "metric_stdev": {
+    "clarifying_question_usefulness": 0.0,
+    "documentation_gap_precision": 0.0,
+    "duplicate_finding_rate": 0.0,
+    "estimated_cost": 3.278823905463055,
+    "execution_duration": 922.0901537573427,
+    "false_negative_rate": 0.4898979485566356,
+    "false_positive_rate": 0.0,
+    "finding_evidence_coverage": 0.0,
+    "model_call_count": 6.374950980203691,
+    "node_failure_rate": 0.04,
+    "report_finding_coverage": 0.0,
+    "report_invented_finding_count": 0.0,
+    "report_severity_inconsistency_count": 0.0,
+    "reviewer_acceptance_rate": 0.4898979485566356,
+    "reviewer_edit_rate": 0.4898979485566356,
+    "reviewer_rejection_rate": 0.0,
+    "token_usage": 283612.6895764715,
+    "unsupported_claim_count": 0.0,
+    "unsupported_claim_rate": 0.0
+  },
+  "item_agreement": {
+    "FND-UW-01": 2
+  }
+}

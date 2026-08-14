@@ -22,6 +22,13 @@ that were *not* drawn, and a critic looking for `documentation_gap_only` — a w
 where the documentation is silent — needs to see that the mapping already considered and declined
 that reading. Without them the critic re-raises what the pipeline already handled, which is
 section 15's superficial-criticism failure condition with a specific cause.
+
+**Precedent is context, never subject** (DEC-064). Rationale-bearing dismissals matched to this
+lineage render as a distinct, labelled block inside the trusted region — the rationale is the
+reviewer's own words, not source content, so the untrusted fence discipline is unchanged. The
+precedents' identifiers are deliberately absent from `referenceable_ids`: a critique may cite a
+precedent's rationale in its explanation, and a critique targeting a precedent fails reference
+validation, which is how "context, never subject" is enforced rather than requested.
 """
 
 from __future__ import annotations
@@ -41,9 +48,13 @@ if TYPE_CHECKING:
     from trace_ai.domain.evidence_assessment import EvidenceAssessment
     from trace_ai.domain.threat import Threat
     from trace_ai.infrastructure.model.profiles import ModelProfile
+    from trace_ai.services.critique.precedent import DismissalPrecedent, PrecedentSelection
     from trace_ai.services.evidence.index import EvidenceIndex
 
-__all__ = ["ReviewGroup", "assemble_review_group", "select_review_group"]
+__all__ = ["PRECEDENT_HEADING", "ReviewGroup", "assemble_review_group", "select_review_group"]
+
+PRECEDENT_HEADING = "Reviewer precedent (context, not subjects)"
+"""The marked block's heading (DEC-064). A test greps for it, so it lives as a constant."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -222,6 +233,24 @@ def _assessment_entry(assessed: EvidenceAssessment) -> dict[str, Any]:
     }
 
 
+def _precedent_entry(precedent: DismissalPrecedent) -> dict[str, Any]:
+    """One dismissal, with what matched stated rather than asserted (DEC-064).
+
+    The rationale is the reviewer's recorded reason — the one text in the pipeline written by the
+    human whose judgment the critic is meant to anticipate. The block asks whether that reason
+    applies here; it never carries the verdict as an instruction.
+    """
+    return {
+        "dismissed_finding_id": precedent.finding_id,
+        "dismissed_finding_title": precedent.finding_title,
+        "decision_id": precedent.decision_id,
+        "disposition": precedent.disposition,
+        "reviewer_rationale": precedent.rationale,
+        "shared_requirement_ids": list(precedent.shared_requirement_ids),
+        "matched_component_names": list(precedent.matched_component_names),
+    }
+
+
 def _gap_entry(gap: DocumentationGap) -> dict[str, Any]:
     return {
         "id": gap.id,
@@ -249,11 +278,16 @@ def assemble_review_group(
     selected: SelectedObjects,
     index: EvidenceIndex,
     profile: ModelProfile,
+    precedents: PrecedentSelection | None = None,
 ) -> ReviewGroup:
     """Render one selected group into the package the critic receives.
 
     Evidence is derived from the selected objects rather than supplied: what bears on a review
     group is what the objects in it cite, and there is no judgment in that.
+
+    `precedents` is DEC-064's block, rendered only when the selection is non-empty so a first
+    run's package is unchanged. Precedent evidence is never added to the fence and precedent
+    identifiers never join `referenceable_ids` — context, not subjects.
     """
     threat = _threat_entry(selected.threat)
     mappings = [_mapping_entry(mapping) for mapping in selected.mappings]
@@ -283,17 +317,30 @@ def assemble_review_group(
         for excerpt in excerpts
     ]
 
-    trusted = _trusted_region(
-        assessment_id=assessment_id,
-        sections={
-            "Threat under review": threat,
-            "Requirement and control mappings": mappings,
-            "Controls": controls,
-            "Evidence assessments": assessments,
-            "Documentation gaps": gaps,
-            "Evidence available": manifest,
-        },
-    )
+    sections: dict[str, Any] = {
+        "Threat under review": threat,
+        "Requirement and control mappings": mappings,
+        "Controls": controls,
+        "Evidence assessments": assessments,
+        "Documentation gaps": gaps,
+        "Evidence available": manifest,
+    }
+    if precedents is not None and precedents:
+        block: dict[str, Any] = {
+            "note": (
+                "Prior findings in this assessment a reviewer dismissed with a stated reason, "
+                "matched to this lineage. Context only: test whether each rationale applies "
+                "here; do not inherit the verdict, and do not target these identifiers."
+            ),
+            "dismissals": [_precedent_entry(precedent) for precedent in precedents.precedents],
+        }
+        if precedents.excluded_finding_ids:
+            # DEC-080: the cap names what it excluded rather than truncating silently, the
+            # same rule the evidence fence follows on a budget overrun.
+            block["excluded_by_cap"] = list(precedents.excluded_finding_ids)
+        sections[PRECEDENT_HEADING] = block
+
+    trusted = _trusted_region(assessment_id=assessment_id, sections=sections)
 
     return ReviewGroup(
         trusted=trusted,
@@ -311,6 +358,10 @@ def assemble_review_group(
             "evidence_assessments": len(assessments),
             "documentation_gaps": len(gaps),
             "evidence": len(excerpts),
+            "precedents": 0 if precedents is None else len(precedents.precedents),
+            "precedents_excluded_by_cap": (
+                0 if precedents is None else len(precedents.excluded_finding_ids)
+            ),
             "characters": len(trusted) + len(untrusted),
             "budget_characters": profile.max_input_characters,
         },

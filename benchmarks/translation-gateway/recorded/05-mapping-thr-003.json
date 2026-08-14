@@ -1,0 +1,22 @@
+{
+  "controls": [],
+  "mappings": [
+    {
+      "threat_id": "thr-003",
+      "requirement_id": "req-SECRET-001",
+      "control_keys": [],
+      "existing_control_ids": [],
+      "applicability_status": "applicable",
+      "applicability_reason": "The connector holds a long-lived platform token of its own, so managed-secret-store custody applies.",
+      "suppressed_conclusion": null,
+      "suppressed_by": null,
+      "satisfaction_status": "unverified",
+      "evidence_ids": [
+        "evd-003"
+      ],
+      "assumptions": [],
+      "confidence": "low"
+    }
+  ],
+  "documentation_gaps": []
+}

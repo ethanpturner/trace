@@ -285,6 +285,73 @@ def test_the_invalid_output_is_preserved_and_referenced(prepared: Any) -> None:
     assert (handle.artifacts.assessment_root / preserved[0]).read_text(encoding="utf-8") == raw
 
 
+def test_the_call_conditions_reach_the_execution_record(prepared: Any) -> None:
+    """#401: agent-design section 29 says the creativity-to-effort mapping is recorded on the
+    `ExecutionRecord`, because a wrong mapping produces plausible output rather than an error.
+    The adapter puts the conditions on the outcome's metadata; the node carries them onto the
+    record, where a reader can find what the call actually ran at."""
+
+    class WithConditions(Usable):
+        def generate(self, **kwargs: Any) -> Any:
+            outcome = super().generate(**kwargs)
+            return type(outcome)(
+                **{
+                    **{f: getattr(outcome, f) for f in outcome.__slots__},
+                    "metadata": {"effort": "high", "creativity": "low"},
+                }
+            )
+
+    handle, ledger = prepared
+    node(handle, ledger).run(context_for(handle, ledger, WithConditions([proposal(handle)])))
+
+    (record,) = ledger.records()
+    assert record.metadata["effort"] == "high"
+    assert record.metadata["creativity"] == "low"
+
+
+def test_the_budget_supplies_the_retry_ceiling_when_no_policy_is_given(prepared: Any) -> None:
+    """#397: `maximum_retries_per_node` reaches the attempt loop through the budget. Configured
+    zero, the node makes exactly one attempt — before this wiring, the hardcoded default retried
+    twice regardless of what the configuration said, and configuring the field changed nothing."""
+    handle, ledger = prepared
+    failure = ModelFailure(
+        reason=FailureReason.SCHEMA_VALIDATION_FAILURE,
+        message="the response did not validate",
+        usage=USAGE,
+        raw_output="{",
+    )
+    model = Usable([failure, failure, failure])
+
+    with pytest.raises(WorkflowError) as caught:
+        node(handle, ledger, budget=Budget(maximum_retries_per_node=0)).run(
+            context_for(handle, ledger, model)
+        )
+
+    assert caught.value.attempts == 1
+    assert len(model.calls) == 1
+    (record,) = ledger.records()
+    assert record.retry_number == 0
+
+
+def test_the_execution_record_carries_the_retries_consumed(prepared: Any) -> None:
+    """#398: `retry_number` is the retries the execution consumed, not a constant zero. One failed
+    attempt and a recovery is one retry. The evaluation's retries metric sums this field, so a
+    field nothing set would make the metric structurally zero however many retries happened."""
+    handle, ledger = prepared
+    failure = ModelFailure(
+        reason=FailureReason.SCHEMA_VALIDATION_FAILURE,
+        message="the response did not validate",
+        usage=USAGE,
+        raw_output="{",
+    )
+
+    node(handle, ledger).run(context_for(handle, ledger, Usable([failure, proposal(handle)])))
+
+    (record,) = ledger.records()
+    assert record.retry_number == 1
+    assert record.metadata["attempts"] == 2
+
+
 def test_incomplete_material_produces_questions_and_no_retry(prepared: Any) -> None:
     """`agent-design.md` section 7, Retry behavior: incomplete context produces questions rather
     than repeated model calls. A node that retried here would be asking the same model the same

@@ -206,6 +206,26 @@ def test_two_renders_over_identical_state_are_byte_identical(handle: AssessmentH
     assert rendered(handle) == rendered(handle)
 
 
+def test_the_scope_names_the_run_profile_not_the_configured_default(
+    handle: AssessmentHandle,
+) -> None:
+    """The report is the run's record, and the run's profile comes from the caller that ran —
+    `assemble_report_input`'s `model_configuration`. The configured default differs on every
+    offline replay, and rendering it would put a profile nobody used into the one document that
+    exists to carry provenance (#322)."""
+    seed(handle)
+    assembly = assemble_report_input(
+        handle,
+        prompt_versions={"generate-report-sections": "generate-report-sections-v1"},
+        model="deterministic-fake",
+        model_configuration="offline-fake",
+    )
+    assert assembly.assessment.configuration.model_profile != "offline-fake"
+    report = render_report(assembly, sections(assembly), generated_at=STAMP)
+    assert "- Model profile: offline-fake" in report
+    assert f"- Model profile: {assembly.assessment.configuration.model_profile}" not in report
+
+
 # ------------------------------------------------------------------------------------------
 # Findings: approved exactly once, cited, quoted verbatim
 # ------------------------------------------------------------------------------------------
@@ -328,3 +348,96 @@ def test_a_filename_that_escapes_the_assessment_is_refused(handle: AssessmentHan
 
     with pytest.raises(ArtifactStoreError):
         handle.artifacts.store_output("../outside.md", b"escaped")
+
+
+# ------------------------------------------------------------------------------------------
+# The coverage ledger (DEC-071, issue #346)
+# ------------------------------------------------------------------------------------------
+
+
+def _register(handle: AssessmentHandle, document_id: str, status: IngestionStatus) -> None:
+    stamped = now()
+    payload: dict[str, Any] = {
+        "id": document_id,
+        "assessment_id": handle.assessment_id,
+        "filename": f"{document_id}.md",
+        "media_type": MediaType.MARKDOWN,
+        "origin": SourceOrigin.UPLOADED_DOCUMENT,
+        "content_hash": content_hash(document_id.encode()),
+        "created_at": stamped,
+        "ingestion_status": status,
+        "trust_level": TrustLevel.UNTRUSTED,
+    }
+    if status is IngestionStatus.INGESTED:
+        payload |= {"ingested_at": stamped, "normalized_path": f"normalized/{document_id}.md"}
+    with handle.objects.transaction():
+        handle.objects.save(SourceDocument.model_validate(payload))
+
+
+def test_the_ledger_accounts_for_every_registered_document(handle: AssessmentHandle) -> None:
+    """Issue #346's acceptance criterion: ledger rows equal registered documents."""
+    seed(handle)
+    _register(handle, "src-002", IngestionStatus.FAILED)
+    _register(handle, "src-003", IngestionStatus.REGISTERED)
+
+    assembly = assembled(handle)
+    assert len(assembly.coverage) == len(assembly.source_documents) == 3
+
+    report = render_report(assembly, sections(assembly), generated_at=STAMP)
+    section_14 = report.split('<a id="s14-methodology"></a>')[1].split('<a id="s15-')[0]
+    assert "### Source coverage" in section_14
+    for document in assembly.source_documents:
+        assert document.id in section_14
+
+    by_id = {entry.document_id: entry for entry in assembly.coverage}
+    assert by_id["src-001"].bucket.value == "reviewed"
+    assert by_id["src-002"].bucket.value == "could_not_process"
+    assert by_id["src-003"].bucket.value == "excluded_by_rule"
+    assert "--no-index" in by_id["src-003"].justification
+
+
+def test_budget_exclusions_reach_the_ledger_with_names(handle: AssessmentHandle) -> None:
+    """The fence rule's naming obligation, carried through to the reader (DEC-071)."""
+    from trace_ai.domain.execution import ExecutionType
+    from trace_ai.services.execution_ledger import ExecutionLedger, start_run
+
+    seed(handle)
+    run = start_run(handle, workflow_version="0.1", model_profile="primary-development")
+    ledger = ExecutionLedger(handle, run)
+    with ledger.record(
+        "threat-analysis", node_version="0.1", execution_type=ExecutionType.MODEL
+    ) as execution:
+        execution.metadata["excluded_evidence_ids"] = ["evd-001"]
+
+    assembly = assembled(handle)
+    entry = next(item for item in assembly.coverage if item.document_id == "src-001")
+    assert entry.bucket.value == "reviewed_with_exclusions"
+    assert entry.excluded_evidence_ids == ("evd-001",)
+    assert "evd-001" in entry.justification
+
+    report = render_report(assembly, sections(assembly), generated_at=STAMP)
+    assert "reviewed_with_exclusions" in report
+
+
+def test_an_unaccounted_document_refuses_to_render(handle: AssessmentHandle) -> None:
+    """A loud failure over a quiet omission: the renderer checks the ledger is total."""
+    from dataclasses import replace as dc_replace
+
+    seed(handle)
+    assembly = dc_replace(assembled(handle), coverage=())
+    with pytest.raises(ValueError, match="does not account"):
+        render_report(assembly, sections(assembly), generated_at=STAMP)
+
+
+def test_the_agent_receives_the_ledger_as_input(handle: AssessmentHandle) -> None:
+    """DEC-071: limitations prose may interpret the ledger, so the agent must see it."""
+    from trace_ai.services.report.prompt_input import assemble_report_prompt_input
+
+    seed(handle)
+    _register(handle, "src-002", IngestionStatus.REGISTERED)
+
+    prompt_input = assemble_report_prompt_input(assembled(handle))
+    text = prompt_input.substitutions()["input.report"]
+    assert "### Source coverage" in text
+    assert "excluded_by_rule" in text
+    assert "never restate" in text

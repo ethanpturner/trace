@@ -600,7 +600,12 @@ Model comparisons should use the versioned benchmark suite.
 
 ## 9.1 Evaluation Dashboard
 
-**Status:** Candidate
+**Status:** Built in part (DEC-076)
+
+DEC-076's first form is built (issue #271): a static HTML scorecard generated deterministically
+from the harness's results feeds by `scripts/build_scorecard.py`, regenerated and checked by CI
+from recorded runs, metrics-only and never carrying assessment content, committed at
+`docs/eval/scorecard.html`. The fuller live dashboard below remains a candidate.
 
 Display evaluation metrics across workflow and prompt versions.
 
@@ -621,7 +626,13 @@ This should be added after the underlying metrics are reliable.
 
 ## 9.2 Workflow Ablation Testing
 
-**Status:** Candidate
+**Status:** Built (issue #270)
+
+The harness applies the section-14 ablations (evidence validation, critical review, context
+approval) harness-side per DEC-012, marks each ablated run non-authoritative (DEC-031), and
+`trace evaluate --ablation-set` reports what each removal changes at the finding level — the
+DEC-012 decision gate answered per scenario. Left as future work: ablations that restructure the
+agent set (single versus multi-agent) rather than removing a stage.
 
 Compare the full Trace workflow with individual stages removed.
 
@@ -923,6 +934,10 @@ The feature would need to avoid generating excessive or low-value requests.
 
 **Status:** Candidate
 
+The read-only demonstration form of this view is built: milestone M9's localhost interface
+(issue #276, DEC-078) renders finding lineage from persisted objects over stdlib `http.server`,
+GET-only and read-only. The interactive product form described below remains a candidate.
+
 Provide a visual “Why was this generated?” view.
 
 It should show:
@@ -978,18 +993,16 @@ The executive report must remain traceable to the technical assessment.
 
 ## 13.5 Export Formats
 
-**Status:** Idea
+**Status:** Decided in part (DEC-072)
 
-Support formats beyond Markdown, potentially including:
+Markdown remains the report's only MVP format. DEC-072 separates *exports* from report formats:
+a post-MVP family of deterministic serializers over approved objects — TM-BOM first, SARIF
+second (approved findings only, reviewer-assigned severity only), a standalone Mermaid DFD
+third, CycloneDX for the catalog deferred until a consumer exists. No export contains prose or
+a model call.
 
-- PDF
-- HTML
-- JSON
-- SARIF
-- Ticketing-system formats
-- Audit packages
-
-Markdown remains sufficient for the MVP.
+Still ideas, not decided: PDF, HTML, ticketing-system formats, audit packages, and any
+executive-report format.
 
 # 14. Potential Research Questions
 

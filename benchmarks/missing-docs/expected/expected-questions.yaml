@@ -1,0 +1,36 @@
+# Kiosk Sync Service expected questions
+#
+# One paired question per gap; every answer is obtainable from the operating team.
+# Nothing in this directory is supplied to Trace during an assessment.
+
+benchmark_version: "1.0"
+scenario: missing-docs
+source: service-note.md
+
+questions:
+  - key: Q-KS-01
+    subject: transport and storage protection
+    asks: Is kiosk-to-service traffic encrypted, and are stored order records encrypted at rest?
+    arises_from: service-note.md
+    requirement_id: req-DATA-001
+    changes: whether GAP-KS-01 resolves to a satisfied requirement or a finding
+    priority: high
+    blocking: false
+
+  - key: Q-KS-02
+    subject: caller identification
+    asks: How does the service identify the kiosks and the fulfillment system, and what limits what each may do?
+    arises_from: service-note.md
+    requirement_id: req-AUTHZ-001
+    changes: whether GAP-KS-02 resolves to a satisfied requirement or a finding
+    priority: high
+    blocking: false
+
+  - key: Q-KS-03
+    subject: record retention
+    asks: How long are order records retained after the fulfillment system reads them?
+    arises_from: service-note.md
+    requirement_id: req-DATA-002
+    changes: whether GAP-KS-03 resolves to a satisfied requirement or a finding
+    priority: medium
+    blocking: false

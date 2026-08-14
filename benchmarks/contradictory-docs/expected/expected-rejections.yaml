@@ -1,0 +1,29 @@
+# Contradictory Docs expected rejections
+#
+# The claims a correct assessment does not make. Nothing in this directory is supplied to
+# Trace during an assessment.
+
+benchmark_version: "1.0"
+scenario: contradictory-docs
+catalog_version: "0.1"
+source: architecture-overview.md and operations-guide.md
+
+rejections:
+  - key: REJ-CD-01
+    claim: The service deletes exports immediately, so retention is not a concern.
+    mechanism: no_evidence
+    requirement_id: req-DATA-002
+    entry: the architecture claim is contradicted by the operations policy
+    why: >
+      Taking the architecture document's "deleted immediately" at face value ignores the
+      operations lifecycle policy that retains for 30 days. The contradiction resolves against
+      this claim; concluding immediate deletion would grade the wrong side of OBS-CD-01.
+
+  - key: REJ-CD-02
+    claim: Retained exports are stored unencrypted.
+    mechanism: documentation_gap
+    requirement_id: req-DATA-001
+    entry: encryption at rest for the object store is undetermined
+    why: >
+      Whether the managed store encrypts at rest is not stated. That is GAP-CD-01, not a
+      finding — a documented gap, not a documented absence.

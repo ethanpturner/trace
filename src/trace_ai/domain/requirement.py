@@ -92,8 +92,10 @@ class Requirement(DomainModel):
     DEC-030 gives severity to the reviewer at checkpoint 2 and no node proposes one."""
 
     source_frameworks: list[str] = Field(default_factory=list)
-    """Provenance, not compliance mapping. `'<framework> <version>: <control id>'`, checked for
-    shape and against the adopted-framework list by `tests/unit/test_requirements_catalog.py` --
+    """Provenance, not compliance mapping. `'<framework>: <version-qualified reference>'`, using
+    the reference form the framework itself prescribes where one exists (`'OWASP ASVS:
+    v5.0.0-2.1.1'`, issue #222), checked for shape and against the adopted-framework list by
+    `tests/unit/test_requirements_catalog.py` --
     which is an authoring convention rather than a schema rule, and where the adopted list
     belongs, because adopting a framework is a provenance decision. ASVS citations are resolved
     against a cached v5.0.0 export by `scripts/asvs_resolver.py` (issue #221); NIST SP 800-53 and

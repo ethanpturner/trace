@@ -1,0 +1,182 @@
+{
+  "system": {
+    "system_name": "Metrics Store",
+    "system_purpose": "record product usage metrics and serve them to an internal dashboard",
+    "business_criticality": null,
+    "environment": [],
+    "deployment_model": null,
+    "data_classifications": []
+  },
+  "claims": [
+    {
+      "key": "at-rest-encryption",
+      "subject_type": "component",
+      "subject_key": "database",
+      "predicate": "encryption_at_rest",
+      "value": "the platform encrypts the database at rest by default, and key management is handled by the platform's key management service",
+      "status": "documented",
+      "confidence": "high",
+      "rationale": null,
+      "evidence_ids": [
+        "evd-002"
+      ]
+    },
+    {
+      "key": "transport-encryption",
+      "subject_type": "component",
+      "subject_key": "database",
+      "predicate": "encryption_in_transit",
+      "value": "the connection from the metrics API to the database uses the platform's transport encryption terminated at the managed endpoint",
+      "status": "documented",
+      "confidence": "high",
+      "rationale": null,
+      "evidence_ids": [
+        "evd-002"
+      ]
+    },
+    {
+      "key": "confidential-data",
+      "subject_type": "component",
+      "subject_key": "api",
+      "predicate": "data_sensitivity",
+      "value": "metrics records associate a product account with usage counters and are treated as confidential business data",
+      "status": "documented",
+      "confidence": "high",
+      "rationale": null,
+      "evidence_ids": [
+        "evd-003"
+      ]
+    },
+    {
+      "key": "internal-only",
+      "subject_type": "component",
+      "subject_key": "api",
+      "predicate": "network_exposure",
+      "value": "the metrics API is reachable only from inside the application subnet and is not reachable from the internet",
+      "status": "documented",
+      "confidence": "high",
+      "rationale": null,
+      "evidence_ids": [
+        "evd-001",
+        "evd-002"
+      ]
+    }
+  ],
+  "components": [
+    {
+      "key": "api",
+      "name": "Metrics API",
+      "component_type": "service",
+      "description": "internal HTTP service that accepts metric writes from product services and answers metric queries from the dashboard",
+      "technology": [],
+      "ownership": null,
+      "deployment_zone": null,
+      "internet_accessible": false,
+      "externally_managed": null,
+      "data_classifications": [],
+      "authentication_mechanisms": [],
+      "authorization_mechanisms": [],
+      "evidence_ids": [
+        "evd-002"
+      ]
+    },
+    {
+      "key": "database",
+      "name": "Managed Metrics Database",
+      "component_type": "managed_database",
+      "description": "managed relational database provided by the cloud platform, encrypted at rest by default with platform-held keys",
+      "technology": [],
+      "ownership": null,
+      "deployment_zone": null,
+      "internet_accessible": false,
+      "externally_managed": true,
+      "data_classifications": [],
+      "authentication_mechanisms": [],
+      "authorization_mechanisms": [],
+      "evidence_ids": [
+        "evd-002"
+      ]
+    }
+  ],
+  "actors": [
+    {
+      "key": "product-service",
+      "name": "Product service",
+      "actor_type": "internal_service",
+      "trust_level": null,
+      "capabilities": [],
+      "authentication_method": null,
+      "evidence_ids": [
+        "evd-004"
+      ]
+    },
+    {
+      "key": "dashboard",
+      "name": "Dashboard",
+      "actor_type": "internal_service",
+      "trust_level": null,
+      "capabilities": [],
+      "authentication_method": null,
+      "evidence_ids": [
+        "evd-004"
+      ]
+    }
+  ],
+  "assets": [
+    {
+      "key": "metrics",
+      "name": "Metrics records",
+      "asset_type": "business_data",
+      "description": "product account identifiers and usage counters, treated as confidential business data",
+      "confidentiality_impact": null,
+      "integrity_impact": null,
+      "availability_impact": null,
+      "data_classification": null,
+      "owner": null,
+      "component_keys": [
+        "api",
+        "database"
+      ],
+      "evidence_ids": [
+        "evd-003"
+      ]
+    }
+  ],
+  "data_flows": [
+    {
+      "key": "writes",
+      "name": "Metric writes",
+      "source_component_key": "api",
+      "destination_component_key": "database",
+      "direction": "bidirectional",
+      "protocol": null,
+      "data_types": [],
+      "authentication": "unknown",
+      "encryption_in_transit": "platform_transport_encryption",
+      "crosses_trust_boundary_keys": [],
+      "internet_exposed": false,
+      "evidence_ids": [
+        "evd-002"
+      ]
+    }
+  ],
+  "trust_boundaries": [
+    {
+      "key": "subnet",
+      "name": "Application subnet boundary",
+      "boundary_type": "network_perimeter",
+      "description": "the metrics store is reachable only from inside the application subnet",
+      "inside_component_keys": [
+        "api",
+        "database"
+      ],
+      "outside_component_keys": [],
+      "controls": [],
+      "evidence_ids": [
+        "evd-001"
+      ]
+    }
+  ],
+  "questions": [],
+  "observations": []
+}

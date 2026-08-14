@@ -1,0 +1,48 @@
+# Category: cicd_trust
+# Requirements about the path from source to running system, which can grant
+# access to production without ever touching the application's own controls.
+
+requirements:
+
+  - id: req-CICD-001
+    catalog_version: "0.2"
+    title: The deployment path and its dependencies are trusted deliberately
+    statement: >
+      The documentation must describe how the deployment pipeline authenticates
+      to the environments it deploys to, and how third-party components entering
+      a build are identified and controlled.
+    rationale: >
+      A deployment pipeline holds production access by construction, so it is a
+      privileged component whether or not it is described as one, and a
+      long-lived deployment credential is frequently the broadest static secret
+      an organization holds. Third-party components entering a build inherit the
+      same reach. Both are outside the application's own controls, which is why
+      they are commonly omitted from an architecture document.
+    category:
+      - cicd_trust
+      - supply_chain
+      - secrets_management
+    applicable_conditions:
+      - the system is deployed by an automated pipeline
+      - builds incorporate third-party components
+    non_applicable_conditions:
+      - deployment is manual and performed by named operators
+      - the component has no build or deployment step
+    acceptable_implementations:
+      - short-lived federated workload identity for deployment, with no stored credential
+      - an environment-scoped deployment identity with a documented approval step
+      - a dependency manifest with pinned versions and recorded provenance
+      - a generated component inventory produced at build time
+    evidence_expectations:
+      - deployment documentation describing pipeline authentication
+      - description of dependency management
+      - pipeline configuration
+    common_false_positives:
+      - absent build reproducibility or artifact signing, which exceed this expectation
+      - absent dependency scanning schedule, which is an operational process rather than an architectural control
+      - absent pipeline detail where deployment is manual and documented as such
+    default_severity: medium
+    source_frameworks:
+      - "OWASP ASVS: v5.0.0-15.1.2"
+      - "NIST SP 800-53 5.2.0: SA-10"
+    status: active

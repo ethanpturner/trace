@@ -51,19 +51,19 @@ __all__ = [
 class Creativity(StrEnum):
     """How much latitude an agent should have (`agent-design.md` section 29).
 
-    The three values are the ones the section 29 table uses. They are **provider-neutral intent**:
-    they say how much room the agent has to range beyond the obvious reading, and they name no
-    control. An adapter maps them; a caller does not.
+    The two values are the ones the section 29 table uses since DEC-085 resolved its "low to
+    moderate" rows to one value each. They are **provider-neutral intent**: they say how much
+    room the agent has to range beyond the obvious reading, and they name no control. An adapter
+    maps them; a caller does not.
     """
 
     LOW = "low"
-    """Structured analytical work: context extraction, mapping, evidence validation."""
-
-    LOW_TO_MODERATE = "low_to_moderate"
-    """Critical review and report generation: judgment, but grounded in approved objects."""
+    """Structured analytical work: context extraction, mapping, evidence validation — and report
+    generation, which summarises approved objects and invents nothing (DEC-085)."""
 
     MODERATE = "moderate"
-    """Threat analysis. Breadth helps, and must not override architectural grounding."""
+    """Threat analysis and critical review (DEC-085). Breadth helps both — proposing threats and
+    imagining how a conclusion fails — and must not override architectural grounding."""
 
 
 class ModelCapability(StrEnum):
@@ -138,14 +138,19 @@ class GenerationSettings:
     """
 
     creativity: Creativity = Creativity.LOW
-    max_output_tokens: int = 16_000
-    """Sized so one attempt cannot be truncated by a ceiling nobody chose. An agent proposing a
+    max_output_tokens: int = 64_000
+    """Sized so one attempt cannot be truncated by a ceiling nobody chose — and measured, not
+    guessed: at 16,000 the live ForgeFlow extraction truncated on all three attempts (#324),
+    because adaptive thinking spends from the same output budget as the proposal it precedes.
+    A ceiling is not a purchase; only produced tokens are billed. An agent proposing a
     context extraction returns a large object; a small default would show up as a truncation
     failure that looks like a model problem."""
 
-    timeout_seconds: float = 600.0
+    timeout_seconds: float = 1_800.0
     """One attempt's deadline. Long, because the retry budget is the orchestrator's and a timeout
-    here is a real failure rather than an impatience."""
+    here is a real failure rather than an impatience — and sized with the output ceiling: the
+    16,000-token live extraction generated for ~140 seconds, so a full 64,000-token attempt
+    needs headroom a 600-second deadline did not give."""
 
     def __post_init__(self) -> None:
         if self.max_output_tokens < 1:
@@ -165,11 +170,18 @@ class ModelUsage:
 
     model: str
     input_tokens: int = 0
+    """Uncached input processed at the full rate. The three input spans are disjoint (DEC-067):
+    cache reads and cache writes are their own counts, never folded in — folding them in is
+    exactly how cost and tokens come to describe different spans of work."""
+
     output_tokens: int = 0
-    cached_input_tokens: int = 0
+    cache_read_tokens: int = 0
     """Input tokens served from a provider-side cache, where the adapter reports them. They are
     counted separately because they are priced separately and because a cache that silently stops
     working looks exactly like one that is working."""
+
+    cache_creation_tokens: int = 0
+    """Input tokens written into the provider's cache, priced at its premium (DEC-067)."""
 
     estimated_cost: Decimal = Decimal(0)
     """Estimated, and named so. It is computed from published rates the adapter holds, not returned

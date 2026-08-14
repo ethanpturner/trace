@@ -34,3 +34,9 @@ scripts/.staged/
 # version-controlled fixtures; an unanchored rule would silently swallow a data/
 # directory under any of them.
 /data/
+
+# The harness's metrics feed (DEC-073): derived from the assessment stores, keyed by scenario,
+# condition, and label, and regenerable by one command. DEC-073 left the tree's location open;
+# it lives in-repo for the scorecard and CI to read, and out of history because a derived
+# artifact that regenerates on demand earns no place there.
+/benchmarks/results/

@@ -1,0 +1,445 @@
+{
+  "controls": [
+    {
+      "key": "platform-encryption-storage-transit",
+      "name": "Platform-provided encryption of stored artifacts and TLS for customer traffic",
+      "description": "The security overview states that customer traffic uses TLS and that managed cloud storage services provide encryption for stored customer data (evd-126), and lists managed object storage among shared platform capabilities managed outside the application team (evd-136). The architecture records as an assumption that the managed database and storage services provide standard platform protections (evd-053), and the structured input records managed object storage and TLS everywhere as security controls (evd-149). The provider of the storage encryption is the managed cloud platform; the application implements no cryptography of its own (evd-126).",
+      "control_type": "inherited",
+      "provider_component_id": "cmp-010",
+      "protected_component_ids": [
+        "cmp-010"
+      ],
+      "protected_asset_ids": [
+        "ast-009",
+        "ast-001",
+        "ast-002"
+      ],
+      "implementation_status": "implemented",
+      "evidence_ids": [
+        "evd-126",
+        "evd-136",
+        "evd-053",
+        "evd-149"
+      ],
+      "owner": "Managed cloud provider (storage encryption), ForgeFlow Platform Engineering (integration, TLS termination at the managed edge)",
+      "limitations": [
+        "Encryption protects data at rest and on the wire; it does not constrain retrieval by a party holding a valid access link or a permitted API path (evd-033).",
+        "Key custody, key scope, and whether per-tenant keys are used are not described in any reviewed document (evd-126)."
+      ]
+    },
+    {
+      "key": "artifact-retention-cleanup",
+      "name": "Thirty-day artifact retention with scheduled cleanup of object-storage artifacts",
+      "description": "The operations guide states that artifacts remain available for operational troubleshooting and customer support, that the current retention target is 30 days, and that scheduled cleanup jobs remove eligible artifacts after the retention window expires; support personnel may request temporary retention extensions (evd-079). The architecture states that source-related artifacts are intended to support temporary processing and operational troubleshooting, with detailed retention behaviour defined in operational documentation (evd-033).",
+      "control_type": "implemented",
+      "provider_component_id": null,
+      "protected_component_ids": [
+        "cmp-010"
+      ],
+      "protected_asset_ids": [
+        "ast-009",
+        "ast-001"
+      ],
+      "implementation_status": "claimed",
+      "evidence_ids": [
+        "evd-079",
+        "evd-033"
+      ],
+      "owner": "ForgeFlow Platform Operations",
+      "limitations": [
+        "Stated as a retention 'target' rather than an enforced lifecycle policy, and the enforcing mechanism (storage lifecycle rule versus scheduled job) is described only as 'scheduled cleanup jobs' (evd-079).",
+        "The product-facing statement that source files are deleted after analysis completes (evd-099) does not agree with the 30-day operational window (evd-079).",
+        "Source-artifact retention is a named documentation gap in the architecture overview (evd-054)."
+      ]
+    },
+    {
+      "key": "org-data-deletion-support",
+      "name": "Organization-level customer data deletion support",
+      "description": "The ForgeFlow API is documented as supporting organization-level data deletion requests (evd-026), customer administrators may request deletion of organization data (evd-096), and the database holds data-deletion status records (evd-032). Whether the deletion path reaches artifacts held in managed object storage under organization- and job-scoped paths (evd-033) is not stated in any reviewed document.",
+      "control_type": "implemented",
+      "provider_component_id": null,
+      "protected_component_ids": [
+        "cmp-003",
+        "cmp-010"
+      ],
+      "protected_asset_ids": [
+        "ast-009",
+        "ast-001",
+        "ast-002"
+      ],
+      "implementation_status": "claimed",
+      "evidence_ids": [
+        "evd-026",
+        "evd-096",
+        "evd-032"
+      ],
+      "owner": "ForgeFlow Platform Engineering",
+      "limitations": [
+        "No reviewed passage states which stores a deletion request reaches; object storage is not named in the deletion description (evd-026, evd-096).",
+        "Administrative support for deletion requests is described as a workflow (evd-035) without stating the resulting coverage."
+      ]
+    }
+  ],
+  "mappings": [
+    {
+      "threat_id": "thr-007",
+      "requirement_id": "req-AUTHZ-001",
+      "control_keys": [],
+      "existing_control_ids": [
+        "ctl-010",
+        "ctl-011"
+      ],
+      "applicability_status": "applicable",
+      "applicability_reason": "Both applicable conditions hold for this threat: ForgeFlow serves multiple customer organizations (evd-022, evd-102) and this threat's path runs through shared stores holding data of distinct organizations (cmp-010, cmp-003). The threat turns precisely on whether the artifact-link request is constrained to the requester's tenant and on whether the organization context accompanying an API request is server-derived (evd-026).",
+      "suppressed_conclusion": "That tenant-aware authorization is absent on the artifact-link issuance path, on the grounds that no document names the enforcement point or the authorization mechanism.",
+      "suppressed_by": "common_false_positives: 'absent description of an authorization library or framework' (and 'absent per-endpoint permission matrix') — the security overview explicitly omits internal authorization implementation (evd-138), which is silence, not a described shortfall.",
+      "satisfaction_status": "unverified",
+      "evidence_ids": [
+        "evd-032",
+        "evd-124",
+        "evd-102",
+        "evd-130",
+        "evd-026",
+        "evd-138",
+        "evd-054"
+      ],
+      "assumptions": [
+        "Assumed, for the purpose of assessing this threat, that the 'organization context' carried on API requests operating on customer resources (evd-026) is checked against server-held membership rather than trusted as supplied; no reviewed passage states which it is."
+      ],
+      "confidence": "medium"
+    },
+    {
+      "threat_id": "thr-007",
+      "requirement_id": "req-DATA-003",
+      "control_keys": [],
+      "existing_control_ids": [
+        "ctl-011"
+      ],
+      "applicability_status": "applicable",
+      "applicability_reason": "Both applicable conditions hold and are the substance of this threat: artifacts from multiple customers share one managed object store (evd-033, evd-078), and stored objects are addressable by a path template built from an organization identifier and a job identifier, which is predictable to a party who learns those two values (evd-033).",
+      "suppressed_conclusion": null,
+      "suppressed_by": null,
+      "satisfaction_status": "partially_satisfied",
+      "evidence_ids": [
+        "evd-033",
+        "evd-078",
+        "evd-130",
+        "evd-054"
+      ],
+      "assumptions": [],
+      "confidence": "medium"
+    },
+    {
+      "threat_id": "thr-007",
+      "requirement_id": "req-DATA-001",
+      "control_keys": [
+        "platform-encryption-storage-transit"
+      ],
+      "existing_control_ids": [],
+      "applicability_status": "applicable",
+      "applicability_reason": "The applicable condition 'the system stores or transmits confidential or restricted data' holds for the assets this threat reaches: analysis artifacts and source content are classified restricted (ast-009, ast-001) and are retrieved across a link that traverses the public edge (evd-033, evd-046). The requirement bears on the network-level exposure of the retrieval path, though not on the authorization question at the centre of this threat.",
+      "suppressed_conclusion": null,
+      "suppressed_by": null,
+      "satisfaction_status": "satisfied",
+      "evidence_ids": [
+        "evd-126",
+        "evd-136",
+        "evd-053",
+        "evd-149"
+      ],
+      "assumptions": [],
+      "confidence": "medium"
+    },
+    {
+      "threat_id": "thr-007",
+      "requirement_id": "req-DATA-002",
+      "control_keys": [
+        "artifact-retention-cleanup"
+      ],
+      "existing_control_ids": [],
+      "applicability_status": "applicable",
+      "applicability_reason": "The applicable conditions hold: intermediate artifacts created for processing are written to persistent storage and retained after the job completes (evd-078, evd-079). For this threat the retention window is the period during which a predictable path or a re-issuable link resolves to live restricted content, so the defined period and its agreement with customer-facing statements bear directly on exposure.",
+      "suppressed_conclusion": "That no retention control exists for analysis artifacts.",
+      "suppressed_by": "common_false_positives: 'absent deletion evidence where a platform lifecycle policy is documented' — evd-079 documents a 30-day target with scheduled cleanup, so the unmet part is confined to the inconsistency between evd-079 and the customer-facing statement in evd-099 that source files are deleted after analysis completes, which is a described discrepancy rather than silence.",
+      "satisfaction_status": "partially_satisfied",
+      "evidence_ids": [
+        "evd-079",
+        "evd-099",
+        "evd-033",
+        "evd-054"
+      ],
+      "assumptions": [],
+      "confidence": "medium"
+    },
+    {
+      "threat_id": "thr-007",
+      "requirement_id": "req-DATA-004",
+      "control_keys": [
+        "org-data-deletion-support"
+      ],
+      "existing_control_ids": [],
+      "applicability_status": "applicable",
+      "applicability_reason": "The applicable conditions hold: customer data is stored, and it exists in more than one store — structured results in the managed database and artifacts in object storage (evd-032, evd-033). For this threat, whether deletion reaches the derived object-storage copies determines whether exposure via predictable paths persists after a customer believes their data is gone.",
+      "suppressed_conclusion": "That organization data deletion does not cover object-storage artifacts.",
+      "suppressed_by": "The material is silent on which stores a deletion request reaches (evd-026, evd-096); silence cannot support a negative conclusion under the evidence rules.",
+      "satisfaction_status": "unverified",
+      "evidence_ids": [
+        "evd-026",
+        "evd-096",
+        "evd-032",
+        "evd-033"
+      ],
+      "assumptions": [],
+      "confidence": "low"
+    },
+    {
+      "threat_id": "thr-007",
+      "requirement_id": "req-NET-001",
+      "control_keys": [],
+      "existing_control_ids": [
+        "ctl-011"
+      ],
+      "applicability_status": "conditionally_applicable",
+      "applicability_reason": "The condition 'the component holds data or work belonging to more than one tenant' holds for managed object storage (evd-033, evd-078). Whether the further condition 'a data store that is not itself a public interface' holds cannot be established: the component's internet reachability is not stated anywhere, and the reviewed documents describe network restriction only for Redis (evd-029) and edge origin restriction for the application (evd-024). If artifact objects are directly reachable from an untrusted network, this requirement governs the path-guessing branch of the threat; if all reads are mediated by the API, it does not.",
+      "suppressed_conclusion": "That managed object storage is reachable from an untrusted network, on the grounds that only Redis is described as restricted to approved application workloads.",
+      "suppressed_by": "common_false_positives: 'absent description of network placement for an internal component, which is not evidence that the component is publicly reachable', and 'a component described only as managed or hosted, where the provider's default placement is private and undescribed'.",
+      "satisfaction_status": "unverified",
+      "evidence_ids": [
+        "evd-033",
+        "evd-029",
+        "evd-024",
+        "evd-050",
+        "evd-136"
+      ],
+      "assumptions": [],
+      "confidence": "low"
+    },
+    {
+      "threat_id": "thr-007",
+      "requirement_id": "req-AUTH-001",
+      "control_keys": [],
+      "existing_control_ids": [
+        "ctl-012"
+      ],
+      "applicability_status": "applicable",
+      "applicability_reason": "The applicable condition 'user authentication is delegated to an external identity provider' holds (evd-123, evd-143), and this threat begins with an authenticated customer user, so the identity on which any organization-scoping decision rests is established by the delegated provider.",
+      "suppressed_conclusion": "That authentication controls are inadequate because no local password policy, lockout threshold, or credential hashing is described.",
+      "suppressed_by": "common_false_positives: 'absent local password complexity policy', 'absent account lockout threshold', 'absent credential storage or hashing description' — ForgeFlow maintains no local password database (evd-027, evd-097).",
+      "satisfaction_status": "satisfied",
+      "evidence_ids": [
+        "evd-027",
+        "evd-123",
+        "evd-059",
+        "evd-143"
+      ],
+      "assumptions": [],
+      "confidence": "high"
+    },
+    {
+      "threat_id": "thr-007",
+      "requirement_id": "req-ADMIN-001",
+      "control_keys": [],
+      "existing_control_ids": [],
+      "applicability_status": "not_applicable",
+      "applicability_reason": "This requirement's conditions concern an operator interface and operator reach into customer data. This threat's actors are authenticated customer users and customer administrators (act-001, act-002) whose path runs browser → ForgeFlow API → object storage (evd-046, evd-026); the administrative interface (evd-035) appears nowhere in the attack path, and operator access to source artifacts is a distinct concern recorded separately (evd-054).",
+      "suppressed_conclusion": null,
+      "suppressed_by": null,
+      "satisfaction_status": "not_applicable",
+      "evidence_ids": [
+        "evd-046",
+        "evd-026",
+        "evd-035"
+      ],
+      "assumptions": [],
+      "confidence": "medium"
+    },
+    {
+      "threat_id": "thr-007",
+      "requirement_id": "req-LOG-002",
+      "control_keys": [],
+      "existing_control_ids": [],
+      "applicability_status": "not_applicable",
+      "applicability_reason": "The requirement covers actions taken through a privileged interface. The actions in this threat are ordinary customer API requests for a result view and an artifact link (evd-046, evd-026), made by customer-role actors; no privileged administrative action occurs on this path, so the requirement's applicable conditions are not engaged by this threat.",
+      "suppressed_conclusion": null,
+      "suppressed_by": null,
+      "satisfaction_status": "not_applicable",
+      "evidence_ids": [
+        "evd-046",
+        "evd-026"
+      ],
+      "assumptions": [],
+      "confidence": "medium"
+    },
+    {
+      "threat_id": "thr-007",
+      "requirement_id": "req-WEBHOOK-001",
+      "control_keys": [],
+      "existing_control_ids": [],
+      "applicability_status": "not_applicable",
+      "applicability_reason": "The requirement applies where an endpoint accepts events from an external platform and acts on them. This threat's entry point is an authenticated customer API request for an artifact link (evd-026, evd-046), not an inbound GitHub event; the webhook receiver (evd-028) is not on the attack path or among the affected components.",
+      "suppressed_conclusion": null,
+      "suppressed_by": null,
+      "satisfaction_status": "not_applicable",
+      "evidence_ids": [
+        "evd-026",
+        "evd-046",
+        "evd-028"
+      ],
+      "assumptions": [],
+      "confidence": "high"
+    },
+    {
+      "threat_id": "thr-007",
+      "requirement_id": "req-AI-003",
+      "control_keys": [],
+      "existing_control_ids": [],
+      "applicability_status": "not_applicable",
+      "applicability_reason": "The applicable condition is that customer content is sent to an external model provider. This threat concerns retrieval of already-stored artifacts from ForgeFlow's own managed object storage (evd-033, evd-078); no data crosses the AI-provider boundary (evd-038) on this path, so minimization of provider input does not bear on it.",
+      "suppressed_conclusion": null,
+      "suppressed_by": null,
+      "satisfaction_status": "not_applicable",
+      "evidence_ids": [
+        "evd-033",
+        "evd-078",
+        "evd-038"
+      ],
+      "assumptions": [],
+      "confidence": "high"
+    },
+    {
+      "threat_id": "thr-007",
+      "requirement_id": "req-SECRET-002",
+      "control_keys": [],
+      "existing_control_ids": [],
+      "applicability_status": "not_applicable",
+      "applicability_reason": "This requirement concerns credentials the system holds to reach customer resources on an external platform, which for ForgeFlow are short-lived GitHub installation tokens (evd-061). The bearer credential in this threat is a time-limited download link ForgeFlow issues to its own users (evd-033, evd-026), which is not a credential used to reach a customer resource on an external platform, so the applicable conditions are not engaged.",
+      "suppressed_conclusion": null,
+      "suppressed_by": null,
+      "satisfaction_status": "not_applicable",
+      "evidence_ids": [
+        "evd-061",
+        "evd-033",
+        "evd-026"
+      ],
+      "assumptions": [],
+      "confidence": "medium"
+    },
+    {
+      "threat_id": "thr-007",
+      "requirement_id": "req-TPI-002",
+      "control_keys": [],
+      "existing_control_ids": [],
+      "applicability_status": "not_applicable",
+      "applicability_reason": "The applicable conditions concern processing that consumes a metered external service or is triggered by an external event. Retrieval of a stored artifact through an issued link (evd-033, evd-046) consumes no metered provider capacity and triggers no analysis work, so the bounding expectation does not bear on this threat.",
+      "suppressed_conclusion": null,
+      "suppressed_by": null,
+      "satisfaction_status": "not_applicable",
+      "evidence_ids": [
+        "evd-033",
+        "evd-046"
+      ],
+      "assumptions": [],
+      "confidence": "medium"
+    }
+  ],
+  "documentation_gaps": [
+    {
+      "title": "Object-storage authorization enforcement is not described",
+      "description": "Artifacts are stored under a documented, predictable path template containing the organization and job identifiers (evd-033, evd-078), and tenant isolation is described in terms of 'organization-specific paths' (evd-130). The architecture's own known-gaps list names object-storage authorization enforcement as requiring further clarification (evd-054), and the security overview omits internal authorization implementation (evd-138). Consequently it cannot be determined whether any server-side check separates knowledge of a path from the ability to read the object.",
+      "importance": "This is the control that decides whether the organization identifier in an object path is an access rule or only a naming convention, and it governs the restricted analysis artifacts (ast-009) and the source content within them (ast-001).",
+      "related_object_ids": [
+        "cmp-010",
+        "cmp-003",
+        "ast-009",
+        "ast-001",
+        "df-014",
+        "df-010",
+        "ctl-011"
+      ],
+      "requested_evidence": [
+        "The storage access policy or bucket policy governing reads of artifact objects",
+        "A statement of whether artifact reads are always mediated by the ForgeFlow API or can be made directly against object storage",
+        "A description of the enforcement point (data access layer, middleware, or storage policy) that constrains an artifact read to the requester's organization"
+      ],
+      "evidence_ids": [
+        "evd-033",
+        "evd-078",
+        "evd-130",
+        "evd-054",
+        "evd-138"
+      ],
+      "severity": "high"
+    },
+    {
+      "title": "Conditions, scope, and lifetime of time-limited artifact access links are not described",
+      "description": "The ForgeFlow API is documented as creating signed links for selected stored artifacts and generating time-limited access links for permitted customer downloads (evd-026, evd-033), but no reviewed passage states what membership check precedes issuance, how long a link remains valid, whether it is scoped to a single object, or whether it can be reused or revoked.",
+      "importance": "An issued link is a bearer credential for whatever validity window it carries, so forwarding, caching or logging of the link is an exposure path that operates independently of the database-level organization checks described in evd-124 and evd-032.",
+      "related_object_ids": [
+        "cmp-003",
+        "cmp-010",
+        "ast-009",
+        "df-014",
+        "ctl-011"
+      ],
+      "requested_evidence": [
+        "The membership or authorization check performed before a signed link is issued",
+        "The validity period configured for issued links and whether links are single-use",
+        "Whether issued link URLs are excluded from application and edge logs"
+      ],
+      "evidence_ids": [
+        "evd-026",
+        "evd-033",
+        "evd-046",
+        "evd-054"
+      ],
+      "severity": "medium"
+    },
+    {
+      "title": "Stated artifact retention conflicts between customer-facing and operational documentation",
+      "description": "The product overview states that source files are treated as temporary processing data and are deleted after analysis completes (evd-099), while the operations guide states a current retention target of 30 days with scheduled cleanup afterwards and the possibility of retention extensions (evd-079). The architecture lists source-artifact retention among details requiring further clarification (evd-054). Which statement describes actual behaviour cannot be determined from the material, and this is a reviewer's decision rather than one to be resolved silently.",
+      "importance": "The retention period is the window during which a predictable artifact path or a re-issued link resolves to live restricted content, and a discrepancy between the stated and actual period is both an exposure question and a customer-disclosure question.",
+      "related_object_ids": [
+        "cmp-010",
+        "ast-009",
+        "ast-001"
+      ],
+      "requested_evidence": [
+        "The storage lifecycle configuration or cleanup job definition applied to artifact paths",
+        "A statement reconciling the customer-facing deletion claim with the 30-day operational retention target",
+        "The approval path and maximum duration for retention extensions requested by support personnel"
+      ],
+      "evidence_ids": [
+        "evd-099",
+        "evd-079",
+        "evd-033",
+        "evd-054"
+      ],
+      "severity": "medium"
+    }
+  ],
+  "catalog_gap_candidates": [
+    {
+      "concern": "The catalog contains no requirement covering the issuance and handling of bearer access links that the system mints for its own users — their validity window, single-use or object scoping, revocability, and exclusion from logs, referrers and caches. ForgeFlow issues time-limited links to restricted analysis artifacts (evd-026, evd-033), so once issued the link, rather than the session, is what authorizes retrieval.",
+      "suggested_category": "authorization",
+      "nearest_requirements": [
+        {
+          "requirement_id": "req-DATA-003",
+          "why_not": "It asks how tenant separation is enforced on access to shared storage, which addresses the check performed at retrieval time; it says nothing about the properties of a credential the system hands out and that remains valid after the check has passed."
+        },
+        {
+          "requirement_id": "req-SECRET-002",
+          "why_not": "It bounds the lifetime of credentials the system holds and uses to reach customer resources on an external platform; the link here travels in the opposite direction, from the system to a user, and the requirement's applicable conditions do not reach it."
+        },
+        {
+          "requirement_id": "req-AUTHZ-001",
+          "why_not": "It requires tenant context to be derived from server-side state per request; a pre-issued link is redeemed without a further request to the application, so satisfying it would not constrain replay of an already-issued link."
+        }
+      ],
+      "evidence_ids": [
+        "evd-026",
+        "evd-033",
+        "evd-046"
+      ]
+    }
+  ]
+}

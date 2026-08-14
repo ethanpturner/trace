@@ -1,0 +1,41 @@
+# Managed DB Service expected rejections
+#
+# The claims a correct assessment does not make. The first two are the scenario's reason to
+# exist: inherited platform encryption that a generic review turns into an encryption finding.
+#
+# Nothing in this directory is supplied to Trace during an assessment.
+
+benchmark_version: "1.0"
+scenario: managed-db-service
+catalog_version: "0.1"
+source: system-overview.md
+
+rejections:
+  - key: REJ-MD-01
+    claim: The metrics database is not encrypted at rest.
+    mechanism: common_false_positives
+    requirement_id: req-DATA-001
+    entry: absent encryption detail for a managed service that encrypts by default
+    why: >
+      The document states the platform encrypts the database at rest by default and that a key
+      management service holds the keys. The requirement is satisfied by an inherited control;
+      an at-rest finding asserts an absence the document contradicts.
+
+  - key: REJ-MD-02
+    claim: The service implements no transport encryption for the database connection.
+    mechanism: common_false_positives
+    requirement_id: req-DATA-001
+    entry: absent application-implemented cryptography where managed services provide it
+    why: >
+      Transport encryption is terminated at the managed endpoint, which the document states.
+      Expecting the application to implement its own is the false positive the catalog names.
+
+  - key: REJ-MD-03
+    claim: The metrics API lacks authentication because none is described.
+    mechanism: no_evidence
+    requirement_id: req-AUTHZ-001
+    entry: no passage addresses metrics-API authentication
+    why: >
+      The documents neither describe nor deny an authorization control on the internal API.
+      Absence of a description is a gap or a question, never a finding (DEC-009); this claim is
+      simply unsupported.

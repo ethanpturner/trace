@@ -1,0 +1,26 @@
+# Parcelworks expected questions
+#
+# Nothing in this directory is supplied to Trace during an assessment.
+
+benchmark_version: "1.0"
+scenario: parcel-platform
+source: platform-overview.md
+
+questions:
+  - key: Q-PP-01
+    subject: warehouse copy retention
+    asks: How long are the nightly warehouse copies kept, and does a lifecycle policy expire them?
+    arises_from: platform-overview.md section 3
+    requirement_id: req-DATA-002
+    changes: whether GAP-PP-01 resolves to a satisfied requirement or a finding
+    priority: high
+    blocking: false
+
+  - key: Q-PP-02
+    subject: data-zone enforcement
+    asks: How is the data zone restricted to the core services — network policy or topology?
+    arises_from: platform-overview.md section 3
+    requirement_id: req-NET-001
+    changes: whether GAP-PP-02 resolves to a satisfied requirement or a finding
+    priority: medium
+    blocking: false

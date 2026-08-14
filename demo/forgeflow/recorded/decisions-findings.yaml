@@ -1,0 +1,38 @@
+assessment_id: asm-001
+reviewer: recorded-reviewer
+findings:
+- id: fnd-001
+  severity: high
+  decision: approve
+  rationale: 'The evidence is affirmative, not silence: the analysis job''s installation and
+    repository context is taken from identifiers the inbound payload carries (evd-029, evd-042),
+    which the documents state, and nothing establishes origin verification of that payload. An
+    internet-reachable receiver minting cross-tenant work from client-supplied context is a
+    weakness the cited passages support.'
+- id: fnd-002
+  severity: high
+  decision: approve
+  rationale: 'Externally visible publication of customer source content with no human gate is
+    documented behaviour (automatic pull-request comments), and the instruction-bearing content
+    path is the scenario''s own demonstrated mechanism. Within the medium-or-high guidance the
+    high reading is warranted: the publication is external and automatic.'
+- id: fnd-003
+  decision: reject
+  rationale: 'The separation mechanism is documented and only its enforcement on access is
+    undocumented — the description itself leans on the architecture''s known-gaps list. That is
+    the DEC-009 line: inability to verify enforcement is a documentation gap with a question,
+    which this run also raised, not evidence that scoping is absent.'
+- id: fnd-004
+  severity: medium
+  decision: approve
+  rationale: 'The forwarding of application events to an externally managed logging platform is
+    documented, the system demonstrably handles restricted source and prompt material, and no
+    redaction control is established anywhere in the material. The exposure path rests on stated
+    behaviour rather than on silence.'
+- id: fnd-005
+  severity: medium
+  decision: approve
+  rationale: 'Every applicable condition is affirmatively documented — externally triggered work,
+    automatic retries, and provider capacity the documents themselves bound — and the requirement''s
+    false-positive entries do not apply because no per-tenant limit is documented. Availability
+    impact within one shared tier keeps this at medium.'

@@ -36,13 +36,19 @@ minimum-rules wording reads as an either-or and DEC-013 is the authority that it
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from typing import TYPE_CHECKING, Self
 
 from pydantic import Field, model_validator
 
 from trace_ai.domain.base import DomainModel
-from trace_ai.domain.enums import ConfidenceLevel, ObjectStatus, Severity, ValidationStatus
+from trace_ai.domain.enums import (
+    ConfidenceLevel,
+    ObjectStatus,
+    RiskTreatment,
+    Severity,
+    ValidationStatus,
+)
 from trace_ai.domain.identifiers import (
     AssessmentId,
     AssetId,
@@ -116,6 +122,29 @@ class Finding(DomainModel):
     generated_by: str = Field(min_length=1)
     created_at: datetime
     updated_at: datetime
+
+    risk_treatment: RiskTreatment = RiskTreatment.UNDECIDED
+    """The reviewer's chosen response, assigned at checkpoint 2 and never proposed by a node
+    (DEC-060), the neighbouring judgment to severity (DEC-030). Findings are created `undecided`,
+    which unlike an unassigned severity may survive approval — the gate is only that `accept`
+    carries a `treatment_rationale`."""
+
+    treatment_rationale: str | None = None
+    """Required when `risk_treatment` is `accept` — the residual-risk statement, what remains
+    exposed and why that is tolerable — and optional otherwise. Enforced at the approval gate, not
+    here, exactly as severity's mandatory-on-approval rule is (DEC-060)."""
+
+    treatment_review_by: date | None = None
+    """An optional date to revisit an accepted risk; DEC-061 gives it semantics."""
+
+    content_fingerprint: str | None = None
+    """DEC-066's cross-run identity: `sha256:` over the sorted `requirement_ids` and the sorted,
+    normalized affected-component names — structural fields only, no prose, so it survives
+    rewording. Derived, never authored: the application sets it when the finding is persisted and
+    recomputes it when an identity field changes (`services/findings/fingerprints.py`, reading
+    `services/evaluation/matching.py`'s one implementation). It exists alongside the allocated
+    identifier and never instead of it — DEC-018 identifiers are per-assessment, so this is the
+    handle for "same finding, still open" across runs."""
 
     duplicate_of_id: FindingId | None = None
     reviewer_notes: str | None = None

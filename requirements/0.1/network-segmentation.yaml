@@ -50,6 +50,6 @@ requirements:
       - absent detail of the enforcing mechanism, where placement itself is stated
     default_severity: high
     source_frameworks:
-      - "OWASP ASVS 5.0.0: 13.1.1"
+      - "OWASP ASVS: v5.0.0-13.1.1"
       - "NIST SP 800-53 5.2.0: SC-7"
     status: active

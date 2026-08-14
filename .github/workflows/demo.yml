@@ -1,0 +1,68 @@
+name: demo
+
+# Re-renders the README's terminal recording from demo/forgeflow/pipeline-demo.tape whenever the
+# tape, the recordings it replays, or the command surface it drives changes. The recording is
+# derived from the tape (#265): a demo that cannot be regenerated from committed code drifts, and
+# a drifted demo is a stale claim with production values.
+#
+# The tape's hidden epilogue writes /tmp/vhs-demo-ok only after a final `trace verify` succeeds,
+# and this workflow fails without it — so the demo doubles as a smoke test of the documented
+# surface. The rendered GIF is uploaded as an artifact; the committed copy in
+# demo/forgeflow/assets/ is produced by the same tape locally, and branch protection is why CI
+# does not push it back itself.
+
+on:
+  pull_request:
+    paths:
+      - demo/forgeflow/pipeline-demo.tape
+      - demo/forgeflow/recorded/**
+      - src/trace_ai/cli.py
+      - src/trace_ai/services/driver.py
+      - .github/workflows/demo.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: demo-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  UV_LOCKED: "1"
+
+jobs:
+  render:
+    name: render the terminal demo
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v9.0.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Install dependencies
+        run: uv sync --locked --all-groups
+
+      - name: Render the tape
+        uses: charmbracelet/vhs-action@v2
+        with:
+          path: demo/forgeflow/pipeline-demo.tape
+
+      # The marker exists only if the tape's hidden `trace verify` epilogue exited zero, which
+      # requires every prior command in the tape to have done its work.
+      - name: The tape's pipeline actually ran
+        run: test -f /tmp/vhs-demo-ok
+
+      - name: Upload the recording
+        uses: actions/upload-artifact@v7
+        with:
+          name: pipeline-demo
+          path: demo/forgeflow/assets/pipeline-demo.gif
+          if-no-files-found: error
+          retention-days: 30

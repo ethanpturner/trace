@@ -56,7 +56,8 @@ class AttemptContext:
     """What one attempt knows about the attempts before it."""
 
     attempt_number: int
-    """Zero for the first attempt, matching `ExecutionRecord.retry_number`."""
+    """Zero for the first attempt. The final attempt's number is what the node's execution record
+    carries as `retry_number` — the retries the execution consumed (#398)."""
 
     feedback: str | None = None
     """What was wrong with the previous attempt, in terms the node can act on.

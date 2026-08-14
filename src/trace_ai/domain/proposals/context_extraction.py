@@ -27,6 +27,13 @@ whose citations cannot be checked.
 **Injection attempts are observations, not claims** (DEC-021). Section 25 says the workflow may
 create a context claim or a security event when injection-like content is detected without defining
 either; DEC-021 settled it as one `SourceObservation` with a `kind`, and this schema carries it.
+
+**A proposed claim's value is a scalar or a list of scalars, not `JsonValue`** (DEC-083). This
+schema crosses the wire: the provider's structured-output format refuses the unconstrained `{}`
+that `JsonValue`'s recursion collapses to, and its strictifier rewrites an open mapping into one
+that accepts only empty objects — so a mapping arm would be taught by the prompt and forbidden by
+the wire grammar at once. The domain `ContextClaim.value` stays `JsonValue`: it never crosses the
+wire, and a reviewer's edit is not bound by what a provider can be asked for.
 """
 
 from __future__ import annotations
@@ -34,7 +41,7 @@ from __future__ import annotations
 import re
 from typing import Annotated, Any, Self
 
-from pydantic import AfterValidator, Field, JsonValue, model_validator
+from pydantic import AfterValidator, Field, model_validator
 
 from trace_ai.domain.base import DomainModel
 from trace_ai.domain.context_claim import ClaimStatus
@@ -43,6 +50,7 @@ from trace_ai.domain.enums import ConfidenceLevel
 from trace_ai.domain.identifiers import EvidenceReferenceId
 from trace_ai.domain.question import QuestionPriority
 from trace_ai.domain.source_observation import ObservationKind
+from trace_ai.domain.system_context import AccessModel
 from trace_ai.domain.vocabulary import UNKNOWN, VocabularyTerm
 
 __all__ = [
@@ -67,6 +75,12 @@ _KEY = re.compile(r"^[a-z][a-z0-9]*(?:[-_][a-z0-9]+)*$")
 # What a key must not look like. DEC-018's two forms, matched loosely on purpose: the point is to
 # refuse anything a reader could mistake for an allocated identifier, not to parse one.
 _LOOKS_LIKE_AN_IDENTIFIER = re.compile(r"^[a-z]{2,4}-(?:[A-Z0-9]+-)?\d{2,}$")
+
+# DEC-083: the value shape the wire supports. Every arm renders as a typed `anyOf` member, which
+# is what the provider's schema transformation requires; `JsonValue` renders as `{}` and is
+# refused before a request is sent (#412).
+type ClaimScalar = str | int | float | bool | None
+type ClaimValue = ClaimScalar | list[ClaimScalar]
 
 
 class ProposalError(ValueError):
@@ -107,6 +121,10 @@ class ProposedSystemContext(DomainModel):
     deployment_model: str | None = None
     data_classifications: list[str] = Field(default_factory=list)
 
+    access_model: AccessModel = AccessModel.UNKNOWN
+    """The stated authorization posture (DEC-068). Closed enum; `unknown` unless the material
+    states one, because a posture nobody stated must never be read as an answer."""
+
 
 class ProposedComponent(DomainModel):
     """A component the agent proposes (`data-model.md` section 11, minus what the application owns)."""
@@ -122,6 +140,10 @@ class ProposedComponent(DomainModel):
     """`None` where the documentation does not say — which is not `False` (DEC-009)."""
 
     externally_managed: bool | None = None
+    entry_point_types: list[VocabularyTerm] = Field(default_factory=list)
+    """How the component can be entered (DEC-068). Open vocabulary; empty where the material
+    names no entry points."""
+
     data_classifications: list[str] = Field(default_factory=list)
     authentication_mechanisms: list[str] = Field(default_factory=list)
     authorization_mechanisms: list[str] = Field(default_factory=list)
@@ -135,6 +157,12 @@ class ProposedActor(DomainModel):
     name: str = Field(min_length=1)
     actor_type: VocabularyTerm
     trust_level: str | None = None
+    skill_level: VocabularyTerm | None = None
+    """Persona (DEC-068): presumed capability. `None` where the material does not say."""
+
+    access_level: VocabularyTerm | None = None
+    """Persona (DEC-068): starting access. `None` where the material does not say."""
+
     capabilities: list[str] = Field(default_factory=list)
     authentication_method: str | None = None
     evidence_ids: list[EvidenceReferenceId] = Field(default_factory=list)
@@ -154,9 +182,15 @@ class ProposedAsset(DomainModel):
     confidentiality_impact: str | None = None
     integrity_impact: str | None = None
     availability_impact: str | None = None
-    data_classification: str | None = None
+    data_classification: VocabularyTerm | None = None
+    """Sensitivity, normalized against an open vocabulary (DEC-068, DEC-036)."""
+
     owner: str | None = None
     component_keys: list[LocalKey] = Field(default_factory=list)
+    stored_in_component_keys: list[LocalKey] = Field(default_factory=list)
+    """The subset of `component_keys` that stores this asset at rest (DEC-068). Local keys,
+    resolved at conversion like the rest."""
+
     evidence_ids: list[EvidenceReferenceId] = Field(default_factory=list)
 
 
@@ -219,7 +253,7 @@ class ProposedContextClaim(DomainModel):
     """The proposed object this claim is about, when it is about one."""
 
     predicate: str = Field(min_length=1)
-    value: JsonValue
+    value: ClaimValue
     status: ClaimStatus
     confidence: ConfidenceLevel
     rationale: str | None = None
@@ -376,6 +410,17 @@ class ContextExtractionProposal(DomainModel):
             for key in asset.component_keys:
                 if key not in {component.key for component in self.components}:
                     problems.append(f"asset {asset.key!r}: {key!r} is not a proposed component")
+            for key in asset.stored_in_component_keys:
+                if key not in {component.key for component in self.components}:
+                    problems.append(f"asset {asset.key!r}: {key!r} is not a proposed component")
+                elif key not in asset.component_keys:
+                    # DEC-068: at-rest placement is a *subset* of "holds or processes". A store
+                    # the asset never touches is a claim the two lists contradict.
+                    problems.append(
+                        f"asset {asset.key!r}: {key!r} is listed as storing the asset at rest "
+                        f"but not in component_keys; stored_in is a subset of holds-or-processes "
+                        f"(DEC-068)"
+                    )
 
         for boundary in self.trust_boundaries:
             for key in [*boundary.inside_component_keys, *boundary.outside_component_keys]:

@@ -36,7 +36,13 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Final
 
 from trace_ai.domain.context_claim import ClaimStatus
-from trace_ai.domain.threat import KNOWN_THREAT_CATEGORIES
+from trace_ai.domain.threat import (
+    KNOWN_THREAT_CATEGORIES,
+    STRIDE_APPLICABILITY,
+    STRIDE_CATEGORIES,
+    UNCLASSIFIED_KIND,
+    classify_element_kind,
+)
 from trace_ai.domain.vocabulary import normalize_term
 
 # One `ReviewTrigger`, not two. `agent-design.md` section 7 and section 10 list human-review
@@ -50,6 +56,7 @@ from trace_ai.workflow.errors import ErrorClass
 if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
 
+    from trace_ai.domain.component import Component
     from trace_ai.domain.context_claim import ContextClaim
     from trace_ai.domain.system_context import SystemContext
     from trace_ai.domain.threat import Threat
@@ -57,11 +64,15 @@ if TYPE_CHECKING:
 __all__ = [
     "DUPLICATE_THRESHOLD",
     "SECTION_10_TRIGGERS",
+    "CoverageGap",
+    "ImplausibleThreat",
     "MergeProposal",
     "ReviewTrigger",
     "ThreatValidationError",
     "ThreatValidationOutcome",
     "duplicate_groups",
+    "implausible_threats",
+    "stride_coverage_gaps",
     "validate_threats",
 ]
 
@@ -105,10 +116,6 @@ class ThreatValidationError:
 
         return self.error_class in RETRYABLE
 
-    def retry_instruction(self) -> str:
-        """What to tell the next attempt, in terms the agent can act on."""
-        return f"{self.threat_id}.{self.field}: {self.message}"
-
 
 @dataclass(frozen=True, slots=True)
 class MergeProposal:
@@ -127,6 +134,35 @@ class MergeProposal:
 
 
 @dataclass(frozen=True, slots=True)
+class ImplausibleThreat:
+    """A threat whose STRIDE category the table calls inapplicable to its elements (DEC-063).
+
+    Warn-only, like coverage: spoofing whose only affected components are data stores is flagged as
+    an observation, never rejected — the vocabulary is open (DEC-041) and the table is a checklist,
+    not a gate. Only raised when at least one affected component classifies; an unclassifiable set
+    is not judged.
+    """
+
+    threat_id: str
+    category: str
+    kinds: tuple[str, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class CoverageGap:
+    """A component and the applicable STRIDE categories no threat names it in (DEC-063).
+
+    Warn-only: zero threats in an applicable category is a legitimate outcome, so this informs the
+    reviewer and is structurally nothing else. `kind` is how the component's type classified, so an
+    `unclassified` component is presented as such rather than as having no gaps.
+    """
+
+    component_id: str
+    kind: str
+    uncovered: tuple[str, ...]
+
+
+@dataclass(frozen=True, slots=True)
 class ThreatValidationOutcome:
     """What validated, what did not, what looks duplicated, and why a person should look."""
 
@@ -136,6 +172,15 @@ class ThreatValidationOutcome:
     unfamiliar_categories: tuple[str, ...] = ()
     """Categories outside `KNOWN_THREAT_CATEGORIES`. Reported, never rejected (DEC-041): the set
     illustrates and STRIDE has no category for several of ForgeFlow's expected threats."""
+
+    coverage_gaps: tuple[CoverageGap, ...] = ()
+    """Per component, applicable STRIDE categories no threat names it in (DEC-063). Warn-only: it
+    never enters `errors`, so it does not block and the orchestrator cannot retry against it — a
+    coverage target that drove regeneration would manufacture threats to fill cells."""
+
+    implausible_threats: tuple[ImplausibleThreat, ...] = ()
+    """Threats whose STRIDE category the table calls inapplicable to their elements (DEC-063).
+    Warn-only, the same as coverage: an observation the reviewer sees, never a rejection."""
 
     @property
     def valid(self) -> bool:
@@ -154,10 +199,6 @@ class ThreatValidationOutcome:
             for error in self.errors
             if error.error_class is not ErrorClass.INSUFFICIENT_EVIDENCE
         )
-
-    def retry_instructions(self) -> tuple[str, ...]:
-        """Feedback for the next attempt, for the errors another attempt could fix."""
-        return tuple(error.retry_instruction() for error in self.errors if error.retryable)
 
 
 def _normalized(value: str) -> str:
@@ -227,18 +268,81 @@ def _attack_path_problem(threat: Threat) -> str | None:
     return None
 
 
+def stride_coverage_gaps(
+    components: Sequence[Component], threats: Sequence[Threat]
+) -> tuple[CoverageGap, ...]:
+    """Per component, the applicable STRIDE categories no threat names it in (DEC-063).
+
+    Deterministic and warn-only. A component's type classifies to an element kind; the kind's
+    applicable STRIDE categories are the checklist; a category is covered when some threat naming
+    that component carries it. An unclassified component has no applicable categories to check but
+    is still listed, with its kind, so a reader sees it was seen and not judged rather than
+    assuming it was covered. Only STRIDE categories are considered — the open vocabulary is not
+    forced onto the table.
+    """
+    covers: dict[str, set[str]] = defaultdict(set)
+    for threat in threats:
+        stride = {category for category in threat.category if category in STRIDE_CATEGORIES}
+        for component_id in threat.affected_component_ids:
+            covers[component_id] |= stride
+
+    gaps: list[CoverageGap] = []
+    for component in sorted(components, key=lambda component: component.id):
+        kind = classify_element_kind(component.component_type)
+        applicable = STRIDE_APPLICABILITY.get(kind, frozenset())
+        uncovered = tuple(sorted(applicable - covers.get(component.id, set())))
+        if uncovered or kind is UNCLASSIFIED_KIND:
+            gaps.append(CoverageGap(component_id=component.id, kind=kind, uncovered=uncovered))
+    return tuple(gaps)
+
+
+def implausible_threats(
+    components: Sequence[Component], threats: Sequence[Threat]
+) -> tuple[ImplausibleThreat, ...]:
+    """Threats carrying a STRIDE category inapplicable to every classified element (DEC-063).
+
+    A threat spanning several components is plausible if the category applies to any of them, so
+    this raises only when no affected component's kind admits the category. A threat whose affected
+    components are all unclassified is not judged — the table has nothing to say.
+    """
+    kind_by_id = {
+        component.id: classify_element_kind(component.component_type) for component in components
+    }
+    observations: list[ImplausibleThreat] = []
+    for threat in threats:
+        kinds = [
+            kind_by_id[component_id]
+            for component_id in threat.affected_component_ids
+            if kind_by_id.get(component_id, UNCLASSIFIED_KIND) is not UNCLASSIFIED_KIND
+        ]
+        if not kinds:
+            continue
+        for category in threat.category:
+            if category not in STRIDE_CATEGORIES:
+                continue
+            if not any(category in STRIDE_APPLICABILITY.get(kind, frozenset()) for kind in kinds):
+                observations.append(
+                    ImplausibleThreat(
+                        threat_id=threat.id, category=category, kinds=tuple(sorted(set(kinds)))
+                    )
+                )
+    return tuple(observations)
+
+
 def validate_threats(
     threats: Sequence[Threat],
     *,
     context: SystemContext,
     claims: Sequence[ContextClaim] = (),
     contradicted_claim_ids: Sequence[str] = (),
+    components: Sequence[Component] = (),
 ) -> ThreatValidationOutcome:
     """Validate a set of candidate threats. Returns problems and proposals; changes nothing.
 
     `threats` are read and never written. `context` supplies the identifiers a threat may
     reference — the approved baseline's lists, so an object the reviewer rejected is not among
-    them. `claims` are read only to tell an assumption from a documented fact.
+    them. `claims` are read only to tell an assumption from a documented fact. `components` feed
+    the warn-only STRIDE coverage baseline (DEC-063) and change nothing about what validates.
     """
     errors: list[ThreatValidationError] = []
     triggers: list[ReviewTrigger] = []
@@ -309,6 +413,8 @@ def validate_threats(
         triggers=tuple(triggers),
         merge_proposals=_merge_proposals(threats),
         unfamiliar_categories=tuple(unfamiliar),
+        coverage_gaps=stride_coverage_gaps(components, threats),
+        implausible_threats=implausible_threats(components, threats),
     )
 
 

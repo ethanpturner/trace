@@ -42,6 +42,7 @@ from trace_ai.domain.system_context import FIRST_VERSION, SystemContext
 from trace_ai.infrastructure.model.seam import ModelFailure, ModelSuccess
 from trace_ai.services.context.input_package import assemble_extractor_input
 from trace_ai.workflow.errors import ErrorClass, classify_model_failure
+from trace_ai.workflow.limits import resolve_retry_policy
 from trace_ai.workflow.nodes import NodeResult
 from trace_ai.workflow.phases import Phase
 from trace_ai.workflow.retry import AttemptFailedError, RetryPolicy, run_with_retries
@@ -80,8 +81,19 @@ class ContextExtractionNode:
     evidence_ids: Sequence[str]
     assessment_name: str
     budget: Budget | None = None
-    retry_policy: RetryPolicy = field(default_factory=RetryPolicy)
+    retry_policy: RetryPolicy | None = None
+    """The attempt loop's policy. `None` — the norm under the driver — defers to the
+    budget's `retry_policy()`, so the configuration's `maximum_retries_per_node` is the
+    operative ceiling (#397); the built-in default applies only when there is neither."""
     structured_input: dict[str, Any] | None = None
+
+    seeded: ConvertedContext | None = None
+    """Objects a DEC-070 parser derived and persisted before this node ran, if any.
+
+    They join the version-1 baseline alongside this node's own conversion, and the agent is told
+    about them in the trusted region so it extends rather than re-derives — the division of
+    labor: parsers own what the artifact states, the agent owns what the documents mean.
+    """
 
     reviewer_feedback: str | None = None
     """Why a reviewer rejected the previous run's context, carried into this attempt.
@@ -132,6 +144,17 @@ class ContextExtractionNode:
             },
         )
         system = package.trusted
+        if self.seeded is not None and self.seeded.all_objects():
+            listed = "\n".join(
+                f"- {getattr(obj, 'id', '')}: {getattr(obj, 'name', type(obj).__name__)}"
+                for obj in self.seeded.all_objects()
+            )
+            system = (
+                f"{system}\n\n## Deterministically parsed context (already recorded)\n\n"
+                f"The objects below were parsed mechanically from a machine-readable artifact "
+                f"and already exist in the assessment. Extend this context rather than "
+                f"re-deriving it: do not re-propose these components or flows.\n\n{listed}"
+            )
         if self.reviewer_feedback:
             system = (
                 f"{system}\n\n## Reviewer feedback on the previous extraction\n\n"
@@ -146,6 +169,7 @@ class ContextExtractionNode:
         def attempt(state: Any) -> ContextExtractionProposal:
             nonlocal attempts
             attempts += 1
+            execution.retry_number = attempts - 1
 
             prompt = (
                 composed.text
@@ -183,6 +207,11 @@ class ContextExtractionNode:
                     message=f"the model seam returned {type(outcome).__name__}",
                 )
             usages.append(outcome.usage)
+            # Section 29: the conditions the call actually ran at, recorded where a reader of the
+            # ExecutionRecord can find them -- a wrong effort mapping is otherwise invisible (#401).
+            for condition_key in ("effort", "creativity"):
+                if condition_key in outcome.metadata:
+                    execution.metadata[condition_key] = outcome.metadata[condition_key]
             if self.budget is not None:
                 self.budget.spend_model_call(outcome.usage.estimated_cost)
 
@@ -208,7 +237,7 @@ class ContextExtractionNode:
             execution.prompt_version = composed.reference
             proposal = run_with_retries(
                 attempt,
-                policy=self.retry_policy,
+                policy=resolve_retry_policy(self.retry_policy, self.budget),
                 node_name=NODE_NAME,
                 artifacts=context.handle.artifacts,
                 on_attempt_failed=lambda number, failure, path: execution.metadata.update(
@@ -226,6 +255,9 @@ class ContextExtractionNode:
                 execution.record_usage(usage)
             execution.metadata["attempts"] = attempts
             execution.metadata["evidence_excluded"] = len(package.excluded_evidence_ids)
+            if package.excluded_evidence_ids:
+                # DEC-071: persist the names, not just the count, for the coverage ledger.
+                execution.metadata["excluded_evidence_ids"] = sorted(package.excluded_evidence_ids)
             execution.metadata["carried_reviewer_feedback"] = bool(self.reviewer_feedback)
 
         return NodeResult(
@@ -288,16 +320,43 @@ class ContextExtractionNode:
         unset because approval is the reviewer's at the checkpoint that follows (DEC-005), and this
         node has no way to reach it.
         """
+        # The baseline lists the seeded objects too: a DEC-070 parser may have persisted
+        # components and flows before this node ran, and a baseline that omitted them would put
+        # objects in front of checkpoint 1's validation that its own context never named. The
+        # union is explicit rather than a repository sweep, so a re-extraction run cannot
+        # accidentally adopt a rejected revision's objects.
+        seeded = self.seeded
         system = SystemContext.model_validate(
             proposal.system.model_dump()
             | {
                 "assessment_id": context.handle.assessment_id,
-                "context_claim_ids": [claim.id for claim in converted.claims],
-                "component_ids": [component.id for component in converted.components],
-                "asset_ids": [asset.id for asset in converted.assets],
-                "actor_ids": [actor.id for actor in converted.actors],
-                "data_flow_ids": [flow.id for flow in converted.data_flows],
-                "trust_boundary_ids": [boundary.id for boundary in converted.trust_boundaries],
+                "context_claim_ids": [
+                    claim.id for claim in (*(seeded.claims if seeded else ()), *converted.claims)
+                ],
+                "component_ids": [
+                    component.id
+                    for component in (
+                        *(seeded.components if seeded else ()),
+                        *converted.components,
+                    )
+                ],
+                "asset_ids": [
+                    asset.id for asset in (*(seeded.assets if seeded else ()), *converted.assets)
+                ],
+                "actor_ids": [
+                    actor.id for actor in (*(seeded.actors if seeded else ()), *converted.actors)
+                ],
+                "data_flow_ids": [
+                    flow.id
+                    for flow in (*(seeded.data_flows if seeded else ()), *converted.data_flows)
+                ],
+                "trust_boundary_ids": [
+                    boundary.id
+                    for boundary in (
+                        *(seeded.trust_boundaries if seeded else ()),
+                        *converted.trust_boundaries,
+                    )
+                ],
                 "version": FIRST_VERSION,
             }
         )

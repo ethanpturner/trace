@@ -20,10 +20,10 @@ superficial criticism" a failure condition and its retry list contains no volume
 that retried an empty response would be the mechanism by which the critic learned to manufacture
 findings, which is the failure the same section names.
 
-**Low-to-moderate creativity** (section 29). The one thing latitude buys here is noticing an
-inconsistency nobody specified a check for; the one thing it costs is superficial volume. Moderate
-is the reading of "low to moderate" that treats the critic as a search rather than as a checklist,
-and it is the setting most worth revisiting at the Stage 4 gate.
+**Moderate creativity** (section 29, resolved by DEC-085). The one thing latitude buys here is
+noticing an inconsistency nobody specified a check for; the one thing it costs is superficial
+volume. Moderate treats the critic as a search rather than as a checklist, and it is the setting
+most worth revisiting once a live run is measured.
 """
 
 from __future__ import annotations
@@ -41,6 +41,7 @@ from trace_ai.domain.proposals.critical_review import (
 from trace_ai.infrastructure.model.seam import Creativity, ModelFailure, ModelSuccess
 from trace_ai.services.critique.input_package import ReviewGroup, assemble_review_group
 from trace_ai.workflow.errors import ErrorClass, classify_model_failure
+from trace_ai.workflow.limits import resolve_retry_policy
 from trace_ai.workflow.nodes import NodeResult
 from trace_ai.workflow.phases import Phase
 from trace_ai.workflow.retry import AttemptFailedError, RetryPolicy, run_with_retries
@@ -48,6 +49,7 @@ from trace_ai.workflow.retry import AttemptFailedError, RetryPolicy, run_with_re
 if TYPE_CHECKING:
     from trace_ai.infrastructure.model.profiles import ModelProfile
     from trace_ai.services.critique.input_package import SelectedObjects
+    from trace_ai.services.critique.precedent import PrecedentSelection
     from trace_ai.services.evidence.index import EvidenceIndex
     from trace_ai.services.execution_ledger import ExecutionLedger
     from trace_ai.services.prompts import PromptRegistry
@@ -94,8 +96,16 @@ class CriticalReviewNode:
     profile: ModelProfile
     registry: PromptRegistry
     selected: SelectedObjects
+    precedents: PrecedentSelection | None = None
+    """DEC-064's precedent block for this lineage: context in the package, never a subject —
+    precedent identifiers stay out of `referenceable_ids`, so a critique targeting one fails
+    reference validation like any other out-of-group target."""
+
     budget: Budget | None = None
-    retry_policy: RetryPolicy = field(default_factory=RetryPolicy)
+    retry_policy: RetryPolicy | None = None
+    """The attempt loop's policy. `None` — the norm under the driver — defers to the
+    budget's `retry_policy()`, so the configuration's `maximum_retries_per_node` is the
+    operative ceiling (#397); the built-in default applies only when there is neither."""
 
     version: str = NODE_VERSION
     execution_type: ExecutionType = field(default=ExecutionType.MODEL, init=False)
@@ -127,6 +137,7 @@ class CriticalReviewNode:
             selected=self.selected,
             index=self.index,
             profile=profile,
+            precedents=self.precedents,
         )
         composed = self.registry.compose(
             PROMPT_ID,
@@ -141,6 +152,7 @@ class CriticalReviewNode:
         def attempt(state: Any) -> CriticalReviewProposal:
             nonlocal attempts
             attempts += 1
+            execution.retry_number = attempts - 1
 
             prompt = (
                 composed.text
@@ -186,6 +198,12 @@ class CriticalReviewNode:
                 )
 
             usages.append(outcome.usage)
+
+            # Section 29: the conditions the call actually ran at, recorded where a reader of the
+            # ExecutionRecord can find them -- a wrong effort mapping is otherwise invisible (#401).
+            for condition_key in ("effort", "creativity"):
+                if condition_key in outcome.metadata:
+                    execution.metadata[condition_key] = outcome.metadata[condition_key]
             if self.budget is not None:
                 self.budget.spend_model_call(outcome.usage.estimated_cost)
 
@@ -225,7 +243,7 @@ class CriticalReviewNode:
             execution.prompt_version = composed.reference
             proposal = run_with_retries(
                 attempt,
-                policy=self.retry_policy,
+                policy=resolve_retry_policy(self.retry_policy, self.budget),
                 node_name=NODE_NAME,
                 artifacts=context.handle.artifacts,
                 on_attempt_failed=lambda number, failure, path: execution.metadata.update(

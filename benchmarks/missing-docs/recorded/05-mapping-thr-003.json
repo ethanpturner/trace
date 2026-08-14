@@ -1,0 +1,22 @@
+{
+  "controls": [],
+  "mappings": [
+    {
+      "threat_id": "thr-003",
+      "requirement_id": "req-DATA-002",
+      "control_keys": [],
+      "existing_control_ids": [],
+      "applicability_status": "applicable",
+      "applicability_reason": "Customer order records are persisted for the fulfillment system, so a defined retention applies; the data is neither memory-only nor public.",
+      "suppressed_conclusion": null,
+      "suppressed_by": null,
+      "satisfaction_status": "unverified",
+      "evidence_ids": [
+        "evd-001"
+      ],
+      "assumptions": [],
+      "confidence": "low"
+    }
+  ],
+  "documentation_gaps": []
+}

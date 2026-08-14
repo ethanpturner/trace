@@ -93,26 +93,83 @@ def test_status_reports_the_state_and_the_counts(
     assert "evidence:" in output
 
 
-def test_archive_is_the_only_transition_offered(
+def test_the_person_performs_archive_and_the_sign_off_and_nothing_else(
     data_root: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    """DEC-031: every other transition is written by a workflow node.
+    """DEC-031 as amended by DEC-082: a person archives, and signs off a finished deliverable.
 
-    A user-settable `approved` would be a checkpoint bypass with extra steps, so the surface does
-    not offer one.
+    `approve` is not a status setter: with no rendered report it is refused in one line, so
+    offering it on the surface is not the checkpoint bypass DEC-031 rejected — the service
+    refuses everything but a completed, authoritative, rendered run.
     """
     identifier = created(data_root, capsys)
+    assert invoke(data_root, "assessment", "approve", identifier) == 1
+    error = capsys.readouterr().err.strip()
+    assert error.startswith("error:")
+    assert "no report has been rendered" in error
+
     assert invoke(data_root, "assessment", "archive", identifier) == 0
     assert "archived" in capsys.readouterr().out
 
     offered = _subcommands("assessment")
-    assert offered == {"create", "list", "status", "archive"}
-    assert "approve" not in offered
+    assert offered == {"create", "list", "status", "candidates", "archive", "approve"}
 
 
 # ------------------------------------------------------------------------------------------
 # Sources and evidence
 # ------------------------------------------------------------------------------------------
+
+
+def test_reset_without_force_lists_and_removes_nothing(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """`reset` is the one destructive command, so its default is a preview and a refusal."""
+    identifier = created(data_root, capsys)
+
+    assert invoke(data_root, "reset") == 1
+    captured = capsys.readouterr()
+    assert "would remove" in captured.out
+    assert "pass --force" in captured.err
+
+    assert invoke(data_root, "assessment", "status", identifier) == 0
+
+
+def test_reset_with_force_returns_the_root_to_the_fresh_state(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """The rerun problem (#321): a used root mints asm-002 while every documented command names
+    asm-001. After a reset, the next create allocates asm-001 again — the property a scripted
+    demonstration depends on."""
+    identifier = created(data_root, capsys)
+    assert invoke(data_root, "source", "add", identifier, str(FORGEFLOW_INPUT)) == 0
+    capsys.readouterr()
+
+    assert invoke(data_root, "reset", "--force") == 0
+    assert "removed" in capsys.readouterr().out
+
+    assert invoke(data_root, "assessment", "list") == 0
+    assert "no assessments" in capsys.readouterr().out
+    assert created(data_root, capsys) == "asm-001"
+
+
+def test_reset_refuses_a_directory_that_is_not_a_data_root(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A flag that removes data, pointed at the wrong directory, must do nothing at all."""
+    other = tmp_path / "not-a-data-root"
+    other.mkdir()
+    (other / "keep.txt").write_text("not trace's", encoding="utf-8")
+
+    assert invoke(other, "reset", "--force") == 1
+    assert "does not look like a trace data root" in capsys.readouterr().err
+    assert (other / "keep.txt").exists()
+
+
+def test_reset_on_a_fresh_root_is_a_no_op(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    assert invoke(data_root, "reset", "--force") == 0
+    assert "already fresh" in capsys.readouterr().out
 
 
 def test_adding_a_directory_registers_and_indexes_the_corpus(
@@ -146,6 +203,45 @@ def test_registering_without_indexing_is_available(
 
     invoke(data_root, "source", "list", identifier)
     assert "registered" in capsys.readouterr().out
+
+
+def test_adding_the_same_directory_twice_changes_no_count(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A repeated `source add` — one rehearsal not wiped, one command run twice — must not move a
+    single number the reviewer is about to quote (#320). The skipped documents are named by
+    identifier, never re-registered and never re-indexed."""
+    identifier = created(data_root, capsys)
+    assert invoke(data_root, "source", "add", identifier, str(FORGEFLOW_INPUT)) == 0
+    first = capsys.readouterr().out
+    assert "registered 8 document(s)" in first
+
+    assert invoke(data_root, "source", "add", identifier, str(FORGEFLOW_INPUT)) == 0
+    second = capsys.readouterr().out
+    assert "registered 0 document(s)" in second
+    assert "already registered: src-001" in second
+    assert "indexed 0 evidence reference(s)" in second
+
+    assert invoke(data_root, "assessment", "status", identifier) == 0
+    status = capsys.readouterr().out
+    assert "source documents: 8" in status
+
+
+def test_a_no_index_registration_is_completed_by_the_next_add(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Rerunning without `--no-index` finishes the job rather than skipping it: the documents are
+    already registered, and the second add indexes what is still unindexed."""
+    identifier = created(data_root, capsys)
+    path = FORGEFLOW_INPUT / "product-overview.md"
+    assert invoke(data_root, "source", "add", identifier, str(path), "--no-index") == 0
+    capsys.readouterr()
+
+    assert invoke(data_root, "source", "add", identifier, str(path)) == 0
+    output = capsys.readouterr().out
+    assert "registered 0 document(s)" in output
+    assert "already registered: src-001" in output
+    assert "indexed 0 evidence reference(s)" not in output
 
 
 def test_source_list_reports_documents_without_their_content(
@@ -331,7 +427,7 @@ def test_the_banner_still_reports_credentials_as_names_only(
     assert run([]) == 0
     output = capsys.readouterr().out
 
-    assert "Hello from trace!" in output
+    assert "context-aware security architecture analysis" in output
     assert "anthropic" in output
     assert FAKE_KEY not in output
 
@@ -365,10 +461,33 @@ def test_the_command_surface_is_the_one_dec_032_confirms() -> None:
     groups = next(
         action for action in parser._actions if isinstance(action, argparse._SubParsersAction)
     )
-    assert set(groups.choices) == {"assessment", "source", "evidence", "context"}
+    assert set(groups.choices) == {
+        "assessment",
+        "source",
+        "evidence",
+        "context",
+        "run",
+        "resume",
+        "findings",
+        "report",
+        "verify",
+        "evaluate",
+        "export",
+        "reset",
+        "view",
+    }
     assert _subcommands("source") == {"add", "list"}
     assert _subcommands("evidence") == {"list", "show", "verify"}
-    assert _subcommands("assessment") == {"create", "list", "status", "archive"}
+    assert _subcommands("assessment") == {
+        "create",
+        "list",
+        "status",
+        "candidates",
+        "archive",
+        "approve",
+    }
+    assert _subcommands("findings") == {"show", "review", "approve"}
+    assert _subcommands("report") == {"show", "rubric"}
 
 
 def test_a_group_with_no_subcommand_prints_help() -> None:
@@ -847,6 +966,54 @@ def test_review_records_the_decisions_the_flags_name(
     assert "reject" in output
 
 
+def test_attach_links_evidence_and_resolve_requires_a_rationale(
+    data_root: Path, capsys: pytest.CaptureFixture[str], tmp_path: Path
+) -> None:
+    """#399's flag half. `--attach` links an existing reference through the same workflow
+    function the file path calls, and `--resolve` without `--rationale` is refused in one line —
+    a resolution with no reasoning is the silent choice the action exists to prevent."""
+    identifier = extracted(data_root, capsys, tmp_path)
+
+    assert (
+        invoke(
+            data_root,
+            "context",
+            "review",
+            identifier,
+            "--reviewer",
+            "eturner",
+            "--attach",
+            "cmp-001=evd-002",
+        )
+        == 0
+    )
+    assert "1 decision(s) recorded as eturner" in capsys.readouterr().out
+
+    from trace_ai.domain.component import Component
+    from trace_ai.infrastructure.database.store import AssessmentStore
+    from trace_ai.services.assessment import AssessmentService
+
+    with AssessmentStore.at_root(data_root) as store:
+        handle = AssessmentService(store, artifact_root=data_root).handle(identifier)
+        component = handle.objects.find(Component, "cmp-001")
+    assert component is not None and "evd-002" in component.evidence_ids
+
+    assert (
+        invoke(
+            data_root,
+            "context",
+            "review",
+            identifier,
+            "--reviewer",
+            "eturner",
+            "--resolve",
+            "obs-001=whatever",
+        )
+        == 1
+    )
+    assert "requires --rationale" in capsys.readouterr().err
+
+
 def test_a_review_file_round_trips_to_the_same_decisions_as_the_flags(
     data_root: Path, capsys: pytest.CaptureFixture[str], tmp_path: Path
 ) -> None:
@@ -1057,3 +1224,596 @@ def test_context_help_follows_the_corpus_prose_register() -> None:
         for word in banned:
             assert word not in lowered, f"{word!r} appears in help output"
         assert text == text.replace("  \n", "\n")
+
+
+# ------------------------------------------------------------------------------------------
+# The pipeline: run, resume, the finding checkpoint, and the report (#261)
+# ------------------------------------------------------------------------------------------
+
+
+def _recorded_file(path: Path, payload: object) -> str:
+    from pydantic import BaseModel
+
+    assert isinstance(payload, BaseModel)
+    path.write_text(payload.model_dump_json(indent=2), encoding="utf-8")
+    return str(path)
+
+
+def _pipeline_recordings(tmp_path: Path) -> dict[str, str]:
+    """The five agents' recorded responses, borrowed from the driver's end-to-end test."""
+    from test_driver import ASSESSMENT, EXTRACTION, MAPPING, THREAT
+
+    from trace_ai.domain.proposals import ContextExtractionProposal
+    from trace_ai.domain.proposals.critical_review import CriticalReviewProposal
+    from trace_ai.domain.proposals.evidence_validation import EvidenceValidationProposal
+    from trace_ai.domain.proposals.mapping import MappingProposal
+    from trace_ai.domain.proposals.threat_analysis import ThreatAnalysisProposal
+
+    return {
+        "extraction": _recorded_file(
+            tmp_path / "extraction.json", ContextExtractionProposal.model_validate(EXTRACTION)
+        ),
+        "threats": _recorded_file(
+            tmp_path / "threats.json", ThreatAnalysisProposal.model_validate({"threats": [THREAT]})
+        ),
+        "mapping": _recorded_file(
+            tmp_path / "mapping.json", MappingProposal.model_validate({"mappings": [MAPPING]})
+        ),
+        "evidence": _recorded_file(
+            tmp_path / "evidence.json",
+            EvidenceValidationProposal.model_validate({"assessments": [ASSESSMENT]}),
+        ),
+        "critique": _recorded_file(
+            tmp_path / "critique.json", CriticalReviewProposal.model_validate({"critiques": []})
+        ),
+    }
+
+
+def _approve_everything_in(review_file: Path) -> None:
+    import yaml
+
+    document = yaml.safe_load(review_file.read_text(encoding="utf-8"))
+    for group in ("components", "actors", "assets", "data_flows", "trust_boundaries", "claims"):
+        for entry in document.get(group) or []:
+            entry["decision"] = "approve"
+    review_file.write_text(yaml.safe_dump(document, sort_keys=False), encoding="utf-8")
+
+
+def _sections_file(data_root: Path, identifier: str, path: Path) -> str:
+    from trace_ai.domain.proposals.report_sections import LimitationEntry, ReportSections
+    from trace_ai.infrastructure.database.store import AssessmentStore
+    from trace_ai.services.assessment import AssessmentService
+    from trace_ai.services.report.input_assembly import assemble_report_input
+
+    with AssessmentStore.at_root(data_root) as store:
+        service = AssessmentService(store, artifact_root=data_root)
+        assembly = assemble_report_input(
+            service.handle(identifier),
+            prompt_versions={"generate-report-sections": "generate-report-sections-v1"},
+            model="deterministic-fake",
+            model_configuration="offline-fake",
+        )
+        sections = ReportSections.model_validate(
+            {
+                "executive_summary": "The assessment reviewed the webhook processing path.",
+                "system_overview": "The system accepts repository events and queues jobs.",
+                "risk_summary": "The approved findings concern unverified event ingestion.",
+                "limitations": [
+                    LimitationEntry.model_validate(
+                        {"limitation_id": limitation.limitation_id, "text": limitation.facts}
+                    )
+                    for limitation in assembly.required_limitations
+                ],
+            }
+        )
+    return _recorded_file(path, sections)
+
+
+def test_the_pipeline_runs_end_to_end_from_the_command_line(
+    data_root: Path, capsys: pytest.CaptureFixture[str], tmp_path: Path
+) -> None:
+    """#261's acceptance criterion: create, run, review both checkpoints, and render the report
+    using only documented commands and recorded responses. No provider key exists in this test."""
+    identifier = created(data_root, capsys)
+    assert (
+        invoke(
+            data_root,
+            "source",
+            "add",
+            identifier,
+            str(FORGEFLOW_INPUT / "architecture-overview.md"),
+        )
+        == 0
+    )
+    recordings = _pipeline_recordings(tmp_path)
+    capsys.readouterr()
+
+    # Run to checkpoint 1.
+    assert (
+        invoke(
+            data_root,
+            "run",
+            identifier,
+            "--model-profile",
+            "offline-fake",
+            "--response",
+            recordings["extraction"],
+        )
+        == 0
+    )
+    output = capsys.readouterr().out
+    assert "paused at:    human_context_review" in output
+
+    # Resuming with nothing decided pauses again — partial progress, not an error.
+    assert invoke(data_root, "resume", identifier, "--model-profile", "offline-fake") == 0
+    assert "paused at:    human_context_review" in capsys.readouterr().out
+
+    # Checkpoint 1: export, approve everything, apply, approve the baseline.
+    review_file = tmp_path / "context-review.yaml"
+    assert invoke(data_root, "context", "review", identifier, "--export", str(review_file)) == 0
+    _approve_everything_in(review_file)
+    assert (
+        invoke(
+            data_root,
+            "context",
+            "review",
+            identifier,
+            "--reviewer",
+            "reviewer",
+            "--apply",
+            str(review_file),
+        )
+        == 0
+    )
+    assert invoke(data_root, "context", "approve", identifier, "--reviewer", "reviewer") == 0
+    capsys.readouterr()
+
+    # Resume to checkpoint 2.
+    assert (
+        invoke(
+            data_root,
+            "resume",
+            identifier,
+            "--model-profile",
+            "offline-fake",
+            "--response",
+            recordings["threats"],
+            "--response",
+            recordings["mapping"],
+            "--response",
+            recordings["evidence"],
+            "--response",
+            recordings["critique"],
+        )
+        == 0
+    )
+    output = capsys.readouterr().out
+    assert "paused at:    human_finding_review" in output
+
+    # Concluding with an undecided finding is refused, with the finding named.
+    assert invoke(data_root, "findings", "approve", identifier) == 1
+    assert "fnd-001" in capsys.readouterr().err
+
+    # The package prints; severity is assigned; the finding is approved; the review concludes.
+    assert invoke(data_root, "findings", "show", identifier) == 0
+    assert "fnd-001" in capsys.readouterr().out
+    assert (
+        invoke(
+            data_root,
+            "findings",
+            "review",
+            identifier,
+            "--reviewer",
+            "reviewer",
+            "--severity",
+            "fnd-001=medium",
+            "--approve",
+            "fnd-001",
+        )
+        == 0
+    )
+    output = capsys.readouterr().out
+    assert "2 decision(s) recorded as reviewer" in output
+    assert invoke(data_root, "findings", "approve", identifier) == 0
+    capsys.readouterr()
+
+    # Resume to completion, then print the report and its manifest.
+    sections = _sections_file(data_root, identifier, tmp_path / "sections.json")
+    assert (
+        invoke(
+            data_root,
+            "resume",
+            identifier,
+            "--model-profile",
+            "offline-fake",
+            "--response",
+            sections,
+        )
+        == 0
+    )
+    assert "completed" in capsys.readouterr().out
+
+    assert invoke(data_root, "report", "show", identifier) == 0
+    report = capsys.readouterr().out
+    assert "fnd-001" in report
+
+    assert invoke(data_root, "report", "show", identifier, "--manifest") == 0
+    manifest = capsys.readouterr().out
+    assert '"manifest_version"' in manifest
+
+    # The whole chain verifies from the command line, in one line of output.
+    assert invoke(data_root, "verify", identifier) == 0
+    verified = capsys.readouterr().out
+    assert "1 manifest" in verified
+
+
+def test_report_show_is_refused_while_no_report_exists(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    identifier = created(data_root, capsys)
+    assert invoke(data_root, "report", "show", identifier) == 1
+    assert "no report has been rendered" in capsys.readouterr().err
+
+
+def test_a_failed_run_exits_one_and_names_the_error(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """The documented exit codes: 0 for a pause or completion, 1 for a failed run."""
+    identifier = created(data_root, capsys)
+    assert invoke(data_root, "run", identifier, "--model-profile", "offline-fake") == 1
+    assert "no source documents" in capsys.readouterr().err
+
+
+def test_an_unreadable_recording_is_refused_by_name(
+    data_root: Path, capsys: pytest.CaptureFixture[str], tmp_path: Path
+) -> None:
+    identifier = created(data_root, capsys)
+    bad = tmp_path / "empty.json"
+    bad.write_text("{}", encoding="utf-8")
+    assert (
+        invoke(
+            data_root,
+            "run",
+            identifier,
+            "--model-profile",
+            "offline-fake",
+            "--response",
+            str(bad),
+        )
+        == 1
+    )
+    assert "empty.json" in capsys.readouterr().err
+
+
+def test_run_without_a_key_is_a_sentence_not_a_traceback(
+    data_root: Path, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The most likely operator slip: forgetting `--model-profile offline-fake`, so the default
+    profile builds the real adapter with no key configured. `MissingSettingError` is in
+    `EXPECTED_ERRORS`, so the answer is the fix in one line rather than a stack trace (#319)."""
+    from trace_ai.config import Settings
+
+    identifier = created(data_root, capsys)
+    assert invoke(data_root, "source", "add", identifier, str(FORGEFLOW_INPUT)) == 0
+    capsys.readouterr()
+
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.setattr(
+        "trace_ai.infrastructure.model.anthropic_adapter.get_settings",
+        lambda: Settings(_env_file=None),
+    )
+    assert invoke(data_root, "run", identifier) == 1
+    captured = capsys.readouterr()
+    assert "error: ANTHROPIC_API_KEY is not set" in captured.err
+    assert "Traceback" not in captured.err
+
+
+def test_an_offline_run_with_missing_responses_is_a_sentence_not_a_traceback(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """The second slip: `offline-fake` with no `--response`. The fake's exhaustion is typed and in
+    `EXPECTED_ERRORS`, and the message speaks to an operator — no test vocabulary (#319)."""
+    identifier = created(data_root, capsys)
+    assert invoke(data_root, "source", "add", identifier, str(FORGEFLOW_INPUT)) == 0
+    capsys.readouterr()
+
+    assert invoke(data_root, "run", identifier, "--model-profile", "offline-fake") == 1
+    captured = capsys.readouterr()
+    assert "error:" in captured.err
+    assert "no response left to serve" in captured.err
+    assert "Traceback" not in captured.err
+    assert "test" not in captured.err.split("error:")[1].lower()
+
+
+def test_evaluate_replays_a_scenario_and_prints_its_metrics(
+    data_root: Path, capsys: pytest.CaptureFixture[str], tmp_path: Path
+) -> None:
+    """`trace evaluate` is the harness's surface (#266): offline, metrics printed, feed named."""
+    assert (
+        invoke(
+            data_root,
+            "evaluate",
+            "forgeflow",
+            "--label",
+            "cli-test",
+            "--work-root",
+            str(tmp_path / "work"),
+            "--results-root",
+            str(tmp_path / "results"),
+        )
+        == 0
+    )
+    output = capsys.readouterr().out
+    assert "scenario:     forgeflow (clean, label cli-test)" in output
+    assert "false_negative_rate" in output
+    assert "feed:" in output
+
+
+def test_evaluate_requires_a_scenario_or_all(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    assert invoke(data_root, "evaluate") == 1
+    assert "name one scenario or pass --all" in capsys.readouterr().err
+
+
+def test_evaluate_all_names_the_scenarios_it_skips(
+    data_root: Path, capsys: pytest.CaptureFixture[str], tmp_path: Path
+) -> None:
+    """No silent caps: a scenario without a recording is reported, never quietly dropped."""
+    assert (
+        invoke(
+            data_root,
+            "evaluate",
+            "--all",
+            "--label",
+            "cli-all",
+            "--work-root",
+            str(tmp_path / "work"),
+            "--results-root",
+            str(tmp_path / "results"),
+        )
+        == 0
+    )
+    output = capsys.readouterr().out
+    assert "skipped" not in output
+    assert "scenario:     forgeflow" in output
+    assert "scenario:     husky-ai" in output
+    assert "scenario:     crypto-wallet" in output
+    assert "scenario:     missing-docs" in output
+    assert "scenario:     order-notifier" in output
+    assert "scenario:     translation-gateway" in output
+    assert "scenario:     parcel-platform" in output
+    assert "scenario:     unsigned-webhooks" in output
+    assert "scenario:     contradictory-docs" in output
+    assert "scenario:     invoice-agent" in output
+    assert "scenario:     oidc-portal" in output
+    assert "scenario:     managed-db-service" in output
+
+
+# ------------------------------------------------------------------------------------------
+# The reviewer rubric (issue #334)
+# ------------------------------------------------------------------------------------------
+
+
+def _seed_run(data_root: Path) -> str:
+    """An assessment with a started run, seeded directly: the rubric attaches to a run."""
+    from trace_ai.domain.assessment import default_configuration
+    from trace_ai.infrastructure.database.store import AssessmentStore
+    from trace_ai.services.assessment import AssessmentService
+    from trace_ai.services.execution_ledger import start_run
+
+    with AssessmentStore.at_root(data_root) as store:
+        service = AssessmentService(store, artifact_root=data_root)
+        created = service.create(
+            "Rubric", default_configuration("primary-development", "stride-scenario-based")
+        )
+        start_run(
+            service.handle(created.id),
+            workflow_version="0.1",
+            model_profile="primary-development",
+        )
+        return created.id
+
+
+def _full_scores(**changes: str) -> list[str]:
+    from trace_ai.services.evaluation.report_metrics import RUBRIC_CATEGORIES
+
+    scores = dict.fromkeys(RUBRIC_CATEGORIES, "4") | changes
+    arguments: list[str] = []
+    for category, value in scores.items():
+        arguments += ["--score", f"{category}={value}"]
+    return arguments
+
+
+def test_rubric_records_all_seven_scores_as_reviewer_judgement(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    from trace_ai.domain.evaluation_result import EvaluationResult, EvaluatorType
+    from trace_ai.infrastructure.database.store import AssessmentStore
+    from trace_ai.services.assessment import AssessmentService
+    from trace_ai.services.evaluation.report_metrics import RUBRIC_CATEGORIES
+
+    identifier = _seed_run(data_root)
+    assert (
+        invoke(
+            data_root,
+            "report",
+            "rubric",
+            identifier,
+            "--reviewer",
+            "reviewer-local",
+            "--comments",
+            "readable throughout",
+            *_full_scores(),
+        )
+        == 0
+    )
+    assert "recorded 7 rubric score(s)" in capsys.readouterr().out
+
+    with AssessmentStore.at_root(data_root) as store:
+        service = AssessmentService(store, artifact_root=data_root)
+        rows = service.handle(identifier).objects.list(EvaluationResult)
+    assert {row.metric_name for row in rows} == {
+        f"rubric_{category}" for category in RUBRIC_CATEGORIES
+    }
+    assert all(row.evaluator_type is EvaluatorType.REVIEWER for row in rows)
+    assert all("reviewer-local" in (row.notes or "") for row in rows)
+
+
+def test_rubric_refuses_an_unknown_dimension_in_one_line(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    identifier = _seed_run(data_root)
+    arguments = [*_full_scores()[:-2], "--score", "vibes=3"]
+    assert invoke(data_root, "report", "rubric", identifier, *arguments) == 1
+    error = capsys.readouterr().err.strip()
+    assert error.startswith("error:")
+    assert "vibes" in error
+    assert "\n" not in error
+
+
+def test_rubric_refuses_an_out_of_range_score_in_one_line(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    identifier = _seed_run(data_root)
+    assert invoke(data_root, "report", "rubric", identifier, *_full_scores(report_quality="6")) == 1
+    error = capsys.readouterr().err.strip()
+    assert error.startswith("error:")
+    assert "one to five" in error
+    assert "\n" not in error
+
+
+def test_rubric_refuses_a_malformed_or_duplicated_score(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    identifier = _seed_run(data_root)
+    assert invoke(data_root, "report", "rubric", identifier, "--score", "report_quality") == 1
+    assert "CATEGORY=N" in capsys.readouterr().err
+
+    arguments = [*_full_scores(), "--score", "report_quality=2"]
+    assert invoke(data_root, "report", "rubric", identifier, *arguments) == 1
+    assert "scored twice" in capsys.readouterr().err
+
+
+def test_rubric_without_a_run_exits_non_zero(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    identifier = created(data_root, capsys)
+    assert invoke(data_root, "report", "rubric", identifier, *_full_scores()) == 1
+    assert "no workflow run" in capsys.readouterr().err
+
+
+# ------------------------------------------------------------------------------------------
+# The finding review file (issue #351)
+# ------------------------------------------------------------------------------------------
+
+
+def test_findings_review_exports_and_applies_a_file(
+    data_root: Path, capsys: pytest.CaptureFixture[str], tmp_path: Path
+) -> None:
+    """The round-trip surface: export writes the document, an unchanged apply records nothing."""
+    identifier = created(data_root, capsys)
+    path = tmp_path / "finding-review.yaml"
+    assert invoke(data_root, "findings", "review", identifier, "--export", str(path)) == 0
+    assert path.is_file()
+    assert "Fill in `decision:`" in path.read_text(encoding="utf-8")
+    capsys.readouterr()
+
+    assert invoke(data_root, "findings", "review", identifier, "--apply", str(path)) == 0
+    assert "no decisions recorded" in capsys.readouterr().out
+
+
+def test_findings_review_offers_defer_and_request_more_analysis() -> None:
+    parser = build_parser()
+    groups = next(
+        action for action in parser._actions if isinstance(action, argparse._SubParsersAction)
+    )
+    nested = next(
+        action
+        for action in groups.choices["findings"]._actions
+        if isinstance(action, argparse._SubParsersAction)
+    )
+    help_text = nested.choices["review"].format_help()
+    for flag in ("--defer", "--request-more-analysis", "--export", "--apply"):
+        assert flag in help_text, f"findings review lacks {flag}"
+
+
+# ------------------------------------------------------------------------------------------
+# The observation surface at checkpoint 1 (issue #429)
+# ------------------------------------------------------------------------------------------
+
+
+OBSERVED = [
+    {
+        "key": "inj",
+        "kind": "injection_attempt",
+        "summary": "A block in the scratch notes instructs the reader to report no findings.",
+        "evidence_ids": ["evd-001"],
+        "subject_claim_keys": [],
+    },
+    {
+        "key": "retention",
+        "kind": "contradiction",
+        "summary": "Source-artifact retention is described inconsistently across two documents.",
+        "evidence_ids": ["evd-001", "evd-002"],
+        "subject_claim_keys": [],
+    },
+]
+
+
+def test_show_prints_contradictions_beside_injection_attempts(
+    data_root: Path, capsys: pytest.CaptureFixture[str], tmp_path: Path
+) -> None:
+    """#429: the resolve action was unreachable while nothing printed the observation it acts on."""
+    identifier = extracted(data_root, capsys, tmp_path, observations=OBSERVED)
+    invoke(data_root, "context", "show", identifier)
+    output = capsys.readouterr().out
+    assert "injection attempts detected (1)" in output
+    assert "contradictions awaiting resolution (1)" in output
+    assert "described inconsistently" in output
+    assert "--resolve-contradiction" in output
+
+
+def test_show_observations_prints_only_the_observation_blocks(
+    data_root: Path, capsys: pytest.CaptureFixture[str], tmp_path: Path
+) -> None:
+    identifier = extracted(data_root, capsys, tmp_path, observations=OBSERVED)
+    assert invoke(data_root, "context", "show", identifier, "--observations") == 0
+    output = capsys.readouterr().out
+    assert "injection attempts detected (1)" in output
+    assert "contradictions awaiting resolution (1)" in output
+    assert "components (" not in output
+    assert "open questions" not in output
+
+
+def test_show_observations_says_so_when_there_are_none(
+    data_root: Path, capsys: pytest.CaptureFixture[str], tmp_path: Path
+) -> None:
+    identifier = extracted(data_root, capsys, tmp_path)
+    assert invoke(data_root, "context", "show", identifier, "--observations") == 0
+    assert "no injection attempts or contradictions were observed" in capsys.readouterr().out
+
+
+def test_a_closed_pipe_is_not_a_traceback(monkeypatch: pytest.MonkeyPatch) -> None:
+    """`trace report show | head` ends with the pager; rehearsal showed the resulting
+    BrokenPipeError traceback on screen, which is the one failure mode a scripted
+    demonstration cannot tolerate. The entry point flushes inside its guard and swallows
+    the pipe's closure, redirecting stdout only where a real descriptor exists."""
+    import sys as _sys
+
+    import trace_ai
+    import trace_ai.cli as cli_module
+
+    class _ClosedPipe:
+        def write(self, text: str) -> int:
+            return len(text)
+
+        def flush(self) -> None:
+            raise BrokenPipeError
+
+        def fileno(self) -> int:
+            raise ValueError("no descriptor under test capture")
+
+    monkeypatch.setattr(cli_module, "run", lambda: 0)
+    monkeypatch.setattr(_sys, "stdout", _ClosedPipe())
+    assert trace_ai.main() == 0

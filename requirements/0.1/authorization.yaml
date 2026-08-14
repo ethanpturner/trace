@@ -41,7 +41,7 @@ requirements:
       - absent per-endpoint permission matrix
     default_severity: high
     source_frameworks:
-      - "OWASP ASVS 5.0.0: 8.1.1"
+      - "OWASP ASVS: v5.0.0-8.1.1"
       - "NIST SP 800-53 5.2.0: AC-3"
       - "NIST SP 800-53 5.2.0: SC-4"
     status: active
@@ -79,6 +79,6 @@ requirements:
       - absent description of the external platform's own permission model
     default_severity: medium
     source_frameworks:
-      - "OWASP ASVS 5.0.0: 8.1.1"
+      - "OWASP ASVS: v5.0.0-8.1.1"
       - "NIST SP 800-53 5.2.0: AC-6"
     status: active

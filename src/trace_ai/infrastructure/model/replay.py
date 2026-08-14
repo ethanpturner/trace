@@ -23,15 +23,22 @@ import json
 from dataclasses import asdict, dataclass
 from typing import TYPE_CHECKING, Any
 
+from pydantic import BaseModel
+
 from trace_ai.domain.hashing import content_hash
+from trace_ai.infrastructure.model.seam import (
+    GenerationSettings,
+    ModelCapability,
+    ModelOutcome,
+    ModelSuccess,
+    ModelUsage,
+    StructuredModel,
+)
 
 if TYPE_CHECKING:
-    from pydantic import BaseModel
-
     from trace_ai.infrastructure.model.profiles import ModelProfile
-    from trace_ai.infrastructure.model.seam import GenerationSettings
 
-__all__ = ["CacheKey", "ReplayCache", "cache_key"]
+__all__ = ["CacheKey", "CachingModel", "ReplayCache", "cache_key"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -120,3 +127,75 @@ class ReplayCache:
 
     def __len__(self) -> int:
         return len(self._recordings)
+
+
+class CachingModel:
+    """A `StructuredModel` that consults a `ReplayCache` before delegating (#408).
+
+    This is the shape the README promises — the replay cache behind the same interface as every
+    other model — and the shape a live capture needs (#324): run with an empty cache and a real
+    inner model, and the cache fills with exactly the recordings a later offline replay serves.
+    A hit answers from the recording at zero cost; a miss delegates, and a successful answer is
+    recorded before it is returned. Failures are never cached — a recorded failure replayed as
+    an answer would turn a transient provider condition into a permanent one.
+
+    Persistence stays the caller's: section 30 settles the key, this class settles the seam
+    conformance, and where the recordings live on disk is the capture tool's question.
+    """
+
+    def __init__(
+        self,
+        inner: StructuredModel,
+        cache: ReplayCache,
+        *,
+        profile: ModelProfile,
+        prompt_version: str = "",
+        requirements_catalog_version: str | None = None,
+        workflow_version: str | None = None,
+    ) -> None:
+        self._inner = inner
+        self._cache = cache
+        self._profile = profile
+        self._prompt_version = prompt_version
+        self._requirements_catalog_version = requirements_catalog_version
+        self._workflow_version = workflow_version
+
+    @property
+    def name(self) -> str:
+        return self._inner.name
+
+    @property
+    def capabilities(self) -> frozenset[ModelCapability]:
+        return self._inner.capabilities
+
+    def generate[T: BaseModel](
+        self,
+        *,
+        prompt: str,
+        schema: type[T],
+        settings: GenerationSettings | None = None,
+        system: str | None = None,
+    ) -> ModelOutcome[T]:
+        resolved = settings if settings is not None else self._profile.settings
+        key = cache_key(
+            prompt=prompt,
+            prompt_version=self._prompt_version,
+            schema=schema,
+            profile=self._profile,
+            settings=resolved,
+            requirements_catalog_version=self._requirements_catalog_version,
+            workflow_version=self._workflow_version,
+        )
+        recorded = self._cache.get(key)
+        if recorded is not None:
+            return ModelSuccess(
+                value=schema.model_validate(recorded),
+                usage=ModelUsage(model=self._profile.model),
+                metadata={"cache": "hit"},
+            )
+        outcome = self._inner.generate(
+            prompt=prompt, schema=schema, settings=resolved, system=system
+        )
+        if isinstance(outcome, ModelSuccess):
+            self._cache.put(key, outcome.value.model_dump(mode="json"))
+        return outcome

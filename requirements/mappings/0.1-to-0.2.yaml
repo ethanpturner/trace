@@ -1,0 +1,44 @@
+# The DEC-057 fate map: one fate per 0.1 requirement identifier, authored with 0.2. The loader
+# never reads this file; its consumers are people and longitudinal tooling. Fates at a minor
+# boundary are `unchanged`, `revised`, and `retired`; the major-boundary fates (`moved_to`,
+# `merged_to`, `split_to`, `deleted`) do not apply here. Every entry's `catalog_version` field
+# moved from "0.1" to "0.2" mechanically; that carriage is what `unchanged` means at a minor
+# version, not byte identity.
+
+fates:
+  req-ADMIN-001: { fate: unchanged }
+  req-AI-001:
+    fate: revised
+    reason: >
+      Citations moved to the 2026 LLM Top 10 identifiers under the GenAI
+      Security Project publisher (DEC-058); the statement is unchanged.
+  req-AI-002:
+    fate: revised
+    reason: >
+      Citations moved to the 2026 LLM Top 10 identifiers under the GenAI
+      Security Project publisher (DEC-058); the statement is unchanged.
+  req-AI-003: { fate: unchanged }
+  req-AI-004: { fate: unchanged }
+  req-AUTH-001: { fate: unchanged }
+  req-AUTH-002: { fate: unchanged }
+  req-AUTHZ-001: { fate: unchanged }
+  req-AUTHZ-002: { fate: unchanged }
+  req-CICD-001: { fate: unchanged }
+  req-DATA-001: { fate: unchanged }
+  req-DATA-002: { fate: unchanged }
+  req-DATA-003: { fate: unchanged }
+  req-DATA-004: { fate: unchanged }
+  req-LOG-001: { fate: unchanged }
+  req-LOG-002: { fate: unchanged }
+  req-NET-001: { fate: unchanged }
+  req-SECRET-001: { fate: unchanged }
+  req-SECRET-002: { fate: unchanged }
+  req-TPI-001: { fate: unchanged }
+  req-TPI-002:
+    fate: revised
+    reason: >
+      The Unbounded Consumption citation moved from LLM10:2025 to LLM06:2026
+      under the GenAI Security Project publisher (DEC-058); the statement is
+      unchanged.
+  req-WEBHOOK-001: { fate: unchanged }
+  req-WEBHOOK-002: { fate: unchanged }

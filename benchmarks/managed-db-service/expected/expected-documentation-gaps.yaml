@@ -1,0 +1,25 @@
+# Managed DB Service expected documentation gaps
+#
+# One gap: retention of the metrics data is not described. Nothing in this directory is
+# supplied to Trace.
+
+benchmark_version: "1.0"
+scenario: managed-db-service
+catalog_version: "0.1"
+source: system-overview.md
+
+documentation_gaps:
+  - key: GAP-MD-01
+    requirement_id: req-DATA-002
+    subject: how long metrics data is retained is not described
+    arises_from: system-overview.md section 2
+    missing:
+      - The retention period for stored metrics
+      - Whether a storage lifecycle policy expires old metrics
+    supported_by:
+      - system-overview.md
+    paired_question: Q-MD-01
+    notes: >
+      The documents establish that metrics are persisted and confidential; they do not
+      establish a retention period. That is a gap, not a finding — nothing states retention is
+      excessive or undefined in a way that breaches a stated commitment.

@@ -46,7 +46,28 @@ def main() -> int:
     The import is deferred rather than done at module scope: `trace_ai.cli` imports from
     `trace_ai.config` and the domain packages, all of which import `trace_ai` first, so a
     top-level import here would be circular.
+
+    A closed pipe is a reader's choice, not an error: `trace report show | head` ends with the
+    pager, and the traceback that Python prints for the resulting `BrokenPipeError` was the one
+    ugly moment in an otherwise scripted demonstration. Stdout is redirected to devnull before
+    returning, per the pattern the Python docs recommend, so the interpreter's final flush
+    cannot raise a second time.
     """
+    import os
+    import sys
+
     from trace_ai.cli import run
 
-    return run()
+    try:
+        code = run()
+        sys.stdout.flush()
+        return code
+    except BrokenPipeError:
+        # Redirect stdout to devnull so the interpreter's own shutdown flush cannot raise a
+        # second time; guarded because a test harness's captured stdout has no file descriptor.
+        try:
+            devnull = os.open(os.devnull, os.O_WRONLY)
+            os.dup2(devnull, sys.stdout.fileno())
+        except OSError, ValueError:
+            pass
+        return 0

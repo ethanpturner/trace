@@ -409,6 +409,8 @@ Controls may be:
 - Satisfied through an alternative mechanism
 - Known to the organization but not repeated in every architecture artifact
 
+**Corroborated 2026-08-10** (issue #226, survey item A6). Three independent sources in the OWASP corpus reached the same position after this decision was recorded. ASVS 5.0 made "the documentation exists and defines X" a first-class requirement class distinct from "the control exists" — its guidance for users of 4.0 (`5.0/en/0x05-For-Users-Of-4.0.md`) describes the new `X.1 Documentation` sections as exactly that split. The GenAI LLM Top 10 2026 preface (`2026/final/LLM00_Preface.md`) argues from a 7,714-incident corpus that low signal does not indicate low risk — its "defense effect" analysis is this decision's reasoning applied to incident data rather than to documents. And TM-BOM makes `assumed` a first-class control state distinct from `active`: a control nobody has evidenced is recorded as assumed, not as absent, which is this decision expressed as a schema.
+
 Alternatives Considered:
 
 - Generate a finding whenever a required control is undocumented
@@ -475,7 +477,10 @@ Tradeoffs:
 Open Questions:
 
 - ~~Should the per-scenario `requirements.json` in the evaluation plan reference catalog identifiers rather than restate requirements?~~ Answered by DEC-027 by removing the file. DEC-024 puts the whole catalog in every mapping call, so a per-scenario requirement list could only narrow what the pipeline sees. A scenario pins `catalog_version` and expected control mappings reference catalog identifiers directly.
-- When should catalog version 0.1 become 0.2 rather than being edited in place?
+- ~~When should catalog version 0.1 become 0.2 rather than being edited in place?~~ Answered by
+  DEC-057: while a version is `draft` it is edited in place; once released its directory is
+  immutable and any content change is the next minor version. 0.1 releases when the recorded
+  ForgeFlow fixture (#263) lands.
 - ~~What computes and verifies `content_hash`, and at what point in the workflow?~~ Answered by DEC-019: one SHA-256 utility, with a stated input per object type and defined compute and verify points. The catalog's hash is computed by the loader.
 
 ## DEC-011: Record common false positives on each requirement
@@ -998,6 +1003,8 @@ The input differs by object type, deliberately, and each is stated:
 | `EvidenceReference` | The UTF-8 bytes of `quoted_text` | At evidence indexing | By the evidence resolver, before evidence reaches an agent |
 | `PromptDefinition` | The UTF-8 bytes of the **composed** prompt, after shared blocks are merged in | At prompt load | At prompt load |
 | `RequirementsCatalog` | A canonical re-serialization of the parsed catalog: keys sorted, comments and formatting discarded | At catalog load | At catalog load |
+| `Finding` (added by DEC-066) | Sorted `requirement_ids` plus sorted, normalized affected-component names | At creation; recomputed when an identity input changes | By longitudinal consumers |
+| `DocumentationGap` (added by DEC-066) | The requirement reached through its mapping, plus that mapping's normalized component names | At creation; recomputed when an identity input changes | By longitudinal consumers |
 
 A source document is hashed over raw bytes rather than normalized text because its hash exists to detect that the file changed, and normalization would mask exactly the changes it is meant to catch. Evidence is hashed over `quoted_text` because DEC-015 makes that field the verbatim excerpt from the original and forbids modifying it after creation. A prompt is hashed after composition because the composed text is what the model receives; hashing the file alone would miss a change to a shared block, which is the change most likely to alter behaviour without anyone noticing.
 
@@ -2733,8 +2740,9 @@ Tradeoffs:
 
 Open Questions:
 
-- Should the Threat Validation node record an observation when a category falls outside
-  `KNOWN_THREAT_CATEGORIES`, so the drift is visible without being refused?
+- ~~Should the Threat Validation node record an observation when a category falls outside
+  `KNOWN_THREAT_CATEGORIES`, so the drift is visible without being refused?~~ Answered by
+  DEC-063: yes — an observation, warn-only, never an error.
 - At what point does `threat_methodology` need a registry — a second methodology, or the first
   cross-assessment comparison?
 
@@ -3618,3 +3626,2085 @@ Open Questions:
 
 - Should the consolidation count become a named metric with a target, or stay metadata on the false-negative computation?
 - When scenario two arrives, does component-name matching survive a scenario whose truth set names components differently from its own context file?
+
+## DEC-057: Catalog versions are immutable once released; lifecycle is minor-or-major, retirement is a status, and cross-version fates are authored data
+
+Date: 2026-08-10
+
+Status: Accepted
+
+Decision:
+
+**A catalog version is `<major>.<minor>`, and there is no patch level.** The classes of change are
+two. A *minor* version may add requirements, revise wording, and retire entries; every identifier
+that exists in the prior version is either present or accounted for, and no identifier is renumbered
+or reused. A *major* version may renumber, and a fate map is then mandatory. The class ASVS calls
+patch — edits compatible with an existing assessment — is empty here by construction: DEC-019's
+content hash covers the parsed catalog, so any change a parser can see moves the hash and breaks
+verification against recorded runs. The version semantics ratify what the hash already enforces;
+a fix, however small, is a new minor version.
+
+**A released version directory is immutable, and the freeze is enforced at PR time.** A version is
+`draft` until released and may be edited in place freely — which answers DEC-010's open question
+about when 0.1 becomes 0.2: while 0.1 is `draft`, edit it; after release, any content change is
+0.2. Version 0.1 releases when the recorded ForgeFlow fixture (#263) lands, because a replayable
+recorded run is the first artifact whose requirement references outlive an edit. On release, CI
+fails any pull request that touches a file under that version's directory (the AISVS `LOCKED`
+pattern): the loader's hash check refuses a drifted catalog at read time, but the CI guard fails
+at review time and documents the freeze in-repo rather than in a stack trace.
+
+**Governance metadata lives outside the frozen, hashed content.** A top-level
+`requirements/versions.yaml` records, per version: lifecycle status (`draft`, `active`,
+`retired`), maintainer, release date, and last-reviewed date (RaD-TM's "owned, not orphaned"
+fields). It sits outside the version directories and outside the content hash, so retiring a
+version does not alter content whose hash a recorded assessment verifies. The manifest keeps its
+section 30 shape; the loader sources lifecycle status from the registry when both exist, and the
+mechanics land with the 0.2 implementation.
+
+**A requirement retires by status, never by deletion, within a major lineage.** The next minor
+version ships the entry in its category file with `status: retired` (section 17 already carries
+the vocabulary; pytm's `DEPRECATED` marker maps onto it and no new marker is invented), so old
+assessment references resolve for the lineage's lifetime. Removal happens only at a major
+version, recorded as a fate.
+
+**Cross-version fate maps are authored data, shipped with the newer version.** When 0.2 ships,
+`requirements/mappings/0.1-to-0.2.yaml` records one fate per 0.1 identifier — `unchanged`,
+`revised`, `retired`, and at a major boundary also `moved_to`, `merged_to`, `split_to`, and
+`deleted` with a reason (ASVS's mapping-file vocabulary). Tests hold it referentially complete in
+both directions: every old identifier has a fate, every named target exists. The loader never
+reads it; its consumers are people and the longitudinal tooling the cross-run finding-identity
+decision (#236) reaches toward.
+
+Why:
+
+**The content hash cannot express change-compatibility, only change.** DEC-010 and DEC-019 pin
+what a version contains; nothing stated which kinds of change are compatible with an assessment
+already made against it. Version pinning (`load_catalog(version)`) protects an in-flight run;
+this contract protects everything downstream of a finished one — recorded runs, benchmark truth
+sets that pin `catalog_version` (DEC-027), and any report citing a requirement identifier.
+
+**Immutability-at-PR-time fails faster than immutability-at-read-time.** The hash already makes
+silent in-place edits unreadable, but the failure surfaces at the next load, in whatever process
+happens to load it, with a hash mismatch as the only message. A CI guard names the violation at
+the moment someone proposes it.
+
+Alternatives Considered:
+
+- Three-part semver with in-place patch releases, hash regenerated each time
+- Editing a released 0.1 in place with `catalog_hash.py --write` as the ritual
+- A `deprecated` boolean or marker field alongside `status`, per pytm's convention
+- Keeping governance fields inside the hashed manifest
+- OpenCRE identifiers as renumbering-proof anchors instead of fate maps
+
+Tradeoffs:
+
+- A new directory per fix is heavier than a patch: every minor version copies eleven-plus files.
+  The cost buys the property that a version, once cited, means one thing forever.
+- Fate maps are authored, so they can be wrong in ways referential-integrity tests cannot see; a
+  `revised` that should have been `split_to` misleads exactly the tooling it exists to serve.
+- The CI guard binds the repository, not a local clone; a locally edited released catalog still
+  fails only at load. The two guards are complementary, not redundant.
+- `versions.yaml` is a second file that can disagree with the manifests it describes; the same
+  both-directions test posture that holds `catalog.yaml` to the category files applies.
+
+Open Questions:
+
+- Does the maintainer field carry weight while DEC-004's single-user scope holds, or is it a
+  placeholder for the multi-user future?
+- What first forces a major version — a category taxonomy change, or an identifier-scheme change?
+
+## DEC-058: Catalog 0.2 provenance — AISVS and the AI Exchange are adopted with stated caveats, the 2026 LLM Top 10 identifiers are used, and `source_frameworks` stays strings
+
+Date: 2026-08-10
+
+Status: Accepted
+
+Decision:
+
+**AISVS 1.0 is adopted as a citable framework for catalog 0.2's agentic and AI categories**, cited
+as `"OWASP AISVS: v1.0-C9.4.3"` — the reference form AISVS itself prescribes, framework segment
+unversioned, exactly parallel to the ASVS rule `requirements/README.md` already records. The
+caveat is binding, not advisory: AISVS wording is runtime-test phrased ("Verify that X is
+enforced") with near-zero documentation-assessable wording, so a Trace requirement grounded in C9
+(Orchestration/Agentic) or C10 (MCP) adopts the *substance* and is rewritten into the
+documentation register, so that silence resolves to `unverified`. A requirement that imports AISVS
+phrasing unrewritten is a DEC-009 violation whatever it cites. AISVS is CC BY-SA 4.0 like ASVS:
+cited by identifier, wording never reproduced.
+
+**The OWASP AI Exchange is citable as a living document, and the accessed date is mandatory.**
+It has no versioned releases, so permalink-plus-accessed-date is the only stable handle:
+`"OWASP AI Exchange: <topic anchor>, accessed YYYY-MM-DD"`. It may stand as a requirement's sole
+citation — refusing that would only push authors to launder the same grounding through a versioned
+framework that fits worse — but the date makes the staleness visible rather than silent.
+
+**Catalog 0.2 cites the LLM Top 10 under the 2026 release**, as `LLMxx:2026` with the GenAI
+Security Project as publisher, applying the renumbering (Improper Output Handling LLM05:2025 →
+LLM10:2026; Unbounded Consumption LLM10:2025 → LLM06:2026). Version 0.1's 2025-pinned strings
+remain correct archived provenance and are not edited — DEC-057 freezes them anyway once 0.1
+releases.
+
+**OpenCRE identifiers are rejected as citation anchors.** The argument for them is renumbering
+resistance; the observed state is the caution — their public ASVS mapping still resolves to
+v4.0.3, one major version behind what this catalog cites. An anchor whose own mappings lag is a
+crosswalk liability wearing a stability costume, and `requirements/README.md` already forbids
+sourcing ASVS crosswalks through it.
+
+**`source_frameworks` stays `list[string]` for 0.2.** The structural alternative —
+`{framework, version, source_url, accessed}` objects, per the 2026 release's mapping sidecars —
+is rejected for now: section 17 is authoritative and implemented, the string grammar
+`<framework>: <version-qualified reference>` is parsed and tested, the one new need (an accessed
+date) fits the grammar, and the field has no machine consumer — compliance mapping is deferred,
+and provenance's readers are a person and the citation test. The revisit trigger is named: the
+first machine consumer, which the interop-export decision (#231) would supply if a serializer
+wants structured citations.
+
+Why:
+
+**Each source earns its place by covering ground the current three do not.** AISVS C9/C10 covers
+agentic orchestration and MCP, which the 2025 LLM Top 10 predates; the AI Exchange feeds ISO/IEC
+27090 and covers AI-specific ground between releases. Adopting them as provenance keeps 0.2's new
+requirements grounded in public work rather than invented, which is the entire function of the
+field.
+
+**The register caveat is the decision's load-bearing half.** Every surveyed verification standard
+phrases for a running system; Trace assesses documentation. The difference is exactly DEC-009 —
+absence of evidence must resolve to `unverified` — and it is easier to import a phrasing violation
+than to notice one.
+
+Alternatives Considered:
+
+- Adopting AISVS wording as-is and accepting the runtime register
+- Refusing living documents as sole citations
+- Keeping 2025 LLM identifiers in 0.2 for continuity with 0.1
+- OpenCRE ids as primary anchors with framework citations secondary
+- Graduating `source_frameworks` to structured objects now, ahead of a consumer
+
+Tradeoffs:
+
+- An accessed-date citation is honest about staleness but does not prevent it; nothing re-checks
+  the Exchange's content against the date.
+- Staying with strings means a future structured consumer parses the grammar out of prose; the
+  grammar is tested, so the parse is stable, but it is still a parse.
+- Skipping OpenCRE keeps the catalog ahead of the mapping ecosystem at the cost of doing its own
+  crosswalk maintenance forever, one fate map at a time (DEC-057).
+
+Open Questions:
+
+- Does the citation test vendor an AISVS export for resolution, as #221 did for ASVS, or accept
+  unresolved AISVS identifiers the way it accepts NIST ones?
+
+## DEC-059: Catalog 0.2 gains a cloud-operations category mined from Cumulus, adapted under CC BY 4.0 with attribution
+
+Date: 2026-08-10
+
+Status: Accepted
+
+Decision:
+
+**Catalog 0.2 adds a cloud-operations primary category**: file `cloud-operations.yaml`, identifier
+prefix `req-OPS-`. Its ground is mined from OWASP Cumulus, whose 55 cards name operational
+security expectations the current catalog does not cover: separation between backup access and
+delete permissions, cost-anomaly alerting, environment separation including indirect connection
+through CI/CD, visibility of pipeline definition changes, and alert actionability against alert
+fatigue. Each phrases naturally in the documentation register — silence resolves to `unverified`
+— which is the admission test DEC-009 sets. The exact requirement set and count are authoring
+work in the 0.2 implementation, guided by this named ground; this decision fixes the category,
+the prefix, and the source posture.
+
+**The licensing posture differs from ASVS and AISVS, and both postures are stated side by side.**
+Cumulus content is CC BY 4.0 (the GitHub license API misreports it as null because of the REUSE
+layout), so wording may be *adapted with attribution* — unlike the CC BY-SA sources, which are
+cited by identifier with wording never reproduced. `requirements/README.md` records the two
+postures adjacently so the share-alike rule is not accidentally applied to Cumulus or, worse, the
+adaptation freedom accidentally applied to ASVS.
+
+**Citations use the version-in-framework-segment form**, since Cumulus prescribes no reference
+format: `"OWASP Cumulus <release>: <card identifier>"`, with the concrete release pinned against
+the source as fetched when 0.2 is authored.
+
+**This is minor-version content under DEC-057** — a new category and new requirements, no
+renumbering — and the provenance table gains its row under DEC-058's process.
+
+Why:
+
+**The gap is real and the source is apt.** The current catalog is application- and
+architecture-shaped; nothing in it asks whether backups can be deleted by the credentials that
+write them, whether cost anomalies alert anyone, or whether a pipeline change is visible. These
+are architecture-level, documentation-assessable questions — precisely Trace's register — and
+Cumulus is the one surveyed source that treats operations as first-class threat-modeling ground.
+
+**Stating the licensing posture now prevents the quiet failure later.** The catalog's standing
+rule is written for share-alike sources. A future author extending the cloud-ops category who
+applies that rule to Cumulus loses harmless freedom; one who assumes Cumulus's freedom applies to
+ASVS creates a licensing obligation. The pair is only safe when both are explicit.
+
+Alternatives Considered:
+
+- Folding the operational requirements into existing categories (cicd-trust, logging) rather than
+  adding one
+- Citing Cumulus by card identifier only, share-alike style, ignoring the adaptation freedom
+- Deferring cloud-ops entirely until a scenario demands it
+- A broader `operations` category not scoped to cloud
+
+Tradeoffs:
+
+- A new category built from one source starts single-sourced; ASVS and NIST cross-citations will
+  be thinner here than elsewhere in the catalog, and the provenance table will show it.
+- Card names are not stable identifiers the way `v5.0.0-2.1.1` is; a Cumulus release that renames
+  cards strands the citations, mitigated by pinning the release in the framework segment.
+- Requirements this operational sit at the edge of "assessable from design documentation"; the
+  authoring test is whether ForgeFlow-class input can evidence them, and some candidates will
+  fail it and be dropped.
+
+Open Questions:
+
+- Which scenario exercises the category first — none of the four seeded benchmarks is
+  operations-heavy, and a requirement no scenario can exercise is exactly what DEC-010's
+  "small on purpose" posture argues against shipping.
+
+## DEC-060: The reviewer may assign a risk treatment at checkpoint 2; `accept` requires a rationale, and treatment never blocks approval
+
+Date: 2026-08-10
+
+Status: Accepted
+
+Decision:
+
+**`Finding` gains a reviewer-assigned risk treatment.** Three fields, specified here; the table
+rows and code land together in the implementing change:
+
+- `risk_treatment` — a **closed** vocabulary: `undecided`, `mitigate`, `accept`, `transfer`,
+  `avoid`. Closed in the DEC-036 sense that the values are named rather than illustrated, like
+  `DataFlow.direction`; extending it is a design change. Findings are created `undecided`.
+- `treatment_rationale` — required when `risk_treatment` is `accept`; optional otherwise. For
+  accepted risk it is the residual-risk statement: what remains exposed and why that is
+  tolerable.
+- `treatment_review_by` — an optional date, meaningful for `accept`; DEC-061 gives it semantics.
+
+**The reviewer assigns treatment at checkpoint 2, and no node proposes one** — DEC-030's
+philosophy applied to the neighbouring judgment. Treatment is a risk decision in business
+context; the documents under review do not contain it, and an agent asked for it would produce a
+fluent answer from sources that cannot answer.
+
+**Unlike severity, treatment never blocks approval.** `undecided` may survive checkpoint 2.
+Severity is the reviewer's own security judgment and orders the report, so DEC-030 makes it
+mandatory; treatment is frequently the system owner's decision to make after reading the report,
+and a gate would manufacture defaults — a forced treatment is a fabricated business decision,
+which is DEC-009's failure relocated into a reviewer field. The gate that does exist: **an
+approval whose finding carries `accept` with no `treatment_rationale` is refused**, by the same
+mechanism as the severity gate.
+
+**Assignment is recorded as `edit`.** No `ReviewDisposition` value is added; `prior_value` and
+`updated_value` carry the change per DEC-023, exactly as severity does. Section 4.6's note
+generalizes.
+
+**The report renders treatment deterministically inside the existing findings sections.** An
+`accept` renders its rationale and review-by date with the finding. No section is added, no
+ownership changes, and the sixteen-section contract (DEC-035) is untouched; the Report Generation
+agent's `risk_summary` may reference treatment outcomes and never rewrites them.
+
+Why:
+
+**Five surveyed projects independently model a treatment outcome** — Threat Dragon's status
+vocabulary, pytm's `Finding.response`, the Threat Modeling Cheat Sheet's "each threat must have a
+response", ThreatAtlas's acceptance-with-approver-and-date, the playbook's residual-risk
+statement — which is the strongest convergence signal in the survey. A finding whose fate is
+recorded is a decision; a finding whose fate is a conversation after the report is a loose end.
+
+**The vocabulary is present-tense choice, not past-tense completion.** Threat Dragon's
+`Mitigated`/`Eliminated` describe work already done, which a documentation review cannot witness;
+Trace's values name the *chosen response*. There is no `eliminated`: a weakness that no longer
+exists produces no finding.
+
+Alternatives Considered:
+
+- Threat Dragon's five past-tense statuses verbatim
+- Requiring a treatment at approval, symmetrical with the severity gate
+- A new `accept_risk` disposition on `ReviewDisposition`
+- Recording treatment on `ControlMapping` rather than `Finding`
+- Leaving treatment entirely to post-report tooling
+
+Tradeoffs:
+
+- An approved report may carry findings with no treatment story. That is deliberate — honesty
+  over completeness theatre — but it will read as unfinished to audiences expecting a risk
+  register, and the report's authored wording should frame `undecided` as "not yet decided by the
+  system owner" rather than leaving the cell blank.
+- The `accept`-requires-rationale rule is a two-field validation coupling that the checkpoint
+  gate must enforce with the same care as the severity gate, and it is easier to forget because
+  it fires rarely.
+- Treatment on `Finding` means a merged finding (21a) carries one treatment for what were two
+  candidates; the merge record preserves lineage, but a treatment assigned before a merge is not
+  automatically revisited.
+
+Open Questions:
+
+- Does `transfer` need a named counterparty to be meaningful, or is that the rationale's job?
+- Should the report's deterministic findings sections group accepted-risk findings separately so
+  residual risk is legible at a glance?
+
+## DEC-061: Revisit is episodic — assumed claims are standing revisit subjects, and an expired acceptance re-routes to checkpoint 2 at the next run
+
+Date: 2026-08-10
+
+Status: Accepted
+
+Decision:
+
+**Nothing watches a clock.** DEC-004's system runs locally and episodically; re-check semantics
+attach to the triggers that already exist — the start of a new `WorkflowRun` on the assessment,
+and `begin_revision` (DEC-031's verb, DEC-038's mechanism). Display never triggers anything:
+`trace assessment status` may list overdue dates read-only, and nothing fires from being looked
+at.
+
+**Assumptions carry no date.** A `ContextClaim` with status `assumed` is a *standing* revisit
+subject: at the next revision's checkpoint 1 it is re-presented flagged with the `revisit_due`
+routing reason (DEC-062) rather than buried among unchanged claims. No `review_by` field is added
+to `ContextClaim`, because an assumption's shelf life is driven by landscape change rather than
+calendar, and an authored date would be a guess wearing a deadline's costume. The OWASP umbrella
+definition asks that assumptions be checkable or challengeable in the future; the status already
+makes them findable, and this makes them presented.
+
+**Accepted risk carries the one authored date.** `treatment_review_by` (DEC-060) passing changes
+nothing at rest. At the first run or revision that begins after the date, the finding routes back
+to checkpoint 2 as a review subject with reason `revisit_due`. **The prior decision is never
+reverted silently**: `accept` stands, with its recorded rationale, until the reviewer re-decides
+— a new `edit` on a new `ReviewerDecision`. An expiry that flips a field nobody touched would be
+the silent overwrite DEC-023 exists to prevent, performed by a calendar.
+
+Why:
+
+**Re-check semantics have to fit the execution model or they are theatre.** ThreatAtlas's expiry
+works because ThreatAtlas is a running service; Trace is a process that exits (DEC-017 — pausing
+is stopping). A review-by date in an episodic system can only mean "surface this when someone is
+next here," and saying so plainly is better than implying monitoring that does not exist.
+
+**The two outlets age differently.** An accepted risk was a *decision* with an owner who can
+name their own confidence horizon — a date is theirs to author. An assumption is a *gap* nobody
+chose; it has no owner to pick a date, and every revision is the right time to challenge it.
+
+Alternatives Considered:
+
+- A scheduler or daemon watching review-by dates
+- `review_by` on `ContextClaim`, symmetrical with accepted risk
+- Auto-expiring acceptance: `risk_treatment` reverts to `undecided` when the date passes
+- A single assessment-level review date instead of per-object semantics
+
+Tradeoffs:
+
+- An expired acceptance can sleep indefinitely if nobody starts a run — the honest cost of an
+  episodic tool, stated rather than hidden. The status display is the mitigation, and it is only
+  a display.
+- Re-presenting every assumed claim at every revision scales checkpoint-1 load with assumption
+  count; for a system whose assumptions grow, the reviewer pays for this decision each revision.
+  The routing reason at least makes the pile legible.
+- Two different revisit mechanisms (standing status versus authored date) is more to explain
+  than one; the difference is by cause, like DEC-023's three mechanisms.
+
+Open Questions:
+
+- Should `archive` — the one human-performed lifecycle verb — warn when overdue review-by dates
+  exist, or is archiving precisely the moment such warnings stop mattering?
+
+## DEC-062: Checkpoint subjects carry typed routing reasons, derived at package-build time from persisted state
+
+Date: 2026-08-10
+
+Status: Accepted
+
+Decision:
+
+**Every review-package subject may carry routing reasons from a closed `ReasonCode` vocabulary,
+at both checkpoints.** A subject may carry several; the initial vocabulary is `low_confidence`,
+`contradicted`, `no_evidence`, `injection_flag`, and `revisit_due`. Extending it is a design
+change, and each code's exact derivation — which persisted fields produce it — is fixed in the
+implementing change under one rule: **a code is a deterministic function of persisted state**,
+never a judgment made at build time. `injection_flag` derives from a recorded observation about a
+cited source (#274 implements the surfacing); `revisit_due` is DEC-061's.
+
+**Reasons are derived when the review package is built, never stored.** The package is derived
+from the run and never stored in it (DEC-005, DEC-017); reasons are part of the package. Nothing
+on validation output, the run, or the subject records a reason code.
+
+**Two guards are part of the decision, not the implementation.** First, reasons triage attention
+and never filter: every subject still requires a `ReviewerDecision` before the checkpoint
+advances (DEC-005), and a subject with no reasons is routine, not exempt. Second, a reason is a
+routing aid, not a verdict: the Context Validation node's report-and-route remit
+(`agent-design.md` section 8) is unchanged, and no node gains authority from a code.
+
+Why:
+
+**Derivation from persisted facts gets auditability without a second store.** The question the
+issue poses — derived and cheap, or recorded and auditable — is a false choice here, because the
+inputs to every code are already persisted domain data (a confidence field, a contradicted flag,
+an observation, a date against a run timestamp). A deterministic function of stored state is
+re-derivable at any time, which *is* the audit; storing its output would be a second copy of
+authoritative data, the exact shape section 31's state-design rule and DEC-016's
+checkpointer rejection both refuse, and the copy could drift from the fields it summarizes.
+OpenCRE's Librarian stores its reason codes because its review queue is its authoritative store;
+Trace's package is a view over one.
+
+**The reviewer should triage by machine-stated reason rather than re-deriving it.** The fields
+are all present on the objects, but "this claim is here because it is contradicted" currently
+has to be reconstructed by reading the object against the vocabulary in the reviewer's head.
+ThreatAtlas's defined-semantics confidence pill is the presentation-layer proof that stating the
+reason changes review behaviour.
+
+Alternatives Considered:
+
+- Recording reason codes on validation output as data, OpenCRE-Librarian style
+- Free-text reasons authored by the validation node
+- Separate vocabularies per checkpoint
+- A confidence pill in the CLI with no typed codes underneath
+
+Tradeoffs:
+
+- The vocabulary is bounded by what persisted fields can express. A reason like "the reasoning
+  seems thin" cannot be a code without a model call, so codes will under-describe why some
+  subjects deserve attention — and the absence of a code must not read as a clean bill, which is
+  why the never-filters guard is part of the decision.
+- Derivation logic lives in package assembly and grows with the vocabulary; each new code adds a
+  function that must stay deterministic and tested.
+- Deriving at build time means a reason reflects state at package construction; a reviewer
+  looking at a stale package sees stale reasons. Packages are rebuilt on resume (DEC-017), which
+  bounds the staleness to one pause.
+
+Open Questions:
+
+- Should the checkpoint CLI order subjects by reason, and if so in which precedence?
+- Do reason frequencies belong in the evaluation metrics as a reviewer-attention calibration
+  signal?
+
+## DEC-063: Threat Validation gains a warn-only coverage baseline from authored applicability data; nothing retries or quotas against it
+
+Date: 2026-08-10
+
+Status: Accepted
+
+Decision:
+
+**Per-element-kind category applicability becomes authored data**, the Threat Dragon and OdTM
+convention: spoofing applies to actors and processes and never to flows or stores, tampering to
+stores and flows, and so on. The table keys on element kinds — `process`, `data_store`,
+`external_actor`, `data_flow`, `trust_boundary` — with a conservative classification from the
+open `component_type` vocabulary to a kind. It ships beside `STRIDE_CATEGORIES` as authored
+constants and covers only the categories it names; the open vocabulary (DEC-041) is untouched.
+A component whose type does not classify is `unclassified` and is *presented* as unclassified —
+where absence would read as an answer, say `unknown` explicitly (DEC-036); an unclassifiable
+component must never render as "no gaps".
+
+**The table has exactly two uses, both warn-only.**
+
+1. **Plausibility observations from the Threat Validation node.** A threat whose category and
+   affected elements the table calls inapplicable — spoofing whose only affected component is a
+   data store — is flagged as an observation, never rejected. The node also records an
+   observation when a category falls outside `KNOWN_THREAT_CATEGORIES`, which answers DEC-041's
+   open question: drift becomes visible without being refused. An observation is not an error:
+   it never enters the retry taxonomy and never routes anywhere.
+2. **A coverage listing in the checkpoint 2 review package**: per component, the applicable
+   categories in which zero threats name it. It is derived at package-build time from persisted
+   threats, the approved context, and the table — DEC-062's posture; nothing stores it.
+
+**The listing informs the reviewer and is structurally nothing else.** Zero threats in an
+applicable category is a legitimate outcome. A coverage gap is not an error class, so the
+orchestrator cannot retry the threat agent against it — retrying it would be retrying a
+conclusion (`agent-design.md` section 26), and an agent retried until a category is populated
+will populate it, which is the checklist failure sections 2.2 and 10 exist to prevent. It is
+also not an evaluation metric target: the volume principle holds, and no score improves by
+filling a cell.
+
+Why:
+
+**It converts an unverifiable model property into a checkable one at zero model cost.** "Did the
+agent cover the obvious structural threats" is today a question the reviewer answers by
+re-deriving STRIDE-per-element in their head across the whole context. The table is small,
+public, stable knowledge — both surveyed encodings agree on it — and checking against it is
+arithmetic.
+
+**Warn-only is what keeps it compatible with everything already decided.** Enforced
+applicability would close the vocabulary DEC-041 opened; a retry loop would manufacture threats;
+a metric would optimise for finding count. The one safe consumer of a checklist is the human it
+informs.
+
+Alternatives Considered:
+
+- Enforcing applicability: rejecting a spoofing threat against a data store
+- Feeding coverage gaps back to the threat agent as retry feedback
+- A per-category coverage metric in the evaluation plan
+- Leaving coverage entirely to the reviewer's unaided judgment
+
+Tradeoffs:
+
+- The kind classification is a judgment compressed into a lookup, and the open `component_type`
+  vocabulary guarantees unclassifiable components; the listing under-covers exactly the exotic
+  components where threats are least obvious, and says so via `unclassified` rather than hiding
+  it.
+- The baseline is STRIDE-shaped. No per-element applicability data exists for the AI-specific
+  categories, so the listing is silent about the categories ForgeFlow's most important threats
+  use; a reader who treats it as total coverage inverts its meaning. The package labels it as a
+  structural baseline, not a coverage claim.
+- The reviewer now sees a per-component grid at checkpoint 2, which is more to read; the
+  alternative was deriving the same grid mentally or not at all.
+
+Open Questions:
+
+- Does the plausibility observation ever earn a routing reason code (DEC-062) of its own, or
+  would that promote a heuristic to an authority?
+
+## DEC-064: Rationale-bearing dismissals feed the critic as marked context; matching is deterministic and scoped to the assessment
+
+Date: 2026-08-10
+
+Status: Accepted
+
+Decision:
+
+**The Critical Review input package gains a precedent block**: prior findings from the same
+assessment that a reviewer dismissed — disposition `reject`, `convert_to_question`, or
+`convert_to_documentation_gap` — **with the reviewer's recorded rationale**, matched to the
+lineage under review deterministically: the precedent shares a `requirement_id` with the
+lineage's mappings, or names an affected component whose name matches one of the lineage's,
+under DEC-056's normalization (identifier resolved to name, case-insensitive, whitespace
+normalized). No model call and no embedding computes similarity; a hidden model call here is the
+seventh agent the cap refuses.
+
+**Only rationale-bearing decisions qualify.** The question the block puts to the critic is "this
+was dismissed for reason X — does X apply here?", and a bare rejection supplies no X.
+`ReviewerDecision.rationale` is optional by schema; a dismissal without one is simply not
+precedent.
+
+**Precedent is context, never subject.** DEC-049 fixes the critic's unit of work as one threat's
+lineage, and this decision does not reopen it: precedent appears in a distinct, labelled package
+block, the critic may cite a precedent's rationale in a critique's explanation, and a critique
+may still target only the lineage's own subjects. The block is capped; when the cap excludes
+precedent, the package names what was excluded rather than truncating silently, the same rule
+the evidence fence follows.
+
+**Scope is the assessment.** Prior runs and revisions of the same assessment are readable
+through the scoped repository; other assessments are not — the `AssessmentHandle` boundary
+exists so one assessment's code cannot reach another's, and a cross-assessment precedent ledger
+would carve through it. That carve-out is deferred, not decided: appsec-agent's global ledger is
+the shape it would take, and the cross-run finding-identity decision (#236) is where the
+identity half lands.
+
+**Dismissal patterns are not distilled.** appsec-agent's second mechanism — summarising
+dismissals into reusable guidance — is a model call whose output becomes standing instruction,
+unreviewed authority in exactly the place agent output must stay challengeable. Raw precedent
+with a human's own words is the version of this that carries no invented generalisation.
+
+Why:
+
+**The data is already persisted and already trustworthy.** Every `ReviewerDecision` carries
+disposition and rationale (DEC-023); the rationale is the one text in the pipeline written by
+the human whose judgment the critic is meant to anticipate. Feeding it back is reading the
+record, not building a new mechanism.
+
+**The critic is the right consumer.** It already judges whether a finding survives challenge;
+"the reviewer dismissed the sibling of this for reason X" is exactly a challenge. Consolidation
+is mechanical and the checkpoint is the human's own view; neither benefits.
+
+Alternatives Considered:
+
+- Embedding or model-assisted similarity matching
+- Distilling dismissal patterns into reusable prompt guidance, appsec-agent style
+- A cross-assessment precedent ledger through a deliberate scoping carve-out
+- Feeding precedent to Finding Consolidation instead of the critic
+
+Tradeoffs:
+
+- Within-assessment scope makes the block empty until an assessment has revision history, so
+  the mechanism is dormant in every first run; its value arrives with longitudinal use.
+- Deterministic matching misses paraphrased precedent — a dismissal whose finding cited a
+  different requirement for the same underlying concern will not surface.
+- Precedent bias is real: a wrongly-dismissed finding now argues for dismissing its successor.
+  The mitigations are structural — the critic tests whether the rationale applies rather than
+  inheriting the verdict, and the reviewer at checkpoint 2 sees any critique that leaned on
+  precedent.
+
+Open Questions:
+
+- What is the right cap for the precedent block — and should recency or match tightness order
+  it?
+
+## DEC-065: A credible concern no requirement covers becomes a catalog-gap candidate, routed to the catalog owner and never into the assessment's conclusions
+
+Date: 2026-08-10
+
+Status: Accepted
+
+Decision:
+
+**`domain/proposals/` gains `CatalogGapCandidateProposal`, and the Threat Analysis and Mapping
+agents may return it.** The RaD-TM discipline, transplanted: never stretch the nearest
+requirement to cover a concern it does not cover, and never drop the observation — flag it as
+catalog-maintenance input. The proposal carries the concern, the evidence local keys that ground
+it, a suggested category, and — the quality gate — **the nearest requirements considered and why
+each does not fit**. DEC-024's whole-catalog posture is what makes "no requirement covers this"
+a claim the agent can actually make; the named-nearest-requirements field is what makes it
+falsifiable. Proposal rules apply unchanged: local keys, nothing authoritative, `extra="forbid"`.
+
+**A validated candidate persists with the assessment and is not a conclusion.** It is converted
+and allocated like any proposal (DEC-018), with provenance to the run that produced it. No
+report section renders it — the sixteen-section ownership table is unchanged, which is the
+structural guarantee that a candidate cannot become a finding-shaped object. It is not a
+checkpoint subject and requires no `ReviewerDecision`; it appears in the checkpoint 2 package as
+an informational block, because under DEC-004 the reviewer and the catalog owner are the same
+person.
+
+**The candidate feeds the next catalog version through a human.** DEC-057's lifecycle is the
+receiving end: a candidate is raw material for a 0.2 authoring decision, carrying no authority.
+Aggregating candidates across assessments stays manual — the scoped-repository boundary is not
+carved for this either (the DEC-064 posture).
+
+**This is not a seventh agent.** No new model call exists; two existing agents gain an optional
+output type. The cap inventory is unchanged.
+
+Why:
+
+**Both failure modes it replaces are silent.** An agent that stretches `req-AUTH-001` over an
+uncovered concern produces a mapping whose wrongness only a careful reviewer catches; an agent
+that drops the concern produces nothing at all. The typed channel makes the third path cheaper
+than either: flagging is easier than stretching, and the catalog grows from ground the analysis
+actually met — which is how a 23-requirement catalog scoped to one scenario gets honest
+extension pressure rather than invented breadth.
+
+**The DEC-009 pressure point is answered structurally, not by instruction.** A candidate is
+about the *catalog's* coverage, not the system's controls. Its schema carries no severity, no
+validation status, and no finding-shaped field, and no report section can render it; the shape
+that must not happen is unrepresentable rather than discouraged.
+
+Alternatives Considered:
+
+- The status quo: nearest-requirement stretching or silent drops
+- Filing uncovered concerns as low-confidence findings
+- A repo-side maintenance queue the agent writes directly (agents have no filesystem)
+- A standalone catalog-maintenance review agent
+
+Tradeoffs:
+
+- Candidates are model prose reaching a human with less validation pressure than findings get;
+  the volume principle applies and nothing rewards count, but junk candidates cost the catalog
+  owner reading time. The nearest-requirements justification is the filter, and an empty one is
+  a validation failure.
+- An informational block at checkpoint 2 is easy to skim past; a candidate nobody reads is a
+  dropped observation with more steps. The block is small and the alternative was a decision
+  burden on objects that need none.
+- Per-assessment persistence means the catalog owner assembles the cross-assessment picture by
+  hand until a deliberate aggregation surface exists.
+
+Open Questions:
+
+- Does the candidate deserve its own identifier prefix, and which — the prefix registry is
+  DEC-018's to extend?
+- Should `trace assessment show` grow a flag that lists candidates, ahead of any aggregation
+  surface?
+
+## DEC-066: `Finding` gains a structural content fingerprint for cross-run identity, alongside the allocated identifier and never instead of it
+
+Date: 2026-08-10
+
+Status: Accepted
+
+Decision:
+
+**`Finding` gains `content_fingerprint`**: SHA-256 through DEC-019's single utility, rendered
+`sha256:<hex>`, computed by the application when the finding is created and recomputed whenever
+an identity input changes. The DEC-019 table gains the row, because a hash over an unstated
+input is not verifiable. The stated input: the sorted `requirement_ids`, plus the sorted
+affected-component *names* resolved from `affected_component_ids` and normalized under DEC-056's
+rule — case-insensitive, whitespace-normalized. Nothing else: no title, no description, no
+evidence text.
+
+**The tuple is structural because the fingerprint exists to survive rewording.** appsec-agent
+hashes cwe + file + normalized snippet, which is right for a code scanner — the snippet is the
+location. Trace's findings are prose over architecture; the excerpt an extraction cites flickers
+across runs and document edits, and DEC-056 already established that requirement and component
+are the fields that survive rewording. The fingerprint is DEC-056's benchmark matching rule
+promoted to an object property, so evaluation matching and longitudinal identity cannot drift
+apart. Requirement identifiers are stable across catalog versions (DEC-057) and component names
+are the cross-run handle because DEC-018 identifiers are run-scoped.
+
+**Reviewer edits change identity only when they change identity fields.** An edit to
+description, severity, or treatment leaves the fingerprint alone; an edit that changes the
+affected components or cited requirements recomputes it, because it is then a claim about
+different ground. The fingerprint is derived, so recomputation is a rebuild, not a mutation
+with history.
+
+**`DocumentationGap` gets the same treatment**: a fingerprint over the requirement it bears on
+— reached through its related mapping, DEC-056's own path — plus the normalized component names
+of that mapping. The implementing change fixes the exact resolution; the principle fixed here is
+structural fields only, no prose.
+
+Why:
+
+**DEC-018 identifiers cannot answer "same finding, still open."** They are per-assessment and
+allocation-ordered, so a re-assessment after revision re-mints everything and the longitudinal
+question has no handle. Every consumer that wants one — the run-diff in the harness decision
+(#255), precedent maturation beyond DEC-064's within-assessment scope, a future "resolved since
+last assessment" view — needs the same identity, and computing it ad hoc in each place is how
+three subtly different identities happen.
+
+Alternatives Considered:
+
+- Including a normalized evidence excerpt in the tuple, appsec-agent style
+- Title-similarity identity, DEC-043-style normalization
+- No stored fingerprint: compute structural matches ad hoc where needed
+- Letting the reviewer assign a stable cross-run key by hand
+
+Tradeoffs:
+
+- The identity is deliberately coarse: two genuinely distinct weaknesses citing the same
+  requirements against the same components share a fingerprint. DEC-056 accepted the same
+  coarseness for scoring, and the consumers here want "the same ground re-examined," which
+  coarse identity serves; anything finer re-imports prose.
+- A component rename between runs silently breaks identity — DEC-056's recorded tradeoff, now
+  inherited by every longitudinal consumer. The fate-map convention (DEC-057) covers
+  requirement renames; nothing yet covers component renames.
+- A recomputed-on-edit fingerprint means longitudinal tooling must treat identity as
+  time-varying, not immutable.
+
+Open Questions:
+
+- Should `EvaluationResult`'s run-diff persist fingerprint pairs (prior, current) so identity
+  changes are themselves observable?
+
+## DEC-067: `ExecutionRecord` accounts cache tokens as their own spans, and `estimated_cost` weights them at the profile's rates
+
+Date: 2026-08-10
+
+Status: Accepted
+
+Decision:
+
+**`ExecutionRecord` gains `cache_read_tokens` and `cache_creation_tokens`**, optional integers,
+provider-neutral names at the seam; `WorkflowRun` gains the matching rollups
+`total_cache_read_tokens` and `total_cache_creation_tokens`. The adapter maps its provider's
+usage report into them and omits them where the capability is unused or unreported — absent
+means "not reported," and the capability record DEC-014 already keeps on `ExecutionRecord` says
+which.
+
+**The three input spans are disjoint.** `input_tokens` means uncached input actually processed
+at the full rate; cache reads and cache writes are their own counts, never folded in. Folding
+them in is exactly how "cost and tokens described different spans of work."
+
+**`estimated_cost` is the weighted sum**, with the weights owned by the model profile: cache
+reads at the provider's discounted rate, cache creation at its premium, uncached input and
+output at list. The cost ceiling and the `WorkflowRun` totals compare against this
+billed-equivalent number, not against raw token counts.
+
+**The table rows land with the implementing change**, per the conformance test's
+both-directions rule; the fields and their semantics are fixed here.
+
+Why:
+
+**The design leans on caching on purpose, so the divergence lands exactly where the system
+works hardest.** DEC-024 passes the whole catalog on every mapping call *because* it is a
+stable cacheable prefix; a cost ceiling that prices those tokens at the full input rate
+overstates spend most on the runs the design optimizes, and a ceiling comparing against the
+wrong number either trips early or licenses overruns. appsec-agent retrofitted the same fields
+in v3.7.0 for the same reason; the retrofit is cheaper before the numbers exist.
+
+**Profile-owned weights keep the seam provider-agnostic.** Rates are a property of the
+provider-model bundle, which is what a `model_profile` already names (DEC-014). The adapter
+reports counts; the profile prices them; nothing behind the seam does arithmetic the
+application owns.
+
+Alternatives Considered:
+
+- Folding cache reads into `input_tokens` at a discount factor
+- A single `cached: boolean` per call instead of counts
+- Pricing inside the adapter, next to the provider that knows its rates
+- Leaving the divergence until live runs make it measurable
+
+Tradeoffs:
+
+- Two more optional fields whose absence is meaningful ("not reported") — readable only
+  alongside the capability record, which is one join more than obvious.
+- Profile-owned rates go stale when a provider reprices; `estimated_cost` is named *estimated*
+  for exactly this, and the profile is one file to update.
+- Rollups on `WorkflowRun` widen an already-wide totals row; the alternative of computing them
+  by summing records on read was rejected once already for the other totals.
+
+Open Questions:
+
+- Should `scripts/estimate_cost.py` grow the same weighting so pre-run estimates and recorded
+  spend stay comparable?
+
+## DEC-068: Context-model extensions — one pass: sensitivity vocabulary, at-rest placement, personas, entry points, and an access-model claim; no trust-zone object
+
+Date: 2026-08-10
+
+Status: Accepted
+
+Decision:
+
+One pass over the five surveyed extensions, three adopted as fields, one adopted as a check, one
+rejected. Every adopted field lands with its implementing change, document and registry first,
+conformance test holding both directions.
+
+**No named trust-zone object, and no per-component zone field beyond what exists.** The context
+model already says where a component runs (`deployment_zone`, open vocabulary) and which
+boundaries separate what (`TrustBoundary` inside/outside sets, `DataFlow.crosses_trust_boundary_ids`).
+A first-class zone object would be a third representation of the same fact, and two
+representations of containment already have to agree; adding a reconciliation problem to gain a
+name is TM-BOM's shape, not Trace's need. What the survey actually wants from zones — boundary
+crossings as the highest-signal threat locations — is adopted as a **Context Validation
+cross-claim check**: a flow between components whose `deployment_zone` values differ and that
+crosses no declared boundary yields a warn-only observation. Report-and-route holds; nothing is
+corrected.
+
+**`Asset` gains a sensitivity vocabulary and an at-rest split.** `data_classification` stays
+free text but normalizes against a new `KNOWN_DATA_CLASSIFICATIONS` vocabulary (`pii`, `phi`,
+`financial`, `credentials`, `intellectual_property`, `telemetry`, `public`, and peers) — the
+DEC-036 treatment, explicitly against TM-BOM's closed enum, for DEC-036's reasons. `Asset` also
+gains optional `stored_in_component_ids`: `component_ids` keeps meaning "holds or processes,"
+and the subset that *stores at rest* is where encryption-at-rest and retention requirements
+attach; without the split, every at-rest mapping over-applies to processors.
+
+**`Actor` gains persona fields**: optional `skill_level` and `access_level`, open vocabularies
+normalized through `domain/vocabulary.py`, with `KNOWN_*` starting sets (`opportunist`,
+`skilled`, `organized_group`; `anonymous`, `authenticated`, `privileged`, `physical`). Their
+purpose is auditability: a threat's free-text preliminary likelihood becomes checkable against
+who it presumes — a threat presuming an organized attacker with physical access should read
+differently from one an opportunist can execute.
+
+**`Component` gains `entry_point_types`**: an optional list, open vocabulary (`login`,
+`admin_interface`, `file_upload`, `webhook`, `api`, `inter_system_interface`, and peers),
+normalized. With it comes the **privilege-extremes check**: when the approved context
+represents no anonymous-or-external actor, or no administrative-or-privileged one, Context
+Validation emits a Question — the attack surface's extremes are where analysis most often goes
+silent, and a Question is the DEC-009 outlet for exactly that silence.
+
+**`SystemContext` gains `access_model`**: a **closed** enum — `deny_by_default`,
+`allow_by_default`, `mixed`, `unknown` — required, defaulting to `unknown`. Closed because the
+values are named rather than illustrated, like `DataFlow.direction`; `unknown` because an
+authorization posture nobody stated must never be readable as an answer (the never-`False`,
+never-`None` rule applied to the single highest-leverage authorization fact).
+
+Why:
+
+**One pass, because five drive-by field additions would each re-litigate the same principles.**
+Every choice above is an existing principle applied: open-vocabulary-with-normalization where
+the document illustrates (DEC-036), closed where it names, `unknown` where silence would read
+as an answer, warn-only observation where a check could otherwise become a corrector, and a
+Question where absence needs a human. The survey's value is naming the ground; the corpus
+already owned the rules.
+
+Alternatives Considered:
+
+- A first-class TrustZone object with per-component zone assignment, TM-BOM style
+- TM-BOM's closed sensitivity enum
+- A first-class EntryPoint object with counts, per the Attack Surface cheat sheet
+- Making `access_model` an open vocabulary like its neighbours
+- Deferring all five until the threat agent demonstrably misses what they would carry
+
+Tradeoffs:
+
+- The zone-crossing check keys on `deployment_zone` string equality after normalization; two
+  spellings of one zone that normalization does not unify yield a false observation. Warn-only
+  makes that annoying rather than wrong.
+- `stored_in_component_ids` as a subset of `component_ids` is an invariant validation must
+  hold, and a modeling question ("does a cache store?") the extraction agent will answer
+  inconsistently; the reviewer sees both lists at checkpoint 1.
+- Persona fields on `Actor` invite exactly the pseudo-precision DEC-030 refused for severity;
+  they are inputs a human audits a likelihood narrative against, never factors anything
+  computes with, and no scoring formula may consume them.
+- The privilege-extremes Question fires on legitimate single-privilege systems (a batch
+  pipeline with no anonymous surface); a Question is answerable and closes, which is the cost
+  of a check that cannot be silenced.
+
+Open Questions:
+
+- Does the zone-crossing observation deserve promotion to a DEC-062 routing reason once it has
+  run against real extractions?
+- `data-model.md` question 5 (structured applicability) may eventually want
+  `KNOWN_DATA_CLASSIFICATIONS` as one of its axes; nothing here commits that.
+
+## DEC-069: A model profile may carry a per-agent overlay; resolution fails at load, and attribution rides the existing snapshot
+
+Date: 2026-08-10
+
+Status: Accepted
+
+Decision:
+
+**A `ModelProfile` may map agent names to model-and-settings overrides.** The overlay is
+optional; a profile without one behaves exactly as today. Keys are the six agent names the cap
+pins (`tests/unit/test_agent_cap.py`'s inventory); an overlay naming anything else — a
+misspelling, a deterministic node, a seventh agent — is a configuration error refused when the
+profile resolves, at load, not mid-run. Deterministic nodes make no model calls and can carry
+no override.
+
+**Nothing else moves.** The seam is untouched: resolution happens in
+`infrastructure/model/profiles.py` before a call reaches an adapter, and the adapter still sees
+one resolved bundle. The agent cap is untouched: six agents with different models are six
+agents. `ExecutionRecord.model_name` already snapshots the resolved model per call, so
+attribution and evaluation interpretability survive without a schema change. `Creativity`
+stays per-agent provider-neutral intent, orthogonal to the overlay: the profile says which
+model and limits; the intent maps to that model's controls inside the adapter.
+
+**The default profiles stay uniform.** No shipped profile routes agents to different models
+until the evaluation harness can measure what a cheaper model costs in quality — the ablation
+machinery (#256's baseline protocol is the nearest instrument) is where an overlay earns its
+values. The mechanism lands decided so that the measurement, when it runs, is a config edit
+rather than a design change.
+
+Why:
+
+**The cost case is real and the shape is small.** lets-threat-model routes triage to a cheap
+model and analysis to a strong one, and the win in their demos is genuine. Trace's version is a
+closed six-key map resolved in one module — deciding it now costs a page; retrofitting it after
+`model_profile` strings leak into recorded runs and evaluation baselines would cost a
+migration.
+
+**Fail-at-load is the part worth writing down.** An overlay error surfacing mid-run — after
+checkpoint 1, three agents in — wastes a run and a reviewer's time; profiles are configuration,
+and configuration errors belong at the moment configuration is read (the loader's own posture,
+applied to profiles).
+
+Alternatives Considered:
+
+- Per-agent `model_profile` on `AssessmentConfiguration` instead of an overlay inside the profile
+- Free-form overlay keys, validated only against "is a known agent" at call time
+- Extending the overlay to deterministic nodes for symmetry
+- Shipping a cost-optimized default profile now, ahead of measurement
+
+Tradeoffs:
+
+- A run's `WorkflowRun.model_profile` no longer implies one model for every call; anything that
+  assumed so must read `ExecutionRecord.model_name`, which was always the honest source.
+- Six keys is a small closed surface, but it is coupled to the agent inventory; renaming an
+  agent now touches profiles, and the load-time check is what turns that from silent to loud.
+- Deferring shipped overlays means the mechanism carries no default benefit; it is
+  infrastructure for a measurement not yet run, and infrastructure ahead of measurement is the
+  pattern DEC-030 warns about — mitigated by the mechanism being configuration rather than a
+  component.
+
+Open Questions:
+
+- When the measurement runs, is the right comparison per-agent model ablation against the
+  uniform baseline, or a small set of curated mixed profiles?
+
+## DEC-070: Machine-readable artifacts may be parsed deterministically into documented claims; parser output enters the same proposal path, and compose manifests come first
+
+Date: 2026-08-10
+
+Status: Accepted
+
+Decision:
+
+**The capability is adopted, post-MVP.** A deterministic parser may derive context claims from a
+machine-readable artifact — a container-compose manifest, an OpenAPI description, an IaC plan —
+each claim carrying a verifiable excerpt hash into the artifact, exactly as document-cited
+evidence does. A claim derived mechanically is *documented* evidence: the artifact states the
+port, the volume, the dependency, and the excerpt proves it. This shrinks the DocumentationGap
+surface at zero model cost, which is DEC-009 served directly.
+
+**Parser output enters the pipeline as proposals, not as authority.** Parsed objects go through
+the same conversion, the same Context Validation, and the same checkpoint 1 as agent-extracted
+ones; determinism earns no bypass, because a parser can be wrong about meaning while right about
+syntax (a compose port exposed to a host network is not thereby internet-accessible). The
+Context Extraction agent receives parser-derived claims as existing context so it extends rather
+than re-derives — the division of labor: parsers own what the artifact states, the agent owns
+what the documents mean.
+
+**Provenance rides the existing vocabulary.** Parser-derived objects carry
+`source_origin: structured_input`, whose meaning section 4.4 widens to "parsed
+deterministically from a machine-readable source"; `generated_by` names the parser. No new
+`SourceOrigin` value — the distinction that matters, mechanical versus model-extracted, is
+exactly the one `structured_input` already draws against `uploaded_document`.
+
+**The untrusted-source rules apply unchanged.** A compose file is attacker-authorable text; its
+excerpts live inside the fence like every other excerpt, and nothing a parser reads becomes an
+instruction. Parsers are the one place this is easy to forget, because their input looks like
+configuration rather than prose.
+
+**Priority order: compose manifests, then OpenAPI, then IaC.** Compose is OdTM's proven ground
+and yields the topology objects (components, flows, ports) with the least ambiguity. OpenAPI
+yields entry points — feeding `entry_point_types` (DEC-068) — and authentication declarations.
+IaC is the largest surface with the hardest semantics and waits. Cross-claim consistency checks
+(a flow naming HTTP implies its endpoints speak HTTP) accrue to Context Validation as warn-only
+observations, the DEC-063 posture.
+
+Why:
+
+**The pipeline's scarcest resource is verifiable ground, and machine-readable artifacts are
+made of it.** Every claim a parser derives arrives with evidence that re-verifies forever, at
+no model cost, in exactly the format the evidence resolver already checks. The alternative is
+a model reading the same artifact and paraphrasing what a parser could quote.
+
+Alternatives Considered:
+
+- Parser output bypassing checkpoint 1 on the grounds that it is deterministic
+- A new `SourceOrigin` value for parser-derived objects
+- Letting the extraction agent alone read machine-readable artifacts, unassisted
+- OpenAPI first, on the strength of the DEC-068 entry-point synergy
+
+Tradeoffs:
+
+- Two producers of context objects means duplicate-shaped claims when the agent re-derives
+  what a parser stated; feeding parser claims into the agent's package mitigates, and the
+  validation node's duplicate detection is the backstop.
+- A parser is a maintenance surface tracking a moving format; dormant-project history (OdTM
+  itself) shows these rot quietly. Each parser needs its own fixture corpus.
+- `structured_input` now covers both authored structured input and parsed artifacts; anyone
+  needing the finer distinction reads `generated_by`, which is one hop less obvious.
+
+Open Questions:
+
+- Does the roadmap give parsers their own stage, or do they ride the first post-MVP scenario
+  that supplies machine-readable input?
+
+## DEC-071: Every source document lands in exactly one coverage bucket, rendered in the report's methodology section
+
+Date: 2026-08-10
+
+Status: Accepted
+
+Decision:
+
+**The report renders a per-source coverage ledger, and section 14 (Methodology) owns it.** No
+new section; the ledger is deterministic content in an existing rendered section, so the
+sixteen-section contract (DEC-035) is untouched. Every source document supplied to the
+assessment appears in exactly one bucket, each entry with its stored justification:
+
+- `reviewed` — ingested, and its evidence was available to every stage
+- `reviewed_with_exclusions` — reviewed, but the evidence budget excluded named excerpts; the
+  ledger names them, the fence rule's naming obligation carried through to the reader
+- `could_not_process` — supplied but not ingestable (format, corruption), with the error class
+- `excluded_by_rule` — deliberately out of scope, with the rule stated
+
+**The ledger is derived at render time from persisted state.** Ingestion already records what
+could not process; package assembly already names budget exclusions; scope rules are
+configuration. The implementing change fixes the carriers; the decision fixes that every
+disposition must be persisted somewhere derivable, because a ledger with a memory hole is worse
+than none.
+
+**The limitations section may interpret the ledger and never restates it.** Section 16 is agent
+prose; the ledger is rendered fact. The Report Generation agent receives the ledger as input so
+its limitations prose can bound blind spots honestly, and DEC-035's no-rewriting rule keeps the
+authoritative table the rendered one.
+
+Why:
+
+**A reader cannot weigh conclusions without knowing what was never read.** lets-threat-model's
+ledger is the survey's most honest mechanism because it converts the invisible failure — a
+document silently dropped — into a visible row. Trace already does the hard half (naming budget
+exclusions at package-assembly time, DEC-025's fence rule); this decision is where that
+information stops dying inside the run and reaches the person the report is for.
+
+**Methodology is the right owner.** The ledger answers "what did the analysis actually
+consume," which is a methodology fact. The evidence appendix describes what *was* cited;
+limitations interprets; neither states coverage.
+
+Alternatives Considered:
+
+- A seventeenth section owning coverage, amending DEC-035
+- Rendering the ledger in section 15 (Evidence appendix)
+- Limitations-only: the agent describes coverage in prose from run data
+- Per-excerpt rather than per-document granularity throughout
+
+Tradeoffs:
+
+- Exactly-one-bucket forces a call on partially processed documents; `reviewed_with_exclusions`
+  absorbs the budget case, but a document half-parsed by a failing converter still needs one
+  honest bucket, and `could_not_process` with a partial-evidence note is the least-bad answer.
+- The ledger's completeness depends on every exclusion path persisting its reason; a new
+  exclusion path added without a recorded justification silently produces an unlisted document.
+  The renderer should refuse to render a ledger that does not account for every
+  `SourceDocument` — a loud failure over a quiet omission.
+- More rendered content in section 14 lengthens every report, including clean ones.
+
+Open Questions:
+
+- Should the JSON manifest beside the report carry the ledger too, for machine consumers ahead
+  of the export formats (DEC-072)?
+
+## DEC-072: Interop exports are a post-MVP serializer family, not report formats — TM-BOM first, SARIF second, Mermaid third, CycloneDX deferred
+
+Date: 2026-08-10
+
+Status: Accepted
+
+Decision:
+
+**Exports are deterministic serializers over approved objects, and they are not reports.**
+DEC-035's "Markdown is the only MVP output format" governs the *report*; an export is a
+different artifact family — no prose, no model call, approved objects only, written to the
+assessment's `outputs/` beside the same version-pin manifest discipline. The distinction is
+recorded so the report contract and the export family never blur.
+
+**The family and its order:**
+
+1. **TM-BOM** — the OWASP Threat Model Library schema, a near-superset of Trace's approved
+   context with first-class assumptions, and Threat Dragon's declared future primary format.
+   Approved context, threats, and findings serialize; Trace-specific fields ride the schema's
+   namespaced extensions block. This is the ecosystem door: diagramming and GRC tooling reads
+   it with no Trace UI built.
+2. **SARIF 2.1.0** — approved findings as code-scanning alerts. Two hard rules from the trap
+   lets-threat-model demonstrated: only *approved* findings serialize, and the only severity
+   ever written is the reviewer-assigned one — a model-derived rating rendered by GitHub as
+   authority is the exact failure DEC-030 exists to prevent, exported.
+3. **Mermaid DFD** — rendered deterministically from approved `Component` and `DataFlow`
+   objects, never model-drawn. A standalone artifact in `outputs/`; it does **not** embed in
+   the MVP report, so the sixteen-section contract and `templates/report-v1.md` stay untouched.
+4. **CycloneDX for the catalog** — same family, no demonstrated consumer; deferred
+   indefinitely rather than ordered.
+
+**All post-MVP**, sequenced after assembly (M6); nothing here enters a current milestone.
+
+Why:
+
+**Ordering by who consumes, not by ease.** TM-BOM has a named consumer ecosystem and carries
+the most of Trace's structure; SARIF has the single highest-adoption surface (a repository's
+security tab) and the sharpest misuse trap, which is why its rules are fixed at decision time;
+the DFD is a rendering convenience. Deciding the order now prevents the easiest one (Mermaid)
+from shipping first because it is easiest.
+
+Alternatives Considered:
+
+- Treating exports as report formats and amending DEC-035's format list
+- SARIF first, for the adoption surface
+- Embedding the Mermaid DFD in the report's architecture section
+- Committing to all four with milestones now
+
+Tradeoffs:
+
+- TM-BOM is itself pre-1.0; serializing to a moving schema means tracking it, and the
+  extensions block is the hedge — Trace-specific content survives schema drift there.
+- SARIF's consumers will display findings next to static-analysis results with numeric
+  confidence; Trace's reviewer-severity-only rule will read as missing data in that UI, which
+  is correct and will still generate questions.
+- A deferred CycloneDX row is a standing invitation to implement it anyway; the deferral names
+  the missing prerequisite (a demonstrated consumer) so the invitation has a test.
+
+Open Questions:
+
+- Does the TM-BOM serializer round-trip — can Trace *read* a TM-BOM file as structured input
+  (DEC-070's family) — or is export one-way?
+
+## DEC-073: The harness is a caller of the ordinary pipeline — registry-driven, offline through replay, one authoritative results home, per-item run diffs
+
+Date: 2026-08-10
+
+Status: Accepted
+
+Decision:
+
+**The evaluation harness executes a registered scenario by driving the ordinary pipeline.** It
+reads `benchmarks/scenarios.yaml` and never discovers scenarios by scanning (DEC-027's
+registry). It is a caller of `AssessmentService` — not a second orchestrator, not a parallel
+code path: the same nodes run, the same transition table routes, the same stores persist. A
+harness that re-implements the pipeline evaluates the re-implementation.
+
+**A harness run is offline by construction.** Model calls come from the replay adapter serving
+recorded responses; reviewer decisions come from a recorded decision file replayed at both
+checkpoints — the node executes, the gate holds, a `ReviewerDecision` is written, and no switch
+exists because replay is not an ablation (DEC-012). CI can therefore run the harness with no
+provider key, which the CI constraint already requires.
+
+**Ablations are applied harness-side, as run construction.** The harness builds the ablated
+`WorkflowRun`, marks it non-authoritative, and names the ablation (DEC-012, DEC-031); no
+assessment configuration is touched, and an ablated run's assessment can never reach `approved`.
+
+**Results have one authoritative home and one derived feed.** `EvaluationResult` objects
+persist with the assessment through the ordinary stores — they are domain objects (DEC-056
+promoted them) and get no exemption. The harness additionally exports a metrics-only feed,
+keyed by scenario, condition, and commit, into a repo-side results tree for the scorecard
+(DEC-076) and CI; the feed is derived, regenerable from the stores, and never authoritative —
+the DEC-062 posture applied to evaluation output.
+
+**The run diff is per-item, not two aggregate scores.** Comparing a run against a named prior
+run classifies each expected item as matched, missed, spurious, or changed, using the DEC-056
+structural matcher and DEC-066 fingerprints. Two runs can hold the same F1 while disagreeing on
+half their items; the per-item diff is what makes a regression a list rather than a delta.
+
+Why:
+
+**Everything downstream of measurement inherits the harness's honesty.** Baselines (DEC-074),
+adversarial conditions (DEC-075), the scorecard (DEC-076), and stability (DEC-077) are all
+harness runs; a harness that bypassed a checkpoint, skipped a node, or kept private state would
+quietly change what every one of them measures. Making it a caller of the real pipeline is the
+one design that cannot drift from what it evaluates.
+
+Alternatives Considered:
+
+- A standalone runner that invokes nodes directly, skipping the orchestrator
+- Results written only to a repo-side tree, keyed by scenario and commit
+- Results written only to the assessment stores, with the scorecard reading SQLite
+- Aggregate-score comparison between runs, with diffs computed ad hoc when needed
+
+Tradeoffs:
+
+- Driving the real pipeline means harness runs pay full pipeline overhead per scenario; at
+  five scenarios and a handful of conditions this is minutes, and the alternative is measuring
+  something else.
+- Two result homes can disagree; the feed being regenerable-by-command is the repair, and any
+  disagreement is a bug in the export, never in the stores.
+- Replayed reviewer decisions freeze the human at recording time; a pipeline change that
+  produces genuinely better candidates still gets the old reviewer's answers until decisions
+  are re-recorded. The reviewer-facing metrics say when re-recording is due.
+
+Open Questions:
+
+- Does the results tree live under `benchmarks/results/` in-repo, or stay untracked until the
+  scorecard needs CI history?
+
+## DEC-074: Baselines run through the same seam, emit the same schemas, and see the same inputs — with ties resolved against Trace; the external comparable stays in the portfolio
+
+Date: 2026-08-10
+
+Status: Accepted
+
+Decision:
+
+**The baseline set is roadmap Stage 5's, unchanged**: a single generic prompt, a structured
+single-pass prompt, and the ablation family (Trace minus evidence validation, minus critical
+review, minus context approval — DEC-012 machinery). Nothing is added or dropped.
+
+**The two prompt baselines are harness runs through the seam.** Their prompts live in
+`prompts/`, versioned and hashed like agent prompts (DEC-019); their calls go through
+`StructuredModel`, are recorded, and replay. A baseline that cannot be re-run is the
+unverifiable vendor self-comparison the ecosystem is rightly criticized for, and the protocol's
+whole point is that anyone can re-execute the comparison from the repository.
+
+**Baseline output is schema-forced, never hand-normalized.** Both baselines emit the same
+target schemas Trace's agents emit, through the same structured-output contract, and are scored
+by the same structural matcher (DEC-056). There is no free-text normalization step to tune in
+either direction; a baseline that fails to produce valid schema output has that recorded in its
+schema-validity rate, which is itself a reported result, not an excuse.
+
+**Fairness limits, with ties resolved against Trace.** Baselines receive the same source
+documents — never the curated, approved context — and they *do* receive the requirements
+catalog, because the matcher scores on requirement citations and a baseline that cannot cite
+requirements would lose on plumbing rather than analysis. Where an input choice favors a side,
+it goes to the baseline. One asymmetry is structural and stated rather than papered over:
+Trace's scored output passed human checkpoints and the baselines' did not; the
+checkpoint-ablated run is the like-for-like comparator, and the full-pipeline comparison
+measures the system as actually operated.
+
+**STRIDE GPT is scored in the portfolio write-up, not in-repo.** It cannot run through the seam,
+and a wrapper would measure the wrapper. The portfolio comparison uses its published behaviour
+on the public scenario inputs, dated, with its version pinned — the scenario inputs are
+synthetic and public (design-principles section 19), so nothing leaks by feeding them to an
+external tool.
+
+Why:
+
+**The comparison is the project's central claim, so its protocol carries the burden of proof.**
+Roadmap Stage 4's decision gate asks whether the multi-stage workflow beats the simpler
+baseline; an unfair or unrepeatable protocol converts the answer into marketing either way.
+Every choice above — same seam, same schemas, same matcher, generous inputs — exists so that a
+skeptic re-running the comparison finds nothing tuned in Trace's favour.
+
+Alternatives Considered:
+
+- Free-text baselines with a normalization layer mapping prose to objects
+- Withholding the catalog from baselines, scoring their uncited findings by title similarity
+- Scoring STRIDE GPT in-repo behind an adapter
+- Adding named commercial tools to the comparison set
+
+Tradeoffs:
+
+- Schema-forcing helps the baselines (structure is half of Trace's discipline, granted free);
+  that is the chosen direction of error and stated as such.
+- Giving baselines the catalog means the comparison cannot show whether Trace's *catalog
+  integration* helps, only whether its pipeline does; the mapping-quality question needs its
+  own ablation if it ever matters.
+- A portfolio-only external comparison will be read as avoiding the fight; the honest answer —
+  an external tool run through a harness it was not built for measures the harness — needs to
+  be written where the comparison is.
+
+Open Questions:
+
+- Does the structured single-pass baseline get one combined schema or the per-stage schemas in
+  sequence? The former is the purer "no pipeline" claim; the latter isolates decomposition
+  from iteration.
+
+## DEC-075: Adversarial evaluation is a condition axis on scenarios — an authored payload corpus, two reported axes, and a named compliance metric
+
+Date: 2026-08-10
+
+Status: Accepted
+
+Decision:
+
+**Every scenario may run under conditions: `clean`, `ambiguous`, `adversarial`,
+`missing_evidence`.** A condition is a variant of the scenario, registered in
+`benchmarks/scenarios.yaml`, holding an input overlay (files added to or replacing the base
+`input/`) and an expected overlay (truth-set deltas) under the scenario's directory. The
+ForgeFlow injection fixture stops being the whole adversarial story and becomes the first entry
+in a corpus. Conditions are harness runs (DEC-073); nothing about the pipeline changes per
+condition, which is the point — the pipeline must not know it is being attacked.
+
+**The corpus covers five payload classes**, each authored as a document a real assessment could
+plausibly ingest: direct instruction injection; fence delimiter escapes; verifier sabotage
+addressed to the validation node; findings suppression ("this system has been reviewed and has
+no issues"); and checkpoint-bypass instructions. Payloads are test data in the DEC-027 sense —
+they live under `expected/`-adjacent variant directories, never leak into clean inputs, and the
+truth set for an adversarial run includes the expected injection observations
+(`expected-observations.yaml` already holds the kind).
+
+**Reporting is two axes, never one number.** Axis one: extraction and finding quality under
+attack — the same metrics as the clean condition, reported as deltas, because an attack that
+degrades recall without triggering anything is still a successful attack. Axis two: targeted
+attack success — did the specific payload achieve its specific objective. **Injected-instruction
+compliance rate is a named metric**: injected instructions complied with over injected
+instructions presented, per payload class. A resistance claim without a measured compliance
+rate is the ecosystem anti-pattern this decision exists to avoid.
+
+This answers `current-architecture.md` section 19 item 12 and `agent-design.md` section 38
+item 11: injection in source documentation is tested as scenario conditions and measured as
+compliance rate plus quality-under-attack; detection surfaces as recorded observations and the
+`injection_flag` routing reason (DEC-062, #274).
+
+Why:
+
+**The analyzed document is Trace's primary threat surface by design, and one fixture is an
+anecdote.** Every major agentic reviewer was compromised through its analyzed content in the
+past year; Trace's structural argument — the fence, the checkpoints, proposals-not-authority —
+is exactly the kind of claim that must be demonstrated rather than asserted, and demonstration
+means a corpus, conditions, and a rate.
+
+**Conditions-on-scenarios beats a separate adversarial suite** because the clean run is the
+control: the same truth set, the same matcher, the same metrics make the attack delta
+attributable to the attack.
+
+Alternatives Considered:
+
+- A standalone adversarial test suite separate from the benchmark scenarios
+- Fuzzing-style generated payloads rather than an authored corpus
+- A single composite "robustness score"
+- Measuring only detection (flag rate) without quality-under-attack
+
+Tradeoffs:
+
+- An authored corpus measures resistance to the attacks its authors thought of; the compliance
+  rate is meaningful per class and meaningless as a universal claim, and the scorecard must
+  label it per class.
+- Variant overlays multiply harness runs per scenario; recorded-response replay keeps CI cost
+  flat, but recording each condition's live run is real one-time cost.
+- The checkpoint-bypass payload can only demonstrate that bypass is unrepresentable — a
+  structural argument scored as trivially zero — which is worth showing exactly once and
+  uninformative as a recurring number.
+
+Open Questions:
+
+- Does `ambiguous` (contradiction-bearing) get its own payload taxonomy the way `adversarial`
+  does, or stay a single authored variant per scenario?
+
+## DEC-076: The scorecard is static, deterministic, metrics-only, and never contains assessment content
+
+Date: 2026-08-10
+
+Status: Accepted
+
+Decision:
+
+**A static HTML scorecard is generated deterministically from the harness's results feed
+(DEC-073) — no model call, no prose generation.** It shows, per scenario and condition:
+precision, recall, and F1 per truth-set field class; schema-validity rate; injected-instruction
+compliance rate per payload class (DEC-075); run-to-run variance (DEC-077); and cost, including
+the cache-aware spend (DEC-067). It is regenerated by CI from recorded runs only — the CI
+key constraint holds — and lives as a committed artifact published via GitHub Pages from the
+repository, so the page's history is the git history.
+
+**The scorecard never contains assessment content.** No finding text, no claim text, no
+evidence excerpt, no document fragment — metrics and identifiers only. This is the DEC-035
+boundary stated for a new artifact: the scorecard is not the report and cannot drift toward
+being one. It is also a security property, not just a taxonomy: adversarial-condition results
+summarize runs whose inputs are attack payloads, and a scorecard that quoted content would
+republish the corpus to a public page.
+
+**The boundary with DEC-032's read-only demonstration interface is recorded**: the scorecard
+shows measurements of the system; the demo interface shows an assessment's content locally.
+Neither absorbs the other.
+
+Why:
+
+**Public, re-runnable, per-pipeline evaluation is rarer than it should be, and rare is
+visible.** The survey found closed self-reported comparisons to be the commercial norm; a
+scorecard whose every number regenerates from recorded runs in CI is the most credible artifact
+the evaluation work can produce, and credibility is the project's currency.
+
+**Deterministic generation is what makes publication safe.** A model-written summary of results
+would need its own review cycle; a rendered table from persisted metrics is auditably boring.
+
+Alternatives Considered:
+
+- GitHub Pages generated from CI artifacts without committing the rendered page
+- A scorecard with model-written narrative summaries per scenario
+- Extending the Markdown report to include evaluation results
+- A live dashboard (future-features 9.1's fuller shape) instead of a static page
+
+Tradeoffs:
+
+- A committed rendered artifact churns the diff on every regeneration; the feed being the real
+  input keeps the churn reviewable as numbers.
+- Metrics-only means the scorecard cannot show *why* a number moved; the per-item diffs
+  (DEC-073) hold that answer and stay local, one link the reader cannot follow from the page.
+- Publishing variance and compliance rates publicly commits the project to numbers that may be
+  unflattering; that is the differentiator working as intended, and the alternative reads as
+  hiding.
+
+Open Questions:
+
+- Does the scorecard page get versioned per release (DEC-057's registry pattern) or show only
+  the current commit's numbers with history left to git?
+
+## DEC-077: Stability is measured — n live runs, replay-matched decisions, per-item agreement retained — and gates nothing
+
+Date: 2026-08-10
+
+Status: Accepted
+
+Decision:
+
+**The protocol: n live runs per scenario, n = 5 as the working default, identical input, same
+recorded reviewer decisions.** Live runs are manual and never CI — CI stays on recorded
+responses — and the operator sees the cost estimate before starting (the DEC-067-weighted
+number). The runs are ordinary runs under DEC-031, not a new kind.
+
+**Recorded decisions apply across runs by structural match.** A recorded decision names its
+subject; in a fresh live run the subjects are re-generated, so replay matches them by content
+fingerprint (DEC-066) and the DEC-056 rules. A subject with no matching recorded decision gets
+the run's named default policy — approve-as-generated, recorded as such — because pausing five
+runs for a human would re-introduce the reviewer variance the protocol holds constant. A run
+containing defaulted decisions says so in its results.
+
+**Variance and agreement are reported per metric and per object class, and the per-item
+agreement sets are retained.** Which expected items appear in all n runs, which flicker, and
+which appeared in none — persisted with the `EvaluationResult`, because "F1 σ = 0.04" cannot be
+diagnosed and "THR-007 matched in 2 of 5 runs" can. The scorecard (DEC-076) shows the variance;
+the retained sets stay local.
+
+**Stability gates nothing.** It is a reported measurement, not a threshold: no release gate, no
+harness failure, no retry-until-stable. A stability gate creates pressure to reduce *measured*
+variance, and the cheapest reductions — prompts that hedge toward the truth set, matchers
+loosened until runs agree — reduce the measurement, not the instability.
+
+Why:
+
+**Run-to-run instability is a documented, named weakness of LLM threat-modeling tools, and
+almost nobody reports variance at all.** Reporting it — whatever the number — is a
+differentiator precisely because it is honest; the moment it gates something, the incentive
+inverts and the number stops being honest. Evaluation-plan section 18 listed consistency as
+future research; this makes it protocol.
+
+Alternatives Considered:
+
+- Stability as a release gate with a variance threshold
+- Deriving stability from recorded-replay runs (free, and measures nothing — replay is
+  deterministic by construction)
+- Fresh human review per run instead of replay-matched decisions
+- Reporting aggregate variance only, without per-item agreement sets
+
+Tradeoffs:
+
+- Five live runs per scenario is the single most expensive measurement in the plan; it is
+  manual, bounded by the operator, and priced up front — and it will therefore be run rarely,
+  so the numbers will age between measurements.
+- Fingerprint-matched replay under-matches when a run words the same finding onto different
+  components; a defaulted decision then substitutes for the human's recorded one, and the
+  defaulted count is part of the result so the substitution is visible.
+- n = 5 bounds what agreement can mean (an item in 4 of 5 runs is one flicker from
+  unanimous); the protocol reports counts, not confidence intervals, and pretends otherwise
+  nowhere.
+
+Open Questions:
+
+- Should the flickering-item set feed the prompt-evaluation loop (section 12) as its highest-
+  value regression fixtures?
+
+## DEC-078: The Stage 5 read-only view is stdlib `http.server`, localhost-only, GET-only, and read-only — re-introducing the browser boundary bounded, not defended
+
+Date: 2026-08-11
+
+Status: Accepted
+
+Decision:
+
+**The demonstration view (`trace view`) is a local HTTP server built on Python's stdlib
+`http.server`, and no web framework is adopted.** This answers `current-architecture.md` section
+19 question 1 — "which local web-interface framework should be used?" — with *none*, consistent
+with DEC-016's no-orchestration-framework stance and the same supply-chain reasoning DEC-032
+applied to the CLI. `fastapi`, `flask`, `django`, `starlette`, and `uvicorn` stay undeclared, and
+`tests/unit/test_interface_decision.py` fails if one appears.
+
+**The view is read-only by construction, and read-only is enforced as a discipline the tests
+audit, not a file mode.** SQLite offers no read-only handle here, so the guarantee is that the
+`trace_ai.interface` package calls no store write method — `save`, `allocate`, `transaction`,
+`delete` — asserted by scanning the package source. The view consumes the section 32 lineage walk
+and the persisted objects; it drives no phase and holds no checkpoint interaction. Reviewer
+decisions stay on the command line (DEC-032): the browser reads, the CLI writes.
+
+**Shipping it re-introduces the browser-to-application boundary that DEC-032 had removed, and the
+threat model records it as present rather than absent.** `threat-model.md` section 5 is rewritten
+from "this boundary does not exist" to a mitigation table: the server binds `127.0.0.1` only
+(DEC-004); every method other than `GET` is refused with `405`, so the request-forgery threat has
+no state-changing endpoint to forge against; every source-derived value is HTML-escaped on render,
+because a browser is not the inert terminal and an untrusted excerpt must not inject markup; and
+responses carry `X-Frame-Options: DENY`. The review trigger in section 9 fired exactly as written,
+and this is its resolution.
+
+Why:
+
+**A rendering surface over persisted objects needs neither routing, templating, nor an ASGI
+server, and each of those would be a dependency on a project whose subject is architectural risk.**
+The seven views are static HTML the store already has the data for; `http.server` plus a pure
+render module is the whole stack, and the render module is testable without binding a port. The
+differentiating view — the lineage walk from a finding back to its hashed evidence — is the reason
+the view exists at all, and it is pure computation over the object model, not a UI framework's
+concern.
+
+**Making the request-forgery mitigation structural rather than a token means it cannot be edited
+away.** A read-only surface has nothing to forge; that is a property of what the view *is*, not a
+check bolted onto a mutable endpoint. It is the same move DEC-005 makes for checkpoints — the unsafe
+state is unrepresentable rather than guarded against.
+
+Alternatives Considered:
+
+- A local web framework (FastAPI/Flask): more machinery than a read-only view needs, and a
+  dependency and supply-chain surface DEC-016 and DEC-032 both argue against.
+- A static-site export instead of a server: loses the lineage view's live navigation over a real
+  store, and would need a separate render path from the one the CLI already exercises.
+- Leaving the boundary "absent" in the threat model and treating the view as out of scope: the view
+  ships, the port listens, and a threat model that denied it would be false.
+- A read-only SQLite handle to enforce read-only at the storage layer: not available through the
+  store's open path here, so the discipline is enforced by the package-scan audit instead.
+
+Tradeoffs:
+
+- `http.server` is single-threaded and unhardened; it is acceptable only because DEC-004 bounds it
+  to one local reviewer on `127.0.0.1`, and it must never be exposed off the machine.
+- Read-only is enforced by a source scan rather than the type system or a file mode, so a write
+  method reached through an alias the scan does not spell would slip past — the mitigation is that
+  the package is small and the scan is part of the suite.
+- The store opens read-write, so a bug elsewhere in a shared process could write; the view itself
+  does not, and the audit pins that.
+
+Open Questions:
+
+- If the view ever needs to trigger a re-render of the scorecard or a verify pass, does that cross
+  into "driving the pipeline", and does it therefore belong on the CLI rather than a POST route?
+
+## DEC-079: Revisit re-prompts by scoping a checkpoint's completion to the current run; a revisit subject with only prior-run decisions re-enters, its prior decision standing until re-decided
+
+Date: 2026-08-11
+
+Status: Accepted
+
+Decision:
+
+DEC-061 decided that an expired accepted risk "re-routes to checkpoint 2 at the next run" and that
+the prior `accept` decision "is never reverted silently." It did not say how a subject that already
+carries a `ReviewerDecision` re-enters a checkpoint whose completion condition (DEC-005) is a
+decision per subject — an already-decided subject would be skipped. This decides the mechanism.
+
+**A checkpoint's completion is scoped to the current run.** A subject is satisfied when it carries a
+`ReviewerDecision` whose `workflow_run_id` is the run now executing, or a decision with no
+`workflow_run_id` at all — the run-less form recorded replays and file-applied decisions write, kept
+current so those paths are unaffected. A decision made in a *different* run no longer satisfies the
+checkpoint. This changes nothing for an ordinary subject: a candidate object is generated fresh each
+run and decided within it, and a paused run resumes under the same run identifier, so its
+before-pause decisions still count. It changes exactly one thing: a subject carried over from a
+prior run, whose only decisions belong to that prior run, is not treated as decided.
+
+**A revisit subject is added to the checkpoint's subject list, and re-prompts by that scoping.** At
+the finding phase, an approved `Finding` whose `treatment_review_by` (DEC-060) falls on or before the
+run's date joins `candidate_finding_ids`. It is already approved, so its only decision is the prior
+run's `accept`; the current-run scoping means it re-enters checkpoint 2 rather than passing as
+decided. The same holds at checkpoint 1 for a context subject carried across a revision.
+
+**The prior decision is never reverted.** The finding stays `approved` with its recorded `accept`
+and rationale; re-deciding writes a new `ReviewerDecision` in the current run (a new edit or
+approval, DEC-023). Nothing a calendar touches flips a field a person set — the expiry only
+re-presents.
+
+**Every revisit subject carries the `revisit_due` reason (DEC-062).** The reason is derived at
+package-build time: a finding whose `treatment_review_by` has passed, and an assumed `ContextClaim`
+carried across a revision (one already bearing a `ReviewerDecision` and still `assumed`). The reason
+triages attention and never filters; the completion scoping is what makes the subject re-enter.
+
+Why:
+
+**The alternative — a global "any decision ever" rule with a separate re-open marker — needs new
+state on every pause and a second place the completion condition is evaluated.** Run scoping is one
+rule in one place, and it reads naturally: a checkpoint is about *this* run's decisions, and a
+decision from a run that has since been revised is history, not a standing answer. Keeping run-less
+decisions current means the recorded-replay path, which never sets a run identifier, is untouched.
+
+**Expiry is evaluated when the finding phase builds its subjects, not by a clock.** DEC-061 already
+settled that nothing watches time in an episodic local tool (DEC-004, DEC-017); this places the one
+evaluation at the point the run assembles what the reviewer will see, against the run's own date.
+
+Alternatives Considered:
+
+- A global "any decision ever" completion rule plus a `revisit_object_ids` marker on the pause state
+- Reverting `risk_treatment` to `undecided` when the date passes (rejected by DEC-061 already)
+- A scheduler evaluating review-by dates between runs (rejected by DEC-061 already)
+- Scoping completion by decision timestamp rather than run identifier
+
+Tradeoffs:
+
+- Run scoping means a decision genuinely made in a prior run never counts toward a later run's
+  checkpoint. For ordinary subjects this is invisible (they are regenerated per run); the one place
+  it bites is intentional — the revisit.
+- A revisit subject that no reviewer ever re-decides keeps the checkpoint open, which is the point:
+  an expired acceptance surfaces and stays surfaced until a person acts, the honest episodic cost
+  DEC-061 named.
+- Run-less decisions counting as current means a file-applied decision cannot itself be revisited by
+  run; no path needs that today, and the recorded-replay compatibility is worth more.
+
+## DEC-080: The precedent block holds at most ten dismissals, ordered by match tightness then decision recency, and the cap names what it excluded
+
+Date: 2026-08-12
+
+Status: Accepted
+
+Decision:
+
+DEC-064 decided that rationale-bearing dismissals feed the critic as a capped, marked block, and
+left open what the cap is and whether recency or match tightness orders the block. This decides
+both, for the implementing change.
+
+**The cap is ten precedents per review group.** The block exists to put "this was dismissed for
+reason X — does X apply here?" in front of the critic, and ten rationales is already more standing
+challenge than any one lineage can absorb; past that the block stops being precedent and starts
+being a second corpus. The number is a constant in `services/critique/precedent.py`, not
+configuration — DEC-012's reasoning: a knob nobody has evidence to turn is a knob that will be
+turned without evidence.
+
+**Match tightness orders first, recency second.** A precedent sharing a `requirement_id` with the
+lineage's mappings is a tighter match than one matching only on an affected component's name — the
+requirement is the claim's ground, the component is its neighbourhood — so requirement-sharing
+precedents precede name-only ones. Within each class, the most recent dismissal decision comes
+first, because the latest expression of the reviewer's judgment is the one the critic should meet
+first when the cap bites. Ordering is deterministic: decision timestamp, then decision identifier.
+
+**The cap names what it excluded.** When more than ten precedents match, the block carries the
+excluded findings' identifiers — the same rule the evidence fence follows under DEC-064: silent
+truncation reads as "this is everything" when it is not.
+
+Why:
+
+**The open question had to close for the block to be buildable**, and both halves close on
+grounds already in the corpus: the cap follows DEC-012's no-ungoverned-knobs posture, the naming
+of exclusions follows DEC-064's own budget rule, and tightness-first follows from what the block
+is for — the critic tests whether a rationale applies, and a rationale about the same requirement
+applies more often than one about the same component.
+
+Alternatives Considered:
+
+- A character budget instead of a count (the evidence fence's mechanism)
+- Pure recency ordering
+- A configurable cap on `AssessmentConfiguration`
+
+Tradeoffs:
+
+- Any fixed count is arguable; ten is a judgment, not a measurement, and the Stage 4 critic gate
+  is where evidence about it would surface.
+- Tightness-first means a very recent name-only dismissal can be displaced by an old
+  requirement-sharing one. That is intended — but it does mean recency is not a reliable reading
+  of the block's order across match classes.
+- A count cap ignores rationale length, so ten long rationales cost more context than ten short
+  ones. The package's character metadata still reports the real size.
+
+## DEC-081: Scorecard history is committed, append-only, written deliberately, and keyed by git ref, prompt digest, and catalog version
+
+Date: 2026-08-12
+
+Status: Accepted
+
+Decision:
+
+**Scorecard builds can be retained as snapshots in `docs/eval/history.jsonl`, a committed
+append-only JSON-lines file, and the scorecard page renders the retained history alongside the
+current table.** A snapshot holds one build's rows and three identifiers naming what produced
+them: the short git ref the sweep ran on, a digest over the prompt tree, and the
+requirements-catalog version. Evaluation-plan sections 16 and 17 ask for metrics viewable across
+versions; this is the mechanism.
+
+**A snapshot is written deliberately — `build_scorecard.py --snapshot YYYY-MM-DD` — never as a
+side effect of a build.** A plain build reads the history and never writes it. The DEC-076 drift
+check depends on this: a page that stamped the current git ref on every regeneration would
+change on every commit, and the check would either fail permanently or stop meaning anything.
+The operator states the snapshot date rather than the script reading the clock, for the same
+reason the page's generation date is pinned.
+
+**Appending a snapshot whose version key equals the last one's is refused.** Equal git ref,
+prompt digest, and catalog version mean the same build re-run, and retaining both would leave
+two records nothing distinguishes. Any two retained snapshots therefore differ in what produced
+them, which is the property that makes the history a history.
+
+**The prompt identifier is a digest over the prompt tree's files, path-keyed, not a DEC-019
+composed hash.** DEC-019 hashes each composed prompt, and composition needs per-agent
+substitutions a version key should not depend on. Hashing every file under `prompts/` — shared
+blocks included — moves the digest on any edit that could move any composed hash, which is the
+property the key needs.
+
+**The DEC-076 content boundary applies to the history file unchanged**: metrics and identifiers
+only, no finding text, no claim text, no document fragment. The file is committed to a public
+repository; a snapshot that quoted content would republish it. The page's history section pools
+precision, recall, F1, and cost over each snapshot's authoritative rows — baselines and
+ablations are retained in the rows but stay out of the pooled line, because the history tracks
+the pipeline.
+
+Why:
+
+**The scorecard is regenerated in place, so the git history of the page answers "what changed"
+only one diff at a time.** Sections 16 and 17 want the longitudinal question answered directly:
+how a metric moved across prompt revisions, catalog versions, and code changes. A retained
+record keyed by those versions answers it without archaeology.
+
+**Append-only and committed beats a database or a CI artifact.** The history is small, one-line-per-snapshot
+diffs review cleanly, the CI key constraint is untouched, and the same skeptic who can
+re-run the scorecard can read every retained number in the repository.
+
+Alternatives Considered:
+
+- Stamping every build with its git ref and letting the page churn (breaks the drift check)
+- Deriving history from the git log of `scorecard.html` (archaeology, and unkeyed by prompt or
+  catalog version)
+- A separate history page rather than a section on the scorecard
+- Retaining pooled numbers only, without per-row detail
+
+Tradeoffs:
+
+- The snapshot's git ref names the commit the sweep ran on; the commit that adds the snapshot is
+  that ref's child, so the ref is one commit behind the history file's own history. Provenance,
+  not a checkout target.
+- A deliberate step can be forgotten. Nothing prompts for a snapshot; a release checklist is the
+  natural place for it, and section 17's release record is the natural trigger.
+
+## DEC-082: Approval is a person's sign-off on the rendered deliverable; phase fourteen stays a terminal marker
+
+Date: 2026-08-12
+
+Status: Accepted
+
+Decision:
+
+**The `draft` to `approved` transition is performed by a person, through `trace assessment
+approve`, and DEC-031's table is amended: the writer of that edge is the person, not the
+terminal node.** Phase fourteen (`assessment_completion`) declares no node and stays what it
+is today — the orchestrator's terminal marker. A completed run leaves its assessment in
+`draft`, which is what the driver test has asserted since the phase landed.
+
+**The verb is a sign-off, not a status setter, and the service enforces the difference.**
+`AssessmentService.approve()` refuses unless three facts hold: the assessment carries a
+rendered report (`final_report_path`); the run that rendered it — named by the report's
+filename, not whichever run is latest — completed; and that run is authoritative
+(DEC-012's rule, kept from the original verb). Each refusal names what is missing.
+`run_is_authoritative` is no longer caller-supplied: the run exists now, and a boolean the
+caller asserts is a bypass one keyword away.
+
+Why:
+
+**DEC-031's table and the implementation disagreed, and the implementation had the better
+argument.** The table assigned `draft → approved` to "the terminal node"; the code left phase
+fourteen empty and `tests/unit/test_driver.py` asserted that a completed run leaves `draft`,
+annotated "approval is a person's verb, not a run's". The contradiction sat unresolved
+because nothing drove the final verb at all — `approve()` had no caller in `src/` and its
+docstring still claimed `WorkflowRun` did not exist.
+
+**The terminal node cannot make the judgment approval records.** Checkpoint 2 approves
+findings before the report exists; report generation and rendering follow it. `approved`
+means "the conclusions are the reviewer's" (DEC-031) — and the conclusions a customer reads
+are the rendered document, which nobody has confirmed reading at the moment the run
+completes. An automatic terminal approval would mark the deliverable usable on the strength
+of a review that predates it.
+
+**Offering the verb on the surface is not the bypass DEC-031 rejected.** DEC-031 refused a
+user-settable `approved` as "a checkpoint bypass with extra steps" — correctly, for a bare
+setter. The guarded verb cannot bypass anything: no report exists without passing both
+checkpoints (DEC-005 makes them structural), so the earliest moment the verb succeeds is
+after every gate DEC-031 protects has held.
+
+Alternatives Considered:
+
+- A phase-fourteen node writing `approved` on completion, per DEC-031's table as written
+- Keeping `run_is_authoritative` caller-supplied and adding only the CLI verb
+- A separate `sign_off` verb beside `approve`, leaving DEC-031's table untouched
+
+Tradeoffs:
+
+- An operator can now forget the sign-off, leaving a finished assessment in `draft`
+  indefinitely — visible in `trace assessment status`, and preferable to an approval nobody
+  performed.
+- Binding the sign-off to the run named by the report means a later failed run does not
+  block approving the earlier finished one; whether that is generosity or correctness
+  depends on why the later run failed, and the reviewer holding the report is the right
+  judge of that.
+
+## DEC-083: A proposed claim's value is a scalar or a list of scalars; `JsonValue` stays on the domain side
+
+Date: 2026-08-13
+
+Status: Accepted
+
+Decision:
+
+**`ProposedContextClaim.value` is typed `str | int | float | bool | None`, or a list of those,
+and no longer `JsonValue`.** The domain object is unchanged: `ContextClaim.value` remains
+`JsonValue`, and every value a proposal can carry converts into it losslessly.
+
+**Mappings are excluded from the proposal shape deliberately, not provisionally.** A claim that
+wants to assert a mapping asserts one claim per key instead — the subject-predicate-value shape
+already carries that decomposition.
+
+Why:
+
+- The proposal schema crosses the wire and the domain schema does not. The provider's
+  structured-output format refuses the unconstrained `{}` that `JsonValue`'s recursion collapses
+  to in a JSON Schema export, so a proposal carrying it cannot be requested at all — the first
+  live context-extraction call fails before a request is sent (#412). Nothing offline noticed,
+  because the deterministic model never serializes a schema for the wire.
+- A mapping arm would be worse than absent. The provider's schema strictifier rewrites an open
+  mapping into an object that accepts only `{}`, while the prompt substitutes the application's
+  own untransformed export — so the prompt would teach a shape the wire grammar forbids, which
+  is an instruction to fail.
+- Every claim value in every committed recording and truth set is a plain string. The union is
+  headroom, not a migration.
+
+Tradeoffs:
+
+- The proposal and domain types now differ where they used to coincide, and the difference has
+  to be explained wherever a reader would expect symmetry. Both modules carry the explanation.
+- A future agent with a genuine need for structured values needs a schema change and a DEC
+  entry rather than finding the latitude already present. That is the correct friction: the
+  wire shape is part of what the prompt teaches, and it should not widen silently.
+- Section 39's open question 1 — whether claims should keep the subject-predicate-value shape
+  at all — stays open. This entry narrows a field's wire type; it does not answer that.
+
+## DEC-084: The retries ceiling is enforced in the node's attempt loop with the budget's value; the execution record carries the retries consumed
+
+Date: 2026-08-13
+
+Status: Accepted
+
+Decision:
+
+**`AssessmentConfiguration.maximum_retries_per_node` reaches the attempt loop through the
+budget.** `Budget.retry_policy()` derives the `RetryPolicy` from the configured value, and an
+agent node given a budget and no explicit policy runs under it (`resolve_retry_policy`). An
+explicitly supplied policy still wins, because a test that says "no retries" means it.
+
+**The budget does not *check* retries, and `LimitKind` carries no retries member.**
+`Budget.check_retry` and `LimitKind.RETRIES` are removed: a retry decision is made between a
+classified failure and the next attempt, inside the node, where the orchestrator never stands —
+and a run stopped by exhausted retries is classified by the failing attempt's error class with
+the attempt count (section 26), not by the ceiling that stopped the retrying.
+
+**One `ExecutionRecord` per node execution, whose `retry_number` is the retries consumed.** The
+attempt loop sets it as it runs, so a clean first attempt records zero and a recovery after one
+failure records one, on the success and failure paths alike. Per-attempt detail stays in the
+record's `attempt_N` metadata and the preserved outputs under `traces/`.
+
+Why:
+
+- The previous arrangement enforced the ceiling nowhere (#397): `Budget.check_retry` had no
+  callers, every node constructed the default policy, and configuring zero retries still
+  produced three attempts. A configuration field that governs nothing is worse than absent,
+  because it reads as control.
+- `retry_number` was structurally zero (#398): no caller ever passed it, and the evaluation's
+  retries metric summed the constant. A metric that reads as measured and is not commits the
+  failure this project exists to criticize.
+- One record per node execution is the shape the ledger already has, the counters already count,
+  and the committed evaluation feeds already assume. A record per attempt would have moved
+  model-call accounting and the drift-checked pages for no reader's benefit — the per-attempt
+  story is already told by the metadata and the preserved outputs.
+
+Tradeoffs:
+
+- `agent-design.md` section 27 reads "the orchestrator should enforce ... maximum retries", and
+  the enforcement point is now the node's loop rather than the orchestrator's. The value still
+  lives in the one budget the orchestrator owns; what moved is the check, to the only place a
+  retry decision exists. This entry records that reading rather than leaving it implicit.
+- A closed `LimitKind` lost a member. Nothing ever raised or persisted it, so no stored run can
+  reference it, but any external reader that enumerated the vocabulary sees four kinds now.
+
+## DEC-085: Section 29's "low to moderate" rows resolve to moderate for critical review and low for report generation; the enum member goes
+
+Date: 2026-08-13
+
+Status: Accepted
+
+Decision:
+
+**The critical review agent runs at `moderate` creativity and the report generation agent at
+`low`.** `agent-design.md` section 29's table is corrected to say so, replacing its two "low to
+moderate" rows. **`Creativity.LOW_TO_MODERATE` is removed from the seam**, together with the
+adapter's `xhigh` effort tier it mapped to; the mapping is now `low` to effort `high` and
+`moderate` to effort `max`.
+
+Why:
+
+- The split reading has been the implemented behavior since the two nodes landed, reasoned only
+  in module docstrings and pinned by tests — a silent divergence from the corpus, which this
+  project's own discipline says needs a decision entry, not improvisation (#402). The reasoning
+  those docstrings carried is sound and is adopted here: the critic is a search — imagining how
+  a conclusion fails benefits from the same breadth as proposing threats — while report
+  generation is a restatement of approved objects, and a restatement takes the conservative
+  reading.
+- An enum member no node can reach is a claim the seam makes and nothing keeps. Nothing
+  persists the value — no recording, no profile, no feed carries `low_to_moderate` — so removal
+  breaks no stored data, and the seam's docstring stops describing an assignment the table no
+  longer makes.
+- The side effect the audit flagged is corrected with it: `threat_analysis.py` claimed to hold
+  "the one non-`low` creativity setting in the MVP", which the critic's `moderate` made false.
+
+Tradeoffs:
+
+- The Anthropic effort ladder loses its middle rung: two intents, two tiers. A future agent
+  with a genuinely intermediate need reintroduces a value through a decision entry, which is
+  the correct friction — an intent is part of what section 29 promises about an agent's
+  behavior, and it should not widen silently.
+- The table's history is less visible: a reader of section 29 no longer sees that two rows
+  were once broader. The note under the table names this entry, which is where the history
+  belongs.
+
+## DEC-086: Validator retry instructions feed the re-extraction prompt; the four downstream validators drop the surface; the analysis error classes stay as vocabulary
+
+Date: 2026-08-13
+
+Status: Accepted
+
+Decision:
+
+**The Context Validation node's retry instructions are consumed by the re-extraction path.**
+`re_extraction_feedback` appends the validator's per-correctable-error instructions to the
+reviewer's rationale, and the extraction node already carries that feedback into its prompt.
+Re-extraction is the one path on which a generating agent runs again, so it is the consumer
+`agent-design.md` section 8's "retry instructions" output describes.
+
+**The four downstream validators — threat, mapping, evidence-assessment, and critique — lose
+their `retry_instruction`/`retry_instructions` surface.** No path re-runs their agents: a
+blocking validation failure stops the run under its own error class, the transition table has
+no backward edge, and section 26 forbids retrying a conclusion. The actionable content lives on
+the `ValidationError` itself, where the run's stop reporting reads it. Section 8 specifies the
+context validator; the other four surfaces were symmetry the corpus never asked for, produced
+by nothing-consumed-by-nothing since they landed.
+
+**`ErrorClass.INSUFFICIENT_EVIDENCE` and `ErrorClass.UNRESOLVED_CONTRADICTION` stay, without
+producers.** The pipeline expresses both conditions as the Question, gap, or observation they
+resolve to (DEC-009, DEC-021), so nothing is left to raise — a property of the routing, not an
+oversight. The members remain because the taxonomy is section 26's vocabulary: the non-retryable
+rule is stated where retry decisions read it, and a future producer inherits the classification
+instead of inventing one. Their docstrings now say so.
+
+Why:
+
+- The audit (#409) found the feedback loop produced twice and consumed never: five aggregate
+  methods with no caller, and two error classes no code constructs. A mechanism the docs
+  describe as active and nothing exercises is debt in the shape of a feature.
+- Wiring beats deleting exactly where a consumer exists with clear semantics. The re-extraction
+  prompt previously carried only the reviewer's reason; a reviewer who writes "the extraction
+  missed the queue" is not going to restate the validator's finding that a claim cites
+  unresolvable evidence, and the next attempt benefits from both.
+
+Tradeoffs:
+
+- The five validators are no longer shaped identically. Symmetry was the reason the dead
+  surface existed; the asymmetry is now the accurate statement of which agent can be re-run.
+- A future decision to re-run a downstream agent (a DEC-level routing change) reintroduces the
+  surface for that validator deliberately, with its consumer, rather than finding it waiting.
+
+## DEC-087: No open mapping crosses the model wire; proposal fields are typed pair lists
+
+Date: 2026-08-14
+
+Status: Accepted
+
+Decision:
+
+**A proposal schema field is never a dict with arbitrary keys.** A per-identifier association —
+evidence strengths, quoted passages — is a list of typed pair objects (`WeighedEvidence`,
+`QuotedEvidence`), and promotion folds the pairs into the mapping the domain object keeps. The
+proposal accepts the pre-DEC-087 mapping form on input so committed recordings stay loadable;
+the exported schema — what the prompt teaches and the wire grammar compiles — is the pair list
+only.
+
+Why:
+
+- The provider's strict structured-output grammar rewrites an open mapping into an object that
+  accepts only `{}`. DEC-083 met this on an optional field and dropped the arm; the live
+  ForgeFlow capture (#324) met it on a *required* one: `evidence_strengths` demanded one entry
+  per cited reference while the compiled grammar forbade any entry at all, so the evidence
+  validation agent burned five attempts on a structurally impossible instruction. Offline
+  nothing noticed, because the deterministic model never serializes a schema for the wire.
+- The pair list is also the better teaching shape: each entry names its `evidence_id` and its
+  `strength` as declared fields the grammar enforces, instead of a key convention prose has to
+  explain.
+
+Tradeoffs:
+
+- Proposal and domain shapes diverge again where they used to coincide, in the same direction
+  and for the same reason as DEC-083; both modules say so.
+- The legacy-form acceptance is one more input path. It is a loader's tolerance, not a schema
+  the model is offered, and it retires whenever the recordings are next recaptured.
+
+## DEC-083: Report section 7 carries the threats the approved findings rest on; duplicate questions collapse at render
+
+Date: 2026-08-14
+
+Status: Accepted
+
+Decision:
+
+**Section 7 of the report renders the threats referenced by the approved findings.** The
+previous filter — `Threat.status is APPROVED` — was never satisfiable: threats have no approval
+verb anywhere in the pipeline, so the section was structurally empty in every report ever
+rendered, and the live capture's fifteen threats were invisible in the deliverable. The set a
+reviewer transitively validated by approving the findings is the defensible set to print; a
+zero-finding assessment renders the section's authored empty wording, which is the honest shape
+for it. DEC-035's section table and ownership are unchanged — this decides the filter's
+semantics, which DEC-035 never specified.
+
+**Byte-identical open questions collapse onto one line at render, never at creation.** Two
+mappings contradicted on the same requirement each produce "Which statement is authoritative
+for req-X?", and section 11 rendered both verbatim. The collapse happens in the deterministic
+renderer — the duplicate's identifier rides its survivor's line as "*(also asked as qst-NNN)*"
+— because the objects must survive as allocated: the recorded report-generation response
+enumerates the run's question identifiers, and dropping a duplicate at creation renumbers the
+rest and invalidates the recording's own later call. That failure was observed, not
+hypothesized: the first implementation deduped at consolidation and the flagship replay
+exhausted its recorded responses retrying a report whose prose cited questions that no longer
+existed.
+
+**The consolidation question template interpolates missing-evidence entries as clauses.**
+Agents write entries as sentences — leading capital, trailing period — and the template
+produced "Can you confirm The webhook validation mechanism.?" in a section the reviewer reads
+line by line. The entry is stripped of its trailing period and its leading capital lowered
+unless the first word is an acronym.
+
+Why:
+
+**The report is the deliverable, and two of its sections argued against the product.** An
+always-empty threats section reads as "the analysis produced no threats" when the run produced
+fifteen; duplicated and malformed questions read as generator sloppiness in the section a
+reviewer reads most closely. Both defects were visible in the flagship report the demonstration
+opens.
+
+**Creation-time deduplication was rejected by the recording itself.** A recorded run is a
+historical artifact: later responses reference earlier allocations. Any change that renumbers
+identifiers mid-run breaks every recording that spans the change, which is a compatibility rule
+worth stating once and remembering — derived-output changes are re-pin cycles; allocation
+changes are re-capture events.
+
+Alternatives Considered:
+
+- A threat approval verb or checkpoint subject (a third human surface nobody asked for)
+- Rendering all validated threats regardless of findings (prints fifteen threats of which
+  eleven produced no approved conclusion, burying the four that did)
+- Deduplicating questions at consolidation (breaks recorded replays; observed)
+- Leaving both sections as they were and narrating the emptiness
+
+Tradeoffs:
+
+- Section 7 now under-represents the analysis breadth: threats that produced only gaps or
+  questions are absent. The section's lead-in names the rule so absence reads as scope, not
+  omission.
+- The render-time collapse leaves duplicate Question rows in the store; the count metrics see
+  them. That is honest — the model did ask twice — and the DEC-081 history will show the
+  duplicate rate fall when a future capture dedupes at the source.

@@ -25,7 +25,7 @@ mechanically to itself would be inconsistent with what the project argues.
 **Every mitigation below names where it is enforced, or says plainly that it is not implemented.**
 A threat model that lists mitigations without naming their enforcement point is the failure this
 project exists to criticize — a claim about a control with no evidence behind it. The status column
-uses three values:
+uses five values:
 
 | Status | Meaning |
 |---|---|
@@ -33,6 +33,7 @@ uses three values:
 | **Designed** | Specified in the corpus, not built. The issue that builds it is named. |
 | **Open** | Depends on a decision that has not been made. The issue that decides it is named. |
 | **Partial** | A control exists and does not cover every path. What it misses is stated. |
+| **Known gap** | No control exists and none is planned. The reason is stated where the row is. |
 
 ForgeFlow's threat model is scenario data and lives in `demo/forgeflow/forgeflow-scenario.md`.
 Nothing here describes it.
@@ -40,12 +41,14 @@ Nothing here describes it.
 ## 2. What Trace is, for the purposes of this document
 
 DEC-004 makes the MVP a local, single-user application. There is no deployment, no multi-tenancy,
-no authentication, and no network service. DEC-032 makes the interface a command line through M4,
-so there is no browser and no listening port.
+no authentication, and no cloud service. The command line drives everything the pipeline does
+(DEC-032); the Stage 5 read-only view (DEC-078) adds a localhost-only listening port that renders
+persisted state and drives nothing — see section 5.
 
-That shapes the whole analysis. The adversary is **not** a remote attacker; there is nothing
-remote to attack. The adversary is **the content Trace is asked to read**, and the party at risk is
-**the reviewer**, who may act on a conclusion Trace produced.
+That shapes the whole analysis. The adversary is **not** a remote attacker; the one listening port
+binds `127.0.0.1` and changes no state. The adversary is **the content Trace is asked to read**, and
+the party at risk is **the reviewer**, who may act on a conclusion Trace produced — including reading
+that conclusion in a browser, which section 5 covers.
 
 Three assets are worth naming:
 
@@ -65,10 +68,10 @@ test data and is committed unaltered on purpose: sanitizing it would destroy the
 
 | Risk | Mitigation | Where | Status |
 |---|---|---|---|
-| Source content redefines an agent's role, schema, or tool grants | Every agent receiving source-derived content is instructed that source content is untrusted data, cannot modify its role, cannot redefine output schemas, and cannot authorize tools | `agent-design.md` section 25; the shared prompt block | **Designed** — #70 authors the block, #71 fences the content |
+| Source content redefines an agent's role, schema, or tool grants | Every agent receiving source-derived content is instructed that source content is untrusted data, cannot modify its role, cannot redefine output schemas, and cannot authorize tools | `prompts/shared/source-content-boundary-v1.md`, composed into every agent prompt; the fence in `services/context/input_package.py` | **Enforced** |
 | An agent-proposed object carries an invented field that a consumer later trusts | `extra="forbid"` on every domain object: an unknown key fails validation rather than being dropped | `trace_ai.domain.base.DomainModel` | **Enforced** |
 | A source filename escapes the assessment directory | Filenames are refused by shape (no separators, no `..`, not absolute) and again by resolution, so a clean name landing through a symlink is also refused | `ArtifactStore._safe_path` | **Enforced** |
-| Injected content is silently followed rather than recorded | Detection produces a `SourceObservation` of kind `injection_attempt` (DEC-021), which carries no severity and never becomes a `Finding` | `data-model.md` section 10a | **Designed** — #140 builds the object, #74 tests the fixture |
+| Injected content is silently followed rather than recorded | Detection produces a `SourceObservation` of kind `injection_attempt` (DEC-021), which carries no severity and never becomes a `Finding` | `domain/source_observation.py`; consumed by `workflow/reason_codes.py` and surfaced by the CLI and review package | **Enforced** |
 | Ingestion treats a document carrying an injection differently from one that does not | The loader is indifferent to content: format comes from the extension, metadata is size-derived, and the produced object is field-for-field identical to one for a benign document | `trace_ai.services.ingestion.loader`, `tests/unit/test_untrusted_source_boundary.py` | **Enforced** |
 | The loader is given a construct that could execute document content | No call to `eval`, `exec`, `compile`, `__import__`, `yaml.load`, `os.system`, or `subprocess`, and no import of `subprocess`, `importlib`, `pickle`, `shutil`, or `ctypes`. Asserted over the syntax tree, so prose explaining why is not mistaken for a use | `tests/unit/test_untrusted_source_boundary.py` | **Enforced** |
 | Source content is quoted into a log line, where it leaves the assessment's boundary | The redaction filter replaces a field whose name marks it as source-derived with a length and the identifier of the object it came from | `trace_ai.observability.RedactionFilter` | **Enforced** |
@@ -88,10 +91,10 @@ public data and avoids confidential information.
 |---|---|---|---|
 | A provider credential reaches a log, a traceback, or a `repr()` | Secrets are `SecretStr`, and the redaction filter also catches a raw key by field name — covering the case `SecretStr` cannot, where a key never went through `Settings` | `trace_ai.config.Settings`, `trace_ai.observability.RedactionFilter` | **Enforced** |
 | A credential is committed | `.env` is gitignored, `.env.example` is committed blank, and a test fails if the two drift or if a key-shaped entry has a value | `.gitignore`, `tests/unit/test_config.py` | **Enforced** |
-| A credential is committed past the hooks | gitleaks scans staged content — but only locally. It is a pre-commit hook and **is not in the CI workflow**, so `--no-verify`, or a clone without `pre-commit install`, bypasses it entirely | `.pre-commit-config.yaml` | **Partial** — see section 8 |
+| A credential is committed past the hooks | gitleaks scans locally as a pre-commit hook, and again in CI over the full history — the enforcement point `--no-verify` and an uninstalled clone cannot skip | `.pre-commit-config.yaml`; `.github/workflows/ci.yml` gitleaks step | Enforced |
 | CI spends money or needs a key | The `integration` and `evaluation` markers are deselected in `addopts`, so a bare `pytest` cannot make a provider call | `pyproject.toml` | **Enforced** |
 | Source content or prompts reach an external tracing provider | `enable_external_tracing` is off unless set, and section 5.17 requires a data-handling review before it is enabled | `AssessmentConfiguration`, default from `default_configuration()` | **Enforced** for the default; **Designed** for the tracing integration itself |
-| A run costs more than intended | `maximum_model_calls` and `maximum_cost` are optional limits, carried as `Decimal` so a comparison at the limit is exact | `AssessmentConfiguration` | **Designed** — the fields exist; nothing enforces them until the orchestrator does |
+| A run costs more than intended | `maximum_model_calls` and `maximum_cost` are optional limits, carried as `Decimal` so a comparison at the limit is exact | `AssessmentConfiguration`, enforced by `workflow/limits.py` and the orchestrator — the call count and projected cost are checked before the call that would cross them | **Enforced** |
 | A secret is interpolated into a log message before `logging` sees it | Nothing can catch this. A pre-formatted string has no field name and no type, and the module documents the gap rather than implying coverage | `trace_ai.observability` module docstring, and a test that proves it leaks | **Known gap**, deliberately unmitigated |
 
 **What leaves the machine is a design surface, not an accident.** Design principle 13 requires that
@@ -100,22 +103,31 @@ today is: the configured model provider, and an external tracing provider only i
 
 ## 5. Browser-to-application boundary
 
-**This boundary does not exist in the MVP.** DEC-032 makes the command line the interface through
-M4: there is no browser, no listening port, and no server process holding assessment data.
+**This boundary exists as of the Stage 5 read-only view** (`trace view`, DEC-032, DEC-078). Through
+M8 it did not: the command line was the whole interface, and the row was removed rather than
+mitigated. The view re-introduces a listening port and a server process holding assessment data, so
+the row returns — but bounded by what the view is, not defended by a token bolted onto a mutable
+surface.
 
-Section 12 lists it because earlier drafts preferred a local web application. The boundary was not
-mitigated; it was removed, which is the cheaper outcome and worth stating as such rather than
-quietly dropping the row.
+The design is that the request-forgery threat has nothing to forge. The view renders persisted
+state and drives nothing; there is no state-changing endpoint, so the classic cross-site request
+against a mutating URL has no target. That is a structural property, not a filter, which is why it
+is stated as the boundary's shape rather than a mitigation row that could be edited away.
 
-It returns if a Stage 5 read-only view is built. That view is a rendering of persisted state and
-not a way to drive the pipeline, so the surface would be narrow — but a local HTTP server on a
-reviewer's machine is reachable by any page they have open, and request forgery against a
-state-changing endpoint would be the first thing to analyse. **This document is revisited before
-any such view ships**, per section 9.
+| Risk | Mitigation | Where | Status |
+|---|---|---|---|
+| A page the reviewer has open reaches the server across the network | The server binds `127.0.0.1` only, so it is not reachable off the machine (DEC-004, single-user local) | `trace_ai.interface.server.HOST`, `tests/unit/test_interface.py` | **Enforced** |
+| A cross-site request forges a state change | There is no state-changing endpoint to forge against: every method other than `GET` is refused with `405`, and no route calls a store write method — audited by scanning the package for `save`/`allocate`/`transaction`/`delete` | `trace_ai.interface.server`, `tests/unit/test_interface.py` | **Enforced** |
+| An untrusted excerpt injects markup or script into the reviewer's browser | Every source-derived value is HTML-escaped on render, and lineage excerpts are additionally labelled as quoted untrusted content; a browser is not the inert terminal, so this is where the source-document boundary reaches the screen | `trace_ai.interface.render`, `tests/unit/test_interface.py` | **Enforced** |
+| Another origin frames the view to read assessment data | Responses carry `X-Frame-Options: DENY` | `trace_ai.interface.server` | **Enforced** |
+| The view becomes a way to drive the pipeline | It is read-only by construction: it consumes the section 32 lineage walk and the persisted objects, and there is no review interaction — checkpoint decisions stay on the command line (DEC-032) | `trace_ai.interface`, DEC-078 | **Enforced** |
 
-Input validation, which section 12 attaches to this boundary, is not deferred with it. Every input
-reaching workflow or storage is validated by the schema regardless of what supplied it — a command
-line, a file, or a future view all construct the same objects through the same models.
+The store opens read-write because SQLite offers no read-only handle here; read-only is a discipline
+the audit test enforces, not a file mode. Input validation, which `current-architecture.md` section
+12 attaches to this boundary, was never deferred with the boundary: every input reaching workflow or
+storage is validated by the schema regardless of what supplied it — a command line, a file, or the
+view all construct the same objects through the same models. The view supplies none, because it
+writes nothing.
 
 ## 6. Assessment-data boundary
 
@@ -135,19 +147,19 @@ behind it, because it is the one an ordinary bug reaches.
 
 ## 7. Generated-output boundary
 
-Model-generated content is untrusted until validated and reviewed. This boundary is almost entirely
-unbuilt, because nothing generates yet.
+Model-generated content is untrusted until validated and reviewed. All six agents exist, each
+behind a deterministic validation node, and this boundary is where their output is held.
 
 | Risk | Mitigation | Where | Status |
 |---|---|---|---|
-| An agent writes authoritative state directly | Agents return proposed objects; the application validates and persists. Agents get no database writes, no filesystem, no shell, no internet, and no credentials | `agent-design.md` section 22, design principle 13 | **Designed** — no agent exists, and no module reachable from one touches a store |
-| An agent reads a file directly rather than through the retrieval interface | `EvidenceIndex` is that interface, and it exists before any agent so it has no exceptions. Its prompt-facing shape carries no path of any kind, asserted by searching the serialized output | `trace_ai.services.evidence.index` | **Enforced** for the interface; **Designed** for the agents that will use it |
+| An agent writes authoritative state directly | Agents return proposed objects; the application validates and persists. Agents get no database writes, no filesystem, no shell, no internet, and no credentials | `domain/proposals/` carries nothing authoritative and `extra="forbid"` refuses invented fields; agents reach the world only through `StructuredModel`, and `tests/unit/test_model_boundary.py` plus `test_package_layout.py` pin the boundary | **Enforced** |
+| An agent reads a file directly rather than through the retrieval interface | `EvidenceIndex` is that interface, and it exists before any agent so it has no exceptions. Its prompt-facing shape carries no path of any kind, asserted by searching the serialized output | `trace_ai.services.evidence.index`; every agent's input package assembles through it and carries no filesystem path | **Enforced** |
 | A conclusion cites a passage the document no longer contains | Verification re-reads the artifact at the recorded location and reports a changed quotation distinctly from a missing file | `EvidenceIndex.verify` | **Enforced** — nothing runs it on a schedule; see section 8 |
-| Missing documentation is reported as a weakness | A `Finding` asserts a weakness; a `DocumentationGap` says it cannot be determined. `EvidenceReference` cannot express absence at all — `quoted_text` is required and non-empty, so there is no way to cite silence | `trace_ai.domain.evidence`, DEC-009 | **Enforced** for the evidence half; **Designed** for the finding half (#96) |
-| Unapproved content reaches the report | The finding-approval checkpoint is a workflow node rather than a runtime conditional, and `AssessmentConfiguration` carries no setting that governs it | DEC-005, DEC-012, `AssessmentConfiguration` and its tests | **Enforced** for the absence of the switch; **Designed** for the gate (#102, #103) |
-| An ablated run produces an approved assessment | An assessment completed by a non-authoritative run cannot reach `approved` | `AssessmentService.approve` | **Enforced** — the authority flag is supplied by the caller until `WorkflowRun` exists (#57) |
+| Missing documentation is reported as a weakness | A `Finding` asserts a weakness; a `DocumentationGap` says it cannot be determined. `EvidenceReference` cannot express absence at all — `quoted_text` is required and non-empty, so there is no way to cite silence | `trace_ai.domain.evidence` and `trace_ai.domain.finding`, DEC-009; DEC-013's outcome table routes silence to gaps and questions, never findings | **Enforced** |
+| Unapproved content reaches the report | The finding-approval checkpoint is a workflow node rather than a runtime conditional, and `AssessmentConfiguration` carries no setting that governs it | DEC-005, DEC-012; `workflow/checkpoint.py` advances only on recorded decisions, and `finding_review.py` refuses approval at `unassigned` severity | **Enforced** |
+| An ablated run produces an approved assessment | An assessment completed by a non-authoritative run cannot reach `approved` | `AssessmentService.approve` reads `WorkflowRun.is_authoritative` from the run that rendered the report — no caller supplies the flag | **Enforced** |
 | A reviewer edit enters an object without validation | Edited objects are rebuilt through `model_validate`; `model_copy` validates nothing and is documented as the wrong API | `trace_ai.domain.base` docstring, `CLAUDE.md`, four pinning tests | **Enforced** by convention and tests, not by the type system |
-| Report rendering introduces content no model or reviewer produced | Rendering is deterministic and uses no model | `current-architecture.md` section 5.13 | **Designed** (#106) |
+| Report rendering introduces content no model or reviewer produced | Rendering is deterministic and uses no model | `workflow/report_rendering.py` imports no model client, and `templates/report-v1.md` fixes which four sections carry model prose (DEC-035) | **Enforced** |
 | A citation cannot be checked against the document it claims to come from | Every `EvidenceReference` carries a line range and a hash over its own verbatim quotation, and normalization cannot change line counts, so the recorded location addresses the original (DEC-015) | `trace_ai.services.evidence.indexing`, `trace_ai.services.ingestion.normalize` | **Enforced** |
 
 ## 8. Cross-cutting: what is not covered
@@ -160,11 +172,11 @@ Stated because a threat model that only lists what it handles is misleading.
 - **A pre-formatted log message can leak anything.** See section 4.
 - **`reviewer_id` is a configured local string** and is trivially forgeable. DEC-023 says plainly
   that it is not authentication, and nothing enforces that it is not read as such.
-- **Secret scanning stops at the local machine.** gitleaks is a pre-commit hook and is not a CI
-  step. `git commit --no-verify` skips it, and so does any clone where `pre-commit install` was
-  never run. `CLAUDE.md` describes secret scanning as repository hygiene, which reads as stronger
-  than "runs if the author opted in". This was found while writing this document; adding the hook
-  to `.github/workflows/ci.yml` closes it and is a few lines.
+- **Secret scanning reaches CI.** gitleaks was a pre-commit hook only — `git commit --no-verify`
+  skipped it, and so did any clone where `pre-commit install` was never run. Found while writing
+  this document; closed by #407: `.github/workflows/ci.yml` runs the same pinned gitleaks release
+  over the full history on every pull request, with output redacted so a hit is reported without
+  being republished.
 - **Supply chain.** Dependencies are pinned by `uv.lock` and `uv sync --locked` runs in CI, which
   makes the set reproducible rather than trustworthy. Nothing audits them. The runtime dependency
   count is five, which is a mitigation by scale rather than by control.
@@ -178,12 +190,15 @@ Per the roadmap's cross-cutting workstream, this document is revisited when:
 
 - an agent gains data or capability it did not have, including any new tool or retrieval interface;
 - a new external service is introduced, including a tracing provider;
-- an interface is added that accepts input over a network, which under DEC-032 means before any
-  Stage 5 view ships;
+- an interface is added that accepts input over a network. The Stage 5 read-only view (DEC-078) was
+  the trigger for section 5's rewrite; it accepts no input beyond a `GET` path and changes no state,
+  and a view that ever did would re-trigger this review;
 - a boundary's `Designed` or `Open` row becomes `Enforced`, so the status column stays true.
 
-The first of those triggers arrives in M2, with the first outbound model call. This document was
-written before it rather than after.
+This document was written before the first outbound model call and has been revisited since: the
+2026-08-13 audit pass flipped every row whose enforcement had landed — the fence, the injection
+observation, the ceilings, the agent boundary, the finding gate, and rendering among them — and
+closed the gitleaks gap section 8 had named.
 
 ## 10. Open questions
 

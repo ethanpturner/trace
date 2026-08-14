@@ -1,0 +1,35 @@
+# Order Notifier expected findings
+#
+# One finding, stated twice in the inputs: the integration guide and the operations notes
+# each affirmatively document the unsigned callback intake. The scenario grades duplicate
+# handling — a correct assessment reports the weakness once, with the duplicate conclusion
+# merged (DEC-052) rather than double-reported. `allow_consolidation` in the contract is
+# load-bearing here.
+#
+# Nothing in this directory is supplied to Trace during an assessment.
+
+benchmark_version: "1.0"
+scenario: order-notifier
+catalog_version: "0.1"
+source: integration-guide.md, operations-notes.md
+
+findings:
+  - key: FND-ON-01
+    subject: callbacks are processed without origin verification, documented in both sources
+    severity_guidance: medium
+    requirement_id: req-WEBHOOK-001
+    affected_component: Callback Receiver
+    arises_from: integration-guide.md section 1; operations-notes.md section 1
+    evidence_establishes:
+      - The receiver processes any well-formed callback; callbacks are not signed, and the
+        provider's optional signing feature is not enabled.
+      - The incident review confirmed the endpoint accepts unsigned requests from anywhere,
+        with enabling signing tracked as unscheduled backlog work.
+    supported_by:
+      - integration-guide.md
+      - operations-notes.md
+    notes: >
+      Exactly one approved finding is correct. Two documents state the same documented
+      absence, and a run that reports it twice has failed the scenario's point; the merged
+      duplicate is retained with `duplicate_of_id` and a merge record, which is the
+      traceable collapse DEC-052 requires.

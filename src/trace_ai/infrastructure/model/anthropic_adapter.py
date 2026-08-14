@@ -19,6 +19,16 @@ evidence rules, not by being given less room to think.
 retry budget belongs to the orchestrator, and an adapter that retried would break the
 `ExecutionRecord` retry count and the cost ceiling. Nothing in this module loops.
 
+**The adapter validates the response text itself, never the SDK.** `messages.parse` validates each
+text block client-side and raises `pydantic.ValidationError` when the text does not fit the schema
+— which is exactly the shape of a `max_tokens`-truncated response, and an exception the
+`anthropic.*` ladder cannot catch. Raised, it would discard the response and with it the raw output
+`data-model.md` section 33 requires preserved. So this adapter sends the same wire request through
+`messages.create` (the schema transformed by the SDK's own `transform_schema`, merged into
+`output_config` exactly as `parse` would merge it), checks `stop_reason` first so truncation
+reports as truncation, and only then validates the text — returning a `ModelFailure` that carries
+it either way.
+
 **The client is constructed on first use, never at import.** Building it at import time would make
 `import trace_ai` require a key, which is exactly what `Settings.require()` exists to avoid — and
 would break a bare `uv run pytest` on a machine with no `.env`.
@@ -26,10 +36,12 @@ would break a bare `uv run pytest` on a machine with no `.env`.
 
 from __future__ import annotations
 
+import re
 import time
 from typing import TYPE_CHECKING, Any, Final
 
 import anthropic
+import pydantic
 
 from trace_ai.config import Settings, get_settings
 from trace_ai.infrastructure.model.profiles import ModelProfile, resolve_profile
@@ -55,7 +67,6 @@ __all__ = ["EFFORT_BY_CREATIVITY", "AnthropicModel"]
 # wrong latitude produces plausible output rather than an error.
 EFFORT_BY_CREATIVITY: Final[dict[Creativity, str]] = {
     Creativity.LOW: "high",
-    Creativity.LOW_TO_MODERATE: "xhigh",
     Creativity.MODERATE: "max",
 }
 
@@ -135,45 +146,64 @@ class AnthropicModel:
         Every provider condition is caught and returned as a `ModelFailure`. That is not defensive
         breadth: the caller has to record a cost and a duration for the attempt either way, and an
         exception escaping here would leave the execution ledger with a node that started and never
-        finished.
+        finished. Validation runs here rather than in the SDK for the same reason — the SDK's
+        client-side parse raises past that guarantee and takes the raw output with it.
         """
         resolved = settings if settings is not None else self._profile.settings
         effort = EFFORT_BY_CREATIVITY[resolved.creativity]
+
+        # Built before the schema is touched, so an unconfigured key surfaces as
+        # `MissingSettingError` with its fix — the operator's most likely slip (#319) — rather
+        # than as whatever the schema transformation happens to say first.
+        client = self._api()
+        started = time.monotonic()
+
+        try:
+            wire_schema = anthropic.transform_schema(schema)
+        except ValueError as error:
+            return self._failed(
+                FailureReason.INVALID_REQUEST,
+                f"the schema {schema.__name__} could not be transformed for the provider's "
+                f"structured-output format: {error}",
+                started,
+            )
+
         request: dict[str, Any] = {
             "model": self._profile.model,
             "max_tokens": resolved.max_output_tokens,
             "messages": [{"role": "user", "content": prompt}],
-            "output_format": schema,
-            "output_config": {"effort": effort},
+            "output_config": {
+                "effort": effort,
+                "format": {"type": "json_schema", "schema": wire_schema},
+            },
             "thinking": {"type": "adaptive"},
         }
         if system is not None:
             request["system"] = system
+        schema_grammar = "enforced"
 
-        started = time.monotonic()
         try:
-            response = (
-                self._api().with_options(timeout=resolved.timeout_seconds).messages.parse(**request)
-            )
-        except anthropic.APITimeoutError as error:
-            return self._failed(FailureReason.TIMEOUT, str(error), started)
-        except anthropic.APIConnectionError as error:
-            return self._failed(FailureReason.CONNECTION_FAILURE, str(error), started)
-        except anthropic.AuthenticationError as error:
-            return self._failed(FailureReason.AUTHENTICATION_FAILURE, str(error), started)
-        except anthropic.PermissionDeniedError as error:
-            return self._failed(FailureReason.AUTHENTICATION_FAILURE, str(error), started)
+            response = self._send(client, request, timeout=resolved.timeout_seconds)
         except anthropic.BadRequestError as error:
-            return self._failed(FailureReason.INVALID_REQUEST, str(error), started)
-        except anthropic.RateLimitError as error:
-            return self._failed(FailureReason.TRANSIENT_PROVIDER_FAILURE, str(error), started)
-        except anthropic.APIStatusError as error:
-            reason = (
-                FailureReason.TRANSIENT_PROVIDER_FAILURE
-                if error.status_code >= 500
-                else FailureReason.INVALID_REQUEST
-            )
-            return self._failed(reason, str(error), started)
+            if "grammar is too large" not in str(error):
+                return self._failed(FailureReason.INVALID_REQUEST, str(error), started)
+            # The provider refuses to compile a large schema into its output grammar. The
+            # rejection precedes the model — no tokens were billed and no attempt was made — so
+            # resending without the server-side format is not a second attempt. The prompt
+            # already teaches the schema (the application substitutes its own export), and this
+            # adapter validates the text itself either way (#413): the grammar was enforcement
+            # redundancy, and losing it costs nothing the validation below does not still do.
+            # `messages.parse` fails identically here, so this is the only path a large schema
+            # has. Recorded on the outcome's metadata like the effort mapping, and for the same
+            # reason: a silent degradation is invisible exactly when it matters.
+            request["output_config"] = {"effort": effort}
+            schema_grammar = "too_large_omitted"
+            try:
+                response = self._send(client, request, timeout=resolved.timeout_seconds)
+            except anthropic.APIError as retry_error:
+                return self._classified(retry_error, started)
+        except anthropic.APIError as error:
+            return self._classified(error, started)
 
         usage = self._usage(response, time.monotonic() - started)
         stop_reason = getattr(response, "stop_reason", None)
@@ -186,16 +216,32 @@ class AnthropicModel:
                 raw_output=_text_of(response),
             )
 
-        parsed = getattr(response, "parsed_output", None)
-        if not isinstance(parsed, schema):
+        raw = _text_of(response)
+        if raw is None:
+            return ModelFailure(
+                reason=FailureReason.SCHEMA_VALIDATION_FAILURE,
+                message=f"the response carried no text block to validate as {schema.__name__}",
+                usage=usage,
+            )
+
+        try:
+            parsed = schema.model_validate_json(_json_candidate(raw))
+        except pydantic.ValidationError as invalid:
+            # The validation error's full text embeds fragments of the model output, which is
+            # untrusted; what the message carries instead is field locations and error types,
+            # which are schema-shaped and safe (section 27). They are also what makes the retry
+            # feedback actionable: the live ForgeFlow capture burned three attempts on four
+            # misfilled fields because the model was told the proposal was invalid and never
+            # told where (#324). The raw output still carries the full detail.
             return ModelFailure(
                 reason=FailureReason.SCHEMA_VALIDATION_FAILURE,
                 message=(
                     f"the response did not validate as {schema.__name__}; "
-                    f"the raw output is preserved (data-model.md section 33)"
+                    f"the raw output is preserved (data-model.md section 33). "
+                    f"Invalid at: {_error_locations(invalid)}"
                 ),
                 usage=usage,
-                raw_output=_text_of(response),
+                raw_output=raw,
             )
 
         return ModelSuccess(
@@ -208,8 +254,36 @@ class AnthropicModel:
                     ModelCapability.STRUCTURED_OUTPUT,
                 }
             ),
-            metadata={"effort": effort, "creativity": resolved.creativity.value},
+            metadata={
+                "effort": effort,
+                "creativity": resolved.creativity.value,
+                "schema_grammar": schema_grammar,
+            },
         )
+
+    def _send(self, client: Any, request: dict[str, Any], *, timeout: float) -> Any:
+        return client.with_options(timeout=timeout).messages.create(**request)
+
+    def _classified(self, error: anthropic.APIError, started: float) -> ModelFailure:
+        """The exception ladder as a function, so the grammar fallback shares it exactly."""
+        if isinstance(error, anthropic.APITimeoutError):
+            return self._failed(FailureReason.TIMEOUT, str(error), started)
+        if isinstance(error, anthropic.APIConnectionError):
+            return self._failed(FailureReason.CONNECTION_FAILURE, str(error), started)
+        if isinstance(error, anthropic.AuthenticationError | anthropic.PermissionDeniedError):
+            return self._failed(FailureReason.AUTHENTICATION_FAILURE, str(error), started)
+        if isinstance(error, anthropic.BadRequestError):
+            return self._failed(FailureReason.INVALID_REQUEST, str(error), started)
+        if isinstance(error, anthropic.RateLimitError):
+            return self._failed(FailureReason.TRANSIENT_PROVIDER_FAILURE, str(error), started)
+        if isinstance(error, anthropic.APIStatusError):
+            reason = (
+                FailureReason.TRANSIENT_PROVIDER_FAILURE
+                if error.status_code >= 500
+                else FailureReason.INVALID_REQUEST
+            )
+            return self._failed(reason, str(error), started)
+        return self._failed(FailureReason.CONNECTION_FAILURE, str(error), started)
 
     def _failed(self, reason: FailureReason, message: str, started: float) -> ModelFailure:
         """A failure that never produced a response, and therefore has tokens but no counts."""
@@ -222,23 +296,75 @@ class AnthropicModel:
         )
 
     def _usage(self, response: Any, duration: float) -> ModelUsage:
-        """The provider's usage figures, priced with this profile's published rates."""
+        """The provider's usage figures, priced with this profile's published rates.
+
+        The provider's `input_tokens` already excludes both cache spans, so the three input
+        counts arrive disjoint (DEC-067) and are kept that way: reads and writes are their own
+        fields and their own weights in the cost.
+        """
         reported = getattr(response, "usage", None)
         input_tokens = int(getattr(reported, "input_tokens", 0) or 0)
         output_tokens = int(getattr(reported, "output_tokens", 0) or 0)
-        cached = int(getattr(reported, "cache_read_input_tokens", 0) or 0)
+        cache_read = int(getattr(reported, "cache_read_input_tokens", 0) or 0)
+        cache_creation = int(getattr(reported, "cache_creation_input_tokens", 0) or 0)
         return ModelUsage(
             model=str(getattr(response, "model", self._profile.model)),
             input_tokens=input_tokens,
             output_tokens=output_tokens,
-            cached_input_tokens=cached,
+            cache_read_tokens=cache_read,
+            cache_creation_tokens=cache_creation,
             estimated_cost=self._profile.cost_of(
                 input_tokens=input_tokens,
                 output_tokens=output_tokens,
-                cached_input_tokens=cached,
+                cache_read_tokens=cache_read,
+                cache_creation_tokens=cache_creation,
             ),
             duration_seconds=duration,
         )
+
+
+_LOC_PART = re.compile(r"^[A-Za-z0-9_]{1,64}$")
+
+
+def _error_locations(invalid: pydantic.ValidationError, *, limit: int = 20) -> str:
+    """The failing field paths with their error types, and nothing the model wrote.
+
+    `loc` is normally a path through the application's own schema and `type` is pydantic's
+    classification — safe in a message (section 27). The exception is `extra_forbidden`, whose
+    final path element is the *invented* key, which is model-authored text: any part that does
+    not look like a schema identifier is masked rather than quoted. Capped so a wholesale-invalid
+    response cannot flood the record.
+    """
+
+    def part_of(part: object) -> str:
+        if isinstance(part, int):
+            return str(part)
+        return part if isinstance(part, str) and _LOC_PART.match(part) else "<unnamable-key>"
+
+    errors = invalid.errors()
+    listed = "; ".join(
+        ".".join(part_of(part) for part in error["loc"]) + f" ({error['type']})"
+        for error in errors[:limit]
+    )
+    more = f" and {len(errors) - limit} more" if len(errors) > limit else ""
+    return f"{listed}{more}"
+
+
+def _json_candidate(raw: str) -> str:
+    """The text with a Markdown code fence stripped, when the whole response is one fence.
+
+    With the server-side grammar omitted, nothing stops a model from wrapping its JSON in
+    ```json fences. The unwrap is deliberately narrow — a single fence enclosing the entire
+    trimmed response — so it cannot mistake fenced content inside a legitimate answer for
+    packaging. The raw output preserved on a failure stays the original text.
+    """
+    text = raw.strip()
+    if not text.startswith("```"):
+        return raw
+    first_break = text.find("\n")
+    if first_break == -1 or not text.endswith("```"):
+        return raw
+    return text[first_break + 1 : -3].strip()
 
 
 def _text_of(response: Any) -> str | None:

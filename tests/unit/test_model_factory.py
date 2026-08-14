@@ -57,7 +57,8 @@ def test_an_unimplemented_provider_says_what_is_missing() -> None:
         settings=GenerationSettings(),
         input_cost_per_million=Decimal(0),
         output_cost_per_million=Decimal(0),
-        cached_input_cost_per_million=Decimal(0),
+        cache_read_cost_per_million=Decimal(0),
+        cache_creation_cost_per_million=Decimal(0),
     )
 
     with pytest.raises(UnknownProviderError, match="a-provider-nobody-wrote"):

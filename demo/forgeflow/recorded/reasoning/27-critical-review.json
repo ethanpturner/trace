@@ -1,0 +1,48 @@
+{
+  "critiques": [
+    {
+      "subject_type": "threat",
+      "subject_id": "thr-006",
+      "critique_type": "unsupported_claim",
+      "description": "The second precondition states: \"The organization context accompanies the request rather than being derived solely from server-side session state, as documented (evd-026).\" evd-026 says only \"API requests that operate on customer resources include an organization context.\" It does not state that the tenant scope used in the authorization decision is the value carried on the request, and it does not state that the decision is not derived from server-side session state. The clause \"as documented\" presents an inference about the derivation of tenant context as a documented fact, and that precondition is what carries attack-path step 2 (\"optionally with a substituted organization context\").",
+      "rationale": "Every sibling object in this group records the same question as unresolved: ctl-010's second limitation (\"Whether the organization context on a request is derived from server-side session state or supplied with the request is not stated (evd-026)\"), gap-020's second requested-evidence item, and eas-016's second missing-evidence item; map-041 goes further and records the reading of evd-026 as an explicit assumption (\"Assumed that 'organization context' in evd-026 refers to the tenant scope used in the authorization decision\"). evd-138 records internal authorization implementation as intentionally omitted, which is why the derivation is not settled anywhere. The threat is the only object in the chain treating it as documented, and the evidence policy requires an inference of this kind to carry an explicit inferred/assumed status, a rationale and a confidence level rather than the words \"as documented\". Restating the precondition accordingly would not weaken the threat, which is already framed conditionally, but it would stop a downstream finding from asserting a client-supplied tenant key as an established fact.",
+      "evidence_ids": [
+        "evd-026",
+        "evd-138"
+      ],
+      "recommended_action": "revise",
+      "confidence": "medium"
+    },
+    {
+      "subject_type": "threat",
+      "subject_id": "thr-006",
+      "critique_type": "missing_precondition",
+      "description": "Attack-path step 1 requires that an authenticated member of one organization can enumerate or guess identifiers belonging to another organization (analysis job, result, repository configuration, artifact reference), and cites evd-032 and evd-046. evd-032 lists the record types held in PostgreSQL and evd-046 shows the customer result-access flow; neither describes identifier format, predictability, or any way a non-member would learn another organization's identifiers. evd-033 publishes the object path template but its variable segments are exactly the identifier values whose predictability is undocumented. This dependency appears in the attack path and the description but is not listed among the four preconditions, and none of the group's documentation gaps (gap-020 through gap-023, gap-044) requests it.",
+      "rationale": "The threat's feasibility, and therefore its medium confidence, turns on this property as much as on the enforcement point: if job and result identifiers are unguessable and not exposed to non-members, step 1 needs a separate discovery step and the path is materially different. Because the preconditions list is the place a reviewer looks to test feasibility, an undocumented and unevidenced dependency belongs there as a stated precondition (or as a documentation request covering identifier generation and whether identifiers are exposed outside the owning organization). Note also that ctl-011's limitation calls the artifact paths \"predictable\" on the strength of the published template in evd-033, which establishes the structure but not the guessability of the identifiers inside it.",
+      "evidence_ids": [
+        "evd-032",
+        "evd-046",
+        "evd-033"
+      ],
+      "recommended_action": "revise",
+      "confidence": "medium"
+    },
+    {
+      "subject_type": "documentation_gap",
+      "subject_id": "gap-022",
+      "critique_type": "duplicate",
+      "description": "gap-022 records the same missing fact as gap-021 and gap-044 - the enforcement point and storage access policy governing organization-scoped artifact reads - from the same passages (evd-033, evd-078, evd-130, evd-054, plus evd-138/evd-026), and gap-023 re-requests the signed-link items already inside gap-021 (the membership check before issuance, and link scope/lifetime). Each of the four adds only one distinguishable sub-question: gap-022 asks whether artifact reads are always API-mediated, gap-023 asks whether link URLs are excluded from logs, gap-044 asks what the administrative interface can reach in object storage, and gap-021 covers the rest. The four also disagree on severity for the same undocumented fact: high in gap-022, medium in gap-021 and gap-044.",
+      "rationale": "One undocumented item - evd-054's \"Object-storage authorization enforcement\" - is being carried as four gaps citing the same passages, which will generate four findings and four overlapping evidence requests over a single question, and the divergent severities leave a reviewer no basis for prioritisation. Merging them into one gap that keeps the union of the requested-evidence items (storage access policy, check before signed-link issuance, whether reads are API-mediated or direct, link lifetime and single-use, link URLs in logs, administrative reach) and one reconciled severity loses none of the distinct questions. This is a consolidation point rather than a rejection: nothing here says the gaps are wrongly raised, only that they are one gap.",
+      "evidence_ids": [
+        "evd-033",
+        "evd-078",
+        "evd-130",
+        "evd-054",
+        "evd-026",
+        "evd-138"
+      ],
+      "recommended_action": "merge",
+      "confidence": "high"
+    }
+  ]
+}

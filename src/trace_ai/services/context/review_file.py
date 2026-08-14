@@ -24,17 +24,23 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 import yaml
+from pydantic import ValidationError as PydanticValidationError
 
 from trace_ai.domain.context_claim import ClaimStatus, ContextClaim
 from trace_ai.domain.enums import ReviewDisposition
 from trace_ai.domain.question import Question
+from trace_ai.domain.source_observation import SourceObservation
+from trace_ai.services.evidence.index import EvidenceIndex
 from trace_ai.workflow.context_review import (
     CONTEXT_OBJECT_TYPES,
     ReviewerActionError,
+    add_context_object,
     answer_question,
     apply_edit,
+    attach_evidence,
     confirm_assumption,
     decide_object,
+    resolve_contradiction,
 )
 
 if TYPE_CHECKING:
@@ -52,8 +58,9 @@ __all__ = [
 ]
 
 # What a reviewer may change by editing the file. Deliberately narrow: these are the fields a
-# person reads an architecture document to correct. Identifiers, statuses, evidence links, and
-# timestamps are not here — each has its own action, and each has a rule the file cannot express.
+# person reads an architecture document to correct. Identifiers, statuses, and timestamps are not
+# here — each has a rule the file cannot express. Evidence links have their own slot
+# (`attach_evidence:`), because linking is an action with its own resolution rule, not an edit.
 EDITABLE_FIELDS: dict[str, tuple[str, ...]] = {
     "components": (
         "name",
@@ -105,8 +112,14 @@ _HEADER = """\
 # question by writing under `answer:`, and set `confirm: true` on a claim you can vouch for. Leave
 # anything you have no view on exactly as it is: an unchanged entry applies nothing.
 #
-# Identifiers, statuses, evidence links, and timestamps are the application's and are shown for
-# reference. Changing one here has no effect.
+# List evidence identifiers under an entry's `attach_evidence:` to link existing references to it.
+# Settle a contradiction by filling both `resolution:` and `rationale:` under `contradictions:`.
+# Add an object the extractor missed under `additions:`, as
+#   - type: components            # or actors, assets, data_flows, trust_boundaries
+#     fields: {name: ..., ...}    # the object's own fields; the identifier is allocated for you
+#
+# Identifiers, statuses, and timestamps are the application's and are shown for reference.
+# Changing one here has no effect.
 """
 
 
@@ -128,6 +141,7 @@ def export_review_file(package: ContextReviewPackage) -> dict[str, Any]:
             {
                 "id": obj.id,
                 "decision": None,
+                "attach_evidence": [],
                 "editable": {
                     field: obj.model_dump(mode="json")[field]
                     for field in EDITABLE_FIELDS[group]
@@ -144,14 +158,36 @@ def export_review_file(package: ContextReviewPackage) -> dict[str, Any]:
             "confidence": presented.claim.confidence.value,
             "decision": None,
             "confirm": False,
+            "attach_evidence": [],
             "evidence": [excerpt.evidence_id for excerpt in presented.excerpts],
+            # A contradicted claim's value and rationale are settled through `contradictions:`,
+            # not edited here — an edit would choose a side without recording why, and a stale
+            # snapshot re-applied after the resolution would quietly revert it.
             "editable": {
                 field: presented.claim.model_dump(mode="json")[field]
                 for field in EDITABLE_FIELDS["claims"]
+                if not (
+                    presented.claim.status is ClaimStatus.CONTRADICTED
+                    and field in ("value", "rationale")
+                )
             },
         }
         for presented in package.claims
     ]
+
+    document["contradictions"] = [
+        {
+            "id": observation.id,
+            "summary": observation.summary,
+            "claims": list(observation.subject_claim_ids),
+            "evidence": list(observation.evidence_ids),
+            "resolution": None,
+            "rationale": None,
+        }
+        for observation in package.contradictions
+    ]
+
+    document["additions"] = []
 
     document["questions"] = [
         {
@@ -210,6 +246,34 @@ def apply_review_file(
     by_id = {obj.id: obj for _, model in CONTEXT_OBJECT_TYPES for obj in handle.objects.list(model)}
     by_id.update({claim.id: claim for claim in handle.objects.list(ContextClaim)})
     questions = {question.id: question for question in handle.objects.list(Question)}
+    index = EvidenceIndex(handle)
+
+    models_by_group = dict(CONTEXT_OBJECT_TYPES)
+    for entry in document.get("additions") or []:
+        group = str(entry.get("type") or "")
+        model = models_by_group.get(group)
+        if model is None:
+            raise ReviewFileError(
+                f"{group or '(no type)'} is not a type an addition may name. Write one of: "
+                f"{', '.join(name for name, _ in CONTEXT_OBJECT_TYPES)}."
+            )
+        # An addition naming an object that already exists is skipped, not duplicated: the common
+        # cause is the same edited file applied twice, and the rare cause — a reviewer adding a
+        # namesake of an extracted object — is a duplicate either way.
+        name = (entry.get("fields") or {}).get("name")
+        if name and any(getattr(obj, "name", None) == name for obj in handle.objects.list(model)):
+            continue
+        try:
+            _, decision = add_context_object(
+                handle,
+                model,
+                dict(entry.get("fields") or {}),
+                reviewer_id=reviewer_id,
+                workflow_run_id=workflow_run_id,
+            )
+        except (ReviewerActionError, PydanticValidationError) as refused:
+            raise ReviewFileError(f"additions: {refused}") from None
+        decisions.append(decision)
 
     for group, _ in (*CONTEXT_OBJECT_TYPES, ("claims", ContextClaim)):
         for entry in document.get(group) or []:
@@ -219,10 +283,18 @@ def apply_review_file(
                     group,
                     entry,
                     by_id,
+                    index=index,
                     reviewer_id=reviewer_id,
                     workflow_run_id=workflow_run_id,
                 )
             )
+
+    for entry in document.get("contradictions") or []:
+        decisions.extend(
+            _apply_contradiction(
+                handle, entry, reviewer_id=reviewer_id, workflow_run_id=workflow_run_id
+            )
+        )
 
     for entry in document.get("questions") or []:
         answer = (entry.get("answer") or "").strip()
@@ -249,14 +321,15 @@ def _apply_entry(
     entry: dict[str, Any],
     by_id: dict[str, Any],
     *,
+    index: EvidenceIndex,
     reviewer_id: str,
     workflow_run_id: str | None,
 ) -> list[ReviewerDecision]:
-    """One entry's actions, in a fixed order: edit, then confirm, then decide.
+    """One entry's actions, in a fixed order: edit, then attach, then confirm, then decide.
 
-    The order matters and is not arbitrary. An edit changes content and a decision records a
-    judgment about the object; applying the decision first would record a judgment about the
-    version the reviewer replaced.
+    The order matters and is not arbitrary. An edit changes content, an attachment changes what
+    the object rests on, and a decision records a judgment about the object; applying the decision
+    first would record a judgment about the version the reviewer replaced.
     """
     identifier = str(entry.get("id") or "")
     obj = by_id.get(identifier)
@@ -278,6 +351,28 @@ def _apply_entry(
             reviewer_id=reviewer_id,
             workflow_run_id=workflow_run_id,
         )
+        by_id[identifier] = obj
+        produced.append(decision)
+
+    # Filtered to what the object does not already cite, so a file applied twice attaches once —
+    # the same property every other slot has: expressing a difference, not repeating a state.
+    attach = [
+        evidence_id
+        for evidence_id in entry.get("attach_evidence") or []
+        if evidence_id not in getattr(obj, "evidence_ids", ())
+    ]
+    if attach:
+        try:
+            obj, decision = attach_evidence(
+                handle,
+                obj,
+                attach,
+                index=index,
+                reviewer_id=reviewer_id,
+                workflow_run_id=workflow_run_id,
+            )
+        except ReviewerActionError as refused:
+            raise ReviewFileError(f"{identifier}: {refused}") from None
         by_id[identifier] = obj
         produced.append(decision)
 
@@ -312,3 +407,52 @@ def _apply_entry(
         produced.append(decision)
 
     return produced
+
+
+def _apply_contradiction(
+    handle: AssessmentHandle,
+    entry: dict[str, Any],
+    *,
+    reviewer_id: str,
+    workflow_run_id: str | None,
+) -> list[ReviewerDecision]:
+    """One contradiction entry: both slots filled resolves it; both empty leaves it alone.
+
+    One slot without the other is refused rather than half-applied, because a resolution with no
+    rationale is exactly the silent choice `resolve_contradiction` exists to prevent, and a
+    rationale with no resolution settles nothing.
+    """
+    resolution = entry.get("resolution")
+    rationale = str(entry.get("rationale") or "").strip()
+    if resolution is None and not rationale:
+        return []
+    if resolution is None or not rationale:
+        raise ReviewFileError(
+            f"{entry.get('id')}: a contradiction is settled by filling both `resolution:` and "
+            f"`rationale:`; one without the other records nothing defensible"
+        )
+
+    identifier = str(entry.get("id") or "")
+    observation = handle.objects.find(SourceObservation, identifier)
+    if observation is None:
+        raise ReviewFileError(f"{identifier} is not an observation in this assessment")
+    if (observation.reviewer_notes or "").strip():
+        if observation.reviewer_notes == rationale:
+            return []  # the same file applied twice; the resolution already stands
+        raise ReviewFileError(
+            f"{identifier} is already resolved with a different rationale. Resolving it again "
+            f"would silently replace a recorded judgment; edit the observation instead."
+        )
+
+    try:
+        resolved = resolve_contradiction(
+            handle,
+            observation,
+            resolution=resolution,
+            rationale=rationale,
+            reviewer_id=reviewer_id,
+            workflow_run_id=workflow_run_id,
+        )
+    except ReviewerActionError as refused:
+        raise ReviewFileError(f"{identifier}: {refused}") from None
+    return list(resolved.decisions)

@@ -96,6 +96,7 @@ if TYPE_CHECKING:
         ContextValidationOutcome,
         ReviewTrigger,
         ValidationError,
+        ZoneMismatch,
     )
     from trace_ai.workflow.nodes import NodeContext
 
@@ -120,6 +121,7 @@ __all__ = [
     "confirm_assumption",
     "current_system_context",
     "decide_object",
+    "previous_approved_context",
     "re_extraction_feedback",
     "request_re_extraction",
     "resolve_contradiction",
@@ -196,6 +198,28 @@ def current_system_context(handle: AssessmentHandle) -> SystemContext:
     return revisions[-1]
 
 
+def previous_approved_context(
+    handle: AssessmentHandle, current: SystemContext
+) -> SystemContext | None:
+    """The latest approved revision other than `current`, or `None` when there is none.
+
+    This is what makes section 7's sixth human-review trigger reachable (#400): a validation run
+    that knows the previously approved baseline can flag a materially different extraction. Reading
+    `approved_at` rather than counting decisions is the checkpoint gate's own rule — a revision is
+    approved because the approval path stamped it, not because rows exist near it.
+
+    `None` is the common case and means the trigger has nothing to compare against: a first
+    extraction has no approved prior, and neither does a re-extraction requested before any
+    approval.
+    """
+    approved = [
+        revision
+        for revision in sorted(handle.objects.list(SystemContext), key=lambda item: item.version)
+        if revision.approved_at is not None and revision.version != current.version
+    ]
+    return approved[-1] if approved else None
+
+
 @dataclass(frozen=True, slots=True)
 class QuotedExcerpt:
     """One source passage, labelled as what it is.
@@ -265,6 +289,36 @@ class ContextReviewPackage:
 
     triggers: tuple[ReviewTrigger, ...] = ()
     outstanding_errors: tuple[ValidationError, ...] = ()
+    zone_mismatches: tuple[ZoneMismatch, ...] = ()
+    """DEC-068's warn-only cross-claim check: flows between differing zones that cross no
+    declared boundary. Shown for the reviewer to resolve — declare the boundary or fix the zone
+    label — and blocking nothing."""
+
+    contradictions: tuple[SourceObservation, ...] = ()
+    """Contradiction observations awaiting a resolution, oldest first.
+
+    Presented so the review surface can offer `resolve_contradiction` (#399): a reviewer cannot
+    settle a disagreement the package never showed them. An observation already carrying
+    `reviewer_notes` has been resolved and is excluded — resolution writes the rationale there,
+    so the notes are the marker."""
+
+    injection_attempts: tuple[SourceObservation, ...] = ()
+    """Injection attempts the extraction recorded about the supplied documents (DEC-075).
+
+    Surfacing them is detection made visible: the reviewer is told which document tried to inject
+    and what it attempted, framed as an observation about the document rather than an instruction
+    to anyone. An attempt here does not block approval — it triages attention — but a subject
+    extracted from a flagged document also carries an `injection_flag` reason."""
+
+    reasons_by_object_id: dict[str, tuple[str, ...]] = field(default_factory=dict)
+    """Routing reasons per subject (DEC-062), derived from persisted state and stored nowhere.
+
+    A subject absent from this map has no reasons, which is routine, not exempt: it still needs a
+    decision. The values are `ReasonCode` strings, kept as strings so the package carries no
+    import an interface has to resolve."""
+
+    def reasons_for(self, object_id: str) -> tuple[str, ...]:
+        return self.reasons_by_object_id.get(object_id, ())
 
     def claims_by_status(self) -> dict[ClaimStatus, tuple[ClaimPresentation, ...]]:
         """The claims grouped by what kind of assertion each is.
@@ -415,7 +469,43 @@ def build_context_review_package(
         questions=questions,
         triggers=validation.triggers,
         outstanding_errors=validation.blocking_errors,
+        zone_mismatches=validation.zone_mismatches,
+        contradictions=tuple(
+            observation
+            for observation in handle.objects.list(SourceObservation)
+            if observation.kind is ObservationKind.CONTRADICTION
+            and not (observation.reviewer_notes or "").strip()
+        ),
+        injection_attempts=tuple(
+            observation
+            for observation in handle.objects.list(SourceObservation)
+            if observation.kind is ObservationKind.INJECTION_ATTEMPT
+        ),
+        reasons_by_object_id=_routing_reasons(handle),
     )
+
+
+def _routing_reasons(handle: AssessmentHandle) -> dict[str, tuple[str, ...]]:
+    """The per-subject routing reasons (DEC-062), derived from persisted state at build time.
+
+    `injection_flag` (issue #274) and `revisit_due` (DEC-061) are derived here; the other codes
+    attach as their inputs are built. The reasons are computed, never read from storage.
+    """
+    from trace_ai.workflow.reason_codes import (
+        ReasonCode,
+        injection_flagged_subjects,
+        low_confidence_subjects,
+        revisit_due_claims,
+    )
+
+    reasons: dict[str, list[str]] = {}
+    for object_id in injection_flagged_subjects(handle):
+        reasons.setdefault(object_id, []).append(ReasonCode.INJECTION_FLAG.value)
+    for object_id in low_confidence_subjects(handle):
+        reasons.setdefault(object_id, []).append(ReasonCode.LOW_CONFIDENCE.value)
+    for object_id in revisit_due_claims(handle):
+        reasons.setdefault(object_id, []).append(ReasonCode.REVISIT_DUE.value)
+    return {object_id: tuple(codes) for object_id, codes in reasons.items()}
 
 
 def context_review_subjects(context: NodeContext) -> list[str]:
@@ -1132,7 +1222,15 @@ def re_extraction_feedback(handle: AssessmentHandle) -> str | None:
     trust levels put `reviewer_edit` among the origins that are *not* material under review, and
     the reviewer is the operator rather than a document being assessed. This closes DEC-038's open
     question about whether the rationale may reach a prompt.
+
+    The validation node's retry instructions ride along (DEC-086): re-extraction is the one path
+    on which the extracting agent runs again, so it is the consumer `agent-design.md` section 8's
+    "retry instructions" output was waiting for. The reviewer says why the context was rejected;
+    the validator says, per retryable error, what a corrected extraction must fix. Both are
+    application- or operator-authored and belong outside the fence.
     """
+    from trace_ai.workflow.context_validation import validate_context
+
     requests = [
         decision
         for decision in handle.objects.list(ReviewerDecision)
@@ -1141,4 +1239,19 @@ def re_extraction_feedback(handle: AssessmentHandle) -> str | None:
     ]
     if not requests:
         return None
-    return max(requests, key=lambda decision: (decision.created_at, decision.id)).rationale
+    rationale = max(requests, key=lambda decision: (decision.created_at, decision.id)).rationale
+
+    objects: list[DomainModel] = [
+        obj for _, model in CONTEXT_OBJECT_TYPES for obj in handle.objects.list(model)
+    ]
+    objects.extend(handle.objects.list(ContextClaim))
+    outcome = validate_context(
+        current_system_context(handle),
+        objects,
+        available_evidence={reference.id for reference in handle.objects.list(_reference())},
+    )
+    instructions = outcome.retry_instructions()
+    if not instructions:
+        return rationale
+    listed = "\n".join(f"- {instruction}" for instruction in instructions)
+    return f"{rationale}\n\nThe validation node reported, per correctable error:\n{listed}"

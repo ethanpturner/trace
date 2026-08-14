@@ -1,0 +1,74 @@
+{
+  "threats": [
+    {
+      "title": "Forged order-status callbacks processed as the provider's",
+      "description": "Both supplied documents establish the same weakness: the integration guide states callbacks are not signed and the provider's signing feature is not enabled, and the incident review confirmed the endpoint accepts unsigned requests from anywhere. Any caller that formats a callback correctly is processed as though it came from the payment provider, and the fabricated status reaches the operations channel.",
+      "methodology": "stride-scenario-based",
+      "category": [
+        "spoofing"
+      ],
+      "threat_actor_ids": [],
+      "affected_component_ids": [
+        "cmp-001"
+      ],
+      "affected_asset_ids": [
+        "ast-001"
+      ],
+      "related_data_flow_ids": [
+        "df-001"
+      ],
+      "preconditions": [
+        "the attacker can reach the public callback endpoint"
+      ],
+      "attack_path": [
+        "format a well-formed callback",
+        "post it to the receiver",
+        "let the fabricated status reach the operations channel"
+      ],
+      "impact": "Fabricated order statuses reach the operations channel as the provider's.",
+      "likelihood": null,
+      "confidence": "high",
+      "evidence_ids": [
+        "evd-002",
+        "evd-005"
+      ],
+      "assumption_ids": [],
+      "open_question_ids": []
+    },
+    {
+      "title": "Replayed callbacks repeat processing",
+      "description": "The endpoint accepts unsigned requests, and the operations notes record nothing about repeated deliveries of the same callback. Whether re-submitting a previously valid callback repeats its processing is not established.",
+      "methodology": "stride-scenario-based",
+      "category": [
+        "tampering"
+      ],
+      "threat_actor_ids": [],
+      "affected_component_ids": [
+        "cmp-001"
+      ],
+      "affected_asset_ids": [
+        "ast-001"
+      ],
+      "related_data_flow_ids": [
+        "df-001"
+      ],
+      "preconditions": [
+        "a previously valid callback is captured or already known",
+        "processing of a repeated callback is not idempotent"
+      ],
+      "attack_path": [
+        "re-submit a captured callback",
+        "repeat its processing"
+      ],
+      "impact": "Repeated statuses mislead the operations channel.",
+      "likelihood": null,
+      "confidence": "low",
+      "evidence_ids": [
+        "evd-005",
+        "evd-006"
+      ],
+      "assumption_ids": [],
+      "open_question_ids": []
+    }
+  ]
+}

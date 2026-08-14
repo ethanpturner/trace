@@ -1,0 +1,332 @@
+{
+  "threats": [
+    {
+      "title": "Crafted image triggers a flaw in image processing",
+      "description": "An end user submits a crafted image that exploits a memory-safety flaw in the serving path's image processing, leading to remote code execution or denial of service on the web server.",
+      "methodology": "stride-scenario-based",
+      "category": [
+        "tampering",
+        "denial_of_service"
+      ],
+      "threat_actor_ids": [
+        "act-001"
+      ],
+      "affected_component_ids": [
+        "cmp-002"
+      ],
+      "affected_asset_ids": [
+        "ast-003"
+      ],
+      "related_data_flow_ids": [
+        "df-001"
+      ],
+      "preconditions": [
+        "image parsing occurs on the serving path without sandboxing or input hardening the documents describe"
+      ],
+      "attack_path": [
+        "craft a malformed image",
+        "submit it through the public API"
+      ],
+      "impact": "Service availability and production host integrity are compromised.",
+      "likelihood": null,
+      "confidence": "medium",
+      "evidence_ids": [
+        "evd-010",
+        "evd-012"
+      ],
+      "assumption_ids": [],
+      "open_question_ids": []
+    },
+    {
+      "title": "Compromised third-party library reaches training or serving",
+      "description": "A poisoned third-party library or tool is pulled into the image-gathering or model pipeline and compromises training data, the trained model, or the hosts that run the pipeline.",
+      "methodology": "stride-scenario-based",
+      "category": [
+        "tampering"
+      ],
+      "threat_actor_ids": [
+        "act-004"
+      ],
+      "affected_component_ids": [
+        "cmp-004",
+        "cmp-005"
+      ],
+      "affected_asset_ids": [
+        "ast-001",
+        "ast-002"
+      ],
+      "related_data_flow_ids": [
+        "df-002"
+      ],
+      "preconditions": [
+        "third-party tools and libraries are consumed without a verification step the documents describe"
+      ],
+      "attack_path": [
+        "poison a third-party tool or library the experimental environment pulls",
+        "let the gathering or training path consume it"
+      ],
+      "impact": "Training data integrity, model integrity, and host integrity are compromised.",
+      "likelihood": null,
+      "confidence": "medium",
+      "evidence_ids": [
+        "evd-009",
+        "evd-010"
+      ],
+      "assumption_ids": [],
+      "open_question_ids": []
+    },
+    {
+      "title": "Stored training images tampered with or deleted",
+      "description": "An attacker with write access to the training images blob alters or deletes stored images to skew training results or deny service to the training pipeline.",
+      "methodology": "stride-scenario-based",
+      "category": [
+        "tampering"
+      ],
+      "threat_actor_ids": [],
+      "affected_component_ids": [
+        "cmp-005"
+      ],
+      "affected_asset_ids": [
+        "ast-001"
+      ],
+      "related_data_flow_ids": [
+        "df-002"
+      ],
+      "preconditions": [
+        "blob access control fails or is misconfigured",
+        "image integrity is not validated before training"
+      ],
+      "attack_path": [
+        "obtain write access to the training images blob",
+        "alter or delete stored images"
+      ],
+      "impact": "Model accuracy and training availability are degraded.",
+      "likelihood": null,
+      "confidence": "medium",
+      "evidence_ids": [
+        "evd-002",
+        "evd-011"
+      ],
+      "assumption_ids": [],
+      "open_question_ids": []
+    },
+    {
+      "title": "Notebook modified to carry a backdoor",
+      "description": "An attacker who reaches the experimental environment modifies a notebook file so that training runs execute attacker code — a keylogger, a data stealer, or a model backdoor.",
+      "methodology": "stride-scenario-based",
+      "category": [
+        "tampering",
+        "elevation_of_privilege"
+      ],
+      "threat_actor_ids": [],
+      "affected_component_ids": [
+        "cmp-005"
+      ],
+      "affected_asset_ids": [
+        "ast-006",
+        "ast-002"
+      ],
+      "related_data_flow_ids": [],
+      "preconditions": [
+        "notebook content is not integrity-checked before execution",
+        "the password-authenticated experimental boundary is crossed"
+      ],
+      "attack_path": [
+        "cross the public-to-experimental boundary",
+        "modify a notebook",
+        "wait for a training run to execute it"
+      ],
+      "impact": "Model integrity, engineer credentials, and the experimental environment are compromised.",
+      "likelihood": null,
+      "confidence": "medium",
+      "evidence_ids": [
+        "evd-007",
+        "evd-010"
+      ],
+      "assumption_ids": [],
+      "open_question_ids": []
+    },
+    {
+      "title": "Persisted model files read or modified",
+      "description": "An attacker or insider reads the serialized model from the model blob to steal intellectual property, or modifies it to degrade prediction accuracy in production.",
+      "methodology": "stride-scenario-based",
+      "category": [
+        "information_disclosure",
+        "tampering"
+      ],
+      "threat_actor_ids": [],
+      "affected_component_ids": [
+        "cmp-002",
+        "cmp-006"
+      ],
+      "affected_asset_ids": [
+        "ast-002"
+      ],
+      "related_data_flow_ids": [
+        "df-003"
+      ],
+      "preconditions": [
+        "access to the model blob is obtained despite the documented access control, or through a path it does not cover"
+      ],
+      "attack_path": [
+        "reach the model storage blob",
+        "read or replace the serialized model"
+      ],
+      "impact": "Model confidentiality and classification integrity are compromised.",
+      "likelihood": null,
+      "confidence": "medium",
+      "evidence_ids": [
+        "evd-002",
+        "evd-011"
+      ],
+      "assumption_ids": [],
+      "open_question_ids": []
+    },
+    {
+      "title": "Systematic perturbation drives misclassification",
+      "description": "An attacker probes the public classification API with systematically perturbed images until inputs reliably produce wrong classifications.",
+      "methodology": "stride-scenario-based",
+      "category": [
+        "tampering"
+      ],
+      "threat_actor_ids": [
+        "act-001"
+      ],
+      "affected_component_ids": [
+        "cmp-001",
+        "cmp-002"
+      ],
+      "affected_asset_ids": [
+        "ast-002",
+        "ast-008"
+      ],
+      "related_data_flow_ids": [
+        "df-001"
+      ],
+      "preconditions": [
+        "the public API permits enough classification attempts for iterative probing"
+      ],
+      "attack_path": [
+        "submit perturbed variants of an image",
+        "observe classifications and refine until misclassification is reliable"
+      ],
+      "impact": "Classification integrity and trust in system output are degraded.",
+      "likelihood": null,
+      "confidence": "medium",
+      "evidence_ids": [
+        "evd-010",
+        "evd-012"
+      ],
+      "assumption_ids": [],
+      "open_question_ids": []
+    },
+    {
+      "title": "Uploaded images exposed from the cache",
+      "description": "An attacker or malicious insider reads user-submitted images from the in-memory Redis cache before they expire.",
+      "methodology": "stride-scenario-based",
+      "category": [
+        "information_disclosure"
+      ],
+      "threat_actor_ids": [],
+      "affected_component_ids": [
+        "cmp-002"
+      ],
+      "affected_asset_ids": [
+        "ast-003"
+      ],
+      "related_data_flow_ids": [
+        "df-001"
+      ],
+      "preconditions": [
+        "access to the Redis cache or to process memory on the serving host"
+      ],
+      "attack_path": [
+        "reach the cache or serving host memory",
+        "read cached user images"
+      ],
+      "impact": "User data confidentiality is compromised.",
+      "likelihood": null,
+      "confidence": "medium",
+      "evidence_ids": [
+        "evd-004",
+        "evd-011"
+      ],
+      "assumption_ids": [],
+      "open_question_ids": []
+    },
+    {
+      "title": "SSH key theft from a developer machine",
+      "description": "An attacker compromises an engineer's machine, steals SSH private keys, and uses them to reach the Bastion as an authorized user.",
+      "methodology": "stride-scenario-based",
+      "category": [
+        "spoofing",
+        "elevation_of_privilege"
+      ],
+      "threat_actor_ids": [
+        "act-003"
+      ],
+      "affected_component_ids": [
+        "cmp-003"
+      ],
+      "affected_asset_ids": [
+        "ast-004"
+      ],
+      "related_data_flow_ids": [
+        "df-004"
+      ],
+      "preconditions": [
+        "a developer machine holding production SSH keys is compromised"
+      ],
+      "attack_path": [
+        "compromise an engineer's machine",
+        "steal the SSH private key",
+        "authenticate to the Bastion as that engineer"
+      ],
+      "impact": "Production administrative access, model integrity, and storage integrity are exposed.",
+      "likelihood": null,
+      "confidence": "medium",
+      "evidence_ids": [
+        "evd-010",
+        "evd-012"
+      ],
+      "assumption_ids": [],
+      "open_question_ids": []
+    },
+    {
+      "title": "Bastion compromised through its exposed SSH surface",
+      "description": "An attacker exploits a vulnerability in the Bastion's reachable SSH service to escalate privileges or impersonate authorized users.",
+      "methodology": "stride-scenario-based",
+      "category": [
+        "elevation_of_privilege"
+      ],
+      "threat_actor_ids": [],
+      "affected_component_ids": [
+        "cmp-003"
+      ],
+      "affected_asset_ids": [
+        "ast-004",
+        "ast-005"
+      ],
+      "related_data_flow_ids": [
+        "df-004"
+      ],
+      "preconditions": [
+        "the Bastion SSH surface is reachable by the attacker and carries an exploitable weakness"
+      ],
+      "attack_path": [
+        "reach the Bastion's SSH service",
+        "exploit a service vulnerability",
+        "escalate or impersonate an authorized user"
+      ],
+      "impact": "Production administrative access and audit log integrity are compromised.",
+      "likelihood": null,
+      "confidence": "medium",
+      "evidence_ids": [
+        "evd-005",
+        "evd-010"
+      ],
+      "assumption_ids": [],
+      "open_question_ids": []
+    }
+  ]
+}

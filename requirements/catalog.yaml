@@ -17,7 +17,7 @@ catalog:
   # comments, indentation, and key order do not move it -- and a comment doing real
   # work is invisible to it. Do not edit by hand; run
   #   uv run python scripts/catalog_hash.py --write
-  content_hash: sha256:cf77bb8255daf25a747549c46c7e8a1a993075771b469718413a2a1c3e61e759
+  content_hash: sha256:82feaf088d0d8a347dddca9fb4883931432c9411fc2cc6d6ec5f10c511cdf102
 
   requirement_ids:
 

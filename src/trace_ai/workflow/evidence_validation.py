@@ -47,6 +47,7 @@ from trace_ai.services.evidence.validation_package import (
     assemble_evidence_input,
 )
 from trace_ai.workflow.errors import ErrorClass, classify_model_failure
+from trace_ai.workflow.limits import resolve_retry_policy
 from trace_ai.workflow.nodes import NodeResult
 from trace_ai.workflow.phases import Phase
 from trace_ai.workflow.retry import AttemptFailedError, RetryPolicy, run_with_retries
@@ -129,7 +130,10 @@ class EvidenceValidationNode:
     subjects: Sequence[DomainModel]
     observations: Sequence[SourceObservation] = ()
     budget: Budget | None = None
-    retry_policy: RetryPolicy = field(default_factory=RetryPolicy)
+    retry_policy: RetryPolicy | None = None
+    """The attempt loop's policy. `None` — the norm under the driver — defers to the
+    budget's `retry_policy()`, so the configuration's `maximum_retries_per_node` is the
+    operative ceiling (#397); the built-in default applies only when there is neither."""
 
     version: str = NODE_VERSION
     execution_type: ExecutionType = field(default=ExecutionType.MODEL, init=False)
@@ -183,6 +187,7 @@ class EvidenceValidationNode:
         def attempt(state: Any) -> EvidenceValidationProposal:
             nonlocal attempts
             attempts += 1
+            execution.retry_number = attempts - 1
 
             prompt = (
                 composed.text
@@ -227,6 +232,12 @@ class EvidenceValidationNode:
                 )
 
             usages.append(outcome.usage)
+
+            # Section 29: the conditions the call actually ran at, recorded where a reader of the
+            # ExecutionRecord can find them -- a wrong effort mapping is otherwise invisible (#401).
+            for condition_key in ("effort", "creativity"):
+                if condition_key in outcome.metadata:
+                    execution.metadata[condition_key] = outcome.metadata[condition_key]
             if self.budget is not None:
                 self.budget.spend_model_call(outcome.usage.estimated_cost)
 
@@ -280,7 +291,7 @@ class EvidenceValidationNode:
             execution.prompt_version = composed.reference
             proposal = run_with_retries(
                 attempt,
-                policy=self.retry_policy,
+                policy=resolve_retry_policy(self.retry_policy, self.budget),
                 node_name=NODE_NAME,
                 artifacts=context.handle.artifacts,
                 on_attempt_failed=lambda number, failure, path: execution.metadata.update(

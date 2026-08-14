@@ -29,18 +29,23 @@ from __future__ import annotations
 
 import argparse
 import sys
+from datetime import date
 from typing import TYPE_CHECKING, Any
 
+from trace_ai.config import MissingSettingError
 from trace_ai.domain.assessment import default_configuration
-from trace_ai.domain.enums import ReviewDisposition, SourceOrigin
+from trace_ai.domain.enums import ReviewDisposition, RiskTreatment, Severity, SourceOrigin
 from trace_ai.domain.evidence import EvidenceReference
-from trace_ai.domain.execution import WorkflowRun
+from trace_ai.domain.execution import RunStatus, WorkflowRun
+from trace_ai.domain.finding import Finding
 from trace_ai.domain.proposals import ContextExtractionProposal
-from trace_ai.domain.source_document import SourceDocument, TrustLevel
+from trace_ai.domain.source_document import IngestionStatus, SourceDocument, TrustLevel
 from trace_ai.infrastructure.database.store import AssessmentStore, StoreError
 from trace_ai.infrastructure.filesystem.artifact_store import DEFAULT_ROOT, ArtifactStoreError
 from trace_ai.infrastructure.model.factory import UnknownProviderError, build_model
+from trace_ai.infrastructure.model.fake import ResponsesExhaustedError
 from trace_ai.infrastructure.model.profiles import UnknownModelProfileError, resolve_profile
+from trace_ai.infrastructure.model.recorded import load_recorded_responses
 from trace_ai.services.assessment import AssessmentService, AssessmentServiceError
 from trace_ai.services.context.pipeline import context_objects, run_context_slice
 from trace_ai.services.context.review_file import (
@@ -49,24 +54,51 @@ from trace_ai.services.context.review_file import (
     read_review_file,
     write_review_file,
 )
+from trace_ai.services.driver import resume_assessment, run_assessment
+from trace_ai.services.evaluation.report_metrics import RUBRIC_CATEGORIES, record_rubric
 from trace_ai.services.evidence.index import EvidenceIndex, EvidenceNotFoundError
 from trace_ai.services.evidence.indexing import IndexingError, index_document
+from trace_ai.services.findings.review_file import (
+    FindingReviewFileError,
+    apply_finding_review_file,
+    read_finding_review_file,
+    write_finding_review_file,
+)
+from trace_ai.services.findings.review_package import (
+    build_finding_review_package,
+    render_markdown,
+)
 from trace_ai.services.ingestion.loader import DocumentLoader, DocumentLoadError
+from trace_ai.services.verification import verify_assessment
 from trace_ai.workflow.checkpoint import load_state
 from trace_ai.workflow.context_review import (
     ApprovalRefusedError,
     ReviewerActionError,
     answer_question,
     approve_context,
+    attach_evidence,
     build_context_review_package,
     confirm_assumption,
     current_system_context,
     decide_object,
+    previous_approved_context,
     request_re_extraction,
+    resolve_contradiction,
 )
 from trace_ai.workflow.context_validation import validate_context
 from trace_ai.workflow.errors import WorkflowError
+from trace_ai.workflow.finding_review import (
+    approve_finding,
+    assign_risk_treatment,
+    change_severity,
+    conclude_finding_review,
+    defer_finding,
+    edit_finding,
+    reject_finding,
+    request_more_analysis,
+)
 from trace_ai.workflow.limits import LimitExceededError
+from trace_ai.workflow.phases import Phase
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
@@ -86,7 +118,9 @@ DEFAULT_THREAT_METHODOLOGY = "stride-scenario-based"
 
 # Errors the services raise by name. These become a message and a non-zero exit code; anything
 # else is a bug and keeps its traceback, because hiding an unexpected failure is how a tool starts
-# lying about what happened.
+# lying about what happened. `MissingSettingError` and `ResponsesExhaustedError` are the two an
+# operator causes from the command line — an unset provider key, and fewer `--response` files than
+# the run makes model calls — so both are answered in a sentence rather than a traceback.
 EXPECTED_ERRORS = (
     AssessmentServiceError,
     DocumentLoadError,
@@ -94,12 +128,15 @@ EXPECTED_ERRORS = (
     EvidenceNotFoundError,
     ArtifactStoreError,
     StoreError,
+    FindingReviewFileError,
     ReviewFileError,
     ReviewerActionError,
     UnknownModelProfileError,
     UnknownProviderError,
     WorkflowError,
     LimitExceededError,
+    MissingSettingError,
+    ResponsesExhaustedError,
     FileNotFoundError,
     ValueError,
 )
@@ -120,7 +157,7 @@ def _default_reviewer() -> str:
 def build_parser() -> argparse.ArgumentParser:
     """The command surface DEC-032 confirms.
 
-    `context extract` and `context show` are absent rather than stubbed: `--help` is a promise.
+    `--help` is a promise: every command listed here works today, and nothing is stubbed.
     """
     parser = argparse.ArgumentParser(
         prog="trace",
@@ -147,8 +184,32 @@ def build_parser() -> argparse.ArgumentParser:
     status = assessment_commands.add_parser("status", help="report an assessment's state")
     status.add_argument("assessment_id")
 
+    candidates = assessment_commands.add_parser(
+        "candidates", help="list catalog-gap candidates for the catalog owner"
+    )
+    candidates.add_argument("assessment_id")
+
+    export = commands.add_parser("export", help="serialize approved objects to interop formats")
+    export_commands = export.add_subparsers(dest="command")
+    tm_bom = export_commands.add_parser(
+        "tm-bom", help="export the approved model as a TM-BOM document (DEC-072)"
+    )
+    tm_bom.add_argument("assessment_id")
+
     archive = assessment_commands.add_parser("archive", help="retire an assessment")
     archive.add_argument("assessment_id")
+
+    approve = assessment_commands.add_parser(
+        "approve",
+        help="sign off the completed deliverable (DEC-082)",
+        description=(
+            "Moves a completed assessment to approved: the person's statement that they have "
+            "read the rendered report and stand behind it. Refused while no report exists, "
+            "while the report's run is not completed, or when that run is non-authoritative "
+            "(DEC-012) — approval is a sign-off, never a status setter."
+        ),
+    )
+    approve.add_argument("assessment_id")
 
     source = commands.add_parser("source", help="register and inspect source documents")
     source_commands = source.add_subparsers(dest="command")
@@ -212,10 +273,21 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="print the source excerpt behind each claim",
     )
+    show.add_argument(
+        "--observations",
+        action="store_true",
+        help=(
+            "print only what the extraction observed about the documents themselves: "
+            "injection attempts and contradictions awaiting resolution"
+        ),
+    )
 
     review = context_commands.add_parser("review", help="record reviewer decisions")
     review.add_argument("assessment_id")
-    review.add_argument("--reviewer", help="who the decisions are attributed to")
+    review.add_argument(
+        "--reviewer",
+        help="who the decisions are attributed to (default: the operating-system username)",
+    )
     review.add_argument("--export", type=_path, help="write an editable review file to this path")
     review.add_argument("--apply", type=_path, help="apply an edited review file")
     review.add_argument("--approve", action="append", dest="approved", default=[], metavar="ID")
@@ -237,6 +309,26 @@ def build_parser() -> argparse.ArgumentParser:
         help="answer an open question",
     )
     review.add_argument(
+        "--attach",
+        action="append",
+        dest="attachments",
+        default=[],
+        metavar="ID=EVD[,EVD...]",
+        help="link existing evidence references to an object or claim",
+    )
+    review.add_argument(
+        "--resolve",
+        action="append",
+        dest="resolutions",
+        default=[],
+        metavar="ID=VALUE",
+        help="settle a contradiction observation with VALUE; requires --rationale",
+    )
+    review.add_argument(
+        "--rationale",
+        help="the reasoning recorded with --resolve (and, optionally, with --attach)",
+    )
+    review.add_argument(
         "--request-re-extraction",
         dest="re_extraction",
         metavar="REASON",
@@ -245,10 +337,339 @@ def build_parser() -> argparse.ArgumentParser:
 
     approve = context_commands.add_parser("approve", help="approve the context baseline")
     approve.add_argument("assessment_id")
-    approve.add_argument("--reviewer", help="who the approval is attributed to")
+    approve.add_argument(
+        "--reviewer",
+        help="who the approval is attributed to (default: the operating-system username)",
+    )
     approve.add_argument("--note", help="why the baseline was approved")
 
+    running = commands.add_parser(
+        "run",
+        help="run the pipeline until it pauses at a checkpoint or completes",
+        description=(
+            "Runs every phase the transition table names, in order, and stops where the table "
+            "stops: at a checkpoint (exit 0, the run is paused and waiting for a person), at "
+            "completion (exit 0), or at a classified error (exit 1). Pausing is stopping: the "
+            "process exits and `trace resume` continues in a new one."
+        ),
+    )
+    running.add_argument("assessment_id")
+    _model_flags(running)
+
+    resuming = commands.add_parser(
+        "resume",
+        help="resume a paused run in a new process",
+        description=(
+            "Loads the paused state, re-runs the checkpoint, and continues when every subject "
+            "has a decision. With subjects still undecided the run pauses again, which is "
+            "partial progress rather than an error."
+        ),
+    )
+    resuming.add_argument("assessment_id")
+    resuming.add_argument("--run", dest="workflow_run_id", help="a specific paused run")
+    _model_flags(resuming)
+
+    findings = commands.add_parser("findings", help="review and approve candidate findings")
+    findings_commands = findings.add_subparsers(dest="command")
+
+    findings_show = findings_commands.add_parser(
+        "show", help="print the review package for the finding checkpoint"
+    )
+    findings_show.add_argument("assessment_id")
+
+    findings_review = findings_commands.add_parser("review", help="record reviewer decisions")
+    findings_review.add_argument("assessment_id")
+    findings_review.add_argument(
+        "--reviewer",
+        help="who the decisions are attributed to (default: the operating-system username)",
+    )
+    findings_review.add_argument(
+        "--severity",
+        action="append",
+        dest="severities",
+        default=[],
+        metavar="ID=LEVEL",
+        help="assign a severity; the reviewer's to give and recorded as an edit (DEC-030)",
+    )
+    findings_review.add_argument(
+        "--edit",
+        action="append",
+        nargs=2,
+        dest="edits",
+        default=[],
+        metavar=("ID", "FIELD=VALUE"),
+        help="change one field; validated in full and recorded with the delta (DEC-023)",
+    )
+    findings_review.add_argument(
+        "--treatment",
+        action="append",
+        dest="treatments",
+        default=[],
+        metavar="ID=VALUE",
+        help=(
+            "assign a risk treatment (undecided|mitigate|accept|transfer|avoid); the reviewer's "
+            "to give and recorded as an edit (DEC-060)"
+        ),
+    )
+    findings_review.add_argument(
+        "--treatment-rationale",
+        dest="treatment_rationale",
+        help="the residual-risk statement; required to approve a finding treated as 'accept'",
+    )
+    findings_review.add_argument(
+        "--treatment-review-by",
+        dest="treatment_review_by",
+        type=date.fromisoformat,
+        metavar="YYYY-MM-DD",
+        help="an optional date to revisit an accepted risk",
+    )
+    findings_review.add_argument(
+        "--approve", action="append", dest="approved", default=[], metavar="ID"
+    )
+    findings_review.add_argument(
+        "--reject", action="append", dest="rejected", default=[], metavar="ID"
+    )
+    findings_review.add_argument("--note", help="a rationale recorded with each decision")
+    findings_review.add_argument(
+        "--override-rationale",
+        dest="override_rationale",
+        help="approve past the deterministic gate, with the override recorded (DEC-055)",
+    )
+    findings_review.add_argument(
+        "--defer",
+        action="append",
+        dest="deferred",
+        default=[],
+        metavar="ID",
+        help="defer the decision; the finding stays a candidate and the deferral is the record",
+    )
+    findings_review.add_argument(
+        "--request-more-analysis",
+        action="append",
+        dest="more_analysis",
+        default=[],
+        metavar="ID",
+        help="ask for more analysis; requires --note saying what is missing (section 26)",
+    )
+    findings_review.add_argument(
+        "--export", type=_path, help="write an editable review file to this path"
+    )
+    findings_review.add_argument(
+        "--apply",
+        type=_path,
+        help=(
+            "apply an edited review file; the file reaches every reviewer action — "
+            "conversions, merges, rationale, and remediation included"
+        ),
+    )
+
+    findings_approve = findings_commands.add_parser(
+        "approve", help="conclude the finding review once every finding is decided"
+    )
+    findings_approve.add_argument("assessment_id")
+
+    evaluate = commands.add_parser(
+        "evaluate",
+        help="replay a registered benchmark scenario through the harness",
+        description=(
+            "Runs a scenario from benchmarks/scenarios.yaml through the ordinary pipeline, "
+            "offline, from its committed recording (DEC-073). Metrics persist with the replayed "
+            "assessment; a derived feed lands under benchmarks/results/, keyed by scenario, "
+            "condition, and label. A scenario without a recording is refused by name."
+        ),
+    )
+    evaluate.add_argument("scenario", nargs="?", help="a registered scenario slug")
+    evaluate.add_argument(
+        "--all",
+        action="store_true",
+        dest="all_scenarios",
+        help="run every registered scenario that has a recording, naming the ones skipped",
+    )
+    evaluate.add_argument(
+        "--condition",
+        default="clean",
+        help="the condition axis for the results feed (default: clean)",
+    )
+    evaluate.add_argument(
+        "--baseline",
+        choices=["generic", "structured"],
+        help=(
+            "score a single-pass baseline instead of the pipeline (DEC-074): one model call over "
+            "the same documents, replayed from the scenario's recorded baseline response"
+        ),
+    )
+    evaluate.add_argument(
+        "--ablation-set",
+        action="store_true",
+        dest="ablation_set",
+        help=(
+            "run the authoritative pipeline and each section-14 ablation for one scenario, and "
+            "report what each removed component changed (DEC-012)"
+        ),
+    )
+    evaluate.add_argument(
+        "--stability",
+        type=int,
+        metavar="N",
+        help=(
+            "run one scenario N times live and report per-metric variance and per-item agreement "
+            "(DEC-077); refuses the offline profile, which would measure nothing"
+        ),
+    )
+    evaluate.add_argument(
+        "--model-profile",
+        default="offline-fake",
+        help="the model profile for a stability run (default: offline-fake, which it refuses)",
+    )
+    evaluate.add_argument(
+        "--ablate",
+        action="append",
+        dest="ablations",
+        default=[],
+        metavar="NAME",
+        help="apply an ablation (repeatable); the run is marked non-authoritative (DEC-012)",
+    )
+    evaluate.add_argument(
+        "--label",
+        default="local",
+        help="the run's name in the results tree (default: local)",
+    )
+    evaluate.add_argument(
+        "--work-root",
+        type=_path,
+        help="where the replayed assessment is written (default: a temporary directory)",
+    )
+    evaluate.add_argument(
+        "--diff-against",
+        dest="diff_against",
+        metavar="LABEL",
+        help="classify each expected item against a prior feed with this label (DEC-073)",
+    )
+    evaluate.add_argument(
+        "--results-root",
+        dest="results_root",
+        type=_path,
+        help="where the feed is written (default: benchmarks/results/)",
+    )
+
+    verify = commands.add_parser(
+        "verify",
+        help="re-hash stored documents and evidence, and check the report manifest",
+        description=(
+            "Walks the evidence chain: every stored document against its recorded hash, every "
+            "evidence reference against its source, and the report manifest against the store. "
+            "Exit 0 when everything verifies; exit 1 with each drift named — identifier, "
+            "expected hash, found hash — and never the content that changed."
+        ),
+    )
+    verify.add_argument("assessment_id")
+
+    report = commands.add_parser("report", help="inspect the rendered report")
+    report_commands = report.add_subparsers(dest="command")
+
+    report_show = report_commands.add_parser("show", help="print the rendered report")
+    report_show.add_argument("assessment_id")
+    report_show.add_argument(
+        "--manifest",
+        action="store_true",
+        help="print the report's manifest instead of the report",
+    )
+
+    report_rubric = report_commands.add_parser(
+        "rubric",
+        help="record the reviewer rubric for the assessment's report",
+        description=(
+            "Records the evaluation plan's section 9 reviewer rubric: seven categories, each "
+            "scored one to five by a person, all in one invocation so a stored rubric is never "
+            "partial. Scores persist as evaluation results marked as reviewer judgement; no "
+            "rubric value is ever computed (design-principles.md section 15)."
+        ),
+    )
+    report_rubric.add_argument("assessment_id")
+    report_rubric.add_argument(
+        "--score",
+        action="append",
+        dest="scores",
+        default=[],
+        metavar="CATEGORY=N",
+        help=(
+            "one category scored one to five, repeatable; the seven categories are "
+            + ", ".join(RUBRIC_CATEGORIES)
+        ),
+    )
+    report_rubric.add_argument(
+        "--comments",
+        help="qualitative comments recorded with every rubric row",
+    )
+    report_rubric.add_argument(
+        "--reviewer",
+        help="who scored the report (default: the operating-system username, DEC-023)",
+    )
+
+    reset = commands.add_parser(
+        "reset",
+        help="return the data root to the fresh-clone state",
+        description=(
+            "Removes the assessment store and every assessment directory under the data root. "
+            "Exists for the rerun problem: a second run against a used root mints asm-002 while "
+            "every documented command names asm-001, so a rehearsal that was not wiped diverges "
+            "from any script. Without --force it lists what would go and removes nothing, and a "
+            "directory that does not look like a trace data root is refused outright."
+        ),
+    )
+    reset.add_argument(
+        "--force",
+        action="store_true",
+        help="actually remove; without it the command lists what would go and exits non-zero",
+    )
+
+    view = commands.add_parser(
+        "view",
+        help="serve a read-only local view of the assessments in the data root",
+        description=(
+            "Serves a read-only rendering of the persisted assessments on localhost for the "
+            "Stage 5 demonstration (DEC-032): the overview, context, workflow, questions, "
+            "findings, the finding-lineage walk, and the evaluation scorecard. It drives nothing "
+            "-- review stays on the command line -- serves GET only, and binds to 127.0.0.1. "
+            "Closing it loses nothing; everything it shows comes from the store."
+        ),
+    )
+    view.add_argument(
+        "--port",
+        type=int,
+        default=8765,
+        help="the localhost port to serve on (default: 8765)",
+    )
+
     return parser
+
+
+def _model_flags(parser: argparse.ArgumentParser) -> None:
+    """The flags every model-reaching run command shares."""
+    parser.add_argument(
+        "--model-profile",
+        default=DEFAULT_MODEL_PROFILE,
+        help="the provider, model, and settings bundle to run with",
+    )
+    parser.add_argument(
+        "--response",
+        action="append",
+        dest="responses",
+        default=[],
+        type=_path,
+        metavar="PATH",
+        help=(
+            "a recorded model response to replay, repeatable; files are consumed in the order "
+            "given, one per model call the run makes. A directory stands for its numbered "
+            "recordings in sorted order"
+        ),
+    )
+    parser.add_argument(
+        "--max-model-calls",
+        type=int,
+        help="stop the run before exceeding this many model calls",
+    )
+    parser.add_argument("--max-cost", help="stop the run before exceeding this estimated cost")
 
 
 def _path(value: str) -> Path:
@@ -263,17 +684,14 @@ def run(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
 
-    if args.group is None:
-        return _banner()
-    if getattr(args, "command", None) is None:
-        parser.parse_args([args.group, "--help"])
-        return 2
-
     handlers = {
         ("assessment", "create"): _assessment_create,
         ("assessment", "list"): _assessment_list,
         ("assessment", "status"): _assessment_status,
+        ("assessment", "candidates"): _assessment_candidates,
         ("assessment", "archive"): _assessment_archive,
+        ("assessment", "approve"): _assessment_approve,
+        ("export", "tm-bom"): _export_tm_bom,
         ("source", "add"): _source_add,
         ("source", "list"): _source_list,
         ("evidence", "list"): _evidence_list,
@@ -283,8 +701,40 @@ def run(argv: Sequence[str] | None = None) -> int:
         ("context", "show"): _context_show,
         ("context", "review"): _context_review,
         ("context", "approve"): _context_approve,
+        ("run", None): _run,
+        ("resume", None): _resume,
+        ("verify", None): _verify,
+        ("evaluate", None): _evaluate,
+        ("findings", "show"): _findings_show,
+        ("findings", "review"): _findings_review,
+        ("findings", "approve"): _findings_approve,
+        ("report", "show"): _report_show,
+        ("report", "rubric"): _report_rubric,
     }
-    handler = handlers[(args.group, args.command)]
+
+    if args.group is None:
+        return _banner()
+    if args.group == "reset":
+        # Before a store opens: `reset` removes the database, and `AssessmentStore.at_root`
+        # would first recreate the thing it is about to delete.
+        try:
+            return _reset(args)
+        except EXPECTED_ERRORS as error:
+            print(f"error: {error}", file=sys.stderr)
+            return 1
+    if args.group == "view":
+        # The view holds its store open for the server's lifetime; it opens its own rather than
+        # borrowing the request-scoped one the dispatch below would close immediately.
+        try:
+            return _view(args)
+        except EXPECTED_ERRORS as error:
+            print(f"error: {error}", file=sys.stderr)
+            return 1
+    command = getattr(args, "command", None)
+    if command is None and (args.group, None) not in handlers:
+        parser.parse_args([args.group, "--help"])
+        return 2
+    handler = handlers[(args.group, command)]
 
     try:
         with AssessmentStore.at_root(args.data_root) as store:
@@ -308,9 +758,48 @@ def _banner() -> int:
         for name in ("anthropic_api_key", "openai_api_key", "langsmith_api_key")
         if getattr(settings, name) is not None
     ]
-    print("Hello from trace!")
+    print("trace: context-aware security architecture analysis")
     print(f"env: {settings.app_env}  log level: {settings.log_level}")
     print(f"credentials configured: {', '.join(configured) if configured else 'none'}")
+    return 0
+
+
+def _reset(args: argparse.Namespace) -> int:
+    """Return the data root to the fresh-clone state, deliberately.
+
+    Two refusals fail it closed: without `--force` it lists what would go and removes nothing,
+    and a directory holding no store database is refused outright — the flag removes data, and
+    pointed at the wrong directory it must do nothing at all. Entry names are printed rather
+    than paths; `trace.db` and `asm-*` are the assessment's, not the machine's.
+    """
+    import shutil
+
+    from trace_ai.infrastructure.database.store import DATABASE_FILENAME
+
+    root: Path = args.data_root
+    if not root.exists() or not any(root.iterdir()):
+        print("nothing to reset: the data root is already fresh")
+        return 0
+    if not (root / DATABASE_FILENAME).is_file():
+        raise ValueError(
+            f"{root.name!r} holds no {DATABASE_FILENAME}, so it does not look like a trace "
+            f"data root; refusing to remove anything"
+        )
+
+    entries = sorted(root.iterdir())
+    if not args.force:
+        print(f"would remove {len(entries)} entr{'y' if len(entries) == 1 else 'ies'}:")
+        for child in entries:
+            print(f"  {child.name}")
+        print("nothing was removed; pass --force to remove them", file=sys.stderr)
+        return 1
+
+    for child in entries:
+        if child.is_dir():
+            shutil.rmtree(child)
+        else:
+            child.unlink()
+    print(f"reset: removed {len(entries)} entr{'y' if len(entries) == 1 else 'ies'}")
     return 0
 
 
@@ -395,6 +884,61 @@ def _pending_review(handle: AssessmentHandle, workflow_run_id: str) -> PendingHu
         return None
 
 
+def _assessment_candidates(args: argparse.Namespace, service: AssessmentService) -> int:
+    """The DEC-065 listing surface: catalog-gap candidates, for the catalog owner.
+
+    Answers DEC-065's open question about a listing surface ahead of any aggregation: one
+    assessment's candidates, read from the scoped repository. Cross-assessment assembly stays
+    manual, which is the recorded tradeoff.
+    """
+    from trace_ai.domain.catalog_gap_candidate import CatalogGapCandidate
+
+    handle = service.handle(args.assessment_id)
+    candidates = handle.objects.list(CatalogGapCandidate)
+    if not candidates:
+        print("no catalog-gap candidates")
+        return 0
+
+    print(
+        f"{len(candidates)} catalog-gap candidate{'s' if len(candidates) != 1 else ''} "
+        f"(DEC-065): concerns no requirement covers, raw material for the next catalog version. "
+        f"None is a finding."
+    )
+    for candidate in candidates:
+        print()
+        print(f"{candidate.id}  [{candidate.suggested_category}]  {candidate.concern}")
+        print(f"  raised by: {candidate.generated_by}")
+        print(f"  evidence:  {', '.join(candidate.evidence_ids)}")
+        for considered in candidate.nearest_requirements:
+            print(f"  nearest:   {considered.requirement_id} — {considered.why_not}")
+    return 0
+
+
+def _export_tm_bom(args: argparse.Namespace, service: AssessmentService) -> int:
+    """DEC-072's first export: approved objects as a TM-BOM document, to `outputs/`.
+
+    The path is printed relative to the assessment's own area, per the output discipline: no
+    absolute paths on screen.
+    """
+    from trace_ai.services.export import ExportError, write_tm_bom
+
+    handle = service.handle(args.assessment_id)
+    try:
+        written = write_tm_bom(handle)
+    except ExportError as refused:
+        print(f"error: {refused}", file=sys.stderr)
+        return 1
+    print(f"wrote {written.name} to the assessment's outputs area")
+    return 0
+
+
+def _assessment_approve(args: argparse.Namespace, service: AssessmentService) -> int:
+    """Sign off the deliverable. The service owns every refusal (DEC-082)."""
+    assessment = service.approve(args.assessment_id)
+    print(f"assessment {assessment.id} is {assessment.status.value}")
+    return 0
+
+
 def _assessment_archive(args: argparse.Namespace, service: AssessmentService) -> int:
     """The only status transition a person performs (DEC-031)."""
     archived = service.archive(args.assessment_id)
@@ -403,8 +947,15 @@ def _assessment_archive(args: argparse.Namespace, service: AssessmentService) ->
 
 
 def _source_add(args: argparse.Namespace, service: AssessmentService) -> int:
+    """Register documents, reporting what was new and what was already there.
+
+    Registration is idempotent in the loader (#320), so a repeated `source add` returns the
+    existing documents; this handler tells the difference by identifier and does not count a
+    skipped document as registered — the numbers a reviewer quotes must not move on a rerun.
+    """
     handle = service.handle(args.assessment_id)
     loader = DocumentLoader(handle)
+    before = {document.id for document in handle.objects.list(SourceDocument)}
 
     if args.path.is_dir():
         documents = loader.load_directory(
@@ -418,13 +969,19 @@ def _source_add(args: argparse.Namespace, service: AssessmentService) -> int:
                 trust_level=TrustLevel.UNTRUSTED,
             )
         ]
+    skipped = [document for document in documents if document.id in before]
 
+    # Index whatever is still unindexed, which is every new document and any earlier
+    # `--no-index` registration this command is now completing.
     references = 0
     if not args.no_index:
         for document in documents:
-            references += len(index_document(handle, document))
+            if document.ingestion_status is IngestionStatus.REGISTERED:
+                references += len(index_document(handle, document))
 
-    print(f"registered {len(documents)} document(s)")
+    print(f"registered {len(documents) - len(skipped)} document(s)")
+    for document in skipped:
+        print(f"already registered: {document.id}  {document.filename}")
     if not args.no_index:
         print(f"indexed {references} evidence reference(s)")
     return 0
@@ -518,6 +1075,7 @@ def _package_for(handle: AssessmentHandle) -> ContextReviewPackage:
         context,
         context_objects(handle),
         available_evidence={reference.id for reference in handle.objects.list(EvidenceReference)},
+        previous=previous_approved_context(handle, context),
     )
     return build_context_review_package(handle, index=EvidenceIndex(handle), validation=validation)
 
@@ -590,11 +1148,18 @@ def _context_show(args: argparse.Namespace, service: AssessmentService) -> int:
     print(f"revision: version {context.version}, {'approved' if context.is_approved else 'draft'}")
     print(f"purpose:  {context.system_purpose or '-'}")
 
+    if args.observations:
+        # The observation view (#429): what the extraction noticed about the documents
+        # themselves, short enough for a demonstration beat and never clipped by a pager.
+        _print_observations(package, empty_note=True)
+        return 0
+
     for group, objects in package.objects_by_type.items():
         print()
         print(f"{group.replace('_', ' ')} ({len(objects)})")
         for obj in objects:
-            print(f"  {getattr(obj, 'id', '-')}  {_object_line(obj)}")
+            object_id = getattr(obj, "id", "-")
+            print(f"  {object_id}  {_object_line(obj)}{_reasons(package, object_id)}")
 
     for heading, presented in (
         ("documented claims", package.documented_claims),
@@ -606,7 +1171,7 @@ def _context_show(args: argparse.Namespace, service: AssessmentService) -> int:
             claim = item.claim
             print(
                 f"  {claim.id}  {claim.status:<15} {claim.confidence:<7} "
-                f"{claim.predicate} = {claim.value!r}"
+                f"{claim.predicate} = {claim.value!r}{_reasons(package, claim.id)}"
             )
             if claim.rationale:
                 print(f"      rationale: {claim.rationale}")
@@ -619,6 +1184,8 @@ def _context_show(args: argparse.Namespace, service: AssessmentService) -> int:
     for question in package.questions:
         marker = "blocking" if question.blocking else question.priority.value
         print(f"  {question.id}  {marker:<9} {question.question}")
+
+    _print_observations(package)
 
     print()
     print(f"human-review triggers ({len(package.triggers)})")
@@ -640,6 +1207,48 @@ def _context_show(args: argparse.Namespace, service: AssessmentService) -> int:
     for blocker in package.approval_blockers:
         print(f"  {blocker}", file=sys.stderr)
     return 1
+
+
+def _print_observations(package: ContextReviewPackage, *, empty_note: bool = False) -> None:
+    """The extraction's observations about the documents themselves (#429).
+
+    Injection attempts and contradictions are both `SourceObservation`s, and both exist to be
+    read by the reviewer: an attempt triages attention toward its flagged subjects, and a
+    contradiction names the identifier a `--resolve-contradiction` call needs — an action that
+    was unreachable while nothing printed the observation it acts on.
+    """
+    if package.injection_attempts:
+        print()
+        print(f"injection attempts detected ({len(package.injection_attempts)})")
+        for observation in package.injection_attempts:
+            cited = ", ".join(observation.evidence_ids)
+            print(f"  {observation.id}  {observation.summary} [{cited}]")
+
+    if package.contradictions:
+        print()
+        print(f"contradictions awaiting resolution ({len(package.contradictions)})")
+        for observation in package.contradictions:
+            cited = ", ".join(observation.evidence_ids)
+            print(f"  {observation.id}  {observation.summary} [{cited}]")
+        print(
+            "  settle one with `trace context review --resolve-contradiction ID=VALUE "
+            "--rationale ...`"
+        )
+
+    if empty_note and not package.injection_attempts and not package.contradictions:
+        print()
+        print("no injection attempts or contradictions were observed in the supplied documents")
+
+
+def _reasons(package: ContextReviewPackage, object_id: str) -> str:
+    """The routing reasons for one subject, appended to its line (DEC-062).
+
+    A subject with an `injection_flag` came from a document that tried to inject; the reviewer
+    sees the reason and looks closer. Reasons triage attention and never filter — every subject
+    still needs a decision — so this only annotates, never hides.
+    """
+    codes = package.reasons_for(object_id)
+    return f"  [{', '.join(codes)}]" if codes else ""
 
 
 def _object_line(obj: object) -> str:
@@ -738,6 +1347,47 @@ def _context_review(args: argparse.Namespace, service: AssessmentService) -> int
         )
         written.append(decision)
 
+    for pair in args.attachments:
+        identifier, separator, listed = pair.partition("=")
+        evidence_ids = [item.strip() for item in listed.split(",") if item.strip()]
+        if not separator or not evidence_ids:
+            raise ValueError(f"--attach takes ID=EVD[,EVD...]; {pair!r} names no evidence")
+        _, decision = attach_evidence(
+            handle,
+            _require(lookup, identifier.strip(), "an object in this assessment"),
+            evidence_ids,
+            index=EvidenceIndex(handle),
+            reviewer_id=reviewer,
+            rationale=args.rationale,
+            workflow_run_id=run_id,
+        )
+        written.append(decision)
+
+    if args.resolutions:
+        from trace_ai.domain.source_observation import SourceObservation
+
+        if not (args.rationale or "").strip():
+            raise ValueError(
+                "--resolve requires --rationale: a resolution with no reasoning is "
+                "indistinguishable from quietly choosing the safer statement"
+            )
+        observations: dict[str, Any] = {
+            observation.id: observation for observation in handle.objects.list(SourceObservation)
+        }
+        for pair in args.resolutions:
+            identifier, separator, value = pair.partition("=")
+            if not separator:
+                raise ValueError(f"--resolve takes ID=VALUE; {pair!r} has no '='")
+            resolved = resolve_contradiction(
+                handle,
+                _require(observations, identifier.strip(), "an observation in this assessment"),
+                resolution=value.strip(),
+                rationale=args.rationale,
+                reviewer_id=reviewer,
+                workflow_run_id=run_id,
+            )
+            written.extend(resolved.decisions)
+
     if args.re_extraction:
         written.append(
             request_re_extraction(
@@ -811,3 +1461,617 @@ def _context_approve(args: argparse.Namespace, service: AssessmentService) -> in
 def _latest_run(handle: AssessmentHandle) -> WorkflowRun | None:
     runs = handle.objects.list(WorkflowRun)
     return runs[-1] if runs else None
+
+
+# ------------------------------------------------------------------------------------------
+# The pipeline: run, resume, the finding checkpoint, and the report
+# ------------------------------------------------------------------------------------------
+
+
+def _budget_from(args: argparse.Namespace) -> Any:
+    from decimal import Decimal
+
+    from trace_ai.workflow.limits import Budget
+
+    if args.max_model_calls is None and args.max_cost is None:
+        return None
+    return Budget(
+        maximum_model_calls=args.max_model_calls,
+        maximum_cost=Decimal(args.max_cost) if args.max_cost else None,
+    )
+
+
+def _run(args: argparse.Namespace, service: AssessmentService) -> int:
+    """Run the pipeline from initialization until it pauses, completes, or stops.
+
+    The run is `services/driver.py`'s; this reads flags, builds the model, and prints where the
+    run got to. Exit codes are the documented ones: 0 for a pause or a completion (the table
+    stopped the run where it says to stop), 1 for a failed run.
+    """
+    profile = resolve_profile(args.model_profile)
+    outcome = run_assessment(
+        service,
+        args.assessment_id,
+        model=build_model(
+            profile, responses=load_recorded_responses(_response_files(args.responses))
+        ),
+        profile=profile,
+        budget=_budget_from(args),
+    )
+    return _print_run_outcome(outcome)
+
+
+def _response_files(supplied: list[Path]) -> list[Path]:
+    """Each `--response` as the files it names, a directory standing for its numbered recordings.
+
+    A recording is dozens of files consumed in order — the live capture's runs retry, and a
+    retried call consumes an extra response — so a command line naming each file is unwritable
+    by hand. A directory expands to its `NN-*.json` files sorted, which is the consumption
+    order the capture wrote them in.
+    """
+    files: list[Path] = []
+    for path in supplied:
+        if path.is_dir():
+            numbered = sorted(path.glob("[0-9]*.json"))
+            if not numbered:
+                raise ValueError(f"{path} contains no numbered recordings (NN-*.json)")
+            files.extend(numbered)
+        else:
+            files.append(path)
+    return files
+
+
+def _resume(args: argparse.Namespace, service: AssessmentService) -> int:
+    """Resume a paused run: the checkpoint re-runs, and decided subjects let it advance."""
+    profile = resolve_profile(args.model_profile)
+    outcome = resume_assessment(
+        service,
+        args.assessment_id,
+        model=build_model(
+            profile, responses=load_recorded_responses(_response_files(args.responses))
+        ),
+        profile=profile,
+        workflow_run_id=args.workflow_run_id,
+        budget=_budget_from(args),
+    )
+    return _print_run_outcome(outcome)
+
+
+def _print_run_outcome(outcome: Any) -> int:
+    state = outcome.state
+
+    if state.status is RunStatus.FAILED:
+        for recorded in state.errors:
+            print(f"error: {recorded}", file=sys.stderr)
+        print(
+            f"run {state.workflow_run_id} failed at {state.current_phase.value} "
+            f"({outcome.stopped_because})",
+            file=sys.stderr,
+        )
+        return 1
+
+    print(f"workflow run: {state.workflow_run_id}")
+    if outcome.paused:
+        pending = state.pending_human_review
+        waiting = len(pending.object_ids) if pending is not None else 0
+        print(f"paused at:    {state.current_phase.value}")
+        print(f"awaiting:     {waiting} subject(s)")
+        if state.current_phase is Phase.HUMAN_FINDING_REVIEW:
+            print()
+            print(
+                "Review with `trace findings show` and `trace findings review`, conclude with "
+                "`trace findings approve`, then continue with `trace resume`."
+            )
+        else:
+            print()
+            print(
+                "Review with `trace context show` and `trace context review`, approve with "
+                "`trace context approve`, then continue with `trace resume`."
+            )
+        return 0
+
+    print("completed; the report and its manifest are in the assessment's outputs")
+    print("Print the report with `trace report show`.")
+    return 0
+
+
+def _findings_show(args: argparse.Namespace, service: AssessmentService) -> int:
+    """Print the checkpoint-2 review package, findings first, evidence excerpts labelled."""
+    handle = service.handle(args.assessment_id)
+    package = build_finding_review_package(handle, index=EvidenceIndex(handle))
+    print(render_markdown(package))
+    return 0
+
+
+def _findings_review(args: argparse.Namespace, service: AssessmentService) -> int:
+    """Record finding decisions: severity, treatment, and edits first, then rejections, approvals.
+
+    The order inside one invocation is fixed so `--severity fnd-001=medium --approve fnd-001`
+    means what it reads as: the severity and the treatment land before the approval gate checks
+    them, so `--treatment fnd-001=accept --treatment-rationale "..." --approve fnd-001` passes.
+    """
+    handle = service.handle(args.assessment_id)
+    reviewer = args.reviewer or _default_reviewer()
+    run = _latest_run(handle)
+    run_id = run.id if run is not None else None
+
+    if args.export:
+        package = build_finding_review_package(handle, index=EvidenceIndex(handle))
+        args.export.write_text(write_finding_review_file(package), encoding="utf-8")
+        print(f"wrote {args.export}")
+        print("Edit it, then apply it with `trace findings review --apply`.")
+        return 0
+    if args.apply:
+        document = read_finding_review_file(args.apply.read_text(encoding="utf-8"))
+        if document.get("reviewer"):
+            reviewer = str(document["reviewer"])
+        applied = apply_finding_review_file(
+            handle, document, reviewer_id=reviewer, workflow_run_id=run_id
+        )
+        if not applied:
+            print("no decisions recorded; the file matches what was exported")
+            return 0
+        for decision in applied:
+            print(f"{decision.id}  {decision.disposition:<22} {decision.subject_id}")
+        print(f"{len(applied)} decision(s) recorded as {reviewer}")
+        return 0
+
+    findings = {finding.id: finding for finding in handle.objects.list(Finding)}
+    decisions = []
+
+    for entry in args.severities:
+        identifier, separator, level = entry.partition("=")
+        if not separator:
+            raise ValueError(f"--severity takes ID=LEVEL, not {entry!r}")
+        finding = _require(findings, identifier, "a finding in this assessment")
+        updated, decision = change_severity(
+            handle,
+            finding,
+            Severity(level),
+            reviewer_id=reviewer,
+            rationale=args.note,
+            workflow_run_id=run_id,
+        )
+        findings[identifier] = updated
+        decisions.append(decision)
+
+    for entry in args.treatments:
+        identifier, separator, value = entry.partition("=")
+        if not separator:
+            raise ValueError(f"--treatment takes ID=VALUE, not {entry!r}")
+        finding = _require(findings, identifier, "a finding in this assessment")
+        updated, decision = assign_risk_treatment(
+            handle,
+            finding,
+            RiskTreatment(value),
+            rationale=args.treatment_rationale,
+            review_by=args.treatment_review_by,
+            reviewer_id=reviewer,
+            workflow_run_id=run_id,
+        )
+        findings[identifier] = updated
+        decisions.append(decision)
+
+    for identifier, assignment in args.edits:
+        field, separator, value = assignment.partition("=")
+        if not separator or not field:
+            raise ValueError(f"--edit takes ID FIELD=VALUE, not {assignment!r}")
+        finding = _require(findings, identifier, "a finding in this assessment")
+        updated, decision = edit_finding(
+            handle,
+            finding,
+            {field: value},
+            reviewer_id=reviewer,
+            rationale=args.note,
+            workflow_run_id=run_id,
+        )
+        findings[identifier] = updated
+        decisions.append(decision)
+
+    for identifier in args.deferred:
+        finding = _require(findings, identifier, "a finding in this assessment")
+        updated, decision = defer_finding(
+            handle, finding, reviewer_id=reviewer, rationale=args.note, workflow_run_id=run_id
+        )
+        findings[identifier] = updated
+        decisions.append(decision)
+
+    for identifier in args.more_analysis:
+        finding = _require(findings, identifier, "a finding in this assessment")
+        updated, decision = request_more_analysis(
+            handle,
+            finding,
+            reviewer_id=reviewer,
+            rationale=args.note or "",
+            workflow_run_id=run_id,
+        )
+        findings[identifier] = updated
+        decisions.append(decision)
+
+    for identifier in args.rejected:
+        finding = _require(findings, identifier, "a finding in this assessment")
+        updated, decision = reject_finding(
+            handle, finding, reviewer_id=reviewer, rationale=args.note, workflow_run_id=run_id
+        )
+        findings[identifier] = updated
+        decisions.append(decision)
+
+    for identifier in args.approved:
+        finding = _require(findings, identifier, "a finding in this assessment")
+        updated, decision = approve_finding(
+            handle,
+            finding,
+            reviewer_id=reviewer,
+            rationale=args.note,
+            override_rationale=args.override_rationale,
+            workflow_run_id=run_id,
+        )
+        findings[identifier] = updated
+        decisions.append(decision)
+
+    if not decisions:
+        print("no decisions recorded")
+        return 0
+    for decision in decisions:
+        print(f"{decision.id}  {decision.disposition:<22} {decision.subject_id}")
+    print(f"{len(decisions)} decision(s) recorded as {reviewer}")
+    return 0
+
+
+def _findings_approve(args: argparse.Namespace, service: AssessmentService) -> int:
+    """Conclude the finding review, or exit non-zero naming the findings still undecided."""
+    assessment = conclude_finding_review(service, args.assessment_id)
+    print(f"finding review concluded; assessment {assessment.id} is {assessment.status.value}")
+    print("Continue the run with `trace resume`.")
+    return 0
+
+
+def _verify(args: argparse.Namespace, service: AssessmentService) -> int:
+    """Walk the evidence chain and exit non-zero on any drift, each one named.
+
+    The walk is `services/verification.py`'s; nothing here reads a file or computes a hash. A
+    drift line carries identifiers and hashes only — the changed content is exactly what must not
+    be printed.
+    """
+    outcome = verify_assessment(service.handle(args.assessment_id))
+
+    if outcome.ok:
+        manifest = "1 manifest" if outcome.manifest_checked else "no manifest yet"
+        print(
+            f"verified: {outcome.document_count} document(s), "
+            f"{outcome.evidence_count} evidence reference(s), {manifest}"
+        )
+        return 0
+
+    for drift in outcome.document_drift:
+        print(f"  {drift.line()}", file=sys.stderr)
+    for failure in outcome.evidence_failures:
+        print(
+            f"  {failure.evidence_id}  {failure.outcome}  {failure.detail or ''}", file=sys.stderr
+        )
+    for drift in outcome.manifest_drift:
+        print(f"  {drift.line()}", file=sys.stderr)
+    total = (
+        len(outcome.document_drift) + len(outcome.evidence_failures) + len(outcome.manifest_drift)
+    )
+    print(f"{total} item(s) no longer verify", file=sys.stderr)
+    return 1
+
+
+def _report_show(args: argparse.Namespace, service: AssessmentService) -> int:
+    """Print the rendered report, or its manifest. Non-zero while no report exists."""
+    assessment = service.get(args.assessment_id)
+    if assessment.final_report_path is None:
+        print(
+            "error: no report has been rendered for this assessment; run the pipeline to "
+            "completion first",
+            file=sys.stderr,
+        )
+        return 1
+    filename = assessment.final_report_path.rpartition("/")[2]
+    if args.manifest:
+        filename = filename.removesuffix(".md") + ".manifest.json"
+    handle = service.handle(args.assessment_id)
+    print(handle.artifacts.read("outputs", filename).decode("utf-8"))
+    return 0
+
+
+def _report_rubric(args: argparse.Namespace, service: AssessmentService) -> int:
+    """Record the section 9 reviewer rubric against the assessment's latest run.
+
+    Parsing stops at `CATEGORY=N`. Which categories exist, that all seven are present, and that
+    every value is one to five are `record_rubric`'s refusals — they surface here as one-line
+    errors rather than being duplicated.
+    """
+    handle = service.handle(args.assessment_id)
+    run = _latest_run(handle)
+    if run is None:
+        print(
+            "error: no workflow run exists to attach the rubric to; run the pipeline first",
+            file=sys.stderr,
+        )
+        return 1
+
+    scores: dict[str, int] = {}
+    for entry in args.scores:
+        category, separator, value = entry.partition("=")
+        if not separator or not category or not value:
+            raise ValueError(f"a score is written CATEGORY=N: {entry!r}")
+        if category in scores:
+            raise ValueError(f"category {category!r} is scored twice")
+        try:
+            scores[category] = int(value)
+        except ValueError:
+            raise ValueError(f"a rubric score is a whole number one to five: {entry!r}") from None
+
+    results = record_rubric(
+        handle,
+        run,
+        scores,
+        reviewer_id=args.reviewer or _default_reviewer(),
+        comments=args.comments,
+    )
+    print(f"recorded {len(results)} rubric score(s) for run {run.id}")
+    for result in results:
+        print(f"  {result.metric_name:<28} {result.metric_value:.0f}")
+    return 0
+
+
+def _evaluate(args: argparse.Namespace, service: AssessmentService) -> int:
+    """Replay one scenario, or every recorded one, through the evaluation harness.
+
+    The harness opens its own store at the work root — a replayed assessment is a measurement,
+    not part of the user's assessment data — and everything printed is metrics, identifiers, and
+    repo-relative feed paths. Exit 0 when every attempted run completed; 1 when any did not.
+    """
+    import tempfile
+
+    from trace_ai.config import PROJECT_ROOT
+    from trace_ai.services.evaluation.harness import HarnessError, diff_feeds, run_scenario
+    from trace_ai.services.evaluation.registry import load_registry
+
+    if args.all_scenarios == bool(args.scenario):
+        print("error: name one scenario or pass --all", file=sys.stderr)
+        return 1
+
+    if args.baseline is not None:
+        if not args.scenario:
+            print("error: --baseline scores one named scenario, not --all", file=sys.stderr)
+            return 1
+        return _evaluate_baseline(args)
+
+    if args.ablation_set:
+        if not args.scenario:
+            print("error: --ablation-set runs one named scenario, not --all", file=sys.stderr)
+            return 1
+        return _evaluate_ablation_set(args)
+
+    if args.stability is not None:
+        if not args.scenario:
+            print("error: --stability runs one named scenario, not --all", file=sys.stderr)
+            return 1
+        return _evaluate_stability(args)
+
+    if args.all_scenarios:
+        slugs = []
+        for entry in load_registry():
+            if entry.has_recording:
+                slugs.append(entry.slug)
+            else:
+                print(f"skipped {entry.slug}: no recording")
+    else:
+        slugs = [args.scenario]
+
+    failures = 0
+    for slug in slugs:
+        work_root = args.work_root or _path(tempfile.mkdtemp(prefix=f"trace-eval-{slug}-"))
+        try:
+            outcome = run_scenario(
+                slug,
+                data_root=work_root,
+                label=args.label,
+                condition=args.condition,
+                ablations=args.ablations,
+                results_root=args.results_root,
+            )
+        except HarnessError as refused:
+            print(f"error: {refused}", file=sys.stderr)
+            failures += 1
+            continue
+
+        print(f"scenario:     {outcome.scenario} ({outcome.condition}, label {outcome.label})")
+        print(f"workflow run: {outcome.workflow_run_id}  {outcome.run_status}")
+        if outcome.ablations:
+            print(f"ablations:    {', '.join(outcome.ablations)} (non-authoritative, DEC-012)")
+        for result in outcome.metrics:
+            value = f"{result.metric_value:.4g}"
+            print(f"  {result.metric_name:<32} {value}")
+        if outcome.feed_path is not None:
+            import json
+
+            adversarial = json.loads(outcome.feed_path.read_text(encoding="utf-8")).get(
+                "adversarial"
+            )
+            if adversarial is not None:
+                rate = adversarial["injected_instruction_compliance_rate"]
+                detected = "yes" if adversarial["attack_detected"] else "no"
+                print(f"attack detected: {detected} (DEC-075)")
+                print(f"  injected_instruction_compliance_rate  {rate:.4g} (target 0)")
+                for payload in adversarial["payloads"]:
+                    mark = "complied" if payload["complied"] else "resisted"
+                    print(f"  {payload['payload_class']:<32} {mark}")
+            feed = outcome.feed_path
+            if feed.is_relative_to(PROJECT_ROOT):
+                feed = feed.relative_to(PROJECT_ROOT)
+            print(f"feed:         {feed}")
+        if not outcome.completed:
+            print(f"run stopped: {outcome.stopped_because}", file=sys.stderr)
+            failures += 1
+
+        if args.diff_against and outcome.feed_path is not None:
+            prior = outcome.feed_path.with_name(f"{args.diff_against}.json")
+            diff = diff_feeds(outcome.feed_path, prior)
+            print(f"diff against {args.diff_against}:")
+            for label, keys in (
+                ("matched", diff.matched),
+                ("changed", diff.changed),
+                ("missed", diff.missed),
+                ("regressed", diff.regressed),
+                ("recovered", diff.recovered),
+                ("spurious", diff.spurious),
+                ("new spurious", diff.new_spurious),
+            ):
+                print(f"  {label:<13} {', '.join(keys) if keys else '-'}")
+        print()
+
+    return 1 if failures else 0
+
+
+def _evaluate_baseline(args: argparse.Namespace) -> int:
+    """Score a single-pass baseline over one scenario, replayed from its recorded response.
+
+    The baseline is a measurement, not an assessment: it opens no store, prints metrics and the
+    feed path only, and its feed is marked non-authoritative. Exit 1 when the scored scenario has
+    no baseline recording or no truth set, so a comparison cannot silently score nothing.
+    """
+    from trace_ai.config import PROJECT_ROOT
+    from trace_ai.domain.proposals.baseline import BaselineFindings
+    from trace_ai.services.evaluation.baselines import BaselineError, run_baseline
+    from trace_ai.services.evaluation.registry import scenario as load_scenario
+
+    condition = f"baseline-{args.baseline}"
+    entry = load_scenario(args.scenario)
+    recording = entry.recorded_dir / "baselines" / f"{condition}.json"
+    if not recording.is_file():
+        print(
+            f"error: scenario {args.scenario!r} has no recorded {condition} response at "
+            f"{recording.relative_to(PROJECT_ROOT)}",
+            file=sys.stderr,
+        )
+        return 1
+    response = BaselineFindings.model_validate_json(recording.read_text(encoding="utf-8"))
+
+    try:
+        outcome = run_baseline(
+            args.scenario,
+            condition,
+            label=args.label,
+            response=response,
+            results_root=args.results_root,
+        )
+    except BaselineError as refused:
+        print(f"error: {refused}", file=sys.stderr)
+        return 1
+
+    print(f"scenario:     {outcome.scenario} ({outcome.baseline}, label {outcome.label})")
+    print(f"schema valid: {outcome.schema_valid}")
+    print(f"  false_negative_rate              {outcome.metrics['false_negative_rate']:.4g}")
+    print(f"  spurious_finding_count           {int(outcome.metrics['spurious_finding_count'])}")
+    if outcome.spurious:
+        print("spurious (findings the truth set does not expect):")
+        for spurious in outcome.spurious:
+            print(
+                f"  {spurious['requirement_id']}  {spurious['affected_component']}: {spurious['title']}"
+            )
+    if outcome.feed_path is not None:
+        feed = outcome.feed_path
+        if feed.is_relative_to(PROJECT_ROOT):
+            feed = feed.relative_to(PROJECT_ROOT)
+        print(f"feed:         {feed}")
+    return 0
+
+
+def _evaluate_ablation_set(args: argparse.Namespace) -> int:
+    """Run the ablation set for one scenario and report what each removal changed."""
+    import tempfile
+
+    from trace_ai.services.evaluation.harness import HarnessError
+    from trace_ai.services.evaluation.stability import ABLATION_SET, run_ablation_set
+
+    work_root = args.work_root or _path(tempfile.mkdtemp(prefix=f"trace-ablate-{args.scenario}-"))
+    try:
+        comparison = run_ablation_set(
+            args.scenario,
+            data_root=work_root,
+            label=args.label,
+            results_root=args.results_root,
+        )
+    except HarnessError as refused:
+        print(f"error: {refused}", file=sys.stderr)
+        return 1
+
+    metrics = sorted(comparison.authoritative)
+    print(f"scenario:     {comparison.scenario} (ablation set, label {comparison.label})")
+    print("authoritative (DEC-012 baseline):")
+    for metric in metrics:
+        print(f"  {metric:<32} {comparison.authoritative[metric]:.4g}")
+    for ablation in ABLATION_SET:
+        print(f"{ablation} (non-authoritative):")
+        for metric in metrics:
+            delta = comparison.delta(ablation, metric)
+            shown = "-" if delta is None else f"{delta:+.4g}"
+            value = comparison.ablations.get(ablation, {}).get(metric)
+            value_shown = "-" if value is None else f"{value:.4g}"
+            print(f"  {metric:<32} {value_shown:>8}  (delta {shown})")
+    return 0
+
+
+def _evaluate_stability(args: argparse.Namespace) -> int:
+    """Run one scenario N times live and report variance; refuse the offline profile (DEC-077)."""
+    import tempfile
+
+    from trace_ai.services.evaluation.stability import StabilityError, run_stability
+
+    work_root = args.work_root or _path(
+        tempfile.mkdtemp(prefix=f"trace-stability-{args.scenario}-")
+    )
+    try:
+        summary = run_stability(
+            args.scenario,
+            n=args.stability,
+            data_root=work_root,
+            label=args.label,
+            profile_name=args.model_profile,
+            results_root=args.results_root,
+        )
+    except StabilityError as refused:
+        print(f"error: {refused}", file=sys.stderr)
+        return 1
+
+    print(f"scenario:     {summary.scenario} (stability, n={summary.n})")
+    for metric in sorted(summary.metric_mean):
+        print(
+            f"  {metric:<32} mean {summary.metric_mean[metric]:.4g}  "
+            f"stdev {summary.metric_stdev[metric]:.4g}"
+        )
+    print(f"unanimous items:  {', '.join(summary.unanimous) or '-'}")
+    print(f"flickering items: {', '.join(summary.flickering) or '-'}")
+    print(f"defaulted decisions: {summary.defaulted_decisions}")
+    if summary.failed_runs:
+        print(f"failed runs: {summary.failed_runs} of {summary.failed_runs + summary.n}")
+
+    import json as _json
+
+    summary_path = (
+        args.results_root if args.results_root is not None else work_root
+    ) / f"stability-{summary.scenario}-{args.label}.json"
+    summary_path.parent.mkdir(parents=True, exist_ok=True)
+    summary_path.write_text(_json.dumps(summary.to_payload(), indent=2) + "\n", encoding="utf-8")
+    print(f"summary:      {summary_path}")
+    print(
+        "Commit it as docs/eval/live-stability.json to put the measurement on the scorecard "
+        "(DEC-077 reports it; nothing gates on it)."
+    )
+    return 0
+
+
+def _view(args: argparse.Namespace) -> int:
+    """Serve the read-only interface over the data root until interrupted (DEC-032).
+
+    The server is `trace_ai.interface`'s; this reads the flags and hands off. It opens its own
+    store for the server's lifetime, which is why it is dispatched before the request-scoped store.
+    """
+    from trace_ai.interface.server import serve
+
+    serve(args.data_root, port=args.port)
+    return 0

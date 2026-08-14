@@ -22,9 +22,9 @@ critique would be an instruction to find something.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Final, Self
 
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from trace_ai.domain.base import DomainModel
 from trace_ai.domain.critique import (
@@ -34,7 +34,7 @@ from trace_ai.domain.critique import (
     RecommendedAction,
 )
 from trace_ai.domain.enums import ConfidenceLevel, ObjectStatus
-from trace_ai.domain.identifiers import EvidenceReferenceId
+from trace_ai.domain.identifiers import PREFIX_BY_TERM, EvidenceReferenceId, parse_id
 from trace_ai.domain.proposals.context_extraction import ProposalError
 
 if TYPE_CHECKING:
@@ -66,6 +66,41 @@ class CritiqueProposal(DomainModel):
     evidence_ids: list[EvidenceReferenceId] = Field(default_factory=list)
     recommended_action: RecommendedAction
     confidence: ConfidenceLevel
+
+    @model_validator(mode="after")
+    def _severity_critiques_target_objects_that_carry_one(self) -> Self:
+        """A severity critique's subject has a severity to criticise (DEC-030, DEC-045).
+
+        Structural, not contextual: before checkpoint 2 the only object carrying an assigned
+        severity is a `DocumentationGap` (DEC-045; a finding's arrives with the reviewer). A
+        severity critique against a threat or a mapping is a critique of a default, and the live
+        capture showed the model reaching for it (#324) — refused here, where the retry feedback
+        names the field, rather than blocking the run at the downstream validator.
+        """
+        severity_types = {CritiqueType.SEVERITY_OVERSTATED, CritiqueType.SEVERITY_UNDERSTATED}
+        allowed = {CritiqueSubjectType.DOCUMENTATION_GAP, CritiqueSubjectType.FINDING}
+        if self.critique_type in severity_types and self.subject_type not in allowed:
+            raise ValueError(
+                f"critique_type {self.critique_type.value!r} against a "
+                f"{self.subject_type.value}, which carries no assigned severity before "
+                f"checkpoint 2 (DEC-030). Severity critiques target documentation gaps "
+                f"(DEC-045) or findings."
+            )
+        return self
+
+    @model_validator(mode="after")
+    def _subject_id_matches_subject_type(self) -> Self:
+        """`Critique`'s own prefix rule, applied one step earlier (#324's pattern): caught here
+        it is a schema failure the retry policy feeds back; caught at promotion it is a
+        conversion crash after the call is already paid for."""
+        parsed = parse_id(self.subject_id)
+        expected = PREFIX_BY_TERM.get(self.subject_type.value)
+        if expected is not None and parsed.prefix != expected:
+            raise ValueError(
+                f"subject_type is {self.subject_type.value!r}, whose identifiers begin "
+                f"{expected!r}, but subject_id {self.subject_id!r} names a {parsed.object_type}."
+            )
+        return self
 
 
 class CriticalReviewProposal(DomainModel):

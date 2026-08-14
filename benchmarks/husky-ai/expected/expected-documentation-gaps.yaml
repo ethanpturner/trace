@@ -1,0 +1,47 @@
+# Husky AI expected documentation gaps
+#
+# Benchmark truth for what a correct assessment records as undeterminable (DEC-009). The
+# threat-truth header already names the silences: the input documents describe access control
+# on the blobs and say nothing either way about integrity validation of what enters the
+# pipeline, or about bounding of the public classification path.
+#
+# Nothing in this directory is supplied to Trace during an assessment.
+
+benchmark_version: "1.0"
+scenario: husky-ai
+catalog_version: "0.1"
+source: system-overview.md, security-notes.md
+
+documentation_gaps:
+  - key: GAP-HA-01
+    requirement_id: req-CICD-001
+    subject: how third-party components entering the pipeline are identified and controlled is not described
+    arises_from: system-overview.md sections 1, 2, and 4
+    missing:
+      - How third-party tools and libraries pulled into the experimental environment are
+        identified before use
+      - Whether anything validates what the image-gathering and training path consumes
+    supported_by:
+      - system-overview.md
+    paired_question: Q-HA-01
+    notes: >
+      The documents establish that the experimental environment pulls from third-party tools
+      and that the deployment service packages and ships the result to production; nothing
+      addresses how what enters that path is controlled. Concluding the pipeline is
+      unprotected would be the DEC-009 failure — the supply-chain threat's precondition stays
+      a precondition.
+
+  - key: GAP-HA-02
+    requirement_id: req-TPI-002
+    subject: whether public classification work is bounded is not described
+    arises_from: system-overview.md sections 2 and 4
+    missing:
+      - Whether classification requests are rate-limited or otherwise bounded per user
+    supported_by:
+      - system-overview.md
+    paired_question: Q-HA-02
+    notes: >
+      The serving path evaluates every submitted image against the model. The gateway is
+      documented as enforcing request validation and access control; a volume bound is not
+      addressed either way. The perturbation-probing threat's precondition — enough attempts
+      for iterative probing — is exactly what this gap leaves open.

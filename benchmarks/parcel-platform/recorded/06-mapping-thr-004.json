@@ -1,0 +1,22 @@
+{
+  "controls": [],
+  "mappings": [
+    {
+      "threat_id": "thr-004",
+      "requirement_id": "req-NET-001",
+      "control_keys": [],
+      "existing_control_ids": [],
+      "applicability_status": "applicable",
+      "applicability_reason": "The orders database is an internal component used only by the core services, so restricted reachability applies; it is not a public interface and no private link is documented.",
+      "suppressed_conclusion": null,
+      "suppressed_by": null,
+      "satisfaction_status": "unverified",
+      "evidence_ids": [
+        "evd-004"
+      ],
+      "assumptions": [],
+      "confidence": "low"
+    }
+  ],
+  "documentation_gaps": []
+}

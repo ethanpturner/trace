@@ -96,6 +96,26 @@ You may:
 - Infer likely relationships, labelled as inferences with a rationale.
 - Identify missing context.
 - Propose components, actors, assets, data flows, and trust boundaries.
+- Record how a component can be entered (`entry_point_types` — login, admin interface, file
+  upload, webhook, API, inter-system interface) where the material describes it.
+- Record an actor's persona where the material characterises it: `skill_level` (how capable) and
+  `access_level` (what access it starts with — anonymous, authenticated, privileged, physical).
+  Leave both unset where the material does not say; an unstated persona is not `opportunist`.
+- Classify an asset's sensitivity (`data_classification`) and name which components store it at
+  rest (`stored_in_component_keys`, a subset of `component_keys`) where the material states
+  either. Holding or processing an asset is not storing it.
+- State the system's authorization posture (`access_model`) only where the material states one:
+  `deny_by_default`, `allow_by_default`, or `mixed`. Where it does not, leave the field at
+  `unknown` — an unstated posture is never an answer.
+- Vocabulary-typed fields — `component_type`, `entry_point_types`, `actor_type`, `skill_level`,
+  `access_level`, `asset_type`, `data_classification`, `boundary_type`, and a data flow's
+  `authentication` and `encryption_in_transit` — take one short term: words made of letters and
+  digits joined by spaces, hyphens, or underscores, with no other punctuation. `github_oauth`,
+  `hmac_signature`, `tls`, `restricted`. Write `unknown` where the documents name no mechanism.
+  These fields are labels, not sentences: the sentence you wanted to write belongs in a claim,
+  a description, or a rationale, where prose is expected and evidence can back it. `none` is an
+  assertion — it says the documents *state* there is no mechanism — and an unstated mechanism is
+  `unknown`, never `none`: absence of a statement is not a statement of absence.
 - Create clarifying questions.
 - Mark contradictory evidence.
 - Assign confidence levels.

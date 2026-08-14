@@ -39,12 +39,14 @@ from trace_ai.domain.data_flow import DataFlow
 from trace_ai.domain.documentation_gap import DocumentationGap
 from trace_ai.domain.enums import ObjectStatus, ValidationStatus
 from trace_ai.domain.evidence import EvidenceReference
+from trace_ai.domain.execution import ExecutionRecord
 from trace_ai.domain.question import Question, QuestionStatus, order_for_review
 from trace_ai.domain.source_document import IngestionStatus, SourceDocument
 from trace_ai.domain.system_context import SystemContext
 from trace_ai.domain.threat import Threat
 from trace_ai.domain.trust_boundary import TrustBoundary
 from trace_ai.services.findings.approved import approved_findings
+from trace_ai.services.report.coverage import CoverageEntry, coverage_ledger
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -135,6 +137,11 @@ class ReportInput:
     template: str
     versions: ReportVersions
     authoritative: bool
+
+    coverage: tuple[CoverageEntry, ...] = ()
+    """DEC-071's ledger: every source document in exactly one bucket with its justification.
+    Rendered in section 14 and given to the Report Generation agent so its limitations prose can
+    bound blind spots honestly; the authoritative table stays the rendered one."""
 
 
 def _by_id[ModelT](items: list[ModelT]) -> tuple[ModelT, ...]:
@@ -237,9 +244,13 @@ def assemble_report_input(
         for control in repository.list(Control)
         if control.validation_status is ValidationStatus.SUPPORTED
     ]
-    threats = [
-        threat for threat in repository.list(Threat) if threat.status is ObjectStatus.APPROVED
-    ]
+    # DEC-083: section 7 carries the threats the approved findings rest on. Threats have no
+    # approval verb of their own — the old `status is APPROVED` filter was never satisfiable and
+    # rendered the section structurally empty — and the set a reviewer transitively validated by
+    # approving the findings is the defensible one to print. A zero-finding assessment therefore
+    # renders section 7's authored empty wording, which is the honest shape for it.
+    validated_threat_ids = {threat_id for finding in findings for threat_id in finding.threat_ids}
+    threats = [threat for threat in repository.list(Threat) if threat.id in validated_threat_ids]
     assumptions = [
         claim for claim in repository.list(ContextClaim) if claim.status in _ASSUMPTION_STATUSES
     ]
@@ -299,4 +310,9 @@ def assemble_report_input(
             model_configuration=model_configuration,
         ),
         authoritative=authoritative,
+        coverage=coverage_ledger(
+            documents=documents,
+            evidence_references=repository.list(EvidenceReference),
+            execution_records=repository.list(ExecutionRecord),
+        ),
     )

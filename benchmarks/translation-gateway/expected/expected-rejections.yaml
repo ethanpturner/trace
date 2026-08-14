@@ -1,0 +1,38 @@
+# Helpdesk Translate expected rejections
+#
+# Nothing in this directory is supplied to Trace during an assessment.
+
+benchmark_version: "1.0"
+scenario: translation-gateway
+catalog_version: "0.1"
+source: system-overview.md
+
+rejections:
+  - key: REJ-TG-01
+    claim: The translation provider retains customer text and uses it for training.
+    mechanism: no_evidence
+    requirement_id: req-TPI-001
+    entry: >
+      The documents establish that no agreement exists and the terms are unreviewed; they
+      establish nothing about what the provider actually does.
+    why: >
+      The finding is the missing agreement, which is documented. What the provider does
+      under its terms is unknown, and asserting it invents a fact — the finding must not
+      absorb it.
+
+  - key: REJ-TG-02
+    claim: Ticket text is sent to the provider unencrypted.
+    mechanism: no_evidence
+    requirement_id: req-DATA-001
+    entry: The workflow section states the text is sent over HTTPS.
+    why: The claim contradicts the documented transport.
+
+  - key: REJ-TG-03
+    claim: The integration is insecure because the provider contract text is not included in the documentation.
+    mechanism: common_false_positives
+    requirement_id: req-TPI-001
+    entry: absent copy of the provider contract where terms are summarized
+    why: >
+      The genuine shortfall is that no terms were established or reviewed at all — FND-TG-01.
+      Demanding the contract's text be reproduced in the system documentation is the
+      false positive the catalog names, and it is not what the finding asserts.

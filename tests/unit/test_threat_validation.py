@@ -180,11 +180,17 @@ def test_a_rejected_component_is_not_in_the_approved_context() -> None:
     assert "cmp-001" in outcome.errors[0].message
 
 
-def test_the_retry_instruction_names_the_threat_and_the_field() -> None:
+def test_a_reference_error_is_retryable_and_names_the_threat_and_the_field() -> None:
+    """The error itself carries what a correction needs — the threat, the field, and the message.
+    The aggregate retry-instruction surface was removed with DEC-086: no path re-runs this
+    validator's agent, so the actionable content lives on the error, where the run's stop
+    reporting reads it."""
     outcome = validate_threats([a_threat(affected_component_ids=["cmp-404"])], context=a_context())
 
-    (instruction,) = outcome.retry_instructions()
-    assert instruction.startswith("thr-001.affected_component_ids:")
+    (error,) = outcome.errors
+    assert error.retryable
+    assert error.threat_id == "thr-001"
+    assert error.field == "affected_component_ids"
 
 
 # ------------------------------------------------------------------------------------------
@@ -286,7 +292,7 @@ def test_an_unsupported_assumption_is_never_retried() -> None:
 
     outcome = validate_threats([threat], context=a_context(), claims=claims)
 
-    assert not outcome.retry_instructions()
+    assert not any(error.retryable for error in outcome.errors)
 
 
 def test_an_unsupported_assumption_does_not_block_the_threat_set() -> None:
@@ -496,3 +502,91 @@ def test_a_trigger_is_not_an_error() -> None:
 
     assert outcome.triggers
     assert outcome.valid
+
+
+# ------------------------------------------------------------------------------------------
+# STRIDE coverage baseline (DEC-063): authored, deterministic, warn-only
+# ------------------------------------------------------------------------------------------
+
+
+def _component(component_id: str, component_type: str) -> Any:
+    from trace_ai.domain.component import Component
+
+    return Component.model_validate(
+        {
+            "id": component_id,
+            "assessment_id": "asm-001",
+            "name": component_id,
+            "component_type": component_type,
+            "source_origin": SourceOrigin.UPLOADED_DOCUMENT,
+            "status": ObjectStatus.APPROVED,
+        }
+    )
+
+
+def test_classify_maps_known_types_and_defaults_unknown_to_unclassified() -> None:
+    from trace_ai.domain.threat import UNCLASSIFIED_KIND, classify_element_kind
+
+    assert classify_element_kind("service") == "process"
+    assert classify_element_kind("managed_database") == "data_store"
+    assert classify_element_kind("external_service") == "external_actor"
+    assert classify_element_kind("quantum_flux_capacitor") == UNCLASSIFIED_KIND
+
+
+def test_coverage_names_the_uncovered_applicable_categories() -> None:
+    from trace_ai.workflow.threat_validation import stride_coverage_gaps
+
+    component = _component("cmp-001", "service")  # a process: all six STRIDE apply
+    threat = a_threat(category=["spoofing"], affected_component_ids=["cmp-001"])
+    gaps = {gap.component_id: gap for gap in stride_coverage_gaps([component], [threat])}
+
+    assert "spoofing" not in gaps["cmp-001"].uncovered, "a covered category is not a gap"
+    assert "tampering" in gaps["cmp-001"].uncovered, "an applicable, unnamed category is a gap"
+
+
+def test_an_unclassified_component_is_listed_rather_than_read_as_clean() -> None:
+    from trace_ai.domain.threat import UNCLASSIFIED_KIND
+    from trace_ai.workflow.threat_validation import stride_coverage_gaps
+
+    gaps = {
+        gap.component_id: gap for gap in stride_coverage_gaps([_component("cmp-009", "gizmo")], [])
+    }
+    assert gaps["cmp-009"].kind == UNCLASSIFIED_KIND
+    assert gaps["cmp-009"].uncovered == (), "an unclassified component is presented, not judged"
+
+
+def test_coverage_is_warn_only_and_never_blocks_or_retries() -> None:
+    """Acceptance: the run proceeds and no path retries the threat agent against coverage."""
+    component = _component("cmp-001", "service")
+    outcome = validate_threats([a_threat()], context=a_context(), components=[component])
+
+    assert outcome.valid, "a coverage gap does not block the run"
+    assert outcome.coverage_gaps, "the gap is named"
+    assert not any(error.retryable for error in outcome.errors), (
+        "nothing retries against a coverage gap"
+    )
+    assert all("coverage" not in error.rule.lower() for error in outcome.errors), (
+        "coverage never becomes an error"
+    )
+
+
+def test_an_inapplicable_category_is_a_warn_only_observation() -> None:
+    """DEC-063: spoofing whose only element is a data store is flagged, never rejected."""
+    store = _component("cmp-001", "managed_database")  # data_store: no spoofing
+    threat = a_threat(category=["spoofing"], affected_component_ids=["cmp-001"])
+    outcome = validate_threats([threat], context=a_context(), components=[store])
+
+    assert outcome.valid, "an implausible category does not block"
+    flagged = {
+        (observation.threat_id, observation.category) for observation in outcome.implausible_threats
+    }
+    assert ("thr-001", "spoofing") in flagged
+    assert not any(error.retryable for error in outcome.errors)
+
+
+def test_a_category_applicable_to_any_affected_element_is_not_flagged() -> None:
+    process = _component("cmp-001", "service")  # process admits spoofing
+    store = _component("cmp-002", "managed_database")
+    threat = a_threat(category=["spoofing"], affected_component_ids=["cmp-001", "cmp-002"])
+    outcome = validate_threats([threat], context=a_context(), components=[process, store])
+    assert outcome.implausible_threats == (), "plausible against the process element"

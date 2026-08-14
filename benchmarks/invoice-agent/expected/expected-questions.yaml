@@ -1,0 +1,27 @@
+# Invoice Agent expected questions
+#
+# Benchmark truth for the clarifying questions a correct assessment asks. Layout is fixed by
+# DEC-027; the source is agent-overview.md. Nothing in this directory is supplied to Trace.
+
+benchmark_version: "1.0"
+scenario: invoice-agent
+source: agent-overview.md
+
+questions:
+  - key: Q-IA-01
+    subject: credential custody
+    asks: Where are the model-provider and observability credentials stored, and are they scoped?
+    arises_from: agent-overview.md section 5
+    requirement_id: req-SECRET-001
+    changes: whether GAP-IA-01 resolves to a satisfied requirement or a finding
+    priority: high
+    blocking: false
+
+  - key: Q-IA-02
+    subject: submitter identity
+    asks: Does anything upstream of the workflow authenticate submitters and bind the submitter field to that identity?
+    arises_from: agent-overview.md section 4
+    requirement_id: req-AUTHZ-001
+    changes: whether forged-submitter invoices are reachable at all
+    priority: high
+    blocking: false

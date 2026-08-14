@@ -51,6 +51,7 @@ __all__ = [
     "STATE_AREA",
     "CheckpointNode",
     "ReviewPackage",
+    "decided_in_run",
     "decided_object_ids",
     "load_state",
     "pending_object_ids",
@@ -91,8 +92,25 @@ def load_state(handle: AssessmentHandle, workflow_run_id: str) -> AssessmentStat
 
 
 def decided_object_ids(handle: AssessmentHandle) -> set[str]:
-    """Every object this assessment has a `ReviewerDecision` for."""
+    """Every object this assessment has a `ReviewerDecision` for, across every run."""
     return {decision.subject_id for decision in handle.objects.list(ReviewerDecision)}
+
+
+def decided_in_run(handle: AssessmentHandle, workflow_run_id: str) -> set[str]:
+    """Subjects a checkpoint treats as decided for the run now executing (DEC-079).
+
+    A decision counts when it carries this run's identifier, or none at all — the run-less form a
+    recorded replay or a file-applied decision writes, kept current so those paths are unaffected. A
+    decision made in a *different* run does not count, which is what lets a revisit subject carried
+    across a run re-enter the checkpoint despite its prior decision (DEC-061). Ordinary subjects are
+    generated and decided within one run, and a resume keeps the same run identifier, so this is
+    invisible to them.
+    """
+    return {
+        decision.subject_id
+        for decision in handle.objects.list(ReviewerDecision)
+        if decision.workflow_run_id in (workflow_run_id, None)
+    }
 
 
 def pending_object_ids(handle: AssessmentHandle, state: AssessmentState) -> list[str]:
@@ -100,11 +118,12 @@ def pending_object_ids(handle: AssessmentHandle, state: AssessmentState) -> list
 
     Order is preserved rather than sorted so a reviewer returning to a half-finished review sees
     the same list in the same sequence — a review package that reshuffles between sittings is one
-    where "I did the first three" stops being a true statement.
+    where "I did the first three" stops being a true statement. Decided is scoped to the run
+    (DEC-079), so a revisit subject re-presented this run stays pending until this run decides it.
     """
     if state.pending_human_review is None:
         return []
-    decided = decided_object_ids(handle)
+    decided = decided_in_run(handle, state.workflow_run_id)
     return [
         object_id for object_id in state.pending_human_review.object_ids if object_id not in decided
     ]
@@ -155,18 +174,29 @@ def build_review_package[T: "DomainModel"](
     objects: Sequence[T],
     validation_findings: Sequence[str] = (),
     triggers: Sequence[str] = (),
+    workflow_run_id: str | None = None,
 ) -> ReviewPackage[T]:
-    """Assemble the package for a checkpoint from objects that already exist."""
+    """Assemble the package for a checkpoint from objects that already exist.
+
+    `workflow_run_id` scopes the decided set to that run (DEC-079), so a revisit subject
+    re-presented this run reads as pending in the derived package the way it does at the node. Left
+    unscoped, the package reflects every decision ever recorded — the historical view.
+    """
     if checkpoint_type not in PAUSE_PHASES:
         raise ValueError(
             f"{checkpoint_type.value} is not one of the two structural checkpoints (DEC-005)"
         )
+    decided = (
+        decided_in_run(handle, workflow_run_id)
+        if workflow_run_id is not None
+        else decided_object_ids(handle)
+    )
     return ReviewPackage(
         checkpoint_type=checkpoint_type,
         objects=tuple(objects),
         validation_findings=tuple(validation_findings),
         triggers=tuple(triggers),
-        decided_object_ids=frozenset(decided_object_ids(handle)),
+        decided_object_ids=frozenset(decided),
     )
 
 
@@ -208,7 +238,7 @@ class CheckpointNode:
         subject has a decision. There is no branch here that returns nothing for any other reason.
         """
         subjects = self.subjects(context)
-        decided = decided_object_ids(context.handle)
+        decided = decided_in_run(context.handle, context.state.workflow_run_id)
         awaiting = [object_id for object_id in subjects if object_id not in decided]
         return NodeResult(
             awaiting_review=awaiting,

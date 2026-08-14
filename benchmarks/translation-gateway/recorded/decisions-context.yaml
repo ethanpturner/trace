@@ -1,0 +1,151 @@
+assessment_id: asm-001
+system_context_version: 1
+reviewer: recorded-reviewer
+components:
+- id: cmp-001
+  decision: approve
+  editable:
+    name: Translation Connector
+    description: sends ticket text to the translation provider and writes the returned translation back
+      as an internal note
+    component_type: service
+    technology: []
+    ownership: null
+    deployment_zone: null
+    internet_accessible: null
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms:
+    - api_token
+    authorization_mechanisms: []
+- id: cmp-002
+  decision: approve
+  editable:
+    name: Helpdesk
+    description: holds the tickets; the connector authenticates to it with a workspace API token
+    component_type: saas_application
+    technology: []
+    ownership: null
+    deployment_zone: null
+    internet_accessible: null
+    externally_managed: true
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+- id: cmp-003
+  decision: approve
+  editable:
+    name: Translation Provider
+    description: the external translation SaaS; its standard terms apply and have not been reviewed
+    component_type: external_service
+    technology: []
+    ownership: null
+    deployment_zone: null
+    internet_accessible: true
+    externally_managed: true
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+actors:
+- id: act-001
+  decision: approve
+  editable:
+    name: Support agent
+    actor_type: internal_user
+    trust_level: null
+    capabilities: []
+    authentication_method: null
+assets:
+- id: ast-001
+  decision: approve
+  editable:
+    name: Customer tickets
+    asset_type: customer_data
+    description: ticket bodies including customer-written text and attachment text
+    confidentiality_impact: null
+    integrity_impact: null
+    availability_impact: null
+    data_classification: null
+    owner: null
+- id: ast-002
+  decision: approve
+  editable:
+    name: Workspace API token
+    asset_type: credentials
+    description: the connector's helpdesk token, granting full workspace access
+    confidentiality_impact: null
+    integrity_impact: null
+    availability_impact: null
+    data_classification: null
+    owner: null
+data_flows:
+- id: df-001
+  decision: approve
+  editable:
+    name: Ticket text to provider
+    direction: bidirectional
+    protocol: https
+    data_types: []
+    authentication: unknown
+    encryption_in_transit: https
+    internet_exposed: true
+    source_component_id: cmp-001
+    destination_component_id: cmp-003
+- id: df-002
+  decision: approve
+  editable:
+    name: Connector to helpdesk
+    direction: bidirectional
+    protocol: null
+    data_types: []
+    authentication: api_token
+    encryption_in_transit: unknown
+    internet_exposed: null
+    source_component_id: cmp-001
+    destination_component_id: cmp-002
+trust_boundaries:
+- id: tb-001
+  decision: approve
+  editable:
+    name: Third-party service boundary
+    boundary_type: application_to_external_service
+    description: null
+    controls: []
+claims:
+- id: ctx-001
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  evidence:
+  - evd-002
+  editable:
+    predicate: external_data_scope
+    value: the connector sends the full ticket body — including customer-written text and the extracted
+      text of customer attachments — to the translation provider over HTTPS
+    rationale: null
+- id: ctx-002
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  evidence:
+  - evd-004
+  editable:
+    predicate: provider_data_terms
+    value: no agreement covering the provider's retention of submitted text or its use beyond returning
+      the translation has been established; the provider's standard terms apply and have not been reviewed
+    rationale: null
+- id: ctx-003
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  evidence:
+  - evd-003
+  editable:
+    predicate: delegated_privilege
+    value: the workspace API token grants full workspace access, scoped that way during setup for convenience,
+      while the integration only reads tickets and writes notes
+    rationale: null
+questions: []

@@ -1,0 +1,665 @@
+assessment_id: asm-001
+system_context_version: 1
+reviewer: recorded-reviewer
+components:
+- id: cmp-001
+  decision: approve
+  editable:
+    name: Customer Portal
+    description: public web application for booking, labels, and tracking
+    component_type: web_application
+    technology: []
+    ownership: null
+    deployment_zone: edge
+    internet_accessible: true
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+- id: cmp-002
+  decision: approve
+  editable:
+    name: Mobile Gateway
+    description: 'endpoint for the driver mobile application: routes down, scan events and proof-of-delivery
+      photos up'
+    component_type: gateway
+    technology: []
+    ownership: null
+    deployment_zone: edge
+    internet_accessible: true
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+- id: cmp-003
+  decision: approve
+  editable:
+    name: API Gateway
+    description: 'the single public entry point: terminates TLS, authenticates every request against the
+      identity service, applies per-client rate limits'
+    component_type: gateway
+    technology: []
+    ownership: null
+    deployment_zone: edge
+    internet_accessible: true
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+- id: cmp-004
+  decision: approve
+  editable:
+    name: Identity Service
+    description: delegates interactive sign-in to the company SSO provider over OpenID Connect and issues
+      short-lived internal tokens
+    component_type: service
+    technology: []
+    ownership: null
+    deployment_zone: core
+    internet_accessible: null
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms:
+    - openid_connect
+    authorization_mechanisms: []
+- id: cmp-005
+  decision: approve
+  editable:
+    name: Order Service
+    description: owns shipment bookings; writes the orders database and publishes order events to the
+      message bus
+    component_type: service
+    technology: []
+    ownership: null
+    deployment_zone: core
+    internet_accessible: null
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+- id: cmp-006
+  decision: approve
+  editable:
+    name: Routing Service
+    description: plans collection and delivery routes from open orders and driver availability
+    component_type: service
+    technology: []
+    ownership: null
+    deployment_zone: core
+    internet_accessible: null
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+- id: cmp-007
+  decision: approve
+  editable:
+    name: Dispatch Service
+    description: pushes route assignments to drivers through the mobile gateway and records acceptance
+    component_type: service
+    technology: []
+    ownership: null
+    deployment_zone: core
+    internet_accessible: null
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+- id: cmp-008
+  decision: approve
+  editable:
+    name: Tracking Service
+    description: consumes scan events from the message bus, maintains per-parcel state in the tracking
+      store, serves portal queries
+    component_type: service
+    technology: []
+    ownership: null
+    deployment_zone: core
+    internet_accessible: null
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+- id: cmp-009
+  decision: approve
+  editable:
+    name: Notification Service
+    description: sends confirmations and delivery notices through an external messaging provider; templates
+      log the full rendered message body to the shared application log
+    component_type: service
+    technology: []
+    ownership: null
+    deployment_zone: core
+    internet_accessible: null
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+- id: cmp-010
+  decision: approve
+  editable:
+    name: Label Service
+    description: renders shipping labels as PDFs into the object storage bucket
+    component_type: service
+    technology: []
+    ownership: null
+    deployment_zone: core
+    internet_accessible: null
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+- id: cmp-011
+  decision: approve
+  editable:
+    name: Billing Service
+    description: prices shipments and records payments; card processing is entirely external, only the
+      payment reference is stored
+    component_type: service
+    technology: []
+    ownership: null
+    deployment_zone: core
+    internet_accessible: null
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+- id: cmp-012
+  decision: approve
+  editable:
+    name: Admin Console
+    description: staff interface for refunds, corrections, and account management; reached with the same
+      SSO accounts and sign-in path customers use, enabled by an is_admin flag
+    component_type: web_application
+    technology: []
+    ownership: null
+    deployment_zone: core
+    internet_accessible: null
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms:
+    - sso
+    authorization_mechanisms: []
+- id: cmp-013
+  decision: approve
+  editable:
+    name: Message Bus
+    description: the event backbone; services authenticate with per-service credentials issued at deploy
+      time
+    component_type: message_bus
+    technology: []
+    ownership: null
+    deployment_zone: data
+    internet_accessible: null
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+- id: cmp-014
+  decision: approve
+  editable:
+    name: Orders Database
+    description: relational store for bookings, customer accounts, and addresses; reachable only from
+      the core zone
+    component_type: data_store
+    technology: []
+    ownership: null
+    deployment_zone: data
+    internet_accessible: false
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+- id: cmp-015
+  decision: approve
+  editable:
+    name: Tracking Store
+    description: per-parcel scan history and tracking state; reachable only from the core zone
+    component_type: data_store
+    technology: []
+    ownership: null
+    deployment_zone: data
+    internet_accessible: false
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+- id: cmp-016
+  decision: approve
+  editable:
+    name: Object Storage
+    description: managed object store holding label PDFs and proof-of-delivery photos
+    component_type: data_store
+    technology: []
+    ownership: null
+    deployment_zone: data
+    internet_accessible: null
+    externally_managed: true
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+- id: cmp-017
+  decision: approve
+  editable:
+    name: Data Warehouse
+    description: receives a nightly copy of the orders database, including customer names and full delivery
+      addresses, for analytics
+    component_type: data_store
+    technology: []
+    ownership: null
+    deployment_zone: data
+    internet_accessible: null
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+- id: cmp-018
+  decision: approve
+  editable:
+    name: Carrier Link
+    description: 'connector to carrier partners'' APIs: manifests out, status updates in, over the carriers''
+      HTTPS APIs'
+    component_type: service
+    technology: []
+    ownership: null
+    deployment_zone: operations
+    internet_accessible: null
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+- id: cmp-019
+  decision: approve
+  editable:
+    name: Deploy Runner
+    description: runs the deployment pipeline that builds and releases the core services
+    component_type: service
+    technology: []
+    ownership: null
+    deployment_zone: operations
+    internet_accessible: null
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+actors:
+- id: act-001
+  decision: approve
+  editable:
+    name: Customer
+    actor_type: external_user
+    trust_level: null
+    capabilities: []
+    authentication_method: null
+- id: act-002
+  decision: approve
+  editable:
+    name: Driver
+    actor_type: external_user
+    trust_level: null
+    capabilities: []
+    authentication_method: null
+- id: act-003
+  decision: approve
+  editable:
+    name: Staff operator
+    actor_type: internal_user
+    trust_level: null
+    capabilities: []
+    authentication_method: null
+- id: act-004
+  decision: approve
+  editable:
+    name: Carrier partner
+    actor_type: external_service
+    trust_level: null
+    capabilities: []
+    authentication_method: null
+- id: act-005
+  decision: approve
+  editable:
+    name: Messaging provider
+    actor_type: external_service
+    trust_level: null
+    capabilities: []
+    authentication_method: null
+assets:
+- id: ast-001
+  decision: approve
+  editable:
+    name: Shipment bookings and addresses
+    asset_type: customer_data
+    description: bookings, customer accounts, and full delivery addresses
+    confidentiality_impact: null
+    integrity_impact: null
+    availability_impact: null
+    data_classification: null
+    owner: null
+- id: ast-002
+  decision: approve
+  editable:
+    name: Parcel tracking history
+    asset_type: operational_data
+    description: null
+    confidentiality_impact: null
+    integrity_impact: null
+    availability_impact: null
+    data_classification: null
+    owner: null
+- id: ast-003
+  decision: approve
+  editable:
+    name: Labels and proof-of-delivery photos
+    asset_type: customer_data
+    description: null
+    confidentiality_impact: null
+    integrity_impact: null
+    availability_impact: null
+    data_classification: null
+    owner: null
+- id: ast-004
+  decision: approve
+  editable:
+    name: Notification messages
+    asset_type: customer_data
+    description: rendered message bodies carrying recipient name, delivery address, and delivery window
+    confidentiality_impact: null
+    integrity_impact: null
+    availability_impact: null
+    data_classification: null
+    owner: null
+- id: ast-005
+  decision: approve
+  editable:
+    name: Payment references
+    asset_type: financial_data
+    description: null
+    confidentiality_impact: null
+    integrity_impact: null
+    availability_impact: null
+    data_classification: null
+    owner: null
+data_flows:
+- id: df-001
+  decision: approve
+  editable:
+    name: Portal traffic
+    direction: bidirectional
+    protocol: https
+    data_types: []
+    authentication: sso
+    encryption_in_transit: https
+    internet_exposed: true
+    source_component_id: cmp-001
+    destination_component_id: cmp-003
+- id: df-002
+  decision: approve
+  editable:
+    name: Driver app traffic
+    direction: bidirectional
+    protocol: https
+    data_types: []
+    authentication: sso
+    encryption_in_transit: https
+    internet_exposed: true
+    source_component_id: cmp-002
+    destination_component_id: cmp-003
+- id: df-003
+  decision: approve
+  editable:
+    name: Request authentication
+    direction: bidirectional
+    protocol: null
+    data_types: []
+    authentication: internal_token
+    encryption_in_transit: unknown
+    internet_exposed: false
+    source_component_id: cmp-003
+    destination_component_id: cmp-004
+- id: df-004
+  decision: approve
+  editable:
+    name: Booking requests
+    direction: bidirectional
+    protocol: null
+    data_types: []
+    authentication: internal_token
+    encryption_in_transit: unknown
+    internet_exposed: false
+    source_component_id: cmp-003
+    destination_component_id: cmp-005
+- id: df-005
+  decision: approve
+  editable:
+    name: Order persistence
+    direction: bidirectional
+    protocol: null
+    data_types: []
+    authentication: unknown
+    encryption_in_transit: unknown
+    internet_exposed: false
+    source_component_id: cmp-005
+    destination_component_id: cmp-014
+- id: df-006
+  decision: approve
+  editable:
+    name: Order events
+    direction: one_way
+    protocol: null
+    data_types: []
+    authentication: per_service_credentials
+    encryption_in_transit: unknown
+    internet_exposed: false
+    source_component_id: cmp-005
+    destination_component_id: cmp-013
+- id: df-007
+  decision: approve
+  editable:
+    name: Scan events
+    direction: one_way
+    protocol: null
+    data_types: []
+    authentication: per_service_credentials
+    encryption_in_transit: unknown
+    internet_exposed: false
+    source_component_id: cmp-013
+    destination_component_id: cmp-008
+- id: df-008
+  decision: approve
+  editable:
+    name: Notification events
+    direction: one_way
+    protocol: null
+    data_types: []
+    authentication: per_service_credentials
+    encryption_in_transit: unknown
+    internet_exposed: false
+    source_component_id: cmp-013
+    destination_component_id: cmp-009
+- id: df-009
+  decision: approve
+  editable:
+    name: Tracking state
+    direction: bidirectional
+    protocol: null
+    data_types: []
+    authentication: unknown
+    encryption_in_transit: unknown
+    internet_exposed: false
+    source_component_id: cmp-008
+    destination_component_id: cmp-015
+- id: df-010
+  decision: approve
+  editable:
+    name: Route assignment
+    direction: one_way
+    protocol: null
+    data_types: []
+    authentication: unknown
+    encryption_in_transit: unknown
+    internet_exposed: false
+    source_component_id: cmp-006
+    destination_component_id: cmp-007
+- id: df-011
+  decision: approve
+  editable:
+    name: Label storage
+    direction: one_way
+    protocol: null
+    data_types: []
+    authentication: unknown
+    encryption_in_transit: unknown
+    internet_exposed: false
+    source_component_id: cmp-010
+    destination_component_id: cmp-016
+- id: df-012
+  decision: approve
+  editable:
+    name: Nightly warehouse copy
+    direction: one_way
+    protocol: null
+    data_types: []
+    authentication: unknown
+    encryption_in_transit: unknown
+    internet_exposed: false
+    source_component_id: cmp-014
+    destination_component_id: cmp-017
+- id: df-013
+  decision: approve
+  editable:
+    name: Admin operations
+    direction: bidirectional
+    protocol: null
+    data_types: []
+    authentication: sso
+    encryption_in_transit: unknown
+    internet_exposed: false
+    source_component_id: cmp-012
+    destination_component_id: cmp-005
+trust_boundaries:
+- id: tb-001
+  decision: approve
+  editable:
+    name: Internet to edge boundary
+    boundary_type: internet_to_application
+    description: null
+    controls: []
+- id: tb-002
+  decision: approve
+  editable:
+    name: Edge to core boundary
+    boundary_type: zone_boundary
+    description: null
+    controls: []
+- id: tb-003
+  decision: approve
+  editable:
+    name: Core to data boundary
+    boundary_type: zone_boundary
+    description: null
+    controls: []
+- id: tb-004
+  decision: approve
+  editable:
+    name: Operations boundary
+    boundary_type: zone_boundary
+    description: null
+    controls: []
+claims:
+- id: ctx-001
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  evidence:
+  - evd-003
+  editable:
+    predicate: administrative_access_path
+    value: staff reach the admin console with the same SSO accounts and the same sign-in path customers
+      use; an is_admin flag on the user record enables its functions, and the console can read and edit
+      any customer account, order, and address
+    rationale: null
+- id: ctx-002
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  evidence:
+  - evd-003
+  editable:
+    predicate: log_content
+    value: the notification templates log the full rendered message body — including the recipient's name,
+      delivery address, and delivery window — to the shared application log
+    rationale: null
+- id: ctx-003
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  evidence:
+  - evd-004
+  editable:
+    predicate: copy_retention
+    value: the data warehouse receives a nightly copy of the orders database including customer names
+      and full delivery addresses; how long the copies are kept has not been written down anywhere the
+      team could point to
+    rationale: null
+- id: ctx-004
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  evidence:
+  - evd-004
+  editable:
+    predicate: network_reachability
+    value: the orders database and the tracking store are reachable only from the core zone
+    rationale: null
+- id: ctx-005
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  evidence:
+  - evd-002
+  editable:
+    predicate: entry_authentication
+    value: the API gateway terminates TLS, authenticates every request against the identity service, and
+      applies per-client rate limits
+    rationale: null
+- id: ctx-006
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  evidence:
+  - evd-003
+  editable:
+    predicate: authentication_delegation
+    value: all interactive sign-in is delegated to the company's SSO provider over OpenID Connect, and
+      the identity service issues short-lived internal tokens the core services verify
+    rationale: null
+- id: ctx-007
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  evidence:
+  - evd-004
+  editable:
+    predicate: service_authentication
+    value: services authenticate to the message bus with per-service credentials issued at deploy time
+    rationale: null
+- id: ctx-008
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  evidence:
+  - evd-003
+  editable:
+    predicate: payment_processing
+    value: card payments are processed entirely by an external payment provider, and the platform stores
+      only the provider's payment reference
+    rationale: null
+questions: []

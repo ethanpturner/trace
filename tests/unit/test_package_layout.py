@@ -76,12 +76,20 @@ PACKAGES = (
     # persisted objects, with benchmark matching against the authored truth sets. No model on
     # the default path.
     "trace_ai.services.evaluation",
+    # The interop exports (DEC-072, issue #347): post-approval serializers of approved objects,
+    # TM-BOM first. Not report formats — no prose, no model call, `outputs/` artifacts only.
+    "trace_ai.services.export",
     "trace_ai.infrastructure",
     "trace_ai.infrastructure.filesystem",
     "trace_ai.infrastructure.database",
     # The model seam (DEC-014). `tests/unit/test_model_boundary.py` holds the rule this package
     # exists to enforce: the adapter inside it is the only module that may import a provider SDK.
     "trace_ai.infrastructure.model",
+    # The read-only demonstration interface (DEC-032, issue #276): the Stage 5 view that renders
+    # persisted objects to HTML over localhost and drives nothing. Its own top-level package
+    # rather than a service, because it is a presentation surface over the services, not one of
+    # them, and stdlib `http.server` is the whole stack (no framework, DEC-016).
+    "trace_ai.interface",
 )
 
 # What a domain module may not reach for. Named as module prefixes so that

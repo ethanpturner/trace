@@ -1,0 +1,15 @@
+{
+  "executive_summary": "This assessment reviewed the Husky AI classification system from its supplied overview and security notes and approved two findings, described below. What could not be determined from the documents is recorded as documentation gaps rather than concluded.",
+  "system_overview": "The system trains a convolutional neural network on collected images in an experimental environment and serves it behind a public API from a production environment, with administrative access through a Bastion and deployment carried between the environments by a deployment service, as the supplied documents describe.",
+  "risk_summary": "The approved findings concern the experimental environment — which trains and ships the model production serves — sitting behind password authentication alone, and the external image-service API keys being held in a general-purpose storage account rather than a managed secret store. The documented storage access control, in-memory image handling, Bastion logging, and transport security are recorded as controls, not weaknesses.",
+  "limitations": [
+    {
+      "limitation_id": "lim-assumptions-fnd-001",
+      "text": "fnd-001 rests on stated assumptions: No common false positive applies: the conclusion is that the documents place the keys in a blob storage account rather than a managed secret store, not absent detail of a secret store's own encryption or its access-control policy — the false positives the catalog names presuppose a named secret store, and none is named."
+    },
+    {
+      "limitation_id": "lim-assumptions-fnd-002",
+      "text": "fnd-002 rests on stated assumptions: No common false positive applies: the conclusion is that the documented authentication summary, in a document that states it records what is implemented and lists no planned work, names password authentication alone for the public-to-experimental boundary — not absent enrolment-flow or factor-configuration detail, which the catalog names as false positives where a factor policy exists."
+    }
+  ]
+}

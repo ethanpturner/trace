@@ -39,7 +39,7 @@ requirements:
       - absent log retention period, which is a separate expectation
     default_severity: medium
     source_frameworks:
-      - "OWASP ASVS 5.0.0: 16.1.1"
+      - "OWASP ASVS: v5.0.0-16.1.1"
       - "NIST SP 800-53 5.2.0: AU-9"
       - "NIST SP 800-53 5.2.0: SI-11"
     status: active
@@ -78,7 +78,7 @@ requirements:
       - absent audit trail for read-only operations
     default_severity: medium
     source_frameworks:
-      - "OWASP ASVS 5.0.0: 16.1.1"
+      - "OWASP ASVS: v5.0.0-16.1.1"
       - "NIST SP 800-53 5.2.0: AU-2"
       - "NIST SP 800-53 5.2.0: AU-12"
     status: active

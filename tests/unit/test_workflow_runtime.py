@@ -235,13 +235,63 @@ def test_a_node_registered_against_an_undeclared_phase_is_refused(ledger: Execut
         orchestrator(ledger, ScriptedNode("threat-analysis", Phase.CONTEXT_VALIDATION))
 
 
-def test_two_nodes_may_not_claim_one_phase(ledger: ExecutionLedger) -> None:
-    with pytest.raises(ValueError, match="already has node"):
+def test_two_nodes_may_not_claim_one_name(ledger: ExecutionLedger) -> None:
+    """A phase runs every node the table declares for it; a *name* is registered exactly once."""
+    with pytest.raises(ValueError, match="already has a node named"):
         orchestrator(
             ledger,
             ScriptedNode("document-ingestion", Phase.DOCUMENT_INGESTION),
-            ScriptedNode("evidence-indexing", Phase.DOCUMENT_INGESTION),
+            ScriptedNode("document-ingestion", Phase.DOCUMENT_INGESTION),
         )
+
+
+def test_a_two_node_phase_runs_both_in_the_declared_order(ledger: ExecutionLedger) -> None:
+    """`NODES_BY_PHASE` names the order, so registration order decides nothing — the same
+    reasoning that once refused a second node per phase, kept under the table's authority."""
+    order: list[str] = []
+
+    @dataclass(slots=True)
+    class Ordered:
+        name: str
+        phase: Phase
+        execution_type: ExecutionType = ExecutionType.DETERMINISTIC
+        version: str = "0.1"
+
+        def run(self, context: NodeContext) -> NodeResult:
+            order.append(self.name)
+            return NodeResult()
+
+    outcome = orchestrator(
+        ledger,
+        Ordered("evidence-indexing", Phase.DOCUMENT_INGESTION),  # registered backwards
+        Ordered("document-ingestion", Phase.DOCUMENT_INGESTION),
+    ).run(state_for(ledger, Phase.DOCUMENT_INGESTION))
+
+    assert order == ["document-ingestion", "evidence-indexing"]
+    assert outcome.state.errors == ["no node is registered for phase context_extraction"]
+
+
+def test_a_declared_node_left_unregistered_stops_the_run(ledger: ExecutionLedger) -> None:
+    """Half a phase is a skipped node wearing a completed phase's clothes."""
+    outcome = orchestrator(
+        ledger, ScriptedNode("document-ingestion", Phase.DOCUMENT_INGESTION)
+    ).run(state_for(ledger, Phase.DOCUMENT_INGESTION))
+
+    assert outcome.state.status is RunStatus.FAILED
+    assert "declares node 'evidence-indexing'" in outcome.state.errors[0]
+
+
+def test_a_later_node_sees_what_an_earlier_one_recorded(ledger: ExecutionLedger) -> None:
+    """`state_changes` are absorbed between the nodes of one phase, not held for the advance."""
+    first = ScriptedNode(
+        "document-ingestion",
+        Phase.DOCUMENT_INGESTION,
+        result=NodeResult(state_changes={"source_document_ids": ["src-001"]}),
+    )
+    second = ScriptedNode("evidence-indexing", Phase.DOCUMENT_INGESTION)
+    orchestrator(ledger, first, second).run(state_for(ledger, Phase.DOCUMENT_INGESTION))
+
+    assert second.seen[0].state.source_document_ids == ["src-001"]
 
 
 def test_a_deterministic_node_is_given_no_model(ledger: ExecutionLedger) -> None:
@@ -298,14 +348,45 @@ def test_the_duration_ceiling_stops_a_run_that_is_stuck() -> None:
     assert caught.value.kind is LimitKind.DURATION
 
 
-def test_the_retry_ceiling_counts_from_zero() -> None:
-    """`retry_number` is zero for a first attempt, so a limit of two allows attempts 0, 1, and 2."""
-    budget = Budget(maximum_retries_per_node=2)
-    for retry_number in (0, 1, 2):
-        budget.check_retry(node_name="context-extraction", retry_number=retry_number)
-    with pytest.raises(LimitExceededError) as caught:
-        budget.check_retry(node_name="context-extraction", retry_number=3)
-    assert caught.value.kind is LimitKind.RETRIES
+def test_a_resumed_run_does_not_inherit_the_paused_hours(ledger: ExecutionLedger) -> None:
+    """#396: DEC-017 pauses by exiting and waiting costs nothing, so the duration ceiling bounds
+    the active segment rather than the wall clock since the run first began. A ledger whose run
+    row started hours ago is exactly what a resume after a long review looks like; it must run,
+    not stop on its first step with maximum_workflow_duration."""
+    run = ledger.run
+    ledger.run = type(run).model_validate(
+        {**run.model_dump(), "started_at": now() - timedelta(hours=2)}
+    )
+
+    outcome = orchestrator(
+        ledger,
+        ScriptedNode("document-ingestion", Phase.DOCUMENT_INGESTION),
+        ScriptedNode("evidence-indexing", Phase.DOCUMENT_INGESTION),
+    ).run(state_for(ledger, Phase.DOCUMENT_INGESTION), stop_before=Phase.CONTEXT_EXTRACTION)
+
+    assert outcome.stopped_because == "stopped_before_context_extraction"
+    assert outcome.state.status is not RunStatus.FAILED
+    assert not outcome.state.errors
+
+
+def test_the_retry_ceiling_travels_as_the_budget_policy() -> None:
+    """DEC-084 / #397: the budget does not check retries; it issues the policy the node's attempt
+    loop runs under, so the configured value is the operative one and zero means zero. An explicit
+    policy still wins — a test that says "no retries" means it — and the built-in default applies
+    only when there is neither."""
+    from trace_ai.workflow import RetryPolicy
+    from trace_ai.workflow.errors import ErrorClass
+    from trace_ai.workflow.limits import resolve_retry_policy
+
+    budget = Budget(maximum_retries_per_node=0)
+    policy = budget.retry_policy()
+    assert policy.maximum_retries_per_node == 0
+    assert not policy.should_retry(ErrorClass.SCHEMA_VALIDATION_FAILURE, attempt_number=0)
+
+    assert resolve_retry_policy(None, budget).maximum_retries_per_node == 0
+    explicit = RetryPolicy(maximum_retries_per_node=5)
+    assert resolve_retry_policy(explicit, budget) is explicit
+    assert resolve_retry_policy(None, None).maximum_retries_per_node == 2
 
 
 def test_an_absent_ceiling_is_none_rather_than_a_large_number() -> None:

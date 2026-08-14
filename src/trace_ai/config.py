@@ -111,5 +111,10 @@ def get_settings() -> Settings:
     """Return the process-wide settings, read once and cached.
 
     Call `get_settings.cache_clear()` in tests that manipulate the environment.
+
+    The dotenv path is passed at call time rather than left to `model_config`, which captured
+    `ENV_FILE` when the class was defined: a test that monkeypatches `trace_ai.config.ENV_FILE`
+    must actually redirect this read, or the test only passes on machines with no real `.env` —
+    exactly the machines that stop existing the day someone configures a key (#417).
     """
-    return Settings()
+    return Settings(_env_file=ENV_FILE)

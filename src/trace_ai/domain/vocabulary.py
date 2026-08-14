@@ -18,6 +18,18 @@ the vocabulary stays open while the spelling does not.
 A closed enum is still right where the document enumerates rather than illustrates: a description
 reading "Service, datastore, external system, etc." is a list of examples, and one reading "One-way
 or bidirectional" is a list of values. The `etc.` is the signal, and DEC-036 uses it as the rule.
+
+**Normalization collapses spellings, never methodologies** (issue #226, survey item A8). The
+surveyed corpora describe overlapping ground in different category systems, and a rough crosswalk
+exists: LINDDUN's `linkability` concerns what STRIDE files under `information_disclosure` and the
+CIA triad under `confidentiality`. That crosswalk is documentation for a reader, deliberately not
+a normalization rule, and Threat Dragon's category lists show why: LINDDUN and PLOT4ai both carry
+`unawareness` and `non_compliance` as category names, with different meanings -- LINDDUN's are
+privacy categories, PLOT4ai's are AI ones. One spelling of `non_compliance` therefore names two
+different categories depending on the methodology that produced it, which is exactly the case a
+term-level mapping table would silently decide wrong. `normalize_term` unifies `Non-compliance`
+and `non_compliance` because those are one term spelled two ways; nothing here maps a term of one
+methodology onto a term of another, because sharing a spelling is not sharing a meaning.
 """
 
 from __future__ import annotations

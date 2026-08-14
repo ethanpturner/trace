@@ -69,6 +69,7 @@ from trace_ai.workflow.context_review import (
     confirm_assumption,
     current_system_context,
     decide_object,
+    previous_approved_context,
     re_extraction_feedback,
     request_re_extraction,
     resolve_contradiction,
@@ -270,8 +271,12 @@ def package_for(handle: AssessmentHandle) -> Any:
         for model in (Component, Actor, Asset, DataFlow, TrustBoundary, ContextClaim)
         for obj in handle.objects.list(model)
     ]
+    context = current_system_context(handle)
     validation = validate_context(
-        current_system_context(handle), objects, available_evidence=set(evidence_ids(handle))
+        context,
+        objects,
+        available_evidence=set(evidence_ids(handle)),
+        previous=previous_approved_context(handle, context),
     )
     return build_context_review_package(handle, index=EvidenceIndex(handle), validation=validation)
 
@@ -1114,3 +1119,160 @@ def test_every_reviewer_action_leaves_a_decision(reviewed: Any) -> None:
         ReviewDisposition.APPROVE,
         ReviewDisposition.REJECT,
     }
+
+
+# ------------------------------------------------------------------------------------------
+# The prior approved revision, and section 7's sixth trigger (#400)
+# ------------------------------------------------------------------------------------------
+
+
+def test_no_approved_prior_means_no_comparison(reviewed: Any) -> None:
+    """A first extraction has no approved baseline to diverge from, and neither does a
+    re-extraction requested before any approval. `None` is the answer, not an empty context —
+    the trigger must stay silent rather than fire against nothing."""
+    handle, _ = reviewed
+    assert previous_approved_context(handle, current_system_context(handle)) is None
+
+
+def test_material_change_since_the_prior_approved_revision_raises_the_trigger(
+    reviewed: Any,
+) -> None:
+    """#400's acceptance: the sixth human-review trigger is reachable through the composed
+    package, not only when a test passes `previous=` by hand. Two approval cycles produce two
+    approved revisions; the reviewer's added component makes their memberships differ; and the
+    package built afterwards says so."""
+    handle, _ = reviewed
+    answer_question(
+        handle, handle.objects.list(Question)[0], response="Yes, HMAC.", reviewer_id=REVIEWER
+    )
+    first_approved, _ = approve_context(handle, package_for(handle), reviewer_id=REVIEWER)
+
+    added, _ = add_context_object(
+        handle,
+        Component,
+        {"name": "Managed Redis Queue", "component_type": "managed_cache"},
+        reviewer_id=REVIEWER,
+    )
+    second_approved, _ = approve_context(handle, package_for(handle), reviewer_id=REVIEWER)
+    assert second_approved.version == first_approved.version + 1
+
+    prior = previous_approved_context(handle, current_system_context(handle))
+    assert prior is not None
+    assert prior.version == first_approved.version
+
+    package = package_for(handle)
+    triggered = {trigger.name: trigger for trigger in package.triggers}
+    assert "material_change_from_prior_approved_version" in triggered
+    assert added.id in triggered["material_change_from_prior_approved_version"].object_ids
+
+
+# ------------------------------------------------------------------------------------------
+# The review file reaches the remaining actions (#399)
+# ------------------------------------------------------------------------------------------
+
+
+def test_the_review_file_reaches_additions_attachments_and_resolutions(reviewed: Any) -> None:
+    """#399's acceptance for the file path: the three actions the surface never reached — add a
+    missing object, attach evidence, resolve a contradiction — are expressible in the exported
+    document and produce the same objects and decisions the workflow functions produce, because
+    they are the workflow functions."""
+    from trace_ai.services.context.review_file import apply_review_file, export_review_file
+
+    handle, _ = reviewed
+    document = export_review_file(package_for(handle))
+
+    assert document["additions"] == []
+    assert document["contradictions"], "the contradiction observation was not exported"
+    assert all("attach_evidence" in entry for entry in document["components"] + document["claims"])
+
+    target = document["components"][0]
+    cited = handle.objects.find(Component, target["id"]).evidence_ids
+    fresh = next(ref for ref in evidence_ids(handle) if ref not in cited)
+    target["attach_evidence"] = [fresh]
+    document["additions"] = [
+        {
+            "type": "components",
+            "fields": {"name": "Managed Redis Queue", "component_type": "managed_cache"},
+        }
+    ]
+    entry = document["contradictions"][0]
+    entry["resolution"] = "Source files are deleted after analysis completes."
+    entry["rationale"] = "The operations guide is the authoritative retention statement."
+
+    decisions = apply_review_file(handle, document, reviewer_id=REVIEWER)
+    assert decisions, "the edited file produced no decisions"
+
+    added = next(
+        item for item in handle.objects.list(Component) if item.name == "Managed Redis Queue"
+    )
+    assert added.source_origin is SourceOrigin.REVIEWER_EDIT
+    assert fresh in handle.objects.find(Component, target["id"]).evidence_ids
+    settled = claim(handle, "artifact_retention")
+    assert settled.status is ClaimStatus.USER_CONFIRMED
+    assert settled.value == "Source files are deleted after analysis completes."
+    observation = handle.objects.list(SourceObservation)[0]
+    assert (observation.reviewer_notes or "").strip()
+
+
+def test_the_edited_file_applied_twice_applies_once(reviewed: Any) -> None:
+    """The file's governing property, held by the new slots too: every action expresses a
+    difference from the current state, so re-applying the same edited file adds no second
+    component, attaches nothing again, and re-resolves nothing."""
+    from trace_ai.services.context.review_file import apply_review_file, export_review_file
+
+    handle, _ = reviewed
+    document = export_review_file(package_for(handle))
+    target = document["components"][0]
+    cited = handle.objects.find(Component, target["id"]).evidence_ids
+    fresh = next(ref for ref in evidence_ids(handle) if ref not in cited)
+    target["attach_evidence"] = [fresh]
+    document["additions"] = [
+        {
+            "type": "components",
+            "fields": {"name": "Managed Redis Queue", "component_type": "managed_cache"},
+        }
+    ]
+    entry = document["contradictions"][0]
+    entry["resolution"] = "Deleted after analysis."
+    entry["rationale"] = "The operations guide is authoritative."
+
+    first_pass = apply_review_file(handle, document, reviewer_id=REVIEWER)
+    assert first_pass
+
+    second_pass = apply_review_file(handle, document, reviewer_id=REVIEWER)
+    assert second_pass == []
+    namesakes = [
+        item for item in handle.objects.list(Component) if item.name == "Managed Redis Queue"
+    ]
+    assert len(namesakes) == 1
+
+
+def test_re_extraction_feedback_carries_the_validators_instructions(reviewed: Any) -> None:
+    """DEC-086: re-extraction is the one path on which the extracting agent runs again, so it is
+    the consumer of section 8's "retry instructions" output. The reviewer's rationale says why
+    the context was rejected; the validator's instructions say, per correctable error, what the
+    corrected extraction must fix — here, a claim citing evidence that resolves to nothing."""
+    handle, _ = reviewed
+    existing = claim(handle, "request_validation")
+    with handle.objects.transaction() as repository:
+        fabricated = ContextClaim.model_validate(
+            {
+                **existing.model_dump(),
+                "id": repository.allocate("ctx"),
+                "predicate": "invented_control",
+                "evidence_ids": ["evd-999"],
+            }
+        )
+        repository.save(fabricated)
+
+    request_re_extraction(
+        handle,
+        package_for(handle),
+        reviewer_id=REVIEWER,
+        rationale="The extraction missed the queue between the receiver and the worker.",
+    )
+
+    feedback = re_extraction_feedback(handle)
+    assert feedback is not None
+    assert "missed the queue" in feedback
+    assert "evd-999" in feedback, "the validator's correctable error did not reach the feedback"

@@ -6,6 +6,13 @@ orchestrator rather than to any node. Three of the five come from `AssessmentCon
 (`data-model.md` section 6); node executions and duration have no field there and are given
 defaults here.
 
+**Four ceilings are checks on this budget; the retries ceiling is a policy it issues** (DEC-084).
+A retry decision is made inside a node's attempt loop, between a classified failure and the next
+attempt — a place the orchestrator never stands, because an agent node records its own execution.
+So the budget does not check retries; it *derives* the `RetryPolicy` the loop runs under, from the
+same configuration field, through `retry_policy()`. The ceiling is enforced exactly once and the
+configured value is the operative one either way.
+
 **Before, not after.** A cost ceiling checked after a call has already been paid is a record of
 overspending rather than a limit. The check therefore takes the *estimated* cost of the call about
 to be made — which means the ceiling holds against an estimate, and the tradeoff is stated rather
@@ -25,6 +32,7 @@ from decimal import Decimal
 from enum import StrEnum
 from typing import TYPE_CHECKING, Final
 
+from trace_ai.workflow.retry import RetryPolicy
 from trace_ai.workflow.state import RemainingLimits
 
 if TYPE_CHECKING:
@@ -38,6 +46,7 @@ __all__ = [
     "Budget",
     "LimitExceededError",
     "LimitKind",
+    "resolve_retry_policy",
 ]
 
 # Section 27 requires both ceilings and section 6 carries neither, so they are set here. The node
@@ -49,11 +58,15 @@ DEFAULT_MAXIMUM_DURATION_SECONDS: Final = 3_600.0
 
 
 class LimitKind(StrEnum):
-    """Which of section 27's ceilings stopped the run."""
+    """Which of the budget-checked ceilings stopped the run.
+
+    Retries are absent deliberately (DEC-084): an exhausted retry budget stops the run under the
+    *failing attempt's* error class with the attempt count, because section 26 classifies the stop
+    by what kept failing, not by the ceiling that stopped the retrying.
+    """
 
     MODEL_CALLS = "maximum_model_calls"
     COST = "maximum_cost"
-    RETRIES = "maximum_retries_per_node"
     NODE_EXECUTIONS = "maximum_node_executions"
     DURATION = "maximum_workflow_duration"
 
@@ -142,12 +155,14 @@ class Budget:
         if self.maximum_cost is not None and self.cost + estimated_cost > self.maximum_cost:
             raise LimitExceededError(LimitKind.COST, self.maximum_cost, self.cost + estimated_cost)
 
-    def check_retry(self, *, node_name: str, retry_number: int) -> None:
-        """Refuse a retry beyond the per-node ceiling. `retry_number` is zero for a first attempt."""
-        if retry_number > self.maximum_retries_per_node:
-            raise LimitExceededError(
-                LimitKind.RETRIES, f"{self.maximum_retries_per_node} for {node_name}", retry_number
-            )
+    def retry_policy(self) -> RetryPolicy:
+        """The policy an agent node's attempt loop runs under, carrying this budget's ceiling.
+
+        This is how `maximum_retries_per_node` becomes operative (#397): a node given a budget and
+        no explicit policy runs under this one, so configuring zero retries produces exactly one
+        attempt rather than the policy default's three.
+        """
+        return RetryPolicy(maximum_retries_per_node=self.maximum_retries_per_node)
 
     # -- consumption -----------------------------------------------------------------------
 
@@ -176,3 +191,17 @@ class Budget:
                 else max(self.maximum_cost - self.cost, Decimal(0))
             ),
         )
+
+
+def resolve_retry_policy(explicit: RetryPolicy | None, budget: Budget | None) -> RetryPolicy:
+    """The policy a node's attempt loop runs under.
+
+    Precedence is the point (#397): an explicitly supplied policy wins, because a test that says
+    "no retries" means it; otherwise the budget's, because that is where the configuration's
+    `maximum_retries_per_node` lives; the built-in default only when there is neither.
+    """
+    if explicit is not None:
+        return explicit
+    if budget is not None:
+        return budget.retry_policy()
+    return RetryPolicy()

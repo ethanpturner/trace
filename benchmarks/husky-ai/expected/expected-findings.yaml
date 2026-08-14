@@ -1,0 +1,65 @@
+# Husky AI expected findings
+#
+# Benchmark truth for the findings a correct assessment approves. Layout is fixed by DEC-027.
+# The source threat model contributes the threat list; the findings here rest on the input
+# documents' own affirmative statements and nothing else — each entry cites the passage it
+# rests on, and `evidence_establishes` never lists an absence (DEC-009). The security notes
+# declare themselves complete ("this document records what is implemented; it does not list
+# planned work"), which is what lets an enumerated summary carry a documented-negative.
+#
+# Nothing in this directory is supplied to Trace during an assessment.
+#
+# A finding matches on `requirement_id` and `affected_component` (DEC-056). Severity is
+# assigned by the reviewer at checkpoint 2 (DEC-030); `severity_guidance` exists so whoever
+# plays the reviewer in a benchmark run does not introduce variance between runs.
+
+benchmark_version: "1.0"
+scenario: husky-ai
+catalog_version: "0.1"
+source: system-overview.md, security-notes.md
+
+findings:
+  - key: FND-HA-01
+    subject: the experimental environment is reachable with password authentication alone
+    severity_guidance: medium
+    requirement_id: req-AUTH-002
+    affected_component: Jupyter Notebook
+    arises_from: system-overview.md section 1; security-notes.md sections 2 and 6
+    evidence_establishes:
+      - Access across the public-to-experimental boundary is password-authenticated.
+      - The security notes record what is implemented and do not list planned work, and their
+        authentication summary names password authentication as the public-to-experimental
+        mechanism.
+      - The experimental environment holds the training images, the source and configuration,
+        the API keys, and writes the model the production path serves.
+    supported_by:
+      - system-overview.md
+      - security-notes.md
+    notes: >
+      Production access is SSO while the environment that trains and ships the model sits
+      behind a password. The finding rests on the documented authentication summary in a
+      document that states its own completeness — a documented mechanism, not an inferred
+      absence. What is not established is any second factor or delegation for that boundary,
+      and the completeness statement is what turns that from silence into a documented
+      negative.
+
+  - key: FND-HA-02
+    subject: external image-service API keys are held in a storage account, not a secret store
+    severity_guidance: medium
+    requirement_id: req-SECRET-001
+    affected_component: Gather Images Application
+    arises_from: system-overview.md sections 2 and 3
+    evidence_establishes:
+      - The Gather Images application uses API keys held in the API key store.
+      - The data-store table places API Key storage among the blob storage accounts of the
+        experimental environment.
+      - The storage access-control notes cover the training, model, and source stores and do
+        not name the API key storage.
+    supported_by:
+      - system-overview.md
+      - security-notes.md
+    notes: >
+      The documents affirmatively place long-lived provider credentials in general-purpose
+      storage rather than a managed secret store, which is the mechanism req-SECRET-001 asks
+      for. This is a documented mechanism falling short of the requirement, not silence: where
+      the keys live is stated.

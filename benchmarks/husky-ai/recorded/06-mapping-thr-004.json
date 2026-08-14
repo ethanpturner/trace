@@ -1,0 +1,26 @@
+{
+  "controls": [],
+  "mappings": [
+    {
+      "threat_id": "thr-004",
+      "requirement_id": "req-AUTH-002",
+      "control_keys": [],
+      "existing_control_ids": [],
+      "applicability_status": "applicable",
+      "applicability_reason": "The experimental environment is a privileged interface — it holds the training data, source, API keys, and writes the model production serves — so establishing multi-factor responsibility applies; authentication is not documented as owned by an external provider.",
+      "suppressed_conclusion": null,
+      "suppressed_by": null,
+      "satisfaction_status": "unmet",
+      "evidence_ids": [
+        "evd-007",
+        "evd-001",
+        "evd-009"
+      ],
+      "assumptions": [
+        "No common false positive applies: the conclusion is that the documented authentication summary, in a document that states it records what is implemented and lists no planned work, names password authentication alone for the public-to-experimental boundary — not absent enrolment-flow or factor-configuration detail, which the catalog names as false positives where a factor policy exists."
+      ],
+      "confidence": "medium"
+    }
+  ],
+  "documentation_gaps": []
+}

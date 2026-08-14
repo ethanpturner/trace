@@ -56,10 +56,17 @@ class Execution:
     output_object_ids: list[str] = field(default_factory=list)
     metadata: dict[str, object] = field(default_factory=dict)
 
+    retry_number: int = 0
+    """Retries this execution consumed — the final attempt's number, set by the node's attempt
+    loop as it runs (#398). Zero when the first attempt succeeded, and mutable because the count
+    is only known at exit: the record is written when the execution closes, not when it opens."""
+
     prompt_version: str | None = None
     model_name: str | None = None
     input_tokens: int = 0
     output_tokens: int = 0
+    cache_read_tokens: int = 0
+    cache_creation_tokens: int = 0
     estimated_cost: Decimal = field(default_factory=lambda: Decimal(0))
 
     def produced(self, *object_ids: str) -> None:
@@ -79,6 +86,8 @@ class Execution:
         """
         self.input_tokens += usage.input_tokens
         self.output_tokens += usage.output_tokens
+        self.cache_read_tokens += usage.cache_read_tokens
+        self.cache_creation_tokens += usage.cache_creation_tokens
         self.estimated_cost += usage.estimated_cost
         self.model_name = usage.model
 
@@ -97,11 +106,16 @@ def start_run(
     workflow_version: str,
     model_profile: str,
     prompt_versions: dict[str, str] | None = None,
+    ablations: Sequence[str] = (),
 ) -> WorkflowRun:
     """Open a workflow run for this assessment.
 
     `total_model_calls` starts at zero and stays there for a run that calls no model, which is
     every run in this milestone. It is the correct value, not a placeholder.
+
+    `ablations` is the evaluation harness's to pass (DEC-073): a run created with any is marked
+    non-authoritative from birth rather than reclassified later, so no window exists in which an
+    ablated run looks ordinary.
     """
     repository = handle.objects
     with repository.transaction():
@@ -114,6 +128,7 @@ def start_run(
             model_profile=model_profile,
             prompt_versions=prompt_versions or {},
             total_model_calls=0,
+            ablations=list(ablations),
         )
         repository.save(run)
     return run
@@ -145,7 +160,10 @@ class ExecutionLedger:
         """
         started = now()
         execution = Execution(
-            node_name=node_name, started_at=started, input_object_ids=list(consumes)
+            node_name=node_name,
+            started_at=started,
+            input_object_ids=list(consumes),
+            retry_number=retry_number,
         )
         try:
             yield execution
@@ -154,7 +172,6 @@ class ExecutionLedger:
                 execution,
                 node_version=node_version,
                 execution_type=execution_type,
-                retry_number=retry_number,
                 status=ExecutionStatus.FAILED,
                 error_type=type(error).__name__,
                 error_message=safe_message(error),
@@ -165,7 +182,6 @@ class ExecutionLedger:
                 execution,
                 node_version=node_version,
                 execution_type=execution_type,
-                retry_number=retry_number,
                 status=ExecutionStatus.COMPLETED,
             )
 
@@ -175,7 +191,6 @@ class ExecutionLedger:
         *,
         node_version: str,
         execution_type: ExecutionType,
-        retry_number: int,
         status: ExecutionStatus,
         error_type: str | None = None,
         error_message: str | None = None,
@@ -195,7 +210,7 @@ class ExecutionLedger:
                 started_at=execution.started_at,
                 completed_at=completed,
                 status=status,
-                retry_number=retry_number,
+                retry_number=execution.retry_number,
                 error_type=error_type,
                 error_message=error_message,
                 duration_ms=max(int((completed - execution.started_at).total_seconds() * 1000), 0),
@@ -203,6 +218,8 @@ class ExecutionLedger:
                 model_name=execution.model_name,
                 input_tokens=execution.input_tokens or None,
                 output_tokens=execution.output_tokens or None,
+                cache_read_tokens=execution.cache_read_tokens or None,
+                cache_creation_tokens=execution.cache_creation_tokens or None,
                 estimated_cost=execution.estimated_cost or None,
                 metadata=dict(execution.metadata),
             )
@@ -228,6 +245,8 @@ class ExecutionLedger:
         records = self.records()
         input_tokens = sum(record.input_tokens or 0 for record in records)
         output_tokens = sum(record.output_tokens or 0 for record in records)
+        cache_read = sum(record.cache_read_tokens or 0 for record in records)
+        cache_creation = sum(record.cache_creation_tokens or 0 for record in records)
         cost = sum((record.estimated_cost or Decimal(0) for record in records), Decimal(0))
         return {
             "total_model_calls": sum(
@@ -235,6 +254,8 @@ class ExecutionLedger:
             ),
             "total_input_tokens": input_tokens or None,
             "total_output_tokens": output_tokens or None,
+            "total_cache_read_tokens": cache_read or None,
+            "total_cache_creation_tokens": cache_creation or None,
             "estimated_cost": cost or None,
         }
 

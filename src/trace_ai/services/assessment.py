@@ -41,6 +41,7 @@ __all__ = [
     "ASSESSMENT_TRANSITIONS",
     "AssessmentExistsError",
     "AssessmentHandle",
+    "AssessmentNotApprovableError",
     "AssessmentNotFoundError",
     "AssessmentService",
     "AssessmentStatus",
@@ -97,6 +98,17 @@ class AssessmentExistsError(AssessmentServiceError):
             f"assessment {assessment_id!r} already exists. Identifiers come from the store's "
             f"counter and are never reused, so this means two stores were mixed."
         )
+
+
+class AssessmentNotApprovableError(AssessmentServiceError):
+    """Approval is a sign-off on a finished deliverable, and this assessment lacks one (DEC-082).
+
+    The refusal names what is missing — no rendered report, or a report whose run did not
+    complete — so the operator knows what has to happen first rather than which flag to force.
+    """
+
+    def __init__(self, assessment_id: str, reason: str) -> None:
+        super().__init__(f"{assessment_id} cannot be approved: {reason}")
 
 
 class NonAuthoritativeRunError(AssessmentServiceError):
@@ -272,14 +284,41 @@ class AssessmentService:
         """Every pending object has a `ReviewerDecision`; the run continues (DEC-017)."""
         return self._transition(assessment_id, ObjectStatus.DRAFT)
 
-    def approve(self, assessment_id: str, *, run_is_authoritative: bool) -> Assessment:
-        """The pipeline completed and the reviewer approved the findings at checkpoint 2.
+    def approve(self, assessment_id: str) -> Assessment:
+        """The person's sign-off on the completed deliverable (DEC-082).
 
-        `run_is_authoritative` is a property of the `WorkflowRun`, which does not exist yet, so it
-        is supplied by the caller. When #57 lands this reads the run instead; the rule does not
-        change, only where its input comes from.
+        Three refusals make this a sign-off rather than a status setter: a rendered report must
+        exist, the run that rendered it must have completed, and that run must be authoritative
+        (DEC-012 — findings no human approved must not become an approved assessment). The
+        checkpoints are not bypassed because no report exists without passing both; what this
+        verb adds is the judgment the terminal node cannot make — that a person has read the
+        rendered document and stands behind it.
         """
-        if not run_is_authoritative:
+        from trace_ai.domain.execution import RunStatus, WorkflowRun
+
+        current = self.get(assessment_id)
+        if current.final_report_path is None:
+            raise AssessmentNotApprovableError(
+                assessment_id,
+                "no report has been rendered; run the pipeline to completion first",
+            )
+        # The report filename embeds the run that rendered it (report-<run-id>.md), so the
+        # sign-off binds to that run rather than to whichever run happens to be latest.
+        run_id = (
+            current.final_report_path.rpartition("/")[2].removeprefix("report-").removesuffix(".md")
+        )
+        repository = self._store.repository(assessment_id)
+        run = next((run for run in repository.list(WorkflowRun) if run.id == run_id), None)
+        if run is None:
+            raise AssessmentNotApprovableError(
+                assessment_id, f"the report names run {run_id!r}, which this assessment lacks"
+            )
+        if run.status is not RunStatus.COMPLETED:
+            raise AssessmentNotApprovableError(
+                assessment_id,
+                f"the report's run {run.id} is {run.status.value}, not completed",
+            )
+        if not run.is_authoritative:
             raise NonAuthoritativeRunError(assessment_id)
         return self._transition(assessment_id, ObjectStatus.APPROVED)
 

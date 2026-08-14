@@ -1,0 +1,114 @@
+assessment_id: asm-001
+system_context_version: 1
+reviewer: recorded-reviewer
+components:
+- id: cmp-001
+  decision: approve
+  editable:
+    name: Callback Receiver
+    description: the endpoint registered with the payment provider; processes any well-formed callback
+      it receives
+    component_type: service
+    technology: []
+    ownership: null
+    deployment_zone: null
+    internet_accessible: true
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+- id: cmp-002
+  decision: approve
+  editable:
+    name: Channel Poster
+    description: formats the order status and posts it to the operations channel over HTTPS
+    component_type: service
+    technology: []
+    ownership: null
+    deployment_zone: null
+    internet_accessible: null
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+actors:
+- id: act-001
+  decision: approve
+  editable:
+    name: Payment provider
+    actor_type: external_service
+    trust_level: null
+    capabilities: []
+    authentication_method: null
+assets:
+- id: ast-001
+  decision: approve
+  editable:
+    name: Order-status callbacks
+    asset_type: operational_data
+    description: null
+    confidentiality_impact: null
+    integrity_impact: null
+    availability_impact: null
+    data_classification: null
+    owner: null
+data_flows:
+- id: df-001
+  decision: approve
+  editable:
+    name: Callback intake
+    direction: one_way
+    protocol: null
+    data_types: []
+    authentication: unknown
+    encryption_in_transit: unknown
+    internet_exposed: null
+    source_component_id: cmp-001
+    destination_component_id: cmp-002
+trust_boundaries:
+- id: tb-001
+  decision: approve
+  editable:
+    name: Public internet boundary
+    boundary_type: internet_to_application
+    description: the callback endpoint accepts requests from anywhere
+    controls: []
+claims:
+- id: ctx-001
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  evidence:
+  - evd-002
+  editable:
+    predicate: callback_authenticity
+    value: the receiver processes any well-formed callback; callbacks are not signed, and the provider's
+      optional callback-signing feature is not enabled
+    rationale: null
+- id: ctx-002
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  evidence:
+  - evd-005
+  editable:
+    predicate: callback_intake_review
+    value: the incident review confirmed the callback endpoint accepts unsigned requests from anywhere,
+      and enabling provider signing is tracked in the backlog and not yet scheduled
+    rationale: null
+- id: ctx-003
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  evidence:
+  - evd-003
+  - evd-006
+  editable:
+    predicate: channel_posting
+    value: the channel poster posts order status to the operations channel over the channel platform's
+      HTTPS API, and has retried safely during provider outages
+    rationale: null
+questions: []

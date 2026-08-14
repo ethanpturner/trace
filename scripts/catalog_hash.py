@@ -23,49 +23,65 @@ from __future__ import annotations
 import argparse
 import re
 import sys
-from typing import Final
+from typing import TYPE_CHECKING, Final
 
-from trace_ai.services.requirements.loader import MANIFEST_FILE, compute_hash, current_version
+from trace_ai.services.requirements.loader import CATALOG_ROOT, compute_hash, current_version
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 # The one line this script owns. Anchored to the two-space indent the manifest uses for the
 # fields of its `catalog:` mapping, so a `content_hash` appearing anywhere else is not rewritten.
 _LINE: Final = re.compile(r"^  content_hash: .*$", re.MULTILINE)
 
 
-def declared_hash() -> str | None:
-    match = _LINE.search(MANIFEST_FILE.read_text(encoding="utf-8"))
+def manifest_file(version: str) -> Path:
+    """The manifest that owns `version`'s hash line (DEC-057's per-version manifests)."""
+    versioned = CATALOG_ROOT / f"catalog-{version}.yaml"
+    return versioned if versioned.is_file() else CATALOG_ROOT / "catalog.yaml"
+
+
+def declared_hash(version: str) -> str | None:
+    match = _LINE.search(manifest_file(version).read_text(encoding="utf-8"))
     if match is None:
         return None
     return match.group(0).split(":", 1)[1].strip()
 
 
-def write(value: str) -> bool:
+def write(version: str, value: str) -> bool:
     """Rewrite the `content_hash` line. Returns whether the file changed."""
-    text = MANIFEST_FILE.read_text(encoding="utf-8")
+    target = manifest_file(version)
+    text = target.read_text(encoding="utf-8")
     replacement = f"  content_hash: {value}"
     if _LINE.search(text) is None:
         raise SystemExit(
-            f"{MANIFEST_FILE} has no 'content_hash:' line to rewrite. Add "
+            f"{target} has no 'content_hash:' line to rewrite. Add "
             f"'{replacement}' under 'catalog:' and run this again."
         )
     updated = _LINE.sub(replacement, text, count=1)
     if updated == text:
         return False
-    MANIFEST_FILE.write_text(updated, encoding="utf-8")
+    target.write_text(updated, encoding="utf-8")
     return True
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--write", action="store_true", help="rewrite the line in catalog.yaml")
+    parser.add_argument("--write", action="store_true", help="rewrite the line in the manifest")
     parser.add_argument("--check", action="store_true", help="exit non-zero if the hash is stale")
+    parser.add_argument(
+        "--version",
+        default=None,
+        help="catalog version to hash (default: what the root manifest declares)",
+    )
     arguments = parser.parse_args()
 
-    expected = compute_hash(current_version())
-    current = declared_hash()
+    version = arguments.version or current_version()
+    expected = compute_hash(version)
+    current = declared_hash(version)
 
     if arguments.write:
-        changed = write(expected)
+        changed = write(version, expected)
         print(f"{'wrote' if changed else 'unchanged'}: {expected}")
         return 0
 

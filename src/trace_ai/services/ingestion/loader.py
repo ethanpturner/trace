@@ -43,6 +43,7 @@ import yaml
 
 from trace_ai.domain.base import now
 from trace_ai.domain.enums import SourceOrigin
+from trace_ai.domain.hashing import content_hash
 from trace_ai.domain.source_document import (
     IngestionStatus,
     MediaType,
@@ -171,6 +172,9 @@ class DocumentLoader:
         """Register one file. `origin` and `trust_level` are required, never inferred.
 
         Inferring either would mean deciding from the file what to believe about the file.
+
+        Registration is idempotent: a file whose name and bytes are already registered returns
+        the existing `SourceDocument` unchanged (#320).
         """
         if self._ledger is None:
             return self._load(path, origin=origin, trust_level=trust_level)
@@ -183,6 +187,23 @@ class DocumentLoader:
         media_type = self._media_type(path)
         content = self._read(path)
         self._parse(path, media_type, content)
+
+        # Registration is idempotent per (filename, content): `source add` run twice must return
+        # the document it already made, not mint a second one — every count downstream (documents,
+        # evidence references, the report's source table) would silently double otherwise. The
+        # same filename with different bytes still falls through to the artifact store, which
+        # refuses the overwrite by name.
+        digest = content_hash(content)
+        existing = next(
+            (
+                document
+                for document in self.handle.objects.list(SourceDocument)
+                if document.filename == path.name and document.content_hash == digest
+            ),
+            None,
+        )
+        if existing is not None:
+            return existing
 
         already_stored = (self.handle.artifacts.area("sources") / path.name).exists()
         stored = self.handle.artifacts.store_source(path.name, content)

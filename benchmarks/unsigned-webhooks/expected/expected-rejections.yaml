@@ -1,0 +1,29 @@
+# Unsigned Webhooks expected rejections
+#
+# The claims a correct assessment does not make. Nothing in this directory is supplied to
+# Trace during an assessment.
+
+benchmark_version: "1.0"
+scenario: unsigned-webhooks
+catalog_version: "0.1"
+source: system-overview.md
+
+rejections:
+  - key: REJ-UW-01
+    claim: The notifier lacks replay protection.
+    mechanism: documentation_gap
+    requirement_id: req-WEBHOOK-002
+    entry: whether replay is handled is undetermined
+    why: >
+      No passage states replay protection is absent; the document is silent on replay. That is
+      GAP-UW-01 and Q-UW-01, not a finding — the same distinction ForgeFlow draws for webhook
+      replay, applied where signature verification genuinely is documented absent.
+
+  - key: REJ-UW-02
+    claim: Deployment event data is exposed because the endpoint is public.
+    mechanism: common_false_positives
+    requirement_id: req-DATA-001
+    entry: absent description of cipher suites or key lengths
+    why: >
+      The endpoint is HTTPS and the events carry no customer data. A confidentiality finding
+      here asserts sensitivity the document denies.

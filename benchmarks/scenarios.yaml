@@ -10,9 +10,9 @@
 # than a fact about the filesystem.
 #
 # Each scenario directory holds input/ and expected/, per evaluation-plan.md section 5.
-# Nothing under expected/ is supplied to Trace during an assessment.
-#
-# Nothing reads this file yet. The evaluation harness is not built.
+# Nothing under expected/ is supplied to Trace during an assessment. A scenario with a
+# recorded/ directory can be replayed by the harness (services/evaluation/harness.py);
+# one without cannot run until a recording exists, and the harness says so by name.
 
 registry_version: "1.0"
 
@@ -24,7 +24,131 @@ scenarios:
     # to be read by a person and feeds roadmap Stage 6; scenarios two onward have no
     # equivalent. That role split is why this one is not under benchmarks/.
     narrative: demo/forgeflow/forgeflow-scenario.md
-    status: expected-outputs-not-authored
+    # The full truth set landed across M2 through M4; see demo/forgeflow/expected/README.md.
+    status: authored
+    category: baseline
 
-# Roadmap Stage 5 calls for 8 to 12 scenarios. The remainder are unwritten; each will be
-# added here as benchmarks/<slug>/ with the same input/ and expected/ layout.
+  # Scenarios two through four are seeded from externally authored models (issue #225):
+  # the truth sets arrive independently written rather than invented alongside the inputs.
+  # For each, the source's system description became input/ and its threat list became
+  # expected-threats.yaml. All three have since reached full outcome truth and
+  # recordings (#326 for invoice-agent, #327 for husky-ai and crypto-wallet).
+
+  - slug: husky-ai
+    name: Husky AI
+    path: benchmarks/husky-ai
+    # OWASP Threat Model Library, husky-ai-threat-model.json (MIT). Peer-reviewed model
+    # of an ML image classifier: 9 threats with CWE/CAPEC links, 22 controls, 3 risks.
+    # Outcome truth and recording authored in #327: two findings, two gaps.
+    status: authored
+    category: ai-service-risks
+
+  - slug: crypto-wallet
+    name: Wallet and Exchange
+    path: benchmarks/crypto-wallet
+    # OWASP Threat Model Library, cryptocurrency-wallet-threat-model.json (MIT), ported
+    # there from the Threat Modeling Cookbook. Outcome truth and recording authored in
+    # #327: the hedged-statement zero-finding path — a question and a gap, no findings.
+    status: authored
+    category: third-party-integrations
+
+  - slug: invoice-agent
+    name: Invoice Agent
+    path: benchmarks/invoice-agent
+    # GenAI Agent Security Initiative insecure invoice-agent sample (license unasserted;
+    # everything authored originally, source cited by URL). The first scenario whose
+    # subject is itself an LLM agent. Outcome-side truth (findings, gaps, questions,
+    # rejections) authored in #268; recording authored in #326.
+    status: authored
+    category: ai-service-risks
+
+  # Scenarios five through eight are original small architectures authored for this project
+  # (issue #268, design-principles section 19), each built to exercise one catalog mechanism
+  # cleanly from evaluation-plan.md section 6's list. Every one carries a full outcome-side
+  # truth set (findings, gaps, questions, rejections) the harness scores, and each carries
+  # a recording and replays offline (status: authored). The two zero-finding scenarios
+  # exercise the inherited-control path, and their recordings (#326) replay a successful
+  # assessment that approves no findings.
+
+  - slug: unsigned-webhooks
+    name: Deploy Notifier
+    path: benchmarks/unsigned-webhooks
+    # A documented-absent webhook signature check: the finding-versus-gap boundary from the
+    # documented-negative side. One finding, one gap. Also carries the adversarial condition
+    # (DEC-075): a poisoned document with all five payload classes under conditions/adversarial/.
+    # The adversarial condition is the prompt-injection category's coverage (M8, #272).
+    status: authored
+    category: genuine-missing-controls
+    conditions:
+      - adversarial
+
+  - slug: contradictory-docs
+    name: Export Service
+    path: benchmarks/contradictory-docs
+    # Two supplied documents that disagree about retention: contradiction handling. One
+    # finding, one observation, one gap.
+    status: authored
+    category: contradictory-documentation
+
+  - slug: oidc-portal
+    name: Support Portal
+    path: benchmarks/oidc-portal
+    # Delegated OpenID Connect authentication: the local-password-policy false-positive class.
+    # Expects zero findings; the recording (#326) replays the zero-finding path.
+    status: authored
+    category: delegated-authentication
+
+  - slug: managed-db-service
+    name: Metrics Store
+    path: benchmarks/managed-db-service
+    # Inherited managed-platform encryption: the encryption-detail false-positive class.
+    # Expects zero findings; the recording (#326) replays the inherited-control path.
+    status: authored
+    category: managed-platform-controls
+
+  # Scenarios ten through thirteen close the roadmap Stage 5 coverage list (issue #328):
+  # the categories that had no scenario. Each is an original small architecture in the
+  # #268 pattern — input, full outcome truth, and an offline recording.
+
+  - slug: missing-docs
+    name: Kiosk Sync Service
+    path: benchmarks/missing-docs
+    # A one-page note that establishes what the system does and almost nothing about its
+    # protections: the explicit missing-documentation scenario. Silence resolves to three
+    # gaps and their paired questions, never to a finding (DEC-009).
+    status: authored
+    category: missing-documentation
+
+  - slug: order-notifier
+    name: Order Notifier
+    path: benchmarks/order-notifier
+    # Two documents describe the same unsigned callback endpoint, and the recorded mapping
+    # draws the same conclusion once per document. Dedup merges the two provisional
+    # findings (DEC-052: shared threat, shared requirement); one finding is approved and
+    # the merged duplicate is retained with duplicate_of_id.
+    status: authored
+    category: duplicate-threats
+
+  - slug: translation-gateway
+    name: Helpdesk Translate
+    path: benchmarks/translation-gateway
+    # A connector sending full ticket bodies to an external translation SaaS with no
+    # retention agreement and an admittedly over-scoped workspace token: two documented
+    # findings, one custody gap.
+    status: authored
+    category: third-party-integrations
+
+  - slug: parcel-platform
+    name: Parcelworks
+    path: benchmarks/parcel-platform
+    # The large-architecture input: four zones, eighteen components, six actors. Two
+    # documented findings (admin path, notification logging), two gaps (data-zone
+    # enforcement, warehouse retention) — the size is in the context, not the finding
+    # count.
+    status: authored
+    category: large-architecture-input
+
+# Roadmap Stage 5 calls for 8 to 12 scenarios across its ten coverage categories. Every
+# registered scenario is fully authored — outcome truth and recording — and replays under
+# `trace evaluate --all`; every category is covered, with prompt injection carried by the
+# unsigned-webhooks adversarial condition (M8).

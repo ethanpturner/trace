@@ -1,0 +1,547 @@
+{
+  "system": {
+    "system_name": "Husky AI",
+    "system_purpose": "classify uploaded images as huskies or non-huskies behind a public API",
+    "business_criticality": null,
+    "environment": [],
+    "deployment_model": null,
+    "data_classifications": []
+  },
+  "claims": [
+    {
+      "key": "experimental-password-auth",
+      "subject_type": "component",
+      "subject_key": "jupyter",
+      "predicate": "boundary_authentication",
+      "value": "access across the public-to-experimental boundary is password-authenticated",
+      "status": "documented",
+      "confidence": "high",
+      "rationale": null,
+      "evidence_ids": [
+        "evd-007",
+        "evd-009"
+      ]
+    },
+    {
+      "key": "notes-completeness",
+      "subject_type": "component",
+      "subject_key": "jupyter",
+      "predicate": "documentation_completeness",
+      "value": "the security notes record what is implemented and do not list planned work",
+      "status": "documented",
+      "confidence": "high",
+      "rationale": null,
+      "evidence_ids": [
+        "evd-001"
+      ]
+    },
+    {
+      "key": "api-keys-in-storage",
+      "subject_type": "component",
+      "subject_key": "gather",
+      "predicate": "credential_storage",
+      "value": "API keys for the external image services are held in the API Key storage, a blob storage account of the experimental environment",
+      "status": "documented",
+      "confidence": "high",
+      "rationale": null,
+      "evidence_ids": [
+        "evd-010",
+        "evd-011"
+      ]
+    },
+    {
+      "key": "blob-access-control",
+      "subject_type": "component",
+      "subject_key": "jupyter",
+      "predicate": "storage_access_control",
+      "value": "access control and authorization are configured on the training, model, and source storage accounts, granted per environment, and the production model blob is writable only from the deployment path and the Bastion",
+      "status": "documented",
+      "confidence": "high",
+      "rationale": null,
+      "evidence_ids": [
+        "evd-002"
+      ]
+    },
+    {
+      "key": "uploads-in-memory",
+      "subject_type": "component",
+      "subject_key": "web-server",
+      "predicate": "uploaded_image_handling",
+      "value": "uploaded images are held in memory in the Redis cache while awaiting classification and not written to disk",
+      "status": "documented",
+      "confidence": "high",
+      "rationale": null,
+      "evidence_ids": [
+        "evd-004"
+      ]
+    },
+    {
+      "key": "bastion-logging",
+      "subject_type": "component",
+      "subject_key": "bastion",
+      "predicate": "administrative_logging",
+      "value": "all SSH access attempts through the Bastion are logged to the Bastion Logs storage, successful or not, and the Bastion is the only administrative path into production",
+      "status": "documented",
+      "confidence": "high",
+      "rationale": null,
+      "evidence_ids": [
+        "evd-005"
+      ]
+    },
+    {
+      "key": "transport-security",
+      "subject_type": "component",
+      "subject_key": "gateway",
+      "predicate": "transport_encryption",
+      "value": "the public API is HTTPS-only, and image collection from Azure Cognitive Services uses TLS with certificate validation",
+      "status": "documented",
+      "confidence": "high",
+      "rationale": null,
+      "evidence_ids": [
+        "evd-006"
+      ]
+    },
+    {
+      "key": "production-sso",
+      "subject_type": "component",
+      "subject_key": "gateway",
+      "predicate": "boundary_authentication",
+      "value": "access across the public-to-production boundary is authenticated with SSO",
+      "status": "documented",
+      "confidence": "high",
+      "rationale": null,
+      "evidence_ids": [
+        "evd-007",
+        "evd-009"
+      ]
+    }
+  ],
+  "components": [
+    {
+      "key": "gateway",
+      "name": "API Gateway",
+      "component_type": "gateway",
+      "description": "the entry point for external users over HTTPS; routes requests to the web server, enforces request validation, and manages access control to internal services",
+      "technology": [],
+      "ownership": null,
+      "deployment_zone": "production",
+      "internet_accessible": true,
+      "externally_managed": null,
+      "data_classifications": [],
+      "authentication_mechanisms": [
+        "sso"
+      ],
+      "authorization_mechanisms": [],
+      "evidence_ids": [
+        "evd-010"
+      ]
+    },
+    {
+      "key": "web-server",
+      "name": "Simple Python Web Server",
+      "component_type": "service",
+      "description": "serves the classification application; loads the trained model from the model blob and evaluates uploaded images against it",
+      "technology": [],
+      "ownership": null,
+      "deployment_zone": "production",
+      "internet_accessible": null,
+      "externally_managed": null,
+      "data_classifications": [],
+      "authentication_mechanisms": [],
+      "authorization_mechanisms": [],
+      "evidence_ids": [
+        "evd-010"
+      ]
+    },
+    {
+      "key": "bastion",
+      "name": "Bastion Server",
+      "component_type": "bastion",
+      "description": "the administrative access path into production over SSH; reads authorized keys, writes access logs, and carries deployment releases",
+      "technology": [],
+      "ownership": null,
+      "deployment_zone": "production",
+      "internet_accessible": null,
+      "externally_managed": null,
+      "data_classifications": [],
+      "authentication_mechanisms": [
+        "ssh_public_key"
+      ],
+      "authorization_mechanisms": [],
+      "evidence_ids": [
+        "evd-010"
+      ]
+    },
+    {
+      "key": "gather",
+      "name": "Gather Images Application",
+      "component_type": "service",
+      "description": "collects husky and non-husky images from Azure Cognitive Services and third-party tools using API keys from the API key store, and writes them to the training images blob",
+      "technology": [],
+      "ownership": null,
+      "deployment_zone": "experimental",
+      "internet_accessible": null,
+      "externally_managed": null,
+      "data_classifications": [],
+      "authentication_mechanisms": [],
+      "authorization_mechanisms": [],
+      "evidence_ids": [
+        "evd-010"
+      ]
+    },
+    {
+      "key": "jupyter",
+      "name": "Jupyter Notebook",
+      "component_type": "development_environment",
+      "description": "the model development environment; reads training and validation images, trains the network, and writes the serialized model to the model blob",
+      "technology": [],
+      "ownership": null,
+      "deployment_zone": "experimental",
+      "internet_accessible": null,
+      "externally_managed": null,
+      "data_classifications": [],
+      "authentication_mechanisms": [
+        "password"
+      ],
+      "authorization_mechanisms": [],
+      "evidence_ids": [
+        "evd-003",
+        "evd-010"
+      ]
+    },
+    {
+      "key": "deployment",
+      "name": "Deployment Service",
+      "component_type": "service",
+      "description": "packages the trained model with source and configuration and deploys the result to production via the Bastion",
+      "technology": [],
+      "ownership": null,
+      "deployment_zone": "experimental",
+      "internet_accessible": null,
+      "externally_managed": null,
+      "data_classifications": [],
+      "authentication_mechanisms": [],
+      "authorization_mechanisms": [],
+      "evidence_ids": [
+        "evd-010"
+      ]
+    }
+  ],
+  "actors": [
+    {
+      "key": "end-users",
+      "name": "End users",
+      "actor_type": "external_user",
+      "trust_level": null,
+      "capabilities": [],
+      "authentication_method": "sso",
+      "evidence_ids": [
+        "evd-013"
+      ]
+    },
+    {
+      "key": "data-engineers",
+      "name": "Data engineers",
+      "actor_type": "internal_user",
+      "trust_level": null,
+      "capabilities": [],
+      "authentication_method": "password",
+      "evidence_ids": [
+        "evd-013"
+      ]
+    },
+    {
+      "key": "platform-engineers",
+      "name": "Azure platform engineers",
+      "actor_type": "internal_user",
+      "trust_level": null,
+      "capabilities": [],
+      "authentication_method": "ssh_public_key",
+      "evidence_ids": [
+        "evd-013"
+      ]
+    },
+    {
+      "key": "image-services",
+      "name": "External image services",
+      "actor_type": "external_service",
+      "trust_level": null,
+      "capabilities": [],
+      "authentication_method": null,
+      "evidence_ids": [
+        "evd-013"
+      ]
+    }
+  ],
+  "assets": [
+    {
+      "key": "training-images",
+      "name": "Training and validation images",
+      "asset_type": "training_data",
+      "description": null,
+      "confidentiality_impact": null,
+      "integrity_impact": null,
+      "availability_impact": null,
+      "data_classification": null,
+      "owner": null,
+      "component_keys": [
+        "gather",
+        "jupyter"
+      ],
+      "evidence_ids": [
+        "evd-011"
+      ]
+    },
+    {
+      "key": "model",
+      "name": "Trained model",
+      "asset_type": "model_artifact",
+      "description": "trained models in serialized form",
+      "confidentiality_impact": null,
+      "integrity_impact": null,
+      "availability_impact": null,
+      "data_classification": null,
+      "owner": null,
+      "component_keys": [
+        "jupyter",
+        "web-server",
+        "deployment"
+      ],
+      "evidence_ids": [
+        "evd-011"
+      ]
+    },
+    {
+      "key": "uploaded-images",
+      "name": "Uploaded images",
+      "asset_type": "user_data",
+      "description": "user-submitted images held in the Redis cache while awaiting classification",
+      "confidentiality_impact": null,
+      "integrity_impact": null,
+      "availability_impact": null,
+      "data_classification": null,
+      "owner": null,
+      "component_keys": [
+        "web-server"
+      ],
+      "evidence_ids": [
+        "evd-004",
+        "evd-011"
+      ]
+    },
+    {
+      "key": "ssh-keys",
+      "name": "SSH authorized keys",
+      "asset_type": "credentials",
+      "description": "SSH keys authorizing administrative access",
+      "confidentiality_impact": null,
+      "integrity_impact": null,
+      "availability_impact": null,
+      "data_classification": null,
+      "owner": null,
+      "component_keys": [
+        "bastion"
+      ],
+      "evidence_ids": [
+        "evd-011"
+      ]
+    },
+    {
+      "key": "bastion-logs",
+      "name": "Bastion logs",
+      "asset_type": "audit_data",
+      "description": "SSH access and activity logs from the Bastion",
+      "confidentiality_impact": null,
+      "integrity_impact": null,
+      "availability_impact": null,
+      "data_classification": null,
+      "owner": null,
+      "component_keys": [
+        "bastion"
+      ],
+      "evidence_ids": [
+        "evd-011"
+      ]
+    },
+    {
+      "key": "source-config",
+      "name": "Source code and configuration",
+      "asset_type": "source_code",
+      "description": "source and configuration used by deployment",
+      "confidentiality_impact": null,
+      "integrity_impact": null,
+      "availability_impact": null,
+      "data_classification": null,
+      "owner": null,
+      "component_keys": [
+        "deployment",
+        "jupyter"
+      ],
+      "evidence_ids": [
+        "evd-011"
+      ]
+    },
+    {
+      "key": "api-keys",
+      "name": "External image-service API keys",
+      "asset_type": "credentials",
+      "description": "API keys for the external image services, held in the API Key storage",
+      "confidentiality_impact": null,
+      "integrity_impact": null,
+      "availability_impact": null,
+      "data_classification": null,
+      "owner": null,
+      "component_keys": [
+        "gather"
+      ],
+      "evidence_ids": [
+        "evd-011"
+      ]
+    },
+    {
+      "key": "classifications",
+      "name": "Classification results",
+      "asset_type": "operational_data",
+      "description": null,
+      "confidentiality_impact": null,
+      "integrity_impact": null,
+      "availability_impact": null,
+      "data_classification": null,
+      "owner": null,
+      "component_keys": [
+        "web-server"
+      ],
+      "evidence_ids": [
+        "evd-012"
+      ]
+    }
+  ],
+  "data_flows": [
+    {
+      "key": "serving",
+      "name": "Serving path",
+      "source_component_key": "gateway",
+      "destination_component_key": "web-server",
+      "direction": "bidirectional",
+      "protocol": "https",
+      "data_types": [],
+      "authentication": "sso",
+      "encryption_in_transit": "https",
+      "crosses_trust_boundary_keys": [
+        "public-production"
+      ],
+      "internet_exposed": true,
+      "evidence_ids": [
+        "evd-012"
+      ]
+    },
+    {
+      "key": "training",
+      "name": "Training path",
+      "source_component_key": "gather",
+      "destination_component_key": "jupyter",
+      "direction": "one_way",
+      "protocol": null,
+      "data_types": [],
+      "authentication": "unknown",
+      "encryption_in_transit": "unknown",
+      "crosses_trust_boundary_keys": [],
+      "internet_exposed": null,
+      "evidence_ids": [
+        "evd-012"
+      ]
+    },
+    {
+      "key": "deployment-flow",
+      "name": "Deployment path",
+      "source_component_key": "deployment",
+      "destination_component_key": "bastion",
+      "direction": "one_way",
+      "protocol": null,
+      "data_types": [],
+      "authentication": "public_key",
+      "encryption_in_transit": "unknown",
+      "crosses_trust_boundary_keys": [
+        "production-experimental"
+      ],
+      "internet_exposed": null,
+      "evidence_ids": [
+        "evd-012"
+      ]
+    },
+    {
+      "key": "administrative",
+      "name": "Administrative path",
+      "source_component_key": "bastion",
+      "destination_component_key": "web-server",
+      "direction": "one_way",
+      "protocol": "ssh",
+      "data_types": [],
+      "authentication": "ssh_public_key",
+      "encryption_in_transit": "ssh",
+      "crosses_trust_boundary_keys": [
+        "public-production"
+      ],
+      "internet_exposed": null,
+      "evidence_ids": [
+        "evd-012"
+      ]
+    }
+  ],
+  "trust_boundaries": [
+    {
+      "key": "public-production",
+      "name": "Public-to-production boundary",
+      "boundary_type": "internet_to_application",
+      "description": "authenticated with SSO",
+      "inside_component_keys": [
+        "gateway",
+        "web-server",
+        "bastion"
+      ],
+      "outside_component_keys": [],
+      "controls": [],
+      "evidence_ids": [
+        "evd-009"
+      ]
+    },
+    {
+      "key": "public-experimental",
+      "name": "Public-to-experimental boundary",
+      "boundary_type": "internet_to_application",
+      "description": "password-authenticated",
+      "inside_component_keys": [
+        "gather",
+        "jupyter",
+        "deployment"
+      ],
+      "outside_component_keys": [],
+      "controls": [],
+      "evidence_ids": [
+        "evd-009"
+      ]
+    },
+    {
+      "key": "production-experimental",
+      "name": "Production-to-experimental boundary",
+      "boundary_type": "environment_to_environment",
+      "description": "public-key authentication, with RBAC and ACLs applied at each boundary",
+      "inside_component_keys": [
+        "gateway",
+        "web-server",
+        "bastion"
+      ],
+      "outside_component_keys": [
+        "gather",
+        "jupyter",
+        "deployment"
+      ],
+      "controls": [],
+      "evidence_ids": [
+        "evd-009"
+      ]
+    }
+  ],
+  "questions": [],
+  "observations": []
+}
