@@ -93,6 +93,23 @@ def test_the_prompt_hash_covers_the_composed_prompt() -> None:
     assert key(prompt="a").digest() != key(prompt="a ").digest()
 
 
+def test_two_systems_with_one_prompt_get_distinct_keys() -> None:
+    """The system prompt carries the whole trusted region for every agent — the architecture, the
+    evidence manifest, the reviewer's feedback. Two calls with an identical user prompt but a
+    different system are different calls, and a key that omitted it would serve one architecture's
+    answer for another."""
+    assert key(system="architecture A").digest() != key(system="architecture B").digest()
+    assert key(system="architecture A").digest() != key().digest()
+
+
+def test_the_provider_is_in_the_key() -> None:
+    """The same model name can be served by two providers (the fake and a live adapter); a recording
+    made against one is not an answer for the other."""
+    from dataclasses import replace
+
+    assert key().digest() != key(profile=replace(PROFILE, provider="fake")).digest()
+
+
 # --------------------------------------------------------------------------------------------
 # The cache itself
 # --------------------------------------------------------------------------------------------
@@ -208,3 +225,50 @@ def test_a_failure_is_never_recorded() -> None:
     outcome = model.generate(prompt="the prompt", schema=Proposal)
     assert isinstance(outcome, ModelFailure)
     assert len(cache) == 0
+
+
+def test_a_drifted_recording_returns_a_failure_not_a_raise() -> None:
+    """A recording that no longer fits the schema is drift, not an answer. It must come back as a
+    ModelFailure — a ValidationError raised here would escape the orchestrator's attempt loop, which
+    catches only AttemptFailedError, leaving a node started and never finished (seam contract)."""
+    from trace_ai.infrastructure.model import DeterministicModel, ModelFailure
+    from trace_ai.infrastructure.model.profiles import resolve_profile
+    from trace_ai.infrastructure.model.replay import CachingModel, ReplayCache, cache_key
+    from trace_ai.infrastructure.model.seam import FailureReason
+
+    profile = resolve_profile("primary-development")
+    key = cache_key(prompt="the prompt", prompt_version="v1", schema=Proposal, profile=profile)
+    # A recording missing the required `summary` field: it was valid once and no longer is.
+    cache = ReplayCache({key.digest(): {"not_summary": "drift"}})
+    model = CachingModel(DeterministicModel(), cache, profile=profile, prompt_version="v1")
+
+    outcome = model.generate(prompt="the prompt", schema=Proposal)
+    assert isinstance(outcome, ModelFailure)
+    assert outcome.reason is FailureReason.SCHEMA_VALIDATION_FAILURE
+    assert outcome.raw_output is not None and "drift" in outcome.raw_output
+
+
+def test_the_caching_model_keys_on_the_system_prompt() -> None:
+    """A recording made under one system prompt must not be served for a call with a different one:
+    the system is the trusted region, and a hit that ignored it would answer the wrong architecture."""
+    from trace_ai.infrastructure.model import DeterministicModel, ModelSuccess
+    from trace_ai.infrastructure.model.profiles import resolve_profile
+    from trace_ai.infrastructure.model.replay import CachingModel, ReplayCache
+
+    profile = resolve_profile("primary-development")
+    cache = ReplayCache()
+    # Record an answer for system A, then ask under system B: the inner model (empty queue) is
+    # consulted and raises ResponsesExhaustedError, proving the recording was not reused.
+    recorder = CachingModel(
+        DeterministicModel([Proposal(summary="for A")]), cache, profile=profile, prompt_version="v1"
+    )
+    recorder.generate(prompt="the prompt", schema=Proposal, system="architecture A")
+    assert len(cache) == 1
+
+    from trace_ai.infrastructure.model.fake import ResponsesExhaustedError
+
+    replayer = CachingModel(DeterministicModel(), cache, profile=profile, prompt_version="v1")
+    hit = replayer.generate(prompt="the prompt", schema=Proposal, system="architecture A")
+    assert isinstance(hit, ModelSuccess), "the identical system should hit"
+    with pytest.raises(ResponsesExhaustedError):
+        replayer.generate(prompt="the prompt", schema=Proposal, system="architecture B")

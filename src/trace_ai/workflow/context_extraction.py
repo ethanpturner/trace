@@ -39,7 +39,7 @@ from trace_ai.domain.proposals import (
     convert_proposal,
 )
 from trace_ai.domain.system_context import FIRST_VERSION, SystemContext
-from trace_ai.infrastructure.model.seam import ModelFailure, ModelSuccess
+from trace_ai.infrastructure.model.seam import Creativity, ModelFailure, ModelSuccess
 from trace_ai.services.context.input_package import assemble_extractor_input
 from trace_ai.workflow.errors import ErrorClass, classify_model_failure
 from trace_ai.workflow.limits import resolve_retry_policy
@@ -127,6 +127,12 @@ class ContextExtractionNode:
                 f"node is classified as one in agent-design.md section 4."
             )
 
+        # Section 29 assigns Context Extraction `Creativity.LOW`. Declaring it here rather than
+        # relying on the profile default matches the other five agents and makes the intent a
+        # decision the execution record shows, not a default nobody chose that a profile change
+        # could silently mis-latitude.
+        profile = self.profile.with_creativity(Creativity.LOW)
+
         package = assemble_extractor_input(
             context.handle,
             index=self.index,
@@ -186,7 +192,7 @@ class ContextExtractionNode:
             outcome = context.model.generate(  # type: ignore[union-attr]
                 prompt=prompt,
                 schema=ContextExtractionProposal,
-                settings=self.profile.settings,
+                settings=profile.settings,
                 system=system,
             )
 
