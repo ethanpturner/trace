@@ -28,6 +28,7 @@ context is not approvable, for the same reason.
 from __future__ import annotations
 
 import argparse
+import sqlite3
 import sys
 from datetime import date
 from typing import TYPE_CHECKING, Any
@@ -139,6 +140,9 @@ EXPECTED_ERRORS = (
     ResponsesExhaustedError,
     FileNotFoundError,
     ValueError,
+    # A write lock held past `busy_timeout` (a second `trace` process, or the view server beside a
+    # run) surfaces as sqlite3.OperationalError; answer it as a message, not a traceback.
+    sqlite3.Error,
 )
 
 
