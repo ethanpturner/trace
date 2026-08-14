@@ -32,12 +32,14 @@ from trace_ai.domain.base import now
 from trace_ai.domain.enums import Severity
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
     from datetime import datetime
     from pathlib import Path
 
     from trace_ai.domain.evidence import EvidenceReference
     from trace_ai.domain.finding import Finding
     from trace_ai.domain.proposals.report_sections import ReportSections
+    from trace_ai.domain.question import Question
     from trace_ai.services.assessment import AssessmentHandle
     from trace_ai.services.report.input_assembly import ReportInput
 
@@ -155,6 +157,33 @@ def _coverage_ledger_table(assembled: ReportInput) -> str:
             for entry in assembled.coverage
         ],
     )
+
+
+def _question_lines(questions: Sequence[Question]) -> list[str]:
+    """Section 11's lines, with byte-identical asks collapsed onto one line (#430).
+
+    Two mappings contradicted on the same requirement each produce "Which statement is
+    authoritative for req-X?", and the section rendered both verbatim. The collapse happens at
+    render because the objects must survive as allocated: the recorded report prose enumerates
+    the question identifiers, and dropping a duplicate at creation would renumber the rest and
+    invalidate the recorded run's own response. Every identifier is still shown — the duplicate
+    rides its survivor's line — so nothing is silently absent.
+    """
+    lines: list[str] = []
+    first_by_text: dict[str, int] = {}
+    for question in questions:
+        normalized = " ".join(question.question.split()).casefold()
+        if normalized in first_by_text:
+            index = first_by_text[normalized]
+            lines[index] = f"{lines[index]} *(also asked as {question.id})*"
+            continue
+        first_by_text[normalized] = len(lines)
+        lines.append(
+            f"- {question.id} "
+            f"({'blocking' if question.blocking else question.priority.value}): "
+            f"{question.question}"
+        )
+    return lines
 
 
 def _anchor(object_id: str) -> str:
@@ -333,12 +362,7 @@ def render_report(
                 for claim in assembled.assumption_claims
             ],
         ),
-        "open_questions": "\n".join(
-            f"- {question.id} "
-            f"({'blocking' if question.blocking else question.priority.value}): "
-            f"{question.question}"
-            for question in assembled.open_questions
-        ),
+        "open_questions": "\n".join(_question_lines(assembled.open_questions)),
         "controls": "\n\n".join(
             f"{_anchor(control.id)}\n### {control.id}: {control.name}\n\n{control.description}"
             for control in assembled.confirmed_controls
