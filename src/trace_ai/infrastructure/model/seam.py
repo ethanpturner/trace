@@ -138,14 +138,19 @@ class GenerationSettings:
     """
 
     creativity: Creativity = Creativity.LOW
-    max_output_tokens: int = 16_000
-    """Sized so one attempt cannot be truncated by a ceiling nobody chose. An agent proposing a
+    max_output_tokens: int = 64_000
+    """Sized so one attempt cannot be truncated by a ceiling nobody chose — and measured, not
+    guessed: at 16,000 the live ForgeFlow extraction truncated on all three attempts (#324),
+    because adaptive thinking spends from the same output budget as the proposal it precedes.
+    A ceiling is not a purchase; only produced tokens are billed. An agent proposing a
     context extraction returns a large object; a small default would show up as a truncation
     failure that looks like a model problem."""
 
-    timeout_seconds: float = 600.0
+    timeout_seconds: float = 1_800.0
     """One attempt's deadline. Long, because the retry budget is the orchestrator's and a timeout
-    here is a real failure rather than an impatience."""
+    here is a real failure rather than an impatience — and sized with the output ceiling: the
+    16,000-token live extraction generated for ~140 seconds, so a full 64,000-token attempt
+    needs headroom a 600-second deadline did not give."""
 
     def __post_init__(self) -> None:
         if self.max_output_tokens < 1:
