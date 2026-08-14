@@ -69,6 +69,17 @@ jobs:
         if: ${{ !cancelled() && steps.install.outcome == 'success' && github.event_name == 'pull_request' }}
         run: uv run python scripts/check_catalog_freeze.py --base "origin/${{ github.base_ref }}"
 
+      # The threat model's section 8 named the gap this closes (#407): gitleaks ran only as a
+      # local hook, which `--no-verify` or a clone without `pre-commit install` bypasses. This is
+      # the enforcement point that cannot be skipped, pinned to the same release the pre-commit
+      # hook uses, scanning the full history the fetch-depth above already provides. `--redact`
+      # keeps any hit out of the CI log, which would otherwise republish what it caught.
+      - name: gitleaks
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: |
+          curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz | tar -xz gitleaks
+          ./gitleaks detect --source . --no-banner --redact
+
       # Integration and evaluation markers are deselected by the addopts in
       # pyproject.toml, so this needs no provider API keys.
       - name: pytest

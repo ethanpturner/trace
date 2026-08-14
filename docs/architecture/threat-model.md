@@ -90,7 +90,7 @@ public data and avoids confidential information.
 |---|---|---|---|
 | A provider credential reaches a log, a traceback, or a `repr()` | Secrets are `SecretStr`, and the redaction filter also catches a raw key by field name — covering the case `SecretStr` cannot, where a key never went through `Settings` | `trace_ai.config.Settings`, `trace_ai.observability.RedactionFilter` | **Enforced** |
 | A credential is committed | `.env` is gitignored, `.env.example` is committed blank, and a test fails if the two drift or if a key-shaped entry has a value | `.gitignore`, `tests/unit/test_config.py` | **Enforced** |
-| A credential is committed past the hooks | gitleaks scans staged content — but only locally. It is a pre-commit hook and **is not in the CI workflow**, so `--no-verify`, or a clone without `pre-commit install`, bypasses it entirely | `.pre-commit-config.yaml` | **Partial** — see section 8 |
+| A credential is committed past the hooks | gitleaks scans locally as a pre-commit hook, and again in CI over the full history — the enforcement point `--no-verify` and an uninstalled clone cannot skip | `.pre-commit-config.yaml`; `.github/workflows/ci.yml` gitleaks step | Enforced |
 | CI spends money or needs a key | The `integration` and `evaluation` markers are deselected in `addopts`, so a bare `pytest` cannot make a provider call | `pyproject.toml` | **Enforced** |
 | Source content or prompts reach an external tracing provider | `enable_external_tracing` is off unless set, and section 5.17 requires a data-handling review before it is enabled | `AssessmentConfiguration`, default from `default_configuration()` | **Enforced** for the default; **Designed** for the tracing integration itself |
 | A run costs more than intended | `maximum_model_calls` and `maximum_cost` are optional limits, carried as `Decimal` so a comparison at the limit is exact | `AssessmentConfiguration` | **Designed** — the fields exist; nothing enforces them until the orchestrator does |
@@ -171,11 +171,11 @@ Stated because a threat model that only lists what it handles is misleading.
 - **A pre-formatted log message can leak anything.** See section 4.
 - **`reviewer_id` is a configured local string** and is trivially forgeable. DEC-023 says plainly
   that it is not authentication, and nothing enforces that it is not read as such.
-- **Secret scanning stops at the local machine.** gitleaks is a pre-commit hook and is not a CI
-  step. `git commit --no-verify` skips it, and so does any clone where `pre-commit install` was
-  never run. `CLAUDE.md` describes secret scanning as repository hygiene, which reads as stronger
-  than "runs if the author opted in". This was found while writing this document; adding the hook
-  to `.github/workflows/ci.yml` closes it and is a few lines.
+- **Secret scanning reaches CI.** gitleaks was a pre-commit hook only — `git commit --no-verify`
+  skipped it, and so did any clone where `pre-commit install` was never run. Found while writing
+  this document; closed by #407: `.github/workflows/ci.yml` runs the same pinned gitleaks release
+  over the full history on every pull request, with output redacted so a hit is reported without
+  being republished.
 - **Supply chain.** Dependencies are pinned by `uv.lock` and `uv sync --locked` runs in CI, which
   makes the set reproducible rather than trustworthy. Nothing audits them. The runtime dependency
   count is five, which is a mitigation by scale rather than by control.
