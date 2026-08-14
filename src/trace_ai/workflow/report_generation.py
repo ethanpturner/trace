@@ -6,11 +6,11 @@ limitation — and nothing else: per-object prose is the renderer's, the documen
 and the template is not even an input (DEC-035). Its output is handed to the validator and the
 renderer; nothing here writes a report to disk.
 
-**Low creativity** (section 29's "low to moderate", read conservatively). Everything this agent
-may legitimately do — summarize, reorder, explain relationships — is grounded in approved objects,
-and the one thing latitude buys is the failure condition list: invented conclusions, flattened
-uncertainty. The critic reads "low to moderate" as moderate because it is a search; this agent is
-a restatement, and restatement takes the low reading.
+**Low creativity** (section 29, resolved by DEC-085). Everything this agent may legitimately do —
+summarize, reorder, explain relationships — is grounded in approved objects, and the one thing
+latitude buys is the failure condition list: invented conclusions, flattened uncertainty. The
+critic runs at moderate because it is a search; this agent is a restatement, and restatement
+takes the low reading.
 
 **The failure conditions section 19 makes retryable are checked here**, before the proposal
 leaves the node: a limitation set that does not match the required list, and an identifier in
@@ -200,6 +200,12 @@ class ReportGenerationNode:
                 )
 
             usages.append(outcome.usage)
+
+            # Section 29: the conditions the call actually ran at, recorded where a reader of the
+            # ExecutionRecord can find them -- a wrong effort mapping is otherwise invisible (#401).
+            for condition_key in ("effort", "creativity"):
+                if condition_key in outcome.metadata:
+                    execution.metadata[condition_key] = outcome.metadata[condition_key]
             if self.budget is not None:
                 self.budget.spend_model_call(outcome.usage.estimated_cost)
 

@@ -1709,10 +1709,14 @@ General guidance:
 | Threat Analysis | Moderate |
 | Requirement Mapping | Low |
 | Evidence Validation | Low |
-| Critical Review | Low to moderate |
-| Report Generation | Low to moderate |
+| Critical Review | Moderate |
+| Report Generation | Low |
 
-Threat generation benefits from some breadth, but creativity must not override architectural grounding.
+Threat generation benefits from some breadth, but creativity must not override architectural
+grounding. The table's original "low to moderate" rows are resolved by DEC-085: critical review
+runs at moderate, because imagining how a conclusion fails benefits from the same breadth as
+proposing threats; report generation runs at low, because it summarises approved objects and the
+conservative reading is the safe one.
 
 ## Note on the creativity column
 

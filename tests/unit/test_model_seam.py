@@ -65,7 +65,7 @@ def test_the_default_creativity_is_the_conservative_one() -> None:
 
 def test_the_creativity_vocabulary_is_section_twenty_nine_s() -> None:
     """Three values, because the section 29 table uses three."""
-    assert [value.value for value in Creativity] == ["low", "low_to_moderate", "moderate"]
+    assert [value.value for value in Creativity] == ["low", "moderate"]
 
 
 def test_settings_name_no_sampling_parameter() -> None:
