@@ -27,6 +27,13 @@ whose citations cannot be checked.
 **Injection attempts are observations, not claims** (DEC-021). Section 25 says the workflow may
 create a context claim or a security event when injection-like content is detected without defining
 either; DEC-021 settled it as one `SourceObservation` with a `kind`, and this schema carries it.
+
+**A proposed claim's value is a scalar or a list of scalars, not `JsonValue`** (DEC-083). This
+schema crosses the wire: the provider's structured-output format refuses the unconstrained `{}`
+that `JsonValue`'s recursion collapses to, and its strictifier rewrites an open mapping into one
+that accepts only empty objects — so a mapping arm would be taught by the prompt and forbidden by
+the wire grammar at once. The domain `ContextClaim.value` stays `JsonValue`: it never crosses the
+wire, and a reviewer's edit is not bound by what a provider can be asked for.
 """
 
 from __future__ import annotations
@@ -34,7 +41,7 @@ from __future__ import annotations
 import re
 from typing import Annotated, Any, Self
 
-from pydantic import AfterValidator, Field, JsonValue, model_validator
+from pydantic import AfterValidator, Field, model_validator
 
 from trace_ai.domain.base import DomainModel
 from trace_ai.domain.context_claim import ClaimStatus
@@ -68,6 +75,12 @@ _KEY = re.compile(r"^[a-z][a-z0-9]*(?:[-_][a-z0-9]+)*$")
 # What a key must not look like. DEC-018's two forms, matched loosely on purpose: the point is to
 # refuse anything a reader could mistake for an allocated identifier, not to parse one.
 _LOOKS_LIKE_AN_IDENTIFIER = re.compile(r"^[a-z]{2,4}-(?:[A-Z0-9]+-)?\d{2,}$")
+
+# DEC-083: the value shape the wire supports. Every arm renders as a typed `anyOf` member, which
+# is what the provider's schema transformation requires; `JsonValue` renders as `{}` and is
+# refused before a request is sent (#412).
+type ClaimScalar = str | int | float | bool | None
+type ClaimValue = ClaimScalar | list[ClaimScalar]
 
 
 class ProposalError(ValueError):
@@ -240,7 +253,7 @@ class ProposedContextClaim(DomainModel):
     """The proposed object this claim is about, when it is about one."""
 
     predicate: str = Field(min_length=1)
-    value: JsonValue
+    value: ClaimValue
     status: ClaimStatus
     confidence: ConfidenceLevel
     rationale: str | None = None

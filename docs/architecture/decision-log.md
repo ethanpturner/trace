@@ -5436,3 +5436,43 @@ Tradeoffs:
   block approving the earlier finished one; whether that is generosity or correctness
   depends on why the later run failed, and the reviewer holding the report is the right
   judge of that.
+
+## DEC-083: A proposed claim's value is a scalar or a list of scalars; `JsonValue` stays on the domain side
+
+Date: 2026-08-13
+
+Status: Accepted
+
+Decision:
+
+**`ProposedContextClaim.value` is typed `str | int | float | bool | None`, or a list of those,
+and no longer `JsonValue`.** The domain object is unchanged: `ContextClaim.value` remains
+`JsonValue`, and every value a proposal can carry converts into it losslessly.
+
+**Mappings are excluded from the proposal shape deliberately, not provisionally.** A claim that
+wants to assert a mapping asserts one claim per key instead — the subject-predicate-value shape
+already carries that decomposition.
+
+Why:
+
+- The proposal schema crosses the wire and the domain schema does not. The provider's
+  structured-output format refuses the unconstrained `{}` that `JsonValue`'s recursion collapses
+  to in a JSON Schema export, so a proposal carrying it cannot be requested at all — the first
+  live context-extraction call fails before a request is sent (#412). Nothing offline noticed,
+  because the deterministic model never serializes a schema for the wire.
+- A mapping arm would be worse than absent. The provider's schema strictifier rewrites an open
+  mapping into an object that accepts only `{}`, while the prompt substitutes the application's
+  own untransformed export — so the prompt would teach a shape the wire grammar forbids, which
+  is an instruction to fail.
+- Every claim value in every committed recording and truth set is a plain string. The union is
+  headroom, not a migration.
+
+Tradeoffs:
+
+- The proposal and domain types now differ where they used to coincide, and the difference has
+  to be explained wherever a reader would expect symmetry. Both modules carry the explanation.
+- A future agent with a genuine need for structured values needs a schema change and a DEC
+  entry rather than finding the latitude already present. That is the correct friction: the
+  wire shape is part of what the prompt teaches, and it should not widen silently.
+- Section 39's open question 1 — whether claims should keep the subject-predicate-value shape
+  at all — stays open. This entry narrows a field's wire type; it does not answer that.

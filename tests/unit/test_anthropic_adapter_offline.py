@@ -165,6 +165,29 @@ def test_a_response_with_no_text_block_is_a_schema_failure() -> None:
     assert outcome.raw_output is None
 
 
+def test_every_agent_proposal_schema_transforms_for_the_wire() -> None:
+    """#412's regression pin. The six schemas the agents are asked to return must survive the
+    provider's schema transformation, or the phase that sends one fails before a request exists —
+    and nothing offline would notice, because the deterministic model never serializes a schema.
+    `DeterministicModel` replays would keep passing while every live run died on call one."""
+    from trace_ai.domain.proposals.context_extraction import ContextExtractionProposal
+    from trace_ai.domain.proposals.critical_review import CriticalReviewProposal
+    from trace_ai.domain.proposals.evidence_validation import EvidenceValidationProposal
+    from trace_ai.domain.proposals.mapping import MappingProposal
+    from trace_ai.domain.proposals.report_sections import ReportSections
+    from trace_ai.domain.proposals.threat_analysis import ThreatAnalysisProposal
+
+    for schema in (
+        ContextExtractionProposal,
+        ThreatAnalysisProposal,
+        MappingProposal,
+        EvidenceValidationProposal,
+        CriticalReviewProposal,
+        ReportSections,
+    ):
+        anthropic.transform_schema(schema)
+
+
 def test_an_untransformable_schema_is_a_failure_not_an_exception() -> None:
     """`transform_schema` refuses an unconstrained sub-schema — `pydantic.JsonValue` emits one —
     with a `ValueError` that would otherwise escape `generate`. It comes back classified instead,
