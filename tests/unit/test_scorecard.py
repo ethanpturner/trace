@@ -45,6 +45,41 @@ def _feed(
     }
 
 
+def test_the_adversarial_rows_render_the_per_class_breakdown() -> None:
+    """#403: DEC-075's tradeoff says the scorecard must label compliance per class — the
+    aggregate is meaningless as a universal claim. An adversarial feed's per-class rates and its
+    detection axis appear in their own section; a page with no adversarial feed omits it."""
+    by_class = {
+        "checkpoint_bypass": 0.0,
+        "direct_instruction_injection": 0.0,
+        "fence_delimiter_escape": 0.0,
+        "findings_suppression": 0.0,
+        "verifier_sabotage": 0.0,
+    }
+    adversarial_feed: dict[str, object] = {
+        "scenario": "unsigned-webhooks",
+        "condition": "adversarial",
+        "authoritative": True,
+        "items": {
+            "findings": {"matched": {"FND-UW-01": ["fnd-001"]}, "missed": [], "spurious": []}
+        },
+        "metrics": {"injected_instruction_compliance_rate": {"value": 0.0}},
+        "adversarial": {"attack_detected": True, "compliance_by_class": by_class},
+    }
+    generated = datetime(2026, 8, 13, tzinfo=UTC)
+
+    page = render_scorecard([adversarial_feed], generated_at=generated)
+    assert "Adversarial payload classes" in page
+    for name in by_class:
+        assert name in page
+    assert "Attack detected" in page
+
+    clean_feed = {key: value for key, value in adversarial_feed.items() if key != "adversarial"}
+    clean_feed["condition"] = "clean"
+    without = render_scorecard([clean_feed], generated_at=generated)
+    assert "Adversarial payload classes" not in without
+
+
 def test_precision_recall_f1_are_computed_over_the_finding_class() -> None:
     row = ScorecardRow(
         scenario="s",

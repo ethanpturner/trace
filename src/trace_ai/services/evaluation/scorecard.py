@@ -43,6 +43,15 @@ class ScorecardRow:
     compliance: float | None = None
     """Injected-instruction compliance rate for an adversarial condition (DEC-075), else None."""
 
+    compliance_by_class: tuple[tuple[str, float], ...] = ()
+    """The rate per payload class, sorted by class name. DEC-075's tradeoff is explicit: the
+    rate "is meaningful per class and meaningless as a universal claim, and the scorecard must
+    label it per class" — so the aggregate never appears without this breakdown (#403)."""
+
+    attack_detected: bool | None = None
+    """Whether the run recorded the injection as an observation — the detection axis. None on
+    non-adversarial conditions."""
+
     context_accuracy: float | None = None
     threat_coverage: float | None = None
     mapping_accuracy: float | None = None
@@ -98,6 +107,19 @@ def rows_from_feeds(feeds: Sequence[dict[str, Any]]) -> list[ScorecardRow]:
             schema_valid=feed.get("schema_valid"),
             cost=_metric(feed, "estimated_cost"),
             compliance=_metric(feed, "injected_instruction_compliance_rate"),
+            compliance_by_class=tuple(
+                sorted(
+                    (str(name), float(rate))
+                    for name, rate in (feed.get("adversarial") or {})
+                    .get("compliance_by_class", {})
+                    .items()
+                )
+            ),
+            attack_detected=(
+                bool((feed.get("adversarial") or {}).get("attack_detected"))
+                if feed.get("adversarial") is not None
+                else None
+            ),
             context_accuracy=_metric(feed, "context_accuracy"),
             threat_coverage=_metric(feed, "threat_coverage"),
             mapping_accuracy=_metric(feed, "requirement_mapping_accuracy"),
@@ -156,6 +178,55 @@ def _short_digest(digest: str) -> str:
 
 def _count(value: float | None) -> str:
     return "—" if value is None else f"{value:.0f}"
+
+
+def _adversarial_section(rows: Sequence[ScorecardRow]) -> str:
+    """The two-axis attack detail per payload class, for the adversarial rows (#403).
+
+    DEC-075's own tradeoff: the compliance rate "is meaningful per class and meaningless as a
+    universal claim, and the scorecard must label it per class". Detection is the other axis —
+    a run that resists an attack it never noticed is a different result from one that named it.
+    Rows with no per-class data are omitted; the section disappears when nothing adversarial ran.
+    """
+    carrying = [row for row in rows if row.compliance_by_class]
+    if not carrying:
+        return ""
+    lines = []
+    for row in carrying:
+        marker = "" if row.authoritative else " *"
+        detected = {True: "yes", False: "no", None: "—"}[row.attack_detected]
+        first = True
+        for name, rate in row.compliance_by_class:
+            scenario_cells = (
+                f"<td rowspan={len(row.compliance_by_class)}>{html.escape(row.scenario)}</td>"
+                f"<td rowspan={len(row.compliance_by_class)}>{html.escape(row.condition)}{marker}</td>"
+                f"<td rowspan={len(row.compliance_by_class)}>{detected}</td>"
+                if first
+                else ""
+            )
+            attr = ' class="scenario-start"' if first else ""
+            lines.append(
+                f"<tr{attr}>{scenario_cells}<td>{html.escape(name)}</td><td>{_pct(rate)}</td></tr>"
+            )
+            first = False
+    return f"""<h2>Adversarial payload classes</h2>
+<p class="note">The two attack axes per payload class (DEC-075): whether the run recorded the
+injection as an observation, and the injected-instruction compliance rate — zero is the target.
+The rate is meaningful per class and meaningless as a universal claim; the aggregate column
+above never appears without this breakdown. One class, checkpoint bypass, is structural: a
+checkpoint advances only on a recorded reviewer decision (DEC-005), so its zero is shown with
+its basis rather than measured each run.</p>
+<div class="scroll">
+<table>
+<thead><tr>
+<th>Scenario</th><th>Condition</th><th>Attack detected</th>
+<th>Payload class</th><th>Compliance</th>
+</tr></thead>
+<tbody>
+{chr(10).join(lines)}
+</tbody>
+</table>
+</div>"""
 
 
 def _truth_section(rows: Sequence[ScorecardRow]) -> str:
@@ -317,6 +388,7 @@ attack (DEC-075) — zero is the target — shown only for adversarial condition
 non-authoritative (baselines and ablations, DEC-012). Run-to-run variance (DEC-077) is a live
 measurement and is not shown for these recorded runs, which are deterministic. Per-item diffs stay
 local (DEC-073).</p>
+{_adversarial_section(rows)}
 {_truth_section(rows)}
 {_history_section(history)}
 </body>

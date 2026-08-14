@@ -163,12 +163,27 @@ def _spurious_cell(summary: ToolSummary) -> str:
     return f"{summary.spurious} over {summary.scenarios} scenarios [^fp]"
 
 
-def _compliance_cell(summary: ToolSummary) -> str:
+def _compliance_cell(summary: ToolSummary, *, labelled_per_class: bool = False) -> str:
     if summary.compliance is None:
         return "not run [^injection]"
     scenarios = summary.compliance_runs
     plural = "scenario" if scenarios == 1 else "scenarios"
-    return f"{_pct(summary.compliance)} ({scenarios} adversarial {plural})"
+    marker = " [^classes]" if labelled_per_class else ""
+    return f"{_pct(summary.compliance)} ({scenarios} adversarial {plural}){marker}"
+
+
+def _class_rates(feeds: Sequence[dict[str, Any]]) -> dict[str, float]:
+    """The compliance rate per payload class, averaged over the adversarial feeds (#403).
+
+    Only Trace runs carry an `adversarial` block — the baselines are never run against the
+    payloads (the [^injection] footnote says why) — so no tool filter is needed here.
+    """
+    by_class: dict[str, list[float]] = {}
+    for feed in feeds:
+        adversarial = feed.get("adversarial") or {}
+        for name, rate in adversarial.get("compliance_by_class", {}).items():
+            by_class.setdefault(str(name), []).append(float(rate))
+    return {name: sum(rates) / len(rates) for name, rates in sorted(by_class.items())}
 
 
 def render_comparison(
@@ -179,6 +194,7 @@ def render_comparison(
 ) -> str:
     """Render the per-tool comparison as Markdown from the feeds. Metrics and identifiers only."""
     summaries = summaries_from_feeds(feeds)
+    per_class = _class_rates(feeds)
     header = (
         "| Tool | Schema-validity | Evidence-linked claims | "
         "False positives | Injected-instruction compliance | Run-to-run stability |"
@@ -186,9 +202,22 @@ def render_comparison(
     divider = "| --- | --- | --- | --- | --- | --- |"
     rows = [
         f"| {summary.label} | {_schema_cell(summary)} | {_evidence_cell(summary)} | "
-        f"{_spurious_cell(summary)} | {_compliance_cell(summary)} | not measured [^stability] |"
+        f"{_spurious_cell(summary)} | "
+        f"{_compliance_cell(summary, labelled_per_class=bool(per_class))} | "
+        f"not measured [^stability] |"
         for summary in summaries
     ]
+    classes_footnote = ""
+    if per_class:
+        breakdown = ", ".join(f"{name} {_pct(rate)}" for name, rate in per_class.items())
+        classes_footnote = (
+            "\n[^classes]: Per payload class, because DEC-075 makes the aggregate meaningless "
+            f"as a universal claim: {breakdown}. Checkpoint bypass is structural — a checkpoint "
+            "advances only on a recorded reviewer decision (DEC-005) — and its zero is shown "
+            "with that basis rather than measured each run; every other class is measured "
+            "against what the run produced. The per-run detail is in the "
+            "[scorecard](scorecard.html).\n"
+        )
 
     total_scenarios = len({str(feed["scenario"]) for feed in feeds})
     pin_text = ", ".join(f"{key} {value}" for key, value in pins.items())
@@ -235,7 +264,7 @@ would measure the wrapper, so it is scored in the portfolio write-up rather than
     test. Trace's defense is the evidence fence and the structural checkpoints; a single-prompt
     baseline has neither, so the payload is not run through it — the result would measure the
     absence of a defense the baseline never claimed. Zero is the target (DEC-075).
-
+{classes_footnote}
 [^stability]: Run-to-run variance requires repeated live runs (DEC-077); these are deterministic
     offline replays, whose zero variance measures the recording, not the model. No live run has
     been measured.
