@@ -264,12 +264,20 @@ def test_the_same_content_hashes_the_same_in_two_assessments(tmp_path: Path) -> 
     assert first.hash_of("sources", "overview.md") == second.hash_of("sources", "overview.md")
 
 
-def test_assessment_directories_are_owner_only(store: ArtifactStore) -> None:
-    """The store holds copies of material under review, on a machine DEC-004 assumes is local."""
+def test_assessment_directories_are_owner_only(store: ArtifactStore, tmp_path: Path) -> None:
+    """The store holds copies of material under review, on a machine DEC-004 assumes is local.
+
+    Every directory the store creates under the data root must be owner-only, not just the leaf.
+    `mkdir(parents=True, mode=0o700)` tightens only the leaf and leaves the ancestors at the umask
+    default, so the assessment root and `assessments/` above it are checked too -- they are what
+    #443 measured at 0o755.
+    """
     if sys.platform == "win32":  # pragma: no cover -- POSIX mode bits do not apply
         pytest.skip("POSIX permissions")
-    mode = store.area("sources").stat().st_mode & 0o777
-    assert mode == 0o700, f"expected owner-only, found {mode:o}"
+    created = store.area("sources")
+    for directory in (created, store.assessment_root, tmp_path / "assessments"):
+        mode = directory.stat().st_mode & 0o777
+        assert mode == 0o700, f"expected owner-only for {directory}, found {mode:o}"
 
 
 def test_repr_names_the_assessment_and_the_root(store: ArtifactStore) -> None:

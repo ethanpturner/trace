@@ -31,6 +31,7 @@ from typing import Final
 from trace_ai.config import PROJECT_ROOT
 from trace_ai.domain.hashing import content_hash
 from trace_ai.domain.identifiers import parse_id
+from trace_ai.infrastructure.filesystem.permissions import mkdir_owner_only
 
 __all__ = ["AREAS", "DEFAULT_ROOT", "ArtifactStore", "ArtifactStoreError", "UnsafeFilenameError"]
 
@@ -42,10 +43,6 @@ AREAS: Final = ("sources", "normalized", "outputs", "traces", "evaluation")
 # needs to relocate it, tests pass a root directly, and an environment variable whose empty value
 # would silently resolve to the current working directory is a worse default than a fixed path.
 DEFAULT_ROOT: Final = PROJECT_ROOT / "data"
-
-# Owner-only. The store holds copies of material under review, which may be confidential to the
-# organization that supplied it, on a machine DEC-004 assumes is shared with nothing.
-_DIRECTORY_MODE: Final = 0o700
 
 
 class ArtifactStoreError(RuntimeError):
@@ -92,13 +89,19 @@ class ArtifactStore:
         return self.root / "assessments" / self.assessment_id
 
     def area(self, name: str) -> Path:
-        """The path of one subdirectory, created if it does not exist."""
+        """The path of one subdirectory, created if it does not exist.
+
+        Every ancestor is created owner-only, not just the leaf. `mkdir(parents=True, mode=...)`
+        applies the mode to the leaf and leaves `data/`, `data/assessments/`, and the assessment
+        root at the umask default -- world-readable directories above the confidential material the
+        area holds.
+        """
         if name not in AREAS:
             raise ArtifactStoreError(
                 f"{name!r} is not one of the areas section 5.16 lists: {AREAS}"
             )
         path = self.assessment_root / name
-        path.mkdir(parents=True, exist_ok=True, mode=_DIRECTORY_MODE)
+        mkdir_owner_only(path)
         return path
 
     def contains(self, path: Path) -> bool:

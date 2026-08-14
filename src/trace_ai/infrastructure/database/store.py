@@ -42,6 +42,7 @@ from pydantic import ValidationError
 
 from trace_ai.domain.base import DomainModel
 from trace_ai.domain.identifiers import PREFIXES, format_id, parse_id
+from trace_ai.infrastructure.filesystem.permissions import mkdir_owner_only, restrict_to_owner
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -109,11 +110,16 @@ class StoreError(RuntimeError):
 
 
 class IncompatibleSchemaError(StoreError):
-    """The database was written by a schema version this build cannot read."""
+    """The database was written by a schema version this build cannot read.
 
-    def __init__(self, found: int, expected: int) -> None:
+    `found` is the recorded value: an `int` for an ordinary version mismatch, or the raw string for
+    a value that is not an integer at all (a corrupted or hand-edited metadata row). Both are the
+    same refusal -- this build will not read the database -- so they share one error.
+    """
+
+    def __init__(self, found: int | str, expected: int) -> None:
         super().__init__(
-            f"this database was written with store schema version {found}; this build reads "
+            f"this database was written with store schema version {found!r}; this build reads "
             f"version {expected}. DEC-020 refuses rather than migrates: create a new database "
             f"and re-run the assessment."
         )
@@ -200,25 +206,73 @@ class AssessmentStore:
 
     def __init__(self, path: Path) -> None:
         self.path = path
-        self.path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
-        self._connection = sqlite3.connect(self.path)
-        self._connection.row_factory = sqlite3.Row
-        # Referential integrity lives in application code (DEC-020), so foreign keys are not
-        # enabled; there are none to enforce. WAL and NORMAL are the ordinary local defaults.
-        self._connection.execute("PRAGMA journal_mode = WAL")
-        self._connection.executescript(_SCHEMA)
-        # One connection means one transaction scope, so the depth lives here rather than on a
-        # repository: two repositories for two assessments share this connection, and a commit
-        # from either would otherwise land the other's pending work.
-        self._transaction_depth = 0
-        self._check_schema_version()
+        # Every ancestor owner-only, not just the leaf: `mkdir(parents=True, mode=...)` would leave
+        # `data/` world-readable above an owner-only assessment directory.
+        mkdir_owner_only(self.path.parent)
+        # `isolation_level=None` puts the connection in autocommit mode, so this module owns
+        # transaction control explicitly -- BEGIN IMMEDIATE, SAVEPOINT, COMMIT, ROLLBACK -- rather
+        # than letting Python's sqlite3 issue an implicit BEGIN before each DML statement, which
+        # cannot coexist with the savepoints `transaction()` needs for real nesting.
+        self._connection = sqlite3.connect(self.path, isolation_level=None)
+        try:
+            self._connection.row_factory = sqlite3.Row
+            # Referential integrity lives in application code (DEC-020), so foreign keys are not
+            # enabled; there are none to enforce. `busy_timeout` lets a second process (the view
+            # server alongside a run) wait for a write lock rather than failing immediately.
+            self._connection.execute("PRAGMA journal_mode = WAL")
+            self._connection.execute("PRAGMA busy_timeout = 5000")
+            # One connection means one transaction scope, so the depth and the owning assessment
+            # live here rather than on a repository: two repositories for two assessments share
+            # this connection, and a commit or rollback from either would otherwise land -- or
+            # discard -- the other's pending work. `_doomed` records that a nested transaction
+            # rolled back, so the outermost commit refuses rather than persisting a partial result.
+            self._transaction_depth = 0
+            self._transaction_owner: str | None = None
+            self._transaction_doomed = False
+            # Refuse an unreadable database *before* `executescript` writes into it. The old order
+            # ran `CREATE TABLE IF NOT EXISTS` against a database it was about to declare
+            # incompatible.
+            self._refuse_incompatible_schema()
+            self._connection.executescript(_SCHEMA)
+            self._record_schema_version_if_absent()
+            # SQLite creates the file and its WAL companions at 0o644; the payloads include verbatim
+            # confidential excerpts, so tighten them once the tables (and thus the WAL) exist.
+            restrict_to_owner(self.path)
+        except BaseException:
+            # A raise in __init__ means __enter__/__exit__ never run, so the connection would leak.
+            self._connection.close()
+            raise
 
     @classmethod
     def at_root(cls, root: Path) -> Self:
         """The database beside the artifact store, under the same gitignored `data/` root."""
         return cls(root / DATABASE_FILENAME)
 
-    def _check_schema_version(self) -> None:
+    def _refuse_incompatible_schema(self) -> None:
+        """Raise `IncompatibleSchemaError` if the database was written by another schema version.
+
+        Runs before `executescript`, so it must not assume the metadata table exists. A fresh
+        database (no `store_metadata` table, or the table without the row) is not incompatible; its
+        version is recorded after the schema is created.
+        """
+        table = self._connection.execute(
+            "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'store_metadata'"
+        ).fetchone()
+        if table is None:
+            return
+        row = self._connection.execute(
+            "SELECT value FROM store_metadata WHERE key = 'schema_version'"
+        ).fetchone()
+        if row is None:
+            return
+        try:
+            found = int(row["value"])
+        except TypeError, ValueError:
+            raise IncompatibleSchemaError(str(row["value"]), SCHEMA_VERSION) from None
+        if found != SCHEMA_VERSION:
+            raise IncompatibleSchemaError(found, SCHEMA_VERSION)
+
+    def _record_schema_version_if_absent(self) -> None:
         row = self._connection.execute(
             "SELECT value FROM store_metadata WHERE key = 'schema_version'"
         ).fetchone()
@@ -227,11 +281,6 @@ class AssessmentStore:
                 "INSERT INTO store_metadata (key, value) VALUES ('schema_version', ?)",
                 (str(SCHEMA_VERSION),),
             )
-            self._connection.commit()
-            return
-        found = int(row["value"])
-        if found != SCHEMA_VERSION:
-            raise IncompatibleSchemaError(found, SCHEMA_VERSION)
 
     @property
     def schema_version(self) -> int:
@@ -239,6 +288,8 @@ class AssessmentStore:
         row = self._connection.execute(
             "SELECT value FROM store_metadata WHERE key = 'schema_version'"
         ).fetchone()
+        if row is None:
+            raise StoreError("store_metadata has no schema_version row; the database is malformed")
         return int(row["value"])
 
     def allocate_assessment_id(self) -> str:
@@ -273,14 +324,21 @@ class AssessmentStore:
         ).fetchall()
         return [row["assessment_id"] for row in rows]
 
-    def _commit_unless_in_transaction(self) -> None:
-        """Commit a single statement, or leave it to the transaction that encloses it.
+    def _guard_write_scope(self, assessment_id: str) -> None:
+        """Refuse a write from an assessment other than the one whose transaction is open.
 
-        Without this, every write would be its own transaction and DEC-018's requirement that a
-        counter increment and the insert consuming it commit together would be unimplementable.
+        The connection is shared, so a write from assessment B while assessment A holds an open
+        transaction would be swept into A's unit of work -- and discarded if A rolls back, or
+        committed early if B's write path committed. Both are silent corruption of an unrelated
+        assessment. Refusing is the honest outcome: B waits until A's transaction closes. Writes
+        outside any transaction (`_transaction_depth == 0`) are unaffected.
         """
-        if self._transaction_depth == 0:
-            self._connection.commit()
+        if self._transaction_depth > 0 and self._transaction_owner != assessment_id:
+            raise StoreError(
+                f"a transaction scoped to {self._transaction_owner} is open on this connection; "
+                f"{assessment_id} cannot write until it closes. Two assessments share one "
+                f"connection, so their writes cannot be interleaved within a transaction."
+            )
 
     def close(self) -> None:
         self._connection.close()
@@ -311,17 +369,57 @@ class AssessmentRepository:
 
         DEC-018 increments the counter in the same transaction as the insert. Without that, a
         crash between the two leaves a gap that reads as a deleted object.
+
+        Nesting is real, not a shared counter. The outermost `transaction()` opens
+        `BEGIN IMMEDIATE`; each nested one opens a `SAVEPOINT`, so an inner failure rolls back only
+        the inner work. But a nested rollback *dooms* the whole unit: if an inner transaction rolls
+        back and the caller swallows the exception, the outermost commit refuses and rolls the whole
+        thing back instead. Committing the outer after an inner abort would persist a partial
+        result and -- because DEC-018 allocates inside the transaction -- could hand the same
+        identifier to two live objects (the exact failure this replaced). A cross-assessment
+        `transaction()` while one is open is refused for the reason `_guard_write_scope` gives.
         """
-        self._store._transaction_depth += 1
+        store = self._store
+        depth = store._transaction_depth
+        if depth > 0 and store._transaction_owner != self.assessment_id:
+            self._store._guard_write_scope(self.assessment_id)
+        savepoint = None if depth == 0 else f"sp_{depth}"
+        if savepoint is None:
+            store._transaction_owner = self.assessment_id
+            store._transaction_doomed = False
+            self._connection.execute("BEGIN IMMEDIATE")
+        else:
+            self._connection.execute(f"SAVEPOINT {savepoint}")
+        store._transaction_depth = depth + 1
         try:
             yield self
         except BaseException:
-            self._store._transaction_depth -= 1
-            self._connection.rollback()
+            store._transaction_depth = depth
+            if savepoint is None:
+                self._connection.execute("ROLLBACK")
+                store._transaction_owner = None
+                store._transaction_doomed = False
+            else:
+                self._connection.execute(f"ROLLBACK TO {savepoint}")
+                self._connection.execute(f"RELEASE {savepoint}")
+                store._transaction_doomed = True
             raise
         else:
-            self._store._transaction_depth -= 1
-            self._store._commit_unless_in_transaction()
+            store._transaction_depth = depth
+            if savepoint is not None:
+                self._connection.execute(f"RELEASE {savepoint}")
+            elif store._transaction_doomed:
+                self._connection.execute("ROLLBACK")
+                store._transaction_owner = None
+                store._transaction_doomed = False
+                raise StoreError(
+                    "a nested transaction rolled back and its error was swallowed; refusing to "
+                    "commit a partial result. Let the inner failure propagate, or do not open a "
+                    "nested transaction whose failure you intend to ignore."
+                )
+            else:
+                self._connection.execute("COMMIT")
+                store._transaction_owner = None
 
     def allocate(self, prefix: str) -> str:
         """The next identifier for `prefix` in this assessment (DEC-018).
@@ -334,19 +432,19 @@ class AssessmentRepository:
                 f"'{prefix}' is not one of the {len(PREFIXES)} prefixes in data-model.md "
                 f"section 2.1"
             )
-        cursor = self._connection.execute(
-            "SELECT next_number FROM identifier_counters WHERE assessment_id = ? AND prefix = ?",
+        self._store._guard_write_scope(self.assessment_id)
+        # One statement, not a SELECT then an upsert: read-modify-write across two statements let
+        # two callers read the same `next_number` and mint the same identifier. `next_number` is the
+        # value the *next* allocation will use, so a fresh row inserts 2 and hands out 1, and a
+        # conflict increments and hands out the pre-increment value. `RETURNING` reflects the row as
+        # finally written, so `next_number - 1` is the number just allocated.
+        row = self._connection.execute(
+            "INSERT INTO identifier_counters (assessment_id, prefix, next_number) VALUES (?, ?, 2) "
+            "ON CONFLICT (assessment_id, prefix) DO UPDATE SET next_number = next_number + 1 "
+            "RETURNING next_number - 1 AS allocated",
             (self.assessment_id, prefix),
-        )
-        row = cursor.fetchone()
-        number = 1 if row is None else int(row["next_number"])
-        self._connection.execute(
-            "INSERT INTO identifier_counters (assessment_id, prefix, next_number) VALUES (?, ?, ?) "
-            "ON CONFLICT (assessment_id, prefix) DO UPDATE SET next_number = ?",
-            (self.assessment_id, prefix, number + 1, number + 1),
-        )
-        self._store._commit_unless_in_transaction()
-        return format_id(prefix, number)
+        ).fetchone()
+        return format_id(prefix, int(row["allocated"]))
 
     def save(self, obj: DomainModel) -> None:
         """Persist a validated object. Replaces the row with the same identifier.
@@ -364,6 +462,7 @@ class AssessmentRepository:
         row_key = _row_key(obj)
         if scope != self.assessment_id:
             raise WrongAssessmentError(row_key, scope, self.assessment_id)
+        self._store._guard_write_scope(self.assessment_id)
 
         payload = obj.model_dump_json()
         self._connection.execute(
@@ -381,7 +480,6 @@ class AssessmentRepository:
                 payload,
             ),
         )
-        self._store._commit_unless_in_transaction()
 
     def get(self, model: type[ModelT], object_id: str) -> ModelT:
         """Read one object, validated. Raises if it is absent or no longer parses."""
