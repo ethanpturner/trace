@@ -9,22 +9,15 @@ name: scorecard
 # A committed page cannot be pushed back by CI on a protected branch, so this checks rather than
 # writes; a stale page is a red check with the regeneration command in the failure. The uploaded
 # artifact is the freshly rendered page for anyone who wants to read it before merging.
+#
+# Every pull request, deliberately unfiltered (#405): the harness replays the full pipeline, so
+# the regenerated feeds depend on far more than the evaluation tree — a change to workflow/,
+# domain/, or any service can move a feed value. A path filter here let those changes drift the
+# committed pages silently until an unrelated evaluation PR inherited the red check. The three
+# checks run offline in seconds; the filter was not buying meaningful CI time.
 
 on:
   pull_request:
-    paths:
-      - src/trace_ai/services/evaluation/**
-      - benchmarks/**
-      - demo/forgeflow/expected/**
-      - demo/forgeflow/recorded/**
-      - scripts/build_scorecard.py
-      - scripts/build_comparison.py
-      - scripts/build_ablation.py
-      - docs/eval/scorecard.html
-      - docs/eval/history.jsonl
-      - docs/eval/comparison.md
-      - docs/eval/ablation.md
-      - .github/workflows/scorecard.yml
   workflow_dispatch:
 
 permissions:

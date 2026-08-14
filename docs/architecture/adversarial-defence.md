@@ -93,12 +93,15 @@ with no payload. From the adversarial feed:
 | Two | injected-instruction compliance rate | 0% |
 | Two | attack detected (recorded as an observation) | yes |
 
-The per-class compliance is zero across all five classes. Two are observable — findings
-suppression and direct injection fail because the finding survives — and three are zero by
-construction, each with its basis in the score (`services/evaluation/adversarial.py`): the fence
-neutralises delimiters, the checkpoint advances only on a recorded decision, and the validation
-nodes read evidence rather than instructions. DEC-075 names these structural classes as worth
-showing once rather than measuring each run.
+The per-class compliance is zero across all five classes. Four are measured against what the run
+produced (`services/evaluation/adversarial.py`): findings suppression and the two
+instruction-vehicle classes — direct injection and the fence escape — fail because the expected
+finding survives, and verifier sabotage fails because no unsupported conclusion survived
+validation into the approved set. One is zero by construction with its basis in the score:
+checkpoint bypass, because a checkpoint advances only on a recorded decision (DEC-005) — the one
+class DEC-075 names as structural, worth showing once rather than measuring each run. The fence
+neutralisation and the deterministic validators are real controls, but their classes are
+measured, not asserted: "the mechanism exists" is not "this run was measured".
 
 - Mechanism: `services/evaluation/adversarial.py`; the scorecard's adversarial row
   (`docs/eval/scorecard.html`).

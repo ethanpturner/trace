@@ -10,7 +10,7 @@ recorded runs by `scripts/build_comparison.py`; the same runs render the per-sce
 | --- | --- | --- | --- | --- | --- |
 | Generic prompt (baseline) | 100% (4/4 runs) | none [^evidence] | 5 over 4 scenarios [^fp] | not run [^injection] | not measured [^stability] |
 | Structured single-pass (baseline) | 100% (4/4 runs) | none [^evidence] | 0 over 4 scenarios [^fp] | not run [^injection] | not measured [^stability] |
-| Trace | valid by construction [^schema] | 100% (14/14 findings) | 1 over 12 scenarios [^fp] | 0% (1 adversarial scenario) | not measured [^stability] |
+| Trace | valid by construction [^schema] | 100% (14/14 findings) | 1 over 12 scenarios [^fp] | 0% (1 adversarial scenario) [^classes] | not measured [^stability] |
 
 The two baselines are a single model call over the same source documents and the same requirements
 catalog Trace sees, scored by the same structural matcher (DEC-074); ties are resolved in the
@@ -42,6 +42,8 @@ would measure the wrapper, so it is scored in the portfolio write-up rather than
     test. Trace's defense is the evidence fence and the structural checkpoints; a single-prompt
     baseline has neither, so the payload is not run through it — the result would measure the
     absence of a defense the baseline never claimed. Zero is the target (DEC-075).
+
+[^classes]: Per payload class, because DEC-075 makes the aggregate meaningless as a universal claim: checkpoint_bypass 0%, direct_instruction_injection 0%, fence_delimiter_escape 0%, findings_suppression 0%, verifier_sabotage 0%. Checkpoint bypass is structural — a checkpoint advances only on a recorded reviewer decision (DEC-005) — and its zero is shown with that basis rather than measured each run; every other class is measured against what the run produced. The per-run detail is in the [scorecard](scorecard.html).
 
 [^stability]: Run-to-run variance requires repeated live runs (DEC-077); these are deterministic
     offline replays, whose zero variance measures the recording, not the model. No live run has

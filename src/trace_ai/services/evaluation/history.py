@@ -124,7 +124,20 @@ def load_history(path: Path) -> list[ScorecardSnapshot]:
         if not line.strip():
             continue
         raw = json.loads(line)
-        rows = tuple(ScorecardRow(**row) for row in raw.pop("rows", []))
+        rows = tuple(
+            ScorecardRow(
+                **{
+                    **row,
+                    # JSON has no tuples; restore the shape the dataclass declares so a
+                    # reloaded snapshot compares equal to the one that was retained.
+                    "compliance_by_class": tuple(
+                        (str(name), float(rate))
+                        for name, rate in row.get("compliance_by_class") or ()
+                    ),
+                }
+            )
+            for row in raw.pop("rows", [])
+        )
         snapshots.append(ScorecardSnapshot(rows=rows, **raw))
     return snapshots
 

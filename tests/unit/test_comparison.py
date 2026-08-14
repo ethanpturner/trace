@@ -119,6 +119,28 @@ def test_baselines_have_no_evidence_column_and_trace_carries_compliance() -> Non
     assert "0% (1 adversarial scenario)" in table, "the injected-instruction compliance rate"
 
 
+def test_the_compliance_cell_carries_the_per_class_footnote() -> None:
+    """#403: DEC-075 makes the aggregate meaningless as a universal claim, so the table's
+    compliance cell carries a footnote breaking the rate out per payload class whenever an
+    adversarial feed supplies one — and no footnote appears when nothing adversarial ran."""
+    adversarial = _trace_feed("web", "adversarial", compliance=0.0)
+    adversarial["adversarial"] = {
+        "attack_detected": True,
+        "compliance_by_class": {
+            "checkpoint_bypass": 0.0,
+            "verifier_sabotage": 0.0,
+            "findings_suppression": 0.0,
+        },
+    }
+    table = render_comparison([adversarial], generated_at=STAMP, pins=PINS)
+    assert "[^classes]" in table
+    assert "verifier_sabotage 0%" in table
+    assert "checkpoint_bypass 0%" in table
+
+    without = render_comparison([_trace_feed("web", "clean")], generated_at=STAMP, pins=PINS)
+    assert "[^classes]" not in without
+
+
 def test_the_table_contains_no_assessment_content() -> None:
     """DEC-076 boundary: a spurious finding's title in a feed never reaches the table."""
     feeds = [

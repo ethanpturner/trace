@@ -128,6 +128,8 @@ def test_the_history_contains_metrics_and_identifiers_only(tmp_path: Path) -> No
         "scenario",
         "condition",
         "authoritative",
+        "compliance_by_class",
+        "attack_detected",
         "matched",
         "missed",
         "spurious",
