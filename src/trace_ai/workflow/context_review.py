@@ -121,6 +121,7 @@ __all__ = [
     "confirm_assumption",
     "current_system_context",
     "decide_object",
+    "previous_approved_context",
     "re_extraction_feedback",
     "request_re_extraction",
     "resolve_contradiction",
@@ -197,6 +198,28 @@ def current_system_context(handle: AssessmentHandle) -> SystemContext:
     return revisions[-1]
 
 
+def previous_approved_context(
+    handle: AssessmentHandle, current: SystemContext
+) -> SystemContext | None:
+    """The latest approved revision other than `current`, or `None` when there is none.
+
+    This is what makes section 7's sixth human-review trigger reachable (#400): a validation run
+    that knows the previously approved baseline can flag a materially different extraction. Reading
+    `approved_at` rather than counting decisions is the checkpoint gate's own rule — a revision is
+    approved because the approval path stamped it, not because rows exist near it.
+
+    `None` is the common case and means the trigger has nothing to compare against: a first
+    extraction has no approved prior, and neither does a re-extraction requested before any
+    approval.
+    """
+    approved = [
+        revision
+        for revision in sorted(handle.objects.list(SystemContext), key=lambda item: item.version)
+        if revision.approved_at is not None and revision.version != current.version
+    ]
+    return approved[-1] if approved else None
+
+
 @dataclass(frozen=True, slots=True)
 class QuotedExcerpt:
     """One source passage, labelled as what it is.
@@ -270,6 +293,14 @@ class ContextReviewPackage:
     """DEC-068's warn-only cross-claim check: flows between differing zones that cross no
     declared boundary. Shown for the reviewer to resolve — declare the boundary or fix the zone
     label — and blocking nothing."""
+
+    contradictions: tuple[SourceObservation, ...] = ()
+    """Contradiction observations awaiting a resolution, oldest first.
+
+    Presented so the review surface can offer `resolve_contradiction` (#399): a reviewer cannot
+    settle a disagreement the package never showed them. An observation already carrying
+    `reviewer_notes` has been resolved and is excluded — resolution writes the rationale there,
+    so the notes are the marker."""
 
     injection_attempts: tuple[SourceObservation, ...] = ()
     """Injection attempts the extraction recorded about the supplied documents (DEC-075).
@@ -439,6 +470,12 @@ def build_context_review_package(
         triggers=validation.triggers,
         outstanding_errors=validation.blocking_errors,
         zone_mismatches=validation.zone_mismatches,
+        contradictions=tuple(
+            observation
+            for observation in handle.objects.list(SourceObservation)
+            if observation.kind is ObservationKind.CONTRADICTION
+            and not (observation.reviewer_notes or "").strip()
+        ),
         injection_attempts=tuple(
             observation
             for observation in handle.objects.list(SourceObservation)

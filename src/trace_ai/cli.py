@@ -76,11 +76,14 @@ from trace_ai.workflow.context_review import (
     ReviewerActionError,
     answer_question,
     approve_context,
+    attach_evidence,
     build_context_review_package,
     confirm_assumption,
     current_system_context,
     decide_object,
+    previous_approved_context,
     request_re_extraction,
+    resolve_contradiction,
 )
 from trace_ai.workflow.context_validation import validate_context
 from trace_ai.workflow.errors import WorkflowError
@@ -296,6 +299,26 @@ def build_parser() -> argparse.ArgumentParser:
         default=[],
         metavar="ID=TEXT",
         help="answer an open question",
+    )
+    review.add_argument(
+        "--attach",
+        action="append",
+        dest="attachments",
+        default=[],
+        metavar="ID=EVD[,EVD...]",
+        help="link existing evidence references to an object or claim",
+    )
+    review.add_argument(
+        "--resolve",
+        action="append",
+        dest="resolutions",
+        default=[],
+        metavar="ID=VALUE",
+        help="settle a contradiction observation with VALUE; requires --rationale",
+    )
+    review.add_argument(
+        "--rationale",
+        help="the reasoning recorded with --resolve (and, optionally, with --attach)",
     )
     review.add_argument(
         "--request-re-extraction",
@@ -1043,6 +1066,7 @@ def _package_for(handle: AssessmentHandle) -> ContextReviewPackage:
         context,
         context_objects(handle),
         available_evidence={reference.id for reference in handle.objects.list(EvidenceReference)},
+        previous=previous_approved_context(handle, context),
     )
     return build_context_review_package(handle, index=EvidenceIndex(handle), validation=validation)
 
@@ -1281,6 +1305,47 @@ def _context_review(args: argparse.Namespace, service: AssessmentService) -> int
             workflow_run_id=run_id,
         )
         written.append(decision)
+
+    for pair in args.attachments:
+        identifier, separator, listed = pair.partition("=")
+        evidence_ids = [item.strip() for item in listed.split(",") if item.strip()]
+        if not separator or not evidence_ids:
+            raise ValueError(f"--attach takes ID=EVD[,EVD...]; {pair!r} names no evidence")
+        _, decision = attach_evidence(
+            handle,
+            _require(lookup, identifier.strip(), "an object in this assessment"),
+            evidence_ids,
+            index=EvidenceIndex(handle),
+            reviewer_id=reviewer,
+            rationale=args.rationale,
+            workflow_run_id=run_id,
+        )
+        written.append(decision)
+
+    if args.resolutions:
+        from trace_ai.domain.source_observation import SourceObservation
+
+        if not (args.rationale or "").strip():
+            raise ValueError(
+                "--resolve requires --rationale: a resolution with no reasoning is "
+                "indistinguishable from quietly choosing the safer statement"
+            )
+        observations: dict[str, Any] = {
+            observation.id: observation for observation in handle.objects.list(SourceObservation)
+        }
+        for pair in args.resolutions:
+            identifier, separator, value = pair.partition("=")
+            if not separator:
+                raise ValueError(f"--resolve takes ID=VALUE; {pair!r} has no '='")
+            resolved = resolve_contradiction(
+                handle,
+                _require(observations, identifier.strip(), "an observation in this assessment"),
+                resolution=value.strip(),
+                rationale=args.rationale,
+                reviewer_id=reviewer,
+                workflow_run_id=run_id,
+            )
+            written.extend(resolved.decisions)
 
     if args.re_extraction:
         written.append(

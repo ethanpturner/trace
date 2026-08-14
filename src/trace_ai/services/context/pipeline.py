@@ -150,11 +150,17 @@ def run_context_slice(
     result = extraction.run(NodeContext(handle=handle, state=state, model=model))
     state = state.advance(Phase.CONTEXT_VALIDATION, **result.state_changes)
 
-    from trace_ai.workflow.context_review import current_system_context
+    from trace_ai.workflow.context_review import (
+        current_system_context,
+        previous_approved_context,
+    )
 
     context = current_system_context(handle)
     validation = validate_context(
-        context, context_objects(handle), available_evidence=set(available)
+        context,
+        context_objects(handle),
+        available_evidence=set(available),
+        previous=previous_approved_context(handle, context),
     )
     package = build_context_review_package(
         handle, index=EvidenceIndex(handle), validation=validation

@@ -70,6 +70,7 @@ from trace_ai.workflow.context_review import (
     approve_context,
     build_context_review_package,
     current_system_context,
+    previous_approved_context,
 )
 from trace_ai.workflow.context_validation import validate_context
 from trace_ai.workflow.finding_review import (
@@ -267,10 +268,12 @@ def _apply_context_decisions(
     # another's — which is not what a rebind to the current run is.
     document["assessment_id"] = assessment_id
     apply_review_file(handle, document, reviewer_id=HARNESS_REVIEWER)
+    reviewed = current_system_context(handle)
     validation = validate_context(
-        current_system_context(handle),
+        reviewed,
         context_objects(handle),
         available_evidence={ref.id for ref in handle.objects.list(EvidenceReference)},
+        previous=previous_approved_context(handle, reviewed),
     )
     package = build_context_review_package(
         handle, index=EvidenceIndex(handle), validation=validation

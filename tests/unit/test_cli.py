@@ -966,6 +966,54 @@ def test_review_records_the_decisions_the_flags_name(
     assert "reject" in output
 
 
+def test_attach_links_evidence_and_resolve_requires_a_rationale(
+    data_root: Path, capsys: pytest.CaptureFixture[str], tmp_path: Path
+) -> None:
+    """#399's flag half. `--attach` links an existing reference through the same workflow
+    function the file path calls, and `--resolve` without `--rationale` is refused in one line —
+    a resolution with no reasoning is the silent choice the action exists to prevent."""
+    identifier = extracted(data_root, capsys, tmp_path)
+
+    assert (
+        invoke(
+            data_root,
+            "context",
+            "review",
+            identifier,
+            "--reviewer",
+            "eturner",
+            "--attach",
+            "cmp-001=evd-002",
+        )
+        == 0
+    )
+    assert "1 decision(s) recorded as eturner" in capsys.readouterr().out
+
+    from trace_ai.domain.component import Component
+    from trace_ai.infrastructure.database.store import AssessmentStore
+    from trace_ai.services.assessment import AssessmentService
+
+    with AssessmentStore.at_root(data_root) as store:
+        handle = AssessmentService(store, artifact_root=data_root).handle(identifier)
+        component = handle.objects.find(Component, "cmp-001")
+    assert component is not None and "evd-002" in component.evidence_ids
+
+    assert (
+        invoke(
+            data_root,
+            "context",
+            "review",
+            identifier,
+            "--reviewer",
+            "eturner",
+            "--resolve",
+            "obs-001=whatever",
+        )
+        == 1
+    )
+    assert "requires --rationale" in capsys.readouterr().err
+
+
 def test_a_review_file_round_trips_to_the_same_decisions_as_the_flags(
     data_root: Path, capsys: pytest.CaptureFixture[str], tmp_path: Path
 ) -> None:

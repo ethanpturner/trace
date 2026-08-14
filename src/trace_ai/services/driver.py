@@ -66,6 +66,7 @@ from trace_ai.workflow.context_extraction import ContextExtractionNode
 from trace_ai.workflow.context_review import (
     ContextReviewNode,
     current_system_context,
+    previous_approved_context,
     re_extraction_feedback,
 )
 from trace_ai.workflow.context_validation import validate_context
@@ -326,7 +327,10 @@ class ContextValidationAdapter:
         system_context = current_system_context(handle)
         available = {ref.id for ref in handle.objects.list(EvidenceReference)}
         outcome = validate_context(
-            system_context, context_objects(handle), available_evidence=available
+            system_context,
+            context_objects(handle),
+            available_evidence=available,
+            previous=previous_approved_context(handle, system_context),
         )
 
         raised: list[str] = []
@@ -1047,10 +1051,12 @@ class AblatedContextApprovalNode:
                 handle, obj, ReviewDisposition.APPROVE, reviewer_id=self.REVIEWER
             )
             decided.append(decision.subject_id)
+        reviewed = current_system_context(handle)
         validation = validate_context(
-            current_system_context(handle),
+            reviewed,
             context_objects(handle),
             available_evidence={ref.id for ref in handle.objects.list(EvidenceReference)},
+            previous=previous_approved_context(handle, reviewed),
         )
         package = build_context_review_package(
             handle, index=EvidenceIndex(handle), validation=validation
