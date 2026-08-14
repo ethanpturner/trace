@@ -155,13 +155,15 @@ Two things are commonly assumed and are **not** decided:
 - **The model interface is provider-agnostic; Anthropic is the default** (DEC-014). The
   application talks to a seam and provider code lives in an adapter behind it. `claude-opus-5` is
   the primary model, and `model_profile` names a provider-model-settings bundle rather than a bare
-  model identifier. Nothing behind the seam is built yet, and a seam with one implementation is not
-  proven agnostic. `anthropic` is now the only provider SDK declared; DEC-016 removed the
-  orchestration and model-framework dependencies.
+  model identifier. Behind the seam today: the Anthropic adapter, the deterministic substitute,
+  the recorded-response loader, the caching wrapper, and the profile registry — one provider, so
+  the seam is populated but not proven agnostic. `anthropic` is the only provider SDK declared;
+  DEC-016 removed the orchestration and model-framework dependencies.
 - **`agent-design.md` section 29's creativity column is provider-neutral intent, not a sampling
   parameter.** Each adapter maps it to its own controls; the Anthropic adapter maps it to effort
   and adaptive thinking, because `temperature`, `top_p`, and `top_k` are rejected on the current
-  Anthropic models. Do not read the column as naming a knob.
+  Anthropic models. Do not read the column as naming a knob. DEC-085 resolved the table's two
+  "low to moderate" rows: critical review runs at moderate, report generation at low.
 
 ## Requirements catalog
 

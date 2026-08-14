@@ -265,8 +265,8 @@ and measures itself offline. Stage 5's demonstration half (M9), the demo-hardeni
   from. Source text is referenced in a log line, never quoted into one.
 - **CI** — ruff, ruff format, mypy in strict mode, and pytest with coverage, on every pull request.
   Each check runs even when an earlier one fails, so one run reports every problem.
-- **Repository hygiene** — pre-commit and pre-push hooks including gitleaks secret scanning, a
-  lockfile freshness gate, and branch protection on `main`.
+- **Repository hygiene** — pre-commit and pre-push hooks, gitleaks secret scanning locally and
+  over the full history in CI, a lockfile freshness gate, and branch protection on `main`.
 - **The shared domain vocabulary** — the seven enumerated types `data-model.md` section 4 defines,
   and `DomainModel`, the Pydantic base every domain object inherits. `extra="forbid"` is the
   setting that matters: an agent-proposed object carrying an invented field fails validation at
@@ -348,7 +348,7 @@ and measures itself offline. Stage 5's demonstration half (M9), the demo-hardeni
   resolving to a provider, a model, generation settings, and published rates. The Anthropic
   adapter makes exactly one attempt and returns a structured failure carrying the raw output
   rather than raising; a test asserts no module outside it imports a provider SDK.
-- **Identifiers and content hashing** — the twenty-three prefixes of section 2.1 as a closed
+- **Identifiers and content hashing** — the twenty-five prefixes of section 2.1 as a closed
   registry, both identifier forms DEC-018 defines, a typed identifier per object so a threat
   identifier cannot be assigned to a finding's field, and the single SHA-256 utility DEC-019
   requires. The scheme governs objects an assessment produces (DEC-034); authored configuration —
@@ -429,6 +429,13 @@ and measures itself offline. Stage 5's demonstration half (M9), the demo-hardeni
 - **The adversarial condition** — DEC-075's poisoned-document variant with all five payload
   classes, run as an ordinary scenario condition, with the two-axis attack metrics (detection,
   and injected-instruction compliance with a target of zero) reported per payload class.
+- **The twelve benchmark scenarios** — every registered scenario carries a full outcome truth
+  set and an offline recording, every roadmap Stage 5 coverage category has a scenario, and
+  `trace evaluate --all` runs the register with nothing skipped.
+- **The M12 decision debt, closed** — DEC-057 through DEC-072 (risk treatment, episodic revisit,
+  routing reasons, the STRIDE coverage baseline, the precedent feed, catalog-gap candidates,
+  fingerprints, cache accounting, context extensions, profile overlays, parsers, the coverage
+  ledger, the TM-BOM export, and catalog 0.2) are built, wired, and tested.
 - **The read-only view and the demo** — `trace view` renders a completed assessment over
   localhost, GET-only, including the finding-lineage walk from a finding back to its hashed
   evidence (DEC-078). The [demo script](docs/product/demo-script.md) stages the offline run as ten
@@ -445,10 +452,6 @@ and measures itself offline. Stage 5's demonstration half (M9), the demo-hardeni
   offline; it replays end to end but does not score against the full truth set in
   `demo/forgeflow/expected/`, and the scorecard says so rather than hiding it. Capturing a full
   run from a live model is milestone M10's closing step.
-- **Every registered scenario is authored and replays.** All twelve scenarios carry full
-  outcome truth sets and offline recordings (#326, #327, #328), every roadmap Stage 5
-  coverage category has a scenario, and `trace evaluate --all` runs the register with
-  nothing skipped.
 - **No live run has been measured.** Every committed recording — including the end-to-end replay
   — is authored offline against the deterministic model, and says so in its provenance. The
   Anthropic adapter has run against a provider only in an opt-in integration test; cost,
@@ -458,10 +461,6 @@ and measures itself offline. Stage 5's demonstration half (M9), the demo-hardeni
   view, the finding-lineage view, the demo script and its recovery plan, and the measured ablation
   narrative. What remains for Stage 6 is the public-facing packaging around it: a short video and
   the release presentation.
-- **The recorded decisions of the M0 wave.** DEC-057 through DEC-072 — risk treatment, episodic
-  revisit, routing reasons, the coverage baseline, the precedent feed, catalog-gap candidates,
-  fingerprints, cache accounting, context extensions, profile overlays, parsers, the coverage
-  ledger, exports, and catalog 0.2 — are decided, issued as milestone M12, and unbuilt.
 
 ### Running it today
 
@@ -685,10 +684,9 @@ read source code, run a program, connect to a cloud account, or inspect a runnin
 weakness present in the implementation but absent from the documentation is outside its reach. It
 assesses what a system is described to be, and a description can be wrong.
 
-**What the evaluation does not prove.** Eight scenarios are registered; three carry an
-authoritative Trace run scored against a truth set (contradictory-docs and unsigned-webhooks in
-full, forgeflow as a slice), and the rest carry a truth set or threat seeds with no recording yet.
-Every truth set is authored by one person, so the numbers are a single annotator's judgment
+**What the evaluation does not prove.** Twelve scenarios are registered, and every one carries an
+authoritative Trace run scored against its truth set — eleven in full, forgeflow as an authored
+slice — plus one adversarial condition. Every truth set is authored by one person, so the numbers are a single annotator's judgment
 measured against itself — self-agreement, not an inter-annotator kappa, and not a claim of external
 ground truth. No live-model run has been measured: every committed recording is deterministic and
 offline, so the scorecard's costs read zero and run-to-run stability (DEC-077) is unmeasured, not
@@ -717,17 +715,18 @@ one the model missed.
 
 ### Failure taxonomy
 
-From reading the per-item match sets of all twelve committed evaluation runs — four authoritative
-Trace runs and eight baseline runs, regenerated offline. Two failure categories appear; because no
+From reading the per-item match sets of all twenty-one committed evaluation runs — thirteen
+authoritative Trace runs (twelve clean, one adversarial) and eight baseline runs, regenerated
+offline. Two failure categories appear; because no
 live-model run has been analyzed, no live-model failure mode is listed, and this table is over the
 deterministic recordings named in each row. The live view is the [scorecard](docs/eval/scorecard.html).
 
 | Failure mode | Frequency | Observed in |
 |---|---|---|
-| **Recorded slice misses its truth set** — Trace produces a finding that matches none of the three expected, for 0 of 3 matched. The recording is an authored slice, not a scored full run. | 1 of 4 authoritative Trace runs | forgeflow (clean) |
+| **Recorded slice misses its truth set** — Trace produces a finding that matches none of the three expected, for 0 of 3 matched. The recording is an authored slice, not a scored full run. | 1 of 13 authoritative Trace runs | forgeflow (clean) |
 | **Silence read as a weakness** — the generic-prompt baseline invents a finding where the documentation is simply quiet: missing MFA and password policy an inherited identity provider covers, an encryption detail a managed database supplies, absent replay protection, unencrypted exports. This is the DEC-009 failure the pipeline exists to prevent. | 5 spurious findings across 4 runs | baseline-generic on oidc-portal (2), managed-db-service (1), contradictory-docs (1), unsigned-webhooks (1) |
 
-The structured single-pass baseline and the three other authoritative Trace runs produced no
+The structured single-pass baseline and the twelve other authoritative Trace runs produced no
 spurious finding, which is why the second row is a baseline failure and not Trace's — the
 comparison exists to measure that difference, not to assert it.
 
