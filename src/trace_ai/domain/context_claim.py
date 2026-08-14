@@ -29,6 +29,11 @@ cannot express, and JSON-compatibility is the real constraint — DEC-020 persis
 JSON payloads, so a value that will not serialize is a value that cannot be stored. This is a typing
 decision and not an answer to section 39's open question 1, which asks whether claims should use
 this subject-predicate-value shape at all or move to typed models. That stays open.
+
+The proposal-side field is narrower on purpose: `ProposedContextClaim.value` is a scalar or a list
+of scalars (DEC-083), because that schema crosses the wire and the provider's structured-output
+format refuses `JsonValue`'s unconstrained recursion. Every proposed value fits here; the reverse
+is not required, because a reviewer's edit is not bound by what a provider can be asked for.
 """
 
 from __future__ import annotations
