@@ -17,10 +17,10 @@ content (DEC-076). Generated 2026-08-11 over 12 scenarios (registry 1.0, catalog
 |  | no evidence validation * | 0% | 100% | 0% | 0% |
 |  | no critical review * | 0% | 100% | 0% | 0% |
 |  | no context approval * | 0% | 100% | 0% | 0% |
-| forgeflow | authoritative | 100% | 100% | 0% | 0% |
-|  | no evidence validation * | 100% | 100% | 0% | 0% |
-|  | no critical review * | 100% | 100% | 0% | 0% |
-|  | no context approval * | 100% | 100% | 0% | 0% |
+| forgeflow | authoritative | 100% | 100% | 20% | 0% |
+|  | no evidence validation * | 100% | 100% | 0% (-20) | 0% |
+|  | no critical review * | 100% | 100% | 20% | 0% |
+|  | no context approval * | 100% | 100% | 20% | 0% |
 | husky-ai | authoritative | 0% | 100% | 0% | 0% |
 |  | no evidence validation * | 100% (+100) | 100% | 0% | 0% |
 |  | no critical review * | 0% | 100% | 0% | 0% |

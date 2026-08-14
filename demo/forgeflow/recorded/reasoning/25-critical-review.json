@@ -1,0 +1,80 @@
+{
+  "critiques": [
+    {
+      "subject_type": "control_mapping",
+      "subject_id": "map-033",
+      "critique_type": "contradictory_analysis",
+      "description": "map-033 concludes req-ADMIN-001 not_applicable at high confidence on the stated ground that \"no operator action appears anywhere in the attack path, which runs from provider response through schema validation to automatic publication (evd-082, evd-010)\". evd-082 — the passage the reason itself cites — closes with \"Operators may retry comment publication independently from the analysis job\", i.e. an operator-initiated route by which the same structurally-validated-only summary is posted to a customer pull request under the ForgeFlow identity (evd-031). The applicability reason contradicts its own cited passage on the specific point it rests on.",
+      "rationale": "The requirement's applicable condition, as the mapping states it, is an interface through which operators act on customer data. Publishing or republishing a comment into a customer's pull request is such an action, and evd-082 places it on exactly the publication path this threat concerns, so the not_applicable determination and especially its high confidence were reached from an incomplete reading of the cited evidence rather than from silence in the documents. The mapping may still land on not_applicable after reconsideration, but the reason as written cannot support it.",
+      "evidence_ids": [
+        "evd-082",
+        "evd-031",
+        "evd-010"
+      ],
+      "recommended_action": "revise",
+      "confidence": "medium"
+    },
+    {
+      "subject_type": "control_mapping",
+      "subject_id": "map-034",
+      "critique_type": "contradictory_analysis",
+      "description": "map-034 concludes req-LOG-002 not_applicable because publication \"is performed by the comment service under the ForgeFlow app identity as part of automatic job completion (evd-031, evd-082), not through a privileged operator interface\". The same cited passage states that \"Operators may retry comment publication independently from the analysis job\" and that \"The worker records publication status for troubleshooting\" (evd-082) — an operator-triggered publication of customer-visible output, and a record described only as troubleshooting status rather than as attribution of who caused the comment to appear.",
+      "rationale": "Whether an operator-initiated republication of an unreviewed summary is attributable is precisely the kind of fact req-LOG-002 is described as covering (actions through a privileged interface affecting customer data). The premise that no privileged interface is involved is drawn from a passage that documents one, so the applicability reasoning is inconsistent with its evidence. Raised at low confidence because the reviewer may judge operator retry to be outside the threat's path, given that retry republishes an already-generated result rather than altering its content.",
+      "evidence_ids": [
+        "evd-082",
+        "evd-031"
+      ],
+      "recommended_action": "revise",
+      "confidence": "low"
+    },
+    {
+      "subject_type": "control_mapping",
+      "subject_id": "map-031",
+      "critique_type": "unsupported_claim",
+      "description": "map-031 records req-AI-003 as satisfied — the only unqualified positive determination in this group — on the strength of ctl-007 alone. Three of the cited passages express intent or restate the conclusion: evd-005 \"ForgeFlow attempts to avoid sending unnecessary repository content\", evd-063 \"ForgeFlow attempts to retrieve only repository content relevant to the requested analysis\", evd-099 \"retrieves only the content selected as relevant to the current pull-request analysis\". evd-007 (\"Each request contains only the information required for the requested analysis\") and evd-129 (\"Only repository content required for analysis is transmitted\") assert the outcome without stating any criterion or mechanism for necessity. ctl-007 is itself recorded as implementation_status claimed and validation_status not_evaluated, with no evidence assessment in this group examining it, and its own limitations state that necessity is asserted at category level and that documentation and configuration files remain in scope by design.",
+      "rationale": "A satisfied status converts asserted intent into verified compliance, which is the mirror of treating silence as absence, and it is the status most likely to stop a finding being raised. If req-AI-003 asks only that content limitation be documented, evd-007 and evd-129 may carry it, but the mapping does not say that is the test it applied, and its own stated relevance to this threat (that limitation \"bounds the material that can shape an incorrect or influenced response\") is contradicted by ctl-007's recorded limitation that the untrusted-content channel is not removed. The determination should be restated against whatever the requirement actually demands, or lowered.",
+      "evidence_ids": [
+        "evd-005",
+        "evd-063",
+        "evd-099",
+        "evd-007",
+        "evd-129"
+      ],
+      "recommended_action": "revise",
+      "confidence": "medium"
+    },
+    {
+      "subject_type": "threat",
+      "subject_id": "thr-004",
+      "critique_type": "missing_evidence",
+      "description": "The threat offers two mechanisms by which published output is wrong: \"ordinary model error (evd-012, evd-105) or ... content-driven influence\". The first is cited; the second carries no citation, appears in no precondition, and has no step in the attack path, which begins after the provider has already returned a response (evd-008, evd-009). map-029 nevertheless asserts req-AI-001 applicability to this threat specifically on the basis of that variant, citing evd-005, evd-006, evd-049 and evd-053 — passages the threat itself does not cite.",
+      "rationale": "An uncited clause in a description is currently carrying a requirement mapping. The package does contain material that would support the variant (evd-006 lists analysis instructions, repository context and pull-request changes as sections of one constructed request; evd-053 records that repository content may be untrusted; evd-049 names the repository-content instruction boundary; evd-005 lists the retrieved content categories), so this is a citation and attack-path completeness defect rather than an unsupportable claim: either the variant should be cited and given a path step, or it should be dropped and map-029's applicability re-derived. Left as it is, a reader cannot check the mechanism that makes req-AI-001 applicable here rather than to the injection-focused threat.",
+      "evidence_ids": [
+        "evd-012",
+        "evd-105",
+        "evd-006",
+        "evd-053",
+        "evd-049",
+        "evd-005"
+      ],
+      "recommended_action": "revise",
+      "confidence": "medium"
+    },
+    {
+      "subject_type": "documentation_gap",
+      "subject_id": "gap-014",
+      "critique_type": "duplicate",
+      "description": "gap-014 and gap-010 are the same unresolved fact. Both cite exactly evd-133, evd-010, evd-082, evd-151 and evd-054; both state that the security overview's review clause conflicts with the automatic publication sequences; both request documentation of the publication path stating whether a human approves each externally published comment, and both request reconciliation of evd-133 with evd-010/evd-082. gap-010's second requested item (\"what validation is applied to comment content in addition to schema, size and formatting checks\") also duplicates gap-015's first requested item. The only difference is the consequence each frames — reproduced source content in gap-010, unwarranted authority in gap-014.",
+      "rationale": "One clarification from the customer answers all of these, and answering it differently for each is impossible. Left separate, they generate multiple clarification requests and potentially multiple findings over a single contradiction, and a reviewer resolving one has no signal that the others are already settled. Recommending merge rather than reject because the underlying question is genuine and correctly raised; only its duplication is the defect. Confidence is medium because a reviewer may prefer to retain distinct gaps where the downstream consequence differs by threat.",
+      "evidence_ids": [
+        "evd-133",
+        "evd-010",
+        "evd-082",
+        "evd-151",
+        "evd-054"
+      ],
+      "recommended_action": "merge",
+      "confidence": "medium"
+    }
+  ]
+}

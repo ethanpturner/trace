@@ -1,0 +1,63 @@
+{
+  "critiques": [
+    {
+      "subject_type": "threat",
+      "subject_id": "thr-010",
+      "critique_type": "missing_evidence",
+      "description": "The amplification premise — that the analysis worker, the component that processes untrusted repository content, can itself retrieve the GitHub App private key — is not carried by any cited passage. evd-034 says only that 'Different application services may receive access to different secrets based on their responsibilities'; evd-030's worker responsibility list says 'Obtain a short-lived GitHub installation token' and never states the worker holds the private key; evd-023 shows WORKER --> SECRETS without naming which secrets; evd-061 attributes App authentication to 'ForgeFlow' rather than to the worker specifically. Three evidence assessments in this group (eas-013, eas-047, eas-065) each name per-service secret access scoping as missing evidence and eas-065 recommends a documentation gap, yet no documentation gap in this group requests the per-service grants — gap-040 concerns webhook validation instead.",
+      "rationale": "Which service is granted retrieval of the App private key is the single fact that decides whether this is a fleet-wide credential compromise or a bounded per-service retrieval question, and it is obtainable from the secrets service's access policy. The threat itself discloses the gap honestly in precondition 4, so the defect is not the threat's wording but that the chain identifies this absence three times and requests the answer nowhere; that is an investigation to commission, not a claim to strike.",
+      "evidence_ids": [
+        "evd-034",
+        "evd-030",
+        "evd-023",
+        "evd-061",
+        "evd-127"
+      ],
+      "recommended_action": "investigate",
+      "confidence": "medium"
+    },
+    {
+      "subject_type": "control_mapping",
+      "subject_id": "map-104",
+      "critique_type": "unsupported_claim",
+      "description": "map-104 concludes satisfied for req-SECRET-001 and lists ctl-020 among its controls. ctl-020's validation_status is not_evaluated, no evidence assessment in this group covers it, and its sole citation evd-135 lists 'Credential rotation' among outcomes that security-relevant events 'may result in' — a possible incident response step, not an established rotation practice. At the same time eas-047, which endorses this mapping as supported with recommendation continue, records 'Rotation practice for the enumerated credentials' and 'Per-service secret access scoping' as missing evidence, and evd-034's 'may receive access to different secrets' does not establish any scoping.",
+      "rationale": "This forks cleanly for a reviewer. If req-SECRET-001 is storage-and-non-embedding only, then evd-034 and evd-127 carry it and ctl-020 contributes nothing and should not be cited in support. If the requirement reaches rotation or scoped retrieval, then 'may result in' (evd-135) and 'may receive access' (evd-034) establish neither and 'satisfied' overstates what the passages support. Either way the mapping as written credits an unevaluated control toward a positive conclusion, on a requirement whose own applicability reason says this threat is precisely the disclosure of that credential material.",
+      "evidence_ids": [
+        "evd-135",
+        "evd-034",
+        "evd-127"
+      ],
+      "recommended_action": "revise",
+      "confidence": "medium"
+    },
+    {
+      "subject_type": "control_mapping",
+      "subject_id": "map-108",
+      "critique_type": "contradictory_analysis",
+      "description": "The applicability_reason states that restricting which workloads can reach the managed secrets service 'is one of the two bounds on this threat', while the same mapping's suppressed_conclusion states that 'the threat's path is retrieval by a legitimately entitled workload, which a network boundary would not bound'. Both cannot hold for this threat. map-109 in this same group handled the identical situation — a requirement that holds for the system but does not govern this threat's principal path — as conditionally_applicable with the restriction stated as a disclosed assumption.",
+      "rationale": "The satisfaction status (unverified) and the refusal to conclude public reachability from silence are both sound; the defect is the stated bearing on the threat. Left as written, an unverified req-NET-001 mapping carrying an applicability reason that calls network reachability a bound on this threat invites a downstream finding recommending network restriction as mitigation for a path the mapping itself says a network boundary would not bound. Aligning the applicability treatment with map-109 would also make the group internally consistent about how requirements that reach only a secondary consequence are recorded.",
+      "evidence_ids": [
+        "evd-034",
+        "evd-053",
+        "evd-136"
+      ],
+      "recommended_action": "revise",
+      "confidence": "medium"
+    },
+    {
+      "subject_type": "evidence_assessment",
+      "subject_id": "eas-021",
+      "critique_type": "documentation_gap_only",
+      "description": "eas-021 assigns evd-054 the strength 'contradictory' in its assessment of ctl-016. evd-054 is the architecture overview's own 'Known Documentation Gaps' list, and the relevant entry is 'Exact GitHub App permissions'; it establishes that a detail is undocumented and contradicts nothing ctl-016 claims — on-demand issuance of short-lived installation tokens with no stored tokens (evd-061), or access remaining limited to repositories selected at installation with workers operating within installation-token permissions (evd-065, evd-060). Relatedly, the rationale faults the control for claiming 'nothing cross-checks a job's organization identifier against its installation identifier', but ctl-016's limitation is already worded 'nothing described cross-checks', which is a statement about the documentation rather than about the system.",
+      "rationale": "'Contradictory' is the strongest adverse strength the schema offers, and applying it to a known-gaps listing converts documented silence into counter-evidence — precisely what the evidence policy forbids — and then feeds the assessment's revise recommendation against a control whose substantive claims are directly documented. Reclassifying that one strength and re-examining the recommendation would leave eas-021's missing_evidence entries, which are correctly framed as absences, to carry the same point without asserting a contradiction that no passage creates.",
+      "evidence_ids": [
+        "evd-054",
+        "evd-061",
+        "evd-065",
+        "evd-060"
+      ],
+      "recommended_action": "revise",
+      "confidence": "medium"
+    }
+  ]
+}

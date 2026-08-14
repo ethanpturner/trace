@@ -25,6 +25,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from pydantic import ValidationError as PydanticValidationError
 
 from trace_ai.config import PROJECT_ROOT
 from trace_ai.domain.assessment import default_configuration
@@ -214,7 +215,7 @@ def test_a_subject_of_a_different_type_is_rejected_with_both_values_named(
             }
         )
         handle.objects.save(component)
-        threat = Threat.model_validate(
+        Threat.model_validate(
             {
                 "id": handle.objects.allocate("thr"),
                 "assessment_id": handle.assessment_id,
@@ -231,18 +232,14 @@ def test_a_subject_of_a_different_type_is_rejected_with_both_values_named(
             }
         )
 
-    outcome = validate_assessments(
+    # The refusal moved one step earlier (#324): the proposal schema now carries the domain
+    # object's prefix rule, so the mismatch is a schema failure the retry policy feeds back
+    # rather than a condition only the downstream validator sees.
+    with pytest.raises(PydanticValidationError, match="whose identifiers begin"):
         proposal(
             prepared,
             an_assessment(prepared, subject_type=SubjectType.THREAT, subject_id=control.id),
-        ),
-        subjects=[control, threat],
-        references=references(handle),
-    )
-
-    (error,) = [e for e in outcome.errors if e.field == "subject_type"]
-    assert "threat" in error.message
-    assert "Control" in error.message
+        )
 
 
 def test_a_resolving_subject_of_the_declared_type_passes(prepared: Any) -> None:
@@ -296,8 +293,9 @@ def test_an_uploaded_document_reference_is_accepted(prepared: Any) -> None:
 
 
 def test_supported_with_no_evidence_is_rejected(prepared: Any) -> None:
-    outcome = validate(
-        prepared,
+    # Also refused at the proposal now (#324) — 'supported' resting on nothing never reaches
+    # promotion, and the retry feedback names the field.
+    with pytest.raises(PydanticValidationError, match="cites no evidence"):
         proposal(
             prepared,
             an_assessment(
@@ -306,11 +304,7 @@ def test_supported_with_no_evidence_is_rejected(prepared: Any) -> None:
                 evidence_ids=[],
                 evidence_strengths={},
             ),
-        ),
-    )
-
-    (error,) = [e for e in outcome.errors if e.field == "validation_status"]
-    assert "cites no evidence" in error.message
+        )
 
 
 def test_unsupported_with_no_evidence_is_accepted(prepared: Any) -> None:

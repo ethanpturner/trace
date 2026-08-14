@@ -572,7 +572,8 @@ def test_two_assessments_from_one_reference_are_each_judged_on_that_reference(
     first, second = outcome.proposal.assessments
     assert cited in first.evidence_ids
     assert second.evidence_ids == [cited]
-    assert second.evidence_strengths[cited] is EvidenceStrength.CONTEXTUAL
+    (weighed,) = [e for e in second.evidence_strengths if e.evidence_id == cited]
+    assert weighed.strength is EvidenceStrength.CONTEXTUAL
 
 
 # The misquotation check (section 14)

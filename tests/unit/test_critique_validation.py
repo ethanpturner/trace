@@ -25,6 +25,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from pydantic import ValidationError as PydanticValidationError
 
 from trace_ai.config import PROJECT_ROOT
 from trace_ai.domain.assessment import default_configuration
@@ -278,8 +279,10 @@ def test_a_target_that_does_not_resolve_is_rejected(prepared: dict[str, Any]) ->
 def test_a_target_of_a_different_type_is_rejected_with_both_values_named(
     prepared: dict[str, Any],
 ) -> None:
-    outcome = validate(
-        prepared,
+    # The refusal moved one step earlier (#324): the proposal schema carries the domain
+    # object's prefix rule, so the retry feedback names the field instead of the run crashing
+    # at promotion after the call is paid for.
+    with pytest.raises(PydanticValidationError, match="whose identifiers begin"):
         proposal(
             prepared,
             a_critique(
@@ -287,12 +290,7 @@ def test_a_target_of_a_different_type_is_rejected_with_both_values_named(
                 subject_type=CritiqueSubjectType.THREAT,
                 subject_id=prepared["mapping"].id,
             ),
-        ),
-    )
-
-    (error,) = [e for e in outcome.errors if e.field == "subject_type"]
-    assert "threat" in error.message
-    assert "ControlMapping" in error.message
+        )
 
 
 def test_a_resolving_target_of_the_declared_type_passes(prepared: dict[str, Any]) -> None:
@@ -307,14 +305,11 @@ def test_a_resolving_target_of_the_declared_type_passes(prepared: dict[str, Any]
 def test_a_severity_critique_against_a_subject_with_no_severity_is_rejected(
     prepared: dict[str, Any],
 ) -> None:
-    outcome = validate(
-        prepared,
-        proposal(prepared, a_critique(prepared, critique_type=CritiqueType.SEVERITY_OVERSTATED)),
-    )
-
-    (error,) = [e for e in outcome.errors if e.field == "critique_type"]
-    assert "no severity" in error.message
-    assert "DEC-030" in error.rule
+    # The refusal moved one step earlier (#324): the proposal schema knows a mapping never
+    # carries an assigned severity before checkpoint 2, so the retry feedback names the field
+    # instead of the downstream validator stopping the run.
+    with pytest.raises(PydanticValidationError, match="carries no assigned severity"):
+        proposal(prepared, a_critique(prepared, critique_type=CritiqueType.SEVERITY_OVERSTATED))
 
 
 def test_a_severity_critique_against_a_documentation_gap_passes(
@@ -672,3 +667,22 @@ def test_persisting_zero_critiques_writes_nothing_and_raises_nothing(
 
     assert written == []
     assert not handle.objects.list(Critique)
+
+
+def test_a_severity_critique_against_a_threat_is_refused_at_the_proposal(
+    prepared: dict[str, Any],
+) -> None:
+    """DEC-030/DEC-045, enforced structurally (#324): before checkpoint 2 only a documentation
+    gap carries an assigned severity, so a severity critique against a threat is a critique of a
+    default — refused where the retry feedback names the field, not at the run-stopping
+    downstream validator."""
+    with pytest.raises(PydanticValidationError, match="carries no assigned severity"):
+        proposal(
+            prepared,
+            a_critique(
+                prepared,
+                subject_type=CritiqueSubjectType.THREAT,
+                subject_id=prepared["threat"].id,
+                critique_type=CritiqueType.SEVERITY_OVERSTATED,
+            ),
+        )

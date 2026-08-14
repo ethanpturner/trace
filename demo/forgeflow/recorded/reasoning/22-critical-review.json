@@ -1,0 +1,123 @@
+{
+  "critiques": [
+    {
+      "subject_type": "documentation_gap",
+      "subject_id": "gap-040",
+      "critique_type": "duplicate",
+      "description": "gap-040 ('Webhook validation mechanism is not stated as cryptographic or structural') asks the same unanswered question as gap-001 ('Webhook authenticity verification mechanism is not described'), over the same passages: the three 'requests are validated' statements (evd-028, evd-062, evd-128), the 'event validation' list item (evd-069), the GitHub-origin operational assumption (evd-070) and the architecture's own naming of detailed webhook-validation behaviour as a gap (evd-054). Both request the same fact — whether the receiver verifies a GitHub signature before creating a job — and both ask where the verification secret is held. They differ only in the threat they hang from and in severity: gap-001 is recorded high, gap-040 medium.",
+      "rationale": "One unanswered documentation question should not be two gap entries with two severities. A reviewer chasing the answer would put the same request to the same team twice, and the severity split invites inconsistent prioritisation of a fact that, on gap-001's own reasoning, decides whether the spoofing element of thr-001 exists at all. gap-040 does carry one request gap-001 lacks — what the receiver does with a request that fails validation, and whether such requests are counted or alerted on — which should be preserved in whichever entry survives.",
+      "evidence_ids": [
+        "evd-028",
+        "evd-062",
+        "evd-128",
+        "evd-069",
+        "evd-070",
+        "evd-054"
+      ],
+      "recommended_action": "merge",
+      "confidence": "high"
+    },
+    {
+      "subject_type": "documentation_gap",
+      "subject_id": "gap-041",
+      "critique_type": "duplicate",
+      "description": "gap-041 ('Duplicate and replayed webhook delivery handling is not documented') restates gap-002 ('Webhook replay and duplicate-delivery handling is not described'). Both rest on the same passages — the architecture's 'Webhook replay handling' gap entry (evd-054), the delivery and event identifiers carried on jobs (evd-029, evd-076), and the operations statements that duplicate processing may occur and that operators should review duplicate comments (evd-080, evd-090) — and both request the same three facts: delivery-identifier persistence, idempotency on the event identifier including comment publication, and a bounded timestamp window.",
+      "rationale": "The two entries are answerable by one statement from the engineering team, and holding both means the same answer must be filed twice and reconciled. gap-002 additionally records the comment-publication consequence (evd-082) and should be the entry retained; gap-041 adds nothing gap-002 does not already ask for.",
+      "evidence_ids": [
+        "evd-054",
+        "evd-029",
+        "evd-076",
+        "evd-080",
+        "evd-090",
+        "evd-082"
+      ],
+      "recommended_action": "merge",
+      "confidence": "high"
+    },
+    {
+      "subject_type": "documentation_gap",
+      "subject_id": "gap-003",
+      "critique_type": "duplicate",
+      "description": "gap-003 and gap-039 carry the identical title, 'Bounds on event-triggered analysis work are not documented', and rest on the same core passages: the product statement that ForgeFlow 'may limit usage' (evd-103), 'selected rate-limiting state' in Redis (evd-029), retry behaviour without a stated maximum (evd-077), exact retry limits named as a gap (evd-054), retry behaviour omitted from the security overview (evd-138) and the shared provider capacity ceiling (evd-051). Both request per-organization limits, retry ceilings, queue-depth shedding and provider spend controls. gap-039 additionally cites provider-specific operational limits configured in application configuration (evd-081) and the scaling policy statement (evd-085), and asks for dead-letter handling.",
+      "rationale": "These are one documentation request expressed twice, and neither can be closed without closing the other. A single consolidated entry would keep the requested-evidence list complete — gap-039's dead-letter and provider-quota requests are the broader set and should survive the merge — and would avoid two separate follow-ups landing on the same operations owner.",
+      "evidence_ids": [
+        "evd-103",
+        "evd-029",
+        "evd-077",
+        "evd-054",
+        "evd-138",
+        "evd-051",
+        "evd-081",
+        "evd-085"
+      ],
+      "recommended_action": "merge",
+      "confidence": "high"
+    },
+    {
+      "subject_type": "documentation_gap",
+      "subject_id": "gap-014",
+      "critique_type": "duplicate",
+      "description": "gap-004, gap-010 and gap-014 all record the same contradiction: the security overview's 'Externally visible AI-generated output is reviewed before publication' (evd-133) against the publication sequences in evd-010 and evd-082, which run from schema validation to publication with no review step, with human review recorded as unknown (evd-151) and AI-output approval requirements named as a gap (evd-054). All three request the same reconciliation of the security overview against the operations and analysis documents.",
+      "rationale": "Three entries pose one question with one answer, and each is attached to a different threat's chain while citing the identical five passages. Consolidating them into one entry — with gap-004 the instance already scoped to this threat's publication path (evd-031, evd-082, evd-009) — leaves the reviewer one question to route and one answer to apply across the affected mappings, rather than three near-identical requests that will be answered inconsistently or triaged twice.",
+      "evidence_ids": [
+        "evd-133",
+        "evd-010",
+        "evd-082",
+        "evd-151",
+        "evd-054"
+      ],
+      "recommended_action": "merge",
+      "confidence": "high"
+    },
+    {
+      "subject_type": "threat",
+      "subject_id": "thr-001",
+      "critique_type": "missing_precondition",
+      "description": "Attack path step 2 offers two branches — the sender 'submits a crafted event, or resubmits a previously observed delivery' — but the four preconditions cover only the forged branch: internet reachability (evd-028, evd-144), job creation from payload identifiers (evd-029, evd-042), validation mechanism and replay defence named as gaps (evd-054, evd-138), and downstream trust in the queued job (evd-030). No precondition states how a party comes to hold a previously delivered payload. The architecture assumes customer traffic uses HTTPS (evd-053), so interception in transit is not established as available to an arbitrary internet party.",
+      "rationale": "The two branches have different feasibility and different defeaters, and the threat treats them as one. If the undescribed validation turns out to be signature verification — the single fact gap-001 says the threat turns on — the forged branch closes and only the replay branch survives, and that branch then depends on a precondition the threat never states. As written, a reviewer who learns that signatures are verified cannot tell whether any residual exposure remains. Recommend the threat state the replay branch's precondition explicitly (access to a genuine prior delivery, whether through platform-side redelivery, log or artefact access, or an insider) or scope that branch to parties who hold it.",
+      "evidence_ids": [
+        "evd-028",
+        "evd-144",
+        "evd-053",
+        "evd-054",
+        "evd-029",
+        "evd-042"
+      ],
+      "recommended_action": "revise",
+      "confidence": "medium"
+    },
+    {
+      "subject_type": "control_mapping",
+      "subject_id": "map-005",
+      "critique_type": "unsupported_claim",
+      "description": "map-005 records req-AUTHZ-001 as partially_satisfied for this threat. The satisfied portion rests on evd-124 ('Customer API requests are evaluated using authenticated user identity together with organization membership'), evd-102 and evd-130, all of which describe the authenticated customer-request path. The mapping's own applicability reason states that the clause this threat engages is the event-driven one, where the job's installation, repository and pull-request context arrives in the payload (evd-029, evd-042) and internal authorization implementation is omitted from the documentation (evd-138). No control is named — control_ids is empty — so the credited portion is attached to no object.",
+      "rationale": "thr-001's attack path does not traverse the customer API: it runs receiver to queue to worker to comment. Grading the requirement partially satisfied on the strength of passages about a path the threat does not exercise reads downstream as partial mitigation of this threat when nothing on the exercised path is established, and with no control recorded there is no coverage statement or limitation for a reviewer to inspect. The mapping's suppressed_by text is candid about which half is which, which is why the status rather than the reasoning is the problem. Recommend either recording the organization-scoping in evd-124, evd-130 and evd-032 as a control with its coverage boundary stated, or recording this mapping as unverified for this threat.",
+      "evidence_ids": [
+        "evd-124",
+        "evd-102",
+        "evd-130",
+        "evd-032",
+        "evd-029",
+        "evd-042",
+        "evd-138"
+      ],
+      "recommended_action": "revise",
+      "confidence": "medium"
+    },
+    {
+      "subject_type": "control_mapping",
+      "subject_id": "map-008",
+      "critique_type": "contradictory_analysis",
+      "description": "map-008 records req-AUTH-001 not_applicable on the ground that the non-applicable condition 'the component is not reachable by end users' holds for the webhook receiver. The receiver is documented as an internet-facing service (evd-028) and is listed among the deployment's internet-facing components (evd-144), and thr-001's first precondition asserts reachability from the public internet citing those same two passages. The argument the mapping actually advances — that the event is machine-to-machine and carries no user identity (evd-062), with customer authentication delegated elsewhere (evd-123) — is a different proposition from the condition it quotes.",
+      "rationale": "A not_applicable status removes the requirement from consideration for this threat entirely, so the stated ground should be one this group's evidence supports. Here two objects in the same group read evd-028 and evd-144 in opposite directions, and the mapping carries no evidence assessment to catch it. The conclusion may well be right — an endpoint with no user-authentication surface is a poor fit for a user-authentication requirement — but it should rest on the absence of that surface rather than on unreachability, which the documents contradict. Recommend revising the applicability reason to state the actual basis, or re-testing the quoted condition against evd-028 and evd-144.",
+      "evidence_ids": [
+        "evd-028",
+        "evd-144",
+        "evd-062",
+        "evd-123"
+      ],
+      "recommended_action": "revise",
+      "confidence": "medium"
+    }
+  ]
+}

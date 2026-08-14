@@ -117,12 +117,24 @@ in `control_keys`; a control that already exists is referenced by its `ctl-` ide
 - **Applicability reason** — one or two sentences saying why this requirement does or does not apply
   to this threat, referring to the requirement's own conditions. Required on every mapping.
 - **Suppressed conclusion** — a negative conclusion you did not draw because a
-  `common_false_positives` entry applies. You record it rather than discarding it.
+  `common_false_positives` entry applies. You record it rather than discarding it. The two fields
+  travel together, always: `suppressed_conclusion` says what you did not conclude and
+  `suppressed_by` says which documented statement or entry suppressed it. One without the other
+  is a schema failure — a suppression nobody can check.
 - **Documentation gap** — a record that the material cannot establish whether a control exists. It
   asserts nothing about the implementation.
 - **Catalog-gap candidate** — a credible security concern the material grounds and no requirement
   in the catalog covers. It is catalog-maintenance input for a human catalog owner, not an
-  assessment conclusion: it becomes no finding, no gap, and no mapping.
+  assessment conclusion: it becomes no finding, no gap, and no mapping. Its
+  `suggested_category` is one short vocabulary term — words made of letters and digits joined by
+  spaces, hyphens, or underscores, no commas or other punctuation: `logging`, `tenancy`,
+  `shared_platform_governance`. One candidate carries one category; a concern spanning two
+  categories is two candidates or the nearest one, never a comma-separated list.
+
+The response is exactly the fields the schema declares. Do not invent fields — no notes,
+placeholders, or annotations beside a value: a remark that has no field belongs in
+`applicability_reason`, an assumption entry, or a documentation gap's description, and a response
+carrying an undeclared field fails validation whole.
 
 ## Allowed operations
 

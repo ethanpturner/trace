@@ -26,8 +26,10 @@ documentation is treated as a question to ask, not a vulnerability to report.
 >
 > It replays a committed ForgeFlow run through every phase with no API key and exits non-zero if
 > the rendered report's content hash stops matching the pinned one. What does not exist is the
-> demonstration surface, and no live provider run has been measured — every committed recording
-> is authored offline and its provenance says so. [Status](#status) gives a precise breakdown.
+> demonstration surface. The flagship ForgeFlow recording was captured from a live
+> `claude-opus-5` run on 2026-08-14 and replays offline byte-for-byte; the other scenario
+> recordings remain authored offline, and each provenance says which. [Status](#status) gives a
+> precise breakdown.
 
 ![The pipeline replayed offline: both checkpoints, the report, and the evidence walk](demo/forgeflow/assets/pipeline-demo.gif)
 
@@ -412,8 +414,10 @@ and measures itself offline. Stage 5's demonstration half (M9), the demo-hardeni
 - **`trace verify`** — re-hashes every stored document, re-checks every evidence reference, and
   verifies the report manifest against the store. Drift is reported as identifier, expected hash,
   found hash — never content.
-- **The recorded ForgeFlow replay** — `demo/forgeflow/recorded/` holds a complete offline run:
-  eight model responses, both checkpoints' reviewer decisions, provenance with version pins, and
+- **The recorded ForgeFlow replay** — `demo/forgeflow/recorded/` holds a complete run captured
+  live from `claude-opus-5`: every model response the run consumed, in consumption order and
+  including the four retried attempts, both checkpoints' reviewer decisions — four findings
+  approved with severities, one rejected on DEC-009 grounds — provenance with version pins, and
   the pinned content hash of the report. `scripts/replay_forgeflow.py` replays it byte-for-byte
   with no provider, and the default test suite replays it on every run.
 - **The evaluation harness** — `trace evaluate` replays any registered scenario offline from its
@@ -448,15 +452,12 @@ and measures itself offline. Stage 5's demonstration half (M9), the demo-hardeni
 
 ### What does not exist yet
 
-- **A scored flagship recording.** `demo/forgeflow/recorded/` is a representative slice authored
-  offline; it replays end to end but does not score against the full truth set in
-  `demo/forgeflow/expected/`, and the scorecard says so rather than hiding it. Capturing a full
-  run from a live model is milestone M10's closing step.
-- **No live run has been measured.** Every committed recording — including the end-to-end replay
-  — is authored offline against the deterministic model, and says so in its provenance. The
-  Anthropic adapter has run against a provider only in an opt-in integration test; cost,
-  runtime, and run-to-run stability (DEC-077) are unmeasured, and every scorecard cost reads
-  zero.
+- **Repeated live-run measurement.** One live run has been captured and scored — the flagship
+  recording, roughly $30 of provider spend including the discarded attempts its provenance
+  discloses — but cost, runtime, and run-to-run stability across repeated live runs (DEC-077,
+  milestone M11) are unmeasured, and the scorecard's cost cells read zero because its feeds
+  regenerate from offline replays. The eleven benchmark scenarios' recordings remain authored
+  offline against the deterministic model.
 - **The public release packaging.** Milestone M9's demonstration surface is built — the read-only
   view, the finding-lineage view, the demo script and its recovery plan, and the measured ablation
   narrative. What remains for Stage 6 is the public-facing packaging around it: a short video and
@@ -487,7 +488,7 @@ uv run trace reset --force    # only when rerunning: returns the data root to th
 uv run trace assessment create --name "ForgeFlow Security Review"
 uv run trace source add asm-001 demo/forgeflow/input
 uv run trace run asm-001 --model-profile offline-fake \
-    --response demo/forgeflow/recorded/01-context-extraction.json
+    --response demo/forgeflow/recorded/extraction
 ```
 
 The run stops at checkpoint 1, because the checkpoint is a phase in the transition table rather
@@ -498,12 +499,7 @@ uv run trace context show asm-001 --evidence
 uv run trace context review asm-001 --export review.yaml   # edit it, then --apply it
 uv run trace context approve asm-001
 uv run trace resume asm-001 --model-profile offline-fake \
-    --response demo/forgeflow/recorded/02-threat-analysis.json \
-    --response demo/forgeflow/recorded/03-mapping-thr-001.json \
-    --response demo/forgeflow/recorded/04-mapping-thr-002.json \
-    --response demo/forgeflow/recorded/05-evidence-validation.json \
-    --response demo/forgeflow/recorded/06-critical-review-thr-001.json \
-    --response demo/forgeflow/recorded/07-critical-review-thr-002.json
+    --response demo/forgeflow/recorded/reasoning
 ```
 
 The run pauses again at checkpoint 2. Review the candidate findings, assign severity — the
@@ -514,7 +510,7 @@ uv run trace findings show asm-001
 uv run trace findings review asm-001 --severity fnd-001=high --approve fnd-001
 uv run trace findings approve asm-001
 uv run trace resume asm-001 --model-profile offline-fake \
-    --response demo/forgeflow/recorded/08-report-sections.json
+    --response demo/forgeflow/recorded/report
 uv run trace report show asm-001
 uv run trace verify asm-001
 ```
@@ -685,20 +681,23 @@ weakness present in the implementation but absent from the documentation is outs
 assesses what a system is described to be, and a description can be wrong.
 
 **What the evaluation does not prove.** Twelve scenarios are registered, and every one carries an
-authoritative Trace run scored against its truth set — eleven in full, forgeflow as an authored
-slice — plus one adversarial condition. Every truth set is authored by one person, so the numbers are a single annotator's judgment
-measured against itself — self-agreement, not an inter-annotator kappa, and not a claim of external
-ground truth. No live-model run has been measured: every committed recording is deterministic and
-offline, so the scorecard's costs read zero and run-to-run stability (DEC-077) is unmeasured, not
-zero. The [scorecard](docs/eval/scorecard.html) carries the current numbers; they are small by
-construction and the sample is stated on the page rather than rounded away.
+authoritative Trace run scored against its truth set, plus one adversarial condition. Every truth
+set is authored by one person, so the numbers are a single annotator's judgment measured against
+itself — self-agreement, not an inter-annotator kappa, and not a claim of external ground truth.
+One live-model run has been captured and scored (the flagship recording); the eleven benchmark
+recordings are deterministic and offline, the scorecard's costs read zero because its feeds
+regenerate from offline replays, and run-to-run stability (DEC-077) is unmeasured, not zero. The
+[scorecard](docs/eval/scorecard.html) carries the current numbers; they are small by construction
+and the sample is stated on the page rather than rounded away.
 
 **Where it still fails despite the architecture.** The pipeline is designed to prevent false
 *conclusions* — a documented control it cannot see becomes a question, not a finding — but it
 cannot manufacture a finding a run did not produce. The flagship forgeflow recording is the
-standing example: it is an authored slice that predates the full truth set, and it matches none of
-the three expected findings. The architecture keeps a wrong answer out; it does not supply a right
-one the model missed.
+standing example: the live run produced five defensible candidate findings — four approved, one
+rejected at the checkpoint on DEC-009 grounds — and none of them matches the truth set's three
+expected findings, which sit on different requirements. The architecture keeps a wrong answer
+out; it does not supply a right one the model missed, and the scorecard reports the miss rather
+than rounding it away.
 
 **Deliberate non-uses of agents.** Three places use no model on purpose, each a recorded decision:
 
@@ -716,19 +715,20 @@ one the model missed.
 ### Failure taxonomy
 
 From reading the per-item match sets of all twenty-one committed evaluation runs — thirteen
-authoritative Trace runs (twelve clean, one adversarial) and eight baseline runs, regenerated
-offline. Two failure categories appear; because no
-live-model run has been analyzed, no live-model failure mode is listed, and this table is over the
-deterministic recordings named in each row. The live view is the [scorecard](docs/eval/scorecard.html).
+authoritative Trace runs (twelve clean, one adversarial, one of them the live capture) and eight
+baseline runs, regenerated offline. Two failure categories appear. The live view is the
+[scorecard](docs/eval/scorecard.html).
 
 | Failure mode | Frequency | Observed in |
 |---|---|---|
-| **Recorded slice misses its truth set** — Trace produces a finding that matches none of the three expected, for 0 of 3 matched. The recording is an authored slice, not a scored full run. | 1 of 13 authoritative Trace runs | forgeflow (clean) |
+| **Live run answers beside the truth set** — the captured `claude-opus-5` run produces four approved, defensible findings that match none of the three expected, for 0 of 3 matched with 4 spurious by the structural matcher: the model mapped real weaknesses to different requirements than the truth set names. This is the live-model failure mode the offline recordings could not show. | 1 of 13 authoritative Trace runs | forgeflow (clean, live capture) |
 | **Silence read as a weakness** — the generic-prompt baseline invents a finding where the documentation is simply quiet: missing MFA and password policy an inherited identity provider covers, an encryption detail a managed database supplies, absent replay protection, unencrypted exports. This is the DEC-009 failure the pipeline exists to prevent. | 5 spurious findings across 4 runs | baseline-generic on oidc-portal (2), managed-db-service (1), contradictory-docs (1), unsigned-webhooks (1) |
 
-The structured single-pass baseline and the twelve other authoritative Trace runs produced no
-spurious finding, which is why the second row is a baseline failure and not Trace's — the
-comparison exists to measure that difference, not to assert it.
+The structured single-pass baseline and the twelve offline Trace runs produced no spurious
+finding; the live capture's four are the first row's mismatches, real findings on requirements
+the truth set does not name. The second row stays a baseline failure — inventing weaknesses from
+silence — which no Trace run, live or offline, has produced: the comparison exists to measure
+that difference, not to assert it.
 
 ## Documentation
 

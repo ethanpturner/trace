@@ -49,7 +49,7 @@ Type "trace source add asm-001 demo/forgeflow/input"
 Enter
 Sleep 4s
 
-Type "trace run asm-001 --model-profile offline-fake --response demo/forgeflow/recorded/01-context-extraction.json"
+Type "trace run asm-001 --model-profile offline-fake --response demo/forgeflow/recorded/extraction"
 Enter
 Sleep 5s
 
@@ -75,7 +75,7 @@ Type "trace context approve asm-001"
 Enter
 Sleep 3s
 
-Type "trace resume asm-001 --model-profile offline-fake --response demo/forgeflow/recorded/02-threat-analysis.json --response demo/forgeflow/recorded/03-mapping-thr-001.json --response demo/forgeflow/recorded/04-mapping-thr-002.json --response demo/forgeflow/recorded/05-evidence-validation.json --response demo/forgeflow/recorded/06-critical-review-thr-001.json --response demo/forgeflow/recorded/07-critical-review-thr-002.json"
+Type "trace resume asm-001 --model-profile offline-fake --response demo/forgeflow/recorded/reasoning"
 Enter
 Sleep 6s
 
@@ -91,7 +91,7 @@ Type "trace findings approve asm-001"
 Enter
 Sleep 3s
 
-Type "trace resume asm-001 --model-profile offline-fake --response demo/forgeflow/recorded/08-report-sections.json"
+Type "trace resume asm-001 --model-profile offline-fake --response demo/forgeflow/recorded/report"
 Enter
 Sleep 5s
 

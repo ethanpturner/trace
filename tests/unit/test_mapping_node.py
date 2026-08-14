@@ -28,6 +28,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from pydantic import ValidationError
 
 from trace_ai.config import PROJECT_ROOT
 from trace_ai.domain.assessment import default_configuration
@@ -1104,3 +1105,28 @@ def test_no_test_here_makes_a_live_model_call(prepared: Any, catalog: LoadedCata
     node(prepared, catalog=catalog).run(node_context(handle, ledger, model))
 
     assert isinstance(model, DeterministicModel)
+
+
+def test_half_a_suppression_fails_at_the_proposal_not_at_promotion(prepared: Any) -> None:
+    """DEC-025's pairing, enforced one step early. A suppressed conclusion with no suppressor
+    passed the proposal schema and crashed at promotion — after the call was paid for — which is
+    how the live ForgeFlow capture died (#324). At the proposal it is a schema failure the retry
+    policy feeds back with the field named."""
+    with pytest.raises(ValidationError, match="DEC-025"):
+        proposal(
+            prepared,
+            a_mapping(
+                prepared,
+                suppressed_conclusion="That validation is absent because the mechanism is unstated.",
+            ),
+        )
+    # Both halves together stay valid, exactly as ControlMapping accepts them.
+    both = proposal(
+        prepared,
+        a_mapping(
+            prepared,
+            suppressed_conclusion="That validation is absent because the mechanism is unstated.",
+            suppressed_by="a documented statement that requests are validated",
+        ),
+    )
+    assert both.mappings[0].suppressed_by is not None

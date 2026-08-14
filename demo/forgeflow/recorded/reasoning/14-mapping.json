@@ -1,0 +1,348 @@
+{
+  "controls": [
+    {
+      "key": "secure-development-practices",
+      "name": "Documented secure development practices covering dependencies and secrets",
+      "description": "The security overview states that ForgeFlow follows standard secure development practices including code review, dependency management, automated testing, security review, vulnerability remediation and secret scanning, and that security requirements are evaluated throughout the software lifecycle (evd-134). Repository notes add that new dependencies are preferred against and secrets are to be kept outside source control (evd-108, evd-117). These bear on the threat's entry precondition (compromise of a workload through a dependency or a defect) but no reviewed passage describes how dependencies entering a build are identified, pinned, or inventoried, nor how the deployment pipeline authenticates to production, so the practices are asserted rather than established.",
+      "control_type": "implemented",
+      "provider_component_id": null,
+      "protected_component_ids": [
+        "cmp-006",
+        "cmp-007",
+        "cmp-004",
+        "cmp-003"
+      ],
+      "protected_asset_ids": [
+        "ast-005",
+        "ast-007"
+      ],
+      "implementation_status": "claimed",
+      "evidence_ids": [
+        "evd-134",
+        "evd-108",
+        "evd-117"
+      ],
+      "owner": "ForgeFlow Security Engineering / Platform Engineering",
+      "limitations": [
+        "Listed as development activities without describing the mechanism, coverage, or enforcement point (evd-134).",
+        "No dependency manifest, pinning, provenance record, or component inventory is described in any reviewed document.",
+        "No reviewed passage describes how the deployment pipeline authenticates to the environments it deploys to (evd-050)."
+      ]
+    },
+    {
+      "key": "incident-credential-rotation",
+      "name": "Credential rotation within the incident response process",
+      "description": "The security overview states that security-relevant events may result in investigation, log review, temporary service restrictions, credential rotation and customer notification, handled through the organization's incident response process (evd-135). Relative to this threat this is a recovery measure applied after a credential compromise is detected; it bounds the duration of misuse of the GitHub App private key and provider keys rather than preventing an authorized workload from retrieving them.",
+      "control_type": "compensating",
+      "provider_component_id": null,
+      "protected_component_ids": [
+        "cmp-011",
+        "cmp-006"
+      ],
+      "protected_asset_ids": [
+        "ast-005",
+        "ast-007",
+        "ast-006"
+      ],
+      "implementation_status": "claimed",
+      "evidence_ids": [
+        "evd-135"
+      ],
+      "owner": "ForgeFlow Security Engineering",
+      "limitations": [
+        "Rotation is listed as a possible outcome ('may result in'), not a defined procedure with a timeframe (evd-135).",
+        "Depends on detection; no reviewed passage describes detection of anomalous secret retrieval or of installation-token minting outside a job's own installation."
+      ]
+    }
+  ],
+  "mappings": [
+    {
+      "threat_id": "thr-010",
+      "requirement_id": "req-SECRET-001",
+      "control_keys": [
+        "incident-credential-rotation"
+      ],
+      "existing_control_ids": [
+        "ctl-005"
+      ],
+      "applicability_status": "applicable",
+      "applicability_reason": "Both applicable conditions hold for this threat: the system holds credentials that authenticate it to an external platform (the AI-provider, OAuth and email API keys) and a private signing key (the GitHub App private key), and this threat is precisely the disclosure of that material (ast-005, ast-007).",
+      "suppressed_conclusion": null,
+      "suppressed_by": null,
+      "satisfaction_status": "satisfied",
+      "evidence_ids": [
+        "evd-034",
+        "evd-127",
+        "evd-149",
+        "evd-125"
+      ],
+      "assumptions": [
+        "The 'managed secrets platform' named in evd-127 and the 'managed secrets service' named in evd-034 are the same component (cmp-011)."
+      ],
+      "confidence": "medium"
+    },
+    {
+      "threat_id": "thr-010",
+      "requirement_id": "req-SECRET-002",
+      "control_keys": [],
+      "existing_control_ids": [
+        "ctl-016"
+      ],
+      "applicability_status": "applicable",
+      "applicability_reason": "The system accesses customer repositories held on GitHub, and GitHub offers installation-scoped short-lived credentials; this threat turns on how those credentials are obtained, since installation tokens are minted on demand from the App private key.",
+      "suppressed_conclusion": null,
+      "suppressed_by": null,
+      "satisfaction_status": "satisfied",
+      "evidence_ids": [
+        "evd-061",
+        "evd-037",
+        "evd-043",
+        "evd-065"
+      ],
+      "assumptions": [],
+      "confidence": "high"
+    },
+    {
+      "threat_id": "thr-010",
+      "requirement_id": "req-AUTHZ-002",
+      "control_keys": [],
+      "existing_control_ids": [
+        "ctl-016"
+      ],
+      "applicability_status": "applicable",
+      "applicability_reason": "The system holds delegated access to GitHub through an App installation and acts on customer repositories on the customer's behalf; the requested permission set is what bounds what a token minted from the compromised private key can do, so it directly governs this threat's impact.",
+      "suppressed_conclusion": "That integration privileges are over-broad or unjustified. evd-060 states only required permissions are requested and lists a narrow capability set (metadata read, pull-request read, contents read, comment posting, webhook receipt); the exact permission set being named as a documentation gap (evd-054, evd-138) is the false-positive case, not evidence of an excessive grant.",
+      "suppressed_by": "absent per-permission justification where the overall scope is documented and narrow",
+      "satisfaction_status": "unverified",
+      "evidence_ids": [
+        "evd-060",
+        "evd-058",
+        "evd-065",
+        "evd-054",
+        "evd-138"
+      ],
+      "assumptions": [],
+      "confidence": "medium"
+    },
+    {
+      "threat_id": "thr-010",
+      "requirement_id": "req-CICD-001",
+      "control_keys": [
+        "secure-development-practices"
+      ],
+      "existing_control_ids": [],
+      "applicability_status": "applicable",
+      "applicability_reason": "The second applicable condition holds: builds incorporate third-party components, which the documents acknowledge by listing dependency management as a development activity (evd-134) and by guidance on introducing new dependencies (evd-108). This threat's stated entry precondition is compromise of a workload through a dependency or a deployment misconfiguration, so the trust placed in the build and deployment path is the control that governs whether the precondition arises.",
+      "suppressed_conclusion": "That dependency and supply-chain control is absent. The documents name dependency management, secret scanning and vulnerability remediation (evd-134) without describing schedules or mechanisms; that silence is the false-positive case. Separately, how the deployment path authenticates to production is not described anywhere, which keeps the requirement unverified rather than satisfied.",
+      "suppressed_by": "absent dependency scanning schedule, which is an operational process rather than an architectural control",
+      "satisfaction_status": "unverified",
+      "evidence_ids": [
+        "evd-134",
+        "evd-108",
+        "evd-050",
+        "evd-117"
+      ],
+      "assumptions": [
+        "Deployment is automated; the documents describe separately deployable workloads and managed services (evd-050) but do not state whether deployment is pipeline-driven or manual."
+      ],
+      "confidence": "medium"
+    },
+    {
+      "threat_id": "thr-010",
+      "requirement_id": "req-NET-001",
+      "control_keys": [],
+      "existing_control_ids": [
+        "ctl-005"
+      ],
+      "applicability_status": "applicable",
+      "applicability_reason": "The managed secrets service (cmp-011) is an internal service holding credential material on behalf of the system and is not a public interface, so the first applicable condition holds. Restricting which workloads can reach it is one of the two bounds on this threat, the other being identity-based retrieval scope.",
+      "suppressed_conclusion": "That the managed secrets service is reachable from an untrusted network. The documents describe it only as a managed service reached through workload identity (evd-034, evd-136) and state network placement explicitly for Redis but not for secrets (evd-053); that silence is the false-positive case. Note also that the threat's path is retrieval by a legitimately entitled workload, which a network boundary would not bound.",
+      "suppressed_by": "a component described only as managed or hosted, where the provider's default placement is private and undescribed",
+      "satisfaction_status": "unverified",
+      "evidence_ids": [
+        "evd-034",
+        "evd-053",
+        "evd-136",
+        "evd-149"
+      ],
+      "assumptions": [],
+      "confidence": "low"
+    },
+    {
+      "threat_id": "thr-010",
+      "requirement_id": "req-AUTHZ-001",
+      "control_keys": [],
+      "existing_control_ids": [
+        "ctl-010"
+      ],
+      "applicability_status": "conditionally_applicable",
+      "applicability_reason": "The system serves multiple organizations and holds their data in shared stores, so the requirement's conditions hold for the system; whether it bears on this threat depends on whether the compromised workload's reach into ForgeFlow's own tenant-scoped stores is in scope, because the threat's principal path reaches customer repository content through GitHub App authority rather than through tenant-scoped application queries.",
+      "suppressed_conclusion": "That tenant-aware authorization is unenforced. The documents place responsibility on application services and declare an organization boundary (evd-032, evd-049, evd-130) without naming the enforcement point, and internal authorization implementation is explicitly omitted (evd-138); that is the false-positive case rather than evidence of absence.",
+      "suppressed_by": "absent description of an authorization library or framework",
+      "satisfaction_status": "unverified",
+      "evidence_ids": [
+        "evd-032",
+        "evd-130",
+        "evd-049",
+        "evd-138"
+      ],
+      "assumptions": [
+        "Treated as engaged only for the secondary consequence in which a compromised workload holding database credentials (evd-034) reads across organizations; the primary cross-tenant impact described in this threat bypasses application-level tenant authorization entirely."
+      ],
+      "confidence": "low"
+    },
+    {
+      "threat_id": "thr-010",
+      "requirement_id": "req-AUTH-002",
+      "control_keys": [],
+      "existing_control_ids": [],
+      "applicability_status": "not_applicable",
+      "applicability_reason": "The non-applicable condition 'authentication and its factor policy are entirely owned by an external provider and documented as such' holds for the privileged access relevant here: administrative authentication is performed through the corporate identity platform with the factor policy set there (evd-123, evd-143). This threat's actor is a compromised workload authenticating by workload identity, not a human crossing an authenticated interface, so no factor policy bears on the path.",
+      "suppressed_conclusion": null,
+      "suppressed_by": null,
+      "satisfaction_status": "not_applicable",
+      "evidence_ids": [
+        "evd-123",
+        "evd-143",
+        "evd-034"
+      ],
+      "assumptions": [],
+      "confidence": "medium"
+    }
+  ],
+  "documentation_gaps": [
+    {
+      "title": "Per-service scoping of secrets retrievable through workload identity is not documented",
+      "description": "The architecture states that application workloads retrieve secrets from the managed secrets service through workload identity and that different services may receive access to different secrets based on their responsibilities (evd-034, evd-127). No reviewed passage states which secrets each workload identity may actually retrieve. It is therefore not possible to determine whether the analysis worker's entitlement is limited to what it needs, or whether any application workload can retrieve the GitHub App private key.",
+      "importance": "The GitHub App private key mints installation tokens for every installation on demand (evd-061, evd-037), so the retrieval entitlement, not the token lifetime, is what determines whether a single workload compromise is tenant-bounded or platform-wide. The same worker is documented as the primary component processing untrusted customer source content (evd-030, evd-053), which concentrates the exposure.",
+      "related_object_ids": [
+        "cmp-011",
+        "cmp-006",
+        "cmp-007",
+        "cmp-004",
+        "cmp-003",
+        "ast-005",
+        "ast-007",
+        "df-018",
+        "df-017",
+        "df-019",
+        "df-020"
+      ],
+      "requested_evidence": [
+        "The secrets-service access policy, showing which secret each workload identity is permitted to read",
+        "A statement of whether the analysis worker's identity can retrieve the GitHub App private key directly, or whether token minting is performed by a separate component",
+        "Deployment or configuration documentation binding workload identities to secret entitlements"
+      ],
+      "evidence_ids": [
+        "evd-034",
+        "evd-127",
+        "evd-030",
+        "evd-061"
+      ],
+      "severity": "high"
+    },
+    {
+      "title": "Deployment pipeline authentication and dependency provenance are not described",
+      "description": "The security overview names code review, dependency management, automated testing, security review, vulnerability remediation and secret scanning as development activities (evd-134), and the deployment model describes separately deployable workloads and managed services (evd-050). No reviewed passage states how the deployment path authenticates to the production environment, nor how third-party components entering a build are identified, pinned, or inventoried.",
+      "importance": "This threat's stated entry precondition is compromise of a workload through a dependency or a deployment misconfiguration. Without a description of the build and deployment trust path, whether that precondition is plausibly reachable cannot be assessed, and a long-lived deployment credential would itself be a route to the same secret entitlements.",
+      "related_object_ids": [
+        "cmp-006",
+        "cmp-007",
+        "cmp-004",
+        "cmp-003"
+      ],
+      "requested_evidence": [
+        "Deployment documentation stating how the pipeline authenticates to production environments",
+        "A dependency manifest, lockfile policy, or generated component inventory for the worker and comment service",
+        "A statement of whether deployment is automated or performed manually by named operators"
+      ],
+      "evidence_ids": [
+        "evd-134",
+        "evd-050",
+        "evd-108"
+      ],
+      "severity": "medium"
+    },
+    {
+      "title": "Exact GitHub App permission set is not documented",
+      "description": "Integration documentation states that only required permissions are requested and lists typical capabilities (evd-060, evd-058, evd-065), while both the architecture and the security overview name the exact GitHub App permissions as a detail not documented here (evd-054, evd-138). The actual granted permission set therefore cannot be established from the reviewed material.",
+      "importance": "The permission set is the ceiling on what any token minted from the GitHub App private key can do across every installation. Whether the granted scope is read-and-comment only, or includes write capability, changes the impact of this threat from disclosure to repository modification.",
+      "related_object_ids": [
+        "cmp-013",
+        "cmp-006",
+        "cmp-007",
+        "ast-006",
+        "ast-001",
+        "df-007"
+      ],
+      "requested_evidence": [
+        "The GitHub App configuration listing each requested repository and organization permission",
+        "A justification per permission tied to a ForgeFlow feature"
+      ],
+      "evidence_ids": [
+        "evd-060",
+        "evd-054",
+        "evd-138",
+        "evd-065"
+      ],
+      "severity": "medium"
+    },
+    {
+      "title": "Network reachability of the managed secrets service is not stated",
+      "description": "The architecture records as an assumption that Redis is not publicly accessible (evd-053) and states that Redis is accessible only from approved application workloads (evd-029), but makes no equivalent statement about the managed secrets service, which is described only as a managed service reached through workload identity (evd-034, evd-136).",
+      "importance": "Network placement is a second bound on secret retrieval alongside identity entitlement. Its absence does not indicate the service is exposed, but it leaves the assessment unable to say whether retrieval is constrained by anything other than a workload credential.",
+      "related_object_ids": [
+        "cmp-011",
+        "df-017",
+        "df-018",
+        "df-019",
+        "df-020"
+      ],
+      "requested_evidence": [
+        "A network or deployment description stating the placement and access policy of the managed secrets service",
+        "A statement of whether access is restricted to named application workloads"
+      ],
+      "evidence_ids": [
+        "evd-034",
+        "evd-053",
+        "evd-136"
+      ],
+      "severity": "low"
+    }
+  ],
+  "catalog_gap_candidates": [
+    {
+      "concern": "No requirement addresses bounding the blast radius of a platform-wide signing key inside the operator's own architecture: whether the component that processes untrusted third-party content is the same component entitled to retrieve the key from which credentials for every tenant are derived. The catalog covers where such a key is stored (req-SECRET-001) and how long the derived credentials live (req-SECRET-002), but not whether the entitlement to mint them is separated from the workload with the largest untrusted-input surface. Here the analysis worker is documented as both the primary handler of untrusted customer source content and the retriever of the GitHub App private key and provider key, so a single workload compromise is not tenant-bounded.",
+      "suggested_category": "secrets_management",
+      "nearest_requirements": [
+        {
+          "requirement_id": "req-SECRET-001",
+          "why_not": "Asks only that the key be held in a managed secret store rather than in source control or images, and that its custody be documented. It is satisfied here (evd-034, evd-127) and says nothing about which workloads may retrieve it."
+        },
+        {
+          "requirement_id": "req-SECRET-002",
+          "why_not": "Bounds the lifetime of the derived credential, not the authority to derive one. Short-lived tokens minted on demand from a retrievable key give a compromised workload unlimited re-minting (evd-061)."
+        },
+        {
+          "requirement_id": "req-AUTHZ-002",
+          "why_not": "Constrains the privileges requested from the external platform, which caps what a token can do but not which internal component may obtain tokens for installations other than the one its current job concerns."
+        },
+        {
+          "requirement_id": "req-AUTHZ-001",
+          "why_not": "Governs tenant scoping of requests within the system's own stores. The cross-tenant reach in this threat is obtained through the external platform and never traverses the application's tenant authorization path."
+        },
+        {
+          "requirement_id": "req-NET-001",
+          "why_not": "Restricts which components can reach an internal service over the network. It does not bound what a component that is legitimately permitted to reach the secrets service may retrieve from it."
+        }
+      ],
+      "evidence_ids": [
+        "evd-034",
+        "evd-030",
+        "evd-061",
+        "evd-037",
+        "evd-053"
+      ]
+    }
+  ]
+}

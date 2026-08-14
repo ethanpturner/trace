@@ -1,0 +1,491 @@
+{
+  "controls": [
+    {
+      "key": "ctl-new-integration-disable",
+      "name": "Operator ability to disable a repository integration",
+      "description": "The architecture and operations guide state that authorized ForgeFlow administrators may disable an integration and disable repository integrations through the internal administrative interface (evd-035, evd-083). Relative to this threat this is a manual containment measure: it can stop further processing for an installation whose access has changed. No reviewed passage states that disabling an integration prevents a retry from consuming artifacts already held in object storage (evd-077, evd-079), nor that it is triggered by an upstream revocation or narrowing of repository selection (evd-058, evd-068).",
+      "control_type": "compensating",
+      "provider_component_id": null,
+      "protected_component_ids": [
+        "cmp-006",
+        "cmp-007"
+      ],
+      "protected_asset_ids": [
+        "ast-001",
+        "ast-002",
+        "ast-009"
+      ],
+      "implementation_status": "claimed",
+      "evidence_ids": [
+        "evd-035",
+        "evd-083",
+        "evd-058",
+        "evd-068"
+      ],
+      "owner": "ForgeFlow Platform Operations",
+      "limitations": [
+        "Operator-initiated and manual; no described trigger from a GitHub-side revocation or repository-selection change (evd-058, evd-068).",
+        "No reviewed passage states that disabling an integration removes or blocks reuse of artifacts already stored for that organization (evd-077, evd-079).",
+        "Described only as an administrative capability; no procedure, precondition, or effect on in-flight or queued jobs is documented (evd-035, evd-083)."
+      ]
+    }
+  ],
+  "mappings": [
+    {
+      "threat_id": "thr-014",
+      "requirement_id": "req-DATA-002",
+      "control_keys": [],
+      "existing_control_ids": [
+        "ctl-014"
+      ],
+      "applicability_status": "applicable",
+      "applicability_reason": "Both applicable_conditions hold: intermediate artifacts (diffs, selected repository files, prompt inputs, provider input and output) are written to persistent object storage as a by-product of processing (evd-078, evd-033), and they are retained after the job completes or fails. This threat depends directly on that retention window overlapping a change in the customer's GitHub access (evd-077, evd-079).",
+      "suppressed_conclusion": null,
+      "suppressed_by": null,
+      "satisfaction_status": "partially_satisfied",
+      "evidence_ids": [
+        "evd-079",
+        "evd-033",
+        "evd-078",
+        "evd-099",
+        "evd-054"
+      ],
+      "assumptions": [],
+      "confidence": "medium"
+    },
+    {
+      "threat_id": "thr-014",
+      "requirement_id": "req-DATA-004",
+      "control_keys": [
+        "ctl-new-integration-disable"
+      ],
+      "existing_control_ids": [
+        "ctl-015"
+      ],
+      "applicability_status": "applicable",
+      "applicability_reason": "The applicable_conditions hold: customer data exists in more than one store (managed PostgreSQL for job and result metadata, managed object storage for artifacts) (evd-032, evd-033, evd-078). The threat turns on artifacts surviving a customer's withdrawal or narrowing of access, so whether a removal path reaches the derived store is directly engaged.",
+      "suppressed_conclusion": null,
+      "suppressed_by": null,
+      "satisfaction_status": "unverified",
+      "evidence_ids": [
+        "evd-026",
+        "evd-096",
+        "evd-032",
+        "evd-033",
+        "evd-035"
+      ],
+      "assumptions": [
+        "Assumed that organization-level deletion (evd-026, evd-096) is the only documented removal path relevant to this threat; no passage describes a removal triggered by installation revocation."
+      ],
+      "confidence": "medium"
+    },
+    {
+      "threat_id": "thr-014",
+      "requirement_id": "req-ADMIN-001",
+      "control_keys": [],
+      "existing_control_ids": [
+        "ctl-022"
+      ],
+      "applicability_status": "applicable",
+      "applicability_reason": "Both applicable_conditions hold: an internal administrative interface exists (evd-035) and operators can act on customer data through it, including retrying failed jobs and retrying comment publication, which is the actor and entry point this threat uses (evd-083, evd-082, act-003).",
+      "suppressed_conclusion": "That the administrative interface's authorization is deficient because no role-based permission matrix is described (evd-035 states detailed administrative permissions are maintained separately).",
+      "suppressed_by": "req-ADMIN-001 common_false_positives: 'absent role-based permission matrix within the administrative interface'",
+      "satisfaction_status": "partially_satisfied",
+      "evidence_ids": [
+        "evd-035",
+        "evd-087",
+        "evd-132",
+        "evd-143",
+        "evd-054"
+      ],
+      "assumptions": [],
+      "confidence": "medium"
+    },
+    {
+      "threat_id": "thr-014",
+      "requirement_id": "req-AUTH-002",
+      "control_keys": [],
+      "existing_control_ids": [
+        "ctl-022"
+      ],
+      "applicability_status": "applicable",
+      "applicability_reason": "The applicable_condition 'the system exposes administrative access' holds, and this threat is carried out through that access by operations personnel retrying jobs or publication (evd-083, evd-082). The factor policy governing that access therefore bears on the threat.",
+      "suppressed_conclusion": null,
+      "suppressed_by": null,
+      "satisfaction_status": "satisfied",
+      "evidence_ids": [
+        "evd-143",
+        "evd-035",
+        "evd-087",
+        "evd-132"
+      ],
+      "assumptions": [],
+      "confidence": "medium"
+    },
+    {
+      "threat_id": "thr-014",
+      "requirement_id": "req-LOG-002",
+      "control_keys": [],
+      "existing_control_ids": [
+        "ctl-022"
+      ],
+      "applicability_status": "applicable",
+      "applicability_reason": "Both applicable_conditions hold: a privileged interface exists (evd-035) and operator actions in this threat — retrying a job, retrying comment publication, disabling an integration — affect customer data and result in externally visible publication (evd-083, evd-082).",
+      "suppressed_conclusion": "That the administrative audit trail is inadequate because no tamper-evidence property is described for the centralized logging platform.",
+      "suppressed_by": "req-LOG-002 common_false_positives: 'absent tamper-evidence detail where records are sent to a separately managed platform'",
+      "satisfaction_status": "partially_satisfied",
+      "evidence_ids": [
+        "evd-087",
+        "evd-132",
+        "evd-036",
+        "evd-032"
+      ],
+      "assumptions": [],
+      "confidence": "low"
+    },
+    {
+      "threat_id": "thr-014",
+      "requirement_id": "req-AI-002",
+      "control_keys": [],
+      "existing_control_ids": [
+        "ctl-004",
+        "ctl-008",
+        "ctl-009"
+      ],
+      "applicability_status": "applicable",
+      "applicability_reason": "Both applicable_conditions hold: model output is published to a destination outside the system (a GitHub pull-request comment, evd-010, evd-031) and the documented publication sequence proceeds automatically once schema validation succeeds (evd-082). This threat's final step is publication of a result derived from stale content, so what validation precedes publication is directly engaged.",
+      "suppressed_conclusion": null,
+      "suppressed_by": null,
+      "satisfaction_status": "partially_satisfied",
+      "evidence_ids": [
+        "evd-009",
+        "evd-081",
+        "evd-031",
+        "evd-133",
+        "evd-010",
+        "evd-082",
+        "evd-151"
+      ],
+      "assumptions": [],
+      "confidence": "medium"
+    },
+    {
+      "threat_id": "thr-014",
+      "requirement_id": "req-SECRET-002",
+      "control_keys": [],
+      "existing_control_ids": [
+        "ctl-016"
+      ],
+      "applicability_status": "applicable",
+      "applicability_reason": "Both applicable_conditions hold: the system reaches customer repositories on GitHub, and GitHub offers installation-scoped short-lived tokens (evd-061, evd-037). The threat asserts that a retry may proceed from a stored copy rather than from a credential-mediated retrieval, so the credential model for repository access is engaged.",
+      "suppressed_conclusion": null,
+      "suppressed_by": null,
+      "satisfaction_status": "satisfied",
+      "evidence_ids": [
+        "evd-061",
+        "evd-037",
+        "evd-065",
+        "evd-060"
+      ],
+      "assumptions": [],
+      "confidence": "medium"
+    },
+    {
+      "threat_id": "thr-014",
+      "requirement_id": "req-AUTHZ-002",
+      "control_keys": [],
+      "existing_control_ids": [
+        "ctl-016",
+        "ctl-018"
+      ],
+      "applicability_status": "applicable",
+      "applicability_reason": "The applicable_conditions hold: ForgeFlow holds delegated access to GitHub through an installed App and acts on customer repositories on their behalf (evd-058, evd-065). This threat concerns processing that continues after that delegated grant is narrowed or withdrawn, so the documented shape of the grant bears on it.",
+      "suppressed_conclusion": "That the requested privilege scope is undocumented or unjustified because no per-permission justification is given for each capability listed in evd-060.",
+      "suppressed_by": "req-AUTHZ-002 common_false_positives: 'absent per-permission justification where the overall scope is documented and narrow'",
+      "satisfaction_status": "partially_satisfied",
+      "evidence_ids": [
+        "evd-060",
+        "evd-058",
+        "evd-065",
+        "evd-054"
+      ],
+      "assumptions": [],
+      "confidence": "low"
+    },
+    {
+      "threat_id": "thr-014",
+      "requirement_id": "req-TPI-001",
+      "control_keys": [],
+      "existing_control_ids": [
+        "ctl-007"
+      ],
+      "applicability_status": "applicable",
+      "applicability_reason": "Both applicable_conditions hold: customer repository content is sent to an external AI provider that processes it on the system's behalf (evd-044, evd-129). The threat's impact is that this content crosses the provider boundary again after the customer withdrew access, so the provider's handling of what it receives is engaged.",
+      "suppressed_conclusion": null,
+      "suppressed_by": null,
+      "satisfaction_status": "partially_satisfied",
+      "evidence_ids": [
+        "evd-005",
+        "evd-007",
+        "evd-013",
+        "evd-100",
+        "evd-129",
+        "evd-054"
+      ],
+      "assumptions": [],
+      "confidence": "medium"
+    },
+    {
+      "threat_id": "thr-014",
+      "requirement_id": "req-TPI-002",
+      "control_keys": [],
+      "existing_control_ids": [
+        "ctl-003",
+        "ctl-023",
+        "ctl-024"
+      ],
+      "applicability_status": "applicable",
+      "applicability_reason": "Two applicable_conditions hold: processing consumes a metered external AI service (evd-044, evd-081) and failed work is retried automatically (evd-077, evd-103). This threat's mechanism is the retry path itself, so how retries are bounded bears on how often stale artifacts can be reprocessed and republished.",
+      "suppressed_conclusion": null,
+      "suppressed_by": null,
+      "satisfaction_status": "unverified",
+      "evidence_ids": [
+        "evd-077",
+        "evd-103",
+        "evd-054",
+        "evd-138",
+        "evd-086"
+      ],
+      "assumptions": [
+        "Assumed that 'exact retry limits' being listed as a documentation gap (evd-054) means limits exist but are undocumented, rather than that no bound exists; the material does not settle this."
+      ],
+      "confidence": "medium"
+    },
+    {
+      "threat_id": "thr-014",
+      "requirement_id": "req-WEBHOOK-002",
+      "control_keys": [],
+      "existing_control_ids": [],
+      "applicability_status": "not_applicable",
+      "applicability_reason": "The requirement's applicable_conditions concern repeated processing arising from re-delivery of an inbound external event whose uniqueness is not established. In this threat the repetition originates inside ForgeFlow — an automatic retry or an operator-initiated retry of stored job metadata and stored artifacts (evd-077, evd-082, evd-083) — not from re-submission of a webhook. Delivery-uniqueness controls would not affect this attack path.",
+      "suppressed_conclusion": null,
+      "suppressed_by": null,
+      "satisfaction_status": "not_applicable",
+      "evidence_ids": [
+        "evd-077",
+        "evd-082",
+        "evd-083"
+      ],
+      "assumptions": [],
+      "confidence": "medium"
+    },
+    {
+      "threat_id": "thr-014",
+      "requirement_id": "req-AI-001",
+      "control_keys": [],
+      "existing_control_ids": [],
+      "applicability_status": "not_applicable",
+      "applicability_reason": "The requirement's applicable_conditions are about content the system did not author redirecting the model's task. This threat concerns the entitlement status and freshness of the content supplied (evd-077, evd-058, evd-068), not instructions embedded within it; no step of the attack path depends on the model being redirected, and an isolation mechanism would not change the outcome.",
+      "suppressed_conclusion": null,
+      "suppressed_by": null,
+      "satisfaction_status": "not_applicable",
+      "evidence_ids": [
+        "evd-077",
+        "evd-058"
+      ],
+      "assumptions": [],
+      "confidence": "low"
+    },
+    {
+      "threat_id": "thr-014",
+      "requirement_id": "req-DATA-003",
+      "control_keys": [],
+      "existing_control_ids": [],
+      "applicability_status": "not_applicable",
+      "applicability_reason": "The requirement's applicable_conditions concern artifacts belonging to different customers sharing a storage system and being separated on access. This threat involves an organization's own artifacts being reused for its own repositories after its access changed (evd-077, evd-078); no cross-organization read occurs in the attack path, so the separation mechanism is neither exercised nor bypassed.",
+      "suppressed_conclusion": null,
+      "suppressed_by": null,
+      "satisfaction_status": "not_applicable",
+      "evidence_ids": [
+        "evd-078",
+        "evd-033",
+        "evd-077"
+      ],
+      "assumptions": [],
+      "confidence": "medium"
+    },
+    {
+      "threat_id": "thr-014",
+      "requirement_id": "req-AUTH-001",
+      "control_keys": [],
+      "existing_control_ids": [],
+      "applicability_status": "not_applicable",
+      "applicability_reason": "The requirement's applicable_conditions concern documenting delegated end-user authentication. The attack path contains no customer authentication step: the acting party is an internal operator authenticated through the corporate identity platform, or an automatic retry with no interactive identity (evd-077, evd-083, act-003). Administrative identity is covered under req-AUTH-002 and req-ADMIN-001.",
+      "suppressed_conclusion": null,
+      "suppressed_by": null,
+      "satisfaction_status": "not_applicable",
+      "evidence_ids": [
+        "evd-077",
+        "evd-083",
+        "evd-087"
+      ],
+      "assumptions": [],
+      "confidence": "medium"
+    }
+  ],
+  "documentation_gaps": [
+    {
+      "title": "Whether a retried analysis job re-verifies GitHub access before reusing stored artifacts",
+      "description": "The operations guide states that manual retries reuse original job metadata whenever possible and that, where repository artifacts are still available, the retry process may reuse previously stored analysis artifacts instead of downloading repository content again (evd-077), and records as an operational assumption that repository artifacts remain available during retry operations (evd-089). Separately, repository selection may be expanded or reduced through normal GitHub administration and access may fail because of a revoked installation or permission changes (evd-058, evd-068). No reviewed passage states whether a retry mints a fresh installation token and re-checks that the installation still grants access to the repository before reusing artifacts, so it cannot be determined whether a live permission check occurs on the retry path.",
+      "importance": "Determines whether artifact reuse can substitute for an entitlement check, which is the pivot of this threat and would change the satisfaction conclusions for req-SECRET-002 and req-AUTHZ-002.",
+      "related_object_ids": [
+        "thr-014",
+        "cmp-006",
+        "cmp-010",
+        "ast-009",
+        "ast-001"
+      ],
+      "requested_evidence": [
+        "Retry implementation description stating whether an installation token is obtained and repository access re-verified on each attempt",
+        "Description of retry behaviour when the installation has been revoked or the repository is no longer within the installation's selected set",
+        "Statement of which conditions cause artifact reuse rather than fresh retrieval"
+      ],
+      "evidence_ids": [
+        "evd-077",
+        "evd-089",
+        "evd-058",
+        "evd-068",
+        "evd-061"
+      ],
+      "severity": "medium"
+    },
+    {
+      "title": "Conflicting statements about how long retrieved source files are retained",
+      "description": "The product overview states that source files are treated as temporary processing data and are deleted after analysis completes (evd-099), while the operations guide states that artifacts including selected repository files and repository diffs remain available for operational troubleshooting with a current retention target of 30 days, removed afterwards by scheduled cleanup jobs, and that support personnel may request temporary retention extensions (evd-078, evd-079). The architecture defers detailed retention behaviour to operational documentation and lists source-artifact retention among known documentation gaps (evd-033, evd-054). Which statement is authoritative cannot be determined from the reviewed material.",
+      "importance": "The retention window is the interval during which a retry can reuse content the customer has since withdrawn access to; the customer-facing statement would imply that window does not exist. It also determines whether req-DATA-002's consistency expectation is met.",
+      "related_object_ids": [
+        "thr-014",
+        "cmp-010",
+        "ast-009",
+        "ast-001"
+      ],
+      "requested_evidence": [
+        "The authoritative retention period for source-derived artifacts and the mechanism that enforces it (storage lifecycle rule or scheduled job)",
+        "Corrected or reconciled customer-facing statement of source-file retention",
+        "Conditions and approval path for retention extensions"
+      ],
+      "evidence_ids": [
+        "evd-099",
+        "evd-079",
+        "evd-078",
+        "evd-033",
+        "evd-054"
+      ],
+      "severity": "medium"
+    },
+    {
+      "title": "Whether deletion or removal of access reaches artifacts held in object storage",
+      "description": "The API is documented as supporting organization-level data deletion requests and customer administrators may request deletion of organization data (evd-026, evd-096), with administrators able to support data-deletion requests through the internal interface (evd-035). No reviewed passage states which stores such a request reaches, and object storage — where selected repository files, diffs and prompt artifacts are held under organization- and job-scoped paths (evd-033, evd-078) — is not named. Nor does any passage describe artifacts being removed when an installation is revoked or its repository selection narrowed (evd-058, evd-068).",
+      "importance": "If deletion and revocation do not reach stored artifacts, the artifacts remain available to a retry for the full retention window after the customer has withdrawn access, which is the condition this threat requires.",
+      "related_object_ids": [
+        "thr-014",
+        "cmp-010",
+        "ast-009",
+        "ast-001",
+        "ast-002"
+      ],
+      "requested_evidence": [
+        "Inventory of stores a deletion request reaches, explicitly stating whether object-storage artifacts are included",
+        "Description of what happens to stored artifacts when an installation is revoked or repository selection is reduced"
+      ],
+      "evidence_ids": [
+        "evd-026",
+        "evd-096",
+        "evd-035",
+        "evd-033",
+        "evd-078",
+        "evd-058"
+      ],
+      "severity": "medium"
+    },
+    {
+      "title": "Whether an independent retry of comment publication re-validates job and installation state",
+      "description": "The operations guide states that operators may retry comment publication independently from the analysis job (evd-082) and that authorized operations personnel may retry failed jobs through the administrative interface (evd-083). The comment service is described as receiving the structured analysis result and posting it with a short-lived installation token (evd-031). No reviewed passage states whether an independent publication retry re-checks that the analysis result is still current, that automatic comments remain enabled, or that the installation still covers the target repository.",
+      "importance": "Determines whether a summary derived from repository state and permissions that no longer hold can be published under the ForgeFlow app identity, which is the externally visible consequence in this threat.",
+      "related_object_ids": [
+        "thr-014",
+        "cmp-007",
+        "ast-002"
+      ],
+      "requested_evidence": [
+        "Description of the preconditions checked before a comment-publication retry proceeds",
+        "Statement of whether comment configuration and installation scope are re-read at publication time"
+      ],
+      "evidence_ids": [
+        "evd-082",
+        "evd-083",
+        "evd-031",
+        "evd-010"
+      ],
+      "severity": "low"
+    },
+    {
+      "title": "Conflicting statements about whether externally visible AI output is reviewed before publication",
+      "description": "The security overview states that externally visible AI-generated output is reviewed before publication (evd-133), while the AI analysis document and operations guide describe publication as an automatic sequence following successful schema validation, with formatting rules applied and the comment posted through the GitHub API (evd-010, evd-082). The structured input records human review as unknown and semantic validation as not documented (evd-151), and AI-output approval requirements are a named architecture documentation gap (evd-054). Which description holds cannot be determined from the reviewed material.",
+      "importance": "Whether a human approves publication decides whether req-AI-002 is met by human review rather than by content validation, and whether a result derived from stale content would be caught before reaching a customer-visible pull request.",
+      "related_object_ids": [
+        "thr-014",
+        "cmp-007",
+        "ast-002"
+      ],
+      "requested_evidence": [
+        "Statement of whether any human approval step precedes publication of a pull-request comment, and who performs it",
+        "Description of any content-level (as opposed to structural) validation applied to AI output before publication"
+      ],
+      "evidence_ids": [
+        "evd-133",
+        "evd-010",
+        "evd-082",
+        "evd-151",
+        "evd-054"
+      ],
+      "severity": "medium"
+    }
+  ],
+  "catalog_gap_candidates": [
+    {
+      "concern": "No requirement addresses whether a system re-establishes that an upstream delegated entitlement still holds before reprocessing or republishing from a retained copy of customer content. ForgeFlow retains analysis artifacts for a retention window (evd-078, evd-079), retries may reuse those artifacts instead of re-fetching (evd-077, evd-089), and the upstream grant can be narrowed or revoked at any point in that window through normal GitHub administration (evd-058, evd-068). The catalog covers what may be retained, for how long, and how it is deleted, but not whether a cached copy may continue to be acted upon after the authorization that justified its collection has changed.",
+      "suggested_category": "authorization_freshness",
+      "nearest_requirements": [
+        {
+          "requirement_id": "req-SECRET-002",
+          "why_not": "Addresses the lifetime of the credential used to reach a customer resource, not whether an entitlement is re-checked on a path that reaches no credential at all because it reads a stored copy."
+        },
+        {
+          "requirement_id": "req-AUTHZ-002",
+          "why_not": "Addresses the breadth of the privileges requested at installation and their documentation, not the propagation of a later reduction or revocation into processing that is already under way or being retried."
+        },
+        {
+          "requirement_id": "req-DATA-002",
+          "why_not": "Bounds how long working data is retained and requires the period to match customer-facing statements; it says nothing about whether retained data may be reprocessed once the access that justified it has been withdrawn."
+        },
+        {
+          "requirement_id": "req-DATA-004",
+          "why_not": "Requires a removal path on customer or operator request; a narrowing of repository selection or an installation revocation is not a deletion request, and the requirement does not make revocation a trigger for removal or for blocking reuse."
+        },
+        {
+          "requirement_id": "req-AUTHZ-001",
+          "why_not": "Concerns constraining each request to the tenant it belongs to; the reuse here stays within the correct tenant and fails on currency of the external grant rather than on tenant scope."
+        }
+      ],
+      "evidence_ids": [
+        "evd-077",
+        "evd-089",
+        "evd-079",
+        "evd-058",
+        "evd-068",
+        "evd-082"
+      ]
+    }
+  ]
+}

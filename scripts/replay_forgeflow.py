@@ -34,7 +34,7 @@ from trace_ai.domain.evidence import EvidenceReference
 from trace_ai.domain.finding import Finding
 from trace_ai.domain.source_document import TrustLevel
 from trace_ai.infrastructure.database.store import AssessmentStore
-from trace_ai.infrastructure.model.factory import build_model
+from trace_ai.infrastructure.model.fake import DeterministicModel
 from trace_ai.infrastructure.model.profiles import resolve_profile
 from trace_ai.infrastructure.model.recorded import load_recorded_responses
 from trace_ai.services.assessment import AssessmentService
@@ -53,6 +53,7 @@ from trace_ai.workflow.finding_review import (
     approve_finding,
     change_severity,
     conclude_finding_review,
+    reject_finding,
 )
 
 RECORDED = PROJECT_ROOT / "demo" / "forgeflow" / "recorded"
@@ -61,31 +62,32 @@ REVIEWER = "recorded-reviewer"
 
 # The recording's generation timestamp. Pinning it is what makes two replays byte-identical:
 # the rendered report carries exactly one timestamp, and this is it.
-GENERATED_AT = datetime(2026, 8, 11, 12, 0, 0, tzinfo=UTC)
+GENERATED_AT = datetime(2026, 8, 14, 12, 0, 0, tzinfo=UTC)
 
 
-def _response_files() -> list[Path]:
-    """The numbered recordings, in consumption order.
+def _stage_files(stage: str) -> list[Path]:
+    """One stage's numbered recordings, in consumption order.
 
-    Derived from the directory rather than named in code, so a capture with a different threat
-    count — and so a different number of mapping and critique calls — replaces the recording
-    without editing the replayer. The first file answers the extraction call, the last answers
-    report generation, and everything between belongs to the reasoning segment; the numbering
-    is the consumption order, which is the only contract the replayer has with the capture.
+    The recording is organized by segment — `extraction/`, `reasoning/`, `report/` — because the
+    pipeline pauses twice and each resume consumes only its own segment's responses. Derived from
+    the directory rather than named in code, so a capture with a different threat count — and so
+    a different number of mapping and critique calls, including recorded retried attempts —
+    replaces the recording without editing the replayer. The same three directories are what the
+    command-line walkthrough hands to `--response`.
     """
-    files = sorted(RECORDED.glob("[0-9]*.json"))
-    if len(files) < 3:
-        raise SystemExit(f"{RECORDED} holds {len(files)} numbered recordings; a run needs >= 3")
+    files = sorted((RECORDED / stage).glob("[0-9]*.json"))
+    if not files:
+        raise SystemExit(f"{RECORDED / stage} holds no numbered recordings")
     return files
 
 
 def _extraction_stage(service: AssessmentService, assessment_id: str, profile_name: str) -> None:
     profile = resolve_profile(profile_name)
-    responses = load_recorded_responses([_response_files()[0]])
+    responses = load_recorded_responses(_stage_files("extraction"))
     outcome = run_assessment(
         service,
         assessment_id,
-        model=build_model(profile, responses=responses),
+        model=DeterministicModel(responses),
         profile=profile,
     )
     if not outcome.paused:
@@ -109,11 +111,11 @@ def _context_decisions(service: AssessmentService, assessment_id: str) -> None:
 
 def _reasoning_stage(service: AssessmentService, assessment_id: str, profile_name: str) -> None:
     profile = resolve_profile(profile_name)
-    responses = load_recorded_responses(_response_files()[1:-1])
+    responses = load_recorded_responses(_stage_files("reasoning"))
     outcome = resume_assessment(
         service,
         assessment_id,
-        model=build_model(profile, responses=responses),
+        model=DeterministicModel(responses),
         profile=profile,
     )
     if not outcome.paused:
@@ -139,17 +141,21 @@ def _finding_decisions(service: AssessmentService, assessment_id: str) -> None:
             finding, _ = approve_finding(
                 handle, finding, reviewer_id=REVIEWER, rationale=entry.get("rationale")
             )
+        elif entry.get("decision") == ReviewDisposition.REJECT.value:
+            finding, _ = reject_finding(
+                handle, finding, reviewer_id=REVIEWER, rationale=entry.get("rationale")
+            )
         findings[finding.id] = finding
     conclude_finding_review(service, assessment_id)
 
 
 def _report_stage(service: AssessmentService, assessment_id: str, profile_name: str) -> str:
     profile = resolve_profile(profile_name)
-    responses = load_recorded_responses([_response_files()[-1]])
+    responses = load_recorded_responses(_stage_files("report"))
     outcome = resume_assessment(
         service,
         assessment_id,
-        model=build_model(profile, responses=responses),
+        model=DeterministicModel(responses),
         profile=profile,
         generated_at=GENERATED_AT,
     )
@@ -163,10 +169,15 @@ def _report_stage(service: AssessmentService, assessment_id: str, profile_name: 
     return handle.artifacts.hash_of("outputs", filename)
 
 
-def replay(data_root: Path, *, profile_name: str = "offline-fake") -> str:
+def replay(data_root: Path, *, profile_name: str = "primary-development") -> str:
     """Run the whole recording against a fresh data root and return the report's content hash.
 
     Each stage opens its own store, the way a fresh process would (DEC-017: resuming is a read).
+
+    `profile_name` is the profile the recording was *captured* with — it reaches the assessment
+    configuration and the report's provenance lines, which must reproduce the recorded run's
+    truthfully (`claude-opus-5` produced these responses). The model is always the deterministic
+    substitute serving the recordings; no profile makes this script call a provider.
     """
     with AssessmentStore.at_root(data_root) as store:
         service = AssessmentService(store, artifact_root=data_root)
