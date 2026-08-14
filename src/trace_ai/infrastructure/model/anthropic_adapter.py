@@ -36,6 +36,7 @@ would break a bare `uv run pytest` on a machine with no `.env`.
 
 from __future__ import annotations
 
+import re
 import time
 from typing import TYPE_CHECKING, Any, Final
 
@@ -179,30 +180,30 @@ class AnthropicModel:
         }
         if system is not None:
             request["system"] = system
+        schema_grammar = "enforced"
 
         try:
-            response = client.with_options(timeout=resolved.timeout_seconds).messages.create(
-                **request
-            )
-        except anthropic.APITimeoutError as error:
-            return self._failed(FailureReason.TIMEOUT, str(error), started)
-        except anthropic.APIConnectionError as error:
-            return self._failed(FailureReason.CONNECTION_FAILURE, str(error), started)
-        except anthropic.AuthenticationError as error:
-            return self._failed(FailureReason.AUTHENTICATION_FAILURE, str(error), started)
-        except anthropic.PermissionDeniedError as error:
-            return self._failed(FailureReason.AUTHENTICATION_FAILURE, str(error), started)
+            response = self._send(client, request, timeout=resolved.timeout_seconds)
         except anthropic.BadRequestError as error:
-            return self._failed(FailureReason.INVALID_REQUEST, str(error), started)
-        except anthropic.RateLimitError as error:
-            return self._failed(FailureReason.TRANSIENT_PROVIDER_FAILURE, str(error), started)
-        except anthropic.APIStatusError as error:
-            reason = (
-                FailureReason.TRANSIENT_PROVIDER_FAILURE
-                if error.status_code >= 500
-                else FailureReason.INVALID_REQUEST
-            )
-            return self._failed(reason, str(error), started)
+            if "grammar is too large" not in str(error):
+                return self._failed(FailureReason.INVALID_REQUEST, str(error), started)
+            # The provider refuses to compile a large schema into its output grammar. The
+            # rejection precedes the model — no tokens were billed and no attempt was made — so
+            # resending without the server-side format is not a second attempt. The prompt
+            # already teaches the schema (the application substitutes its own export), and this
+            # adapter validates the text itself either way (#413): the grammar was enforcement
+            # redundancy, and losing it costs nothing the validation below does not still do.
+            # `messages.parse` fails identically here, so this is the only path a large schema
+            # has. Recorded on the outcome's metadata like the effort mapping, and for the same
+            # reason: a silent degradation is invisible exactly when it matters.
+            request["output_config"] = {"effort": effort}
+            schema_grammar = "too_large_omitted"
+            try:
+                response = self._send(client, request, timeout=resolved.timeout_seconds)
+            except anthropic.APIError as retry_error:
+                return self._classified(retry_error, started)
+        except anthropic.APIError as error:
+            return self._classified(error, started)
 
         usage = self._usage(response, time.monotonic() - started)
         stop_reason = getattr(response, "stop_reason", None)
@@ -224,15 +225,20 @@ class AnthropicModel:
             )
 
         try:
-            parsed = schema.model_validate_json(raw)
-        except pydantic.ValidationError:
-            # The validation error's own text embeds fragments of the model output, which is
-            # untrusted; the message stays safe (section 27) and the raw output carries the detail.
+            parsed = schema.model_validate_json(_json_candidate(raw))
+        except pydantic.ValidationError as invalid:
+            # The validation error's full text embeds fragments of the model output, which is
+            # untrusted; what the message carries instead is field locations and error types,
+            # which are schema-shaped and safe (section 27). They are also what makes the retry
+            # feedback actionable: the live ForgeFlow capture burned three attempts on four
+            # misfilled fields because the model was told the proposal was invalid and never
+            # told where (#324). The raw output still carries the full detail.
             return ModelFailure(
                 reason=FailureReason.SCHEMA_VALIDATION_FAILURE,
                 message=(
                     f"the response did not validate as {schema.__name__}; "
-                    f"the raw output is preserved (data-model.md section 33)"
+                    f"the raw output is preserved (data-model.md section 33). "
+                    f"Invalid at: {_error_locations(invalid)}"
                 ),
                 usage=usage,
                 raw_output=raw,
@@ -248,8 +254,36 @@ class AnthropicModel:
                     ModelCapability.STRUCTURED_OUTPUT,
                 }
             ),
-            metadata={"effort": effort, "creativity": resolved.creativity.value},
+            metadata={
+                "effort": effort,
+                "creativity": resolved.creativity.value,
+                "schema_grammar": schema_grammar,
+            },
         )
+
+    def _send(self, client: Any, request: dict[str, Any], *, timeout: float) -> Any:
+        return client.with_options(timeout=timeout).messages.create(**request)
+
+    def _classified(self, error: anthropic.APIError, started: float) -> ModelFailure:
+        """The exception ladder as a function, so the grammar fallback shares it exactly."""
+        if isinstance(error, anthropic.APITimeoutError):
+            return self._failed(FailureReason.TIMEOUT, str(error), started)
+        if isinstance(error, anthropic.APIConnectionError):
+            return self._failed(FailureReason.CONNECTION_FAILURE, str(error), started)
+        if isinstance(error, anthropic.AuthenticationError | anthropic.PermissionDeniedError):
+            return self._failed(FailureReason.AUTHENTICATION_FAILURE, str(error), started)
+        if isinstance(error, anthropic.BadRequestError):
+            return self._failed(FailureReason.INVALID_REQUEST, str(error), started)
+        if isinstance(error, anthropic.RateLimitError):
+            return self._failed(FailureReason.TRANSIENT_PROVIDER_FAILURE, str(error), started)
+        if isinstance(error, anthropic.APIStatusError):
+            reason = (
+                FailureReason.TRANSIENT_PROVIDER_FAILURE
+                if error.status_code >= 500
+                else FailureReason.INVALID_REQUEST
+            )
+            return self._failed(reason, str(error), started)
+        return self._failed(FailureReason.CONNECTION_FAILURE, str(error), started)
 
     def _failed(self, reason: FailureReason, message: str, started: float) -> ModelFailure:
         """A failure that never produced a response, and therefore has tokens but no counts."""
@@ -287,6 +321,50 @@ class AnthropicModel:
             ),
             duration_seconds=duration,
         )
+
+
+_LOC_PART = re.compile(r"^[A-Za-z0-9_]{1,64}$")
+
+
+def _error_locations(invalid: pydantic.ValidationError, *, limit: int = 20) -> str:
+    """The failing field paths with their error types, and nothing the model wrote.
+
+    `loc` is normally a path through the application's own schema and `type` is pydantic's
+    classification — safe in a message (section 27). The exception is `extra_forbidden`, whose
+    final path element is the *invented* key, which is model-authored text: any part that does
+    not look like a schema identifier is masked rather than quoted. Capped so a wholesale-invalid
+    response cannot flood the record.
+    """
+
+    def part_of(part: object) -> str:
+        if isinstance(part, int):
+            return str(part)
+        return part if isinstance(part, str) and _LOC_PART.match(part) else "<unnamable-key>"
+
+    errors = invalid.errors()
+    listed = "; ".join(
+        ".".join(part_of(part) for part in error["loc"]) + f" ({error['type']})"
+        for error in errors[:limit]
+    )
+    more = f" and {len(errors) - limit} more" if len(errors) > limit else ""
+    return f"{listed}{more}"
+
+
+def _json_candidate(raw: str) -> str:
+    """The text with a Markdown code fence stripped, when the whole response is one fence.
+
+    With the server-side grammar omitted, nothing stops a model from wrapping its JSON in
+    ```json fences. The unwrap is deliberately narrow — a single fence enclosing the entire
+    trimmed response — so it cannot mistake fenced content inside a legitimate answer for
+    packaging. The raw output preserved on a failure stays the original text.
+    """
+    text = raw.strip()
+    if not text.startswith("```"):
+        return raw
+    first_break = text.find("\n")
+    if first_break == -1 or not text.endswith("```"):
+        return raw
+    return text[first_break + 1 : -3].strip()
 
 
 def _text_of(response: Any) -> str | None:

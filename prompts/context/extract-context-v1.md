@@ -107,6 +107,13 @@ You may:
 - State the system's authorization posture (`access_model`) only where the material states one:
   `deny_by_default`, `allow_by_default`, or `mixed`. Where it does not, leave the field at
   `unknown` — an unstated posture is never an answer.
+- Vocabulary-typed fields — `component_type`, `entry_point_types`, `actor_type`, `skill_level`,
+  `access_level`, `asset_type`, `data_classification`, `boundary_type`, and a data flow's
+  `authentication` and `encryption_in_transit` — take one short term: words made of letters and
+  digits joined by spaces, hyphens, or underscores, with no other punctuation. `github_oauth`,
+  `hmac_signature`, `tls`, `restricted`. Write `unknown` where the documents name no mechanism.
+  These fields are labels, not sentences: the sentence you wanted to write belongs in a claim,
+  a description, or a rationale, where prose is expected and evidence can back it.
 - Create clarifying questions.
 - Mark contradictory evidence.
 - Assign confidence levels.

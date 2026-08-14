@@ -64,9 +64,24 @@ REVIEWER = "recorded-reviewer"
 GENERATED_AT = datetime(2026, 8, 11, 12, 0, 0, tzinfo=UTC)
 
 
+def _response_files() -> list[Path]:
+    """The numbered recordings, in consumption order.
+
+    Derived from the directory rather than named in code, so a capture with a different threat
+    count — and so a different number of mapping and critique calls — replaces the recording
+    without editing the replayer. The first file answers the extraction call, the last answers
+    report generation, and everything between belongs to the reasoning segment; the numbering
+    is the consumption order, which is the only contract the replayer has with the capture.
+    """
+    files = sorted(RECORDED.glob("[0-9]*.json"))
+    if len(files) < 3:
+        raise SystemExit(f"{RECORDED} holds {len(files)} numbered recordings; a run needs >= 3")
+    return files
+
+
 def _extraction_stage(service: AssessmentService, assessment_id: str, profile_name: str) -> None:
     profile = resolve_profile(profile_name)
-    responses = load_recorded_responses([RECORDED / "01-context-extraction.json"])
+    responses = load_recorded_responses([_response_files()[0]])
     outcome = run_assessment(
         service,
         assessment_id,
@@ -94,16 +109,7 @@ def _context_decisions(service: AssessmentService, assessment_id: str) -> None:
 
 def _reasoning_stage(service: AssessmentService, assessment_id: str, profile_name: str) -> None:
     profile = resolve_profile(profile_name)
-    responses = load_recorded_responses(
-        [
-            RECORDED / "02-threat-analysis.json",
-            RECORDED / "03-mapping-thr-001.json",
-            RECORDED / "04-mapping-thr-002.json",
-            RECORDED / "05-evidence-validation.json",
-            RECORDED / "06-critical-review-thr-001.json",
-            RECORDED / "07-critical-review-thr-002.json",
-        ]
-    )
+    responses = load_recorded_responses(_response_files()[1:-1])
     outcome = resume_assessment(
         service,
         assessment_id,
@@ -139,7 +145,7 @@ def _finding_decisions(service: AssessmentService, assessment_id: str) -> None:
 
 def _report_stage(service: AssessmentService, assessment_id: str, profile_name: str) -> str:
     profile = resolve_profile(profile_name)
-    responses = load_recorded_responses([RECORDED / "08-report-sections.json"])
+    responses = load_recorded_responses([_response_files()[-1]])
     outcome = resume_assessment(
         service,
         assessment_id,
