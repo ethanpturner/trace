@@ -5476,3 +5476,50 @@ Tradeoffs:
   wire shape is part of what the prompt teaches, and it should not widen silently.
 - Section 39's open question 1 — whether claims should keep the subject-predicate-value shape
   at all — stays open. This entry narrows a field's wire type; it does not answer that.
+
+## DEC-084: The retries ceiling is enforced in the node's attempt loop with the budget's value; the execution record carries the retries consumed
+
+Date: 2026-08-13
+
+Status: Accepted
+
+Decision:
+
+**`AssessmentConfiguration.maximum_retries_per_node` reaches the attempt loop through the
+budget.** `Budget.retry_policy()` derives the `RetryPolicy` from the configured value, and an
+agent node given a budget and no explicit policy runs under it (`resolve_retry_policy`). An
+explicitly supplied policy still wins, because a test that says "no retries" means it.
+
+**The budget does not *check* retries, and `LimitKind` carries no retries member.**
+`Budget.check_retry` and `LimitKind.RETRIES` are removed: a retry decision is made between a
+classified failure and the next attempt, inside the node, where the orchestrator never stands —
+and a run stopped by exhausted retries is classified by the failing attempt's error class with
+the attempt count (section 26), not by the ceiling that stopped the retrying.
+
+**One `ExecutionRecord` per node execution, whose `retry_number` is the retries consumed.** The
+attempt loop sets it as it runs, so a clean first attempt records zero and a recovery after one
+failure records one, on the success and failure paths alike. Per-attempt detail stays in the
+record's `attempt_N` metadata and the preserved outputs under `traces/`.
+
+Why:
+
+- The previous arrangement enforced the ceiling nowhere (#397): `Budget.check_retry` had no
+  callers, every node constructed the default policy, and configuring zero retries still
+  produced three attempts. A configuration field that governs nothing is worse than absent,
+  because it reads as control.
+- `retry_number` was structurally zero (#398): no caller ever passed it, and the evaluation's
+  retries metric summed the constant. A metric that reads as measured and is not commits the
+  failure this project exists to criticize.
+- One record per node execution is the shape the ledger already has, the counters already count,
+  and the committed evaluation feeds already assume. A record per attempt would have moved
+  model-call accounting and the drift-checked pages for no reader's benefit — the per-attempt
+  story is already told by the metadata and the preserved outputs.
+
+Tradeoffs:
+
+- `agent-design.md` section 27 reads "the orchestrator should enforce ... maximum retries", and
+  the enforcement point is now the node's loop rather than the orchestrator's. The value still
+  lives in the one budget the orchestrator owns; what moved is the check, to the only place a
+  retry decision exists. This entry records that reading rather than leaving it implicit.
+- A closed `LimitKind` lost a member. Nothing ever raised or persisted it, so no stored run can
+  reference it, but any external reader that enumerated the vocabulary sees four kinds now.
