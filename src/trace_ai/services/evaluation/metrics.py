@@ -32,7 +32,7 @@ from __future__ import annotations
 
 import json
 import re
-from typing import TYPE_CHECKING, Any, Final
+from typing import TYPE_CHECKING, Any, Final, cast
 
 import yaml
 
@@ -55,8 +55,10 @@ from trace_ai.services.evaluation.matching import (
     match_threats,
     normalized_name,
 )
+from trace_ai.services.execution_ledger import ExecutionLedger
 
 if TYPE_CHECKING:
+    from decimal import Decimal
     from pathlib import Path
 
     from trace_ai.domain.execution import WorkflowRun
@@ -228,12 +230,18 @@ def compute_metrics(
             sample_size=len(records),
         )
     )
+    # The run row's totals are a snapshot written at the last pause, and this code runs inside
+    # the final segment -- before complete() writes the closing counters -- so the segment's own
+    # calls, cost, and tokens are missing from the row (#388). The ledger's counters() is the one
+    # authoritative computation over the records this run wrote; reading it here keeps one
+    # implementation, which is the property its own docstring asks for.
+    counters = ExecutionLedger(handle, run).counters()
     results.append(
         _metric(
             handle,
             run.id,
             "model_call_count",
-            float(run.total_model_calls),
+            float(cast("int", counters["total_model_calls"])),
             unit="count",
         )
     )
@@ -242,15 +250,19 @@ def compute_metrics(
             handle,
             run.id,
             "estimated_cost",
-            float(run.estimated_cost or 0),
+            float(cast("Decimal | None", counters["estimated_cost"]) or 0),
             unit="dollars",
         )
     )
-    if run.total_input_tokens is not None or run.total_output_tokens is not None:
+    counted_input = cast("int | None", counters["total_input_tokens"])
+    counted_output = cast("int | None", counters["total_output_tokens"])
+    if counted_input is not None or counted_output is not None:
         # Reported only when a provider actually reported spans (#329): an offline replay has
         # no token truth, and a zero row would be a default wearing a measurement's clothes.
-        input_tokens = run.total_input_tokens or 0
-        output_tokens = run.total_output_tokens or 0
+        input_tokens = counted_input or 0
+        output_tokens = counted_output or 0
+        cache_read = cast("int | None", counters["total_cache_read_tokens"])
+        cache_creation = cast("int | None", counters["total_cache_creation_tokens"])
         results.append(
             _metric(
                 handle,
@@ -258,12 +270,12 @@ def compute_metrics(
                 "token_usage",
                 float(input_tokens + output_tokens),
                 unit="tokens",
-                method="WorkflowRun token totals as the provider reported them",
+                method="execution-record token totals as the provider reported them",
                 notes=(
                     f"input {input_tokens}, output {output_tokens}, cache read "
-                    f"{run.total_cache_read_tokens if run.total_cache_read_tokens is not None else 'unreported'}, "
+                    f"{cache_read if cache_read is not None else 'unreported'}, "
                     f"cache creation "
-                    f"{run.total_cache_creation_tokens if run.total_cache_creation_tokens is not None else 'unreported'}"
+                    f"{cache_creation if cache_creation is not None else 'unreported'}"
                 ),
             )
         )

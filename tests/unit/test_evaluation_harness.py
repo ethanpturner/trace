@@ -338,3 +338,26 @@ def test_a_run_with_no_prior_run_status_change_diffs_clean(tmp_path: Path) -> No
     current = _feed(tmp_path / "current.json", label="current", findings=same)
 
     assert diff_feeds(current, prior).clean
+
+
+def test_model_call_count_matches_the_responses_the_recording_supplies(tmp_path: Path) -> None:
+    """#388's regression pin. The metric read `run.total_model_calls` — a snapshot written at
+    the last pause, while the metric is computed inside the final segment, before complete()
+    writes the closing counters — so the final segment's calls were missing. oidc-portal is the
+    worst case the issue observed: zero findings means the finding checkpoint never pauses, so
+    everything after context approval is one segment and the stale row said 1 of its 8 calls.
+    The count must equal the recorded responses the run consumed, derived from the recording
+    itself so authoring a scenario cannot silently diverge from this test."""
+    entry = next(item for item in load_registry() if item.slug == "oidc-portal")
+    supplied = len(list(entry.recorded_dir_for("clean").glob("*.json")))
+    assert supplied == 8, "the scenario's recording changed; re-derive this test's expectation"
+
+    outcome = run_scenario(
+        "oidc-portal",
+        data_root=tmp_path / "work",
+        label="calls",
+        results_root=tmp_path / "results",
+    )
+    assert outcome.feed_path is not None
+    feed = json.loads(outcome.feed_path.read_text(encoding="utf-8"))
+    assert feed["metrics"]["model_call_count"]["value"] == float(supplied)
