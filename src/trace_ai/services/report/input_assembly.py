@@ -244,9 +244,13 @@ def assemble_report_input(
         for control in repository.list(Control)
         if control.validation_status is ValidationStatus.SUPPORTED
     ]
-    threats = [
-        threat for threat in repository.list(Threat) if threat.status is ObjectStatus.APPROVED
-    ]
+    # DEC-083: section 7 carries the threats the approved findings rest on. Threats have no
+    # approval verb of their own — the old `status is APPROVED` filter was never satisfiable and
+    # rendered the section structurally empty — and the set a reviewer transitively validated by
+    # approving the findings is the defensible one to print. A zero-finding assessment therefore
+    # renders section 7's authored empty wording, which is the honest shape for it.
+    validated_threat_ids = {threat_id for finding in findings for threat_id in finding.threat_ids}
+    threats = [threat for threat in repository.list(Threat) if threat.id in validated_threat_ids]
     assumptions = [
         claim for claim in repository.list(ContextClaim) if claim.status in _ASSUMPTION_STATUSES
     ]

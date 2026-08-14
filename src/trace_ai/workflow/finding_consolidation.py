@@ -191,6 +191,21 @@ def _question_or_gap(assessed: EvidenceAssessment | None) -> Outcome | Recommend
     return Recommendation.DOCUMENTATION_GAP
 
 
+def _as_clause(entry: str) -> str:
+    """A missing-evidence entry as a mid-sentence clause (#430).
+
+    Agents write entries as sentences — leading capital, trailing period — and interpolating one
+    into "Can you confirm ...?" produced "Can you confirm The webhook validation mechanism.?" in
+    a section the reviewer reads line by line. The trailing period is stripped and the leading
+    capital lowered, unless the first word is an acronym (second letter also upper), which
+    lowering would mangle.
+    """
+    text = entry.strip().rstrip(".")
+    if len(text) >= 2 and text[0].isupper() and text[1].islower():
+        return text[0].lower() + text[1:]
+    return text
+
+
 def _downgraded(mapping: ControlMapping, assessed: EvidenceAssessment | None) -> ControlMapping:
     """The mapping lowered to `unverified`, with the record appended (DEC-046, DEC-055).
 
@@ -428,7 +443,7 @@ def _build_question(
 ) -> Question:
     """A question, phrased for a person, about what the documentation did not settle."""
     wanted = (
-        "; ".join(assessed.missing_evidence)
+        "; ".join(_as_clause(entry) for entry in assessed.missing_evidence)
         if assessed is not None and assessed.missing_evidence
         else f"whether {mapping.requirement_id} is met"
     )

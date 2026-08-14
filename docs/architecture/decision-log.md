@@ -5643,3 +5643,68 @@ Tradeoffs:
   and for the same reason as DEC-083; both modules say so.
 - The legacy-form acceptance is one more input path. It is a loader's tolerance, not a schema
   the model is offered, and it retires whenever the recordings are next recaptured.
+
+## DEC-083: Report section 7 carries the threats the approved findings rest on; duplicate questions collapse at render
+
+Date: 2026-08-14
+
+Status: Accepted
+
+Decision:
+
+**Section 7 of the report renders the threats referenced by the approved findings.** The
+previous filter — `Threat.status is APPROVED` — was never satisfiable: threats have no approval
+verb anywhere in the pipeline, so the section was structurally empty in every report ever
+rendered, and the live capture's fifteen threats were invisible in the deliverable. The set a
+reviewer transitively validated by approving the findings is the defensible set to print; a
+zero-finding assessment renders the section's authored empty wording, which is the honest shape
+for it. DEC-035's section table and ownership are unchanged — this decides the filter's
+semantics, which DEC-035 never specified.
+
+**Byte-identical open questions collapse onto one line at render, never at creation.** Two
+mappings contradicted on the same requirement each produce "Which statement is authoritative
+for req-X?", and section 11 rendered both verbatim. The collapse happens in the deterministic
+renderer — the duplicate's identifier rides its survivor's line as "*(also asked as qst-NNN)*"
+— because the objects must survive as allocated: the recorded report-generation response
+enumerates the run's question identifiers, and dropping a duplicate at creation renumbers the
+rest and invalidates the recording's own later call. That failure was observed, not
+hypothesized: the first implementation deduped at consolidation and the flagship replay
+exhausted its recorded responses retrying a report whose prose cited questions that no longer
+existed.
+
+**The consolidation question template interpolates missing-evidence entries as clauses.**
+Agents write entries as sentences — leading capital, trailing period — and the template
+produced "Can you confirm The webhook validation mechanism.?" in a section the reviewer reads
+line by line. The entry is stripped of its trailing period and its leading capital lowered
+unless the first word is an acronym.
+
+Why:
+
+**The report is the deliverable, and two of its sections argued against the product.** An
+always-empty threats section reads as "the analysis produced no threats" when the run produced
+fifteen; duplicated and malformed questions read as generator sloppiness in the section a
+reviewer reads most closely. Both defects were visible in the flagship report the demonstration
+opens.
+
+**Creation-time deduplication was rejected by the recording itself.** A recorded run is a
+historical artifact: later responses reference earlier allocations. Any change that renumbers
+identifiers mid-run breaks every recording that spans the change, which is a compatibility rule
+worth stating once and remembering — derived-output changes are re-pin cycles; allocation
+changes are re-capture events.
+
+Alternatives Considered:
+
+- A threat approval verb or checkpoint subject (a third human surface nobody asked for)
+- Rendering all validated threats regardless of findings (prints fifteen threats of which
+  eleven produced no approved conclusion, burying the four that did)
+- Deduplicating questions at consolidation (breaks recorded replays; observed)
+- Leaving both sections as they were and narrating the emptiness
+
+Tradeoffs:
+
+- Section 7 now under-represents the analysis breadth: threats that produced only gaps or
+  questions are absent. The section's lead-in names the rule so absence reads as scope, not
+  omission.
+- The render-time collapse leaves duplicate Question rows in the store; the count metrics see
+  them. That is honest — the model did ask twice — and the DEC-081 history will show the
+  duplicate rate fall when a future capture dedupes at the source.
