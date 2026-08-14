@@ -20,9 +20,9 @@ promotion traceback.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Final, Self
 
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from trace_ai.domain.base import DomainModel, now
 from trace_ai.domain.control import (
@@ -121,6 +121,22 @@ class RequirementMappingProposal(DomainModel):
     evidence_ids: list[EvidenceReferenceId] = Field(default_factory=list)
     assumptions: list[str] = Field(default_factory=list)
     confidence: ConfidenceLevel
+
+    @model_validator(mode="after")
+    def _suppression_is_recorded_in_both_halves(self) -> Self:
+        """`ControlMapping`'s DEC-025 pairing, applied one step earlier.
+
+        The duplication is deliberate, for the reason `ProposedContextClaim` states: caught here
+        it is a schema failure the retry policy can feed back with the field named; caught at
+        promotion it is a conversion crash after the call is already paid for — which is exactly
+        how the live ForgeFlow capture died (#324).
+        """
+        if bool(self.suppressed_conclusion) != bool(self.suppressed_by):
+            raise ValueError(
+                "suppressed_conclusion and suppressed_by are recorded together (DEC-025). One "
+                "without the other is a suppression nobody can check."
+            )
+        return self
 
 
 class DocumentationGapProposal(DomainModel):

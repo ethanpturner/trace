@@ -5609,3 +5609,37 @@ Tradeoffs:
   surface existed; the asymmetry is now the accurate statement of which agent can be re-run.
 - A future decision to re-run a downstream agent (a DEC-level routing change) reintroduces the
   surface for that validator deliberately, with its consumer, rather than finding it waiting.
+
+## DEC-087: No open mapping crosses the model wire; proposal fields are typed pair lists
+
+Date: 2026-08-14
+
+Status: Accepted
+
+Decision:
+
+**A proposal schema field is never a dict with arbitrary keys.** A per-identifier association —
+evidence strengths, quoted passages — is a list of typed pair objects (`WeighedEvidence`,
+`QuotedEvidence`), and promotion folds the pairs into the mapping the domain object keeps. The
+proposal accepts the pre-DEC-087 mapping form on input so committed recordings stay loadable;
+the exported schema — what the prompt teaches and the wire grammar compiles — is the pair list
+only.
+
+Why:
+
+- The provider's strict structured-output grammar rewrites an open mapping into an object that
+  accepts only `{}`. DEC-083 met this on an optional field and dropped the arm; the live
+  ForgeFlow capture (#324) met it on a *required* one: `evidence_strengths` demanded one entry
+  per cited reference while the compiled grammar forbade any entry at all, so the evidence
+  validation agent burned five attempts on a structurally impossible instruction. Offline
+  nothing noticed, because the deterministic model never serializes a schema for the wire.
+- The pair list is also the better teaching shape: each entry names its `evidence_id` and its
+  `strength` as declared fields the grammar enforces, instead of a key convention prose has to
+  explain.
+
+Tradeoffs:
+
+- Proposal and domain shapes diverge again where they used to coincide, in the same direction
+  and for the same reason as DEC-083; both modules say so.
+- The legacy-form acceptance is one more input path. It is a loader's tolerance, not a schema
+  the model is offered, and it retires whenever the recordings are next recaptured.

@@ -1,0 +1,282 @@
+{
+  "controls": [
+    {
+      "key": "ctl-managed-db-backups",
+      "name": "Managed database backups and platform maintenance provided by the cloud database service",
+      "description": "The architecture states that database backups and platform maintenance are managed through the cloud database service (evd-032), and the operations guide lists managed database backups and object-storage durability among disaster-recovery capabilities (evd-088). This is a documented durability capability provided by the managed platform. No reviewed passage states whether an organization-level deletion request reaches data held in those backups, or what the backup retention period is, so the control's interaction with the deletion path is not established.",
+      "control_type": "inherited",
+      "provider_component_id": "cmp-009",
+      "protected_component_ids": [
+        "cmp-009"
+      ],
+      "protected_asset_ids": [
+        "ast-002",
+        "ast-010"
+      ],
+      "implementation_status": "claimed",
+      "evidence_ids": [
+        "evd-032",
+        "evd-088",
+        "evd-136"
+      ],
+      "owner": "Managed cloud provider (backups), ForgeFlow Platform Operations (recovery procedures)",
+      "limitations": [
+        "Backup retention period is not stated in any reviewed passage (evd-032, evd-088).",
+        "Whether application-level organization data deletion propagates to managed backups is not described (evd-026, evd-032).",
+        "Recorded as a managed capability outside the application team (evd-136), so the coverage boundary between ForgeFlow and the platform for deletion is unstated."
+      ]
+    }
+  ],
+  "mappings": [
+    {
+      "threat_id": "thr-013",
+      "requirement_id": "req-DATA-002",
+      "control_keys": [],
+      "existing_control_ids": [
+        "ctl-014",
+        "ctl-015"
+      ],
+      "applicability_status": "applicable",
+      "applicability_reason": "The applicable condition 'the system retains a copy of customer data after processing completes' holds: temporary source artifacts, diffs, prompt artifacts and provider input/output artifacts are written to persistent object storage during analysis (evd-078, evd-033), which is exactly the retained working data whose stated lifetime this threat questions.",
+      "suppressed_conclusion": "That the retention expectation is unmet because no enforced deletion of retained working data is evidenced.",
+      "suppressed_by": "common_false_positives entry 'absent deletion evidence where a platform lifecycle policy is documented' — the operations guide documents scheduled cleanup after a 30-day window (evd-079), so absence of further deletion evidence does not support an unmet conclusion.",
+      "satisfaction_status": "partially_satisfied",
+      "evidence_ids": [
+        "evd-079",
+        "evd-099",
+        "evd-033",
+        "evd-054",
+        "evd-125"
+      ],
+      "assumptions": [
+        "Assumed that the 'source files' referred to in the customer-facing statement (evd-099) and the 'selected repository files' held as artifacts (evd-078) are the same material; if they are distinct categories the contradiction may be narrower."
+      ],
+      "confidence": "medium"
+    },
+    {
+      "threat_id": "thr-013",
+      "requirement_id": "req-DATA-004",
+      "control_keys": [
+        "ctl-managed-db-backups"
+      ],
+      "existing_control_ids": [
+        "ctl-015",
+        "ctl-014",
+        "ctl-022"
+      ],
+      "applicability_status": "applicable",
+      "applicability_reason": "Both applicable conditions hold: the system stores customer data, and that data exists in more than one store — PostgreSQL records (evd-032), object-storage artifacts (evd-033), forwarded log records (evd-036) and managed database backups (evd-032) — which is precisely the multi-store coverage question this threat raises about an organization deletion request.",
+      "suppressed_conclusion": "That deletion coverage is unmet because the documented deletion path does not reach object-storage artifacts, forwarded logs or managed database backups.",
+      "suppressed_by": "common_false_positives entries 'absent self-service deletion interface where an operator procedure exists' (operators support deletion requests, evd-035) and 'absent deletion path for data that is already lifecycle-expired' (scheduled cleanup bounds artifact retention, evd-079) — silence about coverage cannot establish that the derived stores are unreachable.",
+      "satisfaction_status": "unverified",
+      "evidence_ids": [
+        "evd-026",
+        "evd-096",
+        "evd-032",
+        "evd-035",
+        "evd-033",
+        "evd-036"
+      ],
+      "assumptions": [],
+      "confidence": "medium"
+    },
+    {
+      "threat_id": "thr-013",
+      "requirement_id": "req-DATA-003",
+      "control_keys": [],
+      "existing_control_ids": [
+        "ctl-011",
+        "ctl-013"
+      ],
+      "applicability_status": "applicable",
+      "applicability_reason": "Artifacts from multiple customers share one managed object store and are addressable by a documented, predictable path template (evd-033, evd-078), matching both applicable conditions; the threat's impact depends on who can read those artifact paths once the customer believes the data is gone.",
+      "suppressed_conclusion": "That tenant separation of stored artifacts is inadequate because separation is described only as a path naming convention.",
+      "suppressed_by": "common_false_positives entry 'absent description of a physical separation mechanism where logical separation is enforced and documented' — organization-scoped paths are documented (evd-033, evd-130) and the missing element is the enforcement description, which the architecture itself names as an open item (evd-054) rather than a stated deficiency.",
+      "satisfaction_status": "partially_satisfied",
+      "evidence_ids": [
+        "evd-033",
+        "evd-078",
+        "evd-130",
+        "evd-054"
+      ],
+      "assumptions": [],
+      "confidence": "medium"
+    },
+    {
+      "threat_id": "thr-013",
+      "requirement_id": "req-LOG-001",
+      "control_keys": [],
+      "existing_control_ids": [
+        "ctl-021"
+      ],
+      "applicability_status": "applicable",
+      "applicability_reason": "Both applicable conditions hold: the system handles restricted source material (evd-147, evd-122) and forwards logs to a shared platform managed outside the application team (evd-036, evd-136). This threat asserts that forwarded log records survive an organization deletion request, so what reaches those logs and where they go is directly engaged.",
+      "suppressed_conclusion": "That the requirement is unmet because log records are retained beyond the point at which the customer was told source material was deleted.",
+      "suppressed_by": "common_false_positives entry 'absent log retention period, which is a separate expectation' — log retention is outside this requirement's statement, which covers exclusion of restricted content and identification of the log destination.",
+      "satisfaction_status": "partially_satisfied",
+      "evidence_ids": [
+        "evd-036",
+        "evd-131",
+        "evd-136",
+        "evd-084"
+      ],
+      "assumptions": [],
+      "confidence": "medium"
+    },
+    {
+      "threat_id": "thr-013",
+      "requirement_id": "req-ADMIN-001",
+      "control_keys": [],
+      "existing_control_ids": [
+        "ctl-022"
+      ],
+      "applicability_status": "applicable",
+      "applicability_reason": "The system exposes an internal administrative interface and operators can act on customer data, including supporting deletion requests and requesting retention extensions (evd-035, evd-079), satisfying both applicable conditions. The threat depends in part on what internal personnel can reach in the stores that outlive a deletion request.",
+      "suppressed_conclusion": "That privileged administrative access is inadequately restricted because detailed administrative permissions are not described.",
+      "suppressed_by": "common_false_positives entry 'absent role-based permission matrix within the administrative interface' — the missing permission detail (evd-035, evd-138) does not support a negative conclusion about the access path, which is documented as corporate identity provider authentication separate from the customer login flow (evd-035, evd-087).",
+      "satisfaction_status": "partially_satisfied",
+      "evidence_ids": [
+        "evd-035",
+        "evd-087",
+        "evd-132",
+        "evd-143",
+        "evd-054"
+      ],
+      "assumptions": [],
+      "confidence": "medium"
+    },
+    {
+      "threat_id": "thr-013",
+      "requirement_id": "req-LOG-002",
+      "control_keys": [],
+      "existing_control_ids": [
+        "ctl-022"
+      ],
+      "applicability_status": "applicable",
+      "applicability_reason": "An administrative interface exists and operator actions affect customer data — supporting deletion requests and requesting temporary retention extensions (evd-035, evd-079) — so both applicable conditions hold. This threat's repudiation aspect turns on whether an accurate record exists of what deletion and extension actions were taken.",
+      "suppressed_conclusion": "That administrative recording is unmet because no tamper-evidence property is described for the audit records.",
+      "suppressed_by": "common_false_positives entry 'absent tamper-evidence detail where records are sent to a separately managed platform' — operational actions are recorded in the centrally managed logging platform (evd-087, evd-136), so absent tamper-evidence detail does not support a negative conclusion.",
+      "satisfaction_status": "partially_satisfied",
+      "evidence_ids": [
+        "evd-032",
+        "evd-087",
+        "evd-132",
+        "evd-079"
+      ],
+      "assumptions": [],
+      "confidence": "low"
+    },
+    {
+      "threat_id": "thr-013",
+      "requirement_id": "req-DATA-001",
+      "control_keys": [],
+      "existing_control_ids": [
+        "ctl-013"
+      ],
+      "applicability_status": "applicable",
+      "applicability_reason": "The stores this threat says outlive a deletion request hold restricted and confidential customer data (evd-147, evd-033, evd-032), satisfying the condition that the system stores confidential or restricted data; the requirement's protection question is therefore live for that persistence window.",
+      "suppressed_conclusion": "That encryption is unverified because no cipher suites, key lengths or key custody arrangements are described.",
+      "suppressed_by": "common_false_positives entries 'absent description of cipher suites or key lengths' and 'absent application-implemented cryptography where managed services provide it' — the documentation names the providing party (evd-126, evd-136), which is what the statement asks for.",
+      "satisfaction_status": "satisfied",
+      "evidence_ids": [
+        "evd-126",
+        "evd-136",
+        "evd-053",
+        "evd-149"
+      ],
+      "assumptions": [
+        "Assumed the statement that managed cloud storage services provide encryption for stored customer data (evd-126) covers both the object store and the managed database, since both are named as managed cloud storage capabilities (evd-136)."
+      ],
+      "confidence": "medium"
+    }
+  ],
+  "documentation_gaps": [
+    {
+      "title": "Stores reached by an organization-level data deletion request are not enumerated",
+      "description": "The API is documented as supporting organization-level data deletion, customer administrators may request deletion, and deletion status is held in PostgreSQL (evd-026, evd-096, evd-032). No reviewed passage states which stores such a request reaches. Object-storage artifacts under organization- and job-scoped paths (evd-033, evd-078), forwarded log records on the shared logging platform (evd-036, evd-131) and managed database backups (evd-032, evd-088) are separate stores whose treatment under a deletion request is unstated. Trace cannot determine whether deletion coverage extends to them.",
+      "importance": "Without an inventory of stores covered by deletion, neither the exposure window after a deletion request nor the accuracy of what customers are told about deletion can be assessed.",
+      "related_object_ids": [
+        "thr-013",
+        "cmp-003",
+        "cmp-009",
+        "cmp-010",
+        "cmp-012",
+        "ast-001",
+        "ast-002",
+        "ast-009",
+        "ast-010",
+        "req-DATA-004"
+      ],
+      "requested_evidence": [
+        "Operations documentation describing the deletion procedure and naming every store it acts on",
+        "An inventory of stores holding customer data, including derived and secondary stores",
+        "A statement of managed database backup retention and whether deletion propagates to backups",
+        "A statement of log retention on the shared logging platform for records referencing customer content"
+      ],
+      "evidence_ids": [
+        "evd-026",
+        "evd-096",
+        "evd-032",
+        "evd-033",
+        "evd-036",
+        "evd-088"
+      ],
+      "severity": "medium"
+    },
+    {
+      "title": "Source-artifact retention is stated inconsistently between customer-facing and operational documentation",
+      "description": "Product documentation tells customers that source files are treated as temporary processing data and are deleted after analysis completes (evd-099), while the operations guide records a 30-day retention target with scheduled cleanup and support-requested extensions (evd-079). The security overview states only that the platform is designed to minimize unnecessary retention (evd-125), and the architecture lists source-artifact retention among its known documentation gaps (evd-054). Which statement is authoritative is not resolvable from the reviewed material, and the structured input directs that conflicts be surfaced rather than resolved (evd-153).",
+      "importance": "The discrepancy determines both the real exposure window for restricted source material and whether the customer-facing statement is accurate; a reviewer must decide which passage governs.",
+      "related_object_ids": [
+        "thr-013",
+        "cmp-010",
+        "ast-001",
+        "ast-009",
+        "req-DATA-002",
+        "ctl-014"
+      ],
+      "requested_evidence": [
+        "A single authoritative retention statement for source-derived artifacts, reconciling evd-099 and evd-079",
+        "Storage lifecycle configuration or scheduled-cleanup job definition showing the enforced period",
+        "The approval path and maximum duration for support-requested retention extensions, and whether extensions are recorded"
+      ],
+      "evidence_ids": [
+        "evd-099",
+        "evd-079",
+        "evd-125",
+        "evd-054",
+        "evd-033"
+      ],
+      "severity": "medium"
+    },
+    {
+      "title": "Enforcement of organization scoping on access to stored artifacts is not described",
+      "description": "Object paths include the organization and job identifiers and follow a documented template (evd-033, evd-078, evd-130), and the API may issue time-limited access links (evd-026, evd-033). The architecture names object-storage authorization enforcement and administrative access to source artifacts as details requiring further clarification (evd-054), and the security overview omits internal authorization implementation (evd-138). Trace cannot determine whether the path layout is backed by an enforced access check for artifacts that persist after a customer believes deletion has occurred.",
+      "importance": "If separation rests on path naming alone, restricted source-derived artifacts surviving a deletion request are readable by any party able to address those paths, which is the exposure this threat describes.",
+      "related_object_ids": [
+        "thr-013",
+        "cmp-010",
+        "cmp-003",
+        "ast-009",
+        "ast-001",
+        "req-DATA-003",
+        "ctl-011"
+      ],
+      "requested_evidence": [
+        "Storage access policy configuration showing how reads are constrained per organization",
+        "A description of the authorization check performed before a time-limited link is issued",
+        "A statement of what the administrative interface can reach in object storage"
+      ],
+      "evidence_ids": [
+        "evd-033",
+        "evd-078",
+        "evd-130",
+        "evd-054",
+        "evd-138",
+        "evd-026"
+      ],
+      "severity": "medium"
+    }
+  ],
+  "catalog_gap_candidates": []
+}

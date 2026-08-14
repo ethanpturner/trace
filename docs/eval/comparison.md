@@ -10,7 +10,7 @@ recorded runs by `scripts/build_comparison.py`; the same runs render the per-sce
 | --- | --- | --- | --- | --- | --- |
 | Generic prompt (baseline) | 100% (4/4 runs) | none [^evidence] | 5 over 4 scenarios [^fp] | not run [^injection] | not measured [^stability] |
 | Structured single-pass (baseline) | 100% (4/4 runs) | none [^evidence] | 0 over 4 scenarios [^fp] | not run [^injection] | not measured [^stability] |
-| Trace | valid by construction [^schema] | 100% (14/14 findings) | 1 over 12 scenarios [^fp] | 0% (1 adversarial scenario) [^classes] | not measured [^stability] |
+| Trace | valid by construction [^schema] | 100% (17/17 findings) | 4 over 12 scenarios [^fp] | 0% (1 adversarial scenario) [^classes] | not measured [^stability] |
 
 The two baselines are a single model call over the same source documents and the same requirements
 catalog Trace sees, scored by the same structural matcher (DEC-074); ties are resolved in the

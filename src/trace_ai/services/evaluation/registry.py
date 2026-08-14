@@ -105,11 +105,11 @@ class Scenario:
         A bare `recorded/` directory is not a recording: it must hold response JSON files. The
         harness refuses a scenario without one by name, and `--all` reports it skipped.
         """
-        return self.recorded_dir.is_dir() and any(self.recorded_dir.glob("*.json"))
+        return self.recorded_dir.is_dir() and any(self.recorded_dir.rglob("[0-9]*.json"))
 
     def has_recording_for(self, condition: str = CLEAN_CONDITION) -> bool:
         recorded = self.recorded_dir_for(condition)
-        return recorded.is_dir() and any(recorded.glob("*.json"))
+        return recorded.is_dir() and any(recorded.rglob("[0-9]*.json"))
 
     @property
     def has_outcome_truth(self) -> bool:

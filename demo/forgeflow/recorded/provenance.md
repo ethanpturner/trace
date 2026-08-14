@@ -1,49 +1,60 @@
 # The recorded ForgeFlow run
 
-This directory holds one complete offline run of the pipeline: eight model responses, the
+This directory holds one complete run of the pipeline, captured live from `claude-opus-5`
+(profile `primary-development`) on 2026-08-14: every model response the run consumed, the
 reviewer decisions for both checkpoints, and the content hash of the report the run renders.
 `uv run python scripts/replay_forgeflow.py` replays it end to end with no provider, no key, and
 no network, and exits non-zero if the report's bytes stop matching `report-hash.txt`.
 `tests/unit/test_forgeflow_replay.py` runs the same replay in the default suite.
 
-## What this recording is, and is not
+## What this recording is
 
-The responses are authored offline against the `offline-fake` profile and the deterministic
-model — they were not captured from a provider call. They are shaped exactly as recordings are
-consumed (one JSON file per model call, schema inferred structurally, replayed in order), so a
-live capture can replace them file for file without changing the replayer. The run is a
-representative slice of the ForgeFlow scenario — two threats, one finding, one documentation
-gap — not the benchmark truth run; scoring against `demo/forgeflow/expected/` is the evaluation
-harness's work (DEC-073), not this recording's.
+The responses were captured from live provider calls by `scripts/capture_forgeflow.py` (#324):
+a recording wrapper behind the model seam wrote each successful response, in consumption order,
+shaped exactly as `load_recorded_responses` reads them back. The reviewer decisions were authored
+against what the live run actually produced — sixteen components, fifteen threats, five candidate
+findings — with the scenario's `expected/reviewer-notes.md` as the judgment guide. The run is
+scored against `demo/forgeflow/expected/` by the evaluation harness (DEC-073), and the scorecard
+carries the honest result: strong context and mapping accuracy, one rejected candidate, and none
+of the truth set's three expected findings matched — the run found real, defensible weaknesses
+that are not the ones the truth set names.
+
+**Retries are part of the recording.** Four calls failed schema validation live and were retried
+with the validator's feedback; the failed responses are recorded in their consumed positions, so
+a replay reproduces the retries exactly, within the default retry budget. One reviewer decision
+is a rejection (fnd-003), taken on DEC-009 grounds: the run proposed a finding whose enforcement
+evidence was silence, and the reviewer routed it back toward the gap the run had also raised.
+
+The capture session spent roughly $30 of provider budget in total, including attempts that were
+discarded along the way (truncations, grammar rejections, and validation failures — each one a
+live-run defect fixed in the same change set). No per-call price is pinned here: the profile's
+published rates and the execution ledger are the accounting surfaces.
 
 The reviewer decisions reach the workflow through the same writers an interactive session uses
 (DEC-017): `decisions-context.yaml` is an exported review file applied verbatim, and
-`decisions-findings.yaml` drives the same severity and approval functions the CLI calls. Both
-checkpoints execute and their gates hold; replay is not an ablation (DEC-012).
+`decisions-findings.yaml` drives the same severity, approval, and rejection functions the CLI
+calls. Both checkpoints execute and their gates hold; replay is not an ablation (DEC-012).
 
 ## Version pins
 
 | Pin | Value |
 |---|---|
-| Model profile | `offline-fake` (provider `fake`, model `deterministic-fake`) |
+| Model profile | `primary-development` (provider `anthropic`, model `claude-opus-5`) |
+| Captured | 2026-08-14, by `scripts/capture_forgeflow.py` |
 | Workflow version | `0.1` |
 | Requirements catalog | `0.1` |
 | Report template | `report-v1` |
-| Generation timestamp | `2026-08-11T12:00:00+00:00` (pinned in `scripts/replay_forgeflow.py`) |
+| Generation timestamp | `2026-08-14T12:00:00+00:00` (pinned in `scripts/replay_forgeflow.py`) |
 
 The report carries exactly one timestamp, and the replayer pins it; everything else the run
 writes is deterministic, which is what makes the pinned hash a claim worth checking.
 
 ## Files, in consumption order
 
-| File | Consumed by |
-|---|---|
-| `01-context-extraction.json` | the Context Extraction agent's one call |
-| `decisions-context.yaml` | checkpoint 1, applied through the review-file writer |
-| `02-threat-analysis.json` | the Threat Analysis agent's one call |
-| `03-mapping-thr-001.json`, `04-mapping-thr-002.json` | one mapping call per threat |
-| `05-evidence-validation.json` | the Evidence Validation agent's one call |
-| `06-critical-review-thr-001.json`, `07-critical-review-thr-002.json` | one critic call per threat; both found nothing to challenge |
-| `decisions-findings.yaml` | checkpoint 2: severity assigned, the finding approved |
-| `08-report-sections.json` | the Report Generation agent's one call |
-| `report-hash.txt` | the pinned content hash of the rendered report |
+The numbered files are consumed strictly in sorted order, one per model call including retried
+calls; the replayer derives the list from the directory. The first file answers the context
+extraction call, the last answers report generation, and everything between belongs to the
+reasoning segment: one threat-analysis response, one mapping response per threat (plus recorded
+failed attempts where the live run retried), one evidence-validation response, and one critique
+response per threat. `decisions-context.yaml` is applied at checkpoint 1, `decisions-findings.yaml`
+at checkpoint 2, and `report-hash.txt` pins the rendered report.

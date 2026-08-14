@@ -1,0 +1,53 @@
+{
+  "critiques": [
+    {
+      "subject_type": "threat",
+      "subject_id": "thr-015",
+      "critique_type": "weak_attack_path",
+      "description": "Attack-path step 2 asserts that the operator \"opens job error metadata and the associated diagnostic artifacts for a customer organization\" on the strength of evd-083 and evd-033, but neither passage carries the artifact-read half of that step. evd-083 enumerates retrying failed jobs, disabling repository integrations, reviewing operational logs, worker failures, queue status and provider failures, and confirming customer configuration - no artifact retrieval of any kind. evd-033 lists diagnostic artifacts among stored objects and says nothing about who may read them. The path also passes over the mediation shown in evd-023 and evd-048 (ForgeFlow Administrator -> Corporate Identity Provider -> Administrative Interface -> ForgeFlow API), where the enumerated primary data for that flow is organization metadata, integration status, job metadata, error details and administrative actions, with artifacts absent, while evd-026 describes the API's administrative surface only as \"permitted administrative operations\". The impact section then states without qualification that customer source code and analysis artifacts \"across every organization are reachable from a single internal role\".",
+      "rationale": "Whether administrative access reaches source artifacts is a named documentation gap (evd-054) and administrative respect for isolation is stated only as intent (evd-130), so the artifact-read step is an inference from silence and should be presented as such rather than cited as documented operator behaviour, with the impact worded conditionally. This is consistent with the group's own handling elsewhere (eas-070 records the reach as \"not established either way\" and gap-050 requests the missing statement); it is the threat object itself that reads as though the reach were documented. Revision also lets the threat pose the narrower, answerable question the mediation implies - what artifact operations the ForgeFlow API permits an administrative session - and puts evd-048's enumeration in front of a reviewer as material bearing on the claim rather than as background.",
+      "evidence_ids": [
+        "evd-083",
+        "evd-033",
+        "evd-048",
+        "evd-023",
+        "evd-026",
+        "evd-054",
+        "evd-130"
+      ],
+      "recommended_action": "revise",
+      "confidence": "medium"
+    },
+    {
+      "subject_type": "documentation_gap",
+      "subject_id": "gap-044",
+      "critique_type": "duplicate",
+      "description": "gap-044 records the same missing fact as gap-022. Both state that artifacts sit under a documented organization/job path template (evd-033, evd-078, evd-130), both rest on evd-054's \"Object-storage authorization enforcement\" entry and evd-138's omission of internal authorization implementation, and both conclude that it cannot be determined whether a server-side check constrains an artifact read. Their requested evidence overlaps almost item for item: the storage or bucket access policy governing reads, the authorization check performed before a time-limited link is issued (which gap-023 also requests, citing evd-026 and evd-033), and a statement of what the administrative interface can reach in object storage (which gap-050 requests). The only material difference is framing - gap-044 frames the same silence around artifacts that persist after a customer believes deletion has occurred - and the two records carry different severities, high for gap-022 and medium for gap-044, for one underlying gap.",
+      "rationale": "Both records would be answered by the same document from the same team, so keeping them separate produces two open items for one answer, inflates the number of unverified controls recorded around ctl-011, and splits the severity signal between high and medium. Consolidating into gap-022 while carrying gap-044's deletion-survival framing and its administrative-reach request across as scope preserves what is actually distinct. The one reason a reviewer might decline is lineage: gap-044 is linked to thr-013 rather than to this threat, and consolidation should not lose that link.",
+      "evidence_ids": [
+        "evd-033",
+        "evd-078",
+        "evd-130",
+        "evd-054",
+        "evd-138",
+        "evd-026"
+      ],
+      "recommended_action": "merge",
+      "confidence": "medium"
+    },
+    {
+      "subject_type": "documentation_gap",
+      "subject_id": "gap-050",
+      "critique_type": "severity_understated",
+      "description": "gap-050 is recorded at severity medium while its own importance statement says it is \"the fact that decides whether one internal role can read customer source material for every organization\" and that it \"cannot be settled by the other administrative controls that are documented\". gap-022, which rests on the same evd-054 known-gaps list and governs the same assets - restricted analysis artifacts and the source content inside them - for the narrower customer-facing read path, is rated high. Nothing in gap-050 states why the cross-organization administrative case ranks below the object-path enforcement case.",
+      "rationale": "Gap severity determines which evidence requests are chased first. On this group's own reasoning, the undefined reach of a role that by design spans every organization (evd-035, \"Locate organizations and installations\") and whose isolation behaviour is stated only as intent (evd-130) is at least as consequential as the enforcement question rated high, and the divergence reads as an inconsistency between sibling gaps rather than a recorded judgment. A reviewer should either raise gap-050 to high or record why the documented compensating controls - corporate-identity authentication, session expiry and audit recording - justify medium.",
+      "evidence_ids": [
+        "evd-054",
+        "evd-130",
+        "evd-035"
+      ],
+      "recommended_action": "revise",
+      "confidence": "low"
+    }
+  ]
+}

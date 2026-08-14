@@ -744,10 +744,15 @@ class CritiqueValidationAdapter:
     phase: ClassVar[Phase] = Phase.CRITICAL_REVIEW
     execution_type: ClassVar[ExecutionType] = ExecutionType.DETERMINISTIC
 
+    # Every subject type the critique package presents. EVIDENCE_ASSESSMENT was missing until
+    # the live capture produced a critique of one and the validator refused an object that was
+    # sitting in the store (#324): the package deliberately shows the critic the assessments, so
+    # the map must let a critique land on them.
     _SUBJECT_MODELS: ClassVar[dict[CritiqueSubjectType, type[DomainModel]]] = {
         CritiqueSubjectType.THREAT: Threat,
         CritiqueSubjectType.CONTROL: Control,
         CritiqueSubjectType.CONTROL_MAPPING: ControlMapping,
+        CritiqueSubjectType.EVIDENCE_ASSESSMENT: EvidenceAssessment,
         CritiqueSubjectType.DOCUMENTATION_GAP: DocumentationGap,
     }
 

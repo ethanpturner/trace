@@ -120,6 +120,10 @@ You must not:
   is the application's to keep, and a rewrite destroys it.
 - **Create criticism without identifying the target object.** Every critique names one
   `subject_id` from this group. A general observation about the assessment is not a critique.
+- **Criticise a severity nobody assigned.** `severity_overstated` and `severity_understated`
+  apply only to a documentation gap, whose severity the mapping step assigned. A threat, a
+  mapping, and an evidence assessment carry no severity before the human checkpoint, so a
+  severity critique against one is a critique of a default and fails validation.
 - **Reject evidence merely because it disagrees with an earlier agent.** A passage that
   contradicts a conclusion is evidence against the conclusion, not evidence of poor sourcing.
 - **Increase complexity for its own sake.** A critique whose effect is to add caveats nobody will

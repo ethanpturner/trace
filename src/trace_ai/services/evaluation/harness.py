@@ -77,6 +77,7 @@ from trace_ai.workflow.finding_review import (
     approve_finding,
     change_severity,
     conclude_finding_review,
+    reject_finding,
 )
 from trace_ai.workflow.phases import Phase
 
@@ -251,7 +252,10 @@ def _recordings_for(
     ]
     return [
         path
-        for path in sorted(entry.recorded_dir_for(condition).glob("*.json"))
+        # rglob, sorted by relative path: the flagship recording is organized by segment
+        # (extraction/, reasoning/, report/), whose alphabetical order is the consumption
+        # order; a flat benchmark directory sorts identically to before.
+        for path in sorted(entry.recorded_dir_for(condition).rglob("[0-9]*.json"))
         if not any(marker in path.name for marker in skipped_markers)
     ]
 
@@ -307,6 +311,10 @@ def _apply_finding_decisions(
             )
         if decided.get("decision") == ReviewDisposition.APPROVE.value:
             approve_finding(
+                handle, finding, reviewer_id=HARNESS_REVIEWER, rationale=decided.get("rationale")
+            )
+        elif decided.get("decision") == ReviewDisposition.REJECT.value:
+            reject_finding(
                 handle, finding, reviewer_id=HARNESS_REVIEWER, rationale=decided.get("rationale")
             )
     conclude_finding_review(service, assessment_id)

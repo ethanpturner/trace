@@ -46,6 +46,7 @@ from trace_ai.infrastructure.model.seam import (
     ModelCapability,
     ModelOutcome,
     ModelSuccess,
+    ModelUsage,
     StructuredModel,
 )
 from trace_ai.services.assessment import AssessmentService
@@ -69,6 +70,7 @@ from trace_ai.workflow.finding_review import (
     approve_finding,
     change_severity,
     conclude_finding_review,
+    reject_finding,
 )
 from trace_ai.workflow.limits import Budget
 
@@ -144,19 +146,70 @@ class RecordingModel:
         return outcome
 
 
+class FallbackModel:
+    """Serves the already-recorded responses in order, then delegates to the live model.
+
+    This is how an interrupted capture resumes without re-spending (#324): a fresh data root
+    replays the recorded prefix — same responses, same conversions, same allocated identifiers —
+    and the first unanswered call goes live. Only the live inner is a `RecordingModel`, so a
+    replayed response is never re-recorded.
+    """
+
+    def __init__(self, recorded: list[BaseModel], live: StructuredModel) -> None:
+        self._recorded = list(recorded)
+        self._live = live
+
+    @property
+    def name(self) -> str:
+        return self._live.name
+
+    @property
+    def capabilities(self) -> frozenset[ModelCapability]:
+        return self._live.capabilities
+
+    def generate[T: BaseModel](
+        self,
+        *,
+        prompt: str,
+        schema: type[T],
+        settings: GenerationSettings,
+        system: str | None = None,
+    ) -> ModelOutcome[T]:
+        if self._recorded:
+            queued = self._recorded.pop(0)
+            if not isinstance(queued, schema):
+                raise SystemExit(
+                    f"the next recorded response is a {type(queued).__name__}, not the "
+                    f"{schema.__name__} this call asks for; the capture and the recording have "
+                    f"diverged and continuing live would corrupt the sequence"
+                )
+            print(f"  replayed a recorded {type(queued).__name__} (no spend)")
+            return ModelSuccess(value=queued, usage=ModelUsage(model=self._live.name))
+        return self._live.generate(prompt=prompt, schema=schema, settings=settings, system=system)
+
+
 def _budget() -> Budget:
     # Four retries rather than the default two: a live 100KB proposal is regenerated whole on
     # each attempt, so a handful of misfilled fields can take an extra round to converge even
     # with the field-location feedback, and a fifth attempt is cheaper than a re-run.
+    # Four hours of segment time rather than one: fifteen threats means fifteen mapping calls
+    # and fifteen critique calls in one reasoning segment, each minutes long at live speed.
     return Budget(
         maximum_model_calls=BUDGET_CALLS,
         maximum_cost=BUDGET_COST,
         maximum_retries_per_node=4,
+        maximum_duration_seconds=4 * 3600.0,
     )
 
 
-def _model() -> RecordingModel:
-    return RecordingModel(AnthropicModel(PROFILE_NAME))
+def _model(*, from_recorded: bool, skip: int = 0) -> StructuredModel:
+    live = RecordingModel(AnthropicModel(PROFILE_NAME))
+    if not from_recorded:
+        return live
+    from trace_ai.infrastructure.model.recorded import load_recorded_responses
+
+    paths = sorted(CAPTURE.glob("[0-9]*.json"))[skip:]
+    return FallbackModel(list(load_recorded_responses(paths)), live)
 
 
 def _assessment_id() -> str:
@@ -173,10 +226,17 @@ def _spent(service: AssessmentService, assessment_id: str) -> str:
     return f"{calls} calls, ${cost:.2f} per the run rows so far"
 
 
-def stage_extract() -> None:
-    """Create the assessment, load the inputs, and run live to checkpoint 1."""
-    if CAPTURE.exists() and any(CAPTURE.iterdir()):
-        raise SystemExit(f"{CAPTURE} is not empty; a re-run would re-spend the extraction call")
+def stage_extract(*, from_recorded: bool = False) -> None:
+    """Create the assessment, load the inputs, and run to checkpoint 1.
+
+    With `--from-recorded`, existing recordings answer the calls they cover (an interrupted
+    capture resumed on a fresh data root) and only unanswered calls go live.
+    """
+    if CAPTURE.exists() and any(CAPTURE.glob("[0-9]*.json")) and not from_recorded:
+        raise SystemExit(
+            f"{CAPTURE} holds recordings; a re-run would re-spend them. Resume with "
+            f"--from-recorded, or remove the directory to start over."
+        )
     CAPTURE.mkdir(parents=True, exist_ok=True)
     if DATA_ROOT.exists():
         raise SystemExit(f"{DATA_ROOT} exists; remove it to start a fresh capture")
@@ -197,7 +257,7 @@ def stage_extract() -> None:
         outcome = run_assessment(
             service,
             created.id,
-            model=_model(),
+            model=_model(from_recorded=from_recorded),
             profile=profile,
             budget=_budget(),
         )
@@ -220,7 +280,7 @@ def stage_extract() -> None:
         print(f"author {CAPTURE / 'decisions-context.yaml'} from review-export.yaml, then: reason")
 
 
-def stage_reason() -> None:
+def stage_reason(*, from_recorded: bool = False) -> None:
     """Apply the authored context decisions, approve, and run live to checkpoint 2."""
     decisions = CAPTURE / "decisions-context.yaml"
     if not decisions.is_file():
@@ -250,7 +310,7 @@ def stage_reason() -> None:
         outcome = resume_assessment(
             service,
             assessment_id,
-            model=_model(),
+            model=_model(from_recorded=from_recorded, skip=1),
             profile=profile,
             budget=_budget(),
         )
@@ -319,13 +379,17 @@ def stage_report() -> None:
                 finding, _ = approve_finding(
                     handle, finding, reviewer_id=REVIEWER, rationale=entry.get("rationale")
                 )
+            elif entry.get("decision") == "reject":
+                finding, _ = reject_finding(
+                    handle, finding, reviewer_id=REVIEWER, rationale=entry["rationale"]
+                )
             findings[finding.id] = finding
         conclude_finding_review(service, assessment_id)
 
         outcome = resume_assessment(
             service,
             assessment_id,
-            model=_model(),
+            model=_model(from_recorded=False),
             profile=profile,
             budget=_budget(),
             generated_at=GENERATED_AT,
@@ -351,8 +415,18 @@ def stage_report() -> None:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("stage", choices=["extract", "reason", "report"])
+    parser.add_argument(
+        "--from-recorded",
+        action="store_true",
+        help="serve existing recordings before going live (resume an interrupted capture)",
+    )
     args = parser.parse_args(argv)
-    {"extract": stage_extract, "reason": stage_reason, "report": stage_report}[args.stage]()
+    if args.stage == "extract":
+        stage_extract(from_recorded=args.from_recorded)
+    elif args.stage == "reason":
+        stage_reason(from_recorded=args.from_recorded)
+    else:
+        stage_report()
     return 0
 
 

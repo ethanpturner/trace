@@ -1,0 +1,79 @@
+{
+  "critiques": [
+    {
+      "subject_type": "threat",
+      "subject_id": "thr-011",
+      "critique_type": "unsupported_claim",
+      "description": "The third limb of the impact statement -- that short-lived installation tokens (ast-006) are exposed within their validity window -- is not carried by the attack path as written. The only serialisation step in the path is step 2, 'the error path serialises context that includes part of the constructed request or the provider response', and the cited documents state that this material excludes token material: evd-007 says the worker does not transmit installation tokens, and evd-038 says the AI provider does not receive GitHub installation tokens. The sole support for the token limb is evd-036's expectation that 'error handling should avoid logging full provider prompts or GitHub access tokens', which addresses ForgeFlow error handling generally, not the serialisation of a provider request; the failure mode that would plausibly touch a token (GitHub API timeout, listed in evd-052) does not appear in step 1 of this path.",
+      "rationale": "The threat asserts a credential-exposure impact whose mechanism its own attack path does not contain, and two of the group's passages document that the serialised material excludes tokens. This is not merely a hedge ('if token material is captured'): the token limb is what makes map-118 and map-120 applicable to this threat, so the unsupported limb propagates into two mappings. Either add a step describing a GitHub-API error path that handles token material, or drop ast-006 from the impact and let map-118/map-120 fall away.",
+      "evidence_ids": [
+        "evd-007",
+        "evd-038",
+        "evd-036",
+        "evd-052"
+      ],
+      "recommended_action": "revise",
+      "confidence": "medium"
+    },
+    {
+      "subject_type": "threat",
+      "subject_id": "thr-011",
+      "critique_type": "missing_evidence",
+      "description": "Precondition 3 states, as an established condition, that 'failure handling produces diagnostic artifacts and error records derived from provider requests and responses', and carries the parenthetical 'evd-015 not cited - see evd-052' -- an identifier that is neither in the threat's evidence_ids nor resolvable in this group's evidence references. The artifact half of the precondition is supported: evd-033 lists model input artifacts, model output artifacts and diagnostic artifacts associated with failed jobs, and evd-078 lists prompt-construction artifacts, structured AI responses and diagnostic information. The 'error records derived from provider requests and responses' half is not: evd-052 enumerates failure conditions without describing what an error record contains, and gap-035 records this same question as unanswered.",
+      "rationale": "A precondition stated as documented, resting on a citation a reviewer cannot resolve, reads exactly like one that checks out. The substantive half that the cited passages do carry (artifacts) should be separated from the half they do not (error-record content), which should be marked assumed or inferred consistent with gap-035, and the unresolvable reference removed from the precondition text.",
+      "evidence_ids": [
+        "evd-033",
+        "evd-078",
+        "evd-052"
+      ],
+      "recommended_action": "revise",
+      "confidence": "medium"
+    },
+    {
+      "subject_type": "control_mapping",
+      "subject_id": "map-122",
+      "critique_type": "contradictory_analysis",
+      "description": "map-122 rules req-LOG-002 not_applicable on the ground that the attack path contains 'no privileged operator action as a step'. But the path's terminal step is a read of customer-derived content by the shared logging platform's reader population, a population evd-036 and evd-136 place outside the application team, and the threat's impact is that this content lands in audit and operational log stores (ast-010) 'whose access model is not the organization boundary'. evd-035 records that authorized administrators review error metadata through the internal interface. map-117, in the same group, treats operator review of error metadata and operational logs as bearing directly on this threat, which sits awkwardly with map-122's premise that no operator action figures in the path.",
+      "rationale": "Whether a requirement about recording who acted on customer data is engaged when customer-derived content is deposited into a store whose reads ForgeFlow does not record is a question this ruling closes rather than answers, and the ruling's stated ground is contradicted by the threat's own final step and by map-117's applicability reasoning. I cannot see req-LOG-002's conditions, so the correct status may still be not_applicable -- but the reason given does not support it as written.",
+      "evidence_ids": [
+        "evd-036",
+        "evd-136",
+        "evd-035"
+      ],
+      "recommended_action": "investigate",
+      "confidence": "low"
+    },
+    {
+      "subject_type": "documentation_gap",
+      "subject_id": "gap-037",
+      "critique_type": "duplicate",
+      "description": "gap-037 and gap-043 record the same unresolved contradiction with the same evidence: evd-099's statement that source files are deleted after analysis completes against evd-079's 30-day retention target with scheduled cleanup, with evd-054 naming source-artifact retention as a known gap and evd-033 as context. Their requested evidence is substantially identical (an authoritative retention statement, the enforcing mechanism, and reconciliation of the customer-facing statement with the operational window); gap-037 adds only 'what happens if the job does not run' and gap-043 adds only the approval path and maximum duration for support-requested extensions. Both bear on req-DATA-002 and ctl-014.",
+      "rationale": "One reconciliation question is being carried twice, so a reviewer would answer the same question twice and two findings would issue from a single documentation defect. Merging keeps the two supplementary items while leaving one gap to resolve. I set confidence at medium only because per-lineage gap instances may be an intended application convention rather than an error.",
+      "evidence_ids": [
+        "evd-099",
+        "evd-079",
+        "evd-054",
+        "evd-033"
+      ],
+      "recommended_action": "merge",
+      "confidence": "medium"
+    },
+    {
+      "subject_type": "documentation_gap",
+      "subject_id": "gap-022",
+      "critique_type": "duplicate",
+      "description": "gap-022, gap-044, and the second and third requested items of gap-036 ask the same unanswered question -- what authorization check constrains a read of an organization-scoped artifact object, and what check precedes issuance of a time-limited access link -- from the same passages: evd-033, evd-078 and evd-130 for the predictable path template, evd-054 and evd-138 for the omission, evd-026 for signed-link issuance. gap-023 overlaps again on the conditions and lifetime of those links. The cluster also assigns two different severities to the same undocumented fact (gap-022 high, gap-044 medium).",
+      "rationale": "Four gap records converge on one missing statement about object-storage read authorization, which will produce duplicate findings and an unexplained severity split for the same defect. Consolidating them into one gap covering read authorization and link issuance would leave gap-036 to carry what is genuinely unique to it -- what a diagnostic artifact for a failed job contains -- which no other gap asks.",
+      "evidence_ids": [
+        "evd-033",
+        "evd-078",
+        "evd-130",
+        "evd-054",
+        "evd-138",
+        "evd-026"
+      ],
+      "recommended_action": "merge",
+      "confidence": "medium"
+    }
+  ]
+}

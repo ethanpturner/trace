@@ -1,0 +1,271 @@
+{
+  "controls": [
+    {
+      "key": "ctl-ai-advisory-reliance-statements",
+      "name": "Documented advisory status of AI output and customer responsibility for review",
+      "description": "Product and analysis documentation repeatedly state that ForgeFlow output is review assistance rather than authoritative approval, that the provider may miss issues or produce incorrect recommendations, and that developers and customers remain responsible for reviewing generated recommendations before acting on them or merging code (evd-012, evd-105, evd-064, evd-101, evd-133, evd-003). These statements are addressed to customers and reviewers; no document describes a mechanism inside the system that enforces or evidences that such review occurs, so the control operates as a disclosure and expectation-setting measure compensating for the absence of documented semantic validation.",
+      "control_type": "compensating",
+      "provider_component_id": null,
+      "protected_component_ids": [
+        "cmp-007",
+        "cmp-002"
+      ],
+      "protected_asset_ids": [
+        "ast-002",
+        "ast-001"
+      ],
+      "implementation_status": "claimed",
+      "evidence_ids": [
+        "evd-012",
+        "evd-105",
+        "evd-064",
+        "evd-101",
+        "evd-133",
+        "evd-003"
+      ],
+      "owner": "ForgeFlow Product Management / Security Engineering",
+      "limitations": [
+        "The statements set expectations for human readers; they do not constrain what is published under the ForgeFlow app identity (evd-031, evd-082).",
+        "The published comment carries no described marker distinguishing model-generated, structurally-validated-only content from a reviewed finding (evd-010, evd-064).",
+        "Whether a ForgeFlow-side review occurs before publication is contradicted between evd-133 and evd-010/evd-082 and recorded as unknown in evd-151."
+      ]
+    }
+  ],
+  "mappings": [
+    {
+      "threat_id": "thr-004",
+      "requirement_id": "req-AI-002",
+      "control_keys": [
+        "ctl-ai-advisory-reliance-statements"
+      ],
+      "existing_control_ids": [
+        "ctl-004",
+        "ctl-008"
+      ],
+      "applicability_status": "applicable",
+      "applicability_reason": "Both applicable conditions hold for this threat: the structured analysis result is published to a destination outside the system (a GitHub pull-request comment, evd-031, evd-082, df-012), and the operations guide and AI analysis document describe that publication as an automatic sequence following schema validation with no approval step (evd-082, evd-010).",
+      "suppressed_conclusion": "That the absence of content filtering on published comments is itself a shortfall. The comment surface is described as a fixed set of fields (short summary, key observations, suggested review questions, result link) with length restriction and formatting removal applied (evd-010, evd-064, evd-031), so this negative conclusion was not drawn. The partial satisfaction rests instead on the requirement's documentation expectation: the validation applied is documented and is structural (evd-009, evd-081), while whether it covers content is not settled - semantic validation is recorded as not documented (evd-151), AI-output approval requirements are a named documentation gap (evd-054), and the two documents disagree about human review (evd-133 versus evd-082 and evd-010).",
+      "suppressed_by": "absent content filtering where the published surface is constrained to fixed fields",
+      "satisfaction_status": "partially_satisfied",
+      "evidence_ids": [
+        "evd-009",
+        "evd-081",
+        "evd-031",
+        "evd-133",
+        "evd-082",
+        "evd-010",
+        "evd-151",
+        "evd-054"
+      ],
+      "assumptions": [
+        "Automatic comments are enabled for the organization, which is the configuration this threat presupposes (evd-010, evd-082)."
+      ],
+      "confidence": "medium"
+    },
+    {
+      "threat_id": "thr-004",
+      "requirement_id": "req-AI-001",
+      "control_keys": [],
+      "existing_control_ids": [
+        "ctl-006",
+        "ctl-007"
+      ],
+      "applicability_status": "applicable",
+      "applicability_reason": "The threat's content-driven influence variant depends on the applicable conditions of this requirement: content ForgeFlow did not author (pull-request titles, descriptions, diffs, source files, documentation and configuration) is passed into the model as part of a single constructed request (evd-005, evd-006), and the contribution source is open to untrusted authors, which the architecture records as an assumption that repository content may be untrusted (evd-053).",
+      "suppressed_conclusion": "That protection against instructions embedded in repository content is absent. The architecture names a repository-content instruction boundary and records repository content as untrusted (evd-049, evd-053), and provider responses are structurally validated before use (evd-009); no passage describes the boundary's enforcing mechanism and none describes it as absent, so the honest status is unverified rather than unmet.",
+      "suppressed_by": "absent input sanitization where model capability is restricted and output is validated",
+      "satisfaction_status": "unverified",
+      "evidence_ids": [
+        "evd-049",
+        "evd-053",
+        "evd-006",
+        "evd-081",
+        "evd-005"
+      ],
+      "assumptions": [],
+      "confidence": "medium"
+    },
+    {
+      "threat_id": "thr-004",
+      "requirement_id": "req-AI-004",
+      "control_keys": [],
+      "existing_control_ids": [
+        "ctl-008"
+      ],
+      "applicability_status": "applicable",
+      "applicability_reason": "This requirement's applicable conditions both hold on the threat's publication path: model-derived output is submitted as markup to an external platform (a GitHub pull-request comment with formatting rules and repository links applied, evd-010, evd-031) and the same structured result is rendered into the ForgeFlow web application interface (evd-025, evd-046).",
+      "suppressed_conclusion": "That output encoding for the destination context is absent. The comment service is described as removing unsupported formatting and applying length restrictions (evd-031), the web client is a React single-page application whose framework behaviour is not described (evd-025), and rich-content rendering behaviour is a named documentation gap (evd-054). No passage states where encoding occurs and none states that it does not, so the status is unverified.",
+      "suppressed_by": "absent explicit encoding step where the rendering framework encodes by default",
+      "satisfaction_status": "unverified",
+      "evidence_ids": [
+        "evd-031",
+        "evd-010",
+        "evd-025",
+        "evd-054"
+      ],
+      "assumptions": [],
+      "confidence": "low"
+    },
+    {
+      "threat_id": "thr-004",
+      "requirement_id": "req-AI-003",
+      "control_keys": [],
+      "existing_control_ids": [
+        "ctl-007"
+      ],
+      "applicability_status": "applicable",
+      "applicability_reason": "The applicable conditions hold on the flow this threat runs through: customer content classified restricted is sent across the AI-provider boundary in df-008 (evd-005, evd-038, evd-129). It bears on this threat because the volume and type of untrusted repository content admitted into the request bounds the material that can shape an incorrect or influenced response.",
+      "suppressed_conclusion": null,
+      "suppressed_by": null,
+      "satisfaction_status": "satisfied",
+      "evidence_ids": [
+        "evd-005",
+        "evd-007",
+        "evd-099",
+        "evd-063",
+        "evd-129",
+        "evd-038"
+      ],
+      "assumptions": [],
+      "confidence": "medium"
+    },
+    {
+      "threat_id": "thr-004",
+      "requirement_id": "req-WEBHOOK-001",
+      "control_keys": [],
+      "existing_control_ids": [],
+      "applicability_status": "not_applicable",
+      "applicability_reason": "This requirement's applicable conditions concern an endpoint accepting inbound events from an external platform and the work those events trigger. This threat's attack path begins after an analysis job has completed and a provider response has been returned (evd-008, evd-009); the webhook receiver is not among its affected components and inbound event authenticity does not alter whether a structurally valid but substantively wrong result is published.",
+      "suppressed_conclusion": null,
+      "suppressed_by": null,
+      "satisfaction_status": "not_applicable",
+      "evidence_ids": [],
+      "assumptions": [],
+      "confidence": "high"
+    },
+    {
+      "threat_id": "thr-004",
+      "requirement_id": "req-ADMIN-001",
+      "control_keys": [],
+      "existing_control_ids": [],
+      "applicability_status": "not_applicable",
+      "applicability_reason": "The applicable conditions turn on an administrative or operator interface through which operators act on customer data. The components this threat reaches are the analysis worker, the comment service, the web application and GitHub (cmp-006, cmp-007, cmp-002, cmp-013); no operator action appears anywhere in the attack path, which runs from provider response through schema validation to automatic publication (evd-082, evd-010).",
+      "suppressed_conclusion": null,
+      "suppressed_by": null,
+      "satisfaction_status": "not_applicable",
+      "evidence_ids": [],
+      "assumptions": [],
+      "confidence": "high"
+    },
+    {
+      "threat_id": "thr-004",
+      "requirement_id": "req-LOG-002",
+      "control_keys": [],
+      "existing_control_ids": [],
+      "applicability_status": "not_applicable",
+      "applicability_reason": "This requirement applies where actions taken through a privileged interface affect customer data or security configuration. The publication in this threat is performed by the comment service under the ForgeFlow app identity as part of automatic job completion (evd-031, evd-082), not through a privileged operator interface, so neither applicable condition is engaged by this threat.",
+      "suppressed_conclusion": null,
+      "suppressed_by": null,
+      "satisfaction_status": "not_applicable",
+      "evidence_ids": [],
+      "assumptions": [],
+      "confidence": "medium"
+    },
+    {
+      "threat_id": "thr-004",
+      "requirement_id": "req-DATA-001",
+      "control_keys": [],
+      "existing_control_ids": [],
+      "applicability_status": "not_applicable",
+      "applicability_reason": "The applicable conditions concern confidentiality of sensitive data stored or transmitted across boundaries. This threat concerns the substantive correctness and authority of output that the system publishes deliberately through its documented path (evd-031, evd-082); encryption in transit or at rest neither prevents nor mitigates a structurally valid but wrong analysis reaching reviewers.",
+      "suppressed_conclusion": null,
+      "suppressed_by": null,
+      "satisfaction_status": "not_applicable",
+      "evidence_ids": [],
+      "assumptions": [],
+      "confidence": "high"
+    }
+  ],
+  "documentation_gaps": [
+    {
+      "title": "Whether externally visible AI-generated output is reviewed before publication is contradicted between documents",
+      "description": "The security overview states that externally visible AI-generated output is reviewed before publication (evd-133). The operations guide describes publication as an automatic sequence - schema validation succeeds, the comment service formats the response, formatting rules are applied, the comment is published to GitHub (evd-082) - and the AI analysis document describes the same sequence with no approval step (evd-010). The structured input records human_review_required as unknown (evd-151), and AI-output approval requirements are listed among known documentation gaps (evd-054). Which account is authoritative cannot be determined from the material and is a reviewer's decision.",
+      "importance": "The answer decides whether a person stands between a wrong or content-influenced provider response and a customer-visible pull-request comment posted under the ForgeFlow identity. It changes the satisfaction status of req-AI-002 and the residual exposure of the whole publication path.",
+      "related_object_ids": [
+        "thr-004",
+        "cmp-007",
+        "cmp-006",
+        "ast-002",
+        "df-011",
+        "df-012",
+        "ctl-004"
+      ],
+      "requested_evidence": [
+        "Documentation of the publication path stating explicitly whether a human approves each externally published comment, and if so who and at what step",
+        "If review is automated rather than human, a description of what that review evaluates",
+        "Reconciliation of security-overview section 13 with operations-guide section 9"
+      ],
+      "evidence_ids": [
+        "evd-133",
+        "evd-082",
+        "evd-010",
+        "evd-151",
+        "evd-054"
+      ],
+      "severity": "medium"
+    },
+    {
+      "title": "Validation applied to provider responses is not established as covering content as well as structure",
+      "description": "Every document that addresses provider-response validation describes structural checks: required fields, schema conformance, maximum response size and basic formatting rules, with failures rejecting the job (evd-009, evd-081), and the security overview describes rejection of responses failing structural validation (evd-133). The structured input records semantic validation as not documented (evd-151). No passage states that any check evaluates whether the observations are correct or whether the response reflects instructions embedded in the analysed content. This is a gap in what the material establishes, not a statement that such checking is absent.",
+      "importance": "req-AI-002 asks the documentation to state whether validation covers content as well as structure. Without that statement, the only barrier described between a wrong or influenced response and an externally published comment is a schema check.",
+      "related_object_ids": [
+        "thr-004",
+        "cmp-006",
+        "ast-002",
+        "df-008",
+        "ctl-004",
+        "ctl-006"
+      ],
+      "requested_evidence": [
+        "A statement of what checks, if any, are applied to response content beyond schema, size and formatting",
+        "A description of how the repository-content instruction boundary named in evd-049 is enforced at request construction or on response handling",
+        "Any constraint on what the model is permitted to cause the system to do when a response is influenced by analysed content"
+      ],
+      "evidence_ids": [
+        "evd-009",
+        "evd-081",
+        "evd-133",
+        "evd-151",
+        "evd-054",
+        "evd-012"
+      ],
+      "severity": "medium"
+    },
+    {
+      "title": "Encoding of AI-derived output for the GitHub comment and web-application rendering contexts is not described",
+      "description": "The comment service is described as formatting the summary, applying output-length restrictions and removing unsupported formatting before posting through the GitHub API (evd-031), and comments include repository links (evd-010). The same structured result is displayed in the React web application (evd-025, evd-046). No document states where output encoding for either destination occurs, and rich-content rendering behaviour is listed among known documentation gaps (evd-054).",
+      "importance": "Model output is attacker-influenceable wherever untrusted repository content reaches the model (evd-053), so the point at which it is encoded for the destination markup or interface is the fact req-AI-004 asks for. It cannot currently be verified either way.",
+      "related_object_ids": [
+        "thr-004",
+        "cmp-007",
+        "cmp-002",
+        "ast-002",
+        "df-012",
+        "df-002",
+        "ctl-008"
+      ],
+      "requested_evidence": [
+        "A description of the rendering path for analysis results in the web application, including whether the framework encodes by default",
+        "A statement of how the comment service constrains or encodes markup submitted to the GitHub API, beyond removing unsupported formatting"
+      ],
+      "evidence_ids": [
+        "evd-031",
+        "evd-010",
+        "evd-025",
+        "evd-054"
+      ],
+      "severity": "low"
+    }
+  ],
+  "catalog_gap_candidates": []
+}

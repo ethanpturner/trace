@@ -652,7 +652,8 @@ def _model_flags(parser: argparse.ArgumentParser) -> None:
         metavar="PATH",
         help=(
             "a recorded model response to replay, repeatable; files are consumed in the order "
-            "given, one per model call the run makes"
+            "given, one per model call the run makes. A directory stands for its numbered "
+            "recordings in sorted order"
         ),
     )
     parser.add_argument(
@@ -1451,11 +1452,33 @@ def _run(args: argparse.Namespace, service: AssessmentService) -> int:
     outcome = run_assessment(
         service,
         args.assessment_id,
-        model=build_model(profile, responses=load_recorded_responses(args.responses)),
+        model=build_model(
+            profile, responses=load_recorded_responses(_response_files(args.responses))
+        ),
         profile=profile,
         budget=_budget_from(args),
     )
     return _print_run_outcome(outcome)
+
+
+def _response_files(supplied: list[Path]) -> list[Path]:
+    """Each `--response` as the files it names, a directory standing for its numbered recordings.
+
+    A recording is dozens of files consumed in order — the live capture's runs retry, and a
+    retried call consumes an extra response — so a command line naming each file is unwritable
+    by hand. A directory expands to its `NN-*.json` files sorted, which is the consumption
+    order the capture wrote them in.
+    """
+    files: list[Path] = []
+    for path in supplied:
+        if path.is_dir():
+            numbered = sorted(path.glob("[0-9]*.json"))
+            if not numbered:
+                raise ValueError(f"{path} contains no numbered recordings (NN-*.json)")
+            files.extend(numbered)
+        else:
+            files.append(path)
+    return files
 
 
 def _resume(args: argparse.Namespace, service: AssessmentService) -> int:
@@ -1464,7 +1487,9 @@ def _resume(args: argparse.Namespace, service: AssessmentService) -> int:
     outcome = resume_assessment(
         service,
         args.assessment_id,
-        model=build_model(profile, responses=load_recorded_responses(args.responses)),
+        model=build_model(
+            profile, responses=load_recorded_responses(_response_files(args.responses))
+        ),
         profile=profile,
         workflow_run_id=args.workflow_run_id,
         budget=_budget_from(args),
