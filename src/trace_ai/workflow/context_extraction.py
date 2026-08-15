@@ -39,10 +39,11 @@ from trace_ai.domain.proposals import (
     convert_proposal,
 )
 from trace_ai.domain.system_context import FIRST_VERSION, SystemContext
-from trace_ai.infrastructure.model.seam import Creativity, ModelFailure, ModelSuccess
+from trace_ai.infrastructure.model.agents import spec_for
 from trace_ai.services.context.input_package import assemble_extractor_input
-from trace_ai.workflow.errors import ErrorClass, classify_model_failure
+from trace_ai.workflow.errors import ErrorClass
 from trace_ai.workflow.limits import resolve_retry_policy
+from trace_ai.workflow.model_call import call_model, with_retry_feedback
 from trace_ai.workflow.nodes import NodeResult
 from trace_ai.workflow.phases import Phase
 from trace_ai.workflow.retry import AttemptFailedError, RetryPolicy, run_with_retries
@@ -116,9 +117,6 @@ class ContextExtractionNode:
     def phase(self) -> Phase:
         return Phase.CONTEXT_EXTRACTION
 
-    def _projected_cost(self, prompt: str) -> Any:
-        return _projected_cost_for(self.profile, prompt)
-
     def run(self, context: NodeContext) -> NodeResult:
         """One extraction: assemble, call, convert, persist, and report what was produced."""
         if context.model is None:
@@ -127,11 +125,10 @@ class ContextExtractionNode:
                 f"node is classified as one in agent-design.md section 4."
             )
 
-        # Section 29 assigns Context Extraction `Creativity.LOW`. Declaring it here rather than
-        # relying on the profile default matches the other five agents and makes the intent a
-        # decision the execution record shows, not a default nobody chose that a profile change
-        # could silently mis-latitude.
-        profile = self.profile.with_creativity(Creativity.LOW)
+        # Section 29's creativity for this agent, read from the one `AGENTS` table (WS11) rather
+        # than declared inline: declaring it per node is how this very value drifted before it was
+        # caught, and the table makes the intent one decision the execution record still shows.
+        profile = self.profile.with_creativity(spec_for(NODE_NAME).creativity)
 
         package = assemble_extractor_input(
             context.handle,
@@ -177,51 +174,21 @@ class ContextExtractionNode:
             attempts += 1
             execution.retry_number = attempts - 1
 
-            prompt = (
-                composed.text
-                if state.feedback is None
-                else (
-                    f"{composed.text}\n\n## Validation feedback on your previous attempt\n\n"
-                    f"{state.feedback}\n\nReturn a corrected object. Do not restate the previous one."
-                )
+            prompt = with_retry_feedback(
+                composed.text,
+                state.feedback,
+                instruction="Return a corrected object. Do not restate the previous one.",
             )
-
-            if self.budget is not None:
-                self.budget.check_model_call(estimated_cost=self._projected_cost(prompt))
-
-            outcome = context.model.generate(  # type: ignore[union-attr]
+            proposal = call_model(
+                context.model,
                 prompt=prompt,
                 schema=ContextExtractionProposal,
-                settings=profile.settings,
+                profile=profile,
                 system=system,
+                budget=self.budget,
+                execution=execution,
+                usages=usages,
             )
-
-            if isinstance(outcome, ModelFailure):
-                usages.append(outcome.usage)
-                if self.budget is not None:
-                    self.budget.spend_model_call(outcome.usage.estimated_cost)
-                raise AttemptFailedError(
-                    error_class=classify_model_failure(outcome.reason),
-                    message=outcome.message,
-                    raw_output=outcome.raw_output,
-                    feedback=outcome.message,
-                )
-
-            if not isinstance(outcome, ModelSuccess):  # pragma: no cover - the union has two arms
-                raise AttemptFailedError(
-                    error_class=ErrorClass.UNEXPECTED_APPLICATION_FAILURE,
-                    message=f"the model seam returned {type(outcome).__name__}",
-                )
-            usages.append(outcome.usage)
-            # Section 29: the conditions the call actually ran at, recorded where a reader of the
-            # ExecutionRecord can find them -- a wrong effort mapping is otherwise invisible (#401).
-            for condition_key in ("effort", "creativity"):
-                if condition_key in outcome.metadata:
-                    execution.metadata[condition_key] = outcome.metadata[condition_key]
-            if self.budget is not None:
-                self.budget.spend_model_call(outcome.usage.estimated_cost)
-
-            proposal = outcome.value
             try:
                 proposal.validate_against_evidence(set(package.evidence_ids))
                 proposal.validate_references()
@@ -369,21 +336,6 @@ class ContextExtractionNode:
         with context.handle.objects.transaction():
             context.handle.objects.save(system)
         return system
-
-
-def _projected_cost_for(profile: ModelProfile, prompt: str) -> Any:
-    """A conservative projection of one call's cost, for the pre-call ceiling check.
-
-    Input is estimated from the prompt's length at roughly four characters per token, and output is
-    charged at the full `max_output_tokens` — a call cannot cost more than that, so a ceiling
-    enforced against this projection is never crossed. It is deliberately pessimistic: the
-    alternative is a ceiling checked after the money is spent, which is a record rather than a
-    limit. The tradeoff is that a run can be stopped slightly early.
-    """
-    return profile.cost_of(
-        input_tokens=len(prompt) // 4,
-        output_tokens=profile.settings.max_output_tokens,
-    )
 
 
 def _schema_text() -> str:

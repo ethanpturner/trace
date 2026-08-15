@@ -248,6 +248,7 @@ def test_the_extraction_declares_its_creativity(prepared: Any) -> None:
     node(handle, ledger).run(context_for(handle, ledger, model))
 
     (call,) = model.calls
+    assert call.settings is not None
     assert call.settings.creativity is Creativity.LOW
 
 

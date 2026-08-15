@@ -1061,7 +1061,8 @@ def test_the_call_uses_low_creativity(prepared: Any, catalog: LoadedCatalog) -> 
 
     node(prepared, catalog=catalog).run(node_context(handle, ledger, model))
 
-    assert model.calls[0].settings.creativity is Creativity.LOW
+    assert (settings := model.calls[0].settings) is not None
+    assert settings.creativity is Creativity.LOW
 
 
 def test_a_zero_call_ceiling_stops_the_node_before_it_spends(

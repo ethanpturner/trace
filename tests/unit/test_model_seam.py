@@ -253,6 +253,7 @@ def test_the_fake_records_what_it_was_asked() -> None:
     assert call.prompt == "<source>untrusted</source>"
     assert call.schema is Proposal
     assert call.system == "You extract context."
+    assert call.settings is not None
     assert call.settings.creativity is Creativity.MODERATE
 
 

@@ -159,6 +159,17 @@ def test_a_missing_shared_block_names_the_block(tree: Path) -> None:
         PromptRegistry(tree).compose("extract-context", "v1")
 
 
+def test_two_shared_blocks_with_the_same_stem_are_refused(tree: Path) -> None:
+    """A shared block is addressed by its stem, so two files with the same stem in different subtrees
+    would overwrite each other last-write-wins and change the composed text of every prompt that
+    includes the block. Symmetric with the duplicate-(id, version) refusal (WS11)."""
+    nested = tree / "shared" / "nested"
+    nested.mkdir()
+    (nested / "evidence-policy-v1.md").write_text("A colliding block.", encoding="utf-8")
+    with pytest.raises(PromptSyntaxError, match="evidence-policy-v1"):
+        PromptRegistry(tree)
+
+
 def test_a_prompt_without_front_matter_is_refused(tmp_path: Path) -> None:
     (tmp_path / "orphan.md").write_text("Just some text.", encoding="utf-8")
     with pytest.raises(PromptSyntaxError, match="front matter"):

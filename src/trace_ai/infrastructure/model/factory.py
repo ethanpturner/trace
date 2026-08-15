@@ -18,8 +18,9 @@ a supported way to run the pipeline rather than something only tests do.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Final
+from typing import TYPE_CHECKING, Final
 
+from trace_ai.infrastructure.model.agents import AGENTS
 from trace_ai.infrastructure.model.fake import DeterministicModel
 
 if TYPE_CHECKING:
@@ -30,6 +31,7 @@ if TYPE_CHECKING:
     from trace_ai.infrastructure.model.profiles import ModelProfile
     from trace_ai.infrastructure.model.seam import (
         GenerationSettings,
+        ModelCapability,
         ModelOutcome,
         StructuredModel,
     )
@@ -39,15 +41,9 @@ __all__ = ["AGENT_BY_SCHEMA", "OverlayRoutingModel", "UnknownProviderError", "bu
 # Which agent a response schema belongs to. The schemas are mutually exclusive by construction —
 # `infrastructure/model/recorded.py` already relies on exactly that to infer a recording's agent —
 # so the schema a call asks for identifies the agent making it, and DEC-069's per-agent routing
-# needs no new parameter on the seam.
-AGENT_BY_SCHEMA: Final[Mapping[str, str]] = {
-    "ContextExtractionProposal": "context-extraction",
-    "ThreatAnalysisProposal": "threat-analysis",
-    "MappingProposal": "requirement-and-control-mapping",
-    "EvidenceValidationProposal": "evidence-validation",
-    "CriticalReviewProposal": "critical-review",
-    "ReportSections": "report-generation",
-}
+# needs no new parameter on the seam. Derived from the one `AGENTS` table (WS11) rather than
+# restated, so it cannot disagree with the recorded-response schemas or the node prompts.
+AGENT_BY_SCHEMA: Final[Mapping[str, str]] = {spec.schema.__name__: spec.name for spec in AGENTS}
 
 
 class UnknownProviderError(ValueError):
@@ -80,7 +76,7 @@ class OverlayRoutingModel:
         return self.base.name
 
     @property
-    def capabilities(self) -> frozenset[Any]:
+    def capabilities(self) -> frozenset[ModelCapability]:
         return self.base.capabilities
 
     def generate[T: BaseModel](
@@ -88,7 +84,7 @@ class OverlayRoutingModel:
         *,
         prompt: str,
         schema: type[T],
-        settings: GenerationSettings,
+        settings: GenerationSettings | None = None,
         system: str | None = None,
     ) -> ModelOutcome[T]:
         agent = AGENT_BY_SCHEMA.get(schema.__name__)

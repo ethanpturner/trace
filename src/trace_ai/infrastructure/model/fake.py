@@ -68,7 +68,7 @@ class RecordedCall:
 
     prompt: str
     schema: type
-    settings: GenerationSettings
+    settings: GenerationSettings | None
     system: str | None
 
 
@@ -112,7 +112,7 @@ class DeterministicModel:
         *,
         prompt: str,
         schema: type[T],
-        settings: GenerationSettings,
+        settings: GenerationSettings | None = None,
         system: str | None = None,
     ) -> ModelOutcome[T]:
         self.calls.append(RecordedCall(prompt, schema, settings, system))

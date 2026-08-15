@@ -309,7 +309,8 @@ def test_the_call_uses_low_creativity(prepared: Any) -> None:
 
     run(prepared, model)
 
-    assert model.calls[0].settings.creativity is Creativity.LOW
+    assert (settings := model.calls[0].settings) is not None
+    assert settings.creativity is Creativity.LOW
 
 
 # The package (section 23)

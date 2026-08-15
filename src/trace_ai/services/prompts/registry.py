@@ -248,8 +248,19 @@ class PromptRegistry:
 
     def _load(self) -> None:
         shared_root = self.root / SHARED_DIRECTORY
+        shared_paths: dict[str, Path] = {}
         for path in sorted(self.root.rglob("*.md")):
             if shared_root in path.parents:
+                # Symmetric with the duplicate-`(id, version)` refusal below (WS11): a shared block
+                # is addressed by its stem, so two files with the same stem in different subtrees
+                # would silently overwrite each other last-write-wins, changing the composed text of
+                # every prompt that includes it. The worst failure available here, so it raises.
+                if path.stem in shared_paths:
+                    raise PromptSyntaxError(
+                        f"{path} and {shared_paths[path.stem]} are both shared block "
+                        f"{path.stem!r}; a shared block's stem is its name and must be unique"
+                    )
+                shared_paths[path.stem] = path
                 self._shared[path.stem] = path.read_text(encoding="utf-8").strip()
                 continue
 

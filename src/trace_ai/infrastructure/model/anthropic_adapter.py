@@ -36,7 +36,6 @@ would break a bare `uv run pytest` on a machine with no `.env`.
 
 from __future__ import annotations
 
-import re
 import time
 from typing import TYPE_CHECKING, Any, Final
 
@@ -44,6 +43,11 @@ import anthropic
 import pydantic
 
 from trace_ai.config import Settings, get_settings
+from trace_ai.infrastructure.model.adapter_support import (
+    classify_http_error,
+    error_locations,
+    json_candidate,
+)
 from trace_ai.infrastructure.model.profiles import ModelProfile, resolve_profile
 from trace_ai.infrastructure.model.seam import (
     Creativity,
@@ -225,7 +229,7 @@ class AnthropicModel:
             )
 
         try:
-            parsed = schema.model_validate_json(_json_candidate(raw))
+            parsed = schema.model_validate_json(json_candidate(raw))
         except pydantic.ValidationError as invalid:
             # The validation error's full text embeds fragments of the model output, which is
             # untrusted; what the message carries instead is field locations and error types,
@@ -238,7 +242,7 @@ class AnthropicModel:
                 message=(
                     f"the response did not validate as {schema.__name__}; "
                     f"the raw output is preserved (data-model.md section 33). "
-                    f"Invalid at: {_error_locations(invalid)}"
+                    f"Invalid at: {error_locations(invalid)}"
                 ),
                 usage=usage,
                 raw_output=raw,
@@ -277,12 +281,7 @@ class AnthropicModel:
         if isinstance(error, anthropic.RateLimitError):
             return self._failed(FailureReason.TRANSIENT_PROVIDER_FAILURE, str(error), started)
         if isinstance(error, anthropic.APIStatusError):
-            reason = (
-                FailureReason.TRANSIENT_PROVIDER_FAILURE
-                if error.status_code >= 500
-                else FailureReason.INVALID_REQUEST
-            )
-            return self._failed(reason, str(error), started)
+            return self._failed(classify_http_error(error.status_code), str(error), started)
         return self._failed(FailureReason.CONNECTION_FAILURE, str(error), started)
 
     def _failed(self, reason: FailureReason, message: str, started: float) -> ModelFailure:
@@ -321,50 +320,6 @@ class AnthropicModel:
             ),
             duration_seconds=duration,
         )
-
-
-_LOC_PART = re.compile(r"^[A-Za-z0-9_]{1,64}$")
-
-
-def _error_locations(invalid: pydantic.ValidationError, *, limit: int = 20) -> str:
-    """The failing field paths with their error types, and nothing the model wrote.
-
-    `loc` is normally a path through the application's own schema and `type` is pydantic's
-    classification — safe in a message (section 27). The exception is `extra_forbidden`, whose
-    final path element is the *invented* key, which is model-authored text: any part that does
-    not look like a schema identifier is masked rather than quoted. Capped so a wholesale-invalid
-    response cannot flood the record.
-    """
-
-    def part_of(part: object) -> str:
-        if isinstance(part, int):
-            return str(part)
-        return part if isinstance(part, str) and _LOC_PART.match(part) else "<unnamable-key>"
-
-    errors = invalid.errors()
-    listed = "; ".join(
-        ".".join(part_of(part) for part in error["loc"]) + f" ({error['type']})"
-        for error in errors[:limit]
-    )
-    more = f" and {len(errors) - limit} more" if len(errors) > limit else ""
-    return f"{listed}{more}"
-
-
-def _json_candidate(raw: str) -> str:
-    """The text with a Markdown code fence stripped, when the whole response is one fence.
-
-    With the server-side grammar omitted, nothing stops a model from wrapping its JSON in
-    ```json fences. The unwrap is deliberately narrow — a single fence enclosing the entire
-    trimmed response — so it cannot mistake fenced content inside a legitimate answer for
-    packaging. The raw output preserved on a failure stays the original text.
-    """
-    text = raw.strip()
-    if not text.startswith("```"):
-        return raw
-    first_break = text.find("\n")
-    if first_break == -1 or not text.endswith("```"):
-        return raw
-    return text[first_break + 1 : -3].strip()
 
 
 def _text_of(response: Any) -> str | None:
