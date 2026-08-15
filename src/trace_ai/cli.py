@@ -1314,7 +1314,7 @@ def _print_observations(package: ContextReviewPackage, *, empty_note: bool = Fal
 
     Injection attempts and contradictions are both `SourceObservation`s, and both exist to be
     read by the reviewer: an attempt triages attention toward its flagged subjects, and a
-    contradiction names the identifier a `--resolve-contradiction` call needs — an action that
+    contradiction names the identifier a `--resolve` call needs — an action that
     was unreachable while nothing printed the observation it acts on.
     """
     if package.injection_attempts:
@@ -1330,10 +1330,7 @@ def _print_observations(package: ContextReviewPackage, *, empty_note: bool = Fal
         for observation in package.contradictions:
             cited = ", ".join(observation.evidence_ids)
             print(f"  {observation.id}  {observation.summary} [{cited}]")
-        print(
-            "  settle one with `trace context review --resolve-contradiction ID=VALUE "
-            "--rationale ...`"
-        )
+        print("  settle one with `trace context review --resolve ID=VALUE --rationale ...`")
 
     if empty_note and not package.injection_attempts and not package.contradictions:
         print()

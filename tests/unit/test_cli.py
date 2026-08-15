@@ -1779,7 +1779,7 @@ def test_show_prints_contradictions_beside_injection_attempts(
     assert "injection attempts detected (1)" in output
     assert "contradictions awaiting resolution (1)" in output
     assert "described inconsistently" in output
-    assert "--resolve-contradiction" in output
+    assert "--resolve ID=VALUE --rationale" in output
 
 
 def test_show_observations_prints_only_the_observation_blocks(
