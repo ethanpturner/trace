@@ -5708,3 +5708,57 @@ Tradeoffs:
 - The render-time collapse leaves duplicate Question rows in the store; the count metrics see
   them. That is honest — the model did ask twice — and the DEC-081 history will show the
   duplicate rate fall when a future capture dedupes at the source.
+
+## DEC-088: The CLI has four exit codes, and a stated refusal is code 3 rather than code 1
+
+Date: 2026-08-14
+
+Status: Accepted
+
+Decision:
+
+**The command line uses four exit codes, and "refused" is not "crashed".** `0` is success; `1` is
+an error the operator can fix, named in one line; `2` is argparse rejecting the arguments (the
+standard-library convention); and `3` is a stated refusal that is an answer rather than a fault —
+a context that is not approvable, an approval blocked by an open question, evidence or a report
+that no longer verifies, a `reset` dry run. Before this the CLI returned `1` for both a genuine
+error and every one of those refusals, so a script could not tell the two apart without parsing
+the prose the code was supposed to make unnecessary.
+
+Two supporting changes land with it. `--max-cost` and `--max-model-calls` are parsed by argparse
+converters that reject a non-number and a negative as exit `2`, rather than an inline `Decimal(...)`
+whose `decimal.InvalidOperation` (an `ArithmeticError`, not a `ValueError`) escaped as a traceback.
+And a `pydantic.ValidationError` from the pipeline is re-raised with its traceback instead of being
+rendered as a one-line error: DEC-006 says a domain object never fails validation, so one that does
+is a bug, not operator input — even though `ValidationError` is a `ValueError`, which the CLI still
+catches for the domain's own operator-facing value errors (a malformed identifier through
+`parse_id`, an out-of-range rubric score).
+
+Why:
+
+- DEC-032 makes the command line the interface a reviewer and an evaluation script both use, and the
+  module's own docstring already promised "exit codes are answers ... a script can act on without
+  parsing prose." A single non-zero code broke that promise for exactly the case it named: a refused
+  approval and a crashed run were the same signal.
+- The `--max-cost` traceback and the swallowed `ValidationError` were the same bug in two
+  directions: a value the taxonomy did not classify surfacing raw, and a value the taxonomy
+  over-classified being hidden. Both are the error contract failing to say what actually happened.
+
+Alternatives Considered:
+
+- Leaving one non-zero code and documenting that callers parse stderr (the thing the exit-code
+  contract exists to avoid).
+- Removing bare `ValueError` from the caught set entirely (rejected: the domain raises it on an
+  operator-supplied identifier, so removal would traceback a mistyped `asm-001`; the narrower
+  re-raise of `ValidationError` fixes the actual bug without that cost).
+
+Tradeoffs:
+
+- Code `3` is a new value a caller may not expect; a script that treated "non-zero" as failure now
+  sees a refusal as failure, which is the old behaviour, so nothing regresses, but a script that
+  wants to act on a refusal must learn the code. The `--help` epilog and the module docstring both
+  state the table.
+- The CLI still catches bare `ValueError` for the domain's and services' operator-facing value
+  errors; a `CommandInputError` subclass names the CLI's own input errors, but the tuple is not
+  yet free of the broad class. Narrowing it further is a domain change (typing `parse_id`'s error)
+  left for when that surface is next touched.

@@ -25,6 +25,7 @@ import json
 from pathlib import Path
 
 import pytest
+from pydantic import ValidationError
 
 from trace_ai.cli import build_parser, run
 from trace_ai.config import PROJECT_ROOT
@@ -123,10 +124,13 @@ def test_the_person_performs_archive_and_the_sign_off_and_nothing_else(
 def test_reset_without_force_lists_and_removes_nothing(
     data_root: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    """`reset` is the one destructive command, so its default is a preview and a refusal."""
+    """`reset` is the one destructive command, so its default is a preview and a refusal.
+
+    A dry run is a stated refusal, not an error: it exits 3 (DEC-088) so a script can tell it apart
+    from a genuine failure."""
     identifier = created(data_root, capsys)
 
-    assert invoke(data_root, "reset") == 1
+    assert invoke(data_root, "reset") == 3
     captured = capsys.readouterr()
     assert "would remove" in captured.out
     assert "pass --force" in captured.err
@@ -327,7 +331,8 @@ def test_evidence_verify_exits_non_zero_when_a_document_changed(
     stored = data_root / "assessments" / identifier / "sources" / "product-overview.md"
     stored.write_bytes(b"# Replaced\n")
 
-    assert invoke(data_root, "evidence", "verify", identifier) == 1
+    # Drift is a stated finding, not an error: exit 3 (DEC-088).
+    assert invoke(data_root, "evidence", "verify", identifier) == 3
     captured = capsys.readouterr()
     assert "content_changed" in captured.out
     assert "no longer match" in captured.err
@@ -880,10 +885,11 @@ def _injection_evidence_id(data_root: Path, assessment_id: str) -> str:
 def test_show_exits_non_zero_while_the_context_cannot_be_approved(
     data_root: Path, capsys: pytest.CaptureFixture[str], tmp_path: Path
 ) -> None:
-    """Usable from a script without parsing prose."""
+    """Usable from a script without parsing prose: a not-approvable context is a stated refusal,
+    exit 3 (DEC-088), distinct from an error."""
     identifier = extracted(data_root, capsys, tmp_path)
 
-    assert invoke(data_root, "context", "show", identifier) == 1
+    assert invoke(data_root, "context", "show", identifier) == 3
     assert "blocking" in capsys.readouterr().err
 
 
@@ -892,7 +898,8 @@ def test_approve_is_refused_and_names_the_blocking_question(
 ) -> None:
     identifier = extracted(data_root, capsys, tmp_path)
 
-    assert invoke(data_root, "context", "approve", identifier, "--reviewer", "eturner") == 1
+    # A blocked approval is a stated refusal, exit 3 (DEC-088), not an error.
+    assert invoke(data_root, "context", "approve", identifier, "--reviewer", "eturner") == 3
     captured = capsys.readouterr()
 
     assert "was not approved" in captured.err
@@ -1817,3 +1824,106 @@ def test_a_closed_pipe_is_not_a_traceback(monkeypatch: pytest.MonkeyPatch) -> No
     monkeypatch.setattr(cli_module, "run", lambda: 0)
     monkeypatch.setattr(_sys, "stdout", _ClosedPipe())
     assert trace_ai.main() == 0
+
+
+# ------------------------------------------------------------------------------------------
+# The error contract (#447): argparse rejections, refusals, and unswallowed bugs
+# ------------------------------------------------------------------------------------------
+
+
+def test_max_cost_rejects_a_non_number(data_root: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    """`Decimal("abc")` raises an ArithmeticError, not a ValueError, so an inline construction
+    escaped as a traceback. As an argparse type it is exit 2 with a message."""
+    identifier = created(data_root, capsys)
+    with pytest.raises(SystemExit) as caught:
+        invoke(data_root, "run", identifier, "--max-cost", "abc")
+    assert caught.value.code == 2
+    assert "not a number" in capsys.readouterr().err
+
+
+def test_max_cost_rejects_a_negative(data_root: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    identifier = created(data_root, capsys)
+    with pytest.raises(SystemExit) as caught:
+        invoke(data_root, "run", identifier, "--max-cost", "-5")
+    assert caught.value.code == 2
+    assert "cannot be negative" in capsys.readouterr().err
+
+
+def test_max_model_calls_rejects_a_negative(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    identifier = created(data_root, capsys)
+    with pytest.raises(SystemExit) as caught:
+        invoke(data_root, "run", identifier, "--max-model-calls", "-1")
+    assert caught.value.code == 2
+    assert "cannot be negative" in capsys.readouterr().err
+
+
+def test_a_pipeline_validation_error_keeps_its_traceback(
+    data_root: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """DEC-006 says a domain object never fails validation, so a ValidationError from the pipeline
+    is a bug that must keep its traceback rather than being rendered as a one-line operator error --
+    even though ValidationError is a ValueError, which EXPECTED_ERRORS still catches for operator
+    input like a malformed identifier."""
+    from pydantic import BaseModel
+
+    class _Model(BaseModel):
+        x: int
+
+    def _raise(*_args: object, **_kwargs: object) -> int:
+        _Model(x="not an int")  # type: ignore[arg-type]
+        return 0
+
+    monkeypatch.setattr("trace_ai.cli._assessment_list", _raise)
+    with pytest.raises(ValidationError):
+        run(["--data-root", str(data_root), "assessment", "list"])
+
+
+def test_view_on_a_busy_port_is_a_message_not_a_traceback(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Running the view twice is the likeliest demonstration slip; a taken port is EADDRINUSE, and
+    the answer is a sentence naming --port, not a stack trace."""
+    import socket
+
+    occupied = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    occupied.bind(("127.0.0.1", 0))
+    occupied.listen(1)
+    port = occupied.getsockname()[1]
+    try:
+        assert invoke(data_root, "view", "--port", str(port)) == 1
+    finally:
+        occupied.close()
+    captured = capsys.readouterr()
+    assert f"port {port} is already in use" in captured.err
+    assert "Traceback" not in captured.err
+
+
+def test_context_extract_accepts_a_directory_of_responses(
+    data_root: Path, capsys: pytest.CaptureFixture[str], tmp_path: Path
+) -> None:
+    """The demo tape passes `--response <dir>`; `context extract` used to take a singular
+    `--response` and read the directory as a file (IsADirectoryError). It now expands a directory of
+    numbered recordings like `run` and `resume` do."""
+    identifier = created(data_root, capsys)
+    invoke(data_root, "source", "add", identifier, str(FORGEFLOW_INPUT))
+    capsys.readouterr()
+
+    recordings = tmp_path / "recordings"
+    recordings.mkdir()
+    recorded_response(recordings / "01-context-extraction.json")
+
+    assert (
+        invoke(
+            data_root,
+            "context",
+            "extract",
+            identifier,
+            "--model-profile",
+            "offline-fake",
+            "--response",
+            str(recordings),
+        )
+        == 0
+    )
