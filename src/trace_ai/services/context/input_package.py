@@ -38,7 +38,13 @@ from typing import TYPE_CHECKING, Any, Final
 
 from trace_ai.domain.proposals.context_extraction import ContextExtractionProposal
 from trace_ai.domain.source_document import SourceDocument
-from trace_ai.services.budget import fill_untrusted, schema_overhead
+from trace_ai.services.budget import (
+    INGESTION_ORDER,
+    STRUCTURED_INPUT_FIRST,
+    fill_untrusted,
+    rank_excerpts,
+    schema_overhead,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -217,6 +223,21 @@ def _trusted_region(
     return "\n".join(lines)
 
 
+def _primary_documents(structured_input: dict[str, Any] | None) -> frozenset[str]:
+    """The filenames the structured input names as primary, for ranking (WS10).
+
+    `documentation.primary_documents` is a list of source filenames when the scenario supplies
+    structured input; anything else — no structured input, a missing or malformed section — yields
+    an empty set, and the ranking falls back to ingestion order."""
+    if not structured_input:
+        return frozenset()
+    documentation = structured_input.get("documentation")
+    primary = documentation.get("primary_documents") if isinstance(documentation, dict) else None
+    if not isinstance(primary, list):
+        return frozenset()
+    return frozenset(str(name) for name in primary)
+
+
 def assemble_extractor_input(
     handle: AssessmentHandle,
     *,
@@ -232,7 +253,14 @@ def assemble_extractor_input(
     a decision made in one place. Nothing in the package is a path, a credential, or a
     configuration object: the agent receives data about documents, never a way to reach one.
     """
-    excerpts = index.render_for_prompt(list(evidence_ids))
+    # Rank before the fill so overflow drops the lowest-signal excerpts, not whatever sorts last:
+    # the documents the structured input names as primary come first (WS10). The ranking is
+    # recorded in metadata so an exclusion is explicable.
+    priority = _primary_documents(structured_input)
+    excerpts = rank_excerpts(
+        index.render_for_prompt(list(evidence_ids)), priority_documents=priority
+    )
+    ranking_basis = STRUCTURED_INPUT_FIRST if priority else INGESTION_ORDER
     documents = sorted(handle.objects.list(SourceDocument), key=lambda document: document.id)
 
     # The trusted region and the schema export share the budget with the excerpts (WS10). Charge
@@ -270,6 +298,7 @@ def assemble_extractor_input(
         metadata={
             "documents": len(documents),
             "trusted_characters": len(trusted),
+            "ranking_basis": ranking_basis,
             **outcome.metadata(),
         },
     )
