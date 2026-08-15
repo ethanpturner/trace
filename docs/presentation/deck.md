@@ -280,15 +280,18 @@ Severity is untouched in this run: no node proposes one, and nothing has been de
 **Step 3 — Show the findings (about 0:30)**
 
 ```bash
-uv run trace findings show asm-001
+uv run trace findings show asm-001 | head -30
 ```
 
 Say: "Five candidate findings, not a wall. Each carries the passages it rests on. The point of
 this system is not finding count — it is that every conclusion can be defended, and I will show
 you one that could not be."
 
-Reminder: the severities read blank here; assigning them is the reviewer's job at this
-checkpoint, which is the step 8 closer.
+Reminders: pipe through `head` — the full package runs to thousands of lines because every
+finding embeds its quoted evidence, critiques, and questions verbatim; unpiped, it scrolls the
+room while the line above says "not a wall". `grep '^## fnd-'` prints exactly the five titles if
+that is the shot wanted instead. The severities read blank here; assigning them is the reviewer's
+job at this checkpoint, which is the step 8 closer.
 
 **Step 4 — Pick the finding (about 0:15)**
 
@@ -351,7 +354,7 @@ there is no need to memorise it.
 
 ```bash
 uv run trace findings review asm-001 --reviewer recorded-reviewer --apply demo/forgeflow/recorded/decisions-findings.yaml
-uv run trace findings show asm-001
+uv run trace findings show asm-001 | head -5
 ```
 
 Say: "Here is the recorded decision. Rejected — and the rationale is the heart of the project:
@@ -362,8 +365,10 @@ person at the checkpoint read the evidence and stopped it. The same run raised t
 question instead. The other four candidates were approved, each with the severity the reviewer
 assigned."
 
-Reminders: the rejection rationale is the strongest sentence in the demo; let it land before
-moving on. If the deck has the scorecard, `docs/eval/comparison.md` is the cross-scenario version
+Reminders: the verdicts are on screen twice — the review command prints the decision table
+(nine rows, `reject fnd-003` among them) and the piped summary confirms every proposed finding
+now carries a reviewer decision; keep the `head`. The rejection rationale is the strongest
+sentence in the demo; let it land before moving on. If the deck has the scorecard, `docs/eval/comparison.md` is the cross-scenario version
 of the same claim: the generic baseline invents this class of false positive; no Trace run has.
 
 **Optional closer (about 0:30)**
