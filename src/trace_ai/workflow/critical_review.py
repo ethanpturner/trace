@@ -42,7 +42,7 @@ from trace_ai.infrastructure.model.agents import spec_for
 from trace_ai.services.critique.input_package import ReviewGroup, assemble_review_group
 from trace_ai.workflow.errors import ErrorClass
 from trace_ai.workflow.limits import resolve_retry_policy
-from trace_ai.workflow.model_call import call_model, with_retry_feedback
+from trace_ai.workflow.model_call import cache_prefix_of, call_model, with_retry_feedback
 from trace_ai.workflow.nodes import NodeResult
 from trace_ai.workflow.phases import Phase
 from trace_ai.workflow.retry import AttemptFailedError, RetryPolicy, run_with_retries
@@ -148,6 +148,7 @@ class CriticalReviewNode:
         )
         available = group.referenceable_ids()
 
+        cache_prefix = cache_prefix_of(composed.text, group.untrusted)
         usages: list[Any] = []
         attempts = 0
 
@@ -173,6 +174,7 @@ class CriticalReviewNode:
                 budget=self.budget,
                 execution=execution,
                 usages=usages,
+                cache_prefix=cache_prefix,
             )
 
             # Section 15's retry conditions. References first: a critique of something outside the

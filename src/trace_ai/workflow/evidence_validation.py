@@ -48,7 +48,7 @@ from trace_ai.services.evidence.validation_package import (
 )
 from trace_ai.workflow.errors import ErrorClass
 from trace_ai.workflow.limits import resolve_retry_policy
-from trace_ai.workflow.model_call import call_model, with_retry_feedback
+from trace_ai.workflow.model_call import cache_prefix_of, call_model, with_retry_feedback
 from trace_ai.workflow.nodes import NodeResult
 from trace_ai.workflow.phases import Phase
 from trace_ai.workflow.retry import AttemptFailedError, RetryPolicy, run_with_retries
@@ -183,6 +183,7 @@ class EvidenceValidationNode:
         )
         available = package.referenceable_ids()
 
+        cache_prefix = cache_prefix_of(composed.text, package.untrusted)
         usages: list[Any] = []
         attempts = 0
 
@@ -208,6 +209,7 @@ class EvidenceValidationNode:
                 budget=self.budget,
                 execution=execution,
                 usages=usages,
+                cache_prefix=cache_prefix,
             )
 
             # Section 14's four retry conditions, in the order that makes each correction the most

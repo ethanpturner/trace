@@ -115,7 +115,10 @@ class DeterministicModel:
         schema: type[T],
         settings: GenerationSettings | None = None,
         system: str | None = None,
+        cache_prefix: str | None = None,
     ) -> ModelOutcome[T]:
+        # `cache_prefix` is a provider-side optimisation hint; the fake reaches no provider, so it
+        # records nothing and replays the queue exactly as before (WS10).
         self.calls.append(RecordedCall(prompt, schema, settings, system))
 
         if not self._queued:

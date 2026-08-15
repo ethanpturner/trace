@@ -43,7 +43,7 @@ from trace_ai.infrastructure.model.agents import spec_for
 from trace_ai.services.context.input_package import assemble_extractor_input
 from trace_ai.workflow.errors import ErrorClass
 from trace_ai.workflow.limits import resolve_retry_policy
-from trace_ai.workflow.model_call import call_model, with_retry_feedback
+from trace_ai.workflow.model_call import cache_prefix_of, call_model, with_retry_feedback
 from trace_ai.workflow.nodes import NodeResult
 from trace_ai.workflow.phases import Phase
 from trace_ai.workflow.retry import AttemptFailedError, RetryPolicy, run_with_retries
@@ -166,6 +166,7 @@ class ContextExtractionNode:
                 f"{self.reviewer_feedback}"
             )
 
+        cache_prefix = cache_prefix_of(composed.text, package.untrusted)
         usages: list[Any] = []
         attempts = 0
 
@@ -188,6 +189,7 @@ class ContextExtractionNode:
                 budget=self.budget,
                 execution=execution,
                 usages=usages,
+                cache_prefix=cache_prefix,
             )
             try:
                 proposal.validate_against_evidence(set(package.evidence_ids))
