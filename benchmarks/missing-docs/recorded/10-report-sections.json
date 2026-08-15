@@ -1,11 +1,14 @@
 {
-  "executive_summary": "This assessment reviewed the kiosk sync service from its one-page note and approved no findings. That is not a statement that the system is secure — it is a statement about the documentation: almost nothing about the service's protections can be determined from what was supplied, and each undeterminable point is recorded as a documentation gap rather than concluded.",
-  "system_overview": "The system is a sync service on a virtual machine in the operations subnet: field kiosks submit customer order records to it over the store network, and the fulfillment system polls it hourly, as the supplied note describes.",
-  "risk_summary": "No candidate weakness reached the assessment's bar, because the note establishes too little to support one. What the records contain and how they move is documented; how the traffic is protected, how callers are identified, and how long records are kept are not addressed either way, and each is recorded as a documentation gap with the evidence that would resolve it.",
-  "limitations": [
-    {
-      "limitation_id": "lim-empty-findings",
-      "text": "No candidate weakness reached the assessment's bar. This is not a statement that the system is secure; what could not be determined is recorded as documentation gaps and open questions."
-    }
-  ]
+  "schema": "ReportSections",
+  "response": {
+    "executive_summary": "This assessment reviewed the kiosk sync service from its one-page note and approved no findings. That is not a statement that the system is secure \u2014 it is a statement about the documentation: almost nothing about the service's protections can be determined from what was supplied, and each undeterminable point is recorded as a documentation gap rather than concluded.",
+    "system_overview": "The system is a sync service on a virtual machine in the operations subnet: field kiosks submit customer order records to it over the store network, and the fulfillment system polls it hourly, as the supplied note describes.",
+    "risk_summary": "No candidate weakness reached the assessment's bar, because the note establishes too little to support one. What the records contain and how they move is documented; how the traffic is protected, how callers are identified, and how long records are kept are not addressed either way, and each is recorded as a documentation gap with the evidence that would resolve it.",
+    "limitations": [
+      {
+        "limitation_id": "lim-empty-findings",
+        "text": "No candidate weakness reached the assessment's bar. This is not a statement that the system is secure; what could not be determined is recorded as documentation gaps and open questions."
+      }
+    ]
+  }
 }

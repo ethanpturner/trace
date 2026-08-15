@@ -1,69 +1,72 @@
 {
-  "threats": [
-    {
-      "title": "Confidential metrics exposed from the stored database",
-      "description": "Metrics records associate product accounts with usage counters and are treated as confidential business data. An attacker who obtains the stored data — a stolen disk, a platform-side copy, or a captured connection — would hold confidential business data. The document states the platform encrypts the database at rest by default with platform-managed keys and that the API-to-database connection uses the platform's transport encryption.",
-      "methodology": "stride-scenario-based",
-      "category": [
-        "information_disclosure"
-      ],
-      "threat_actor_ids": [],
-      "affected_component_ids": [
-        "cmp-002"
-      ],
-      "affected_asset_ids": [
-        "ast-001"
-      ],
-      "related_data_flow_ids": [
-        "df-001"
-      ],
-      "preconditions": [
-        "an attacker obtains stored data or captures the database connection"
-      ],
-      "attack_path": [
-        "obtain the stored database contents or capture the connection",
-        "read account identifiers and usage counters"
-      ],
-      "impact": "Confidential business data is disclosed.",
-      "likelihood": null,
-      "confidence": "medium",
-      "evidence_ids": [
-        "evd-002",
-        "evd-003"
-      ],
-      "assumption_ids": [],
-      "open_question_ids": []
-    },
-    {
-      "title": "Confidential metrics retained beyond need",
-      "description": "Metrics are persisted and treated as confidential, but no document states how long they are retained or whether a lifecycle policy expires them. Data kept longer than needed widens the impact of any later disclosure.",
-      "methodology": "stride-scenario-based",
-      "category": [
-        "information_disclosure"
-      ],
-      "threat_actor_ids": [],
-      "affected_component_ids": [
-        "cmp-002"
-      ],
-      "affected_asset_ids": [
-        "ast-001"
-      ],
-      "related_data_flow_ids": [],
-      "preconditions": [
-        "metrics accumulate without a retention bound"
-      ],
-      "attack_path": [
-        "any later compromise of the store",
-        "read the full accumulated history rather than a bounded window"
-      ],
-      "impact": "A disclosure exposes the full accumulated metrics history.",
-      "likelihood": null,
-      "confidence": "low",
-      "evidence_ids": [
-        "evd-003"
-      ],
-      "assumption_ids": [],
-      "open_question_ids": []
-    }
-  ]
+  "schema": "ThreatAnalysisProposal",
+  "response": {
+    "threats": [
+      {
+        "title": "Confidential metrics exposed from the stored database",
+        "description": "Metrics records associate product accounts with usage counters and are treated as confidential business data. An attacker who obtains the stored data \u2014 a stolen disk, a platform-side copy, or a captured connection \u2014 would hold confidential business data. The document states the platform encrypts the database at rest by default with platform-managed keys and that the API-to-database connection uses the platform's transport encryption.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "information_disclosure"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-002"
+        ],
+        "affected_asset_ids": [
+          "ast-001"
+        ],
+        "related_data_flow_ids": [
+          "df-001"
+        ],
+        "preconditions": [
+          "an attacker obtains stored data or captures the database connection"
+        ],
+        "attack_path": [
+          "obtain the stored database contents or capture the connection",
+          "read account identifiers and usage counters"
+        ],
+        "impact": "Confidential business data is disclosed.",
+        "likelihood": null,
+        "confidence": "medium",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Confidential metrics retained beyond need",
+        "description": "Metrics are persisted and treated as confidential, but no document states how long they are retained or whether a lifecycle policy expires them. Data kept longer than needed widens the impact of any later disclosure.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "information_disclosure"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-002"
+        ],
+        "affected_asset_ids": [
+          "ast-001"
+        ],
+        "related_data_flow_ids": [],
+        "preconditions": [
+          "metrics accumulate without a retention bound"
+        ],
+        "attack_path": [
+          "any later compromise of the store",
+          "read the full accumulated history rather than a bounded window"
+        ],
+        "impact": "A disclosure exposes the full accumulated metrics history.",
+        "likelihood": null,
+        "confidence": "low",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      }
+    ]
+  }
 }

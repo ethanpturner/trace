@@ -19,6 +19,7 @@ from collections import deque
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from trace_ai.infrastructure.model.recorded import RecordedResponse
 from trace_ai.infrastructure.model.seam import (
     FailureReason,
     GenerationSettings,
@@ -83,12 +84,12 @@ class DeterministicModel:
 
     def __init__(
         self,
-        outcomes: Iterable[BaseModel | ModelFailure] = (),
+        outcomes: Iterable[BaseModel | ModelFailure | RecordedResponse] = (),
         *,
         name: str = "deterministic-fake",
         capabilities: frozenset[ModelCapability] = frozenset(),
     ) -> None:
-        self._queued: deque[BaseModel | ModelFailure] = deque(outcomes)
+        self._queued: deque[BaseModel | ModelFailure | RecordedResponse] = deque(outcomes)
         self._name = name
         self._capabilities = capabilities
         self._last_mismatch: str | None = None
@@ -103,7 +104,7 @@ class DeterministicModel:
         """Empty by default: a test that depends on a capability should say so."""
         return self._capabilities
 
-    def queue(self, *outcomes: BaseModel | ModelFailure) -> None:
+    def queue(self, *outcomes: BaseModel | ModelFailure | RecordedResponse) -> None:
         """Add outcomes to the end of the queue."""
         self._queued.extend(outcomes)
 
@@ -120,26 +121,32 @@ class DeterministicModel:
         if not self._queued:
             raise ResponsesExhaustedError(self._name, len(self.calls), self._last_mismatch)
 
-        outcome = self._queued.popleft()
-        usage = ModelUsage(model=self._name)
+        queued = self._queued.popleft()
 
-        if isinstance(outcome, ModelFailure):
+        if isinstance(queued, ModelFailure):
             self._last_mismatch = None
-            return outcome
+            return queued
 
-        if not isinstance(outcome, schema):
+        # A RecordedResponse carries the usage to replay (#461); a bare proposal carries none, so
+        # the fake reports zeros exactly as it did before the envelope existed.
+        if isinstance(queued, RecordedResponse):
+            value: BaseModel = queued.response
+            usage = queued.usage if queued.usage is not None else ModelUsage(model=self._name)
+        else:
+            value = queued
+            usage = ModelUsage(model=self._name)
+
+        if not isinstance(value, schema):
             # Remembered so that running out on the retry can say what actually went wrong: the
             # retry consumed the next call's response, and without this the exhaustion message
             # would blame the count when the cause was the order.
-            self._last_mismatch = (
-                f"a {type(outcome).__name__} where {schema.__name__} was asked for"
-            )
+            self._last_mismatch = f"a {type(value).__name__} where {schema.__name__} was asked for"
             return ModelFailure(
                 reason=FailureReason.SCHEMA_VALIDATION_FAILURE,
                 message=f"queued {self._last_mismatch}",
                 usage=usage,
-                raw_output=repr(outcome),
+                raw_output=repr(value),
             )
 
         self._last_mismatch = None
-        return ModelSuccess(value=outcome, usage=usage)
+        return ModelSuccess(value=value, usage=usage)

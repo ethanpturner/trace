@@ -1,96 +1,99 @@
 {
-  "critiques": [
-    {
-      "subject_type": "documentation_gap",
-      "subject_id": "gap-018",
-      "critique_type": "duplicate",
-      "description": "gap-018 records the same unresolved question as gap-014 and gap-010: whether externally visible AI-generated output is reviewed before publication. All three cite the identical passage set (evd-133 against the automatic publication sequences in evd-010 and evd-082, with evd-151 recording human review as unknown and evd-054 listing AI-output approval requirements as an outstanding item), all three state that req-AI-002 turns on the answer, and all three request the same reconciliation of the security overview with the operations guide. They differ only in the threat each was raised beside and in wording.",
-      "rationale": "One contradiction between two documents is one gap. Three records of it will reach a reviewer as three items requiring the identical resolution, and the third copy adds no passage, no affected component and no requested evidence the first two lack. gap-015 asks an adjacent but arguably distinguishable question (whether provider-response validation covers content as well as structure, on the same evd-009/evd-081/evd-151 basis) and should be checked for the same overlap rather than assumed separate.",
-      "evidence_ids": [
-        "evd-133",
-        "evd-010",
-        "evd-082",
-        "evd-151",
-        "evd-054"
-      ],
-      "recommended_action": "merge",
-      "confidence": "high"
-    },
-    {
-      "subject_type": "documentation_gap",
-      "subject_id": "gap-019",
-      "critique_type": "duplicate",
-      "description": "gap-019 and gap-011 ask the same question — what mechanism enforces the 'Repository-content instruction boundary' named in evd-049 — and rest on the same four passages: evd-049 naming the boundary, evd-053 recording repository content as possibly untrusted, and evd-006 and evd-081 listing analysis instructions and repository content as sections of one constructed request without describing separation. Both name act-006 and ctl-006's subject matter, and both request a description of role separation or equivalent isolation. gap-019 adds only the evd-115/evd-116 illustration of the class of content the boundary is expected to withstand.",
-      "rationale": "The enforcement mechanism is a single undocumented fact about one request-construction step; two gap records will produce two requests for the same document passage and two places for a reviewer to record one answer. The evd-115 illustration in gap-019 is worth retaining on the merged record, since it is the only concrete demonstration in the material of what the boundary would have to absorb, but it does not make the question a different question.",
-      "evidence_ids": [
-        "evd-049",
-        "evd-053",
-        "evd-006",
-        "evd-081",
-        "evd-115"
-      ],
-      "recommended_action": "merge",
-      "confidence": "high"
-    },
-    {
-      "subject_type": "documentation_gap",
-      "subject_id": "gap-017",
-      "critique_type": "duplicate",
-      "description": "gap-017 and gap-016 both record that encoding and rendering behaviour is undescribed for the same two surfaces — the GitHub comment path (evd-031, evd-010) and the React web application (evd-025) — both cite evd-054's 'Rich-content rendering behavior' entry as the reason the question is open, both name cmp-002 and cmp-007 and the same two data flows, and both state that req-AI-004 turns on the answer. gap-016 carries severity low and gap-017 severity medium for the same undetermined question; gap-017's requested evidence is the more specific of the two, naming the framework and default-encoding behaviour, the comment body format submitted to the GitHub API, and the handling of links carried inside model-returned fields.",
-      "rationale": "The divergent severities are the actionable part: as two records, the low-severity copy can be closed while the medium copy stays open, or the reverse, leaving one question with two dispositions. Neither record cites a passage the other lacks, so consolidation loses nothing and forces one severity and one requested-evidence list for one document request.",
-      "evidence_ids": [
-        "evd-025",
-        "evd-031",
-        "evd-010",
-        "evd-054"
-      ],
-      "recommended_action": "merge",
-      "confidence": "high"
-    },
-    {
-      "subject_type": "control",
-      "subject_id": "ctl-009",
-      "critique_type": "missing_evidence",
-      "description": "ctl-009 is one of the two controls map-037 names for req-AI-002, whose satisfaction status is partially_satisfied, yet it carries validation_status not_evaluated and is the only control in this group with no evidence assessment against it (ctl-004 has eas-012, ctl-006 eas-014, ctl-008 eas-015). Its evidence base includes evd-133, the passage eas-012 classifies as contradictory, and its own recorded limitations state that the disclaimers do not constrain what is published under the ForgeFlow identity (evd-031, evd-082) and that the published comment carries no marker distinguishing structurally-validated model output from a reviewed finding (evd-010, evd-064).",
-      "rationale": "A control credited in a mapping that reached a satisfaction determination, without any validation record, leaves that determination unchecked at exactly the point this threat turns on: ctl-009's mechanism is customer-directed documentation (evd-105, evd-012, evd-064, evd-003) while the threat is that reviewers act on content bearing ForgeFlow's provenance, so whether the disclosure compensates at all is contestable rather than self-evident. An assessment would also settle which clause of evd-133 ctl-009 relies on, since one clause of that passage is the contradicted one and the other (customer responsibility for review) is not.",
-      "evidence_ids": [
-        "evd-133",
-        "evd-105",
-        "evd-012",
-        "evd-064",
-        "evd-031",
-        "evd-082",
-        "evd-010"
-      ],
-      "recommended_action": "investigate",
-      "confidence": "medium"
-    },
-    {
-      "subject_type": "control_mapping",
-      "subject_id": "map-039",
-      "critique_type": "unsupported_claim",
-      "description": "map-039 concludes that req-AI-003 is not engaged on the stated ground that minimizing outbound content 'would neither prevent nor bound the rendering of attacker-chosen markup in a returned field'. The threat's own first attack-path step names repository documentation as one of the two channels carrying the attacker-authored element, cited to evd-005 — the passage that lists 'Selected repository documentation' among content the worker may retrieve, makes inclusion depend on repository configuration and configured analysis profile, and states that ForgeFlow attempts to avoid sending unnecessary repository content. The mapping cites only evd-031 and evd-025, neither of which addresses what is sent outbound.",
-      "rationale": "Content that is never sent to the provider cannot be reproduced in a returned field, so the scope of the outbound request bounds at least the documentation channel of this attack path; the 'nor bound' half of the reason is not carried by any cited passage. The not_applicable conclusion may still be right on a different ground — evd-005 lists pull-request title, description and diff among retrieved content, so the second channel is in scope whatever minimization occurs — but as written the reason asserts more than the evidence supports and conflicts with the threat's own step 1.",
-      "evidence_ids": [
-        "evd-005",
-        "evd-006"
-      ],
-      "recommended_action": "revise",
-      "confidence": "low"
-    },
-    {
-      "subject_type": "threat",
-      "subject_id": "thr-005",
-      "critique_type": "unsupported_claim",
-      "description": "thr-005 lists information_disclosure among its categories, but neither the attack path nor the impact describes information reaching a party not already entitled to it: the impact is that attacker-chosen links or markup inherit ForgeFlow's apparent authorship, 'enabling misdirection of reviewers'. Of the passages the threat cites, evd-101 is the only one touching disclosure and it addresses ForgeFlow's attempt to avoid unnecessary source-code content in comments, not any disclosure caused by rendering; evd-031 and evd-025 describe the two rendering surfaces and say nothing about disclosure. prompt_injection and spoofing are both carried by the described path.",
-      "rationale": "Threat categories travel into findings and into how impact is characterised, so an unsupported category invites a downstream claim of disclosure impact that no cited passage backs. Either the category comes off, or the attack path and impact should state the disclosure mechanism intended — for example a rendered element that causes a reviewer's client to reach an attacker-chosen destination — so that it can be evidenced or recorded as an unknown.",
-      "evidence_ids": [
-        "evd-101",
-        "evd-031",
-        "evd-025"
-      ],
-      "recommended_action": "revise",
-      "confidence": "low"
-    }
-  ]
+  "schema": "CriticalReviewProposal",
+  "response": {
+    "critiques": [
+      {
+        "subject_type": "documentation_gap",
+        "subject_id": "gap-018",
+        "critique_type": "duplicate",
+        "description": "gap-018 records the same unresolved question as gap-014 and gap-010: whether externally visible AI-generated output is reviewed before publication. All three cite the identical passage set (evd-133 against the automatic publication sequences in evd-010 and evd-082, with evd-151 recording human review as unknown and evd-054 listing AI-output approval requirements as an outstanding item), all three state that req-AI-002 turns on the answer, and all three request the same reconciliation of the security overview with the operations guide. They differ only in the threat each was raised beside and in wording.",
+        "rationale": "One contradiction between two documents is one gap. Three records of it will reach a reviewer as three items requiring the identical resolution, and the third copy adds no passage, no affected component and no requested evidence the first two lack. gap-015 asks an adjacent but arguably distinguishable question (whether provider-response validation covers content as well as structure, on the same evd-009/evd-081/evd-151 basis) and should be checked for the same overlap rather than assumed separate.",
+        "evidence_ids": [
+          "evd-133",
+          "evd-010",
+          "evd-082",
+          "evd-151",
+          "evd-054"
+        ],
+        "recommended_action": "merge",
+        "confidence": "high"
+      },
+      {
+        "subject_type": "documentation_gap",
+        "subject_id": "gap-019",
+        "critique_type": "duplicate",
+        "description": "gap-019 and gap-011 ask the same question \u2014 what mechanism enforces the 'Repository-content instruction boundary' named in evd-049 \u2014 and rest on the same four passages: evd-049 naming the boundary, evd-053 recording repository content as possibly untrusted, and evd-006 and evd-081 listing analysis instructions and repository content as sections of one constructed request without describing separation. Both name act-006 and ctl-006's subject matter, and both request a description of role separation or equivalent isolation. gap-019 adds only the evd-115/evd-116 illustration of the class of content the boundary is expected to withstand.",
+        "rationale": "The enforcement mechanism is a single undocumented fact about one request-construction step; two gap records will produce two requests for the same document passage and two places for a reviewer to record one answer. The evd-115 illustration in gap-019 is worth retaining on the merged record, since it is the only concrete demonstration in the material of what the boundary would have to absorb, but it does not make the question a different question.",
+        "evidence_ids": [
+          "evd-049",
+          "evd-053",
+          "evd-006",
+          "evd-081",
+          "evd-115"
+        ],
+        "recommended_action": "merge",
+        "confidence": "high"
+      },
+      {
+        "subject_type": "documentation_gap",
+        "subject_id": "gap-017",
+        "critique_type": "duplicate",
+        "description": "gap-017 and gap-016 both record that encoding and rendering behaviour is undescribed for the same two surfaces \u2014 the GitHub comment path (evd-031, evd-010) and the React web application (evd-025) \u2014 both cite evd-054's 'Rich-content rendering behavior' entry as the reason the question is open, both name cmp-002 and cmp-007 and the same two data flows, and both state that req-AI-004 turns on the answer. gap-016 carries severity low and gap-017 severity medium for the same undetermined question; gap-017's requested evidence is the more specific of the two, naming the framework and default-encoding behaviour, the comment body format submitted to the GitHub API, and the handling of links carried inside model-returned fields.",
+        "rationale": "The divergent severities are the actionable part: as two records, the low-severity copy can be closed while the medium copy stays open, or the reverse, leaving one question with two dispositions. Neither record cites a passage the other lacks, so consolidation loses nothing and forces one severity and one requested-evidence list for one document request.",
+        "evidence_ids": [
+          "evd-025",
+          "evd-031",
+          "evd-010",
+          "evd-054"
+        ],
+        "recommended_action": "merge",
+        "confidence": "high"
+      },
+      {
+        "subject_type": "control",
+        "subject_id": "ctl-009",
+        "critique_type": "missing_evidence",
+        "description": "ctl-009 is one of the two controls map-037 names for req-AI-002, whose satisfaction status is partially_satisfied, yet it carries validation_status not_evaluated and is the only control in this group with no evidence assessment against it (ctl-004 has eas-012, ctl-006 eas-014, ctl-008 eas-015). Its evidence base includes evd-133, the passage eas-012 classifies as contradictory, and its own recorded limitations state that the disclaimers do not constrain what is published under the ForgeFlow identity (evd-031, evd-082) and that the published comment carries no marker distinguishing structurally-validated model output from a reviewed finding (evd-010, evd-064).",
+        "rationale": "A control credited in a mapping that reached a satisfaction determination, without any validation record, leaves that determination unchecked at exactly the point this threat turns on: ctl-009's mechanism is customer-directed documentation (evd-105, evd-012, evd-064, evd-003) while the threat is that reviewers act on content bearing ForgeFlow's provenance, so whether the disclosure compensates at all is contestable rather than self-evident. An assessment would also settle which clause of evd-133 ctl-009 relies on, since one clause of that passage is the contradicted one and the other (customer responsibility for review) is not.",
+        "evidence_ids": [
+          "evd-133",
+          "evd-105",
+          "evd-012",
+          "evd-064",
+          "evd-031",
+          "evd-082",
+          "evd-010"
+        ],
+        "recommended_action": "investigate",
+        "confidence": "medium"
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-039",
+        "critique_type": "unsupported_claim",
+        "description": "map-039 concludes that req-AI-003 is not engaged on the stated ground that minimizing outbound content 'would neither prevent nor bound the rendering of attacker-chosen markup in a returned field'. The threat's own first attack-path step names repository documentation as one of the two channels carrying the attacker-authored element, cited to evd-005 \u2014 the passage that lists 'Selected repository documentation' among content the worker may retrieve, makes inclusion depend on repository configuration and configured analysis profile, and states that ForgeFlow attempts to avoid sending unnecessary repository content. The mapping cites only evd-031 and evd-025, neither of which addresses what is sent outbound.",
+        "rationale": "Content that is never sent to the provider cannot be reproduced in a returned field, so the scope of the outbound request bounds at least the documentation channel of this attack path; the 'nor bound' half of the reason is not carried by any cited passage. The not_applicable conclusion may still be right on a different ground \u2014 evd-005 lists pull-request title, description and diff among retrieved content, so the second channel is in scope whatever minimization occurs \u2014 but as written the reason asserts more than the evidence supports and conflicts with the threat's own step 1.",
+        "evidence_ids": [
+          "evd-005",
+          "evd-006"
+        ],
+        "recommended_action": "revise",
+        "confidence": "low"
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-005",
+        "critique_type": "unsupported_claim",
+        "description": "thr-005 lists information_disclosure among its categories, but neither the attack path nor the impact describes information reaching a party not already entitled to it: the impact is that attacker-chosen links or markup inherit ForgeFlow's apparent authorship, 'enabling misdirection of reviewers'. Of the passages the threat cites, evd-101 is the only one touching disclosure and it addresses ForgeFlow's attempt to avoid unnecessary source-code content in comments, not any disclosure caused by rendering; evd-031 and evd-025 describe the two rendering surfaces and say nothing about disclosure. prompt_injection and spoofing are both carried by the described path.",
+        "rationale": "Threat categories travel into findings and into how impact is characterised, so an unsupported category invites a downstream claim of disclosure impact that no cited passage backs. Either the category comes off, or the attack path and impact should state the disclosure mechanism intended \u2014 for example a rendered element that causes a reviewer's client to reach an attacker-chosen destination \u2014 so that it can be evidenced or recorded as an unknown.",
+        "evidence_ids": [
+          "evd-101",
+          "evd-031",
+          "evd-025"
+        ],
+        "recommended_action": "revise",
+        "confidence": "low"
+      }
+    ]
+  }
 }

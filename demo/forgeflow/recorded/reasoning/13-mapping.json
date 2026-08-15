@@ -1,373 +1,376 @@
 {
-  "controls": [
-    {
-      "key": "membership-and-installation-change-logging",
-      "name": "Central logging of organization-membership and GitHub installation changes",
-      "description": "The architecture states that ForgeFlow forwards application and security-relevant events to a shared logging platform, and lists 'Organization-membership changes' and 'GitHub installation changes' among the logged event types (evd-036). The security overview repeats that GitHub installation events and authentication activity are forwarded to the centralized logging platform (evd-131). This is a detective record that a membership or installation change occurred; no reviewed passage states that such an event causes a stored ForgeFlow membership record to be re-derived, nor that any alert or review is triggered, so the control observes the divergence rather than closing it.",
-      "control_type": "implemented",
-      "provider_component_id": null,
-      "protected_component_ids": [
-        "cmp-003"
-      ],
-      "protected_asset_ids": [
-        "ast-004"
-      ],
-      "implementation_status": "claimed",
-      "evidence_ids": [
-        "evd-036",
-        "evd-131"
-      ],
-      "owner": "ForgeFlow Platform Engineering / central logging platform team",
-      "limitations": [
-        "The documents state that membership and installation change events are logged; they do not state that any process consumes them to update stored membership records (evd-036, evd-131).",
-        "No retention, review, or alerting behaviour for these specific event types is described (evd-131)."
-      ]
-    },
-    {
-      "key": "customer-owned-github-access-management",
-      "name": "Documented allocation of GitHub organization access management to the customer",
-      "description": "Product and integration documentation place responsibility for managing GitHub organization access, reviewing granted repository permissions, removing unused installations and maintaining GitHub identity and organization controls on the customer (evd-104, evd-069). The security overview records as an assumption that customer organizations appropriately manage GitHub permissions (evd-137). This allocates the upstream entitlement decision to the customer; it does not describe any ForgeFlow-side mechanism that reflects an upstream removal into the ForgeFlow membership records used for authorization (evd-027, evd-097).",
-      "control_type": "compensating",
-      "provider_component_id": "cmp-013",
-      "protected_component_ids": [
-        "cmp-013"
-      ],
-      "protected_asset_ids": [
-        "ast-004",
-        "ast-002"
-      ],
-      "implementation_status": "claimed",
-      "evidence_ids": [
-        "evd-104",
-        "evd-069",
-        "evd-137"
-      ],
-      "owner": "Customer organizations (documented by ForgeFlow Product Management and Platform Engineering)",
-      "limitations": [
-        "The customer's action takes effect on the GitHub side; no reviewed passage states that it propagates to the ForgeFlow membership and role records that authorize API access (evd-027, evd-097, evd-124).",
-        "Recorded as an assumption rather than an enforced property (evd-137)."
-      ]
-    }
-  ],
-  "mappings": [
-    {
-      "threat_id": "thr-009",
-      "requirement_id": "req-AUTH-001",
-      "control_keys": [],
-      "existing_control_ids": [
-        "ctl-012"
-      ],
-      "applicability_status": "applicable",
-      "applicability_reason": "The threat's first step is a user authenticating through GitHub as an individual, and the requirement's applicable condition 'user authentication is delegated to an external identity provider' holds: ForgeFlow delegates customer authentication to GitHub and keeps no local password database (evd-027, evd-097).",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "satisfied",
-      "evidence_ids": [
-        "evd-027",
-        "evd-059",
-        "evd-097",
-        "evd-123",
-        "evd-143"
-      ],
-      "assumptions": [],
-      "confidence": "high"
-    },
-    {
-      "threat_id": "thr-009",
-      "requirement_id": "req-AUTHZ-001",
-      "control_keys": [],
-      "existing_control_ids": [
-        "ctl-010"
-      ],
-      "applicability_status": "applicable",
-      "applicability_reason": "ForgeFlow serves multiple customer organizations whose records share a single managed database (evd-032, evd-102), and this threat is precisely a request being evaluated against organization membership held server-side (evd-124), so both applicable conditions hold.",
-      "suppressed_conclusion": "That tenant-aware authorization is absent or inadequate because no enforcement point (data access layer, middleware, or datastore constraint) is named and internal authorization implementation is intentionally omitted (evd-032, evd-138). The requirement remains live but the negative inference is not available from that silence.",
-      "suppressed_by": "absent description of an authorization library or framework",
-      "satisfaction_status": "unverified",
-      "evidence_ids": [
-        "evd-032",
-        "evd-124",
-        "evd-102",
-        "evd-130",
-        "evd-049",
-        "evd-026",
-        "evd-138"
-      ],
-      "assumptions": [
-        "Proceeding on the basis that the 'organization context' carried on API requests operating on customer resources (evd-026) is the same context the authorization rules evaluate; no passage states whether it is derived from the session or supplied by the client."
-      ],
-      "confidence": "medium"
-    },
-    {
-      "threat_id": "thr-009",
-      "requirement_id": "req-DATA-003",
-      "control_keys": [],
-      "existing_control_ids": [
-        "ctl-011"
-      ],
-      "applicability_status": "conditionally_applicable",
-      "applicability_reason": "The requirement's conditions hold for the platform generally — artifacts from multiple customers share managed object storage under a documented, predictable path template (evd-033, evd-078) — but it bears on this threat only through the artifact-link step of the attack path (evd-046, evd-026), and separation by ForgeFlow organization does not address a reader whose ForgeFlow membership record still names that organization.",
-      "suppressed_conclusion": "That artifact separation is inadequate because the paths are predictable and object-storage authorization enforcement is a named documentation gap (evd-033, evd-054). Logical separation is documented; whether it is enforced on access is unestablished rather than shown absent.",
-      "suppressed_by": "absent description of a physical separation mechanism where logical separation is enforced and documented",
-      "satisfaction_status": "unverified",
-      "evidence_ids": [
-        "evd-033",
-        "evd-078",
-        "evd-130",
-        "evd-026",
-        "evd-054"
-      ],
-      "assumptions": [
-        "Assuming the 'artifact links' in the attack path are the time-limited access links the API generates for stored artifacts (evd-026, evd-033); the threat does not name the storage component explicitly."
-      ],
-      "confidence": "low"
-    },
-    {
-      "threat_id": "thr-009",
-      "requirement_id": "req-WEBHOOK-001",
-      "control_keys": [],
-      "existing_control_ids": [
-        "ctl-001"
-      ],
-      "applicability_status": "conditionally_applicable",
-      "applicability_reason": "Installation events and installation permission updates are among the webhook types ForgeFlow subscribes to (evd-062), so the requirement engages this threat only if those inbound events are what would re-derive or revoke stored membership and installation state; no reviewed passage says they are used that way, so the condition cannot be established.",
-      "suppressed_conclusion": "That origin authenticity of installation-related webhook events is not verified, because the documents say only that incoming requests are 'validated' (evd-028, evd-062, evd-128) and detailed webhook-validation behaviour is a named gap (evd-054).",
-      "suppressed_by": "documentation stating only that requests are validated, where the mechanism is unstated",
-      "satisfaction_status": "unverified",
-      "evidence_ids": [
-        "evd-062",
-        "evd-028",
-        "evd-128",
-        "evd-069",
-        "evd-054"
-      ],
-      "assumptions": [],
-      "confidence": "medium"
-    },
-    {
-      "threat_id": "thr-009",
-      "requirement_id": "req-AUTH-002",
-      "control_keys": [],
-      "existing_control_ids": [],
-      "applicability_status": "not_applicable",
-      "applicability_reason": "The non-applicable condition 'authentication and its factor policy are entirely owned by an external provider and documented as such' holds for the actors in this threat: customer users and customer administrators authenticate through GitHub, which owns any factor policy, and ForgeFlow stores no passwords (evd-123, evd-097, evd-027). The administrative identity platform where MFA is recorded (evd-143) is not on this attack path.",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "not_applicable",
-      "evidence_ids": [
-        "evd-123",
-        "evd-097",
-        "evd-027"
-      ],
-      "assumptions": [],
-      "confidence": "medium"
-    },
-    {
-      "threat_id": "thr-009",
-      "requirement_id": "req-ADMIN-001",
-      "control_keys": [],
-      "existing_control_ids": [],
-      "applicability_status": "not_applicable",
-      "applicability_reason": "The requirement's conditions concern operators acting through an administrative or operator interface. This threat's actors are customer users and customer administrators reading organization data through the customer API after a GitHub-side entitlement change (evd-097, evd-124, evd-046); the path does not traverse the internal administrative interface (evd-035).",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "not_applicable",
-      "evidence_ids": [
-        "evd-035",
-        "evd-097",
-        "evd-046"
-      ],
-      "assumptions": [],
-      "confidence": "medium"
-    },
-    {
-      "threat_id": "thr-009",
-      "requirement_id": "req-LOG-002",
-      "control_keys": [],
-      "existing_control_ids": [],
-      "applicability_status": "not_applicable",
-      "applicability_reason": "The requirement applies to actions taken through a privileged operator interface. No step of this attack path is an operator action; the access occurs through ordinary customer API requests evaluated against stored membership (evd-124, evd-046), so the requirement's applicable conditions are not engaged by this threat.",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "not_applicable",
-      "evidence_ids": [
-        "evd-124",
-        "evd-046"
-      ],
-      "assumptions": [],
-      "confidence": "medium"
-    },
-    {
-      "threat_id": "thr-009",
-      "requirement_id": "req-AUTHZ-002",
-      "control_keys": [],
-      "existing_control_ids": [
-        "ctl-016"
-      ],
-      "applicability_status": "not_applicable",
-      "applicability_reason": "This requirement concerns the breadth of privileges ForgeFlow requests from GitHub. The threat does not turn on that scope: worker repository access is obtained per operation as a short-lived installation-scoped token that follows current GitHub selection (evd-061, evd-065), while the disclosure occurs against ForgeFlow-held records read through the customer API (evd-124, evd-046).",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "not_applicable",
-      "evidence_ids": [
-        "evd-061",
-        "evd-065",
-        "evd-124"
-      ],
-      "assumptions": [],
-      "confidence": "medium"
-    },
-    {
-      "threat_id": "thr-009",
-      "requirement_id": "req-DATA-001",
-      "control_keys": [],
-      "existing_control_ids": [
-        "ctl-013"
-      ],
-      "applicability_status": "not_applicable",
-      "applicability_reason": "The requirement's conditions concern data at rest and data crossing a network boundary the system does not control. In this threat the data is retrieved over an ordinary authenticated TLS session by a party the system's own records treat as a member (evd-126, evd-046), so transport and at-rest encryption are not the controls the threat defeats.",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "not_applicable",
-      "evidence_ids": [
-        "evd-126",
-        "evd-046"
-      ],
-      "assumptions": [],
-      "confidence": "medium"
-    },
-    {
-      "threat_id": "thr-009",
-      "requirement_id": "req-DATA-004",
-      "control_keys": [],
-      "existing_control_ids": [
-        "ctl-015"
-      ],
-      "applicability_status": "not_applicable",
-      "applicability_reason": "The requirement concerns removing customer data when a customer or operator requires it (evd-026, evd-096). This threat concerns continued read access by a user whose upstream entitlement was withdrawn while the data remains legitimately retained for the organization, so the requirement's conditions are not what the attack path engages.",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "not_applicable",
-      "evidence_ids": [
-        "evd-026",
-        "evd-096"
-      ],
-      "assumptions": [],
-      "confidence": "medium"
-    }
-  ],
-  "documentation_gaps": [
-    {
-      "title": "Whether ForgeFlow membership and role records are re-derived from GitHub is not documented",
-      "description": "The architecture states that after the GitHub flow completes ForgeFlow associates the GitHub identity with a ForgeFlow user and one or more customer organizations, and that organization membership and role information are stored in ForgeFlow (evd-027); authorization is then evaluated against those stored records (evd-097, evd-124). Installation events and installation permission updates are subscribed webhook types (evd-062) and membership and installation changes are logged (evd-036), but no reviewed passage states whether any of these re-derive, refresh, or revoke a stored membership record when a customer removes a user from the GitHub organization or reduces repository coverage (evd-058, evd-104). The security overview records internal authorization implementation among intentionally omitted details (evd-138). Trace cannot determine whether a synchronization or revocation control exists.",
-      "importance": "Whether stored membership tracks GitHub-side reality determines whether a former GitHub organization member retains read access to structured analysis results and artifact links for that organization. The answer changes the satisfaction assessment of tenant-aware authorization for this threat and is obtainable from engineering documentation.",
-      "related_object_ids": [
-        "thr-009",
-        "cmp-003",
-        "cmp-009",
-        "cmp-013",
-        "ast-004",
-        "df-002",
-        "df-013"
-      ],
-      "requested_evidence": [
-        "Documentation describing how and when ForgeFlow organization membership and role records are created, refreshed, and removed relative to GitHub organization membership",
-        "A statement of whether installation, installation-permission, or membership webhook events cause membership or installation records to be updated or revoked",
-        "A description of the authorization model stating whether membership is read from stored records only, or re-checked against GitHub at authorization time"
-      ],
-      "evidence_ids": [
-        "evd-027",
-        "evd-097",
-        "evd-124",
-        "evd-062",
-        "evd-058",
-        "evd-104",
-        "evd-138",
-        "evd-036"
-      ],
-      "severity": "medium"
-    },
-    {
-      "title": "Customer session lifetime, renewal and revocation behaviour is not described",
-      "description": "The architecture states only that 'the application uses secure browser sessions for subsequent customer requests' (evd-027), and the product and security documents describe sessions as established after successful GitHub authentication without further detail (evd-059, evd-123). Administrative sessions are documented as expiring after inactivity (evd-087), but no equivalent statement covers customer sessions, and no passage describes how a session is invalidated when membership or entitlement changes. Trace cannot determine whether a session-side control bounds the window in this threat.",
-      "importance": "If stored membership is refreshed only at login, session lifetime and revocation determine how long an existing session continues to authorize access after a GitHub-side removal. The answer is obtainable and bears directly on the exposure window.",
-      "related_object_ids": [
-        "thr-009",
-        "cmp-003",
-        "ast-004",
-        "df-002"
-      ],
-      "requested_evidence": [
-        "Documentation stating customer session lifetime, idle expiry, and renewal behaviour",
-        "A description of how and when a customer session can be invalidated, including on membership or role change"
-      ],
-      "evidence_ids": [
-        "evd-027",
-        "evd-059",
-        "evd-123",
-        "evd-087"
-      ],
-      "severity": "medium"
-    },
-    {
-      "title": "The enforcement point for organization-scoped authorization is not identified",
-      "description": "Customer-associated records carry an organization identifier and 'application services are responsible for applying organization-aware access rules when querying customer data' (evd-032); API requests operating on customer resources 'include an organization context' (evd-026). No reviewed passage names where the rule is enforced (shared data access layer, middleware, or datastore constraint) or whether the organization context is derived from server-side session state or accepted from the request, and the security overview places internal authorization implementation among intentionally omitted details (evd-138). Detailed tenant-isolation tests are a named architecture gap (evd-054).",
-      "importance": "Without the enforcement point, Trace cannot verify req-AUTHZ-001 for this threat, and cannot distinguish an enforced boundary from a naming convention. The information is held in engineering documentation and would settle the mapping.",
-      "related_object_ids": [
-        "thr-009",
-        "cmp-003",
-        "cmp-009",
-        "ast-002",
-        "ast-004",
-        "df-013"
-      ],
-      "requested_evidence": [
-        "Architecture or engineering documentation naming the component that enforces organization scoping on customer data queries",
-        "A statement of whether the organization context on an API request is derived from server-side session state or supplied by the client",
-        "Results or description of tenant-isolation tests referenced as a gap in evd-054"
-      ],
-      "evidence_ids": [
-        "evd-032",
-        "evd-026",
-        "evd-124",
-        "evd-130",
-        "evd-138",
-        "evd-054"
-      ],
-      "severity": "medium"
-    }
-  ],
-  "catalog_gap_candidates": [
-    {
-      "concern": "The catalog contains no requirement covering the currency of entitlements derived from an external identity or platform provider: that is, whether locally stored membership, role, or installation records are re-derived or revoked when the upstream grant they were derived from is withdrawn, and whether existing sessions are re-evaluated when that happens. ForgeFlow authenticates through GitHub but authorizes against membership and roles it stores itself (evd-027, evd-097, evd-124), while GitHub-side membership and repository selection change independently under customer control (evd-058, evd-104). Nothing in the catalog asks for the de-provisioning path to be documented.",
-      "suggested_category": "authorization",
-      "nearest_requirements": [
-        {
-          "requirement_id": "req-AUTH-001",
-          "why_not": "It asks that the delegation, the provider, and the boundary of the provider's responsibility be documented. ForgeFlow documents all three (evd-027, evd-123); the requirement says nothing about keeping locally stored entitlements in step with the provider after the initial authentication."
-        },
-        {
-          "requirement_id": "req-AUTHZ-001",
-          "why_not": "It asks that every request be constrained to the tenant it belongs to and that tenant context be server-derived. A stale membership record satisfies that requirement exactly — the request is constrained to the organization the record names — while still authorizing a user whose upstream entitlement has been withdrawn."
-        },
-        {
-          "requirement_id": "req-AUTHZ-002",
-          "why_not": "It governs the scope of privileges the system requests from an external platform, not the lifecycle of a user's entitlement to the system's own data; the threat here is unaffected by how narrow the GitHub App's permissions are (evd-060, evd-065)."
-        },
-        {
-          "requirement_id": "req-ADMIN-001",
-          "why_not": "It concerns restriction and reach of an operator interface; the stale entitlement here belongs to an ordinary customer user acting through the customer API (evd-097, evd-046)."
-        }
-      ],
-      "evidence_ids": [
-        "evd-027",
-        "evd-097",
-        "evd-124",
-        "evd-058",
-        "evd-104",
-        "evd-062",
-        "evd-138"
-      ]
-    }
-  ]
+  "schema": "MappingProposal",
+  "response": {
+    "controls": [
+      {
+        "key": "membership-and-installation-change-logging",
+        "name": "Central logging of organization-membership and GitHub installation changes",
+        "description": "The architecture states that ForgeFlow forwards application and security-relevant events to a shared logging platform, and lists 'Organization-membership changes' and 'GitHub installation changes' among the logged event types (evd-036). The security overview repeats that GitHub installation events and authentication activity are forwarded to the centralized logging platform (evd-131). This is a detective record that a membership or installation change occurred; no reviewed passage states that such an event causes a stored ForgeFlow membership record to be re-derived, nor that any alert or review is triggered, so the control observes the divergence rather than closing it.",
+        "control_type": "implemented",
+        "provider_component_id": null,
+        "protected_component_ids": [
+          "cmp-003"
+        ],
+        "protected_asset_ids": [
+          "ast-004"
+        ],
+        "implementation_status": "claimed",
+        "evidence_ids": [
+          "evd-036",
+          "evd-131"
+        ],
+        "owner": "ForgeFlow Platform Engineering / central logging platform team",
+        "limitations": [
+          "The documents state that membership and installation change events are logged; they do not state that any process consumes them to update stored membership records (evd-036, evd-131).",
+          "No retention, review, or alerting behaviour for these specific event types is described (evd-131)."
+        ]
+      },
+      {
+        "key": "customer-owned-github-access-management",
+        "name": "Documented allocation of GitHub organization access management to the customer",
+        "description": "Product and integration documentation place responsibility for managing GitHub organization access, reviewing granted repository permissions, removing unused installations and maintaining GitHub identity and organization controls on the customer (evd-104, evd-069). The security overview records as an assumption that customer organizations appropriately manage GitHub permissions (evd-137). This allocates the upstream entitlement decision to the customer; it does not describe any ForgeFlow-side mechanism that reflects an upstream removal into the ForgeFlow membership records used for authorization (evd-027, evd-097).",
+        "control_type": "compensating",
+        "provider_component_id": "cmp-013",
+        "protected_component_ids": [
+          "cmp-013"
+        ],
+        "protected_asset_ids": [
+          "ast-004",
+          "ast-002"
+        ],
+        "implementation_status": "claimed",
+        "evidence_ids": [
+          "evd-104",
+          "evd-069",
+          "evd-137"
+        ],
+        "owner": "Customer organizations (documented by ForgeFlow Product Management and Platform Engineering)",
+        "limitations": [
+          "The customer's action takes effect on the GitHub side; no reviewed passage states that it propagates to the ForgeFlow membership and role records that authorize API access (evd-027, evd-097, evd-124).",
+          "Recorded as an assumption rather than an enforced property (evd-137)."
+        ]
+      }
+    ],
+    "mappings": [
+      {
+        "threat_id": "thr-009",
+        "requirement_id": "req-AUTH-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-012"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The threat's first step is a user authenticating through GitHub as an individual, and the requirement's applicable condition 'user authentication is delegated to an external identity provider' holds: ForgeFlow delegates customer authentication to GitHub and keeps no local password database (evd-027, evd-097).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "satisfied",
+        "evidence_ids": [
+          "evd-027",
+          "evd-059",
+          "evd-097",
+          "evd-123",
+          "evd-143"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-009",
+        "requirement_id": "req-AUTHZ-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-010"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "ForgeFlow serves multiple customer organizations whose records share a single managed database (evd-032, evd-102), and this threat is precisely a request being evaluated against organization membership held server-side (evd-124), so both applicable conditions hold.",
+        "suppressed_conclusion": "That tenant-aware authorization is absent or inadequate because no enforcement point (data access layer, middleware, or datastore constraint) is named and internal authorization implementation is intentionally omitted (evd-032, evd-138). The requirement remains live but the negative inference is not available from that silence.",
+        "suppressed_by": "absent description of an authorization library or framework",
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-032",
+          "evd-124",
+          "evd-102",
+          "evd-130",
+          "evd-049",
+          "evd-026",
+          "evd-138"
+        ],
+        "assumptions": [
+          "Proceeding on the basis that the 'organization context' carried on API requests operating on customer resources (evd-026) is the same context the authorization rules evaluate; no passage states whether it is derived from the session or supplied by the client."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-009",
+        "requirement_id": "req-DATA-003",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-011"
+        ],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "The requirement's conditions hold for the platform generally \u2014 artifacts from multiple customers share managed object storage under a documented, predictable path template (evd-033, evd-078) \u2014 but it bears on this threat only through the artifact-link step of the attack path (evd-046, evd-026), and separation by ForgeFlow organization does not address a reader whose ForgeFlow membership record still names that organization.",
+        "suppressed_conclusion": "That artifact separation is inadequate because the paths are predictable and object-storage authorization enforcement is a named documentation gap (evd-033, evd-054). Logical separation is documented; whether it is enforced on access is unestablished rather than shown absent.",
+        "suppressed_by": "absent description of a physical separation mechanism where logical separation is enforced and documented",
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-033",
+          "evd-078",
+          "evd-130",
+          "evd-026",
+          "evd-054"
+        ],
+        "assumptions": [
+          "Assuming the 'artifact links' in the attack path are the time-limited access links the API generates for stored artifacts (evd-026, evd-033); the threat does not name the storage component explicitly."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-009",
+        "requirement_id": "req-WEBHOOK-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-001"
+        ],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "Installation events and installation permission updates are among the webhook types ForgeFlow subscribes to (evd-062), so the requirement engages this threat only if those inbound events are what would re-derive or revoke stored membership and installation state; no reviewed passage says they are used that way, so the condition cannot be established.",
+        "suppressed_conclusion": "That origin authenticity of installation-related webhook events is not verified, because the documents say only that incoming requests are 'validated' (evd-028, evd-062, evd-128) and detailed webhook-validation behaviour is a named gap (evd-054).",
+        "suppressed_by": "documentation stating only that requests are validated, where the mechanism is unstated",
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-062",
+          "evd-028",
+          "evd-128",
+          "evd-069",
+          "evd-054"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-009",
+        "requirement_id": "req-AUTH-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'authentication and its factor policy are entirely owned by an external provider and documented as such' holds for the actors in this threat: customer users and customer administrators authenticate through GitHub, which owns any factor policy, and ForgeFlow stores no passwords (evd-123, evd-097, evd-027). The administrative identity platform where MFA is recorded (evd-143) is not on this attack path.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-123",
+          "evd-097",
+          "evd-027"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-009",
+        "requirement_id": "req-ADMIN-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The requirement's conditions concern operators acting through an administrative or operator interface. This threat's actors are customer users and customer administrators reading organization data through the customer API after a GitHub-side entitlement change (evd-097, evd-124, evd-046); the path does not traverse the internal administrative interface (evd-035).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-035",
+          "evd-097",
+          "evd-046"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-009",
+        "requirement_id": "req-LOG-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The requirement applies to actions taken through a privileged operator interface. No step of this attack path is an operator action; the access occurs through ordinary customer API requests evaluated against stored membership (evd-124, evd-046), so the requirement's applicable conditions are not engaged by this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-124",
+          "evd-046"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-009",
+        "requirement_id": "req-AUTHZ-002",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-016"
+        ],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This requirement concerns the breadth of privileges ForgeFlow requests from GitHub. The threat does not turn on that scope: worker repository access is obtained per operation as a short-lived installation-scoped token that follows current GitHub selection (evd-061, evd-065), while the disclosure occurs against ForgeFlow-held records read through the customer API (evd-124, evd-046).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-061",
+          "evd-065",
+          "evd-124"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-009",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-013"
+        ],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The requirement's conditions concern data at rest and data crossing a network boundary the system does not control. In this threat the data is retrieved over an ordinary authenticated TLS session by a party the system's own records treat as a member (evd-126, evd-046), so transport and at-rest encryption are not the controls the threat defeats.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-126",
+          "evd-046"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-009",
+        "requirement_id": "req-DATA-004",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-015"
+        ],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The requirement concerns removing customer data when a customer or operator requires it (evd-026, evd-096). This threat concerns continued read access by a user whose upstream entitlement was withdrawn while the data remains legitimately retained for the organization, so the requirement's conditions are not what the attack path engages.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-026",
+          "evd-096"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Whether ForgeFlow membership and role records are re-derived from GitHub is not documented",
+        "description": "The architecture states that after the GitHub flow completes ForgeFlow associates the GitHub identity with a ForgeFlow user and one or more customer organizations, and that organization membership and role information are stored in ForgeFlow (evd-027); authorization is then evaluated against those stored records (evd-097, evd-124). Installation events and installation permission updates are subscribed webhook types (evd-062) and membership and installation changes are logged (evd-036), but no reviewed passage states whether any of these re-derive, refresh, or revoke a stored membership record when a customer removes a user from the GitHub organization or reduces repository coverage (evd-058, evd-104). The security overview records internal authorization implementation among intentionally omitted details (evd-138). Trace cannot determine whether a synchronization or revocation control exists.",
+        "importance": "Whether stored membership tracks GitHub-side reality determines whether a former GitHub organization member retains read access to structured analysis results and artifact links for that organization. The answer changes the satisfaction assessment of tenant-aware authorization for this threat and is obtainable from engineering documentation.",
+        "related_object_ids": [
+          "thr-009",
+          "cmp-003",
+          "cmp-009",
+          "cmp-013",
+          "ast-004",
+          "df-002",
+          "df-013"
+        ],
+        "requested_evidence": [
+          "Documentation describing how and when ForgeFlow organization membership and role records are created, refreshed, and removed relative to GitHub organization membership",
+          "A statement of whether installation, installation-permission, or membership webhook events cause membership or installation records to be updated or revoked",
+          "A description of the authorization model stating whether membership is read from stored records only, or re-checked against GitHub at authorization time"
+        ],
+        "evidence_ids": [
+          "evd-027",
+          "evd-097",
+          "evd-124",
+          "evd-062",
+          "evd-058",
+          "evd-104",
+          "evd-138",
+          "evd-036"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Customer session lifetime, renewal and revocation behaviour is not described",
+        "description": "The architecture states only that 'the application uses secure browser sessions for subsequent customer requests' (evd-027), and the product and security documents describe sessions as established after successful GitHub authentication without further detail (evd-059, evd-123). Administrative sessions are documented as expiring after inactivity (evd-087), but no equivalent statement covers customer sessions, and no passage describes how a session is invalidated when membership or entitlement changes. Trace cannot determine whether a session-side control bounds the window in this threat.",
+        "importance": "If stored membership is refreshed only at login, session lifetime and revocation determine how long an existing session continues to authorize access after a GitHub-side removal. The answer is obtainable and bears directly on the exposure window.",
+        "related_object_ids": [
+          "thr-009",
+          "cmp-003",
+          "ast-004",
+          "df-002"
+        ],
+        "requested_evidence": [
+          "Documentation stating customer session lifetime, idle expiry, and renewal behaviour",
+          "A description of how and when a customer session can be invalidated, including on membership or role change"
+        ],
+        "evidence_ids": [
+          "evd-027",
+          "evd-059",
+          "evd-123",
+          "evd-087"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "The enforcement point for organization-scoped authorization is not identified",
+        "description": "Customer-associated records carry an organization identifier and 'application services are responsible for applying organization-aware access rules when querying customer data' (evd-032); API requests operating on customer resources 'include an organization context' (evd-026). No reviewed passage names where the rule is enforced (shared data access layer, middleware, or datastore constraint) or whether the organization context is derived from server-side session state or accepted from the request, and the security overview places internal authorization implementation among intentionally omitted details (evd-138). Detailed tenant-isolation tests are a named architecture gap (evd-054).",
+        "importance": "Without the enforcement point, Trace cannot verify req-AUTHZ-001 for this threat, and cannot distinguish an enforced boundary from a naming convention. The information is held in engineering documentation and would settle the mapping.",
+        "related_object_ids": [
+          "thr-009",
+          "cmp-003",
+          "cmp-009",
+          "ast-002",
+          "ast-004",
+          "df-013"
+        ],
+        "requested_evidence": [
+          "Architecture or engineering documentation naming the component that enforces organization scoping on customer data queries",
+          "A statement of whether the organization context on an API request is derived from server-side session state or supplied by the client",
+          "Results or description of tenant-isolation tests referenced as a gap in evd-054"
+        ],
+        "evidence_ids": [
+          "evd-032",
+          "evd-026",
+          "evd-124",
+          "evd-130",
+          "evd-138",
+          "evd-054"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": [
+      {
+        "concern": "The catalog contains no requirement covering the currency of entitlements derived from an external identity or platform provider: that is, whether locally stored membership, role, or installation records are re-derived or revoked when the upstream grant they were derived from is withdrawn, and whether existing sessions are re-evaluated when that happens. ForgeFlow authenticates through GitHub but authorizes against membership and roles it stores itself (evd-027, evd-097, evd-124), while GitHub-side membership and repository selection change independently under customer control (evd-058, evd-104). Nothing in the catalog asks for the de-provisioning path to be documented.",
+        "suggested_category": "authorization",
+        "nearest_requirements": [
+          {
+            "requirement_id": "req-AUTH-001",
+            "why_not": "It asks that the delegation, the provider, and the boundary of the provider's responsibility be documented. ForgeFlow documents all three (evd-027, evd-123); the requirement says nothing about keeping locally stored entitlements in step with the provider after the initial authentication."
+          },
+          {
+            "requirement_id": "req-AUTHZ-001",
+            "why_not": "It asks that every request be constrained to the tenant it belongs to and that tenant context be server-derived. A stale membership record satisfies that requirement exactly \u2014 the request is constrained to the organization the record names \u2014 while still authorizing a user whose upstream entitlement has been withdrawn."
+          },
+          {
+            "requirement_id": "req-AUTHZ-002",
+            "why_not": "It governs the scope of privileges the system requests from an external platform, not the lifecycle of a user's entitlement to the system's own data; the threat here is unaffected by how narrow the GitHub App's permissions are (evd-060, evd-065)."
+          },
+          {
+            "requirement_id": "req-ADMIN-001",
+            "why_not": "It concerns restriction and reach of an operator interface; the stale entitlement here belongs to an ordinary customer user acting through the customer API (evd-097, evd-046)."
+          }
+        ],
+        "evidence_ids": [
+          "evd-027",
+          "evd-097",
+          "evd-124",
+          "evd-058",
+          "evd-104",
+          "evd-062",
+          "evd-138"
+        ]
+      }
+    ]
+  }
 }

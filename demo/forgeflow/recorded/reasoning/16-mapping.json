@@ -1,349 +1,352 @@
 {
-  "controls": [
-    {
-      "key": "provider-operational-limits",
-      "name": "Provider-specific operational limits and content-inclusion limits in application configuration",
-      "description": "The operations guide states that provider-specific operational limits are configured through application configuration and that workers perform basic request validation before sending content to the provider (evd-081). Product and analysis documentation add that the amount and type of content sent for analysis may be limited based on file size, file type, pull-request size, repository configuration and provider input limits (evd-099, evd-005). These bound the size of an individual provider request rather than the aggregate volume of jobs a single installation can trigger; no limit values, enforcement point, or per-organization scope is stated in any reviewed passage.",
-      "control_type": "implemented",
-      "provider_component_id": null,
-      "protected_component_ids": [
-        "cmp-006",
-        "cmp-014"
-      ],
-      "protected_asset_ids": [
-        "ast-011"
-      ],
-      "implementation_status": "claimed",
-      "evidence_ids": [
-        "evd-081",
-        "evd-099",
-        "evd-005"
-      ],
-      "owner": "ForgeFlow AI Platform Engineering / Platform Operations",
-      "limitations": [
-        "Limit values and their enforcement point are not stated; evd-081 says only that limits are 'configured through application configuration'.",
-        "The described limits bound per-request content size, not per-organization job volume or aggregate provider consumption (evd-099, evd-005).",
-        "No spend, quota, or concurrency ceiling at the AI provider is described."
-      ]
-    },
-    {
-      "key": "queue-monitoring-alerting",
-      "name": "Operational monitoring and alerting on queue depth, job duration and retry count",
-      "description": "Platform monitoring is documented as tracking queue depth, worker availability, job duration, retry count, GitHub API failures, AI provider latency, storage failures and database availability, with alerts generated when configured operational thresholds are exceeded (evd-086). The analysis service additionally records analysis duration, provider latency, retry count, success rate and processing failures as operational metrics used for reliability and capacity planning (evd-014). Relative to this threat the control is detective: it would make a queue-depth flood visible to operators, but no reviewed passage describes an automatic throttling, shedding, or per-tenant response triggered by those alerts.",
-      "control_type": "compensating",
-      "provider_component_id": null,
-      "protected_component_ids": [
-        "cmp-004",
-        "cmp-005",
-        "cmp-006"
-      ],
-      "protected_asset_ids": [
-        "ast-011"
-      ],
-      "implementation_status": "claimed",
-      "evidence_ids": [
-        "evd-086",
-        "evd-014"
-      ],
-      "owner": "ForgeFlow Platform Operations",
-      "limitations": [
-        "Detective only; no automated response to exceeded thresholds is described (evd-086).",
-        "Thresholds and alert routing are not stated.",
-        "Monitoring is described in aggregate terms; no per-organization queue-depth or consumption metric is named (evd-086, evd-014)."
-      ]
-    },
-    {
-      "key": "independent-scaling-and-buffering",
-      "name": "Independent horizontal scaling of receivers and workers with Redis buffering and degraded-mode result access",
-      "description": "Webhook receiver replicas are documented as scaling with event volume, worker replicas as scaling with queue depth, and Redis as buffering temporary job spikes (evd-051, evd-085); the webhook receiver is described as independently scalable from the main API because webhook traffic may arrive in short bursts (evd-028). Workers may execute in parallel and poll Redis continuously (evd-076). The architecture also states that a temporary AI-provider outage should not prevent customers from viewing previously completed results (evd-051). This is a capacity measure that absorbs bursts; the same passage records that external AI-provider capacity may limit total processing throughput, so it does not bound consumption or protect one organization's throughput from another's load.",
-      "control_type": "implemented",
-      "provider_component_id": null,
-      "protected_component_ids": [
-        "cmp-004",
-        "cmp-005",
-        "cmp-006"
-      ],
-      "protected_asset_ids": [
-        "ast-011",
-        "ast-002"
-      ],
-      "implementation_status": "claimed",
-      "evidence_ids": [
-        "evd-051",
-        "evd-085",
-        "evd-028",
-        "evd-076"
-      ],
-      "owner": "ForgeFlow Platform Operations",
-      "limitations": [
-        "Scaling is capped by external AI-provider capacity, which is documented as potentially limiting total throughput (evd-051).",
-        "Scaling addresses aggregate capacity rather than fairness between organizations; no per-organization share of worker capacity is described (evd-085, evd-076).",
-        "Scaling policies are maintained separately from application configuration and are not described in any reviewed document (evd-085)."
-      ]
-    }
-  ],
-  "mappings": [
-    {
-      "threat_id": "thr-012",
-      "requirement_id": "req-TPI-002",
-      "control_keys": [
-        "provider-operational-limits",
-        "queue-monitoring-alerting",
-        "independent-scaling-and-buffering"
-      ],
-      "existing_control_ids": [
-        "ctl-003"
-      ],
-      "applicability_status": "applicable",
-      "applicability_reason": "All three of this requirement's applicable_conditions hold for this threat: analysis consumes a capacity-limited external AI service whose capacity may limit total throughput (evd-051), work is triggered by GitHub pull-request events the system does not originate (evd-042, evd-062), and failed work is retried automatically (evd-077, evd-015). Neither common_false_positives entry blocks the partial conclusion drawn here: the first ('absent cost ceiling where per-tenant rate limits are documented') does not apply because no per-tenant rate limit is documented, only a statement that usage 'may' be limited (evd-103); the second ('absent autoscaling detail') does not apply because the shortfall recorded is the absence of a documented bound, not the absence of scaling detail, and scaling is in fact described (evd-051, evd-085).",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "partially_satisfied",
-      "evidence_ids": [
-        "evd-103",
-        "evd-029",
-        "evd-077",
-        "evd-015",
-        "evd-054",
-        "evd-138",
-        "evd-051",
-        "evd-085",
-        "evd-081",
-        "evd-099",
-        "evd-086",
-        "evd-090"
-      ],
-      "assumptions": [
-        "Assumed that 'selected rate-limiting state' held in Redis (evd-029) relates to some enforced limit somewhere in the pipeline; the passage names the state but not the limit, its scope, or its enforcement point, so the nature of that limit is treated as unestablished."
-      ],
-      "confidence": "medium"
-    },
-    {
-      "threat_id": "thr-012",
-      "requirement_id": "req-WEBHOOK-001",
-      "control_keys": [],
-      "existing_control_ids": [
-        "ctl-001",
-        "ctl-005"
-      ],
-      "applicability_status": "applicable",
-      "applicability_reason": "The webhook receiver is an internet-facing endpoint that accepts GitHub events and converts relevant ones into background analysis jobs (evd-028, evd-062), which is this requirement's applicable condition of an inbound event triggering processing. It bears on this threat because whether the set of parties able to inject work into the shared queue is limited to GitHub-originated events determines how easily the flood described in the attack path can be generated. Neither non_applicable condition holds: the endpoint is internet-facing (evd-144) and events are delivered rather than polled (evd-062).",
-      "suppressed_conclusion": "That origin authenticity verification is absent at the webhook receiver, and that any party who learns the endpoint address can therefore enqueue analysis jobs at will.",
-      "suppressed_by": "req-WEBHOOK-001 common_false_positives entry: 'documentation stating only that requests are validated, where the mechanism is unstated' — evd-028, evd-062 and evd-128 all say requests are 'validated' without stating whether the check is cryptographic, and evd-054 names detailed webhook-validation behaviour as a documentation gap.",
-      "satisfaction_status": "unverified",
-      "evidence_ids": [
-        "evd-028",
-        "evd-062",
-        "evd-128",
-        "evd-069",
-        "evd-054",
-        "evd-070",
-        "evd-138"
-      ],
-      "assumptions": [],
-      "confidence": "high"
-    },
-    {
-      "threat_id": "thr-012",
-      "requirement_id": "req-WEBHOOK-002",
-      "control_keys": [],
-      "existing_control_ids": [
-        "ctl-001"
-      ],
-      "applicability_status": "applicable",
-      "applicability_reason": "This requirement's applicable conditions hold for this threat: inbound event processing is costly and externally visible (each event creates a job that consumes worker time and metered AI-provider capacity and may publish a pull-request comment — evd-042, evd-051, evd-082), and delivery uniqueness is not established, since webhook replay handling is a named documentation gap (evd-054). Repeated delivery of the same event is an amplifier of exactly the queue-depth growth this threat describes. The non_applicable condition 'repeated processing is idempotent and documented as such' does not hold: the operations guide states duplicate processing may occur and that operators should review duplicate comments (evd-080, evd-090).",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "unverified",
-      "evidence_ids": [
-        "evd-054",
-        "evd-080",
-        "evd-090",
-        "evd-076",
-        "evd-029",
-        "evd-042"
-      ],
-      "assumptions": [
-        "Each queued job carries a delivery identifier and event identifier (evd-029, evd-076); assumed these are recorded for correlation. No reviewed passage states that they are used to reject repeated deliveries, so no duplicate-suppression property is inferred from their presence."
-      ],
-      "confidence": "medium"
-    },
-    {
-      "threat_id": "thr-012",
-      "requirement_id": "req-NET-001",
-      "control_keys": [],
-      "existing_control_ids": [
-        "ctl-002"
-      ],
-      "applicability_status": "applicable",
-      "applicability_reason": "The managed Redis queue is a non-public internal component that holds queued work on behalf of every organization (evd-029, evd-042), matching two of this requirement's applicable conditions, and its authentication mechanism is not described. It bears on this threat because reachability of the queue determines whether the flood described must arrive through the webhook path at all or could be injected directly into the shared work store.",
-      "suppressed_conclusion": "That the queue's network boundary is unestablished because no firewall, security-group, or private-link mechanism is named, and that direct enqueue by an untrusted party therefore cannot be ruled out.",
-      "suppressed_by": "req-NET-001 common_false_positives entry: 'absent detail of the enforcing mechanism, where placement itself is stated' — evd-029 states the Redis service is accessible only from approved application workloads and evd-053 records that Redis is not publicly accessible, so the placement is stated even though the enforcing mechanism is not.",
-      "satisfaction_status": "satisfied",
-      "evidence_ids": [
-        "evd-029",
-        "evd-053",
-        "evd-050"
-      ],
-      "assumptions": [],
-      "confidence": "medium"
-    },
-    {
-      "threat_id": "thr-012",
-      "requirement_id": "req-AUTHZ-001",
-      "control_keys": [],
-      "existing_control_ids": [],
-      "applicability_status": "not_applicable",
-      "applicability_reason": "This requirement asks that every request be constrained to the tenant it belongs to, with tenant context derived from server-side state. This threat involves no cross-organization access to data: each queued job carries its own organization identifier (evd-029) and is processed for that organization; the cross-tenant effect described is contention for shared processing capacity and queue position (evd-051, evd-075), which request-scoped authorization does not address. Per-organization limits on triggered work are covered by req-TPI-002, which is mapped applicable above.",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "not_applicable",
-      "evidence_ids": [
-        "evd-029",
-        "evd-051",
-        "evd-075"
-      ],
-      "assumptions": [],
-      "confidence": "medium"
-    },
-    {
-      "threat_id": "thr-012",
-      "requirement_id": "req-DATA-003",
-      "control_keys": [],
-      "existing_control_ids": [],
-      "applicability_status": "not_applicable",
-      "applicability_reason": "This requirement concerns separation of stored customer artifacts and its enforcement on access. The assets this threat degrades are the timeliness of new analysis (ast-011) and the results and job records that arrive late as a consequence (evd-075, evd-051); no read of another organization's stored artifact occurs on the attack path, and the threat's own impact statement records that previously completed results remain viewable. Storage-layout separation therefore does not bear on this threat.",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "not_applicable",
-      "evidence_ids": [
-        "evd-051",
-        "evd-075"
-      ],
-      "assumptions": [],
-      "confidence": "high"
-    },
-    {
-      "threat_id": "thr-012",
-      "requirement_id": "req-TPI-001",
-      "control_keys": [],
-      "existing_control_ids": [],
-      "applicability_status": "not_applicable",
-      "applicability_reason": "This requirement asks what the external provider does with customer data it receives — retention, secondary use, and duration. The provider's role on this attack path is as a capacity ceiling (evd-051), not as a recipient whose handling of content matters; the threat describes no confidentiality consequence at the provider boundary. The provider's consumption of capacity is addressed by req-TPI-002, mapped applicable above.",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "not_applicable",
-      "evidence_ids": [
-        "evd-051"
-      ],
-      "assumptions": [],
-      "confidence": "medium"
-    },
-    {
-      "threat_id": "thr-012",
-      "requirement_id": "req-AI-001",
-      "control_keys": [],
-      "existing_control_ids": [],
-      "applicability_status": "not_applicable",
-      "applicability_reason": "This requirement concerns instructions embedded in content the system did not author redirecting the model's task. The actor in this threat (act-006) exercises volume and diff size rather than content semantics: the attack path is high-rate pull-request open and synchronize events and very large diffs (evd-062, evd-090), and the impact is delayed processing rather than an altered analysis task. Prompt-injection handling on the same data flow is a separate threat and is not engaged by this one.",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "not_applicable",
-      "evidence_ids": [
-        "evd-062",
-        "evd-090"
-      ],
-      "assumptions": [],
-      "confidence": "medium"
-    }
-  ],
-  "documentation_gaps": [
-    {
-      "title": "Bounds on event-triggered analysis work are not documented",
-      "description": "No reviewed passage states a bound on the work a single installation or organization can trigger. Product documentation states only that ForgeFlow 'may limit usage to protect service reliability and control excessive processing' (evd-103); Redis is said to hold 'selected rate-limiting state' without describing the limit or its enforcement point (evd-029); exact retry limits are named as a documentation gap in the architecture overview (evd-054) and retry behaviour is explicitly omitted from the security overview (evd-138); provider-specific operational limits are said to be 'configured through application configuration' without values or scope (evd-081). No queue-depth shedding rule, dead-letter handling, per-organization volume limit, or AI-provider quota or spend ceiling is described anywhere. Trace therefore cannot determine whether the bounding req-TPI-002 requires exists.",
-      "importance": "This is the central control for thr-012. Whether one organization's event volume or retry loop can consume the shared worker pool and the provider capacity ceiling (evd-051) depends entirely on bounds that no reviewed document states. Without the answer, the mapping for req-TPI-002 cannot move past partially_satisfied, and a reviewer cannot tell whether a noisy-neighbour flood is prevented, absorbed, or merely alerted on.",
-      "related_object_ids": [
-        "thr-012",
-        "cmp-004",
-        "cmp-005",
-        "cmp-006",
-        "cmp-014",
-        "ast-011",
-        "ctl-003"
-      ],
-      "requested_evidence": [
-        "Operations documentation or queue/worker configuration stating the maximum retry count and backoff schedule for analysis jobs, and what happens to a job that exhausts them.",
-        "A statement of whether any rate or volume limit is applied per organization or per installation, where it is enforced (webhook receiver, enqueue path, or worker dispatch), and its configured value.",
-        "Description of any queue-depth ceiling, load-shedding rule, or dead-letter destination.",
-        "Description of AI-provider quota, concurrency, or spend controls configured by ForgeFlow, including whether they are shared across all organizations."
-      ],
-      "evidence_ids": [
-        "evd-103",
-        "evd-029",
-        "evd-077",
-        "evd-054",
-        "evd-138",
-        "evd-081",
-        "evd-051",
-        "evd-085"
-      ],
-      "severity": "medium"
-    },
-    {
-      "title": "Webhook validation mechanism is not stated as cryptographic or structural",
-      "description": "Three documents state that inbound GitHub webhook requests are 'validated' before processing (evd-028, evd-062, evd-128) and 'event validation' is listed among GitHub integration security principles (evd-069), but none states whether the check verifies the event's origin cryptographically or only that the payload is well formed. Detailed webhook-validation behaviour is a named documentation gap (evd-054) and detailed webhook processing logic is intentionally omitted from the security overview (evd-138). The integration document records GitHub origin as an assumption rather than an enforced property (evd-070), and the enumerated secrets in the managed secrets service (evd-034, evd-127) include no webhook verification secret or GitHub public key.",
-      "importance": "The set of parties that can enqueue work into the shared queue determines how readily the flood in thr-012's attack path can be produced, and by whom. If validation is structural only, the load bound in req-TPI-002 becomes the sole control against an arbitrary internet party driving worker and provider consumption. The answer is obtainable from the receiver's implementation and would change the mapping for req-WEBHOOK-001 from unverified to satisfied or unmet.",
-      "related_object_ids": [
-        "thr-012",
-        "cmp-004",
-        "ast-011",
-        "ast-003",
-        "ctl-001",
-        "ctl-005"
-      ],
-      "requested_evidence": [
-        "A statement, or a source reference, showing whether the webhook receiver verifies a GitHub signature header before creating an analysis job.",
-        "Identification of where the webhook verification secret or GitHub public key is held, if one exists.",
-        "Description of what the receiver does with a request that fails validation, and whether such requests are counted or alerted on."
-      ],
-      "evidence_ids": [
-        "evd-028",
-        "evd-062",
-        "evd-128",
-        "evd-069",
-        "evd-070",
-        "evd-054",
-        "evd-034"
-      ],
-      "severity": "medium"
-    },
-    {
-      "title": "Duplicate and replayed webhook delivery handling is not documented",
-      "description": "Webhook replay handling is listed as a known documentation gap in the architecture overview (evd-054). Queued jobs carry a delivery identifier and event identifier (evd-029, evd-076), but no reviewed passage states that either is used to reject a repeated delivery or to make processing idempotent. The operations guide states the opposite for at least one failure mode: duplicate processing may occur following unexpected infrastructure failures and operators should review duplicate comments before manual cleanup (evd-080, evd-090).",
-      "importance": "Repeated delivery of an already-processed event multiplies queued work against the same capped worker pool and provider ceiling, and duplicates externally visible pull-request comments. This bears directly on thr-012's queue-depth growth and on req-WEBHOOK-002, which cannot be resolved either way from the current material.",
-      "related_object_ids": [
-        "thr-012",
-        "cmp-004",
-        "cmp-005",
-        "cmp-006",
-        "ast-011",
-        "ast-003",
-        "ctl-001"
-      ],
-      "requested_evidence": [
-        "A statement of whether the GitHub delivery identifier is persisted and checked before a job is enqueued, and for how long.",
-        "A statement of whether analysis job processing is idempotent on the event identifier, including comment publication.",
-        "Description of any bounded timestamp window applied to accepted webhook deliveries."
-      ],
-      "evidence_ids": [
-        "evd-054",
-        "evd-029",
-        "evd-076",
-        "evd-080",
-        "evd-090"
-      ],
-      "severity": "medium"
-    }
-  ],
-  "catalog_gap_candidates": []
+  "schema": "MappingProposal",
+  "response": {
+    "controls": [
+      {
+        "key": "provider-operational-limits",
+        "name": "Provider-specific operational limits and content-inclusion limits in application configuration",
+        "description": "The operations guide states that provider-specific operational limits are configured through application configuration and that workers perform basic request validation before sending content to the provider (evd-081). Product and analysis documentation add that the amount and type of content sent for analysis may be limited based on file size, file type, pull-request size, repository configuration and provider input limits (evd-099, evd-005). These bound the size of an individual provider request rather than the aggregate volume of jobs a single installation can trigger; no limit values, enforcement point, or per-organization scope is stated in any reviewed passage.",
+        "control_type": "implemented",
+        "provider_component_id": null,
+        "protected_component_ids": [
+          "cmp-006",
+          "cmp-014"
+        ],
+        "protected_asset_ids": [
+          "ast-011"
+        ],
+        "implementation_status": "claimed",
+        "evidence_ids": [
+          "evd-081",
+          "evd-099",
+          "evd-005"
+        ],
+        "owner": "ForgeFlow AI Platform Engineering / Platform Operations",
+        "limitations": [
+          "Limit values and their enforcement point are not stated; evd-081 says only that limits are 'configured through application configuration'.",
+          "The described limits bound per-request content size, not per-organization job volume or aggregate provider consumption (evd-099, evd-005).",
+          "No spend, quota, or concurrency ceiling at the AI provider is described."
+        ]
+      },
+      {
+        "key": "queue-monitoring-alerting",
+        "name": "Operational monitoring and alerting on queue depth, job duration and retry count",
+        "description": "Platform monitoring is documented as tracking queue depth, worker availability, job duration, retry count, GitHub API failures, AI provider latency, storage failures and database availability, with alerts generated when configured operational thresholds are exceeded (evd-086). The analysis service additionally records analysis duration, provider latency, retry count, success rate and processing failures as operational metrics used for reliability and capacity planning (evd-014). Relative to this threat the control is detective: it would make a queue-depth flood visible to operators, but no reviewed passage describes an automatic throttling, shedding, or per-tenant response triggered by those alerts.",
+        "control_type": "compensating",
+        "provider_component_id": null,
+        "protected_component_ids": [
+          "cmp-004",
+          "cmp-005",
+          "cmp-006"
+        ],
+        "protected_asset_ids": [
+          "ast-011"
+        ],
+        "implementation_status": "claimed",
+        "evidence_ids": [
+          "evd-086",
+          "evd-014"
+        ],
+        "owner": "ForgeFlow Platform Operations",
+        "limitations": [
+          "Detective only; no automated response to exceeded thresholds is described (evd-086).",
+          "Thresholds and alert routing are not stated.",
+          "Monitoring is described in aggregate terms; no per-organization queue-depth or consumption metric is named (evd-086, evd-014)."
+        ]
+      },
+      {
+        "key": "independent-scaling-and-buffering",
+        "name": "Independent horizontal scaling of receivers and workers with Redis buffering and degraded-mode result access",
+        "description": "Webhook receiver replicas are documented as scaling with event volume, worker replicas as scaling with queue depth, and Redis as buffering temporary job spikes (evd-051, evd-085); the webhook receiver is described as independently scalable from the main API because webhook traffic may arrive in short bursts (evd-028). Workers may execute in parallel and poll Redis continuously (evd-076). The architecture also states that a temporary AI-provider outage should not prevent customers from viewing previously completed results (evd-051). This is a capacity measure that absorbs bursts; the same passage records that external AI-provider capacity may limit total processing throughput, so it does not bound consumption or protect one organization's throughput from another's load.",
+        "control_type": "implemented",
+        "provider_component_id": null,
+        "protected_component_ids": [
+          "cmp-004",
+          "cmp-005",
+          "cmp-006"
+        ],
+        "protected_asset_ids": [
+          "ast-011",
+          "ast-002"
+        ],
+        "implementation_status": "claimed",
+        "evidence_ids": [
+          "evd-051",
+          "evd-085",
+          "evd-028",
+          "evd-076"
+        ],
+        "owner": "ForgeFlow Platform Operations",
+        "limitations": [
+          "Scaling is capped by external AI-provider capacity, which is documented as potentially limiting total throughput (evd-051).",
+          "Scaling addresses aggregate capacity rather than fairness between organizations; no per-organization share of worker capacity is described (evd-085, evd-076).",
+          "Scaling policies are maintained separately from application configuration and are not described in any reviewed document (evd-085)."
+        ]
+      }
+    ],
+    "mappings": [
+      {
+        "threat_id": "thr-012",
+        "requirement_id": "req-TPI-002",
+        "control_keys": [
+          "provider-operational-limits",
+          "queue-monitoring-alerting",
+          "independent-scaling-and-buffering"
+        ],
+        "existing_control_ids": [
+          "ctl-003"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "All three of this requirement's applicable_conditions hold for this threat: analysis consumes a capacity-limited external AI service whose capacity may limit total throughput (evd-051), work is triggered by GitHub pull-request events the system does not originate (evd-042, evd-062), and failed work is retried automatically (evd-077, evd-015). Neither common_false_positives entry blocks the partial conclusion drawn here: the first ('absent cost ceiling where per-tenant rate limits are documented') does not apply because no per-tenant rate limit is documented, only a statement that usage 'may' be limited (evd-103); the second ('absent autoscaling detail') does not apply because the shortfall recorded is the absence of a documented bound, not the absence of scaling detail, and scaling is in fact described (evd-051, evd-085).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "partially_satisfied",
+        "evidence_ids": [
+          "evd-103",
+          "evd-029",
+          "evd-077",
+          "evd-015",
+          "evd-054",
+          "evd-138",
+          "evd-051",
+          "evd-085",
+          "evd-081",
+          "evd-099",
+          "evd-086",
+          "evd-090"
+        ],
+        "assumptions": [
+          "Assumed that 'selected rate-limiting state' held in Redis (evd-029) relates to some enforced limit somewhere in the pipeline; the passage names the state but not the limit, its scope, or its enforcement point, so the nature of that limit is treated as unestablished."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-012",
+        "requirement_id": "req-WEBHOOK-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-001",
+          "ctl-005"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The webhook receiver is an internet-facing endpoint that accepts GitHub events and converts relevant ones into background analysis jobs (evd-028, evd-062), which is this requirement's applicable condition of an inbound event triggering processing. It bears on this threat because whether the set of parties able to inject work into the shared queue is limited to GitHub-originated events determines how easily the flood described in the attack path can be generated. Neither non_applicable condition holds: the endpoint is internet-facing (evd-144) and events are delivered rather than polled (evd-062).",
+        "suppressed_conclusion": "That origin authenticity verification is absent at the webhook receiver, and that any party who learns the endpoint address can therefore enqueue analysis jobs at will.",
+        "suppressed_by": "req-WEBHOOK-001 common_false_positives entry: 'documentation stating only that requests are validated, where the mechanism is unstated' \u2014 evd-028, evd-062 and evd-128 all say requests are 'validated' without stating whether the check is cryptographic, and evd-054 names detailed webhook-validation behaviour as a documentation gap.",
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-028",
+          "evd-062",
+          "evd-128",
+          "evd-069",
+          "evd-054",
+          "evd-070",
+          "evd-138"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-012",
+        "requirement_id": "req-WEBHOOK-002",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-001"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "This requirement's applicable conditions hold for this threat: inbound event processing is costly and externally visible (each event creates a job that consumes worker time and metered AI-provider capacity and may publish a pull-request comment \u2014 evd-042, evd-051, evd-082), and delivery uniqueness is not established, since webhook replay handling is a named documentation gap (evd-054). Repeated delivery of the same event is an amplifier of exactly the queue-depth growth this threat describes. The non_applicable condition 'repeated processing is idempotent and documented as such' does not hold: the operations guide states duplicate processing may occur and that operators should review duplicate comments (evd-080, evd-090).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-054",
+          "evd-080",
+          "evd-090",
+          "evd-076",
+          "evd-029",
+          "evd-042"
+        ],
+        "assumptions": [
+          "Each queued job carries a delivery identifier and event identifier (evd-029, evd-076); assumed these are recorded for correlation. No reviewed passage states that they are used to reject repeated deliveries, so no duplicate-suppression property is inferred from their presence."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-012",
+        "requirement_id": "req-NET-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-002"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The managed Redis queue is a non-public internal component that holds queued work on behalf of every organization (evd-029, evd-042), matching two of this requirement's applicable conditions, and its authentication mechanism is not described. It bears on this threat because reachability of the queue determines whether the flood described must arrive through the webhook path at all or could be injected directly into the shared work store.",
+        "suppressed_conclusion": "That the queue's network boundary is unestablished because no firewall, security-group, or private-link mechanism is named, and that direct enqueue by an untrusted party therefore cannot be ruled out.",
+        "suppressed_by": "req-NET-001 common_false_positives entry: 'absent detail of the enforcing mechanism, where placement itself is stated' \u2014 evd-029 states the Redis service is accessible only from approved application workloads and evd-053 records that Redis is not publicly accessible, so the placement is stated even though the enforcing mechanism is not.",
+        "satisfaction_status": "satisfied",
+        "evidence_ids": [
+          "evd-029",
+          "evd-053",
+          "evd-050"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-012",
+        "requirement_id": "req-AUTHZ-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This requirement asks that every request be constrained to the tenant it belongs to, with tenant context derived from server-side state. This threat involves no cross-organization access to data: each queued job carries its own organization identifier (evd-029) and is processed for that organization; the cross-tenant effect described is contention for shared processing capacity and queue position (evd-051, evd-075), which request-scoped authorization does not address. Per-organization limits on triggered work are covered by req-TPI-002, which is mapped applicable above.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-029",
+          "evd-051",
+          "evd-075"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-012",
+        "requirement_id": "req-DATA-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This requirement concerns separation of stored customer artifacts and its enforcement on access. The assets this threat degrades are the timeliness of new analysis (ast-011) and the results and job records that arrive late as a consequence (evd-075, evd-051); no read of another organization's stored artifact occurs on the attack path, and the threat's own impact statement records that previously completed results remain viewable. Storage-layout separation therefore does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-051",
+          "evd-075"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-012",
+        "requirement_id": "req-TPI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This requirement asks what the external provider does with customer data it receives \u2014 retention, secondary use, and duration. The provider's role on this attack path is as a capacity ceiling (evd-051), not as a recipient whose handling of content matters; the threat describes no confidentiality consequence at the provider boundary. The provider's consumption of capacity is addressed by req-TPI-002, mapped applicable above.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-051"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-012",
+        "requirement_id": "req-AI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This requirement concerns instructions embedded in content the system did not author redirecting the model's task. The actor in this threat (act-006) exercises volume and diff size rather than content semantics: the attack path is high-rate pull-request open and synchronize events and very large diffs (evd-062, evd-090), and the impact is delayed processing rather than an altered analysis task. Prompt-injection handling on the same data flow is a separate threat and is not engaged by this one.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-062",
+          "evd-090"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Bounds on event-triggered analysis work are not documented",
+        "description": "No reviewed passage states a bound on the work a single installation or organization can trigger. Product documentation states only that ForgeFlow 'may limit usage to protect service reliability and control excessive processing' (evd-103); Redis is said to hold 'selected rate-limiting state' without describing the limit or its enforcement point (evd-029); exact retry limits are named as a documentation gap in the architecture overview (evd-054) and retry behaviour is explicitly omitted from the security overview (evd-138); provider-specific operational limits are said to be 'configured through application configuration' without values or scope (evd-081). No queue-depth shedding rule, dead-letter handling, per-organization volume limit, or AI-provider quota or spend ceiling is described anywhere. Trace therefore cannot determine whether the bounding req-TPI-002 requires exists.",
+        "importance": "This is the central control for thr-012. Whether one organization's event volume or retry loop can consume the shared worker pool and the provider capacity ceiling (evd-051) depends entirely on bounds that no reviewed document states. Without the answer, the mapping for req-TPI-002 cannot move past partially_satisfied, and a reviewer cannot tell whether a noisy-neighbour flood is prevented, absorbed, or merely alerted on.",
+        "related_object_ids": [
+          "thr-012",
+          "cmp-004",
+          "cmp-005",
+          "cmp-006",
+          "cmp-014",
+          "ast-011",
+          "ctl-003"
+        ],
+        "requested_evidence": [
+          "Operations documentation or queue/worker configuration stating the maximum retry count and backoff schedule for analysis jobs, and what happens to a job that exhausts them.",
+          "A statement of whether any rate or volume limit is applied per organization or per installation, where it is enforced (webhook receiver, enqueue path, or worker dispatch), and its configured value.",
+          "Description of any queue-depth ceiling, load-shedding rule, or dead-letter destination.",
+          "Description of AI-provider quota, concurrency, or spend controls configured by ForgeFlow, including whether they are shared across all organizations."
+        ],
+        "evidence_ids": [
+          "evd-103",
+          "evd-029",
+          "evd-077",
+          "evd-054",
+          "evd-138",
+          "evd-081",
+          "evd-051",
+          "evd-085"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Webhook validation mechanism is not stated as cryptographic or structural",
+        "description": "Three documents state that inbound GitHub webhook requests are 'validated' before processing (evd-028, evd-062, evd-128) and 'event validation' is listed among GitHub integration security principles (evd-069), but none states whether the check verifies the event's origin cryptographically or only that the payload is well formed. Detailed webhook-validation behaviour is a named documentation gap (evd-054) and detailed webhook processing logic is intentionally omitted from the security overview (evd-138). The integration document records GitHub origin as an assumption rather than an enforced property (evd-070), and the enumerated secrets in the managed secrets service (evd-034, evd-127) include no webhook verification secret or GitHub public key.",
+        "importance": "The set of parties that can enqueue work into the shared queue determines how readily the flood in thr-012's attack path can be produced, and by whom. If validation is structural only, the load bound in req-TPI-002 becomes the sole control against an arbitrary internet party driving worker and provider consumption. The answer is obtainable from the receiver's implementation and would change the mapping for req-WEBHOOK-001 from unverified to satisfied or unmet.",
+        "related_object_ids": [
+          "thr-012",
+          "cmp-004",
+          "ast-011",
+          "ast-003",
+          "ctl-001",
+          "ctl-005"
+        ],
+        "requested_evidence": [
+          "A statement, or a source reference, showing whether the webhook receiver verifies a GitHub signature header before creating an analysis job.",
+          "Identification of where the webhook verification secret or GitHub public key is held, if one exists.",
+          "Description of what the receiver does with a request that fails validation, and whether such requests are counted or alerted on."
+        ],
+        "evidence_ids": [
+          "evd-028",
+          "evd-062",
+          "evd-128",
+          "evd-069",
+          "evd-070",
+          "evd-054",
+          "evd-034"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Duplicate and replayed webhook delivery handling is not documented",
+        "description": "Webhook replay handling is listed as a known documentation gap in the architecture overview (evd-054). Queued jobs carry a delivery identifier and event identifier (evd-029, evd-076), but no reviewed passage states that either is used to reject a repeated delivery or to make processing idempotent. The operations guide states the opposite for at least one failure mode: duplicate processing may occur following unexpected infrastructure failures and operators should review duplicate comments before manual cleanup (evd-080, evd-090).",
+        "importance": "Repeated delivery of an already-processed event multiplies queued work against the same capped worker pool and provider ceiling, and duplicates externally visible pull-request comments. This bears directly on thr-012's queue-depth growth and on req-WEBHOOK-002, which cannot be resolved either way from the current material.",
+        "related_object_ids": [
+          "thr-012",
+          "cmp-004",
+          "cmp-005",
+          "cmp-006",
+          "ast-011",
+          "ast-003",
+          "ctl-001"
+        ],
+        "requested_evidence": [
+          "A statement of whether the GitHub delivery identifier is persisted and checked before a job is enqueued, and for how long.",
+          "A statement of whether analysis job processing is idempotent on the event identifier, including comment publication.",
+          "Description of any bounded timestamp window applied to accepted webhook deliveries."
+        ],
+        "evidence_ids": [
+          "evd-054",
+          "evd-029",
+          "evd-076",
+          "evd-080",
+          "evd-090"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": []
+  }
 }

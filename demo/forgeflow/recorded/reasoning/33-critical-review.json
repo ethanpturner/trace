@@ -1,61 +1,64 @@
 {
-  "critiques": [
-    {
-      "subject_type": "threat",
-      "subject_id": "thr-012",
-      "critique_type": "missing_precondition",
-      "description": "The four preconditions are all system properties (one shared queue and pool, provider ceiling, undocumented retry limits, unstated rate limits); none states what access the actor needs. The attack path introduces that condition only in passing at step 1 — \"a party with commit access to a connected repository\" — and no cited passage establishes that commit access is the requirement. evd-062 lists \"Pull request opened\" and \"Pull request synchronized\" among subscribed events without distinguishing pull requests opened from forks, and a fork-originated pull request generates open and synchronize events on the connected repository from pushes the contributor makes to their own fork. Whether such events produce analysis jobs (evd-028, evd-042) is not stated anywhere in the reviewed material.",
-      "rationale": "For a shared-capacity exhaustion threat, the size of the set of parties who can inject work is the main determinant of exploitability, and a reviewer reading the preconditions cannot see it at all. The attack path's implicit scoping to holders of commit access is narrower than evd-062 supports; if fork-originated pull-request events are analysed, the actor set widens to any GitHub user able to open a pull request against a connected repository, which changes how readily the flood in the attack path is produced. This is answerable from the receiver's event handling and should be recorded as an explicit precondition rather than left as an aside in step 1.",
-      "evidence_ids": [
-        "evd-062",
-        "evd-042",
-        "evd-028"
-      ],
-      "recommended_action": "revise",
-      "confidence": "medium"
-    },
-    {
-      "subject_type": "control",
-      "subject_id": "ctl-003",
-      "critique_type": "contradictory_analysis",
-      "description": "ctl-003 folds retry handling into a control that map-134 credits toward req-TPI-002's bound on event-triggered work, but the same retry behaviour is treated as an amplifier of this threat elsewhere in the group: attack-path step 4 has failing or timing-out jobs retried and \"adding further load during the same window\" (evd-077, evd-015), and precondition 3 records that retry limits are a named documentation gap so failing jobs may be retried repeatedly (evd-054, evd-090). eas-026 finds the control \"established only in its retry component\", i.e. the only evidenced part of ctl-003 is the part the threat relies on as a load multiplier, while the usage-limiting part rests on evd-103 saying only that ForgeFlow \"may limit usage\".",
-      "rationale": "As composed, the control reads as partial coverage of the bounding requirement when no component of it is shown to bound anything: retry without documented limits, backoff detail, or dead-letter handling (evd-054, evd-090) increases work against the capped pool in exactly this scenario. A reviewer cannot simultaneously accept retry as a mitigation here and as an amplifier in the attack path. The retry description should be separated from the asserted usage limiting so that map-134's credited coverage reflects only what is claimed as a bound.",
-      "evidence_ids": [
-        "evd-077",
-        "evd-015",
-        "evd-054",
-        "evd-090",
-        "evd-103"
-      ],
-      "recommended_action": "revise",
-      "confidence": "medium"
-    },
-    {
-      "subject_type": "control",
-      "subject_id": "ctl-023",
-      "critique_type": "missing_evidence",
-      "description": "ctl-023 carries validation_status not_evaluated and is the only control in this group with no corresponding evidence assessment, yet map-134 lists it first among the four controls behind its partially_satisfied conclusion for req-TPI-002. Its cited passages support only per-request scoping: evd-081 says provider-specific operational limits are \"configured through application configuration\" with no value, scope, or enforcement point named, and evd-099 and evd-005 describe limits on the amount or type of content sent for a given analysis based on file size, file type, pull-request size, repository configuration and provider input limits. The control's own limitations state that these bound per-request content size rather than per-organization job volume or aggregate provider consumption, which is the condition req-TPI-002 and thr-012 turn on.",
-      "rationale": "A control whose evidence has not been validated, and whose stated limitations concede it does not address the requirement's condition, still contributes to the appearance of coverage in map-134's four-control list. Either its evidence should be assessed as the other six controls in this group were, or it should not be counted toward the bounding requirement — a reviewer needs to know which before this conclusion becomes a finding.",
-      "evidence_ids": [
-        "evd-081",
-        "evd-099",
-        "evd-005"
-      ],
-      "recommended_action": "investigate",
-      "confidence": "medium"
-    },
-    {
-      "subject_type": "control_mapping",
-      "subject_id": "map-137",
-      "critique_type": "unsupported_claim",
-      "description": "map-137 concludes satisfied for req-NET-001, but the two positive passages establish reachability only: evd-029 states the Redis service is accessible only from approved application workloads, and evd-053 records \"Redis is not publicly accessible\" in the architecture document's own assumptions section rather than as described configuration. The mapping's applicability reason itself notes that the queue's authentication mechanism is not described, and eas-011 lists \"whether the queue connection is authenticated\" as missing evidence; neither the mapping nor its suppressed_conclusion addresses that limb — the suppressed conclusion covers only the reading that the network boundary is unestablished because no firewall or private-link mechanism is named.",
-      "rationale": "This is not a request to re-draw the conclusion the false-positive guard blocked; the guard covers an unnamed enforcing mechanism where placement is stated, and placement is stated. The question is whether satisfied is the right status when one supporting passage is a declared assumption and the requirement's applicability, as the mapping describes it, also turns on the undescribed authentication of a component holding every organization's queued work. If req-NET-001's conditions extend to authentication of internal components, satisfied overstates what evd-029 and evd-053 carry and should be partially_satisfied or unverified; confirming the requirement's scope resolves it either way.",
-      "evidence_ids": [
-        "evd-029",
-        "evd-053"
-      ],
-      "recommended_action": "investigate",
-      "confidence": "low"
-    }
-  ]
+  "schema": "CriticalReviewProposal",
+  "response": {
+    "critiques": [
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-012",
+        "critique_type": "missing_precondition",
+        "description": "The four preconditions are all system properties (one shared queue and pool, provider ceiling, undocumented retry limits, unstated rate limits); none states what access the actor needs. The attack path introduces that condition only in passing at step 1 \u2014 \"a party with commit access to a connected repository\" \u2014 and no cited passage establishes that commit access is the requirement. evd-062 lists \"Pull request opened\" and \"Pull request synchronized\" among subscribed events without distinguishing pull requests opened from forks, and a fork-originated pull request generates open and synchronize events on the connected repository from pushes the contributor makes to their own fork. Whether such events produce analysis jobs (evd-028, evd-042) is not stated anywhere in the reviewed material.",
+        "rationale": "For a shared-capacity exhaustion threat, the size of the set of parties who can inject work is the main determinant of exploitability, and a reviewer reading the preconditions cannot see it at all. The attack path's implicit scoping to holders of commit access is narrower than evd-062 supports; if fork-originated pull-request events are analysed, the actor set widens to any GitHub user able to open a pull request against a connected repository, which changes how readily the flood in the attack path is produced. This is answerable from the receiver's event handling and should be recorded as an explicit precondition rather than left as an aside in step 1.",
+        "evidence_ids": [
+          "evd-062",
+          "evd-042",
+          "evd-028"
+        ],
+        "recommended_action": "revise",
+        "confidence": "medium"
+      },
+      {
+        "subject_type": "control",
+        "subject_id": "ctl-003",
+        "critique_type": "contradictory_analysis",
+        "description": "ctl-003 folds retry handling into a control that map-134 credits toward req-TPI-002's bound on event-triggered work, but the same retry behaviour is treated as an amplifier of this threat elsewhere in the group: attack-path step 4 has failing or timing-out jobs retried and \"adding further load during the same window\" (evd-077, evd-015), and precondition 3 records that retry limits are a named documentation gap so failing jobs may be retried repeatedly (evd-054, evd-090). eas-026 finds the control \"established only in its retry component\", i.e. the only evidenced part of ctl-003 is the part the threat relies on as a load multiplier, while the usage-limiting part rests on evd-103 saying only that ForgeFlow \"may limit usage\".",
+        "rationale": "As composed, the control reads as partial coverage of the bounding requirement when no component of it is shown to bound anything: retry without documented limits, backoff detail, or dead-letter handling (evd-054, evd-090) increases work against the capped pool in exactly this scenario. A reviewer cannot simultaneously accept retry as a mitigation here and as an amplifier in the attack path. The retry description should be separated from the asserted usage limiting so that map-134's credited coverage reflects only what is claimed as a bound.",
+        "evidence_ids": [
+          "evd-077",
+          "evd-015",
+          "evd-054",
+          "evd-090",
+          "evd-103"
+        ],
+        "recommended_action": "revise",
+        "confidence": "medium"
+      },
+      {
+        "subject_type": "control",
+        "subject_id": "ctl-023",
+        "critique_type": "missing_evidence",
+        "description": "ctl-023 carries validation_status not_evaluated and is the only control in this group with no corresponding evidence assessment, yet map-134 lists it first among the four controls behind its partially_satisfied conclusion for req-TPI-002. Its cited passages support only per-request scoping: evd-081 says provider-specific operational limits are \"configured through application configuration\" with no value, scope, or enforcement point named, and evd-099 and evd-005 describe limits on the amount or type of content sent for a given analysis based on file size, file type, pull-request size, repository configuration and provider input limits. The control's own limitations state that these bound per-request content size rather than per-organization job volume or aggregate provider consumption, which is the condition req-TPI-002 and thr-012 turn on.",
+        "rationale": "A control whose evidence has not been validated, and whose stated limitations concede it does not address the requirement's condition, still contributes to the appearance of coverage in map-134's four-control list. Either its evidence should be assessed as the other six controls in this group were, or it should not be counted toward the bounding requirement \u2014 a reviewer needs to know which before this conclusion becomes a finding.",
+        "evidence_ids": [
+          "evd-081",
+          "evd-099",
+          "evd-005"
+        ],
+        "recommended_action": "investigate",
+        "confidence": "medium"
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-137",
+        "critique_type": "unsupported_claim",
+        "description": "map-137 concludes satisfied for req-NET-001, but the two positive passages establish reachability only: evd-029 states the Redis service is accessible only from approved application workloads, and evd-053 records \"Redis is not publicly accessible\" in the architecture document's own assumptions section rather than as described configuration. The mapping's applicability reason itself notes that the queue's authentication mechanism is not described, and eas-011 lists \"whether the queue connection is authenticated\" as missing evidence; neither the mapping nor its suppressed_conclusion addresses that limb \u2014 the suppressed conclusion covers only the reading that the network boundary is unestablished because no firewall or private-link mechanism is named.",
+        "rationale": "This is not a request to re-draw the conclusion the false-positive guard blocked; the guard covers an unnamed enforcing mechanism where placement is stated, and placement is stated. The question is whether satisfied is the right status when one supporting passage is a declared assumption and the requirement's applicability, as the mapping describes it, also turns on the undescribed authentication of a component holding every organization's queued work. If req-NET-001's conditions extend to authentication of internal components, satisfied overstates what evd-029 and evd-053 carry and should be partially_satisfied or unverified; confirming the requirement's scope resolves it either way.",
+        "evidence_ids": [
+          "evd-029",
+          "evd-053"
+        ],
+        "recommended_action": "investigate",
+        "confidence": "low"
+      }
+    ]
+  }
 }

@@ -1,474 +1,477 @@
 {
-  "controls": [
-    {
-      "key": "installation-scoped-short-lived-token",
-      "name": "Installation-scoped, short-lived GitHub token issuance bounding worker repository reach",
-      "description": "Repository access for background processing is performed through the GitHub App installation rather than stored tokens: the worker identifies the installation, ForgeFlow authenticates as the App, GitHub issues a short-lived installation token, and the token expires according to GitHub policy (evd-061, evd-037). Access is stated to remain limited to repositories selected during installation, with workers operating within the permissions associated with the installation token and no access requested outside the installed scope (evd-065, evd-058). This bounds what any single minted token can reach to one installation's selected repositories, but it does not establish that the installation named in a queued job is the one associated with the organization named in the same job.",
-      "control_type": "implemented",
-      "provider_component_id": null,
-      "protected_component_ids": [
-        "cmp-006"
-      ],
-      "protected_asset_ids": [
-        "ast-001",
-        "ast-006",
-        "ast-003"
-      ],
-      "implementation_status": "claimed",
-      "evidence_ids": [
-        "evd-061",
-        "evd-037",
-        "evd-065",
-        "evd-058",
-        "evd-060"
-      ],
-      "owner": "ForgeFlow Platform Engineering",
-      "limitations": [
-        "The scope bound is per installation; nothing described cross-checks the job's organization identifier against the installation identifier before a token is minted (evd-029, evd-030, evd-076).",
-        "Repository selection is controlled by the customer administrator in GitHub (evd-058), so ForgeFlow-side enforcement of the association is not described.",
-        "Exact GitHub App permissions are recorded as a documentation gap (evd-054)."
-      ]
-    }
-  ],
-  "mappings": [
-    {
-      "threat_id": "thr-008",
-      "requirement_id": "req-AUTHZ-001",
-      "control_keys": [],
-      "existing_control_ids": [
-        "ctl-010"
-      ],
-      "applicability_status": "applicable",
-      "applicability_reason": "Both applicable_conditions hold for this threat: ForgeFlow serves multiple customer organizations (evd-022, evd-102) and analysis results and job metadata for distinct organizations share the same structured store (evd-032). The threat turns on the requirement's second clause specifically, because the organization context used at execution time arrives inside the queued job payload (evd-029, evd-076) rather than from an authenticated session.",
-      "suppressed_conclusion": "That tenant-aware authorization is unmet on the background-processing path because no enforcement point is named for the organization identifier carried in a queued job. The documentation does state that customer records include organization identifiers, that analysis jobs execute within organization context, and that the organization boundary applies to background jobs (evd-130, evd-049); it simply does not name where or how that is enforced, and internal authorization implementation is explicitly omitted (evd-138). Silence about the enforcing mechanism does not establish absence.",
-      "suppressed_by": "absent description of an authorization library or framework",
-      "satisfaction_status": "unverified",
-      "evidence_ids": [
-        "evd-032",
-        "evd-102",
-        "evd-124",
-        "evd-130",
-        "evd-049",
-        "evd-029",
-        "evd-076",
-        "evd-030",
-        "evd-138"
-      ],
-      "assumptions": [
-        "Assumed that the 'organization context' on background job execution (evd-130) is the organization identifier carried in the job payload (evd-029, evd-076), since no document describes another source for it."
-      ],
-      "confidence": "medium"
-    },
-    {
-      "threat_id": "thr-008",
-      "requirement_id": "req-NET-001",
-      "control_keys": [],
-      "existing_control_ids": [
-        "ctl-002"
-      ],
-      "applicability_status": "applicable",
-      "applicability_reason": "The threat's first step is a write into the Redis queue by a party that should not be writing jobs, and Redis is exactly the class of component this requirement covers: a queue holding work on behalf of the system, holding jobs for more than one tenant, whose caller authentication is not described (evd-029, evd-076).",
-      "suppressed_conclusion": "That this requirement is only partially satisfied because no network segment, firewall rule, or security-group policy is named as the enforcing mechanism. The documentation states the placement directly — the Redis service is accessible only from approved application workloads (evd-029) and is not publicly accessible (evd-053) — which is what the statement asks for; the missing mechanism detail is the named false positive.",
-      "suppressed_by": "absent detail of the enforcing mechanism, where placement itself is stated",
-      "satisfaction_status": "satisfied",
-      "evidence_ids": [
-        "evd-029",
-        "evd-053",
-        "evd-050"
-      ],
-      "assumptions": [],
-      "confidence": "medium"
-    },
-    {
-      "threat_id": "thr-008",
-      "requirement_id": "req-DATA-003",
-      "control_keys": [],
-      "existing_control_ids": [],
-      "applicability_status": "applicable",
-      "applicability_reason": "Both applicable_conditions hold: artifacts from multiple customers share one managed object store, and objects are addressable by a predictable path built from the organization and job identifiers (evd-033, evd-078). This threat is precisely the case where the organization identifier used to build that path is supplied by the job rather than derived from the content's true owner (evd-045, evd-078).",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "partially_satisfied",
-      "evidence_ids": [
-        "evd-033",
-        "evd-078",
-        "evd-130",
-        "evd-054"
-      ],
-      "assumptions": [],
-      "confidence": "medium"
-    },
-    {
-      "threat_id": "thr-008",
-      "requirement_id": "req-SECRET-002",
-      "control_keys": [
-        "installation-scoped-short-lived-token"
-      ],
-      "existing_control_ids": [],
-      "applicability_status": "applicable",
-      "applicability_reason": "The applicable_conditions hold: the system reaches customer repositories held on GitHub, and GitHub offers installation-scoped short-lived credentials. The threat exercises this credential path directly, since a mismatched job causes a token to be minted for an installation no party requested (evd-030, evd-061).",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "satisfied",
-      "evidence_ids": [
-        "evd-061",
-        "evd-037",
-        "evd-030",
-        "evd-069"
-      ],
-      "assumptions": [],
-      "confidence": "high"
-    },
-    {
-      "threat_id": "thr-008",
-      "requirement_id": "req-AUTHZ-002",
-      "control_keys": [
-        "installation-scoped-short-lived-token"
-      ],
-      "existing_control_ids": [],
-      "applicability_status": "applicable",
-      "applicability_reason": "The system holds delegated access to GitHub and acts on customer repositories on the customer's behalf, so both applicable_conditions hold. The requirement bears on this threat because the requested privilege set bounds what a token minted under a mismatched installation identifier can read and write (evd-060, evd-065).",
-      "suppressed_conclusion": "That the requirement is only partially satisfied because 'exact GitHub App permissions' is listed as a documentation gap (evd-054). The requested capabilities are enumerated and narrow — repository metadata read, pull-request read, contents read, comment posting, webhook receipt — with an overall necessity statement (evd-060, evd-096); the missing per-permission justification is the named false positive.",
-      "suppressed_by": "absent per-permission justification where the overall scope is documented and narrow",
-      "satisfaction_status": "satisfied",
-      "evidence_ids": [
-        "evd-060",
-        "evd-065",
-        "evd-058",
-        "evd-096"
-      ],
-      "assumptions": [],
-      "confidence": "medium"
-    },
-    {
-      "threat_id": "thr-008",
-      "requirement_id": "req-WEBHOOK-001",
-      "control_keys": [],
-      "existing_control_ids": [
-        "ctl-001"
-      ],
-      "applicability_status": "applicable",
-      "applicability_reason": "The applicable_conditions hold: the receiver is an internet-facing endpoint accepting GitHub events, and each accepted event creates an analysis job that causes privileged repository access (evd-028, evd-062). This threat names a defect or unauthorised production of the identifier association as one of its two entry points, and the receiver derives the installation and repository identifiers from the inbound event (evd-028).",
-      "suppressed_conclusion": "That cryptographic origin verification of inbound webhooks is absent. Three passages say requests are 'validated' before processing (evd-028, evd-062, evd-128) without naming the mechanism, and detailed webhook-validation behaviour is recorded as a documentation gap (evd-054, evd-138). None describes a shortfall, so absence cannot be concluded.",
-      "suppressed_by": "documentation stating only that requests are validated, where the mechanism is unstated",
-      "satisfaction_status": "unverified",
-      "evidence_ids": [
-        "evd-028",
-        "evd-062",
-        "evd-128",
-        "evd-069",
-        "evd-054",
-        "evd-138",
-        "evd-070"
-      ],
-      "assumptions": [],
-      "confidence": "high"
-    },
-    {
-      "threat_id": "thr-008",
-      "requirement_id": "req-WEBHOOK-002",
-      "control_keys": [],
-      "existing_control_ids": [
-        "ctl-003"
-      ],
-      "applicability_status": "conditionally_applicable",
-      "applicability_reason": "The requirement's conditions hold for the system generally — event processing is costly and externally visible (evd-082, evd-051) and delivery uniqueness is not established (evd-054) — but it bears on this threat only if a replayed delivery could carry or produce a mismatched organization-installation pairing. The threat's mechanism is identifier mismatch rather than repetition, and no passage establishes that link.",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "unverified",
-      "evidence_ids": [
-        "evd-076",
-        "evd-077",
-        "evd-080",
-        "evd-054",
-        "evd-138"
-      ],
-      "assumptions": [
-        "Assumed that a delivery identifier is carried on each job (evd-076) but that its use for duplicate suppression is not established, since webhook replay handling is a named documentation gap (evd-054)."
-      ],
-      "confidence": "low"
-    },
-    {
-      "threat_id": "thr-008",
-      "requirement_id": "req-DATA-001",
-      "control_keys": [],
-      "existing_control_ids": [
-        "ctl-013"
-      ],
-      "applicability_status": "not_applicable",
-      "applicability_reason": "This threat concerns the binding between a tenant identifier and the content retrieved under it, not the confidentiality of data in transit or at rest. Encryption neither prevents nor detects a job whose organization and installation identifiers disagree; the data would be encrypted correctly and attributed to the wrong customer.",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "not_applicable",
-      "evidence_ids": [
-        "evd-126"
-      ],
-      "assumptions": [],
-      "confidence": "medium"
-    },
-    {
-      "threat_id": "thr-008",
-      "requirement_id": "req-AI-001",
-      "control_keys": [],
-      "existing_control_ids": [],
-      "applicability_status": "not_applicable",
-      "applicability_reason": "The threat's mechanism is a mismatched identifier in a queued job, not instruction-like content embedded in material passed to the model. Nothing in the attack path depends on how untrusted repository content is framed inside a prompt (evd-029, evd-030).",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "not_applicable",
-      "evidence_ids": [
-        "evd-029",
-        "evd-030"
-      ],
-      "assumptions": [],
-      "confidence": "high"
-    },
-    {
-      "threat_id": "thr-008",
-      "requirement_id": "req-AI-002",
-      "control_keys": [],
-      "existing_control_ids": [
-        "ctl-004"
-      ],
-      "applicability_status": "not_applicable",
-      "applicability_reason": "The requirement governs whether published model output is validated for content as well as structure. In this threat the published comment is misdirected because of an identifier mismatch, not because the output content is unsafe; validating content would not detect a comment posted into the wrong installation (evd-031).",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "not_applicable",
-      "evidence_ids": [
-        "evd-031"
-      ],
-      "assumptions": [],
-      "confidence": "medium"
-    },
-    {
-      "threat_id": "thr-008",
-      "requirement_id": "req-AI-003",
-      "control_keys": [],
-      "existing_control_ids": [
-        "ctl-007"
-      ],
-      "applicability_status": "not_applicable",
-      "applicability_reason": "This requirement concerns the scope of customer content crossing the provider boundary. The threat does not widen or narrow that scope; it changes which customer the content belongs to before it is stored, which minimization does not address (evd-063, evd-078).",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "not_applicable",
-      "evidence_ids": [
-        "evd-063",
-        "evd-078"
-      ],
-      "assumptions": [],
-      "confidence": "medium"
-    },
-    {
-      "threat_id": "thr-008",
-      "requirement_id": "req-AUTH-001",
-      "control_keys": [],
-      "existing_control_ids": [],
-      "applicability_status": "not_applicable",
-      "applicability_reason": "The requirement's non_applicable_conditions are not the reason here: the threat path runs from a queue writer through the worker to GitHub and storage, and never traverses an end-user authentication step. Delegated customer authentication (evd-123) has no bearing on whether a queued job's identifiers correspond.",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "not_applicable",
-      "evidence_ids": [
-        "evd-123",
-        "evd-030"
-      ],
-      "assumptions": [],
-      "confidence": "high"
-    },
-    {
-      "threat_id": "thr-008",
-      "requirement_id": "req-AUTH-002",
-      "control_keys": [],
-      "existing_control_ids": [],
-      "applicability_status": "not_applicable",
-      "applicability_reason": "No step of this attack path passes through an administrative or externally reachable privileged login; the job is placed and consumed by workloads, not by an operator authenticating with factors (evd-029, evd-030).",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "not_applicable",
-      "evidence_ids": [
-        "evd-029",
-        "evd-030"
-      ],
-      "assumptions": [],
-      "confidence": "high"
-    },
-    {
-      "threat_id": "thr-008",
-      "requirement_id": "req-ADMIN-001",
-      "control_keys": [],
-      "existing_control_ids": [],
-      "applicability_status": "not_applicable",
-      "applicability_reason": "An administrative interface exists (evd-035), but this threat's attack path does not traverse it: the mismatched job is written to the queue and consumed by a worker. The requirement's conditions about operator access paths do not bear on this threat.",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "not_applicable",
-      "evidence_ids": [
-        "evd-035",
-        "evd-029"
-      ],
-      "assumptions": [],
-      "confidence": "medium"
-    },
-    {
-      "threat_id": "thr-008",
-      "requirement_id": "req-LOG-002",
-      "control_keys": [],
-      "existing_control_ids": [],
-      "applicability_status": "not_applicable",
-      "applicability_reason": "The requirement records privileged actions taken through an operator interface. No step in this attack path is an operator action; the corrupted attribution arises from an automated worker acting on a job payload (evd-030, evd-076).",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "not_applicable",
-      "evidence_ids": [
-        "evd-030",
-        "evd-076"
-      ],
-      "assumptions": [],
-      "confidence": "medium"
-    },
-    {
-      "threat_id": "thr-008",
-      "requirement_id": "req-TPI-002",
-      "control_keys": [],
-      "existing_control_ids": [
-        "ctl-003"
-      ],
-      "applicability_status": "not_applicable",
-      "applicability_reason": "The requirement bounds consumption driven by repeated or malicious triggers. This threat concerns a single job attributed to the wrong tenant rather than unbounded volume; bounding work would not prevent one mismatched job from crossing the organization boundary (evd-029, evd-030).",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "not_applicable",
-      "evidence_ids": [
-        "evd-029",
-        "evd-030"
-      ],
-      "assumptions": [],
-      "confidence": "medium"
-    },
-    {
-      "threat_id": "thr-008",
-      "requirement_id": "req-SECRET-001",
-      "control_keys": [],
-      "existing_control_ids": [
-        "ctl-005"
-      ],
-      "applicability_status": "not_applicable",
-      "applicability_reason": "Custody of the GitHub App private key and provider credentials is documented as held in the managed secrets service (evd-034, evd-127), and this threat does not involve exposure or misuse of stored credential material; it misuses a correctly-issued token by directing it at the wrong installation.",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "not_applicable",
-      "evidence_ids": [
-        "evd-034",
-        "evd-127"
-      ],
-      "assumptions": [],
-      "confidence": "medium"
-    }
-  ],
-  "documentation_gaps": [
-    {
-      "title": "Whether the analysis worker validates that a job's organization and installation identifiers correspond is not documented",
-      "description": "Each queued job carries an organization identifier and a GitHub installation identifier side by side (evd-029, evd-076), and the worker resolves the organization and installation from the job, mints an installation token, retrieves repository content and stores results under the organization identifier the job supplied (evd-030, evd-045, evd-078). No reviewed document states whether the worker re-derives either identifier from server-side state, or cross-checks that the installation named belongs to the organization named, before minting the token. The architecture records identifier propagation as an assumption rather than an enforced property (evd-053), and internal authorization implementation is explicitly omitted from the security overview (evd-138).",
-      "importance": "This is the fact that decides whether the organization boundary declared for background jobs (evd-049, evd-130) is enforced at execution time or is a naming convention carried by the payload. Without it, req-AUTHZ-001 cannot be resolved either way on the background-processing path.",
-      "related_object_ids": [
-        "cmp-004",
-        "cmp-005",
-        "cmp-006",
-        "ast-001",
-        "ast-003",
-        "ast-006"
-      ],
-      "requested_evidence": [
-        "A description of where the organization-installation association is authoritatively held and how it is checked before an installation token is minted",
-        "Worker job-handling documentation or code reference showing whether job-supplied identifiers are trusted or re-derived",
-        "A description of the shared data access layer or middleware that applies organization scoping to background-job writes"
-      ],
-      "evidence_ids": [
-        "evd-029",
-        "evd-076",
-        "evd-030",
-        "evd-053",
-        "evd-049",
-        "evd-130",
-        "evd-138"
-      ],
-      "severity": "medium"
-    },
-    {
-      "title": "Authentication of connections to the managed Redis queue is not described",
-      "description": "Redis holds pending analysis jobs and is stated to be accessible only from approved application workloads and not publicly accessible (evd-029, evd-053). No reviewed document states whether the queue connection itself is authenticated, or which mechanism enforces the reachability restriction (network segment, firewall policy, or private link). The deployment section names Redis among managed services without describing its network placement mechanism (evd-050).",
-      "importance": "Network placement is documented and satisfies req-NET-001 as stated, but whether a second layer of caller authentication exists determines how much the queue-write precondition of this threat depends on the network boundary alone.",
-      "related_object_ids": [
-        "cmp-005",
-        "cmp-004",
-        "cmp-006"
-      ],
-      "requested_evidence": [
-        "Managed Redis configuration showing whether connection authentication is enabled",
-        "The network or security-group policy that restricts Redis to named application workloads"
-      ],
-      "evidence_ids": [
-        "evd-029",
-        "evd-053",
-        "evd-050"
-      ],
-      "severity": "low"
-    },
-    {
-      "title": "Enforcement of organization separation on access to stored artifacts is not documented",
-      "description": "Artifacts are written under paths containing the organization identifier and job identifier (evd-033, evd-078), and organization-specific object paths are named as part of tenant isolation (evd-130). The architecture lists 'object-storage authorization enforcement' among details requiring further clarification (evd-054), so whether the path convention is backed by an authorization check on read is not established.",
-      "importance": "If separation is enforced only by path naming, an artifact written under a wrongly-supplied organization identifier — the outcome of this threat — becomes directly readable by that organization's members through the ordinary result-access path (evd-046).",
-      "related_object_ids": [
-        "cmp-006",
-        "ast-001",
-        "ast-003"
-      ],
-      "requested_evidence": [
-        "The storage access policy applied to organization-scoped object paths",
-        "A description of the server-side authorization check performed before an artifact is returned or a time-limited link is generated"
-      ],
-      "evidence_ids": [
-        "evd-033",
-        "evd-078",
-        "evd-130",
-        "evd-054",
-        "evd-046"
-      ],
-      "severity": "medium"
-    }
-  ],
-  "catalog_gap_candidates": [
-    {
-      "concern": "The catalog has no requirement covering the integrity of tenant-binding fields carried on internally produced asynchronous work items. Where a system passes a unit of work between its own components through a queue, the tenant identity of that work is re-established downstream from the payload rather than from an authenticated session or an inbound signature, and no catalog requirement asks that such fields be re-derived, cross-checked, or bound to the message so that a mismatched or altered pairing cannot be acted upon.",
-      "suggested_category": "tenancy",
-      "nearest_requirements": [
-        {
-          "requirement_id": "req-AUTHZ-001",
-          "why_not": "Its statement is framed around requests and requires the tenant context to be derived from server-side state rather than a client-supplied value. A queued job is neither a client request nor a client-supplied value in that sense: it is produced by a trusted internal component, so the requirement's own wording does not reach the case where a trusted producer emits an internally inconsistent pairing."
-        },
-        {
-          "requirement_id": "req-NET-001",
-          "why_not": "It addresses who can reach the queue, not what the consumer does with the content of a message once dequeued. Satisfying it fully leaves a defect-produced mismatch entirely unaddressed."
-        },
-        {
-          "requirement_id": "req-WEBHOOK-001",
-          "why_not": "It requires authenticity verification for events arriving from an external platform. The job in question is produced inside the trust boundary by the receiver, so the requirement's applicable_conditions about inbound external events do not hold."
-        },
-        {
-          "requirement_id": "req-SECRET-002",
-          "why_not": "It constrains credential lifetime, not the selection of which installation a credential is minted for. A correctly short-lived token minted against the wrong installation satisfies it completely."
-        }
-      ],
-      "evidence_ids": [
-        "evd-029",
-        "evd-076",
-        "evd-030",
-        "evd-061",
-        "evd-053",
-        "evd-078"
-      ]
-    }
-  ]
+  "schema": "MappingProposal",
+  "response": {
+    "controls": [
+      {
+        "key": "installation-scoped-short-lived-token",
+        "name": "Installation-scoped, short-lived GitHub token issuance bounding worker repository reach",
+        "description": "Repository access for background processing is performed through the GitHub App installation rather than stored tokens: the worker identifies the installation, ForgeFlow authenticates as the App, GitHub issues a short-lived installation token, and the token expires according to GitHub policy (evd-061, evd-037). Access is stated to remain limited to repositories selected during installation, with workers operating within the permissions associated with the installation token and no access requested outside the installed scope (evd-065, evd-058). This bounds what any single minted token can reach to one installation's selected repositories, but it does not establish that the installation named in a queued job is the one associated with the organization named in the same job.",
+        "control_type": "implemented",
+        "provider_component_id": null,
+        "protected_component_ids": [
+          "cmp-006"
+        ],
+        "protected_asset_ids": [
+          "ast-001",
+          "ast-006",
+          "ast-003"
+        ],
+        "implementation_status": "claimed",
+        "evidence_ids": [
+          "evd-061",
+          "evd-037",
+          "evd-065",
+          "evd-058",
+          "evd-060"
+        ],
+        "owner": "ForgeFlow Platform Engineering",
+        "limitations": [
+          "The scope bound is per installation; nothing described cross-checks the job's organization identifier against the installation identifier before a token is minted (evd-029, evd-030, evd-076).",
+          "Repository selection is controlled by the customer administrator in GitHub (evd-058), so ForgeFlow-side enforcement of the association is not described.",
+          "Exact GitHub App permissions are recorded as a documentation gap (evd-054)."
+        ]
+      }
+    ],
+    "mappings": [
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-AUTHZ-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-010"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "Both applicable_conditions hold for this threat: ForgeFlow serves multiple customer organizations (evd-022, evd-102) and analysis results and job metadata for distinct organizations share the same structured store (evd-032). The threat turns on the requirement's second clause specifically, because the organization context used at execution time arrives inside the queued job payload (evd-029, evd-076) rather than from an authenticated session.",
+        "suppressed_conclusion": "That tenant-aware authorization is unmet on the background-processing path because no enforcement point is named for the organization identifier carried in a queued job. The documentation does state that customer records include organization identifiers, that analysis jobs execute within organization context, and that the organization boundary applies to background jobs (evd-130, evd-049); it simply does not name where or how that is enforced, and internal authorization implementation is explicitly omitted (evd-138). Silence about the enforcing mechanism does not establish absence.",
+        "suppressed_by": "absent description of an authorization library or framework",
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-032",
+          "evd-102",
+          "evd-124",
+          "evd-130",
+          "evd-049",
+          "evd-029",
+          "evd-076",
+          "evd-030",
+          "evd-138"
+        ],
+        "assumptions": [
+          "Assumed that the 'organization context' on background job execution (evd-130) is the organization identifier carried in the job payload (evd-029, evd-076), since no document describes another source for it."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-NET-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-002"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The threat's first step is a write into the Redis queue by a party that should not be writing jobs, and Redis is exactly the class of component this requirement covers: a queue holding work on behalf of the system, holding jobs for more than one tenant, whose caller authentication is not described (evd-029, evd-076).",
+        "suppressed_conclusion": "That this requirement is only partially satisfied because no network segment, firewall rule, or security-group policy is named as the enforcing mechanism. The documentation states the placement directly \u2014 the Redis service is accessible only from approved application workloads (evd-029) and is not publicly accessible (evd-053) \u2014 which is what the statement asks for; the missing mechanism detail is the named false positive.",
+        "suppressed_by": "absent detail of the enforcing mechanism, where placement itself is stated",
+        "satisfaction_status": "satisfied",
+        "evidence_ids": [
+          "evd-029",
+          "evd-053",
+          "evd-050"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-DATA-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Both applicable_conditions hold: artifacts from multiple customers share one managed object store, and objects are addressable by a predictable path built from the organization and job identifiers (evd-033, evd-078). This threat is precisely the case where the organization identifier used to build that path is supplied by the job rather than derived from the content's true owner (evd-045, evd-078).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "partially_satisfied",
+        "evidence_ids": [
+          "evd-033",
+          "evd-078",
+          "evd-130",
+          "evd-054"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-SECRET-002",
+        "control_keys": [
+          "installation-scoped-short-lived-token"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The applicable_conditions hold: the system reaches customer repositories held on GitHub, and GitHub offers installation-scoped short-lived credentials. The threat exercises this credential path directly, since a mismatched job causes a token to be minted for an installation no party requested (evd-030, evd-061).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "satisfied",
+        "evidence_ids": [
+          "evd-061",
+          "evd-037",
+          "evd-030",
+          "evd-069"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-AUTHZ-002",
+        "control_keys": [
+          "installation-scoped-short-lived-token"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The system holds delegated access to GitHub and acts on customer repositories on the customer's behalf, so both applicable_conditions hold. The requirement bears on this threat because the requested privilege set bounds what a token minted under a mismatched installation identifier can read and write (evd-060, evd-065).",
+        "suppressed_conclusion": "That the requirement is only partially satisfied because 'exact GitHub App permissions' is listed as a documentation gap (evd-054). The requested capabilities are enumerated and narrow \u2014 repository metadata read, pull-request read, contents read, comment posting, webhook receipt \u2014 with an overall necessity statement (evd-060, evd-096); the missing per-permission justification is the named false positive.",
+        "suppressed_by": "absent per-permission justification where the overall scope is documented and narrow",
+        "satisfaction_status": "satisfied",
+        "evidence_ids": [
+          "evd-060",
+          "evd-065",
+          "evd-058",
+          "evd-096"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-WEBHOOK-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-001"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The applicable_conditions hold: the receiver is an internet-facing endpoint accepting GitHub events, and each accepted event creates an analysis job that causes privileged repository access (evd-028, evd-062). This threat names a defect or unauthorised production of the identifier association as one of its two entry points, and the receiver derives the installation and repository identifiers from the inbound event (evd-028).",
+        "suppressed_conclusion": "That cryptographic origin verification of inbound webhooks is absent. Three passages say requests are 'validated' before processing (evd-028, evd-062, evd-128) without naming the mechanism, and detailed webhook-validation behaviour is recorded as a documentation gap (evd-054, evd-138). None describes a shortfall, so absence cannot be concluded.",
+        "suppressed_by": "documentation stating only that requests are validated, where the mechanism is unstated",
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-028",
+          "evd-062",
+          "evd-128",
+          "evd-069",
+          "evd-054",
+          "evd-138",
+          "evd-070"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-WEBHOOK-002",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-003"
+        ],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "The requirement's conditions hold for the system generally \u2014 event processing is costly and externally visible (evd-082, evd-051) and delivery uniqueness is not established (evd-054) \u2014 but it bears on this threat only if a replayed delivery could carry or produce a mismatched organization-installation pairing. The threat's mechanism is identifier mismatch rather than repetition, and no passage establishes that link.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-076",
+          "evd-077",
+          "evd-080",
+          "evd-054",
+          "evd-138"
+        ],
+        "assumptions": [
+          "Assumed that a delivery identifier is carried on each job (evd-076) but that its use for duplicate suppression is not established, since webhook replay handling is a named documentation gap (evd-054)."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-013"
+        ],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This threat concerns the binding between a tenant identifier and the content retrieved under it, not the confidentiality of data in transit or at rest. Encryption neither prevents nor detects a job whose organization and installation identifiers disagree; the data would be encrypted correctly and attributed to the wrong customer.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-126"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-AI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat's mechanism is a mismatched identifier in a queued job, not instruction-like content embedded in material passed to the model. Nothing in the attack path depends on how untrusted repository content is framed inside a prompt (evd-029, evd-030).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-029",
+          "evd-030"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-AI-002",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-004"
+        ],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The requirement governs whether published model output is validated for content as well as structure. In this threat the published comment is misdirected because of an identifier mismatch, not because the output content is unsafe; validating content would not detect a comment posted into the wrong installation (evd-031).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-031"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-AI-003",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-007"
+        ],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This requirement concerns the scope of customer content crossing the provider boundary. The threat does not widen or narrow that scope; it changes which customer the content belongs to before it is stored, which minimization does not address (evd-063, evd-078).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-063",
+          "evd-078"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-AUTH-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The requirement's non_applicable_conditions are not the reason here: the threat path runs from a queue writer through the worker to GitHub and storage, and never traverses an end-user authentication step. Delegated customer authentication (evd-123) has no bearing on whether a queued job's identifiers correspond.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-123",
+          "evd-030"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-AUTH-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No step of this attack path passes through an administrative or externally reachable privileged login; the job is placed and consumed by workloads, not by an operator authenticating with factors (evd-029, evd-030).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-029",
+          "evd-030"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-ADMIN-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "An administrative interface exists (evd-035), but this threat's attack path does not traverse it: the mismatched job is written to the queue and consumed by a worker. The requirement's conditions about operator access paths do not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-035",
+          "evd-029"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-LOG-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The requirement records privileged actions taken through an operator interface. No step in this attack path is an operator action; the corrupted attribution arises from an automated worker acting on a job payload (evd-030, evd-076).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-030",
+          "evd-076"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-TPI-002",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-003"
+        ],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The requirement bounds consumption driven by repeated or malicious triggers. This threat concerns a single job attributed to the wrong tenant rather than unbounded volume; bounding work would not prevent one mismatched job from crossing the organization boundary (evd-029, evd-030).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-029",
+          "evd-030"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-SECRET-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-005"
+        ],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Custody of the GitHub App private key and provider credentials is documented as held in the managed secrets service (evd-034, evd-127), and this threat does not involve exposure or misuse of stored credential material; it misuses a correctly-issued token by directing it at the wrong installation.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-034",
+          "evd-127"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Whether the analysis worker validates that a job's organization and installation identifiers correspond is not documented",
+        "description": "Each queued job carries an organization identifier and a GitHub installation identifier side by side (evd-029, evd-076), and the worker resolves the organization and installation from the job, mints an installation token, retrieves repository content and stores results under the organization identifier the job supplied (evd-030, evd-045, evd-078). No reviewed document states whether the worker re-derives either identifier from server-side state, or cross-checks that the installation named belongs to the organization named, before minting the token. The architecture records identifier propagation as an assumption rather than an enforced property (evd-053), and internal authorization implementation is explicitly omitted from the security overview (evd-138).",
+        "importance": "This is the fact that decides whether the organization boundary declared for background jobs (evd-049, evd-130) is enforced at execution time or is a naming convention carried by the payload. Without it, req-AUTHZ-001 cannot be resolved either way on the background-processing path.",
+        "related_object_ids": [
+          "cmp-004",
+          "cmp-005",
+          "cmp-006",
+          "ast-001",
+          "ast-003",
+          "ast-006"
+        ],
+        "requested_evidence": [
+          "A description of where the organization-installation association is authoritatively held and how it is checked before an installation token is minted",
+          "Worker job-handling documentation or code reference showing whether job-supplied identifiers are trusted or re-derived",
+          "A description of the shared data access layer or middleware that applies organization scoping to background-job writes"
+        ],
+        "evidence_ids": [
+          "evd-029",
+          "evd-076",
+          "evd-030",
+          "evd-053",
+          "evd-049",
+          "evd-130",
+          "evd-138"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Authentication of connections to the managed Redis queue is not described",
+        "description": "Redis holds pending analysis jobs and is stated to be accessible only from approved application workloads and not publicly accessible (evd-029, evd-053). No reviewed document states whether the queue connection itself is authenticated, or which mechanism enforces the reachability restriction (network segment, firewall policy, or private link). The deployment section names Redis among managed services without describing its network placement mechanism (evd-050).",
+        "importance": "Network placement is documented and satisfies req-NET-001 as stated, but whether a second layer of caller authentication exists determines how much the queue-write precondition of this threat depends on the network boundary alone.",
+        "related_object_ids": [
+          "cmp-005",
+          "cmp-004",
+          "cmp-006"
+        ],
+        "requested_evidence": [
+          "Managed Redis configuration showing whether connection authentication is enabled",
+          "The network or security-group policy that restricts Redis to named application workloads"
+        ],
+        "evidence_ids": [
+          "evd-029",
+          "evd-053",
+          "evd-050"
+        ],
+        "severity": "low"
+      },
+      {
+        "title": "Enforcement of organization separation on access to stored artifacts is not documented",
+        "description": "Artifacts are written under paths containing the organization identifier and job identifier (evd-033, evd-078), and organization-specific object paths are named as part of tenant isolation (evd-130). The architecture lists 'object-storage authorization enforcement' among details requiring further clarification (evd-054), so whether the path convention is backed by an authorization check on read is not established.",
+        "importance": "If separation is enforced only by path naming, an artifact written under a wrongly-supplied organization identifier \u2014 the outcome of this threat \u2014 becomes directly readable by that organization's members through the ordinary result-access path (evd-046).",
+        "related_object_ids": [
+          "cmp-006",
+          "ast-001",
+          "ast-003"
+        ],
+        "requested_evidence": [
+          "The storage access policy applied to organization-scoped object paths",
+          "A description of the server-side authorization check performed before an artifact is returned or a time-limited link is generated"
+        ],
+        "evidence_ids": [
+          "evd-033",
+          "evd-078",
+          "evd-130",
+          "evd-054",
+          "evd-046"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": [
+      {
+        "concern": "The catalog has no requirement covering the integrity of tenant-binding fields carried on internally produced asynchronous work items. Where a system passes a unit of work between its own components through a queue, the tenant identity of that work is re-established downstream from the payload rather than from an authenticated session or an inbound signature, and no catalog requirement asks that such fields be re-derived, cross-checked, or bound to the message so that a mismatched or altered pairing cannot be acted upon.",
+        "suggested_category": "tenancy",
+        "nearest_requirements": [
+          {
+            "requirement_id": "req-AUTHZ-001",
+            "why_not": "Its statement is framed around requests and requires the tenant context to be derived from server-side state rather than a client-supplied value. A queued job is neither a client request nor a client-supplied value in that sense: it is produced by a trusted internal component, so the requirement's own wording does not reach the case where a trusted producer emits an internally inconsistent pairing."
+          },
+          {
+            "requirement_id": "req-NET-001",
+            "why_not": "It addresses who can reach the queue, not what the consumer does with the content of a message once dequeued. Satisfying it fully leaves a defect-produced mismatch entirely unaddressed."
+          },
+          {
+            "requirement_id": "req-WEBHOOK-001",
+            "why_not": "It requires authenticity verification for events arriving from an external platform. The job in question is produced inside the trust boundary by the receiver, so the requirement's applicable_conditions about inbound external events do not hold."
+          },
+          {
+            "requirement_id": "req-SECRET-002",
+            "why_not": "It constrains credential lifetime, not the selection of which installation a credential is minted for. A correctly short-lived token minted against the wrong installation satisfies it completely."
+          }
+        ],
+        "evidence_ids": [
+          "evd-029",
+          "evd-076",
+          "evd-030",
+          "evd-061",
+          "evd-053",
+          "evd-078"
+        ]
+      }
+    ]
+  }
 }

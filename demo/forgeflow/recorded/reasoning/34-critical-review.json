@@ -1,63 +1,66 @@
 {
-  "critiques": [
-    {
-      "subject_type": "threat",
-      "subject_id": "thr-013",
-      "critique_type": "documentation_gap_only",
-      "description": "Attack path step 4 states as fact that \"Forwarded log records and managed database backups are unaffected by the application-level deletion (evd-036, evd-032)\". Neither cited passage addresses deletion scope: evd-032 lists what the database holds (including data-deletion status) and states only that \"Database backups and platform maintenance are managed through the cloud database service\"; evd-036 lists forwarded event types. Nothing in either says whether an organization-level deletion request (evd-026) propagates to backups or to the shared logging platform. The step should be stated as unestablished rather than as an established property of the system.",
-      "rationale": "The passages cited are silent on deletion coverage, so the step converts absence of documentation into a positive assertion of weakness. This is also internally inconsistent with the rest of the group: map-143 records the same question as 'unverified' and expressly declined the conclusion that deletion fails to reach the derived stores, gap-042 states that coverage 'cannot be determined', and the threat's own description uses the careful formulation 'is not described as reaching'. Only the attack path asserts it outright, so the fix is confined to that step and does not disturb the multi-store premise, which evd-032, evd-033 and evd-036 do document.",
-      "evidence_ids": [
-        "evd-032",
-        "evd-036",
-        "evd-026"
-      ],
-      "recommended_action": "revise",
-      "confidence": "medium"
-    },
-    {
-      "subject_type": "threat",
-      "subject_id": "thr-013",
-      "critique_type": "unsupported_claim",
-      "description": "The threat's title and step 5 place restricted source-derived material in forwarded log records (ast-010, cmp-012) and assert it 'remains accessible' there after deletion, with evd-036 among the citations. evd-036 states the opposite intent: 'Customer source code should not be included in normal application logs' and 'Error handling should avoid logging full provider prompts or GitHub access tokens'. evd-131 similarly says operational logging 'should avoid unnecessary exposure of customer source code', and evd-084 says large request bodies 'should not normally be written to operational logs'. No cited passage establishes that source-derived content reaches log records.",
-      "rationale": "The only cited statements about log content are exclusion expectations, so they do not carry a claim that logs hold restricted source material. That ctl-021 describes no enforcement mechanism is silence about the error path, not evidence that source content lands there. The artifact leg of this threat rests on directly documented persistence (evd-033, evd-078, evd-079); the log leg does not, and stating it at the same level of assertion inflates the asset and component scope a downstream finding would inherit. Marking the log leg unknown, or narrowing the affected assets, would leave the rest of the threat intact.",
-      "evidence_ids": [
-        "evd-036",
-        "evd-131",
-        "evd-084"
-      ],
-      "recommended_action": "revise",
-      "confidence": "low"
-    },
-    {
-      "subject_type": "control",
-      "subject_id": "ctl-026",
-      "critique_type": "contradictory_analysis",
-      "description": "ctl-026 is recorded with control_type 'inherited', provider_component_id cmp-009, and a description that calls it 'a documented durability capability provided by the managed platform', yet carries is_documented_inheritance: false and implementation_status 'claimed'. The cited passages establish the inheritance directly: evd-032 states 'Database backups and platform maintenance are managed through the cloud database service', evd-088 lists 'Managed database backups' among recovery capabilities, and evd-136 lists 'Managed database services' among capabilities managed outside the application team. That is the same footing as ctl-013, which the group flags as documented inheritance.",
-      "rationale": "The flag and the control's own description disagree, and the flag is the field downstream steps read to distinguish an established platform control from a merely implied one. The unknowns the control records — backup retention period, and whether application-level deletion propagates to backups (evd-026, evd-032) — are limitations on the coverage boundary, which the uncertainty policy says to record as such; they are not grounds for treating the inheritance itself as undocumented. A reviewer should reconcile the flag and status with evd-032 rather than have the record read both ways.",
-      "evidence_ids": [
-        "evd-032",
-        "evd-088",
-        "evd-136"
-      ],
-      "recommended_action": "revise",
-      "confidence": "medium"
-    },
-    {
-      "subject_type": "documentation_gap",
-      "subject_id": "gap-044",
-      "critique_type": "duplicate",
-      "description": "gap-044 ('Enforcement of organization scoping on access to stored artifacts is not described') restates gap-022 ('Object-storage authorization enforcement is not described'). Both rest on the same question — whether the organization identifier in the documented path template (evd-033, evd-078, evd-130) is an enforced access rule or a naming convention — and both cite the same passages (evd-033, evd-078, evd-130, evd-054, evd-138), gap-044 adding only evd-026. Its requested evidence repeats gap-022's storage-access-policy and enforcement-point items, and its second item (the authorization check before a time-limited link is issued) repeats gap-023. The only material addition is one item on what the administrative interface can reach in object storage.",
-      "rationale": "Two gap records for one undocumented control split the evidence request a reviewer would have to answer once, and they carry inconsistent severities for the same missing enforcement description (gap-022 high, gap-044 medium), which a consolidated record would settle. Merging gap-044's deletion-window framing and its administrative-reach item into gap-022, and leaving the link-issuance item with gap-023, preserves everything gap-044 contributes without asking for the same storage access policy three times.",
-      "evidence_ids": [
-        "evd-033",
-        "evd-078",
-        "evd-130",
-        "evd-054",
-        "evd-138",
-        "evd-026"
-      ],
-      "recommended_action": "merge",
-      "confidence": "medium"
-    }
-  ]
+  "schema": "CriticalReviewProposal",
+  "response": {
+    "critiques": [
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-013",
+        "critique_type": "documentation_gap_only",
+        "description": "Attack path step 4 states as fact that \"Forwarded log records and managed database backups are unaffected by the application-level deletion (evd-036, evd-032)\". Neither cited passage addresses deletion scope: evd-032 lists what the database holds (including data-deletion status) and states only that \"Database backups and platform maintenance are managed through the cloud database service\"; evd-036 lists forwarded event types. Nothing in either says whether an organization-level deletion request (evd-026) propagates to backups or to the shared logging platform. The step should be stated as unestablished rather than as an established property of the system.",
+        "rationale": "The passages cited are silent on deletion coverage, so the step converts absence of documentation into a positive assertion of weakness. This is also internally inconsistent with the rest of the group: map-143 records the same question as 'unverified' and expressly declined the conclusion that deletion fails to reach the derived stores, gap-042 states that coverage 'cannot be determined', and the threat's own description uses the careful formulation 'is not described as reaching'. Only the attack path asserts it outright, so the fix is confined to that step and does not disturb the multi-store premise, which evd-032, evd-033 and evd-036 do document.",
+        "evidence_ids": [
+          "evd-032",
+          "evd-036",
+          "evd-026"
+        ],
+        "recommended_action": "revise",
+        "confidence": "medium"
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-013",
+        "critique_type": "unsupported_claim",
+        "description": "The threat's title and step 5 place restricted source-derived material in forwarded log records (ast-010, cmp-012) and assert it 'remains accessible' there after deletion, with evd-036 among the citations. evd-036 states the opposite intent: 'Customer source code should not be included in normal application logs' and 'Error handling should avoid logging full provider prompts or GitHub access tokens'. evd-131 similarly says operational logging 'should avoid unnecessary exposure of customer source code', and evd-084 says large request bodies 'should not normally be written to operational logs'. No cited passage establishes that source-derived content reaches log records.",
+        "rationale": "The only cited statements about log content are exclusion expectations, so they do not carry a claim that logs hold restricted source material. That ctl-021 describes no enforcement mechanism is silence about the error path, not evidence that source content lands there. The artifact leg of this threat rests on directly documented persistence (evd-033, evd-078, evd-079); the log leg does not, and stating it at the same level of assertion inflates the asset and component scope a downstream finding would inherit. Marking the log leg unknown, or narrowing the affected assets, would leave the rest of the threat intact.",
+        "evidence_ids": [
+          "evd-036",
+          "evd-131",
+          "evd-084"
+        ],
+        "recommended_action": "revise",
+        "confidence": "low"
+      },
+      {
+        "subject_type": "control",
+        "subject_id": "ctl-026",
+        "critique_type": "contradictory_analysis",
+        "description": "ctl-026 is recorded with control_type 'inherited', provider_component_id cmp-009, and a description that calls it 'a documented durability capability provided by the managed platform', yet carries is_documented_inheritance: false and implementation_status 'claimed'. The cited passages establish the inheritance directly: evd-032 states 'Database backups and platform maintenance are managed through the cloud database service', evd-088 lists 'Managed database backups' among recovery capabilities, and evd-136 lists 'Managed database services' among capabilities managed outside the application team. That is the same footing as ctl-013, which the group flags as documented inheritance.",
+        "rationale": "The flag and the control's own description disagree, and the flag is the field downstream steps read to distinguish an established platform control from a merely implied one. The unknowns the control records \u2014 backup retention period, and whether application-level deletion propagates to backups (evd-026, evd-032) \u2014 are limitations on the coverage boundary, which the uncertainty policy says to record as such; they are not grounds for treating the inheritance itself as undocumented. A reviewer should reconcile the flag and status with evd-032 rather than have the record read both ways.",
+        "evidence_ids": [
+          "evd-032",
+          "evd-088",
+          "evd-136"
+        ],
+        "recommended_action": "revise",
+        "confidence": "medium"
+      },
+      {
+        "subject_type": "documentation_gap",
+        "subject_id": "gap-044",
+        "critique_type": "duplicate",
+        "description": "gap-044 ('Enforcement of organization scoping on access to stored artifacts is not described') restates gap-022 ('Object-storage authorization enforcement is not described'). Both rest on the same question \u2014 whether the organization identifier in the documented path template (evd-033, evd-078, evd-130) is an enforced access rule or a naming convention \u2014 and both cite the same passages (evd-033, evd-078, evd-130, evd-054, evd-138), gap-044 adding only evd-026. Its requested evidence repeats gap-022's storage-access-policy and enforcement-point items, and its second item (the authorization check before a time-limited link is issued) repeats gap-023. The only material addition is one item on what the administrative interface can reach in object storage.",
+        "rationale": "Two gap records for one undocumented control split the evidence request a reviewer would have to answer once, and they carry inconsistent severities for the same missing enforcement description (gap-022 high, gap-044 medium), which a consolidated record would settle. Merging gap-044's deletion-window framing and its administrative-reach item into gap-022, and leaving the link-issuance item with gap-023, preserves everything gap-044 contributes without asking for the same storage access policy three times.",
+        "evidence_ids": [
+          "evd-033",
+          "evd-078",
+          "evd-130",
+          "evd-054",
+          "evd-138",
+          "evd-026"
+        ],
+        "recommended_action": "merge",
+        "confidence": "medium"
+      }
+    ]
+  }
 }

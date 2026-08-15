@@ -1,179 +1,182 @@
 {
-  "threats": [
-    {
-      "title": "Submitted invoice content steers the approval decision",
-      "description": "The invoice file's contents are parsed and returned to the model as the invoice details, and a denial is followed up in the same conversation with an urgency note asking the agent to reconsider. A submitter who writes steering content into the invoice reaches the model twice with it, and the decision policy explicitly leaves the deny rules negotiable by discretion.",
-      "methodology": "stride-scenario-based",
-      "category": [
-        "tampering"
-      ],
-      "threat_actor_ids": [
-        "act-001"
-      ],
-      "affected_component_ids": [
-        "cmp-001"
-      ],
-      "affected_asset_ids": [
-        "ast-001"
-      ],
-      "related_data_flow_ids": [
-        "df-001"
-      ],
-      "preconditions": [
-        "the workflow relays submitted content and a reconsideration request into the model conversation"
-      ],
-      "attack_path": [
-        "write steering content into the submitted invoice fields",
-        "submit the invoice",
-        "let the denial follow-up press the agent to reconsider with the content still in context"
-      ],
-      "impact": "Invoices are approved against the stated deny rules.",
-      "likelihood": null,
-      "confidence": "high",
-      "evidence_ids": [
-        "evd-002",
-        "evd-003",
-        "evd-005"
-      ],
-      "assumption_ids": [],
-      "open_question_ids": []
-    },
-    {
-      "title": "Over-ceiling invoices approved through discretionary enforcement",
-      "description": "The $20,000 ceiling is applied by the agent from its instructions while the schema enforces no maximum amount, and the approve rule prioritizes due-date urgency with discretion arbitrating between the rule sets. The model's approve-or-deny output is acted on as the decision with no deterministic layer holding the ceiling.",
-      "methodology": "stride-scenario-based",
-      "category": [
-        "tampering"
-      ],
-      "threat_actor_ids": [
-        "act-001"
-      ],
-      "affected_component_ids": [
-        "cmp-001"
-      ],
-      "affected_asset_ids": [
-        "ast-001"
-      ],
-      "related_data_flow_ids": [],
-      "preconditions": [
-        "the agent's decision is acted on without a validation step enforcing the ceiling"
-      ],
-      "attack_path": [
-        "submit an over-ceiling invoice with a due date inside the next week",
-        "let the urgency approve rule and discretion outweigh the deny rule"
-      ],
-      "impact": "Payments above the stated $20,000 ceiling can be authorized.",
-      "likelihood": null,
-      "confidence": "high",
-      "evidence_ids": [
-        "evd-003",
-        "evd-004"
-      ],
-      "assumption_ids": [],
-      "open_question_ids": []
-    },
-    {
-      "title": "Submitted financial data leaves through captured traces",
-      "description": "Request and tool-call traces, including HTTP request and response bodies, are captured for debugging, and invoice contents are parsed and returned to the model — so the captured bodies carry submitted financial data to the observability service.",
-      "methodology": "stride-scenario-based",
-      "category": [
-        "information_disclosure"
-      ],
-      "threat_actor_ids": [],
-      "affected_component_ids": [
-        "cmp-001",
-        "cmp-004"
-      ],
-      "affected_asset_ids": [
-        "ast-001",
-        "ast-003"
-      ],
-      "related_data_flow_ids": [
-        "df-003"
-      ],
-      "preconditions": [
-        "trace capture includes request and response bodies"
-      ],
-      "attack_path": [
-        "submit an invoice",
-        "read its contents from the captured request and response bodies"
-      ],
-      "impact": "Submitted financial data is exposed through the trace store.",
-      "likelihood": null,
-      "confidence": "high",
-      "evidence_ids": [
-        "evd-005",
-        "evd-006"
-      ],
-      "assumption_ids": [],
-      "open_question_ids": []
-    },
-    {
-      "title": "Provider credentials taken from the agent runtime",
-      "description": "The agent runs with credentials for the model provider and the observability service. An attacker who compromises the runtime holds both; how the credentials are stored, scoped, or rotated is not described.",
-      "methodology": "stride-scenario-based",
-      "category": [
-        "elevation_of_privilege"
-      ],
-      "threat_actor_ids": [],
-      "affected_component_ids": [
-        "cmp-001"
-      ],
-      "affected_asset_ids": [
-        "ast-002"
-      ],
-      "related_data_flow_ids": [],
-      "preconditions": [
-        "an attacker reaches the agent runtime or its configuration"
-      ],
-      "attack_path": [
-        "compromise the agent runtime",
-        "read the provider credentials",
-        "call the model provider and observability service as the agent"
-      ],
-      "impact": "Both third-party services can be used under the agent's identity.",
-      "likelihood": null,
-      "confidence": "medium",
-      "evidence_ids": [
-        "evd-006"
-      ],
-      "assumption_ids": [],
-      "open_question_ids": []
-    },
-    {
-      "title": "Forged submitter identity in an uploaded invoice",
-      "description": "The submitter field is a value in the uploaded document and submitters are not otherwise authenticated to the workflow. Whether anything upstream establishes who submitted is not described; a forged approved-submitter name would pass the case-insensitive list validation.",
-      "methodology": "stride-scenario-based",
-      "category": [
-        "spoofing"
-      ],
-      "threat_actor_ids": [
-        "act-001"
-      ],
-      "affected_component_ids": [
-        "cmp-002"
-      ],
-      "affected_asset_ids": [
-        "ast-001"
-      ],
-      "related_data_flow_ids": [
-        "df-001"
-      ],
-      "preconditions": [
-        "no upstream system binds the submitter field to an authenticated identity"
-      ],
-      "attack_path": [
-        "write an approved submitter's name into the invoice",
-        "submit it through the workflow"
-      ],
-      "impact": "Invoices are processed under an identity the submitter does not hold.",
-      "likelihood": null,
-      "confidence": "medium",
-      "evidence_ids": [
-        "evd-005"
-      ],
-      "assumption_ids": [],
-      "open_question_ids": []
-    }
-  ]
+  "schema": "ThreatAnalysisProposal",
+  "response": {
+    "threats": [
+      {
+        "title": "Submitted invoice content steers the approval decision",
+        "description": "The invoice file's contents are parsed and returned to the model as the invoice details, and a denial is followed up in the same conversation with an urgency note asking the agent to reconsider. A submitter who writes steering content into the invoice reaches the model twice with it, and the decision policy explicitly leaves the deny rules negotiable by discretion.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "tampering"
+        ],
+        "threat_actor_ids": [
+          "act-001"
+        ],
+        "affected_component_ids": [
+          "cmp-001"
+        ],
+        "affected_asset_ids": [
+          "ast-001"
+        ],
+        "related_data_flow_ids": [
+          "df-001"
+        ],
+        "preconditions": [
+          "the workflow relays submitted content and a reconsideration request into the model conversation"
+        ],
+        "attack_path": [
+          "write steering content into the submitted invoice fields",
+          "submit the invoice",
+          "let the denial follow-up press the agent to reconsider with the content still in context"
+        ],
+        "impact": "Invoices are approved against the stated deny rules.",
+        "likelihood": null,
+        "confidence": "high",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-005"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Over-ceiling invoices approved through discretionary enforcement",
+        "description": "The $20,000 ceiling is applied by the agent from its instructions while the schema enforces no maximum amount, and the approve rule prioritizes due-date urgency with discretion arbitrating between the rule sets. The model's approve-or-deny output is acted on as the decision with no deterministic layer holding the ceiling.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "tampering"
+        ],
+        "threat_actor_ids": [
+          "act-001"
+        ],
+        "affected_component_ids": [
+          "cmp-001"
+        ],
+        "affected_asset_ids": [
+          "ast-001"
+        ],
+        "related_data_flow_ids": [],
+        "preconditions": [
+          "the agent's decision is acted on without a validation step enforcing the ceiling"
+        ],
+        "attack_path": [
+          "submit an over-ceiling invoice with a due date inside the next week",
+          "let the urgency approve rule and discretion outweigh the deny rule"
+        ],
+        "impact": "Payments above the stated $20,000 ceiling can be authorized.",
+        "likelihood": null,
+        "confidence": "high",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Submitted financial data leaves through captured traces",
+        "description": "Request and tool-call traces, including HTTP request and response bodies, are captured for debugging, and invoice contents are parsed and returned to the model \u2014 so the captured bodies carry submitted financial data to the observability service.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "information_disclosure"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-001",
+          "cmp-004"
+        ],
+        "affected_asset_ids": [
+          "ast-001",
+          "ast-003"
+        ],
+        "related_data_flow_ids": [
+          "df-003"
+        ],
+        "preconditions": [
+          "trace capture includes request and response bodies"
+        ],
+        "attack_path": [
+          "submit an invoice",
+          "read its contents from the captured request and response bodies"
+        ],
+        "impact": "Submitted financial data is exposed through the trace store.",
+        "likelihood": null,
+        "confidence": "high",
+        "evidence_ids": [
+          "evd-005",
+          "evd-006"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Provider credentials taken from the agent runtime",
+        "description": "The agent runs with credentials for the model provider and the observability service. An attacker who compromises the runtime holds both; how the credentials are stored, scoped, or rotated is not described.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "elevation_of_privilege"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-001"
+        ],
+        "affected_asset_ids": [
+          "ast-002"
+        ],
+        "related_data_flow_ids": [],
+        "preconditions": [
+          "an attacker reaches the agent runtime or its configuration"
+        ],
+        "attack_path": [
+          "compromise the agent runtime",
+          "read the provider credentials",
+          "call the model provider and observability service as the agent"
+        ],
+        "impact": "Both third-party services can be used under the agent's identity.",
+        "likelihood": null,
+        "confidence": "medium",
+        "evidence_ids": [
+          "evd-006"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Forged submitter identity in an uploaded invoice",
+        "description": "The submitter field is a value in the uploaded document and submitters are not otherwise authenticated to the workflow. Whether anything upstream establishes who submitted is not described; a forged approved-submitter name would pass the case-insensitive list validation.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "spoofing"
+        ],
+        "threat_actor_ids": [
+          "act-001"
+        ],
+        "affected_component_ids": [
+          "cmp-002"
+        ],
+        "affected_asset_ids": [
+          "ast-001"
+        ],
+        "related_data_flow_ids": [
+          "df-001"
+        ],
+        "preconditions": [
+          "no upstream system binds the submitter field to an authenticated identity"
+        ],
+        "attack_path": [
+          "write an approved submitter's name into the invoice",
+          "submit it through the workflow"
+        ],
+        "impact": "Invoices are processed under an identity the submitter does not hold.",
+        "likelihood": null,
+        "confidence": "medium",
+        "evidence_ids": [
+          "evd-005"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      }
+    ]
+  }
 }

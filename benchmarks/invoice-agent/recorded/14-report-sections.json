@@ -1,19 +1,22 @@
 {
-  "executive_summary": "This assessment reviewed the invoice agent from its supplied overview and approved three findings, described below. What could not be determined from the documents is recorded as documentation gaps rather than concluded.",
-  "system_overview": "The system is an LLM-based finance assistant that reads a submitted invoice through its processing tool and answers with an approve or deny decision, calling a hosted model provider and sending traces to an observability service, as the supplied document describes.",
-  "risk_summary": "The approved findings concern submitted content steering the approval decision through the model conversation, a spending ceiling enforced by model discretion rather than validation, and traces that carry submitted financial data to a third-party service.",
-  "limitations": [
-    {
-      "limitation_id": "lim-assumptions-fnd-001",
-      "text": "fnd-001 rests on stated assumptions: No common false positive applies: the weakness is submitted content steering a discretionary decision through the conversation, not absent input sanitization where capability is restricted, nor absent detection of specific injection phrasings — the conclusions the catalog names as false positives."
-    },
-    {
-      "limitation_id": "lim-assumptions-fnd-002",
-      "text": "fnd-002 rests on stated assumptions: No common false positive applies: the ceiling is documented as applied by instruction while the schema enforces no maximum — a documented absence of validation on the acted-on output, not absent human review or absent content filtering, which the catalog names as false positives."
-    },
-    {
-      "limitation_id": "lim-assumptions-fnd-003",
-      "text": "fnd-003 rests on stated assumptions: No common false positive applies: full request and response bodies are documented as captured, which is not an absent field-level redaction list where identifier-only logging is documented, nor an absent log retention period — the false positives the catalog names."
-    }
-  ]
+  "schema": "ReportSections",
+  "response": {
+    "executive_summary": "This assessment reviewed the invoice agent from its supplied overview and approved three findings, described below. What could not be determined from the documents is recorded as documentation gaps rather than concluded.",
+    "system_overview": "The system is an LLM-based finance assistant that reads a submitted invoice through its processing tool and answers with an approve or deny decision, calling a hosted model provider and sending traces to an observability service, as the supplied document describes.",
+    "risk_summary": "The approved findings concern submitted content steering the approval decision through the model conversation, a spending ceiling enforced by model discretion rather than validation, and traces that carry submitted financial data to a third-party service.",
+    "limitations": [
+      {
+        "limitation_id": "lim-assumptions-fnd-001",
+        "text": "fnd-001 rests on stated assumptions: No common false positive applies: the weakness is submitted content steering a discretionary decision through the conversation, not absent input sanitization where capability is restricted, nor absent detection of specific injection phrasings \u2014 the conclusions the catalog names as false positives."
+      },
+      {
+        "limitation_id": "lim-assumptions-fnd-002",
+        "text": "fnd-002 rests on stated assumptions: No common false positive applies: the ceiling is documented as applied by instruction while the schema enforces no maximum \u2014 a documented absence of validation on the acted-on output, not absent human review or absent content filtering, which the catalog names as false positives."
+      },
+      {
+        "limitation_id": "lim-assumptions-fnd-003",
+        "text": "fnd-003 rests on stated assumptions: No common false positive applies: full request and response bodies are documented as captured, which is not an absent field-level redaction list where identifier-only logging is documented, nor an absent log retention period \u2014 the false positives the catalog names."
+      }
+    ]
+  }
 }

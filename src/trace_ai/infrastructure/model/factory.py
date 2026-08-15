@@ -29,6 +29,7 @@ if TYPE_CHECKING:
     from pydantic import BaseModel
 
     from trace_ai.infrastructure.model.profiles import ModelProfile
+    from trace_ai.infrastructure.model.recorded import RecordedResponse
     from trace_ai.infrastructure.model.seam import (
         GenerationSettings,
         ModelCapability,
@@ -92,7 +93,9 @@ class OverlayRoutingModel:
         return model.generate(prompt=prompt, schema=schema, settings=settings, system=system)
 
 
-def build_model(profile: ModelProfile, *, responses: Sequence[BaseModel] = ()) -> StructuredModel:
+def build_model(
+    profile: ModelProfile, *, responses: Sequence[BaseModel | RecordedResponse] = ()
+) -> StructuredModel:
     """The model this profile names.
 
     `responses` are the queued outcomes for the fake provider and are ignored by a real one — a

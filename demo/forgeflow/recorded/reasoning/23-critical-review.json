@@ -1,85 +1,88 @@
 {
-  "critiques": [
-    {
-      "subject_type": "documentation_gap",
-      "subject_id": "gap-010",
-      "critique_type": "duplicate",
-      "description": "gap-010 records the same unresolved question as gap-008 in this group: evd-133 states that externally visible AI-generated output is reviewed before publication, while evd-010 and evd-082 describe publication as an automatic sequence following schema validation with no review step, evd-151 records human review as unknown, and evd-054 lists AI-output approval requirements among known documentation gaps. Both records cite that same passage set and request substantially the same three items - whether a human approves each published comment, what validation is applied to comment content beyond schema/size/formatting, and reconciliation of evd-133 with evd-010 and evd-082. gap-014 is a third instance of the same question, differing only in the threat it is attached to.",
-      "rationale": "This is one question about one publication path, carried three times because three threats traverse that path. A single answer from the reviewer (evd-133 versus evd-010/evd-082) resolves all three records, so keeping them separate produces three gap findings resting on identical evidence and triplicates the same evidence request to the customer. Consolidating into one gap that lists the affected threats among its related objects preserves the record without the duplication.",
-      "evidence_ids": [
-        "evd-133",
-        "evd-010",
-        "evd-082",
-        "evd-151",
-        "evd-054"
-      ],
-      "recommended_action": "merge",
-      "confidence": "medium"
-    },
-    {
-      "subject_type": "documentation_gap",
-      "subject_id": "gap-014",
-      "critique_type": "duplicate",
-      "description": "gap-014 states the same contradiction as gap-008 and gap-010: evd-133 says externally visible AI-generated output is reviewed before publication; evd-082 and evd-010 describe schema validation followed directly by formatting and posting; evd-151 records human review as unknown; evd-054 lists AI-output approval requirements as a documentation gap. Its evidence set is identical and its requested evidence differs only by one item - a description of what an automated review would evaluate - which folds into the same request.",
-      "rationale": "Three gap records asking the reviewer to reconcile evd-133 with evd-010 and evd-082 will each generate a separate finding on the same passages, and the reviewer's single decision about which document is authoritative disposes of all three. Merging into one record (retaining gap-014's additional request about what an automated review evaluates) keeps everything asked without asking it three times.",
-      "evidence_ids": [
-        "evd-133",
-        "evd-082",
-        "evd-010",
-        "evd-151",
-        "evd-054"
-      ],
-      "recommended_action": "merge",
-      "confidence": "medium"
-    },
-    {
-      "subject_type": "documentation_gap",
-      "subject_id": "gap-011",
-      "critique_type": "duplicate",
-      "description": "gap-011 asks for the mechanism enforcing the repository-content instruction boundary named in evd-049, citing evd-049, evd-053, evd-006 and evd-081, and requests prompt-construction detail at the level of message roles, a statement of how untrusted content is isolated, and any restriction on what a redirected task could cause the pipeline to do. gap-007 in this group asks for the same three things from the same passages, adding evd-115, evd-116 and evd-054 as context. The two records also assign different severities to the same undocumented mechanism - gap-007 high, gap-011 medium.",
-      "rationale": "Both records turn on the single fact that no reviewed passage describes how the boundary in evd-049 is enforced when evd-006 and evd-081 list instructions and retrieved content as sections of one constructed request; one answer settles both. The divergent severities on an identical question are themselves an inconsistency a reviewer would have to resolve, and merging removes it rather than leaving two different weightings of the same gap in the output.",
-      "evidence_ids": [
-        "evd-049",
-        "evd-053",
-        "evd-006",
-        "evd-081",
-        "evd-054"
-      ],
-      "recommended_action": "merge",
-      "confidence": "medium"
-    },
-    {
-      "subject_type": "control_mapping",
-      "subject_id": "map-011",
-      "critique_type": "unsupported_claim",
-      "description": "map-011 concludes req-AI-003 'satisfied' on the strength of category-level statements of intent, and the passages cited do not carry that conclusion. evd-007 asserts each request contains 'only the information required for the requested analysis' and evd-129 that 'only repository content required for analysis is transmitted', but evd-005 says ForgeFlow 'attempts to avoid sending unnecessary repository content' and evd-063 that it 'attempts to retrieve only repository content relevant to the requested analysis' - statements of attempt, not of an enforced limit. evd-005 further makes actual inclusion depend on pull-request size, repository configuration, supported file types, analysis profile and provider input limits, none of which is documented as a rule set. The single control cited, ctl-007, carries implementation_status 'claimed' and validation_status 'not_evaluated', and its own recorded limitation is that necessity is asserted at category level rather than justified per content type.",
-      "rationale": "The mapping's own assumption concedes the scope statement is 'an assertion by the system's own documentation rather than a demonstrated property', and eas-039 reaches partially_supported on the same reading, yet the satisfaction status remains the strongest available value. 'Satisfied' here suppresses a live question on the very channel this threat uses: evd-005 and evd-063 keep repository documentation and configuration files in scope by design, which map-011's applicability reason itself identifies as the route by which a contributor places instruction-shaped text into the request. A status of partially_satisfied or unverified would match the cited passages; the change is actionable and affects whether req-AI-003 reaches findings at all.",
-      "evidence_ids": [
-        "evd-005",
-        "evd-007",
-        "evd-063",
-        "evd-099",
-        "evd-129",
-        "evd-038"
-      ],
-      "recommended_action": "revise",
-      "confidence": "medium"
-    },
-    {
-      "subject_type": "control_mapping",
-      "subject_id": "map-009",
-      "critique_type": "contradictory_analysis",
-      "description": "map-009's suppressed_conclusion gives two grounds for declining the negative reading: the documented structural validation of provider responses (evd-009, evd-081, ctl-004) and 'the absence of any described tool or action capability granted to the model'. Neither ground is established by the cited passages in the direction used. The second is an argument from silence run in the mitigating direction, and gap-007 in this same lineage records exactly that question as unanswered, requesting 'a statement of what actions or capabilities the model is granted, so that the effect of a redirected task can be bounded'. The first ground is documented as structural only - evd-009 lists required fields, schema conformance, maximum response size and basic formatting rules, and evd-151 records semantic validation as not documented - so it cannot bear on whether a response was shaped by instructions embedded in the analysed content, which is the conclusion being suppressed.",
-      "rationale": "The suppression catalog entry named is 'absent input sanitization where model capability is restricted and output is validated', and on this evidence neither condition is documented: capability restriction is inferred from silence, and validation is established only as structural. The outcome may well remain 'unverified' - evd-049 and evd-006 leave the enforcement mechanism genuinely undescribed, and silence is not proof of absence - so this critique does not ask for the negative conclusion to be drawn. It asks that the recorded basis be corrected, because as written it presents an unknown (what the model is permitted to do) as a mitigating fact, which is the same inference from silence the suppression rule exists to block and which contradicts gap-007's own statement that the answer is missing.",
-      "evidence_ids": [
-        "evd-009",
-        "evd-081",
-        "evd-151",
-        "evd-049",
-        "evd-006"
-      ],
-      "recommended_action": "revise",
-      "confidence": "medium"
-    }
-  ]
+  "schema": "CriticalReviewProposal",
+  "response": {
+    "critiques": [
+      {
+        "subject_type": "documentation_gap",
+        "subject_id": "gap-010",
+        "critique_type": "duplicate",
+        "description": "gap-010 records the same unresolved question as gap-008 in this group: evd-133 states that externally visible AI-generated output is reviewed before publication, while evd-010 and evd-082 describe publication as an automatic sequence following schema validation with no review step, evd-151 records human review as unknown, and evd-054 lists AI-output approval requirements among known documentation gaps. Both records cite that same passage set and request substantially the same three items - whether a human approves each published comment, what validation is applied to comment content beyond schema/size/formatting, and reconciliation of evd-133 with evd-010 and evd-082. gap-014 is a third instance of the same question, differing only in the threat it is attached to.",
+        "rationale": "This is one question about one publication path, carried three times because three threats traverse that path. A single answer from the reviewer (evd-133 versus evd-010/evd-082) resolves all three records, so keeping them separate produces three gap findings resting on identical evidence and triplicates the same evidence request to the customer. Consolidating into one gap that lists the affected threats among its related objects preserves the record without the duplication.",
+        "evidence_ids": [
+          "evd-133",
+          "evd-010",
+          "evd-082",
+          "evd-151",
+          "evd-054"
+        ],
+        "recommended_action": "merge",
+        "confidence": "medium"
+      },
+      {
+        "subject_type": "documentation_gap",
+        "subject_id": "gap-014",
+        "critique_type": "duplicate",
+        "description": "gap-014 states the same contradiction as gap-008 and gap-010: evd-133 says externally visible AI-generated output is reviewed before publication; evd-082 and evd-010 describe schema validation followed directly by formatting and posting; evd-151 records human review as unknown; evd-054 lists AI-output approval requirements as a documentation gap. Its evidence set is identical and its requested evidence differs only by one item - a description of what an automated review would evaluate - which folds into the same request.",
+        "rationale": "Three gap records asking the reviewer to reconcile evd-133 with evd-010 and evd-082 will each generate a separate finding on the same passages, and the reviewer's single decision about which document is authoritative disposes of all three. Merging into one record (retaining gap-014's additional request about what an automated review evaluates) keeps everything asked without asking it three times.",
+        "evidence_ids": [
+          "evd-133",
+          "evd-082",
+          "evd-010",
+          "evd-151",
+          "evd-054"
+        ],
+        "recommended_action": "merge",
+        "confidence": "medium"
+      },
+      {
+        "subject_type": "documentation_gap",
+        "subject_id": "gap-011",
+        "critique_type": "duplicate",
+        "description": "gap-011 asks for the mechanism enforcing the repository-content instruction boundary named in evd-049, citing evd-049, evd-053, evd-006 and evd-081, and requests prompt-construction detail at the level of message roles, a statement of how untrusted content is isolated, and any restriction on what a redirected task could cause the pipeline to do. gap-007 in this group asks for the same three things from the same passages, adding evd-115, evd-116 and evd-054 as context. The two records also assign different severities to the same undocumented mechanism - gap-007 high, gap-011 medium.",
+        "rationale": "Both records turn on the single fact that no reviewed passage describes how the boundary in evd-049 is enforced when evd-006 and evd-081 list instructions and retrieved content as sections of one constructed request; one answer settles both. The divergent severities on an identical question are themselves an inconsistency a reviewer would have to resolve, and merging removes it rather than leaving two different weightings of the same gap in the output.",
+        "evidence_ids": [
+          "evd-049",
+          "evd-053",
+          "evd-006",
+          "evd-081",
+          "evd-054"
+        ],
+        "recommended_action": "merge",
+        "confidence": "medium"
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-011",
+        "critique_type": "unsupported_claim",
+        "description": "map-011 concludes req-AI-003 'satisfied' on the strength of category-level statements of intent, and the passages cited do not carry that conclusion. evd-007 asserts each request contains 'only the information required for the requested analysis' and evd-129 that 'only repository content required for analysis is transmitted', but evd-005 says ForgeFlow 'attempts to avoid sending unnecessary repository content' and evd-063 that it 'attempts to retrieve only repository content relevant to the requested analysis' - statements of attempt, not of an enforced limit. evd-005 further makes actual inclusion depend on pull-request size, repository configuration, supported file types, analysis profile and provider input limits, none of which is documented as a rule set. The single control cited, ctl-007, carries implementation_status 'claimed' and validation_status 'not_evaluated', and its own recorded limitation is that necessity is asserted at category level rather than justified per content type.",
+        "rationale": "The mapping's own assumption concedes the scope statement is 'an assertion by the system's own documentation rather than a demonstrated property', and eas-039 reaches partially_supported on the same reading, yet the satisfaction status remains the strongest available value. 'Satisfied' here suppresses a live question on the very channel this threat uses: evd-005 and evd-063 keep repository documentation and configuration files in scope by design, which map-011's applicability reason itself identifies as the route by which a contributor places instruction-shaped text into the request. A status of partially_satisfied or unverified would match the cited passages; the change is actionable and affects whether req-AI-003 reaches findings at all.",
+        "evidence_ids": [
+          "evd-005",
+          "evd-007",
+          "evd-063",
+          "evd-099",
+          "evd-129",
+          "evd-038"
+        ],
+        "recommended_action": "revise",
+        "confidence": "medium"
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-009",
+        "critique_type": "contradictory_analysis",
+        "description": "map-009's suppressed_conclusion gives two grounds for declining the negative reading: the documented structural validation of provider responses (evd-009, evd-081, ctl-004) and 'the absence of any described tool or action capability granted to the model'. Neither ground is established by the cited passages in the direction used. The second is an argument from silence run in the mitigating direction, and gap-007 in this same lineage records exactly that question as unanswered, requesting 'a statement of what actions or capabilities the model is granted, so that the effect of a redirected task can be bounded'. The first ground is documented as structural only - evd-009 lists required fields, schema conformance, maximum response size and basic formatting rules, and evd-151 records semantic validation as not documented - so it cannot bear on whether a response was shaped by instructions embedded in the analysed content, which is the conclusion being suppressed.",
+        "rationale": "The suppression catalog entry named is 'absent input sanitization where model capability is restricted and output is validated', and on this evidence neither condition is documented: capability restriction is inferred from silence, and validation is established only as structural. The outcome may well remain 'unverified' - evd-049 and evd-006 leave the enforcement mechanism genuinely undescribed, and silence is not proof of absence - so this critique does not ask for the negative conclusion to be drawn. It asks that the recorded basis be corrected, because as written it presents an unknown (what the model is permitted to do) as a mitigating fact, which is the same inference from silence the suppression rule exists to block and which contradicts gap-007's own statement that the answer is missing.",
+        "evidence_ids": [
+          "evd-009",
+          "evd-081",
+          "evd-151",
+          "evd-049",
+          "evd-006"
+        ],
+        "recommended_action": "revise",
+        "confidence": "medium"
+      }
+    ]
+  }
 }

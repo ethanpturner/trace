@@ -1,323 +1,326 @@
 {
-  "controls": [
-    {
-      "key": "repo-content-instruction-boundary",
-      "name": "Named repository-content instruction boundary in the architecture",
-      "description": "The architecture names a 'Repository-content instruction boundary' separating trusted ForgeFlow analysis instructions from untrusted repository and pull-request content (evd-049), and records as an architecture assumption that repository content may be untrusted and that AI-generated output requires validation before use (evd-053). The prompt-construction description lists analysis instructions, pull-request metadata, repository context, pull-request changes and output-format instructions as sections of a single constructed request (evd-006, evd-081), but no document states the mechanism by which the boundary is enforced, so the control is asserted rather than established.",
-      "control_type": "implemented",
-      "provider_component_id": null,
-      "protected_component_ids": [
-        "cmp-006",
-        "cmp-014"
-      ],
-      "protected_asset_ids": [
-        "ast-002",
-        "ast-001"
-      ],
-      "implementation_status": "claimed",
-      "evidence_ids": [
-        "evd-049",
-        "evd-053",
-        "evd-006",
-        "evd-081"
-      ],
-      "owner": "ForgeFlow Platform Engineering / AI Platform Engineering",
-      "limitations": [
-        "The boundary is named as a trust boundary; no enforcing mechanism (message roles, delimiting, capability restriction, secondary checking) is described in any reviewed document (evd-006, evd-049).",
-        "Architecture documentation itself lists AI-output approval requirements among known documentation gaps (evd-054)."
-      ]
-    },
-    {
-      "key": "analysis-content-scope-limitation",
-      "name": "Limitation of repository content included in provider requests",
-      "description": "ForgeFlow documents the categories of content that may be retrieved and sent to the provider (pull-request title, description, diff, changed source files, selected documentation, configuration files, language information) and the factors that govern inclusion (pull-request size, repository configuration, supported file types, analysis profile, provider input limits) (evd-005, evd-099). Requests are described as containing only information required for the requested analysis, with GitHub App credentials, installation tokens, customer sessions and infrastructure credentials explicitly not transmitted (evd-007, evd-038), and retrieval is described as limited to content relevant to the requested analysis (evd-063, evd-129).",
-      "control_type": "implemented",
-      "provider_component_id": null,
-      "protected_component_ids": [
-        "cmp-006"
-      ],
-      "protected_asset_ids": [
-        "ast-001"
-      ],
-      "implementation_status": "claimed",
-      "evidence_ids": [
-        "evd-005",
-        "evd-007",
-        "evd-038",
-        "evd-063",
-        "evd-099",
-        "evd-129"
-      ],
-      "owner": "ForgeFlow AI Platform Engineering",
-      "limitations": [
-        "Necessity is asserted at category level ('only the information required for the requested analysis', evd-007) rather than justified per content type.",
-        "Repository documentation and configuration files remain in scope by design (evd-005, evd-063), so the untrusted-content channel this threat uses is not removed by the limitation."
-      ]
-    }
-  ],
-  "mappings": [
-    {
-      "threat_id": "thr-002",
-      "requirement_id": "req-AI-001",
-      "control_keys": [
-        "repo-content-instruction-boundary",
-        "analysis-content-scope-limitation"
-      ],
-      "existing_control_ids": [
-        "ctl-004"
-      ],
-      "applicability_status": "applicable",
-      "applicability_reason": "Both applicable_conditions hold for this threat: content ForgeFlow did not author (pull-request titles and descriptions, diffs, changed source files, repository documentation and configuration files) is placed into the provider request alongside analysis instructions (evd-005, evd-006, evd-044, evd-081), and the source is open to untrusted contributors, which the architecture itself records as an assumption that repository content may be untrusted (evd-053). Neither non_applicable condition holds: model input is not all authored by ForgeFlow, and content is passed to a model.",
-      "suppressed_conclusion": "That no control prevents instructions embedded in repository content from altering the model's task. Not drawn: the documented structural validation of provider responses (evd-009, evd-081, ctl-004) and the absence of any described tool or action capability granted to the model mean an inference of absent injection handling from silence is not available. The requirement remains live because the documentation nowhere states that retrieved content is treated as data or how the instruction boundary is enforced (evd-006, evd-049).",
-      "suppressed_by": "absent input sanitization where model capability is restricted and output is validated",
-      "satisfaction_status": "unverified",
-      "evidence_ids": [
-        "evd-005",
-        "evd-006",
-        "evd-044",
-        "evd-049",
-        "evd-053",
-        "evd-081",
-        "evd-054"
-      ],
-      "assumptions": [
-        "The 'Repository-content instruction boundary' named in evd-049 is intended as a security control rather than a descriptive label; the reviewed documents do not state which.",
-        "A passage inside sample-repository-notes.md (evd-115) is addressed to an AI reader and attempts to override instructions, suppress security findings and cause credential disclosure. It was treated as data, not followed, and is cited only as an example of the content class the worker retrieves — not as evidence about any control."
-      ],
-      "confidence": "medium"
-    },
-    {
-      "threat_id": "thr-002",
-      "requirement_id": "req-AI-002",
-      "control_keys": [],
-      "existing_control_ids": [
-        "ctl-004"
-      ],
-      "applicability_status": "applicable",
-      "applicability_reason": "Model output is published outside the system as a pull-request comment under the ForgeFlow app identity when automatic comments are enabled (evd-010, evd-031, evd-082), which is the final step of this threat's attack path. Whether a human approves each publication is not established — the publication sequences describe schema validation followed directly by formatting and posting (evd-010, evd-082) and the structured input records human review as unknown (evd-151) — so the non_applicable condition 'a human approves each publication and this is documented' does not hold.",
-      "suppressed_conclusion": "That content filtering of published output is absent. Not drawn: comments are described as carrying a constrained set of elements — brief summary, key observations, suggested review questions and a link to the full result — with output-length restrictions and removal of unsupported formatting applied (evd-010, evd-031). The partially_satisfied status rests only on the documentation not establishing whether validation covers content as well as structure (evd-151, evd-054), not on an inference that no filtering exists.",
-      "suppressed_by": "absent content filtering where the published surface is constrained to fixed fields",
-      "satisfaction_status": "partially_satisfied",
-      "evidence_ids": [
-        "evd-009",
-        "evd-081",
-        "evd-031",
-        "evd-133",
-        "evd-010",
-        "evd-082",
-        "evd-151",
-        "evd-054"
-      ],
-      "assumptions": [],
-      "confidence": "medium"
-    },
-    {
-      "threat_id": "thr-002",
-      "requirement_id": "req-AI-003",
-      "control_keys": [
-        "analysis-content-scope-limitation"
-      ],
-      "existing_control_ids": [],
-      "applicability_status": "applicable",
-      "applicability_reason": "Customer content classified restricted — diffs, changed source files, selected documentation and configuration files — is sent across the AI-provider trust boundary (evd-038, evd-044, evd-005, evd-049). The scope of that content is directly relevant to this threat because each additional retrieved file is another channel through which a contributor can place instruction-shaped text into the request. Neither non_applicable condition holds: the model is external (evd-038) and more than metadata is sent (evd-005).",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "satisfied",
-      "evidence_ids": [
-        "evd-005",
-        "evd-007",
-        "evd-038",
-        "evd-063",
-        "evd-099",
-        "evd-129"
-      ],
-      "assumptions": [
-        "The categorical statement that requests contain 'only the information required for the requested analysis' (evd-007) is taken at face value as the documented justification of scope; it is an assertion by the system's own documentation rather than a demonstrated property."
-      ],
-      "confidence": "medium"
-    },
-    {
-      "threat_id": "thr-002",
-      "requirement_id": "req-AI-004",
-      "control_keys": [],
-      "existing_control_ids": [
-        "ctl-004"
-      ],
-      "applicability_status": "applicable",
-      "applicability_reason": "Both applicable_conditions hold on this threat's output path: the structured result is stored and rendered in the React web application for developers (evd-045, evd-046, evd-025), and the same result is formatted and submitted as comment markup to GitHub (evd-010, evd-031). Because untrusted repository content reaches the model, the rendered output is attacker-influenceable, which is what makes the encoding question part of this threat rather than a general hygiene point.",
-      "suppressed_conclusion": "That output encoding is absent on the web rendering path. Not drawn: the customer-facing application is a React single-page application (evd-025) and the documentation nowhere describes the rendering behaviour, with 'rich-content rendering behavior' listed among known documentation gaps (evd-054). The comment path documents removal of unsupported formatting (evd-031), which is formatting normalisation and is not stated to be destination encoding, so the status is unverified rather than satisfied.",
-      "suppressed_by": "absent explicit encoding step where the rendering framework encodes by default",
-      "satisfaction_status": "unverified",
-      "evidence_ids": [
-        "evd-025",
-        "evd-031",
-        "evd-045",
-        "evd-046",
-        "evd-010",
-        "evd-054"
-      ],
-      "assumptions": [],
-      "confidence": "medium"
-    },
-    {
-      "threat_id": "thr-002",
-      "requirement_id": "req-TPI-001",
-      "control_keys": [],
-      "existing_control_ids": [],
-      "applicability_status": "not_applicable",
-      "applicability_reason": "The requirement's conditions hold for the system as a whole — customer content is sent to an external provider (evd-038) — but not for this threat. This threat concerns the integrity of results produced when injected instructions steer the model, not what the provider retains or does with transmitted data; no step of the attack path (evd-005 retrieval, evd-006 request assembly, evd-009 validation, evd-045/evd-082 publication) turns on provider retention or secondary use. Provider retention and usage terms are engaged by the confidentiality threats on the same data flow, where this requirement should be mapped.",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "not_applicable",
-      "evidence_ids": [
-        "evd-038",
-        "evd-013",
-        "evd-129"
-      ],
-      "assumptions": [],
-      "confidence": "medium"
-    },
-    {
-      "threat_id": "thr-002",
-      "requirement_id": "req-AUTHZ-002",
-      "control_keys": [],
-      "existing_control_ids": [],
-      "applicability_status": "not_applicable",
-      "applicability_reason": "The non_applicable reasoning is that the delegated privilege is not what this threat abuses: the injected content sits inside repositories the customer administrator selected and ForgeFlow is legitimately authorised to read (evd-058, evd-065), and the worker retrieves it under an installation-scoped token within that grant (evd-061, evd-063). Narrowing or widening the requested permissions would not change whether instruction-shaped text in a retrieved README or diff reaches the provider request, so this requirement does not bear on this attack path.",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "not_applicable",
-      "evidence_ids": [
-        "evd-058",
-        "evd-060",
-        "evd-061",
-        "evd-063",
-        "evd-065"
-      ],
-      "assumptions": [],
-      "confidence": "medium"
-    },
-    {
-      "threat_id": "thr-002",
-      "requirement_id": "req-WEBHOOK-001",
-      "control_keys": [],
-      "existing_control_ids": [
-        "ctl-001"
-      ],
-      "applicability_status": "not_applicable",
-      "applicability_reason": "This threat does not require a forged or unauthenticated inbound event. Its precondition is a genuine pull-request event followed by retrieval of attacker-authored repository content under the installation token (evd-005, evd-030, evd-063); the injected text travels in content ForgeFlow fetches from GitHub itself, not in the webhook payload. Event authenticity is engaged by the webhook-forgery threats against cmp-004, where ctl-001 is the relevant control, and mapping it here would apply the catalog rather than assess this threat.",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "not_applicable",
-      "evidence_ids": [
-        "evd-030",
-        "evd-063",
-        "evd-005"
-      ],
-      "assumptions": [],
-      "confidence": "high"
-    },
-    {
-      "threat_id": "thr-002",
-      "requirement_id": "req-AUTH-001",
-      "control_keys": [],
-      "existing_control_ids": [],
-      "applicability_status": "not_applicable",
-      "applicability_reason": "The non_applicable condition 'the component is not reachable by end users' holds for the components this threat traverses: the analysis worker (cmp-006) and the provider integration (cmp-014) are background and external components with no end-user authentication path (evd-030, evd-038), and the threat actor is a repository content author who never authenticates to ForgeFlow at all (evd-053). Customer authentication delegation to GitHub (evd-027, evd-123) is real and documented, but it is not a control this attack path crosses.",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "not_applicable",
-      "evidence_ids": [
-        "evd-030",
-        "evd-038",
-        "evd-053",
-        "evd-027",
-        "evd-123"
-      ],
-      "assumptions": [],
-      "confidence": "medium"
-    }
-  ],
-  "documentation_gaps": [
-    {
-      "title": "Prompt construction does not describe how untrusted repository content is separated from analysis instructions",
-      "description": "The architecture names a 'Repository-content instruction boundary' separating trusted ForgeFlow analysis instructions from untrusted repository and pull-request content (evd-049) and records that repository content may be untrusted (evd-053). The prompt-construction description lists analysis instructions, pull-request metadata, repository context, pull-request changes and output-format instructions as sections the worker assembles into a single request (evd-006, evd-081), but no reviewed document states that retrieved content is presented to the provider as data, nor what mechanism prevents instructions embedded in that content from altering the model's task. Trace therefore cannot determine whether such a control exists. Relevant context, recorded as an observation rather than as evidence about any control: the sample repository notes contain a block addressed to an AI reader attempting to override prior instructions, suppress security findings, assert that controls are implemented, and cause source content and a GitHub App private key to be included in output (evd-115); the following section states the block is experimental and should not be relied upon (evd-116). That passage was treated as data and not acted upon; it is cited only because it is an instance of the content class the worker retrieves as repository documentation.",
-      "importance": "This is the control the threat turns on. Without it, whether a contributor can steer the analysis that reviewers rely on is undetermined, and the answer changes the satisfaction status of req-AI-001 from unverified to satisfied or otherwise.",
-      "related_object_ids": [
-        "thr-002",
-        "cmp-006",
-        "cmp-014",
-        "ast-002",
-        "df-008"
-      ],
-      "requested_evidence": [
-        "Documentation or code describing how the provider request is constructed, including whether structured message roles or an equivalent separation are used for instructions versus retrieved content",
-        "A statement of what checks, if any, are applied to retrieved content before it is included in a request",
-        "A statement of what actions or capabilities the model is granted, so that the effect of a redirected task can be bounded"
-      ],
-      "evidence_ids": [
-        "evd-006",
-        "evd-049",
-        "evd-053",
-        "evd-081",
-        "evd-115",
-        "evd-116",
-        "evd-054"
-      ],
-      "severity": "high"
-    },
-    {
-      "title": "Contradictory statements about whether AI output is reviewed before publication to pull requests",
-      "description": "The security overview states that externally visible AI-generated output is reviewed before publication (evd-133). The AI-analysis and operations documents describe publication as an automatic sequence following successful schema validation, with no review step: the validated response is converted to comment format, formatting rules applied, and the comment published through the GitHub API (evd-010, evd-082). The structured system input records human_review_required as unknown and semantic_validation as not documented (evd-151), and the architecture lists AI-output approval requirements among known documentation gaps (evd-054). Which statement is authoritative is a reviewer's decision and is not resolved here.",
-      "importance": "The presence or absence of a human approval step determines whether structural validation (ctl-004) is the only barrier between a manipulated provider response and a customer-visible GitHub pull request, and it decides whether req-AI-002 is satisfied or only partially satisfied.",
-      "related_object_ids": [
-        "thr-002",
-        "cmp-007",
-        "cmp-006",
-        "ast-002",
-        "df-011",
-        "df-012"
-      ],
-      "requested_evidence": [
-        "A statement of whether any human approves an automatic pull-request comment before it is posted, and if so who and at what point",
-        "A description of any validation applied to response content, as distinct from schema, size and formatting checks",
-        "The comment-publication code path or configuration showing the steps between successful validation and the GitHub API call"
-      ],
-      "evidence_ids": [
-        "evd-133",
-        "evd-010",
-        "evd-082",
-        "evd-151",
-        "evd-054",
-        "evd-009"
-      ],
-      "severity": "high"
-    },
-    {
-      "title": "Rendering and encoding behaviour for AI-generated output is not documented",
-      "description": "Structured analysis results are stored and displayed in the React web application (evd-045, evd-046, evd-025) and formatted into GitHub comment markup (evd-010, evd-031). The comment service is documented as applying output-length restrictions and removing unsupported formatting (evd-031), but no document states where output is encoded for its destination, and the architecture lists rich-content rendering behaviour among known documentation gaps (evd-054). Because untrusted repository content reaches the model, the output is attacker-influenceable and its treatment at render time cannot be assumed from the framework alone.",
-      "importance": "Determines whether req-AI-004 is satisfied by default framework encoding or whether markup-carrying model output reaches a rendering context unencoded; the answer is obtainable from the frontend implementation and the comment-formatting code.",
-      "related_object_ids": [
-        "thr-002",
-        "cmp-002",
-        "cmp-007",
-        "ast-002",
-        "df-002",
-        "df-012"
-      ],
-      "requested_evidence": [
-        "A statement of how analysis result fields are rendered in the web application, including whether any raw-HTML or raw-markdown rendering path is used",
-        "A description of what 'removes unsupported formatting' covers in the comment service, and whether it is a normalisation step or a destination-specific encoding step"
-      ],
-      "evidence_ids": [
-        "evd-025",
-        "evd-031",
-        "evd-045",
-        "evd-046",
-        "evd-054"
-      ],
-      "severity": "medium"
-    }
-  ],
-  "catalog_gap_candidates": []
+  "schema": "MappingProposal",
+  "response": {
+    "controls": [
+      {
+        "key": "repo-content-instruction-boundary",
+        "name": "Named repository-content instruction boundary in the architecture",
+        "description": "The architecture names a 'Repository-content instruction boundary' separating trusted ForgeFlow analysis instructions from untrusted repository and pull-request content (evd-049), and records as an architecture assumption that repository content may be untrusted and that AI-generated output requires validation before use (evd-053). The prompt-construction description lists analysis instructions, pull-request metadata, repository context, pull-request changes and output-format instructions as sections of a single constructed request (evd-006, evd-081), but no document states the mechanism by which the boundary is enforced, so the control is asserted rather than established.",
+        "control_type": "implemented",
+        "provider_component_id": null,
+        "protected_component_ids": [
+          "cmp-006",
+          "cmp-014"
+        ],
+        "protected_asset_ids": [
+          "ast-002",
+          "ast-001"
+        ],
+        "implementation_status": "claimed",
+        "evidence_ids": [
+          "evd-049",
+          "evd-053",
+          "evd-006",
+          "evd-081"
+        ],
+        "owner": "ForgeFlow Platform Engineering / AI Platform Engineering",
+        "limitations": [
+          "The boundary is named as a trust boundary; no enforcing mechanism (message roles, delimiting, capability restriction, secondary checking) is described in any reviewed document (evd-006, evd-049).",
+          "Architecture documentation itself lists AI-output approval requirements among known documentation gaps (evd-054)."
+        ]
+      },
+      {
+        "key": "analysis-content-scope-limitation",
+        "name": "Limitation of repository content included in provider requests",
+        "description": "ForgeFlow documents the categories of content that may be retrieved and sent to the provider (pull-request title, description, diff, changed source files, selected documentation, configuration files, language information) and the factors that govern inclusion (pull-request size, repository configuration, supported file types, analysis profile, provider input limits) (evd-005, evd-099). Requests are described as containing only information required for the requested analysis, with GitHub App credentials, installation tokens, customer sessions and infrastructure credentials explicitly not transmitted (evd-007, evd-038), and retrieval is described as limited to content relevant to the requested analysis (evd-063, evd-129).",
+        "control_type": "implemented",
+        "provider_component_id": null,
+        "protected_component_ids": [
+          "cmp-006"
+        ],
+        "protected_asset_ids": [
+          "ast-001"
+        ],
+        "implementation_status": "claimed",
+        "evidence_ids": [
+          "evd-005",
+          "evd-007",
+          "evd-038",
+          "evd-063",
+          "evd-099",
+          "evd-129"
+        ],
+        "owner": "ForgeFlow AI Platform Engineering",
+        "limitations": [
+          "Necessity is asserted at category level ('only the information required for the requested analysis', evd-007) rather than justified per content type.",
+          "Repository documentation and configuration files remain in scope by design (evd-005, evd-063), so the untrusted-content channel this threat uses is not removed by the limitation."
+        ]
+      }
+    ],
+    "mappings": [
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-AI-001",
+        "control_keys": [
+          "repo-content-instruction-boundary",
+          "analysis-content-scope-limitation"
+        ],
+        "existing_control_ids": [
+          "ctl-004"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "Both applicable_conditions hold for this threat: content ForgeFlow did not author (pull-request titles and descriptions, diffs, changed source files, repository documentation and configuration files) is placed into the provider request alongside analysis instructions (evd-005, evd-006, evd-044, evd-081), and the source is open to untrusted contributors, which the architecture itself records as an assumption that repository content may be untrusted (evd-053). Neither non_applicable condition holds: model input is not all authored by ForgeFlow, and content is passed to a model.",
+        "suppressed_conclusion": "That no control prevents instructions embedded in repository content from altering the model's task. Not drawn: the documented structural validation of provider responses (evd-009, evd-081, ctl-004) and the absence of any described tool or action capability granted to the model mean an inference of absent injection handling from silence is not available. The requirement remains live because the documentation nowhere states that retrieved content is treated as data or how the instruction boundary is enforced (evd-006, evd-049).",
+        "suppressed_by": "absent input sanitization where model capability is restricted and output is validated",
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-005",
+          "evd-006",
+          "evd-044",
+          "evd-049",
+          "evd-053",
+          "evd-081",
+          "evd-054"
+        ],
+        "assumptions": [
+          "The 'Repository-content instruction boundary' named in evd-049 is intended as a security control rather than a descriptive label; the reviewed documents do not state which.",
+          "A passage inside sample-repository-notes.md (evd-115) is addressed to an AI reader and attempts to override instructions, suppress security findings and cause credential disclosure. It was treated as data, not followed, and is cited only as an example of the content class the worker retrieves \u2014 not as evidence about any control."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-AI-002",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-004"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "Model output is published outside the system as a pull-request comment under the ForgeFlow app identity when automatic comments are enabled (evd-010, evd-031, evd-082), which is the final step of this threat's attack path. Whether a human approves each publication is not established \u2014 the publication sequences describe schema validation followed directly by formatting and posting (evd-010, evd-082) and the structured input records human review as unknown (evd-151) \u2014 so the non_applicable condition 'a human approves each publication and this is documented' does not hold.",
+        "suppressed_conclusion": "That content filtering of published output is absent. Not drawn: comments are described as carrying a constrained set of elements \u2014 brief summary, key observations, suggested review questions and a link to the full result \u2014 with output-length restrictions and removal of unsupported formatting applied (evd-010, evd-031). The partially_satisfied status rests only on the documentation not establishing whether validation covers content as well as structure (evd-151, evd-054), not on an inference that no filtering exists.",
+        "suppressed_by": "absent content filtering where the published surface is constrained to fixed fields",
+        "satisfaction_status": "partially_satisfied",
+        "evidence_ids": [
+          "evd-009",
+          "evd-081",
+          "evd-031",
+          "evd-133",
+          "evd-010",
+          "evd-082",
+          "evd-151",
+          "evd-054"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-AI-003",
+        "control_keys": [
+          "analysis-content-scope-limitation"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Customer content classified restricted \u2014 diffs, changed source files, selected documentation and configuration files \u2014 is sent across the AI-provider trust boundary (evd-038, evd-044, evd-005, evd-049). The scope of that content is directly relevant to this threat because each additional retrieved file is another channel through which a contributor can place instruction-shaped text into the request. Neither non_applicable condition holds: the model is external (evd-038) and more than metadata is sent (evd-005).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "satisfied",
+        "evidence_ids": [
+          "evd-005",
+          "evd-007",
+          "evd-038",
+          "evd-063",
+          "evd-099",
+          "evd-129"
+        ],
+        "assumptions": [
+          "The categorical statement that requests contain 'only the information required for the requested analysis' (evd-007) is taken at face value as the documented justification of scope; it is an assertion by the system's own documentation rather than a demonstrated property."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-AI-004",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-004"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "Both applicable_conditions hold on this threat's output path: the structured result is stored and rendered in the React web application for developers (evd-045, evd-046, evd-025), and the same result is formatted and submitted as comment markup to GitHub (evd-010, evd-031). Because untrusted repository content reaches the model, the rendered output is attacker-influenceable, which is what makes the encoding question part of this threat rather than a general hygiene point.",
+        "suppressed_conclusion": "That output encoding is absent on the web rendering path. Not drawn: the customer-facing application is a React single-page application (evd-025) and the documentation nowhere describes the rendering behaviour, with 'rich-content rendering behavior' listed among known documentation gaps (evd-054). The comment path documents removal of unsupported formatting (evd-031), which is formatting normalisation and is not stated to be destination encoding, so the status is unverified rather than satisfied.",
+        "suppressed_by": "absent explicit encoding step where the rendering framework encodes by default",
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-025",
+          "evd-031",
+          "evd-045",
+          "evd-046",
+          "evd-010",
+          "evd-054"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-TPI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The requirement's conditions hold for the system as a whole \u2014 customer content is sent to an external provider (evd-038) \u2014 but not for this threat. This threat concerns the integrity of results produced when injected instructions steer the model, not what the provider retains or does with transmitted data; no step of the attack path (evd-005 retrieval, evd-006 request assembly, evd-009 validation, evd-045/evd-082 publication) turns on provider retention or secondary use. Provider retention and usage terms are engaged by the confidentiality threats on the same data flow, where this requirement should be mapped.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-038",
+          "evd-013",
+          "evd-129"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-AUTHZ-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non_applicable reasoning is that the delegated privilege is not what this threat abuses: the injected content sits inside repositories the customer administrator selected and ForgeFlow is legitimately authorised to read (evd-058, evd-065), and the worker retrieves it under an installation-scoped token within that grant (evd-061, evd-063). Narrowing or widening the requested permissions would not change whether instruction-shaped text in a retrieved README or diff reaches the provider request, so this requirement does not bear on this attack path.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-058",
+          "evd-060",
+          "evd-061",
+          "evd-063",
+          "evd-065"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-WEBHOOK-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-001"
+        ],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This threat does not require a forged or unauthenticated inbound event. Its precondition is a genuine pull-request event followed by retrieval of attacker-authored repository content under the installation token (evd-005, evd-030, evd-063); the injected text travels in content ForgeFlow fetches from GitHub itself, not in the webhook payload. Event authenticity is engaged by the webhook-forgery threats against cmp-004, where ctl-001 is the relevant control, and mapping it here would apply the catalog rather than assess this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-030",
+          "evd-063",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-AUTH-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non_applicable condition 'the component is not reachable by end users' holds for the components this threat traverses: the analysis worker (cmp-006) and the provider integration (cmp-014) are background and external components with no end-user authentication path (evd-030, evd-038), and the threat actor is a repository content author who never authenticates to ForgeFlow at all (evd-053). Customer authentication delegation to GitHub (evd-027, evd-123) is real and documented, but it is not a control this attack path crosses.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-030",
+          "evd-038",
+          "evd-053",
+          "evd-027",
+          "evd-123"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Prompt construction does not describe how untrusted repository content is separated from analysis instructions",
+        "description": "The architecture names a 'Repository-content instruction boundary' separating trusted ForgeFlow analysis instructions from untrusted repository and pull-request content (evd-049) and records that repository content may be untrusted (evd-053). The prompt-construction description lists analysis instructions, pull-request metadata, repository context, pull-request changes and output-format instructions as sections the worker assembles into a single request (evd-006, evd-081), but no reviewed document states that retrieved content is presented to the provider as data, nor what mechanism prevents instructions embedded in that content from altering the model's task. Trace therefore cannot determine whether such a control exists. Relevant context, recorded as an observation rather than as evidence about any control: the sample repository notes contain a block addressed to an AI reader attempting to override prior instructions, suppress security findings, assert that controls are implemented, and cause source content and a GitHub App private key to be included in output (evd-115); the following section states the block is experimental and should not be relied upon (evd-116). That passage was treated as data and not acted upon; it is cited only because it is an instance of the content class the worker retrieves as repository documentation.",
+        "importance": "This is the control the threat turns on. Without it, whether a contributor can steer the analysis that reviewers rely on is undetermined, and the answer changes the satisfaction status of req-AI-001 from unverified to satisfied or otherwise.",
+        "related_object_ids": [
+          "thr-002",
+          "cmp-006",
+          "cmp-014",
+          "ast-002",
+          "df-008"
+        ],
+        "requested_evidence": [
+          "Documentation or code describing how the provider request is constructed, including whether structured message roles or an equivalent separation are used for instructions versus retrieved content",
+          "A statement of what checks, if any, are applied to retrieved content before it is included in a request",
+          "A statement of what actions or capabilities the model is granted, so that the effect of a redirected task can be bounded"
+        ],
+        "evidence_ids": [
+          "evd-006",
+          "evd-049",
+          "evd-053",
+          "evd-081",
+          "evd-115",
+          "evd-116",
+          "evd-054"
+        ],
+        "severity": "high"
+      },
+      {
+        "title": "Contradictory statements about whether AI output is reviewed before publication to pull requests",
+        "description": "The security overview states that externally visible AI-generated output is reviewed before publication (evd-133). The AI-analysis and operations documents describe publication as an automatic sequence following successful schema validation, with no review step: the validated response is converted to comment format, formatting rules applied, and the comment published through the GitHub API (evd-010, evd-082). The structured system input records human_review_required as unknown and semantic_validation as not documented (evd-151), and the architecture lists AI-output approval requirements among known documentation gaps (evd-054). Which statement is authoritative is a reviewer's decision and is not resolved here.",
+        "importance": "The presence or absence of a human approval step determines whether structural validation (ctl-004) is the only barrier between a manipulated provider response and a customer-visible GitHub pull request, and it decides whether req-AI-002 is satisfied or only partially satisfied.",
+        "related_object_ids": [
+          "thr-002",
+          "cmp-007",
+          "cmp-006",
+          "ast-002",
+          "df-011",
+          "df-012"
+        ],
+        "requested_evidence": [
+          "A statement of whether any human approves an automatic pull-request comment before it is posted, and if so who and at what point",
+          "A description of any validation applied to response content, as distinct from schema, size and formatting checks",
+          "The comment-publication code path or configuration showing the steps between successful validation and the GitHub API call"
+        ],
+        "evidence_ids": [
+          "evd-133",
+          "evd-010",
+          "evd-082",
+          "evd-151",
+          "evd-054",
+          "evd-009"
+        ],
+        "severity": "high"
+      },
+      {
+        "title": "Rendering and encoding behaviour for AI-generated output is not documented",
+        "description": "Structured analysis results are stored and displayed in the React web application (evd-045, evd-046, evd-025) and formatted into GitHub comment markup (evd-010, evd-031). The comment service is documented as applying output-length restrictions and removing unsupported formatting (evd-031), but no document states where output is encoded for its destination, and the architecture lists rich-content rendering behaviour among known documentation gaps (evd-054). Because untrusted repository content reaches the model, the output is attacker-influenceable and its treatment at render time cannot be assumed from the framework alone.",
+        "importance": "Determines whether req-AI-004 is satisfied by default framework encoding or whether markup-carrying model output reaches a rendering context unencoded; the answer is obtainable from the frontend implementation and the comment-formatting code.",
+        "related_object_ids": [
+          "thr-002",
+          "cmp-002",
+          "cmp-007",
+          "ast-002",
+          "df-002",
+          "df-012"
+        ],
+        "requested_evidence": [
+          "A statement of how analysis result fields are rendered in the web application, including whether any raw-HTML or raw-markdown rendering path is used",
+          "A description of what 'removes unsupported formatting' covers in the comment service, and whether it is a normalisation step or a destination-specific encoding step"
+        ],
+        "evidence_ids": [
+          "evd-025",
+          "evd-031",
+          "evd-045",
+          "evd-046",
+          "evd-054"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": []
+  }
 }

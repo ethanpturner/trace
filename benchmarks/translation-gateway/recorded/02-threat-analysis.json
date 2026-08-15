@@ -1,105 +1,108 @@
 {
-  "threats": [
-    {
-      "title": "Customer ticket content held or reused by the translation provider",
-      "description": "Full ticket bodies, including customer-written text and attachment text, are sent to the external provider, and the documents state that no agreement covers the provider's retention or its use of the text beyond returning the translation — the standard terms apply and have not been reviewed.",
-      "methodology": "stride-scenario-based",
-      "category": [
-        "information_disclosure"
-      ],
-      "threat_actor_ids": [],
-      "affected_component_ids": [
-        "cmp-001",
-        "cmp-003"
-      ],
-      "affected_asset_ids": [
-        "ast-001"
-      ],
-      "related_data_flow_ids": [
-        "df-001"
-      ],
-      "preconditions": [
-        "the provider retains or reuses submitted text under its unreviewed standard terms"
-      ],
-      "attack_path": [
-        "an agent translates a ticket",
-        "the full body reaches the provider",
-        "the provider holds or reuses it under terms nobody reviewed"
-      ],
-      "impact": "Customer ticket content is governed by terms the operator has not reviewed.",
-      "likelihood": null,
-      "confidence": "high",
-      "evidence_ids": [
-        "evd-002",
-        "evd-004"
-      ],
-      "assumption_ids": [],
-      "open_question_ids": []
-    },
-    {
-      "title": "Stolen connector token reaches the whole workspace",
-      "description": "The connector's workspace token grants full workspace access, scoped for convenience, while the integration only reads tickets and writes notes. An attacker holding the token holds the whole workspace, not the integration's slice.",
-      "methodology": "stride-scenario-based",
-      "category": [
-        "elevation_of_privilege"
-      ],
-      "threat_actor_ids": [],
-      "affected_component_ids": [
-        "cmp-001"
-      ],
-      "affected_asset_ids": [
-        "ast-002",
-        "ast-001"
-      ],
-      "related_data_flow_ids": [
-        "df-002"
-      ],
-      "preconditions": [
-        "an attacker obtains the connector's token"
-      ],
-      "attack_path": [
-        "obtain the workspace token from the connector",
-        "use the full workspace access it grants"
-      ],
-      "impact": "The blast radius of a token theft is the workspace, not the integration.",
-      "likelihood": null,
-      "confidence": "high",
-      "evidence_ids": [
-        "evd-003"
-      ],
-      "assumption_ids": [],
-      "open_question_ids": []
-    },
-    {
-      "title": "Connector token taken from wherever it is held",
-      "description": "The connector authenticates with a workspace API token; where that token is stored, and whether it is scoped or rotated, is not described.",
-      "methodology": "stride-scenario-based",
-      "category": [
-        "information_disclosure"
-      ],
-      "threat_actor_ids": [],
-      "affected_component_ids": [
-        "cmp-001"
-      ],
-      "affected_asset_ids": [
-        "ast-002"
-      ],
-      "related_data_flow_ids": [],
-      "preconditions": [
-        "an attacker reaches the connector's configuration or runtime"
-      ],
-      "attack_path": [
-        "reach the connector's runtime or configuration",
-        "read the token"
-      ],
-      "impact": "The workspace token is exposed to whoever reaches its storage.",
-      "likelihood": null,
-      "confidence": "low",
-      "evidence_ids": [
-        "evd-003"
-      ],
-      "assumption_ids": [],
-      "open_question_ids": []
-    }
-  ]
+  "schema": "ThreatAnalysisProposal",
+  "response": {
+    "threats": [
+      {
+        "title": "Customer ticket content held or reused by the translation provider",
+        "description": "Full ticket bodies, including customer-written text and attachment text, are sent to the external provider, and the documents state that no agreement covers the provider's retention or its use of the text beyond returning the translation \u2014 the standard terms apply and have not been reviewed.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "information_disclosure"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-001",
+          "cmp-003"
+        ],
+        "affected_asset_ids": [
+          "ast-001"
+        ],
+        "related_data_flow_ids": [
+          "df-001"
+        ],
+        "preconditions": [
+          "the provider retains or reuses submitted text under its unreviewed standard terms"
+        ],
+        "attack_path": [
+          "an agent translates a ticket",
+          "the full body reaches the provider",
+          "the provider holds or reuses it under terms nobody reviewed"
+        ],
+        "impact": "Customer ticket content is governed by terms the operator has not reviewed.",
+        "likelihood": null,
+        "confidence": "high",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Stolen connector token reaches the whole workspace",
+        "description": "The connector's workspace token grants full workspace access, scoped for convenience, while the integration only reads tickets and writes notes. An attacker holding the token holds the whole workspace, not the integration's slice.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "elevation_of_privilege"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-001"
+        ],
+        "affected_asset_ids": [
+          "ast-002",
+          "ast-001"
+        ],
+        "related_data_flow_ids": [
+          "df-002"
+        ],
+        "preconditions": [
+          "an attacker obtains the connector's token"
+        ],
+        "attack_path": [
+          "obtain the workspace token from the connector",
+          "use the full workspace access it grants"
+        ],
+        "impact": "The blast radius of a token theft is the workspace, not the integration.",
+        "likelihood": null,
+        "confidence": "high",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Connector token taken from wherever it is held",
+        "description": "The connector authenticates with a workspace API token; where that token is stored, and whether it is scoped or rotated, is not described.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "information_disclosure"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-001"
+        ],
+        "affected_asset_ids": [
+          "ast-002"
+        ],
+        "related_data_flow_ids": [],
+        "preconditions": [
+          "an attacker reaches the connector's configuration or runtime"
+        ],
+        "attack_path": [
+          "reach the connector's runtime or configuration",
+          "read the token"
+        ],
+        "impact": "The workspace token is exposed to whoever reaches its storage.",
+        "likelihood": null,
+        "confidence": "low",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      }
+    ]
+  }
 }

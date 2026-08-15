@@ -1,129 +1,132 @@
 {
-  "system": {
-    "system_name": "Export Service",
-    "system_purpose": "produce customer data exports",
-    "business_criticality": null,
-    "environment": [],
-    "deployment_model": null,
-    "data_classifications": []
-  },
-  "claims": [
-    {
-      "key": "retention",
-      "subject_type": "component",
-      "subject_key": "worker",
-      "predicate": "export_retention",
-      "value": "exports retained 30 days by lifecycle policy despite documented immediate deletion",
-      "status": "documented",
-      "confidence": "high",
-      "rationale": null,
-      "evidence_ids": [
-        "evd-001"
-      ]
-    }
-  ],
-  "components": [
-    {
-      "key": "api",
-      "name": "Export API",
-      "component_type": "service",
-      "description": null,
-      "technology": [],
-      "ownership": null,
-      "deployment_zone": null,
-      "internet_accessible": true,
-      "externally_managed": null,
-      "data_classifications": [],
-      "authentication_mechanisms": [],
-      "authorization_mechanisms": [],
-      "evidence_ids": [
-        "evd-001"
-      ]
+  "schema": "ContextExtractionProposal",
+  "response": {
+    "system": {
+      "system_name": "Export Service",
+      "system_purpose": "produce customer data exports",
+      "business_criticality": null,
+      "environment": [],
+      "deployment_model": null,
+      "data_classifications": []
     },
-    {
-      "key": "worker",
-      "name": "Export Worker",
-      "component_type": "background_worker",
-      "description": null,
-      "technology": [],
-      "ownership": null,
-      "deployment_zone": null,
-      "internet_accessible": null,
-      "externally_managed": null,
-      "data_classifications": [],
-      "authentication_mechanisms": [],
-      "authorization_mechanisms": [],
-      "evidence_ids": [
-        "evd-001"
-      ]
-    }
-  ],
-  "actors": [
-    {
-      "key": "customer",
-      "name": "Customer",
-      "actor_type": "end_user",
-      "trust_level": null,
-      "capabilities": [],
-      "authentication_method": null,
-      "evidence_ids": [
-        "evd-001"
-      ]
-    }
-  ],
-  "assets": [
-    {
-      "key": "records",
-      "name": "Customer records",
-      "asset_type": "data",
-      "description": null,
-      "confidentiality_impact": null,
-      "integrity_impact": null,
-      "availability_impact": null,
-      "data_classification": null,
-      "owner": null,
-      "component_keys": [
-        "worker"
-      ],
-      "evidence_ids": [
-        "evd-001"
-      ]
-    }
-  ],
-  "data_flows": [
-    {
-      "key": "assemble",
-      "name": "Export assembly",
-      "source_component_key": "api",
-      "destination_component_key": "worker",
-      "direction": "one_way",
-      "protocol": null,
-      "data_types": [],
-      "authentication": "unknown",
-      "encryption_in_transit": "unknown",
-      "crosses_trust_boundary_keys": [],
-      "internet_exposed": null,
-      "evidence_ids": [
-        "evd-001"
-      ]
-    }
-  ],
-  "trust_boundaries": [
-    {
-      "key": "internet",
-      "name": "Public internet boundary",
-      "boundary_type": "internet_to_application",
-      "description": null,
-      "inside_component_keys": [
-        "api"
-      ],
-      "outside_component_keys": [],
-      "controls": [],
-      "evidence_ids": [
-        "evd-001"
-      ]
-    }
-  ],
-  "questions": [],
-  "observations": []
+    "claims": [
+      {
+        "key": "retention",
+        "subject_type": "component",
+        "subject_key": "worker",
+        "predicate": "export_retention",
+        "value": "exports retained 30 days by lifecycle policy despite documented immediate deletion",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-001"
+        ]
+      }
+    ],
+    "components": [
+      {
+        "key": "api",
+        "name": "Export API",
+        "component_type": "service",
+        "description": null,
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": null,
+        "internet_accessible": true,
+        "externally_managed": null,
+        "data_classifications": [],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-001"
+        ]
+      },
+      {
+        "key": "worker",
+        "name": "Export Worker",
+        "component_type": "background_worker",
+        "description": null,
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": null,
+        "internet_accessible": null,
+        "externally_managed": null,
+        "data_classifications": [],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-001"
+        ]
+      }
+    ],
+    "actors": [
+      {
+        "key": "customer",
+        "name": "Customer",
+        "actor_type": "end_user",
+        "trust_level": null,
+        "capabilities": [],
+        "authentication_method": null,
+        "evidence_ids": [
+          "evd-001"
+        ]
+      }
+    ],
+    "assets": [
+      {
+        "key": "records",
+        "name": "Customer records",
+        "asset_type": "data",
+        "description": null,
+        "confidentiality_impact": null,
+        "integrity_impact": null,
+        "availability_impact": null,
+        "data_classification": null,
+        "owner": null,
+        "component_keys": [
+          "worker"
+        ],
+        "evidence_ids": [
+          "evd-001"
+        ]
+      }
+    ],
+    "data_flows": [
+      {
+        "key": "assemble",
+        "name": "Export assembly",
+        "source_component_key": "api",
+        "destination_component_key": "worker",
+        "direction": "one_way",
+        "protocol": null,
+        "data_types": [],
+        "authentication": "unknown",
+        "encryption_in_transit": "unknown",
+        "crosses_trust_boundary_keys": [],
+        "internet_exposed": null,
+        "evidence_ids": [
+          "evd-001"
+        ]
+      }
+    ],
+    "trust_boundaries": [
+      {
+        "key": "internet",
+        "name": "Public internet boundary",
+        "boundary_type": "internet_to_application",
+        "description": null,
+        "inside_component_keys": [
+          "api"
+        ],
+        "outside_component_keys": [],
+        "controls": [],
+        "evidence_ids": [
+          "evd-001"
+        ]
+      }
+    ],
+    "questions": [],
+    "observations": []
+  }
 }
