@@ -444,6 +444,23 @@ def test_zero_findings_produces_a_complete_package_that_is_not_a_failure(
     assert "gap-001" in rendered, "the rest of the package is intact"
 
 
+def test_every_finding_decided_is_stated_as_decided_not_as_never_proposed(
+    handle: AssessmentHandle,
+) -> None:
+    """#479: an empty provisional set after the reviewer acted is not "nothing was proposed"."""
+    objects = seed(handle)
+    finding = objects["findings"][0]
+    decided = Finding.model_validate({**finding.model_dump(), "status": ObjectStatus.REJECTED})
+    with handle.objects.transaction():
+        handle.objects.save(decided)
+
+    package = build(handle)
+    assert package.summary.finding_count == 0
+    assert "1 proposed finding carries a reviewer decision" in package.summary.statement
+    assert "`trace findings approve` concludes the checkpoint" in package.summary.statement
+    assert "were proposed" not in package.summary.statement
+
+
 def test_a_duplicate_or_rejected_finding_is_not_in_the_provisional_set(
     handle: AssessmentHandle,
 ) -> None:
