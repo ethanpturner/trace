@@ -94,8 +94,10 @@ work."
 ## Beat 5 — Open the view (about 0:15)
 
 ```bash
-uv run trace view  # second terminal; open http://127.0.0.1:8765/asm-001/
+uv run trace view
 ```
+
+Run it in the second terminal, then open `http://127.0.0.1:8765/asm-001/`.
 
 Say: "This is a read-only rendering of the same store the command line reads. It changes nothing
 — GET only — it just renders persisted state."
@@ -124,10 +126,14 @@ Reminders:
 ## Beat 7 — Identify the source evidence (about 1:00)
 
 ```bash
-uv run trace evidence show --assessment asm-001 <evd-id>   # the id on the lineage page
+uv run trace evidence show --assessment asm-001 EVD-ID
 uv run trace context show asm-001 --evidence
 uv run trace verify asm-001
 ```
+
+`EVD-ID` stands for the evidence identifier shown on the lineage page — it is not pasteable as
+written, and an angle-bracket placeholder would be worse: zsh parses `<...>` as a redirection and
+refuses the whole line.
 
 Say: "The excerpts cite the architecture's own Known Documentation Gaps list. The documents
 describe a separation mechanism as documented behaviour; what they never state is that its

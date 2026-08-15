@@ -492,12 +492,14 @@ your own documents rather than the fixture, start with
 [Assessment Walkthrough](docs/guide/assessment-walkthrough.md).
 
 Driving an assessment yourself is the same pipeline, one command at a time. Every command below
-names `asm-001`, which is the identifier a fresh data root allocates first — so a rerun starts by
-resetting the root, or the second `assessment create` mints `asm-002` and the transcript diverges
-from this walkthrough:
+names `asm-001`, which is the identifier a fresh data root allocates first — so a rerun starts
+with `reset --force`, which returns the data root to the fresh state, or the second
+`assessment create` mints `asm-002` and the transcript diverges from this walkthrough. The blocks
+below carry no trailing comments, so they paste cleanly into a default macOS zsh, which does not
+treat `#` as a comment at the prompt:
 
 ```bash
-uv run trace reset --force    # only when rerunning: returns the data root to the fresh state
+uv run trace reset --force
 uv run trace assessment create --name "ForgeFlow Security Review"
 uv run trace source add asm-001 demo/forgeflow/input
 uv run trace run asm-001 --model-profile offline-fake \
@@ -505,11 +507,12 @@ uv run trace run asm-001 --model-profile offline-fake \
 ```
 
 The run stops at checkpoint 1, because the checkpoint is a phase in the transition table rather
-than a conditional something could skip. Review and approve the context:
+than a conditional something could skip. Review and approve the context — the exported
+`review.yaml` is edited in place and applied back with `--apply review.yaml`:
 
 ```bash
 uv run trace context show asm-001 --evidence
-uv run trace context review asm-001 --export review.yaml   # edit it, then --apply it
+uv run trace context review asm-001 --export review.yaml
 uv run trace context approve asm-001
 uv run trace resume asm-001 --model-profile offline-fake \
     --response demo/forgeflow/recorded/reasoning

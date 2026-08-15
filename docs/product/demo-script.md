@@ -16,9 +16,15 @@ narration for the presentation's eight-step variant is
 ## Before the room
 
 ```bash
-uv sync                       # once, on the demo machine
-uv run trace reset --force    # returns the data root to the fresh-clone state
+uv sync
+uv run trace reset --force
 ```
+
+`uv sync` is needed once on the demo machine; `reset --force` returns the data root to the
+fresh-clone state. The block carries no trailing comments deliberately: the default macOS zsh
+does not treat `#` as a comment at an interactive prompt, so a pasted trailing comment becomes
+literal arguments and the command is rejected — which, for the reset line, leaves the stale data
+root in place and desynchronizes every identifier below.
 
 Every command names `asm-001`, the identifier a fresh data root allocates first. Reset before the
 talk, or a leftover `asm-001` makes the next `assessment create` mint `asm-002` and the transcript
