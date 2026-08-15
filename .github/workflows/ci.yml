@@ -32,6 +32,9 @@ jobs:
           # The catalog freeze guard diffs against the pull request's base, which needs history
           # beyond the merge commit the default shallow checkout provides.
           fetch-depth: 0
+          # No step here pushes; the checks only read the tree and already-fetched refs. Dropping
+          # the stored token keeps a compromised step from using it to write to the repository.
+          persist-credentials: false
 
       # Pinned to an exact patch: setup-uv publishes no floating major tag.
       - name: Install uv
@@ -72,6 +75,13 @@ jobs:
         if: ${{ !cancelled() && steps.install.outcome == 'success' && github.event_name == 'pull_request' && github.head_ref != 'develop' }}
         run: uv run python scripts/check_catalog_freeze.py --base "origin/${{ github.base_ref }}"
 
+      # The loader recomputes the catalog's content hash on every read and pytest fails on drift,
+      # so this is a second, faster signal that names the fix (`--write`) directly rather than
+      # surfacing as an opaque loader refusal buried in a test failure (DEC-019).
+      - name: catalog hash is current
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: uv run python scripts/catalog_hash.py --check
+
       # The threat model's section 8 named the gap this closes (#407): gitleaks ran only as a
       # local hook, which `--no-verify` or a clone without `pre-commit install` bypasses. This is
       # the enforcement point that cannot be skipped, pinned to the same release the pre-commit
@@ -97,3 +107,39 @@ jobs:
           path: coverage.xml
           if-no-files-found: error
           retention-days: 14
+
+      # The distribution is clone-only (DEC-090): `trace --help` must work from a built wheel in a
+      # clean environment, and a real command must refuse rather than crash. `[project.scripts]`
+      # claims an entry point; this proves the wheel actually exposes it, guarding against a
+      # packaging change that leaves the console script importing a module the wheel omits.
+      - name: The built wheel exposes the CLI
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: |
+          uv build
+          uv run --isolated --with dist/*.whl trace --help
+
+  macos:
+    name: test on macOS
+    runs-on: macos-latest
+    timeout-minutes: 15
+
+    # macOS is the development platform and has a case-insensitive filesystem, which the artifact
+    # store's untrusted-filename handling and the store layer's on-disk layout never otherwise
+    # meet in CI. Only the test suite is platform-sensitive; lint, typecheck, and the secret and
+    # catalog guards are filesystem-independent and stay on the single Linux job above.
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v9.0.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Install dependencies
+        run: uv sync --locked --all-groups
+
+      - name: pytest
+        run: uv run pytest

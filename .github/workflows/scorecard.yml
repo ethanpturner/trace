@@ -7,8 +7,9 @@ name: scorecard
 # key, which the CI constraint requires.
 #
 # A committed page cannot be pushed back by CI on a protected branch, so this checks rather than
-# writes; a stale page is a red check with the regeneration command in the failure. The uploaded
-# artifact is the freshly rendered page for anyone who wants to read it before merging.
+# writes; a stale page is a red check with the regeneration command in the failure. When the
+# checks pass the committed pages are current, so those are what the job uploads for review — no
+# re-render, and nothing to upload when a page is stale (the red check already says so).
 #
 # Every pull request, deliberately unfiltered (#405): the harness replays the full pipeline, so
 # the regenerated feeds depend on far more than the evaluation tree — a change to workflow/,
@@ -38,6 +39,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - name: Install uv
         uses: astral-sh/setup-uv@v9.0.0
@@ -48,24 +51,26 @@ jobs:
       - name: Install dependencies
         run: uv sync --locked --all-groups
 
+      # The scorecard and the comparison read the same feeds, so the sweep runs once here and both
+      # checks render from the result rather than replaying every recording twice (#450). The
+      # ablation runs a different sweep — nodes dropped in turn — and keeps its own.
+      - name: Sweep the recorded runs once
+        run: uv run python scripts/build_scorecard.py --sweep-to "${RUNNER_TEMP}/feeds.json"
+
       - name: The committed scorecard matches the recorded runs
-        run: uv run python scripts/build_scorecard.py --check
+        run: uv run python scripts/build_scorecard.py --check --from-feeds "${RUNNER_TEMP}/feeds.json"
 
       - name: The committed comparison matches the recorded runs
-        run: uv run python scripts/build_comparison.py --check
+        run: uv run python scripts/build_comparison.py --check --from-feeds "${RUNNER_TEMP}/feeds.json"
 
       - name: The committed ablation table matches the recorded runs
         run: uv run python scripts/build_ablation.py --check
 
-      - name: Render fresh copies for review
-        if: ${{ !cancelled() }}
-        run: |
-          uv run python scripts/build_scorecard.py
-          uv run python scripts/build_comparison.py
-          uv run python scripts/build_ablation.py
-
-      - name: Upload the rendered artifacts
-        if: ${{ !cancelled() }}
+      # When the checks pass the committed pages are current by definition, so they are the fresh
+      # copies — no second sweep to re-render them. On a stale page the check above is already red
+      # with the regeneration command, and this step is skipped rather than uploading a stale copy.
+      - name: Upload the current pages for review
+        if: ${{ success() }}
         uses: actions/upload-artifact@v7
         with:
           name: evaluation-scorecard

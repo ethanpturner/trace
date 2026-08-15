@@ -115,11 +115,15 @@ asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 
 [tool.coverage.run]
-source = ["src"]
+source = ["src", "scripts"]
 branch = true
 
 [tool.coverage.report]
 show_missing = true
+# A floor, not a target: it fails the run when coverage drops below what the suite holds today,
+# so a change that deletes tests or ships a large untested path cannot land green. Raise it when
+# real coverage rises; never lower it to make a red run pass.
+fail_under = 80
 exclude_lines = [
     "pragma: no cover",
     "if TYPE_CHECKING:",
