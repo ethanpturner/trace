@@ -240,6 +240,20 @@ def build_parser() -> argparse.ArgumentParser:
     archive = assessment_commands.add_parser("archive", help="retire an assessment")
     archive.add_argument("assessment_id")
 
+    purge = assessment_commands.add_parser(
+        "purge",
+        help="delete one assessment entirely: every row and its whole directory (DEC-089)",
+        description=(
+            "Removes exactly one assessment -- its stored objects, its identifier counters, and its "
+            "artifact directory -- where `reset` removes the whole data root. Destructive: without "
+            "--force it prints what would go and removes nothing."
+        ),
+    )
+    purge.add_argument("assessment_id")
+    purge.add_argument(
+        "--force", action="store_true", help="actually remove; without it, a dry run"
+    )
+
     approve = assessment_commands.add_parser(
         "approve",
         help="sign off the completed deliverable (DEC-082)",
@@ -762,6 +776,7 @@ def run(argv: Sequence[str] | None = None) -> int:
         ("assessment", "status"): _assessment_status,
         ("assessment", "candidates"): _assessment_candidates,
         ("assessment", "archive"): _assessment_archive,
+        ("assessment", "purge"): _assessment_purge,
         ("assessment", "approve"): _assessment_approve,
         ("export", "tm-bom"): _export_tm_bom,
         ("source", "add"): _source_add,
@@ -1019,6 +1034,24 @@ def _assessment_archive(args: argparse.Namespace, service: AssessmentService) ->
     """The only status transition a person performs (DEC-031)."""
     archived = service.archive(args.assessment_id)
     print(f"{archived.id} {archived.status}")
+    return 0
+
+
+def _assessment_purge(args: argparse.Namespace, service: AssessmentService) -> int:
+    """Delete one assessment entirely (DEC-089). A dry run without --force is a stated refusal."""
+    assessment = service.get(args.assessment_id)  # a message, not a traceback, if it is unknown
+    counts = service.handle(args.assessment_id).objects.counts_by_type()
+    total = sum(counts.values())
+    if not args.force:
+        print(
+            f"would purge {assessment.id} ({assessment.status}): {total} object(s) and its directory"
+        )
+        for object_type, count in sorted(counts.items()):
+            print(f"  {object_type:<28} {count}")
+        print("nothing was removed; pass --force to remove it", file=sys.stderr)
+        return REFUSED
+    removed = service.purge(args.assessment_id)
+    print(f"purged {args.assessment_id}: removed {removed} object(s) and its directory")
     return 0
 
 

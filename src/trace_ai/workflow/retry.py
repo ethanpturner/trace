@@ -34,6 +34,7 @@ from trace_ai.workflow.errors import RETRYABLE, ErrorClass, WorkflowError
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+    from pathlib import Path
 
     from trace_ai.infrastructure.filesystem.artifact_store import ArtifactStore
 
@@ -140,9 +141,24 @@ def preserve_failed_output(
     """
     stamp = now().strftime("%Y%m%dT%H%M%S%f")
     filename = f"{node_name}-attempt-{attempt_number}-{stamp}.txt"
-    path = artifacts.area("traces") / filename
+    traces = artifacts.area("traces")
+    path = traces / filename
     write_text_atomic(path, raw_output)
+    _prune_failed_attempts(traces)
     return str(path.relative_to(artifacts.assessment_root))
+
+
+# The most recent failed-attempt artifacts kept per assessment. A run that keeps failing writes one
+# file per attempt, and nothing else removed them, so an assessment accumulated them without bound.
+# The newest are the ones a reader of a recent ExecutionRecord wants; older debugging is stale.
+MAXIMUM_FAILED_ATTEMPTS_KEPT: Final = 50
+
+
+def _prune_failed_attempts(traces_dir: Path) -> None:
+    """Keep only the most recent failed-attempt files, by modification time."""
+    kept = sorted(traces_dir.glob("*-attempt-*.txt"), key=lambda path: path.stat().st_mtime)
+    for stale in kept[:-MAXIMUM_FAILED_ATTEMPTS_KEPT]:
+        stale.unlink(missing_ok=True)
 
 
 def run_with_retries[T](

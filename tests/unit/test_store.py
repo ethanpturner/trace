@@ -399,6 +399,78 @@ def test_an_object_without_an_assessment_id_is_refused(store: AssessmentStore) -
 
 
 # ------------------------------------------------------------------------------------------
+# Ordering, id-only reads, and deletion (#449)
+# ------------------------------------------------------------------------------------------
+
+
+def _document(identifier: str) -> FakeDocument:
+    return FakeDocument(
+        id=identifier,
+        assessment_id="asm-001",
+        filename=f"{identifier}.md",
+        content_hash="sha256:" + "d" * 64,
+        created_at=now(),
+    )
+
+
+def test_list_orders_by_insert_order_not_lexical_id(store: AssessmentStore) -> None:
+    """DEC-018 widens past 999 rather than wrapping, so `src-1000` sorts lexically before `src-999`.
+    `list` orders by the monotonic `seq` (insert order), so a moderate corpus is not reordered."""
+    repository = store.repository("asm-001")
+    repository.save(_document("src-999"))
+    repository.save(_document("src-1000"))
+    assert [doc.id for doc in repository.list(FakeDocument)] == ["src-999", "src-1000"]
+
+
+def test_a_replacement_keeps_its_insert_position(store: AssessmentStore) -> None:
+    """A DEC-023 edit re-saves under the same identifier; `seq` is not moved, so the object keeps
+    its place in the oldest-first order."""
+    repository = store.repository("asm-001")
+    repository.save(_document("src-001"))
+    repository.save(_document("src-002"))
+    repository.save(_document("src-001"))  # a re-save of the first
+    assert [doc.id for doc in repository.list(FakeDocument)] == ["src-001", "src-002"]
+
+
+def test_ids_returns_identifiers_without_parsing_the_payload(store: AssessmentStore) -> None:
+    """`ids` reads the id column only, so it returns even for a row whose payload no longer parses --
+    which `list` would raise on. That is the property that makes it cheap: no JSON, no validation."""
+    repository = store.repository("asm-001")
+    repository.save(_document("src-001"))
+
+    connection = sqlite3.connect(store.path)
+    connection.execute("UPDATE objects SET payload = '{}' WHERE id = 'src-001'")
+    connection.commit()
+    connection.close()
+
+    assert repository.ids(FakeDocument) == ["src-001"], "ids must not parse the payload"
+    with pytest.raises(CorruptRecordError):
+        repository.list(FakeDocument)
+
+
+def test_ids_are_in_insert_order(store: AssessmentStore) -> None:
+    repository = store.repository("asm-001")
+    repository.save(_document("src-999"))
+    repository.save(_document("src-1000"))
+    assert repository.ids(FakeDocument) == ["src-999", "src-1000"]
+
+
+def test_delete_all_removes_one_assessment_and_leaves_the_others(store: AssessmentStore) -> None:
+    store.repository("asm-001").save(an_assessment("asm-001"))
+    store.repository("asm-001").save(_document("src-001"))
+    store.repository("asm-002").save(an_assessment("asm-002"))
+
+    removed = store.repository("asm-001").delete_all()
+
+    assert removed == 2
+    assert store.repository("asm-001").count(FakeAssessment) == 0
+    assert store.repository("asm-001").count(FakeDocument) == 0
+    assert store.repository("asm-002").get(FakeAssessment, "asm-002").name
+    # The counter went too, so a re-created object numbers from one again.
+    assert store.repository("asm-001").allocate("thr") == "thr-001"
+
+
+# ------------------------------------------------------------------------------------------
 # Identifier allocation
 # ------------------------------------------------------------------------------------------
 

@@ -153,6 +153,29 @@ def test_verify_all_reports_nothing_after_indexing_the_corpus(
     assert EvidenceIndex(handle).verify_all() == []
 
 
+def test_verify_all_reads_each_source_file_once(
+    indexed: tuple[AssessmentHandle, list[EvidenceReference]],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """K references into one document verified against the source read K times; the index memoizes
+    the read, so it is one read per document, not one per reference."""
+    handle, references = indexed
+    reads: list[str] = []
+    original_read = handle.artifacts.read
+
+    def counting_read(area: str, filename: str) -> bytes:
+        if area == "sources":
+            reads.append(filename)
+        return original_read(area, filename)
+
+    monkeypatch.setattr(handle.artifacts, "read", counting_read)
+
+    EvidenceIndex(handle).verify_all()
+
+    assert len(reads) == len(set(reads)), "a source file was read more than once"
+    assert len(references) > len(set(reads)), "the corpus has many references per document"
+
+
 def test_editing_the_artifact_reports_content_changed(
     indexed: tuple[AssessmentHandle, list[EvidenceReference]],
 ) -> None:
