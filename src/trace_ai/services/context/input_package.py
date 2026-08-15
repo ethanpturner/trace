@@ -36,7 +36,9 @@ import re
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Final
 
+from trace_ai.domain.proposals.context_extraction import ContextExtractionProposal
 from trace_ai.domain.source_document import SourceDocument
+from trace_ai.services.budget import fill_untrusted, schema_overhead
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -233,22 +235,26 @@ def assemble_extractor_input(
     excerpts = index.render_for_prompt(list(evidence_ids))
     documents = sorted(handle.objects.list(SourceDocument), key=lambda document: document.id)
 
-    blocks: list[str] = []
-    included: list[str] = []
-    excluded: list[str] = []
-    used = 0
-    budget = profile.max_input_characters
+    # The trusted region and the schema export share the budget with the excerpts (WS10). Charge
+    # both as fixed overhead against a trusted estimate built from every candidate, then fill the
+    # untrusted region against what is left. The estimate over-counts only when the fill excludes
+    # something, which is the conservative direction.
+    rendered = [(excerpt["evidence_id"], fenced_excerpt(excerpt)) for excerpt in excerpts]
+    trusted_estimate = _trusted_region(
+        assessment_name=assessment_name,
+        documents=documents,
+        excerpts=excerpts,
+        structured_input=structured_input,
+    )
+    outcome = fill_untrusted(
+        rendered,
+        profile=profile,
+        overhead_characters=len(trusted_estimate) + schema_overhead(ContextExtractionProposal),
+    )
 
-    for excerpt in excerpts:
-        block = fenced_excerpt(excerpt)
-        if used + len(block) > budget:
-            excluded.append(excerpt["evidence_id"])
-            continue
-        blocks.append(block)
-        included.append(excerpt["evidence_id"])
-        used += len(block)
-
-    present = [excerpt for excerpt in excerpts if excerpt["evidence_id"] in set(included)]
+    present = [
+        excerpt for excerpt in excerpts if excerpt["evidence_id"] in set(outcome.included_ids)
+    ]
     trusted = _trusted_region(
         assessment_name=assessment_name,
         documents=documents,
@@ -258,14 +264,12 @@ def assemble_extractor_input(
 
     return ExtractorInput(
         trusted=trusted,
-        untrusted="\n\n".join(blocks),
-        evidence_ids=tuple(included),
-        excluded_evidence_ids=tuple(excluded),
+        untrusted=outcome.untrusted,
+        evidence_ids=outcome.included_ids,
+        excluded_evidence_ids=outcome.excluded_ids,
         metadata={
             "documents": len(documents),
-            "evidence_included": len(included),
-            "evidence_excluded": len(excluded),
-            "characters": used,
-            "budget_characters": budget,
+            "trusted_characters": len(trusted),
+            **outcome.metadata(),
         },
     )

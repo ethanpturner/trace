@@ -37,6 +37,8 @@ import json
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
+from trace_ai.domain.proposals.critical_review import CriticalReviewProposal
+from trace_ai.services.budget import fill_untrusted, schema_overhead
 from trace_ai.services.context.input_package import fenced_excerpt
 
 if TYPE_CHECKING:
@@ -71,6 +73,8 @@ class ReviewGroup:
     assessment_ids: tuple[str, ...]
     documentation_gap_ids: tuple[str, ...]
     evidence_ids: tuple[str, ...]
+    excluded_evidence_ids: tuple[str, ...] = ()
+    """Cited evidence the budget shed (WS10), named rather than dropped in silence."""
     metadata: dict[str, Any] = field(default_factory=dict)
 
     @property
@@ -302,56 +306,70 @@ def assemble_review_group(
                 cited.append(evidence_id)
 
     excerpts = index.render_for_prompt(cited)
-    untrusted = "\n\n".join(fenced_excerpt(excerpt) for excerpt in excerpts)
+    rendered = [(excerpt["evidence_id"], fenced_excerpt(excerpt)) for excerpt in excerpts]
 
-    manifest = [
-        {
-            "evidence_id": excerpt["evidence_id"],
-            "document": excerpt.get("source_filename"),
-            "location": {
-                key: value
-                for key, value in (excerpt.get("location") or {}).items()
-                if value is not None
-            },
+    def sections_for(present: Sequence[dict[str, Any]]) -> dict[str, Any]:
+        manifest = [
+            {
+                "evidence_id": excerpt["evidence_id"],
+                "document": excerpt.get("source_filename"),
+                "location": {
+                    key: value
+                    for key, value in (excerpt.get("location") or {}).items()
+                    if value is not None
+                },
+            }
+            for excerpt in present
+        ]
+        built: dict[str, Any] = {
+            "Threat under review": threat,
+            "Requirement and control mappings": mappings,
+            "Controls": controls,
+            "Evidence assessments": assessments,
+            "Documentation gaps": gaps,
+            "Evidence available": manifest,
         }
-        for excerpt in excerpts
-    ]
+        if precedents is not None and precedents:
+            block: dict[str, Any] = {
+                "note": (
+                    "Prior findings in this assessment a reviewer dismissed with a stated reason, "
+                    "matched to this lineage. Context only: test whether each rationale applies "
+                    "here; do not inherit the verdict, and do not target these identifiers."
+                ),
+                "dismissals": [_precedent_entry(precedent) for precedent in precedents.precedents],
+            }
+            if precedents.excluded_finding_ids:
+                # DEC-080: the cap names what it excluded rather than truncating silently, the
+                # same rule the evidence fence follows on a budget overrun.
+                block["excluded_by_cap"] = list(precedents.excluded_finding_ids)
+            built[PRECEDENT_HEADING] = block
+        return built
 
-    sections: dict[str, Any] = {
-        "Threat under review": threat,
-        "Requirement and control mappings": mappings,
-        "Controls": controls,
-        "Evidence assessments": assessments,
-        "Documentation gaps": gaps,
-        "Evidence available": manifest,
-    }
-    if precedents is not None and precedents:
-        block: dict[str, Any] = {
-            "note": (
-                "Prior findings in this assessment a reviewer dismissed with a stated reason, "
-                "matched to this lineage. Context only: test whether each rationale applies "
-                "here; do not inherit the verdict, and do not target these identifiers."
-            ),
-            "dismissals": [_precedent_entry(precedent) for precedent in precedents.precedents],
-        }
-        if precedents.excluded_finding_ids:
-            # DEC-080: the cap names what it excluded rather than truncating silently, the
-            # same rule the evidence fence follows on a budget overrun.
-            block["excluded_by_cap"] = list(precedents.excluded_finding_ids)
-        sections[PRECEDENT_HEADING] = block
+    # This package rendered every cited excerpt unconditionally and enforced no budget (WS10). It
+    # now charges the trusted region and the schema export as fixed overhead and fills the untrusted
+    # region against what is left, naming anything it sheds.
+    trusted_estimate = _trusted_region(assessment_id=assessment_id, sections=sections_for(excerpts))
+    outcome = fill_untrusted(
+        rendered,
+        profile=profile,
+        overhead_characters=len(trusted_estimate) + schema_overhead(CriticalReviewProposal),
+    )
 
-    trusted = _trusted_region(assessment_id=assessment_id, sections=sections)
+    included = set(outcome.included_ids)
+    present = [excerpt for excerpt in excerpts if excerpt["evidence_id"] in included]
+    trusted = _trusted_region(assessment_id=assessment_id, sections=sections_for(present))
 
     return ReviewGroup(
         trusted=trusted,
-        untrusted=untrusted,
+        untrusted=outcome.untrusted,
         assessment_id=assessment_id,
         threat_id=selected.threat.id,
         mapping_ids=tuple(entry["id"] for entry in mappings),
         control_ids=tuple(entry["id"] for entry in controls),
         assessment_ids=tuple(entry["id"] for entry in assessments),
         documentation_gap_ids=tuple(entry["id"] for entry in gaps),
-        evidence_ids=tuple(excerpt["evidence_id"] for excerpt in excerpts),
+        evidence_ids=outcome.included_ids,
+        excluded_evidence_ids=outcome.excluded_ids,
         metadata={
             "mappings": len(mappings),
             "controls": len(controls),
@@ -362,7 +380,7 @@ def assemble_review_group(
             "precedents_excluded_by_cap": (
                 0 if precedents is None else len(precedents.excluded_finding_ids)
             ),
-            "characters": len(trusted) + len(untrusted),
-            "budget_characters": profile.max_input_characters,
+            "trusted_characters": len(trusted),
+            **outcome.metadata(),
         },
     )

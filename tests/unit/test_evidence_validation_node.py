@@ -22,6 +22,7 @@ section 26's fabrication-on-the-third-attempt in this agent's terms.
 from __future__ import annotations
 
 from collections.abc import Iterator
+from dataclasses import replace
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
@@ -330,6 +331,26 @@ def test_the_package_carries_the_conclusion_the_evidence_and_the_contradiction(
     assert package.subject_ids == (claim.id,)
     assert package.contradiction_ids == (observation.id,)
     assert set(observation.evidence_ids) <= set(package.evidence_ids)
+
+
+def test_a_tiny_budget_sheds_evidence_and_names_it(prepared: Any) -> None:
+    """WS10: this package enforced no budget and rendered every cited excerpt unconditionally.
+    It now sheds what will not fit and names it, rather than overrunning the declared ceiling."""
+    handle, _, claim, observation = prepared
+
+    package = assemble_evidence_input(
+        assessment_id=handle.assessment_id,
+        subjects=[claim],
+        index=EvidenceIndex(handle),
+        observations=[observation],
+        profile=replace(PROFILE, max_input_characters=2_000),
+    )
+
+    assert package.excluded_evidence_ids, "a 2,000-character budget excluded nothing"
+    assert not set(package.evidence_ids) & set(package.excluded_evidence_ids)
+    # A shed passage is not carried into the misquotation-check copy either.
+    for excluded in package.excluded_evidence_ids:
+        assert excluded not in package.quoted_text
 
 
 def test_the_package_does_not_restate_the_evidence_policy(prepared: Any) -> None:

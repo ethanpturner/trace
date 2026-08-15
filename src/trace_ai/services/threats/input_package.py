@@ -41,8 +41,27 @@ from trace_ai.domain.asset import Asset
 from trace_ai.domain.component import Component
 from trace_ai.domain.context_claim import ContextClaim
 from trace_ai.domain.data_flow import DataFlow
+from trace_ai.domain.proposals.threat_analysis import ThreatAnalysisProposal
 from trace_ai.domain.trust_boundary import TrustBoundary
+from trace_ai.services.budget import fill_untrusted, schema_overhead
 from trace_ai.services.context.input_package import fenced_excerpt
+
+
+def _manifest(excerpts: Sequence[dict[str, Any]]) -> list[dict[str, Any]]:
+    """The evidence manifest for the trusted region: identifiers and locations, never text."""
+    return [
+        {
+            "evidence_id": excerpt["evidence_id"],
+            "document": excerpt.get("source_filename"),
+            "location": {
+                key: value
+                for key, value in (excerpt.get("location") or {}).items()
+                if value is not None
+            },
+        }
+        for excerpt in excerpts
+    ]
+
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -338,39 +357,27 @@ def assemble_threat_input(
 
     excerpts = index.render_for_prompt(list(evidence_ids))
 
-    blocks: list[str] = []
-    included: list[str] = []
-    excluded: list[str] = []
-    used = 0
-    # The architecture already occupies part of the input allowance, so evidence is measured
-    # against what is left rather than against the whole budget. Charging evidence the full budget
-    # would let a large architecture and a large evidence set together exceed it.
-    trusted_estimate = sum(len(json.dumps(block)) for block in architecture.values())
-    budget = max(profile.max_input_characters - trusted_estimate, 0)
+    # The trusted region (the architecture, the approved context, the manifest) and the schema
+    # export share the input allowance with the excerpts (WS10). Both are charged as fixed overhead
+    # against a trusted estimate built from every candidate, and the untrusted region fills what is
+    # left. This replaces charging evidence against only the architecture JSON, which left the rest
+    # of the trusted region and the whole schema uncounted.
+    rendered = [(excerpt["evidence_id"], fenced_excerpt(excerpt)) for excerpt in excerpts]
+    trusted_estimate = _trusted_region(
+        assessment_name=assessment_name,
+        methodology=threat_methodology,
+        context=context,
+        architecture=architecture,
+        manifest=_manifest(excerpts),
+    )
+    outcome = fill_untrusted(
+        rendered,
+        profile=profile,
+        overhead_characters=len(trusted_estimate) + schema_overhead(ThreatAnalysisProposal),
+    )
 
-    for excerpt in excerpts:
-        block = fenced_excerpt(excerpt)
-        if used + len(block) > budget:
-            excluded.append(excerpt["evidence_id"])
-            continue
-        blocks.append(block)
-        included.append(excerpt["evidence_id"])
-        used += len(block)
-
-    present = set(included)
-    manifest = [
-        {
-            "evidence_id": excerpt["evidence_id"],
-            "document": excerpt.get("source_filename"),
-            "location": {
-                key: value
-                for key, value in (excerpt.get("location") or {}).items()
-                if value is not None
-            },
-        }
-        for excerpt in excerpts
-        if excerpt["evidence_id"] in present
-    ]
+    present = set(outcome.included_ids)
+    manifest = _manifest([excerpt for excerpt in excerpts if excerpt["evidence_id"] in present])
 
     trusted = _trusted_region(
         assessment_name=assessment_name,
@@ -382,14 +389,14 @@ def assemble_threat_input(
 
     return ThreatAnalysisInput(
         trusted=trusted,
-        untrusted="\n\n".join(blocks),
-        evidence_ids=tuple(included),
+        untrusted=outcome.untrusted,
+        evidence_ids=outcome.included_ids,
         component_ids=tuple(component["id"] for component in architecture["components"]),
         asset_ids=tuple(asset["id"] for asset in architecture["assets"]),
         actor_ids=tuple(actor["id"] for actor in architecture["actors"]),
         data_flow_ids=tuple(flow["id"] for flow in architecture["data_flows"]),
         trust_boundary_ids=tuple(boundary["id"] for boundary in architecture["trust_boundaries"]),
-        excluded_evidence_ids=tuple(excluded),
+        excluded_evidence_ids=outcome.excluded_ids,
         metadata={
             "context_version": context.version,
             "components": len(architecture["components"]),
@@ -398,9 +405,7 @@ def assemble_threat_input(
             "data_flows": len(architecture["data_flows"]),
             "trust_boundaries": len(architecture["trust_boundaries"]),
             "context_claims": len(architecture["context_claims"]),
-            "evidence_included": len(included),
-            "evidence_excluded": len(excluded),
-            "characters": used,
-            "budget_characters": budget,
+            "trusted_characters": len(trusted),
+            **outcome.metadata(),
         },
     )
