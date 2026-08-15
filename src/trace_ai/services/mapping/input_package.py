@@ -53,8 +53,27 @@ from trace_ai.domain.asset import Asset
 from trace_ai.domain.component import Component
 from trace_ai.domain.control import Control
 from trace_ai.domain.data_flow import DataFlow
+from trace_ai.domain.proposals.mapping import MappingProposal
+from trace_ai.services.budget import fill_untrusted, schema_overhead
 from trace_ai.services.context.input_package import fenced_excerpt
 from trace_ai.services.threats.input_package import UnapprovedContextError
+
+
+def _manifest(excerpts: Sequence[dict[str, Any]]) -> list[dict[str, Any]]:
+    """The evidence manifest for the trusted region: identifiers and locations, never text."""
+    return [
+        {
+            "evidence_id": excerpt["evidence_id"],
+            "document": excerpt.get("source_filename"),
+            "location": {
+                key: value
+                for key, value in (excerpt.get("location") or {}).items()
+                if value is not None
+            },
+        }
+        for excerpt in excerpts
+    ]
+
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -130,6 +149,9 @@ class MappingInput:
     asset_ids: tuple[str, ...]
     actor_ids: tuple[str, ...]
     data_flow_ids: tuple[str, ...]
+    excluded_evidence_ids: tuple[str, ...] = ()
+    """Cited evidence the budget shed (WS10). The catalog is never shed -- an irreducible overflow
+    raises PayloadTooLargeError -- so this names only excerpts, never a requirement."""
     metadata: dict[str, Any] = field(default_factory=dict)
 
     def referenceable_ids(self) -> frozenset[str]:
@@ -431,51 +453,46 @@ def assemble_mapping_input(
     control_entries = [_control_entry(control) for control in controls]
 
     excerpts = index.render_for_prompt(list(evidence_ids))
-    blocks = [fenced_excerpt(excerpt) for excerpt in excerpts]
-    untrusted = "\n\n".join(blocks)
+    rendered = [(excerpt["evidence_id"], fenced_excerpt(excerpt)) for excerpt in excerpts]
 
-    manifest = [
-        {
-            "evidence_id": excerpt["evidence_id"],
-            "document": excerpt.get("source_filename"),
-            "location": {
-                key: value
-                for key, value in (excerpt.get("location") or {}).items()
-                if value is not None
-            },
-        }
-        for excerpt in excerpts
-    ]
-
-    trusted = _trusted_region(
-        assessment_id=handle.assessment_id,
-        catalog_version=catalog.version,
-        threat=_threat_entry(threat),
-        requirements=requirement_entries,
-        architecture=architecture,
-        controls=control_entries,
-        manifest=manifest,
-    )
-
-    # Measured after assembly rather than budgeted during it, because there is no during: nothing
-    # here is optional, so there is no point at which the assembler could have stopped adding.
-    size = len(trusted) + len(untrusted)
-    if size > profile.max_input_characters:
-        raise PayloadTooLargeError(
-            size=size,
-            budget=profile.max_input_characters,
-            excluded_evidence_ids=[excerpt["evidence_id"] for excerpt in excerpts],
+    def build_trusted(present: Sequence[dict[str, Any]]) -> str:
+        return _trusted_region(
+            assessment_id=handle.assessment_id,
+            catalog_version=catalog.version,
+            threat=_threat_entry(threat),
+            requirements=requirement_entries,
+            architecture=architecture,
+            controls=control_entries,
+            manifest=_manifest(present),
         )
+
+    # The catalog, the threat, and the schema are the irreducible part: dropping a requirement is a
+    # DEC-024 violation, not a smaller version of the request, so it is charged as fixed overhead.
+    # Evidence, unlike the catalog, can be shed -- so the payload degrades by dropping excerpts and
+    # naming them, and raises only when the irreducible part alone will not fit (WS10).
+    irreducible = len(build_trusted(excerpts)) + schema_overhead(MappingProposal)
+    if irreducible > profile.max_input_characters:
+        raise PayloadTooLargeError(
+            size=irreducible + sum(len(block) for _, block in rendered),
+            budget=profile.max_input_characters,
+            excluded_evidence_ids=[evidence_id for evidence_id, _ in rendered],
+        )
+
+    outcome = fill_untrusted(rendered, profile=profile, overhead_characters=irreducible)
+    included = set(outcome.included_ids)
+    present = [excerpt for excerpt in excerpts if excerpt["evidence_id"] in included]
+    trusted = build_trusted(present)
 
     return MappingInput(
         trusted=trusted,
-        untrusted=untrusted,
+        untrusted=outcome.untrusted,
         assessment_id=handle.assessment_id,
         threat_id=threat.id,
         catalog_version=catalog.version,
         requirement_ids=tuple(entry["id"] for entry in requirement_entries),
         control_ids=tuple(entry["id"] for entry in control_entries),
-        evidence_ids=tuple(excerpt["evidence_id"] for excerpt in excerpts),
+        evidence_ids=outcome.included_ids,
+        excluded_evidence_ids=outcome.excluded_ids,
         component_ids=tuple(entry["id"] for entry in architecture["components"]),
         asset_ids=tuple(entry["id"] for entry in architecture["assets"]),
         actor_ids=tuple(entry["id"] for entry in architecture["actors"]),
@@ -489,7 +506,7 @@ def assemble_mapping_input(
             "assets": len(architecture["assets"]),
             "data_flows": len(architecture["data_flows"]),
             "evidence": len(excerpts),
-            "characters": size,
-            "budget_characters": profile.max_input_characters,
+            "trusted_characters": len(trusted),
+            **outcome.metadata(),
         },
     )
