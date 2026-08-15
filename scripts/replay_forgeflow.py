@@ -22,7 +22,6 @@ from __future__ import annotations
 import argparse
 import sys
 import tempfile
-from datetime import UTC, datetime
 from pathlib import Path
 
 import yaml
@@ -41,6 +40,7 @@ from trace_ai.services.assessment import AssessmentService
 from trace_ai.services.context.pipeline import context_objects
 from trace_ai.services.context.review_file import apply_review_file, read_review_file
 from trace_ai.services.driver import resume_assessment, run_assessment
+from trace_ai.services.evaluation.stamps import DETERMINISTIC_STAMP
 from trace_ai.services.evidence.index import EvidenceIndex
 from trace_ai.services.ingestion.loader import DocumentLoader
 from trace_ai.workflow.context_review import (
@@ -62,7 +62,7 @@ REVIEWER = "recorded-reviewer"
 
 # The recording's generation timestamp. Pinning it is what makes two replays byte-identical:
 # the rendered report carries exactly one timestamp, and this is it.
-GENERATED_AT = datetime(2026, 8, 14, 12, 0, 0, tzinfo=UTC)
+GENERATED_AT = DETERMINISTIC_STAMP
 
 
 def _stage_files(stage: str) -> list[Path]:
@@ -218,7 +218,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
-    data_root = args.data_root or Path(tempfile.mkdtemp(prefix="trace-replay-"))
+    import contextlib
     import time
 
     started = time.monotonic()
@@ -226,11 +226,22 @@ def main(argv: list[str] | None = None) -> int:
     print("  ingestion + extraction: 8 documents in, checkpoint 1 answered from the recording")
     print("  reasoning: threats, mappings, evidence, critiques; checkpoint 2 answered")
     print("  report: generated, validated, rendered, manifested")
-    produced = replay(data_root)
+    with contextlib.ExitStack() as stack:
+        # A named --data-root is the caller's to keep and inspect; an unnamed one is a throwaway
+        # assessment cleaned up when the replay finishes.
+        if args.data_root is not None:
+            data_root = args.data_root
+        else:
+            data_root = Path(
+                stack.enter_context(tempfile.TemporaryDirectory(prefix="trace-replay-"))
+            )
+        produced = replay(data_root)
+        elapsed = time.monotonic() - started
+        if args.data_root is not None:
+            print(f"replayed in {elapsed:.1f}s; assessment at {data_root}")
+        else:
+            print(f"replayed in {elapsed:.1f}s (assessment in a temporary directory, now removed)")
     expected = pinned_hash()
-    elapsed = time.monotonic() - started
-
-    print(f"replayed in {elapsed:.1f}s; assessment at {data_root}")
     print(f"report hash: {produced}")
     if produced != expected:
         print(f"expected:    {expected}", file=sys.stderr)

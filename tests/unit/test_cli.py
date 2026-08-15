@@ -1927,3 +1927,52 @@ def test_context_extract_accepts_a_directory_of_responses(
         )
         == 0
     )
+
+
+def test_evaluate_cleans_up_its_temporary_work_root(
+    data_root: Path, capsys: pytest.CaptureFixture[str], tmp_path: Path
+) -> None:
+    """Without --work-root the harness store is a throwaway, cleaned up when the run finishes rather
+    than left in the system temp directory (one per scenario on --all)."""
+    import tempfile
+    from pathlib import Path as _Path
+
+    temp_root = _Path(tempfile.gettempdir())
+    before = set(temp_root.glob("trace-eval-*"))
+    assert (
+        invoke(
+            data_root,
+            "evaluate",
+            "forgeflow",
+            "--label",
+            "cleanup-test",
+            "--results-root",
+            str(tmp_path / "results"),
+        )
+        == 0
+    )
+    after = set(temp_root.glob("trace-eval-*"))
+    assert after == before, "the evaluate run left a temporary work root behind"
+
+
+def test_evaluate_diff_against_a_missing_prior_is_a_message_not_a_traceback(
+    data_root: Path, capsys: pytest.CaptureFixture[str], tmp_path: Path
+) -> None:
+    """A missing prior feed is this scenario's failure, not a traceback that aborts the sweep."""
+    exit_code = invoke(
+        data_root,
+        "evaluate",
+        "forgeflow",
+        "--label",
+        "diff-test",
+        "--results-root",
+        str(tmp_path / "results"),
+        "--diff-against",
+        "no-such-prior",
+    )
+    captured = capsys.readouterr()
+    assert exit_code == 1
+    assert "diff against no-such-prior: skipped" in captured.err
+    assert "Traceback" not in captured.err
+    # The scenario's own metrics still printed before the diff was attempted.
+    assert "false_negative_rate" in captured.out

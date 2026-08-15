@@ -23,7 +23,7 @@ import argparse
 import json
 import sys
 import tempfile
-from datetime import UTC, date, datetime
+from datetime import date
 from pathlib import Path
 
 from trace_ai.config import PROJECT_ROOT
@@ -38,6 +38,7 @@ from trace_ai.services.evaluation.history import (
 )
 from trace_ai.services.evaluation.registry import load_registry
 from trace_ai.services.evaluation.scorecard import render_scorecard, rows_from_feeds
+from trace_ai.services.evaluation.stamps import DETERMINISTIC_STAMP
 
 OUTPUT = PROJECT_ROOT / "docs" / "eval" / "scorecard.html"
 HISTORY = PROJECT_ROOT / "docs" / "eval" / "history.jsonl"
@@ -46,7 +47,7 @@ LIVE_STABILITY = PROJECT_ROOT / "docs" / "eval" / "live-stability.json"
 Read like the history file — never regenerated, because the drift checks cannot re-run a live
 measurement — and absent until the first measurement is committed."""
 # Pinned so the committed page changes only when a metric does, never on the clock.
-GENERATED_AT = datetime(2026, 8, 14, 12, 0, 0, tzinfo=UTC)
+GENERATED_AT = DETERMINISTIC_STAMP
 
 
 def _baseline_response(scenario_path: Path, condition: str) -> Path | None:
@@ -165,12 +166,14 @@ def main(argv: list[str] | None = None) -> int:
     if args.snapshot:
         date.fromisoformat(args.snapshot)
 
-    results_root = Path(tempfile.mkdtemp(prefix="trace-scorecard-"))
-    try:
-        rendered = build(results_root, snapshot_date=args.snapshot)
-    except SnapshotRefusedError as error:
-        print(f"error: {error}", file=sys.stderr)
-        return 1
+    # The sweep's results tree is intermediate: `build` returns the rendered page, and nothing after
+    # needs the tree, so it is a temporary that is cleaned up rather than left in /tmp per run.
+    with tempfile.TemporaryDirectory(prefix="trace-scorecard-") as tmp:
+        try:
+            rendered = build(Path(tmp), snapshot_date=args.snapshot)
+        except SnapshotRefusedError as error:
+            print(f"error: {error}", file=sys.stderr)
+            return 1
 
     if args.check:
         current = OUTPUT.read_text(encoding="utf-8") if OUTPUT.is_file() else ""

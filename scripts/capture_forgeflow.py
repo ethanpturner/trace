@@ -25,7 +25,6 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from datetime import UTC, datetime
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
@@ -57,6 +56,7 @@ from trace_ai.services.context.review_file import (
     write_review_file,
 )
 from trace_ai.services.driver import resume_assessment, run_assessment
+from trace_ai.services.evaluation.stamps import DETERMINISTIC_STAMP
 from trace_ai.services.evidence.index import EvidenceIndex
 from trace_ai.services.ingestion.loader import DocumentLoader
 from trace_ai.workflow.context_review import (
@@ -85,7 +85,7 @@ REVIEWER = "recorded-reviewer"
 
 # The capture's generation timestamp, pinned so the replay is byte-identical. The replayer must
 # carry the same value when this capture is promoted.
-GENERATED_AT = datetime(2026, 8, 14, 12, 0, 0, tzinfo=UTC)
+GENERATED_AT = DETERMINISTIC_STAMP
 
 # A hard stop well above the ~28-call, ~$5 estimate: a runaway costs one order of magnitude,
 # never an open-ended bill.

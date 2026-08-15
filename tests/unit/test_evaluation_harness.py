@@ -19,6 +19,7 @@ from trace_ai.infrastructure.database.store import AssessmentStore
 from trace_ai.services.assessment import AssessmentService
 from trace_ai.services.evaluation.harness import HarnessError, diff_feeds, run_scenario
 from trace_ai.services.evaluation.registry import (
+    RegistryError,
     UnknownScenarioError,
     load_registry,
     scenario,
@@ -361,3 +362,90 @@ def test_model_call_count_matches_the_responses_the_recording_supplies(tmp_path:
     assert outcome.feed_path is not None
     feed = json.loads(outcome.feed_path.read_text(encoding="utf-8"))
     assert feed["metrics"]["model_call_count"]["value"] == float(supplied)
+
+
+# ------------------------------------------------------------------------------------------
+# Registry validation (#448)
+# ------------------------------------------------------------------------------------------
+
+
+def _write_registry(tmp_path: Path, body: str) -> Path:
+    registry = tmp_path / "registry" / "scenarios.yaml"
+    registry.parent.mkdir(parents=True)
+    registry.write_text(body, encoding="utf-8")
+    return registry
+
+
+def test_a_misspelled_entry_key_raises_registry_error_naming_it(tmp_path: Path) -> None:
+    """A raw `entry["slug"]` turned a typo into a KeyError traceback; the entry is validated with
+    `extra="forbid"`, so a misspelled key is named with the offending entry."""
+    registry = _write_registry(
+        tmp_path,
+        "registry_version: '1.0'\n"
+        "scenarios:\n"
+        "  - slugg: forgeflow\n"  # the typo
+        "    name: ForgeFlow\n"
+        "    path: demo/forgeflow\n"
+        "    status: recorded\n",
+    )
+    with pytest.raises(RegistryError, match=r"scenarios\.0"):
+        load_registry(registry)
+
+
+def test_a_missing_required_key_raises_registry_error(tmp_path: Path) -> None:
+    registry = _write_registry(
+        tmp_path,
+        "registry_version: '1.0'\nscenarios:\n  - name: ForgeFlow\n    path: demo/forgeflow\n"
+        "    status: recorded\n",
+    )
+    with pytest.raises(RegistryError, match=r"slug"):
+        load_registry(registry)
+
+
+def test_an_unsupported_registry_version_is_refused(tmp_path: Path) -> None:
+    """A future `2.0` reshapes the entries; reading it as `1.0` would misparse silently."""
+    registry = _write_registry(
+        tmp_path,
+        "registry_version: '2.0'\nscenarios:\n  - slug: forgeflow\n    name: ForgeFlow\n"
+        "    path: demo/forgeflow\n    status: recorded\n",
+    )
+    with pytest.raises(RegistryError, match=r"registry_version '2\.0'"):
+        load_registry(registry)
+
+
+# ------------------------------------------------------------------------------------------
+# Finding-decision matching (#448)
+# ------------------------------------------------------------------------------------------
+
+
+def test_a_decision_count_mismatch_fails_loudly(tmp_path: Path) -> None:
+    """The old positional `zip(strict=False)` silently scored the shorter of the two, attributing a
+    truth set to a run it no longer describes. A count mismatch now raises, naming both counts."""
+    import shutil
+
+    import yaml
+
+    from trace_ai.config import PROJECT_ROOT
+
+    scenario_root = tmp_path / "scn" / "forgeflow"
+    shutil.copytree(PROJECT_ROOT / "demo" / "forgeflow", scenario_root)
+    decisions_path = scenario_root / "recorded" / "decisions-findings.yaml"
+    decisions = yaml.safe_load(decisions_path.read_text(encoding="utf-8"))
+    # A sixth decision the run cannot produce: the truth set no longer matches the run.
+    decisions["findings"].append({"id": "fnd-999", "decision": "reject", "rationale": "extra"})
+    decisions_path.write_text(yaml.safe_dump(decisions), encoding="utf-8")
+
+    registry = _write_registry(
+        tmp_path,
+        "registry_version: '1.0'\nscenarios:\n  - slug: forgeflow\n    name: ForgeFlow\n"
+        "    path: scn/forgeflow\n    status: recorded\n",
+    )
+
+    with pytest.raises(HarnessError, match=r"6 finding decision\(s\) but the run produced 5"):
+        run_scenario(
+            "forgeflow",
+            data_root=tmp_path / "work",
+            label="test",
+            registry_path=registry,
+            results_root=tmp_path / "results",
+        )

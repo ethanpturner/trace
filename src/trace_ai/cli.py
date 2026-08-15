@@ -1939,11 +1939,12 @@ def _evaluate(args: argparse.Namespace, service: AssessmentService) -> int:
     not part of the user's assessment data — and everything printed is metrics, identifiers, and
     repo-relative feed paths. Exit 0 when every attempted run completed; 1 when any did not.
     """
+    import contextlib
     import tempfile
 
     from trace_ai.config import PROJECT_ROOT
     from trace_ai.services.evaluation.harness import HarnessError, diff_feeds, run_scenario
-    from trace_ai.services.evaluation.registry import load_registry
+    from trace_ai.services.evaluation.registry import CLEAN_CONDITION, load_registry
 
     if args.all_scenarios == bool(args.scenario):
         print("error: name one scenario or pass --all", file=sys.stderr)
@@ -1967,9 +1968,24 @@ def _evaluate(args: argparse.Namespace, service: AssessmentService) -> int:
             return 1
         return _evaluate_stability(args)
 
+    registry = load_registry()
+
+    # Validate the condition once, not once per scenario: an unknown `--condition` used to produce
+    # twelve identical HarnessErrors on `--all`. `clean` is always valid; any other must be declared
+    # by some scenario.
+    if args.condition != CLEAN_CONDITION:
+        declared = {condition for entry in registry for condition in entry.conditions}
+        if args.condition not in declared:
+            print(
+                f"error: no scenario declares condition {args.condition!r}; "
+                f"known conditions: {', '.join(sorted(declared)) or 'none'}",
+                file=sys.stderr,
+            )
+            return 1
+
     if args.all_scenarios:
         slugs = []
-        for entry in load_registry():
+        for entry in registry:
             if entry.has_recording:
                 slugs.append(entry.slug)
             else:
@@ -1979,65 +1995,83 @@ def _evaluate(args: argparse.Namespace, service: AssessmentService) -> int:
 
     failures = 0
     for slug in slugs:
-        work_root = args.work_root or _path(tempfile.mkdtemp(prefix=f"trace-eval-{slug}-"))
-        try:
-            outcome = run_scenario(
-                slug,
-                data_root=work_root,
-                label=args.label,
-                condition=args.condition,
-                ablations=args.ablations,
-                results_root=args.results_root,
-            )
-        except HarnessError as refused:
-            print(f"error: {refused}", file=sys.stderr)
-            failures += 1
-            continue
+        with contextlib.ExitStack() as stack:
+            # A named `--work-root` is the operator's to keep and inspect; an unnamed one is a
+            # throwaway store and artifact tree, cleaned up when the scenario finishes rather than
+            # left behind (one per scenario on `--all`, six full sweeps on the CI scorecard job).
+            if args.work_root is not None:
+                work_root = args.work_root
+            else:
+                work_root = _path(
+                    stack.enter_context(tempfile.TemporaryDirectory(prefix=f"trace-eval-{slug}-"))
+                )
+            try:
+                outcome = run_scenario(
+                    slug,
+                    data_root=work_root,
+                    label=args.label,
+                    condition=args.condition,
+                    ablations=args.ablations,
+                    results_root=args.results_root,
+                )
+            except HarnessError as refused:
+                print(f"error: {refused}", file=sys.stderr)
+                failures += 1
+                continue
 
-        print(f"scenario:     {outcome.scenario} ({outcome.condition}, label {outcome.label})")
-        print(f"workflow run: {outcome.workflow_run_id}  {outcome.run_status}")
-        if outcome.ablations:
-            print(f"ablations:    {', '.join(outcome.ablations)} (non-authoritative, DEC-012)")
-        for result in outcome.metrics:
-            value = f"{result.metric_value:.4g}"
-            print(f"  {result.metric_name:<32} {value}")
-        if outcome.feed_path is not None:
-            import json
+            print(f"scenario:     {outcome.scenario} ({outcome.condition}, label {outcome.label})")
+            print(f"workflow run: {outcome.workflow_run_id}  {outcome.run_status}")
+            if outcome.ablations:
+                print(f"ablations:    {', '.join(outcome.ablations)} (non-authoritative, DEC-012)")
+            for result in outcome.metrics:
+                value = f"{result.metric_value:.4g}"
+                print(f"  {result.metric_name:<32} {value}")
+            if outcome.feed_path is not None:
+                import json
 
-            adversarial = json.loads(outcome.feed_path.read_text(encoding="utf-8")).get(
-                "adversarial"
-            )
-            if adversarial is not None:
-                rate = adversarial["injected_instruction_compliance_rate"]
-                detected = "yes" if adversarial["attack_detected"] else "no"
-                print(f"attack detected: {detected} (DEC-075)")
-                print(f"  injected_instruction_compliance_rate  {rate:.4g} (target 0)")
-                for payload in adversarial["payloads"]:
-                    mark = "complied" if payload["complied"] else "resisted"
-                    print(f"  {payload['payload_class']:<32} {mark}")
-            feed = outcome.feed_path
-            if feed.is_relative_to(PROJECT_ROOT):
-                feed = feed.relative_to(PROJECT_ROOT)
-            print(f"feed:         {feed}")
-        if not outcome.completed:
-            print(f"run stopped: {outcome.stopped_because}", file=sys.stderr)
-            failures += 1
+                adversarial = json.loads(outcome.feed_path.read_text(encoding="utf-8")).get(
+                    "adversarial"
+                )
+                if adversarial is not None:
+                    rate = adversarial["injected_instruction_compliance_rate"]
+                    detected = "yes" if adversarial["attack_detected"] else "no"
+                    print(f"attack detected: {detected} (DEC-075)")
+                    print(f"  injected_instruction_compliance_rate  {rate:.4g} (target 0)")
+                    for payload in adversarial["payloads"]:
+                        mark = "complied" if payload["complied"] else "resisted"
+                        print(f"  {payload['payload_class']:<32} {mark}")
+                feed = outcome.feed_path
+                if feed.is_relative_to(PROJECT_ROOT):
+                    feed = feed.relative_to(PROJECT_ROOT)
+                print(f"feed:         {feed}")
+            if not outcome.completed:
+                print(f"run stopped: {outcome.stopped_because}", file=sys.stderr)
+                failures += 1
 
-        if args.diff_against and outcome.feed_path is not None:
-            prior = outcome.feed_path.with_name(f"{args.diff_against}.json")
-            diff = diff_feeds(outcome.feed_path, prior)
-            print(f"diff against {args.diff_against}:")
-            for label, keys in (
-                ("matched", diff.matched),
-                ("changed", diff.changed),
-                ("missed", diff.missed),
-                ("regressed", diff.regressed),
-                ("recovered", diff.recovered),
-                ("spurious", diff.spurious),
-                ("new spurious", diff.new_spurious),
-            ):
-                print(f"  {label:<13} {', '.join(keys) if keys else '-'}")
-        print()
+            if args.diff_against and outcome.feed_path is not None:
+                prior = outcome.feed_path.with_name(f"{args.diff_against}.json")
+                # A missing prior feed is this scenario's failure, not the whole sweep's: catch it in
+                # the loop and continue, the same as a HarnessError, rather than aborting `--all`
+                # and discarding the scenarios already printed.
+                try:
+                    diff = diff_feeds(outcome.feed_path, prior)
+                except OSError as missing:
+                    print(f"diff against {args.diff_against}: skipped ({missing})", file=sys.stderr)
+                    failures += 1
+                    print()
+                    continue
+                print(f"diff against {args.diff_against}:")
+                for label, keys in (
+                    ("matched", diff.matched),
+                    ("changed", diff.changed),
+                    ("missed", diff.missed),
+                    ("regressed", diff.regressed),
+                    ("recovered", diff.recovered),
+                    ("spurious", diff.spurious),
+                    ("new spurious", diff.new_spurious),
+                ):
+                    print(f"  {label:<13} {', '.join(keys) if keys else '-'}")
+            print()
 
     return 1 if failures else 0
 
@@ -2098,86 +2132,102 @@ def _evaluate_baseline(args: argparse.Namespace) -> int:
 
 def _evaluate_ablation_set(args: argparse.Namespace) -> int:
     """Run the ablation set for one scenario and report what each removal changed."""
+    import contextlib
     import tempfile
 
     from trace_ai.services.evaluation.harness import HarnessError
     from trace_ai.services.evaluation.stability import ABLATION_SET, run_ablation_set
 
-    work_root = args.work_root or _path(tempfile.mkdtemp(prefix=f"trace-ablate-{args.scenario}-"))
-    try:
-        comparison = run_ablation_set(
-            args.scenario,
-            data_root=work_root,
-            label=args.label,
-            results_root=args.results_root,
+    with contextlib.ExitStack() as stack:
+        work_root = args.work_root or _path(
+            stack.enter_context(
+                tempfile.TemporaryDirectory(prefix=f"trace-ablate-{args.scenario}-")
+            )
         )
-    except HarnessError as refused:
-        print(f"error: {refused}", file=sys.stderr)
-        return 1
+        try:
+            comparison = run_ablation_set(
+                args.scenario,
+                data_root=work_root,
+                label=args.label,
+                results_root=args.results_root,
+            )
+        except HarnessError as refused:
+            print(f"error: {refused}", file=sys.stderr)
+            return 1
 
-    metrics = sorted(comparison.authoritative)
-    print(f"scenario:     {comparison.scenario} (ablation set, label {comparison.label})")
-    print("authoritative (DEC-012 baseline):")
-    for metric in metrics:
-        print(f"  {metric:<32} {comparison.authoritative[metric]:.4g}")
-    for ablation in ABLATION_SET:
-        print(f"{ablation} (non-authoritative):")
+        metrics = sorted(comparison.authoritative)
+        print(f"scenario:     {comparison.scenario} (ablation set, label {comparison.label})")
+        print("authoritative (DEC-012 baseline):")
         for metric in metrics:
-            delta = comparison.delta(ablation, metric)
-            shown = "-" if delta is None else f"{delta:+.4g}"
-            value = comparison.ablations.get(ablation, {}).get(metric)
-            value_shown = "-" if value is None else f"{value:.4g}"
-            print(f"  {metric:<32} {value_shown:>8}  (delta {shown})")
-    return 0
+            print(f"  {metric:<32} {comparison.authoritative[metric]:.4g}")
+        for ablation in ABLATION_SET:
+            print(f"{ablation} (non-authoritative):")
+            for metric in metrics:
+                delta = comparison.delta(ablation, metric)
+                shown = "-" if delta is None else f"{delta:+.4g}"
+                value = comparison.ablations.get(ablation, {}).get(metric)
+                value_shown = "-" if value is None else f"{value:.4g}"
+                print(f"  {metric:<32} {value_shown:>8}  (delta {shown})")
+        return 0
 
 
 def _evaluate_stability(args: argparse.Namespace) -> int:
     """Run one scenario N times live and report variance; refuse the offline profile (DEC-077)."""
+    import contextlib
     import tempfile
+    from pathlib import Path
 
     from trace_ai.services.evaluation.stability import StabilityError, run_stability
 
-    work_root = args.work_root or _path(
-        tempfile.mkdtemp(prefix=f"trace-stability-{args.scenario}-")
-    )
-    try:
-        summary = run_stability(
-            args.scenario,
-            n=args.stability,
-            data_root=work_root,
-            label=args.label,
-            profile_name=args.model_profile,
-            results_root=args.results_root,
+    with contextlib.ExitStack() as stack:
+        work_root = args.work_root or _path(
+            stack.enter_context(
+                tempfile.TemporaryDirectory(prefix=f"trace-stability-{args.scenario}-")
+            )
         )
-    except StabilityError as refused:
-        print(f"error: {refused}", file=sys.stderr)
-        return 1
+        try:
+            summary = run_stability(
+                args.scenario,
+                n=args.stability,
+                data_root=work_root,
+                label=args.label,
+                profile_name=args.model_profile,
+                results_root=args.results_root,
+            )
+        except StabilityError as refused:
+            print(f"error: {refused}", file=sys.stderr)
+            return 1
 
-    print(f"scenario:     {summary.scenario} (stability, n={summary.n})")
-    for metric in sorted(summary.metric_mean):
+        print(f"scenario:     {summary.scenario} (stability, n={summary.n})")
+        for metric in sorted(summary.metric_mean):
+            print(
+                f"  {metric:<32} mean {summary.metric_mean[metric]:.4g}  "
+                f"stdev {summary.metric_stdev[metric]:.4g}"
+            )
+        print(f"unanimous items:  {', '.join(summary.unanimous) or '-'}")
+        print(f"flickering items: {', '.join(summary.flickering) or '-'}")
+        print(f"defaulted decisions: {summary.defaulted_decisions}")
+        if summary.failed_runs:
+            print(f"failed runs: {summary.failed_runs} of {summary.failed_runs + summary.n}")
+
+        import json as _json
+
+        # The summary is a deliverable, so it goes to a persistent location -- the named
+        # `--results-root`, or the current directory -- never the throwaway store, which is cleaned
+        # up when this returns. Writing it into `work_root` would delete the file whose path was
+        # just printed.
+        summary_root = args.results_root if args.results_root is not None else Path.cwd()
+        summary_path = summary_root / f"stability-{summary.scenario}-{args.label}.json"
+        summary_path.parent.mkdir(parents=True, exist_ok=True)
+        summary_path.write_text(
+            _json.dumps(summary.to_payload(), indent=2) + "\n", encoding="utf-8"
+        )
+        print(f"summary:      {summary_path}")
         print(
-            f"  {metric:<32} mean {summary.metric_mean[metric]:.4g}  "
-            f"stdev {summary.metric_stdev[metric]:.4g}"
+            "Commit it as docs/eval/live-stability.json to put the measurement on the scorecard "
+            "(DEC-077 reports it; nothing gates on it)."
         )
-    print(f"unanimous items:  {', '.join(summary.unanimous) or '-'}")
-    print(f"flickering items: {', '.join(summary.flickering) or '-'}")
-    print(f"defaulted decisions: {summary.defaulted_decisions}")
-    if summary.failed_runs:
-        print(f"failed runs: {summary.failed_runs} of {summary.failed_runs + summary.n}")
-
-    import json as _json
-
-    summary_path = (
-        args.results_root if args.results_root is not None else work_root
-    ) / f"stability-{summary.scenario}-{args.label}.json"
-    summary_path.parent.mkdir(parents=True, exist_ok=True)
-    summary_path.write_text(_json.dumps(summary.to_payload(), indent=2) + "\n", encoding="utf-8")
-    print(f"summary:      {summary_path}")
-    print(
-        "Commit it as docs/eval/live-stability.json to put the measurement on the scorecard "
-        "(DEC-077 reports it; nothing gates on it)."
-    )
-    return 0
+        return 0
 
 
 def _view(args: argparse.Namespace) -> int:
