@@ -353,7 +353,21 @@ def build_finding_review_package(
     )
 
     awaiting = sum(1 for item in presented if item.awaiting_severity)
-    if not presented:
+    decided = [
+        finding
+        for finding in repository.list(Finding)
+        if finding.duplicate_of_id is None and finding.status is not ObjectStatus.CANDIDATE
+    ]
+    if not presented and decided:
+        # #479: an empty provisional set after the reviewer acted is not "nothing was proposed" —
+        # saying so at the exact moment the verdicts landed reads as the findings having vanished.
+        count = len(decided)
+        statement = (
+            f"No provisional findings await review: {count} proposed "
+            f"finding{'s' if count != 1 else ''} carr{'y' if count != 1 else 'ies'} a reviewer "
+            "decision. `trace findings approve` concludes the checkpoint."
+        )
+    elif not presented:
         statement = (
             "No provisional findings were proposed. A successful assessment may produce no "
             "findings; what could not be determined is recorded as documentation gaps and "
