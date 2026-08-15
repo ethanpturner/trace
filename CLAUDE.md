@@ -402,8 +402,8 @@ Squashing either pull request breaks the chain: the hotfix commit stops being an
 - **Secrets go through `trace_ai.config.Settings`** as `SecretStr`. `.env` is gitignored;
   `.env.example` is committed with blank values, and a test fails if the two drift apart or if a
   key-shaped entry in the example is non-empty.
-- **The design docs are hand-edited Markdown now.** The `.docx` originals are deleted and
-  `scripts/docx_to_md.py` is a spent migration tool retained for provenance — do not treat the
+- **The design docs are hand-edited Markdown now.** The `.docx` originals and the spent
+  `scripts/docx_to_md.py` migration tool are both deleted; their history is in git. Do not treat the
   Markdown as generated output.
 - **Match the corpus's prose register** in docs, README, and PR descriptions: flat declarative,
   no marketing language, no emoji. Keep tense discipline — present indicative only for what runs

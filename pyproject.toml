@@ -11,7 +11,6 @@ authors = [
 requires-python = ">=3.14"
 dependencies = [
     "anthropic>=0.120.2",
-    "langsmith>=0.10.16",
     "pydantic>=2.13.4",
     "pydantic-settings>=2.15.0",
     "python-dotenv>=1.2.2",
@@ -21,6 +20,11 @@ dependencies = [
     "pyyaml>=6.0.3",
 ]
 
+# v0.1 is clone-only (DEC-090): the prompts, requirements catalog, report template, and benchmark
+# scenarios are version-controlled files in the repository, not package data in the wheel. The
+# console script is declared so `trace` and `trace --help` work from an install, but a command that
+# reads those assets from outside a source checkout stops with a clear message. Installability is a
+# later decision; until then, run from a clone (`uv run trace ...`).
 [project.scripts]
 trace = "trace_ai:main"
 

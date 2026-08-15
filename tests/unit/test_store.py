@@ -455,6 +455,38 @@ def test_ids_are_in_insert_order(store: AssessmentStore) -> None:
     assert repository.ids(FakeDocument) == ["src-999", "src-1000"]
 
 
+def test_a_renamed_class_reads_its_rows_through_stored_type(store: AssessmentStore) -> None:
+    """The stored `object_type` is `stored_type`, not `type(obj).__name__`, so a class overriding it
+    keeps reading rows written under the old name (DEC-090) -- a rename no longer silently makes
+    every existing row unreadable."""
+    store.repository("asm-001").save(_document("src-001"))
+
+    class RenamedDocument(FakeDocument):
+        # A rename of FakeDocument that keeps its stored key: rows written as `FakeDocument` are
+        # still this class's.
+        stored_type = "FakeDocument"
+
+    got = store.repository("asm-001").get(RenamedDocument, "src-001")
+    assert got.id == "src-001"
+    assert store.repository("asm-001").ids(RenamedDocument) == ["src-001"]
+
+
+def test_a_corrupt_record_names_the_writing_build(store: AssessmentStore) -> None:
+    """The store records `trace_version` at creation, so a `CorruptRecordError` names the build that
+    wrote the row (DEC-090) rather than leaving only the pydantic error."""
+    store.repository("asm-001").save(an_assessment())
+
+    connection = sqlite3.connect(store.path)
+    connection.execute("UPDATE objects SET payload = '{}' WHERE id = 'asm-001'")
+    connection.commit()
+    connection.close()
+
+    assert store.trace_version, "the store records a trace_version at creation"
+    with pytest.raises(CorruptRecordError) as caught:
+        store.repository("asm-001").get(FakeAssessment, "asm-001")
+    assert store.trace_version in str(caught.value)
+
+
 def test_delete_all_removes_one_assessment_and_leaves_the_others(store: AssessmentStore) -> None:
     store.repository("asm-001").save(an_assessment("asm-001"))
     store.repository("asm-001").save(_document("src-001"))

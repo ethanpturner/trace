@@ -5821,3 +5821,65 @@ Tradeoffs:
   from before this change re-runs `trace reset` once.
 - `ids()`/`list_where()` only reach the columns DEC-020 lifts out of the payload (`status`); a query
   on any other field still lists and filters in Python, because DEC-020 keeps the payload unqueried.
+
+## DEC-090: v0.1 is clone-only; the unused LangSmith dependency and the implicit store identities go
+
+Date: 2026-08-14
+
+Status: Accepted
+
+Decision:
+
+**v0.1 runs from a source checkout, not an installed wheel.** The prompts, the requirements
+catalog, the report template, and the benchmark scenarios are version-controlled files in the
+repository, read through `PROJECT_ROOT`-relative paths; they are not package data in the wheel.
+`config.IS_SOURCE_CHECKOUT` detects the difference (a `pyproject.toml` beside `PROJECT_ROOT`), and a
+command that would read those assets from outside a checkout stops with a clear
+`SourceCheckoutRequiredError` rather than a dangling `FileNotFoundError` deep in a render or a
+catalog load. `trace` and `trace --help` still work from an install, so the console script is honest
+about what an install can do. Making the package installable -- moving the assets under
+`src/trace_ai/` and reading them through `importlib.resources` -- is a later decision; this one makes
+the current stance explicit instead of a metadata claim the code contradicts.
+
+**The `langsmith` runtime dependency and its four settings are removed.** It was declared in
+`pyproject.toml` and imported nowhere, shipping dead weight to every install, and the `langsmith_*`
+settings it fed were read only by the banner. `openai_api_key` stays: it ships no dependency and the
+seam is provider-agnostic by design (DEC-014), so a second adapter would read it. A package-layout
+test now asserts every declared runtime dependency is imported somewhere in `src/`, so a
+re-added-and-unwired dependency fails there rather than shipping.
+
+**Two store identities that were implicit are now explicit.** The stored `object_type` was
+`type(obj).__name__`, so renaming a domain class silently made every existing row unreadable; it is
+now `DomainModel.stored_type`, a class attribute defaulting to the class name that a rename overrides
+in one line. The row key for the one id-less object (`SystemContext`) was duck-typed ("no `id`? key
+by `(assessment_id, version)`"), so any new id-less object would silently collide with it; it is now
+`DomainModel.row_key()`, which `SystemContext` overrides and the base raises for -- a new id-less
+object is a loud decision, not a collision. And `store_metadata` records `trace_version` at creation,
+so a `CorruptRecordError` names the build that wrote the row, which keeps DEC-020's refuse-don't-
+migrate stance while making the refusal actionable.
+
+Why:
+
+- The packaging metadata claimed installability (`[project.scripts]`, a distribution name) while
+  `pip install trace && trace run` would fail on the first asset read, and nothing in CI caught it
+  because `uv sync` is editable with the repo present. An MVP that DEC-004 scopes to a local
+  single-user run does not need distribution; it needs its packaging to stop lying.
+- Each store identity that lived only as `__name__` or a duck-typed branch was a rename or a new
+  object away from silent data loss -- the one place the otherwise-explicit persistence layer
+  guessed.
+
+Alternatives Considered:
+
+- Making the wheel self-contained now (rejected for v0.1: moving the requirements catalog and its
+  content hash, the prompt tree, and the templates under the package, and rewriting every reader to
+  `importlib.resources`, is a real migration for a distribution nobody is consuming yet).
+- Keeping `langsmith` for a future tracing integration (rejected: an unwired dependency is dead
+  weight now, and wiring tracing is its own decision when it happens).
+
+Tradeoffs:
+
+- A `SourceCheckoutRequiredError` from a wheel is less convenient than a working install, but it is
+  honest, and the guard is one check past the banner rather than scattered through the readers.
+- `stored_type` as a class attribute set in `__init_subclass__` is a small piece of metaclass-time
+  machinery on `DomainModel`; it earns its place by turning a rename from silent data loss into a
+  one-line override, and a conformance test pins that every object's `stored_type` is its name.

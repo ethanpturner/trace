@@ -65,6 +65,23 @@ __all__ = [
 # gitignored and regenerable.
 SCHEMA_VERSION: Final = 2
 
+
+def _trace_version() -> str:
+    """The installed distribution version, or `unknown` from a tree with no metadata.
+
+    Recorded once at store creation (DEC-090) so a `CorruptRecordError` can name the build that
+    wrote a row rather than only the pydantic error, which stays within DEC-020's refuse-don't-
+    migrate stance -- it makes the refusal actionable, not a migration."""
+    from importlib.metadata import PackageNotFoundError, version
+
+    try:
+        return version("trace")
+    except PackageNotFoundError:  # pragma: no cover - only from a tree without installed metadata
+        return "unknown"
+
+
+TRACE_VERSION: Final = _trace_version()
+
 DATABASE_FILENAME: Final = "trace.db"
 
 # The counter scope for identifiers that cannot belong to an assessment. DEC-018 scopes generated
@@ -150,11 +167,19 @@ class WrongAssessmentError(StoreError):
 class CorruptRecordError(StoreError):
     """A stored row no longer parses into its model."""
 
-    def __init__(self, assessment_id: str, object_id: str, model: str, cause: str) -> None:
+    def __init__(
+        self,
+        assessment_id: str,
+        object_id: str,
+        model: str,
+        cause: str,
+        *,
+        written_by: str = "unknown",
+    ) -> None:
         super().__init__(
-            f"{object_id} in {assessment_id} does not parse as {model}. The row was written by "
-            f"an incompatible model version, or by something that bypassed this store. "
-            f"Underlying error: {cause}"
+            f"{object_id} in {assessment_id} does not parse as {model}. The database was created by "
+            f"trace {written_by}; the row was written by an incompatible model version, or by "
+            f"something that bypassed this store. Underlying error: {cause}"
         )
         self.object_id = object_id
 
@@ -186,23 +211,6 @@ def _scope_of(obj: DomainModel) -> str:
             f"except the Assessment itself is scoped to one, per DEC-018."
         )
     return scope
-
-
-def _row_key(obj: DomainModel) -> str:
-    """The key an object is stored under: its identifier, or the pair that identifies it.
-
-    Only `SystemContext` takes the second branch. `data-model.md` section 9 gives it no `id` and
-    DEC-034 states why -- it is addressed by its position in a sequence rather than by a name -- so
-    the row key renders that position instead of inventing one.
-    """
-    identifier = getattr(obj, "id", None)
-    if isinstance(identifier, str):
-        return identifier
-    version = getattr(obj, "version", None)
-    scope = getattr(obj, "assessment_id", None)
-    if isinstance(version, int) and isinstance(scope, str):
-        return f"{scope}@v{version}"
-    raise StoreError(f"{type(obj).__name__} has neither an `id` nor an (assessment_id, version)")
 
 
 class AssessmentStore:
@@ -291,6 +299,10 @@ class AssessmentStore:
                 "INSERT INTO store_metadata (key, value) VALUES ('schema_version', ?)",
                 (str(SCHEMA_VERSION),),
             )
+            self._connection.execute(
+                "INSERT INTO store_metadata (key, value) VALUES ('trace_version', ?)",
+                (TRACE_VERSION,),
+            )
 
     @property
     def schema_version(self) -> int:
@@ -301,6 +313,14 @@ class AssessmentStore:
         if row is None:
             raise StoreError("store_metadata has no schema_version row; the database is malformed")
         return int(row["value"])
+
+    @property
+    def trace_version(self) -> str:
+        """The build that created this database, or `unknown` for one made before it was recorded."""
+        row = self._connection.execute(
+            "SELECT value FROM store_metadata WHERE key = 'trace_version'"
+        ).fetchone()
+        return "unknown" if row is None else str(row["value"])
 
     def allocate_assessment_id(self) -> str:
         """The next `asm-NNN`, unique across this database.
@@ -469,7 +489,7 @@ class AssessmentRepository:
         object the corpus deliberately leaves unnamed, and every revision would then have two.
         """
         scope = _scope_of(obj)
-        row_key = _row_key(obj)
+        row_key = obj.row_key()
         if scope != self.assessment_id:
             raise WrongAssessmentError(row_key, scope, self.assessment_id)
         self._store._guard_write_scope(self.assessment_id)
@@ -489,7 +509,7 @@ class AssessmentRepository:
             (
                 self.assessment_id,
                 row_key,
-                type(obj).__name__,
+                obj.stored_type,
                 _column(obj, "status"),
                 _column(obj, "created_at"),
                 payload,
@@ -500,7 +520,7 @@ class AssessmentRepository:
         """Read one object, validated. Raises if it is absent or no longer parses."""
         row = self._connection.execute(
             "SELECT payload FROM objects WHERE assessment_id = ? AND id = ? AND object_type = ?",
-            (self.assessment_id, object_id, model.__name__),
+            (self.assessment_id, object_id, model.stored_type),
         ).fetchone()
         if row is None:
             raise StoreError(f"no {model.__name__} with id {object_id!r} in {self.assessment_id}")
@@ -527,7 +547,7 @@ class AssessmentRepository:
         materialize it. `list` is this collected.
         """
         sql = "SELECT id, payload FROM objects WHERE assessment_id = ? AND object_type = ?"
-        parameters: list[object] = [self.assessment_id, model.__name__]
+        parameters: list[object] = [self.assessment_id, model.stored_type]
         if status is not None:
             sql += " AND status = ?"
             parameters.append(status)
@@ -544,7 +564,7 @@ class AssessmentRepository:
         `list` pays for every row.
         """
         sql = "SELECT id FROM objects WHERE assessment_id = ? AND object_type = ?"
-        parameters: list[object] = [self.assessment_id, model.__name__]
+        parameters: list[object] = [self.assessment_id, model.stored_type]
         if status is not None:
             sql += " AND status = ?"
             parameters.append(status)
@@ -585,7 +605,7 @@ class AssessmentRepository:
     def count(self, model: type[DomainModel]) -> int:
         row = self._connection.execute(
             "SELECT COUNT(*) AS total FROM objects WHERE assessment_id = ? AND object_type = ?",
-            (self.assessment_id, model.__name__),
+            (self.assessment_id, model.stored_type),
         ).fetchone()
         return int(row["total"])
 
@@ -618,7 +638,11 @@ class AssessmentRepository:
             return model.model_validate_json(payload)
         except ValidationError as error:
             raise CorruptRecordError(
-                self.assessment_id, object_id, model.__name__, str(error)
+                self.assessment_id,
+                object_id,
+                model.__name__,
+                str(error),
+                written_by=self._store.trace_version,
             ) from error
 
 

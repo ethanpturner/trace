@@ -1092,26 +1092,44 @@ class AblatedContextApprovalNode:
         )
 
 
+# Which registered node names each ablation removes. Kept beside `KNOWN_ABLATIONS`, and
+# `_apply_ablations` asserts every requested ablation matched at least one -- a name that has drifted
+# out of step with the node it removes would otherwise substitute nothing and run the full pipeline
+# while marking the run non-authoritative, which is a measurement that lies rather than one that
+# stops.
+_ABLATION_NODE_NAMES: Final = {
+    "no-evidence-validation": frozenset({"evidence-validation", "evidence-assessment-validation"}),
+    "no-critical-review": frozenset({"critical-review", "critique-validation"}),
+    "no-context-approval": frozenset({"human-context-review"}),
+}
+
+
 def _apply_ablations(nodes: list[Node], ablations: Sequence[str]) -> list[Node]:
     """Substitute stand-ins for the nodes each ablation removes. Unknown names were refused."""
-    removed_names = {
-        "no-evidence-validation": {"evidence-validation", "evidence-assessment-validation"},
-        "no-critical-review": {"critical-review", "critique-validation"},
-    }
+    substitutions: dict[str, int] = dict.fromkeys(ablations, 0)
     replaced: list[Node] = []
     for node in nodes:
         substituted = False
         for ablation in ablations:
-            if node.name in removed_names.get(ablation, set()):
-                replaced.append(AblatedNode(name=node.name, phase=node.phase, ablation=ablation))
-                substituted = True
-                break
-            if ablation == "no-context-approval" and node.name == "human-context-review":
+            if node.name not in _ABLATION_NODE_NAMES.get(ablation, frozenset()):
+                continue
+            if ablation == "no-context-approval":
                 replaced.append(AblatedContextApprovalNode())
-                substituted = True
-                break
+            else:
+                replaced.append(AblatedNode(name=node.name, phase=node.phase, ablation=ablation))
+            substitutions[ablation] += 1
+            substituted = True
+            break
         if not substituted:
             replaced.append(node)
+
+    unmatched = sorted(ablation for ablation, count in substitutions.items() if count == 0)
+    if unmatched:
+        raise ValueError(
+            f"ablation(s) {unmatched} substituted no node; the removal map is stale (a node name "
+            f"changed). A run marked non-authoritative that in fact ran the full pipeline is worse "
+            f"than one that stops, so this refuses rather than silently ablating nothing."
+        )
     return replaced
 
 

@@ -123,6 +123,15 @@ class SystemContext(DomainModel):
     version: int = Field(ge=FIRST_VERSION)
     """Revision number within the assessment, from 1. Half of this object's key."""
 
+    def row_key(self) -> str:
+        """`(assessment_id, version)` rendered, because this is the one object with no `id`.
+
+        DEC-034 keys it by that pair; the store persists it under `<assessment_id>@v<version>` rather
+        than minting an identifier the corpus deliberately withholds. Overriding the base's
+        id-or-raise keeps id-less objects from silently sharing one key.
+        """
+        return f"{self.assessment_id}@v{self.version}"
+
     @property
     def is_approved(self) -> bool:
         """True when a reviewer approved this revision, by the record rather than by inference.

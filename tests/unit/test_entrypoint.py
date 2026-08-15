@@ -63,19 +63,19 @@ def test_bootstrap_discards_settings_cached_before_dotenv_load(
 ) -> None:
     """A pre-bootstrap read must not pin stale values for the whole process."""
     env_file = tmp_path / ".env"
-    env_file.write_text("LANGSMITH_PROJECT=from-dotenv\n", encoding="utf-8")
+    env_file.write_text("APP_ENV=staging\n", encoding="utf-8")
     monkeypatch.setattr("trace_ai.config.ENV_FILE", env_file)
-    monkeypatch.delenv("LANGSMITH_PROJECT", raising=False)
+    monkeypatch.delenv("APP_ENV", raising=False)
 
     # Something reads settings too early, before .env has been loaded.
     stale = Settings(_env_file=None)
-    assert stale.langsmith_project == "trace"
+    assert stale.app_env == "local"
     get_settings.cache_clear()
     get_settings()
 
     settings = bootstrap()
 
-    assert settings.langsmith_project == "from-dotenv"
+    assert settings.app_env == "staging"
 
 
 def test_configure_logging_applies_the_settings_level(
