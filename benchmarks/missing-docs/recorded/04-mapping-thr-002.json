@@ -1,22 +1,25 @@
 {
-  "controls": [],
-  "mappings": [
-    {
-      "threat_id": "thr-002",
-      "requirement_id": "req-AUTHZ-001",
-      "control_keys": [],
-      "existing_control_ids": [],
-      "applicability_status": "applicable",
-      "applicability_reason": "The service holds customer-scoped records and is called by kiosks and the fulfillment system, so enforced and documented authorization applies.",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "unverified",
-      "evidence_ids": [
-        "evd-001"
-      ],
-      "assumptions": [],
-      "confidence": "low"
-    }
-  ],
-  "documentation_gaps": []
+  "schema": "MappingProposal",
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-AUTHZ-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The service holds customer-scoped records and is called by kiosks and the fulfillment system, so enforced and documented authorization applies.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "low"
+      }
+    ],
+    "documentation_gaps": []
+  }
 }

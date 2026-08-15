@@ -1,35 +1,38 @@
 {
-  "critiques": [
-    {
-      "subject_type": "threat",
-      "subject_id": "thr-007",
-      "critique_type": "missing_precondition",
-      "description": "The first attack-path step asserts that an authenticated user 'obtains or infers an organization identifier and a job identifier from a result view, comment link or API response' and cites evd-046 and evd-010, but neither passage supports acquisition of identifiers belonging to a different organization. evd-046 records only the flow Customer Browser -> ForgeFlow API -> PostgreSQL or Object Storage and the data classes returned (analysis results, source references, job status, customer settings); evd-010 records only that a published comment contains a 'Link to the full ForgeFlow report'. Neither states that a user is shown any organization or job identifier other than their own, and no cited passage states the format or generation scheme of those identifiers, so 'infers' is unestablished. The four recorded preconditions cover path determinism (evd-033, evd-078), artifact content, link minting and the evd-054 gap, but omit the condition that a party can learn or predict an organization identifier and job identifier outside its own organization.",
-      "rationale": "The path-convention branch of this threat cannot proceed without foreign identifiers, so that condition is load-bearing, yet it appears only as prose in the attack path and is cited to two passages that do not carry it. The link-replay branch (attack-path step 4) is unaffected, because a forwarded link carries the identifiers with it; recording the identifier-acquisition condition as an explicit precondition marked unestablished, or requesting the identifier-generation scheme, would make clear which branch rests on what and would prevent a downstream finding from reading step 1 as documented fact.",
-      "evidence_ids": [
-        "evd-046",
-        "evd-010",
-        "evd-033",
-        "evd-078"
-      ],
-      "recommended_action": "revise",
-      "confidence": "medium"
-    },
-    {
-      "subject_type": "documentation_gap",
-      "subject_id": "gap-044",
-      "critique_type": "duplicate",
-      "description": "gap-044 ('Enforcement of organization scoping on access to stored artifacts is not described') and gap-022 ('Object-storage authorization enforcement is not described') record the same missing documentation from the same passages: both cite evd-033, evd-078, evd-130, evd-054 and evd-138, both name cmp-010 and ctl-011, and both request the storage access policy plus a description of the enforcement point that constrains an artifact read to the requester's organization. gap-044's second requested item, the authorization check performed before a time-limited link is issued, is already gap-023's first requested item (evd-026, evd-033). The only request not held elsewhere is gap-044's third, on what the administrative interface can reach in object storage, which corresponds to a distinct evd-054 entry ('Administrative access to source artifacts') and which map-071 places outside this threat's actor set and path.",
-      "rationale": "Two records asking for the same document (the storage access policy and the read-time enforcement point) cause the same evidence request to be issued twice and split any reviewer response between them. gap-022 is the fuller statement of the two, since it also asks whether artifact reads are always mediated by the ForgeFlow API or can be made directly against storage - the question map-069 and eas-046 deliberately leave open. Merging gap-044 into gap-022 while carrying the administrative-reach request forward separately rather than dropping it would leave one gap per missing document.",
-      "evidence_ids": [
-        "evd-033",
-        "evd-078",
-        "evd-130",
-        "evd-054",
-        "evd-138"
-      ],
-      "recommended_action": "merge",
-      "confidence": "high"
-    }
-  ]
+  "schema": "CriticalReviewProposal",
+  "response": {
+    "critiques": [
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-007",
+        "critique_type": "missing_precondition",
+        "description": "The first attack-path step asserts that an authenticated user 'obtains or infers an organization identifier and a job identifier from a result view, comment link or API response' and cites evd-046 and evd-010, but neither passage supports acquisition of identifiers belonging to a different organization. evd-046 records only the flow Customer Browser -> ForgeFlow API -> PostgreSQL or Object Storage and the data classes returned (analysis results, source references, job status, customer settings); evd-010 records only that a published comment contains a 'Link to the full ForgeFlow report'. Neither states that a user is shown any organization or job identifier other than their own, and no cited passage states the format or generation scheme of those identifiers, so 'infers' is unestablished. The four recorded preconditions cover path determinism (evd-033, evd-078), artifact content, link minting and the evd-054 gap, but omit the condition that a party can learn or predict an organization identifier and job identifier outside its own organization.",
+        "rationale": "The path-convention branch of this threat cannot proceed without foreign identifiers, so that condition is load-bearing, yet it appears only as prose in the attack path and is cited to two passages that do not carry it. The link-replay branch (attack-path step 4) is unaffected, because a forwarded link carries the identifiers with it; recording the identifier-acquisition condition as an explicit precondition marked unestablished, or requesting the identifier-generation scheme, would make clear which branch rests on what and would prevent a downstream finding from reading step 1 as documented fact.",
+        "evidence_ids": [
+          "evd-046",
+          "evd-010",
+          "evd-033",
+          "evd-078"
+        ],
+        "recommended_action": "revise",
+        "confidence": "medium"
+      },
+      {
+        "subject_type": "documentation_gap",
+        "subject_id": "gap-044",
+        "critique_type": "duplicate",
+        "description": "gap-044 ('Enforcement of organization scoping on access to stored artifacts is not described') and gap-022 ('Object-storage authorization enforcement is not described') record the same missing documentation from the same passages: both cite evd-033, evd-078, evd-130, evd-054 and evd-138, both name cmp-010 and ctl-011, and both request the storage access policy plus a description of the enforcement point that constrains an artifact read to the requester's organization. gap-044's second requested item, the authorization check performed before a time-limited link is issued, is already gap-023's first requested item (evd-026, evd-033). The only request not held elsewhere is gap-044's third, on what the administrative interface can reach in object storage, which corresponds to a distinct evd-054 entry ('Administrative access to source artifacts') and which map-071 places outside this threat's actor set and path.",
+        "rationale": "Two records asking for the same document (the storage access policy and the read-time enforcement point) cause the same evidence request to be issued twice and split any reviewer response between them. gap-022 is the fuller statement of the two, since it also asks whether artifact reads are always mediated by the ForgeFlow API or can be made directly against storage - the question map-069 and eas-046 deliberately leave open. Merging gap-044 into gap-022 while carrying the administrative-reach request forward separately rather than dropping it would leave one gap per missing document.",
+        "evidence_ids": [
+          "evd-033",
+          "evd-078",
+          "evd-130",
+          "evd-054",
+          "evd-138"
+        ],
+        "recommended_action": "merge",
+        "confidence": "high"
+      }
+    ]
+  }
 }

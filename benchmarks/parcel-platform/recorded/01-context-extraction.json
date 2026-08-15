@@ -1,887 +1,890 @@
 {
-  "system": {
-    "system_name": "Parcelworks",
-    "system_purpose": "a parcel-logistics platform: customers book and track shipments, drivers collect and deliver, carrier partners handle line-haul",
-    "business_criticality": null,
-    "environment": [],
-    "deployment_model": null,
-    "data_classifications": []
-  },
-  "claims": [
-    {
-      "key": "admin-same-path",
-      "subject_type": "component",
-      "subject_key": "admin",
-      "predicate": "administrative_access_path",
-      "value": "staff reach the admin console with the same SSO accounts and the same sign-in path customers use; an is_admin flag on the user record enables its functions, and the console can read and edit any customer account, order, and address",
-      "status": "documented",
-      "confidence": "high",
-      "rationale": null,
-      "evidence_ids": [
-        "evd-003"
-      ]
+  "schema": "ContextExtractionProposal",
+  "response": {
+    "system": {
+      "system_name": "Parcelworks",
+      "system_purpose": "a parcel-logistics platform: customers book and track shipments, drivers collect and deliver, carrier partners handle line-haul",
+      "business_criticality": null,
+      "environment": [],
+      "deployment_model": null,
+      "data_classifications": []
     },
-    {
-      "key": "notification-logging",
-      "subject_type": "component",
-      "subject_key": "notifications",
-      "predicate": "log_content",
-      "value": "the notification templates log the full rendered message body — including the recipient's name, delivery address, and delivery window — to the shared application log",
-      "status": "documented",
-      "confidence": "high",
-      "rationale": null,
-      "evidence_ids": [
-        "evd-003"
-      ]
-    },
-    {
-      "key": "warehouse-retention",
-      "subject_type": "component",
-      "subject_key": "warehouse",
-      "predicate": "copy_retention",
-      "value": "the data warehouse receives a nightly copy of the orders database including customer names and full delivery addresses; how long the copies are kept has not been written down anywhere the team could point to",
-      "status": "documented",
-      "confidence": "high",
-      "rationale": null,
-      "evidence_ids": [
-        "evd-004"
-      ]
-    },
-    {
-      "key": "data-zone-reachability",
-      "subject_type": "component",
-      "subject_key": "orders-db",
-      "predicate": "network_reachability",
-      "value": "the orders database and the tracking store are reachable only from the core zone",
-      "status": "documented",
-      "confidence": "high",
-      "rationale": null,
-      "evidence_ids": [
-        "evd-004"
-      ]
-    },
-    {
-      "key": "gateway-auth",
-      "subject_type": "component",
-      "subject_key": "api-gateway",
-      "predicate": "entry_authentication",
-      "value": "the API gateway terminates TLS, authenticates every request against the identity service, and applies per-client rate limits",
-      "status": "documented",
-      "confidence": "high",
-      "rationale": null,
-      "evidence_ids": [
-        "evd-002"
-      ]
-    },
-    {
-      "key": "sso-delegation",
-      "subject_type": "component",
-      "subject_key": "identity",
-      "predicate": "authentication_delegation",
-      "value": "all interactive sign-in is delegated to the company's SSO provider over OpenID Connect, and the identity service issues short-lived internal tokens the core services verify",
-      "status": "documented",
-      "confidence": "high",
-      "rationale": null,
-      "evidence_ids": [
-        "evd-003"
-      ]
-    },
-    {
-      "key": "bus-credentials",
-      "subject_type": "component",
-      "subject_key": "bus",
-      "predicate": "service_authentication",
-      "value": "services authenticate to the message bus with per-service credentials issued at deploy time",
-      "status": "documented",
-      "confidence": "high",
-      "rationale": null,
-      "evidence_ids": [
-        "evd-004"
-      ]
-    },
-    {
-      "key": "payment-outsourced",
-      "subject_type": "component",
-      "subject_key": "billing",
-      "predicate": "payment_processing",
-      "value": "card payments are processed entirely by an external payment provider, and the platform stores only the provider's payment reference",
-      "status": "documented",
-      "confidence": "high",
-      "rationale": null,
-      "evidence_ids": [
-        "evd-003"
-      ]
-    }
-  ],
-  "components": [
-    {
-      "key": "portal",
-      "name": "Customer Portal",
-      "component_type": "web_application",
-      "description": "public web application for booking, labels, and tracking",
-      "technology": [],
-      "ownership": null,
-      "deployment_zone": "edge",
-      "internet_accessible": true,
-      "externally_managed": null,
-      "data_classifications": [],
-      "authentication_mechanisms": [],
-      "authorization_mechanisms": [],
-      "evidence_ids": [
-        "evd-002"
-      ]
-    },
-    {
-      "key": "mobile-gateway",
-      "name": "Mobile Gateway",
-      "component_type": "gateway",
-      "description": "endpoint for the driver mobile application: routes down, scan events and proof-of-delivery photos up",
-      "technology": [],
-      "ownership": null,
-      "deployment_zone": "edge",
-      "internet_accessible": true,
-      "externally_managed": null,
-      "data_classifications": [],
-      "authentication_mechanisms": [],
-      "authorization_mechanisms": [],
-      "evidence_ids": [
-        "evd-002"
-      ]
-    },
-    {
-      "key": "api-gateway",
-      "name": "API Gateway",
-      "component_type": "gateway",
-      "description": "the single public entry point: terminates TLS, authenticates every request against the identity service, applies per-client rate limits",
-      "technology": [],
-      "ownership": null,
-      "deployment_zone": "edge",
-      "internet_accessible": true,
-      "externally_managed": null,
-      "data_classifications": [],
-      "authentication_mechanisms": [],
-      "authorization_mechanisms": [],
-      "evidence_ids": [
-        "evd-002"
-      ]
-    },
-    {
-      "key": "identity",
-      "name": "Identity Service",
-      "component_type": "service",
-      "description": "delegates interactive sign-in to the company SSO provider over OpenID Connect and issues short-lived internal tokens",
-      "technology": [],
-      "ownership": null,
-      "deployment_zone": "core",
-      "internet_accessible": null,
-      "externally_managed": null,
-      "data_classifications": [],
-      "authentication_mechanisms": [
-        "openid_connect"
-      ],
-      "authorization_mechanisms": [],
-      "evidence_ids": [
-        "evd-003"
-      ]
-    },
-    {
-      "key": "orders",
-      "name": "Order Service",
-      "component_type": "service",
-      "description": "owns shipment bookings; writes the orders database and publishes order events to the message bus",
-      "technology": [],
-      "ownership": null,
-      "deployment_zone": "core",
-      "internet_accessible": null,
-      "externally_managed": null,
-      "data_classifications": [],
-      "authentication_mechanisms": [],
-      "authorization_mechanisms": [],
-      "evidence_ids": [
-        "evd-003"
-      ]
-    },
-    {
-      "key": "routing",
-      "name": "Routing Service",
-      "component_type": "service",
-      "description": "plans collection and delivery routes from open orders and driver availability",
-      "technology": [],
-      "ownership": null,
-      "deployment_zone": "core",
-      "internet_accessible": null,
-      "externally_managed": null,
-      "data_classifications": [],
-      "authentication_mechanisms": [],
-      "authorization_mechanisms": [],
-      "evidence_ids": [
-        "evd-003"
-      ]
-    },
-    {
-      "key": "dispatch",
-      "name": "Dispatch Service",
-      "component_type": "service",
-      "description": "pushes route assignments to drivers through the mobile gateway and records acceptance",
-      "technology": [],
-      "ownership": null,
-      "deployment_zone": "core",
-      "internet_accessible": null,
-      "externally_managed": null,
-      "data_classifications": [],
-      "authentication_mechanisms": [],
-      "authorization_mechanisms": [],
-      "evidence_ids": [
-        "evd-003"
-      ]
-    },
-    {
-      "key": "tracking",
-      "name": "Tracking Service",
-      "component_type": "service",
-      "description": "consumes scan events from the message bus, maintains per-parcel state in the tracking store, serves portal queries",
-      "technology": [],
-      "ownership": null,
-      "deployment_zone": "core",
-      "internet_accessible": null,
-      "externally_managed": null,
-      "data_classifications": [],
-      "authentication_mechanisms": [],
-      "authorization_mechanisms": [],
-      "evidence_ids": [
-        "evd-003"
-      ]
-    },
-    {
-      "key": "notifications",
-      "name": "Notification Service",
-      "component_type": "service",
-      "description": "sends confirmations and delivery notices through an external messaging provider; templates log the full rendered message body to the shared application log",
-      "technology": [],
-      "ownership": null,
-      "deployment_zone": "core",
-      "internet_accessible": null,
-      "externally_managed": null,
-      "data_classifications": [],
-      "authentication_mechanisms": [],
-      "authorization_mechanisms": [],
-      "evidence_ids": [
-        "evd-003"
-      ]
-    },
-    {
-      "key": "labels",
-      "name": "Label Service",
-      "component_type": "service",
-      "description": "renders shipping labels as PDFs into the object storage bucket",
-      "technology": [],
-      "ownership": null,
-      "deployment_zone": "core",
-      "internet_accessible": null,
-      "externally_managed": null,
-      "data_classifications": [],
-      "authentication_mechanisms": [],
-      "authorization_mechanisms": [],
-      "evidence_ids": [
-        "evd-003"
-      ]
-    },
-    {
-      "key": "billing",
-      "name": "Billing Service",
-      "component_type": "service",
-      "description": "prices shipments and records payments; card processing is entirely external, only the payment reference is stored",
-      "technology": [],
-      "ownership": null,
-      "deployment_zone": "core",
-      "internet_accessible": null,
-      "externally_managed": null,
-      "data_classifications": [],
-      "authentication_mechanisms": [],
-      "authorization_mechanisms": [],
-      "evidence_ids": [
-        "evd-003"
-      ]
-    },
-    {
-      "key": "admin",
-      "name": "Admin Console",
-      "component_type": "web_application",
-      "description": "staff interface for refunds, corrections, and account management; reached with the same SSO accounts and sign-in path customers use, enabled by an is_admin flag",
-      "technology": [],
-      "ownership": null,
-      "deployment_zone": "core",
-      "internet_accessible": null,
-      "externally_managed": null,
-      "data_classifications": [],
-      "authentication_mechanisms": [
-        "sso"
-      ],
-      "authorization_mechanisms": [],
-      "evidence_ids": [
-        "evd-003"
-      ]
-    },
-    {
-      "key": "bus",
-      "name": "Message Bus",
-      "component_type": "message_bus",
-      "description": "the event backbone; services authenticate with per-service credentials issued at deploy time",
-      "technology": [],
-      "ownership": null,
-      "deployment_zone": "data",
-      "internet_accessible": null,
-      "externally_managed": null,
-      "data_classifications": [],
-      "authentication_mechanisms": [],
-      "authorization_mechanisms": [],
-      "evidence_ids": [
-        "evd-004"
-      ]
-    },
-    {
-      "key": "orders-db",
-      "name": "Orders Database",
-      "component_type": "data_store",
-      "description": "relational store for bookings, customer accounts, and addresses; reachable only from the core zone",
-      "technology": [],
-      "ownership": null,
-      "deployment_zone": "data",
-      "internet_accessible": false,
-      "externally_managed": null,
-      "data_classifications": [],
-      "authentication_mechanisms": [],
-      "authorization_mechanisms": [],
-      "evidence_ids": [
-        "evd-004"
-      ]
-    },
-    {
-      "key": "tracking-store",
-      "name": "Tracking Store",
-      "component_type": "data_store",
-      "description": "per-parcel scan history and tracking state; reachable only from the core zone",
-      "technology": [],
-      "ownership": null,
-      "deployment_zone": "data",
-      "internet_accessible": false,
-      "externally_managed": null,
-      "data_classifications": [],
-      "authentication_mechanisms": [],
-      "authorization_mechanisms": [],
-      "evidence_ids": [
-        "evd-004"
-      ]
-    },
-    {
-      "key": "object-storage",
-      "name": "Object Storage",
-      "component_type": "data_store",
-      "description": "managed object store holding label PDFs and proof-of-delivery photos",
-      "technology": [],
-      "ownership": null,
-      "deployment_zone": "data",
-      "internet_accessible": null,
-      "externally_managed": true,
-      "data_classifications": [],
-      "authentication_mechanisms": [],
-      "authorization_mechanisms": [],
-      "evidence_ids": [
-        "evd-004"
-      ]
-    },
-    {
-      "key": "warehouse",
-      "name": "Data Warehouse",
-      "component_type": "data_store",
-      "description": "receives a nightly copy of the orders database, including customer names and full delivery addresses, for analytics",
-      "technology": [],
-      "ownership": null,
-      "deployment_zone": "data",
-      "internet_accessible": null,
-      "externally_managed": null,
-      "data_classifications": [],
-      "authentication_mechanisms": [],
-      "authorization_mechanisms": [],
-      "evidence_ids": [
-        "evd-004"
-      ]
-    },
-    {
-      "key": "carrier-link",
-      "name": "Carrier Link",
-      "component_type": "service",
-      "description": "connector to carrier partners' APIs: manifests out, status updates in, over the carriers' HTTPS APIs",
-      "technology": [],
-      "ownership": null,
-      "deployment_zone": "operations",
-      "internet_accessible": null,
-      "externally_managed": null,
-      "data_classifications": [],
-      "authentication_mechanisms": [],
-      "authorization_mechanisms": [],
-      "evidence_ids": [
-        "evd-005"
-      ]
-    },
-    {
-      "key": "deploy-runner",
-      "name": "Deploy Runner",
-      "component_type": "service",
-      "description": "runs the deployment pipeline that builds and releases the core services",
-      "technology": [],
-      "ownership": null,
-      "deployment_zone": "operations",
-      "internet_accessible": null,
-      "externally_managed": null,
-      "data_classifications": [],
-      "authentication_mechanisms": [],
-      "authorization_mechanisms": [],
-      "evidence_ids": [
-        "evd-005"
-      ]
-    }
-  ],
-  "actors": [
-    {
-      "key": "customer",
-      "name": "Customer",
-      "actor_type": "external_user",
-      "trust_level": null,
-      "capabilities": [],
-      "authentication_method": null,
-      "evidence_ids": [
-        "evd-006"
-      ]
-    },
-    {
-      "key": "driver",
-      "name": "Driver",
-      "actor_type": "external_user",
-      "trust_level": null,
-      "capabilities": [],
-      "authentication_method": null,
-      "evidence_ids": [
-        "evd-006"
-      ]
-    },
-    {
-      "key": "staff",
-      "name": "Staff operator",
-      "actor_type": "internal_user",
-      "trust_level": null,
-      "capabilities": [],
-      "authentication_method": null,
-      "evidence_ids": [
-        "evd-006"
-      ]
-    },
-    {
-      "key": "carrier",
-      "name": "Carrier partner",
-      "actor_type": "external_service",
-      "trust_level": null,
-      "capabilities": [],
-      "authentication_method": null,
-      "evidence_ids": [
-        "evd-006"
-      ]
-    },
-    {
-      "key": "messaging",
-      "name": "Messaging provider",
-      "actor_type": "external_service",
-      "trust_level": null,
-      "capabilities": [],
-      "authentication_method": null,
-      "evidence_ids": [
-        "evd-006"
-      ]
-    }
-  ],
-  "assets": [
-    {
-      "key": "bookings",
-      "name": "Shipment bookings and addresses",
-      "asset_type": "customer_data",
-      "description": "bookings, customer accounts, and full delivery addresses",
-      "confidentiality_impact": null,
-      "integrity_impact": null,
-      "availability_impact": null,
-      "data_classification": null,
-      "owner": null,
-      "component_keys": [
-        "orders-db",
-        "orders",
-        "warehouse"
-      ],
-      "evidence_ids": [
-        "evd-004"
-      ]
-    },
-    {
-      "key": "tracking-history",
-      "name": "Parcel tracking history",
-      "asset_type": "operational_data",
-      "description": null,
-      "confidentiality_impact": null,
-      "integrity_impact": null,
-      "availability_impact": null,
-      "data_classification": null,
-      "owner": null,
-      "component_keys": [
-        "tracking-store",
-        "tracking"
-      ],
-      "evidence_ids": [
-        "evd-004"
-      ]
-    },
-    {
-      "key": "label-artifacts",
-      "name": "Labels and proof-of-delivery photos",
-      "asset_type": "customer_data",
-      "description": null,
-      "confidentiality_impact": null,
-      "integrity_impact": null,
-      "availability_impact": null,
-      "data_classification": null,
-      "owner": null,
-      "component_keys": [
-        "object-storage",
-        "labels"
-      ],
-      "evidence_ids": [
-        "evd-004"
-      ]
-    },
-    {
-      "key": "messages",
-      "name": "Notification messages",
-      "asset_type": "customer_data",
-      "description": "rendered message bodies carrying recipient name, delivery address, and delivery window",
-      "confidentiality_impact": null,
-      "integrity_impact": null,
-      "availability_impact": null,
-      "data_classification": null,
-      "owner": null,
-      "component_keys": [
-        "notifications"
-      ],
-      "evidence_ids": [
-        "evd-003"
-      ]
-    },
-    {
-      "key": "payment-refs",
-      "name": "Payment references",
-      "asset_type": "financial_data",
-      "description": null,
-      "confidentiality_impact": null,
-      "integrity_impact": null,
-      "availability_impact": null,
-      "data_classification": null,
-      "owner": null,
-      "component_keys": [
-        "billing"
-      ],
-      "evidence_ids": [
-        "evd-003"
-      ]
-    }
-  ],
-  "data_flows": [
-    {
-      "key": "portal-gw",
-      "name": "Portal traffic",
-      "source_component_key": "portal",
-      "destination_component_key": "api-gateway",
-      "direction": "bidirectional",
-      "protocol": "https",
-      "data_types": [],
-      "authentication": "sso",
-      "encryption_in_transit": "https",
-      "crosses_trust_boundary_keys": [],
-      "internet_exposed": true,
-      "evidence_ids": [
-        "evd-002"
-      ]
-    },
-    {
-      "key": "mobile-gw",
-      "name": "Driver app traffic",
-      "source_component_key": "mobile-gateway",
-      "destination_component_key": "api-gateway",
-      "direction": "bidirectional",
-      "protocol": "https",
-      "data_types": [],
-      "authentication": "sso",
-      "encryption_in_transit": "https",
-      "crosses_trust_boundary_keys": [],
-      "internet_exposed": true,
-      "evidence_ids": [
-        "evd-002"
-      ]
-    },
-    {
-      "key": "gw-identity",
-      "name": "Request authentication",
-      "source_component_key": "api-gateway",
-      "destination_component_key": "identity",
-      "direction": "bidirectional",
-      "protocol": null,
-      "data_types": [],
-      "authentication": "internal_token",
-      "encryption_in_transit": "unknown",
-      "crosses_trust_boundary_keys": [],
-      "internet_exposed": false,
-      "evidence_ids": [
-        "evd-002"
-      ]
-    },
-    {
-      "key": "gw-orders",
-      "name": "Booking requests",
-      "source_component_key": "api-gateway",
-      "destination_component_key": "orders",
-      "direction": "bidirectional",
-      "protocol": null,
-      "data_types": [],
-      "authentication": "internal_token",
-      "encryption_in_transit": "unknown",
-      "crosses_trust_boundary_keys": [],
-      "internet_exposed": false,
-      "evidence_ids": [
-        "evd-002"
-      ]
-    },
-    {
-      "key": "orders-db-flow",
-      "name": "Order persistence",
-      "source_component_key": "orders",
-      "destination_component_key": "orders-db",
-      "direction": "bidirectional",
-      "protocol": null,
-      "data_types": [],
-      "authentication": "unknown",
-      "encryption_in_transit": "unknown",
-      "crosses_trust_boundary_keys": [],
-      "internet_exposed": false,
-      "evidence_ids": [
-        "evd-003"
-      ]
-    },
-    {
-      "key": "orders-bus",
-      "name": "Order events",
-      "source_component_key": "orders",
-      "destination_component_key": "bus",
-      "direction": "one_way",
-      "protocol": null,
-      "data_types": [],
-      "authentication": "per_service_credentials",
-      "encryption_in_transit": "unknown",
-      "crosses_trust_boundary_keys": [],
-      "internet_exposed": false,
-      "evidence_ids": [
-        "evd-003"
-      ]
-    },
-    {
-      "key": "bus-tracking",
-      "name": "Scan events",
-      "source_component_key": "bus",
-      "destination_component_key": "tracking",
-      "direction": "one_way",
-      "protocol": null,
-      "data_types": [],
-      "authentication": "per_service_credentials",
-      "encryption_in_transit": "unknown",
-      "crosses_trust_boundary_keys": [],
-      "internet_exposed": false,
-      "evidence_ids": [
-        "evd-003"
-      ]
-    },
-    {
-      "key": "bus-notify",
-      "name": "Notification events",
-      "source_component_key": "bus",
-      "destination_component_key": "notifications",
-      "direction": "one_way",
-      "protocol": null,
-      "data_types": [],
-      "authentication": "per_service_credentials",
-      "encryption_in_transit": "unknown",
-      "crosses_trust_boundary_keys": [],
-      "internet_exposed": false,
-      "evidence_ids": [
-        "evd-003"
-      ]
-    },
-    {
-      "key": "tracking-storage",
-      "name": "Tracking state",
-      "source_component_key": "tracking",
-      "destination_component_key": "tracking-store",
-      "direction": "bidirectional",
-      "protocol": null,
-      "data_types": [],
-      "authentication": "unknown",
-      "encryption_in_transit": "unknown",
-      "crosses_trust_boundary_keys": [],
-      "internet_exposed": false,
-      "evidence_ids": [
-        "evd-003"
-      ]
-    },
-    {
-      "key": "routing-dispatch",
-      "name": "Route assignment",
-      "source_component_key": "routing",
-      "destination_component_key": "dispatch",
-      "direction": "one_way",
-      "protocol": null,
-      "data_types": [],
-      "authentication": "unknown",
-      "encryption_in_transit": "unknown",
-      "crosses_trust_boundary_keys": [],
-      "internet_exposed": false,
-      "evidence_ids": [
-        "evd-003"
-      ]
-    },
-    {
-      "key": "labels-storage",
-      "name": "Label storage",
-      "source_component_key": "labels",
-      "destination_component_key": "object-storage",
-      "direction": "one_way",
-      "protocol": null,
-      "data_types": [],
-      "authentication": "unknown",
-      "encryption_in_transit": "unknown",
-      "crosses_trust_boundary_keys": [],
-      "internet_exposed": false,
-      "evidence_ids": [
-        "evd-003"
-      ]
-    },
-    {
-      "key": "nightly-copy",
-      "name": "Nightly warehouse copy",
-      "source_component_key": "orders-db",
-      "destination_component_key": "warehouse",
-      "direction": "one_way",
-      "protocol": null,
-      "data_types": [],
-      "authentication": "unknown",
-      "encryption_in_transit": "unknown",
-      "crosses_trust_boundary_keys": [],
-      "internet_exposed": false,
-      "evidence_ids": [
-        "evd-004"
-      ]
-    },
-    {
-      "key": "admin-orders",
-      "name": "Admin operations",
-      "source_component_key": "admin",
-      "destination_component_key": "orders",
-      "direction": "bidirectional",
-      "protocol": null,
-      "data_types": [],
-      "authentication": "sso",
-      "encryption_in_transit": "unknown",
-      "crosses_trust_boundary_keys": [],
-      "internet_exposed": false,
-      "evidence_ids": [
-        "evd-003"
-      ]
-    }
-  ],
-  "trust_boundaries": [
-    {
-      "key": "internet-edge",
-      "name": "Internet to edge boundary",
-      "boundary_type": "internet_to_application",
-      "description": null,
-      "inside_component_keys": [
-        "portal",
-        "mobile-gateway",
-        "api-gateway"
-      ],
-      "outside_component_keys": [],
-      "controls": [],
-      "evidence_ids": [
-        "evd-002"
-      ]
-    },
-    {
-      "key": "edge-core",
-      "name": "Edge to core boundary",
-      "boundary_type": "zone_boundary",
-      "description": null,
-      "inside_component_keys": [
-        "identity",
-        "orders",
-        "routing",
-        "dispatch",
-        "tracking",
-        "notifications",
-        "labels",
-        "billing",
-        "admin"
-      ],
-      "outside_component_keys": [
-        "portal",
-        "mobile-gateway",
-        "api-gateway"
-      ],
-      "controls": [],
-      "evidence_ids": [
-        "evd-002",
-        "evd-003"
-      ]
-    },
-    {
-      "key": "core-data",
-      "name": "Core to data boundary",
-      "boundary_type": "zone_boundary",
-      "description": null,
-      "inside_component_keys": [
-        "bus",
-        "orders-db",
-        "tracking-store",
-        "object-storage",
-        "warehouse"
-      ],
-      "outside_component_keys": [
-        "orders",
-        "tracking",
-        "labels"
-      ],
-      "controls": [],
-      "evidence_ids": [
-        "evd-004"
-      ]
-    },
-    {
-      "key": "platform-ops",
-      "name": "Operations boundary",
-      "boundary_type": "zone_boundary",
-      "description": null,
-      "inside_component_keys": [
-        "carrier-link",
-        "deploy-runner"
-      ],
-      "outside_component_keys": [],
-      "controls": [],
-      "evidence_ids": [
-        "evd-005"
-      ]
-    }
-  ],
-  "questions": [],
-  "observations": []
+    "claims": [
+      {
+        "key": "admin-same-path",
+        "subject_type": "component",
+        "subject_key": "admin",
+        "predicate": "administrative_access_path",
+        "value": "staff reach the admin console with the same SSO accounts and the same sign-in path customers use; an is_admin flag on the user record enables its functions, and the console can read and edit any customer account, order, and address",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-003"
+        ]
+      },
+      {
+        "key": "notification-logging",
+        "subject_type": "component",
+        "subject_key": "notifications",
+        "predicate": "log_content",
+        "value": "the notification templates log the full rendered message body \u2014 including the recipient's name, delivery address, and delivery window \u2014 to the shared application log",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-003"
+        ]
+      },
+      {
+        "key": "warehouse-retention",
+        "subject_type": "component",
+        "subject_key": "warehouse",
+        "predicate": "copy_retention",
+        "value": "the data warehouse receives a nightly copy of the orders database including customer names and full delivery addresses; how long the copies are kept has not been written down anywhere the team could point to",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-004"
+        ]
+      },
+      {
+        "key": "data-zone-reachability",
+        "subject_type": "component",
+        "subject_key": "orders-db",
+        "predicate": "network_reachability",
+        "value": "the orders database and the tracking store are reachable only from the core zone",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-004"
+        ]
+      },
+      {
+        "key": "gateway-auth",
+        "subject_type": "component",
+        "subject_key": "api-gateway",
+        "predicate": "entry_authentication",
+        "value": "the API gateway terminates TLS, authenticates every request against the identity service, and applies per-client rate limits",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-002"
+        ]
+      },
+      {
+        "key": "sso-delegation",
+        "subject_type": "component",
+        "subject_key": "identity",
+        "predicate": "authentication_delegation",
+        "value": "all interactive sign-in is delegated to the company's SSO provider over OpenID Connect, and the identity service issues short-lived internal tokens the core services verify",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-003"
+        ]
+      },
+      {
+        "key": "bus-credentials",
+        "subject_type": "component",
+        "subject_key": "bus",
+        "predicate": "service_authentication",
+        "value": "services authenticate to the message bus with per-service credentials issued at deploy time",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-004"
+        ]
+      },
+      {
+        "key": "payment-outsourced",
+        "subject_type": "component",
+        "subject_key": "billing",
+        "predicate": "payment_processing",
+        "value": "card payments are processed entirely by an external payment provider, and the platform stores only the provider's payment reference",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-003"
+        ]
+      }
+    ],
+    "components": [
+      {
+        "key": "portal",
+        "name": "Customer Portal",
+        "component_type": "web_application",
+        "description": "public web application for booking, labels, and tracking",
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": "edge",
+        "internet_accessible": true,
+        "externally_managed": null,
+        "data_classifications": [],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-002"
+        ]
+      },
+      {
+        "key": "mobile-gateway",
+        "name": "Mobile Gateway",
+        "component_type": "gateway",
+        "description": "endpoint for the driver mobile application: routes down, scan events and proof-of-delivery photos up",
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": "edge",
+        "internet_accessible": true,
+        "externally_managed": null,
+        "data_classifications": [],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-002"
+        ]
+      },
+      {
+        "key": "api-gateway",
+        "name": "API Gateway",
+        "component_type": "gateway",
+        "description": "the single public entry point: terminates TLS, authenticates every request against the identity service, applies per-client rate limits",
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": "edge",
+        "internet_accessible": true,
+        "externally_managed": null,
+        "data_classifications": [],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-002"
+        ]
+      },
+      {
+        "key": "identity",
+        "name": "Identity Service",
+        "component_type": "service",
+        "description": "delegates interactive sign-in to the company SSO provider over OpenID Connect and issues short-lived internal tokens",
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": "core",
+        "internet_accessible": null,
+        "externally_managed": null,
+        "data_classifications": [],
+        "authentication_mechanisms": [
+          "openid_connect"
+        ],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-003"
+        ]
+      },
+      {
+        "key": "orders",
+        "name": "Order Service",
+        "component_type": "service",
+        "description": "owns shipment bookings; writes the orders database and publishes order events to the message bus",
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": "core",
+        "internet_accessible": null,
+        "externally_managed": null,
+        "data_classifications": [],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-003"
+        ]
+      },
+      {
+        "key": "routing",
+        "name": "Routing Service",
+        "component_type": "service",
+        "description": "plans collection and delivery routes from open orders and driver availability",
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": "core",
+        "internet_accessible": null,
+        "externally_managed": null,
+        "data_classifications": [],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-003"
+        ]
+      },
+      {
+        "key": "dispatch",
+        "name": "Dispatch Service",
+        "component_type": "service",
+        "description": "pushes route assignments to drivers through the mobile gateway and records acceptance",
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": "core",
+        "internet_accessible": null,
+        "externally_managed": null,
+        "data_classifications": [],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-003"
+        ]
+      },
+      {
+        "key": "tracking",
+        "name": "Tracking Service",
+        "component_type": "service",
+        "description": "consumes scan events from the message bus, maintains per-parcel state in the tracking store, serves portal queries",
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": "core",
+        "internet_accessible": null,
+        "externally_managed": null,
+        "data_classifications": [],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-003"
+        ]
+      },
+      {
+        "key": "notifications",
+        "name": "Notification Service",
+        "component_type": "service",
+        "description": "sends confirmations and delivery notices through an external messaging provider; templates log the full rendered message body to the shared application log",
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": "core",
+        "internet_accessible": null,
+        "externally_managed": null,
+        "data_classifications": [],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-003"
+        ]
+      },
+      {
+        "key": "labels",
+        "name": "Label Service",
+        "component_type": "service",
+        "description": "renders shipping labels as PDFs into the object storage bucket",
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": "core",
+        "internet_accessible": null,
+        "externally_managed": null,
+        "data_classifications": [],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-003"
+        ]
+      },
+      {
+        "key": "billing",
+        "name": "Billing Service",
+        "component_type": "service",
+        "description": "prices shipments and records payments; card processing is entirely external, only the payment reference is stored",
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": "core",
+        "internet_accessible": null,
+        "externally_managed": null,
+        "data_classifications": [],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-003"
+        ]
+      },
+      {
+        "key": "admin",
+        "name": "Admin Console",
+        "component_type": "web_application",
+        "description": "staff interface for refunds, corrections, and account management; reached with the same SSO accounts and sign-in path customers use, enabled by an is_admin flag",
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": "core",
+        "internet_accessible": null,
+        "externally_managed": null,
+        "data_classifications": [],
+        "authentication_mechanisms": [
+          "sso"
+        ],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-003"
+        ]
+      },
+      {
+        "key": "bus",
+        "name": "Message Bus",
+        "component_type": "message_bus",
+        "description": "the event backbone; services authenticate with per-service credentials issued at deploy time",
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": "data",
+        "internet_accessible": null,
+        "externally_managed": null,
+        "data_classifications": [],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-004"
+        ]
+      },
+      {
+        "key": "orders-db",
+        "name": "Orders Database",
+        "component_type": "data_store",
+        "description": "relational store for bookings, customer accounts, and addresses; reachable only from the core zone",
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": "data",
+        "internet_accessible": false,
+        "externally_managed": null,
+        "data_classifications": [],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-004"
+        ]
+      },
+      {
+        "key": "tracking-store",
+        "name": "Tracking Store",
+        "component_type": "data_store",
+        "description": "per-parcel scan history and tracking state; reachable only from the core zone",
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": "data",
+        "internet_accessible": false,
+        "externally_managed": null,
+        "data_classifications": [],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-004"
+        ]
+      },
+      {
+        "key": "object-storage",
+        "name": "Object Storage",
+        "component_type": "data_store",
+        "description": "managed object store holding label PDFs and proof-of-delivery photos",
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": "data",
+        "internet_accessible": null,
+        "externally_managed": true,
+        "data_classifications": [],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-004"
+        ]
+      },
+      {
+        "key": "warehouse",
+        "name": "Data Warehouse",
+        "component_type": "data_store",
+        "description": "receives a nightly copy of the orders database, including customer names and full delivery addresses, for analytics",
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": "data",
+        "internet_accessible": null,
+        "externally_managed": null,
+        "data_classifications": [],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-004"
+        ]
+      },
+      {
+        "key": "carrier-link",
+        "name": "Carrier Link",
+        "component_type": "service",
+        "description": "connector to carrier partners' APIs: manifests out, status updates in, over the carriers' HTTPS APIs",
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": "operations",
+        "internet_accessible": null,
+        "externally_managed": null,
+        "data_classifications": [],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-005"
+        ]
+      },
+      {
+        "key": "deploy-runner",
+        "name": "Deploy Runner",
+        "component_type": "service",
+        "description": "runs the deployment pipeline that builds and releases the core services",
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": "operations",
+        "internet_accessible": null,
+        "externally_managed": null,
+        "data_classifications": [],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-005"
+        ]
+      }
+    ],
+    "actors": [
+      {
+        "key": "customer",
+        "name": "Customer",
+        "actor_type": "external_user",
+        "trust_level": null,
+        "capabilities": [],
+        "authentication_method": null,
+        "evidence_ids": [
+          "evd-006"
+        ]
+      },
+      {
+        "key": "driver",
+        "name": "Driver",
+        "actor_type": "external_user",
+        "trust_level": null,
+        "capabilities": [],
+        "authentication_method": null,
+        "evidence_ids": [
+          "evd-006"
+        ]
+      },
+      {
+        "key": "staff",
+        "name": "Staff operator",
+        "actor_type": "internal_user",
+        "trust_level": null,
+        "capabilities": [],
+        "authentication_method": null,
+        "evidence_ids": [
+          "evd-006"
+        ]
+      },
+      {
+        "key": "carrier",
+        "name": "Carrier partner",
+        "actor_type": "external_service",
+        "trust_level": null,
+        "capabilities": [],
+        "authentication_method": null,
+        "evidence_ids": [
+          "evd-006"
+        ]
+      },
+      {
+        "key": "messaging",
+        "name": "Messaging provider",
+        "actor_type": "external_service",
+        "trust_level": null,
+        "capabilities": [],
+        "authentication_method": null,
+        "evidence_ids": [
+          "evd-006"
+        ]
+      }
+    ],
+    "assets": [
+      {
+        "key": "bookings",
+        "name": "Shipment bookings and addresses",
+        "asset_type": "customer_data",
+        "description": "bookings, customer accounts, and full delivery addresses",
+        "confidentiality_impact": null,
+        "integrity_impact": null,
+        "availability_impact": null,
+        "data_classification": null,
+        "owner": null,
+        "component_keys": [
+          "orders-db",
+          "orders",
+          "warehouse"
+        ],
+        "evidence_ids": [
+          "evd-004"
+        ]
+      },
+      {
+        "key": "tracking-history",
+        "name": "Parcel tracking history",
+        "asset_type": "operational_data",
+        "description": null,
+        "confidentiality_impact": null,
+        "integrity_impact": null,
+        "availability_impact": null,
+        "data_classification": null,
+        "owner": null,
+        "component_keys": [
+          "tracking-store",
+          "tracking"
+        ],
+        "evidence_ids": [
+          "evd-004"
+        ]
+      },
+      {
+        "key": "label-artifacts",
+        "name": "Labels and proof-of-delivery photos",
+        "asset_type": "customer_data",
+        "description": null,
+        "confidentiality_impact": null,
+        "integrity_impact": null,
+        "availability_impact": null,
+        "data_classification": null,
+        "owner": null,
+        "component_keys": [
+          "object-storage",
+          "labels"
+        ],
+        "evidence_ids": [
+          "evd-004"
+        ]
+      },
+      {
+        "key": "messages",
+        "name": "Notification messages",
+        "asset_type": "customer_data",
+        "description": "rendered message bodies carrying recipient name, delivery address, and delivery window",
+        "confidentiality_impact": null,
+        "integrity_impact": null,
+        "availability_impact": null,
+        "data_classification": null,
+        "owner": null,
+        "component_keys": [
+          "notifications"
+        ],
+        "evidence_ids": [
+          "evd-003"
+        ]
+      },
+      {
+        "key": "payment-refs",
+        "name": "Payment references",
+        "asset_type": "financial_data",
+        "description": null,
+        "confidentiality_impact": null,
+        "integrity_impact": null,
+        "availability_impact": null,
+        "data_classification": null,
+        "owner": null,
+        "component_keys": [
+          "billing"
+        ],
+        "evidence_ids": [
+          "evd-003"
+        ]
+      }
+    ],
+    "data_flows": [
+      {
+        "key": "portal-gw",
+        "name": "Portal traffic",
+        "source_component_key": "portal",
+        "destination_component_key": "api-gateway",
+        "direction": "bidirectional",
+        "protocol": "https",
+        "data_types": [],
+        "authentication": "sso",
+        "encryption_in_transit": "https",
+        "crosses_trust_boundary_keys": [],
+        "internet_exposed": true,
+        "evidence_ids": [
+          "evd-002"
+        ]
+      },
+      {
+        "key": "mobile-gw",
+        "name": "Driver app traffic",
+        "source_component_key": "mobile-gateway",
+        "destination_component_key": "api-gateway",
+        "direction": "bidirectional",
+        "protocol": "https",
+        "data_types": [],
+        "authentication": "sso",
+        "encryption_in_transit": "https",
+        "crosses_trust_boundary_keys": [],
+        "internet_exposed": true,
+        "evidence_ids": [
+          "evd-002"
+        ]
+      },
+      {
+        "key": "gw-identity",
+        "name": "Request authentication",
+        "source_component_key": "api-gateway",
+        "destination_component_key": "identity",
+        "direction": "bidirectional",
+        "protocol": null,
+        "data_types": [],
+        "authentication": "internal_token",
+        "encryption_in_transit": "unknown",
+        "crosses_trust_boundary_keys": [],
+        "internet_exposed": false,
+        "evidence_ids": [
+          "evd-002"
+        ]
+      },
+      {
+        "key": "gw-orders",
+        "name": "Booking requests",
+        "source_component_key": "api-gateway",
+        "destination_component_key": "orders",
+        "direction": "bidirectional",
+        "protocol": null,
+        "data_types": [],
+        "authentication": "internal_token",
+        "encryption_in_transit": "unknown",
+        "crosses_trust_boundary_keys": [],
+        "internet_exposed": false,
+        "evidence_ids": [
+          "evd-002"
+        ]
+      },
+      {
+        "key": "orders-db-flow",
+        "name": "Order persistence",
+        "source_component_key": "orders",
+        "destination_component_key": "orders-db",
+        "direction": "bidirectional",
+        "protocol": null,
+        "data_types": [],
+        "authentication": "unknown",
+        "encryption_in_transit": "unknown",
+        "crosses_trust_boundary_keys": [],
+        "internet_exposed": false,
+        "evidence_ids": [
+          "evd-003"
+        ]
+      },
+      {
+        "key": "orders-bus",
+        "name": "Order events",
+        "source_component_key": "orders",
+        "destination_component_key": "bus",
+        "direction": "one_way",
+        "protocol": null,
+        "data_types": [],
+        "authentication": "per_service_credentials",
+        "encryption_in_transit": "unknown",
+        "crosses_trust_boundary_keys": [],
+        "internet_exposed": false,
+        "evidence_ids": [
+          "evd-003"
+        ]
+      },
+      {
+        "key": "bus-tracking",
+        "name": "Scan events",
+        "source_component_key": "bus",
+        "destination_component_key": "tracking",
+        "direction": "one_way",
+        "protocol": null,
+        "data_types": [],
+        "authentication": "per_service_credentials",
+        "encryption_in_transit": "unknown",
+        "crosses_trust_boundary_keys": [],
+        "internet_exposed": false,
+        "evidence_ids": [
+          "evd-003"
+        ]
+      },
+      {
+        "key": "bus-notify",
+        "name": "Notification events",
+        "source_component_key": "bus",
+        "destination_component_key": "notifications",
+        "direction": "one_way",
+        "protocol": null,
+        "data_types": [],
+        "authentication": "per_service_credentials",
+        "encryption_in_transit": "unknown",
+        "crosses_trust_boundary_keys": [],
+        "internet_exposed": false,
+        "evidence_ids": [
+          "evd-003"
+        ]
+      },
+      {
+        "key": "tracking-storage",
+        "name": "Tracking state",
+        "source_component_key": "tracking",
+        "destination_component_key": "tracking-store",
+        "direction": "bidirectional",
+        "protocol": null,
+        "data_types": [],
+        "authentication": "unknown",
+        "encryption_in_transit": "unknown",
+        "crosses_trust_boundary_keys": [],
+        "internet_exposed": false,
+        "evidence_ids": [
+          "evd-003"
+        ]
+      },
+      {
+        "key": "routing-dispatch",
+        "name": "Route assignment",
+        "source_component_key": "routing",
+        "destination_component_key": "dispatch",
+        "direction": "one_way",
+        "protocol": null,
+        "data_types": [],
+        "authentication": "unknown",
+        "encryption_in_transit": "unknown",
+        "crosses_trust_boundary_keys": [],
+        "internet_exposed": false,
+        "evidence_ids": [
+          "evd-003"
+        ]
+      },
+      {
+        "key": "labels-storage",
+        "name": "Label storage",
+        "source_component_key": "labels",
+        "destination_component_key": "object-storage",
+        "direction": "one_way",
+        "protocol": null,
+        "data_types": [],
+        "authentication": "unknown",
+        "encryption_in_transit": "unknown",
+        "crosses_trust_boundary_keys": [],
+        "internet_exposed": false,
+        "evidence_ids": [
+          "evd-003"
+        ]
+      },
+      {
+        "key": "nightly-copy",
+        "name": "Nightly warehouse copy",
+        "source_component_key": "orders-db",
+        "destination_component_key": "warehouse",
+        "direction": "one_way",
+        "protocol": null,
+        "data_types": [],
+        "authentication": "unknown",
+        "encryption_in_transit": "unknown",
+        "crosses_trust_boundary_keys": [],
+        "internet_exposed": false,
+        "evidence_ids": [
+          "evd-004"
+        ]
+      },
+      {
+        "key": "admin-orders",
+        "name": "Admin operations",
+        "source_component_key": "admin",
+        "destination_component_key": "orders",
+        "direction": "bidirectional",
+        "protocol": null,
+        "data_types": [],
+        "authentication": "sso",
+        "encryption_in_transit": "unknown",
+        "crosses_trust_boundary_keys": [],
+        "internet_exposed": false,
+        "evidence_ids": [
+          "evd-003"
+        ]
+      }
+    ],
+    "trust_boundaries": [
+      {
+        "key": "internet-edge",
+        "name": "Internet to edge boundary",
+        "boundary_type": "internet_to_application",
+        "description": null,
+        "inside_component_keys": [
+          "portal",
+          "mobile-gateway",
+          "api-gateway"
+        ],
+        "outside_component_keys": [],
+        "controls": [],
+        "evidence_ids": [
+          "evd-002"
+        ]
+      },
+      {
+        "key": "edge-core",
+        "name": "Edge to core boundary",
+        "boundary_type": "zone_boundary",
+        "description": null,
+        "inside_component_keys": [
+          "identity",
+          "orders",
+          "routing",
+          "dispatch",
+          "tracking",
+          "notifications",
+          "labels",
+          "billing",
+          "admin"
+        ],
+        "outside_component_keys": [
+          "portal",
+          "mobile-gateway",
+          "api-gateway"
+        ],
+        "controls": [],
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ]
+      },
+      {
+        "key": "core-data",
+        "name": "Core to data boundary",
+        "boundary_type": "zone_boundary",
+        "description": null,
+        "inside_component_keys": [
+          "bus",
+          "orders-db",
+          "tracking-store",
+          "object-storage",
+          "warehouse"
+        ],
+        "outside_component_keys": [
+          "orders",
+          "tracking",
+          "labels"
+        ],
+        "controls": [],
+        "evidence_ids": [
+          "evd-004"
+        ]
+      },
+      {
+        "key": "platform-ops",
+        "name": "Operations boundary",
+        "boundary_type": "zone_boundary",
+        "description": null,
+        "inside_component_keys": [
+          "carrier-link",
+          "deploy-runner"
+        ],
+        "outside_component_keys": [],
+        "controls": [],
+        "evidence_ids": [
+          "evd-005"
+        ]
+      }
+    ],
+    "questions": [],
+    "observations": []
+  }
 }

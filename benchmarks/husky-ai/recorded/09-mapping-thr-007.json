@@ -1,5 +1,8 @@
 {
-  "controls": [],
-  "mappings": [],
-  "documentation_gaps": []
+  "schema": "MappingProposal",
+  "response": {
+    "controls": [],
+    "mappings": [],
+    "documentation_gaps": []
+  }
 }

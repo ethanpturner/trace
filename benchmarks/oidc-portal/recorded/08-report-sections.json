@@ -1,11 +1,14 @@
 {
-  "executive_summary": "This assessment reviewed the support portal from its supplied overview and approved no findings. That is not a statement that the system is secure: what could not be determined from the documents is recorded as a documentation gap, and the delegated-authentication conclusions a generic review most often gets wrong here are recorded as suppressed, not asserted.",
-  "system_overview": "The system is an internal, server-rendered web portal through which employees view and comment on customer support tickets, backed by an internal ticket service and authenticated entirely through the enterprise OpenID Connect identity provider, as the supplied document describes.",
-  "risk_summary": "No candidate weakness reached the assessment's bar. The one open item is whether the ticket service's internal-only reachability is enforced by network policy or assumed by topology, which the documents do not establish and which is recorded as a documentation gap.",
-  "limitations": [
-    {
-      "limitation_id": "lim-empty-findings",
-      "text": "No candidate weakness reached the assessment's bar. This is not a statement that the system is secure; what could not be determined is recorded as documentation gaps and open questions."
-    }
-  ]
+  "schema": "ReportSections",
+  "response": {
+    "executive_summary": "This assessment reviewed the support portal from its supplied overview and approved no findings. That is not a statement that the system is secure: what could not be determined from the documents is recorded as a documentation gap, and the delegated-authentication conclusions a generic review most often gets wrong here are recorded as suppressed, not asserted.",
+    "system_overview": "The system is an internal, server-rendered web portal through which employees view and comment on customer support tickets, backed by an internal ticket service and authenticated entirely through the enterprise OpenID Connect identity provider, as the supplied document describes.",
+    "risk_summary": "No candidate weakness reached the assessment's bar. The one open item is whether the ticket service's internal-only reachability is enforced by network policy or assumed by topology, which the documents do not establish and which is recorded as a documentation gap.",
+    "limitations": [
+      {
+        "limitation_id": "lim-empty-findings",
+        "text": "No candidate weakness reached the assessment's bar. This is not a statement that the system is secure; what could not be determined is recorded as documentation gaps and open questions."
+      }
+    ]
+  }
 }

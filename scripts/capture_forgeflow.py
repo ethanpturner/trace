@@ -77,6 +77,8 @@ from trace_ai.workflow.limits import Budget
 if TYPE_CHECKING:
     from pydantic import BaseModel
 
+    from trace_ai.infrastructure.model.recorded import RecordedResponse
+
 INPUT = PROJECT_ROOT / "demo" / "forgeflow" / "input"
 CAPTURE = PROJECT_ROOT / "demo" / "forgeflow" / "capture"
 DATA_ROOT = PROJECT_ROOT / "data" / "capture-forgeflow"
@@ -103,6 +105,20 @@ _SLUGS = {
     "CriticalReviewProposal": "critical-review",
     "ReportSections": "report-sections",
 }
+
+
+def _usage_dict(usage: ModelUsage) -> dict[str, object]:
+    """A captured `ModelUsage` as the envelope's `usage` mapping (#461). Decimal cost as a string,
+    so it round-trips through JSON without a float's rounding."""
+    return {
+        "model": usage.model,
+        "input_tokens": usage.input_tokens,
+        "output_tokens": usage.output_tokens,
+        "cache_read_tokens": usage.cache_read_tokens,
+        "cache_creation_tokens": usage.cache_creation_tokens,
+        "estimated_cost": str(usage.estimated_cost),
+        "duration_seconds": usage.duration_seconds,
+    }
 
 
 class RecordingModel:
@@ -140,7 +156,15 @@ class RecordingModel:
             index = len(list(CAPTURE.glob("[0-9]*.json"))) + 1
             slug = _SLUGS.get(type(outcome.value).__name__, "response")
             path = CAPTURE / f"{index:02d}-{slug}.json"
-            path.write_text(outcome.value.model_dump_json(indent=2) + "\n", encoding="utf-8")
+            # The envelope (#461): the named schema, the captured usage the offline ledger replays,
+            # and the response. A live capture is the one place real usage exists, so this is where
+            # it is written.
+            envelope = {
+                "schema": type(outcome.value).__name__,
+                "usage": _usage_dict(outcome.usage),
+                "response": outcome.value.model_dump(mode="json"),
+            }
+            path.write_text(json.dumps(envelope, indent=2) + "\n", encoding="utf-8")
             cost = outcome.usage.estimated_cost
             print(f"  recorded {path.name}  (${cost:.4f}, {outcome.usage.output_tokens} out)")
         return outcome
@@ -155,7 +179,7 @@ class FallbackModel:
     replayed response is never re-recorded.
     """
 
-    def __init__(self, recorded: list[BaseModel], live: StructuredModel) -> None:
+    def __init__(self, recorded: list[RecordedResponse], live: StructuredModel) -> None:
         self._recorded = list(recorded)
         self._live = live
 
@@ -177,14 +201,16 @@ class FallbackModel:
     ) -> ModelOutcome[T]:
         if self._recorded:
             queued = self._recorded.pop(0)
-            if not isinstance(queued, schema):
+            value = queued.response
+            if not isinstance(value, schema):
                 raise SystemExit(
-                    f"the next recorded response is a {type(queued).__name__}, not the "
+                    f"the next recorded response is a {type(value).__name__}, not the "
                     f"{schema.__name__} this call asks for; the capture and the recording have "
                     f"diverged and continuing live would corrupt the sequence"
                 )
-            print(f"  replayed a recorded {type(queued).__name__} (no spend)")
-            return ModelSuccess(value=queued, usage=ModelUsage(model=self._live.name))
+            print(f"  replayed a recorded {type(value).__name__} (no spend)")
+            usage = queued.usage if queued.usage is not None else ModelUsage(model=self._live.name)
+            return ModelSuccess(value=value, usage=usage)
         return self._live.generate(prompt=prompt, schema=schema, settings=settings, system=system)
 
 

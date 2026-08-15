@@ -1,81 +1,84 @@
 {
-  "critiques": [
-    {
-      "subject_type": "evidence_assessment",
-      "subject_id": "eas-069",
-      "critique_type": "documentation_gap_only",
-      "description": "eas-069 records validation_status 'supported' with high confidence for thr-014, but the pivotal element of the threat - that stored artifacts are used as a substitute for a live permission check - is not stated in any cited passage. It is inferred from the absence of any description of re-verification on the retry path, which eas-069 itself lists under missing_evidence and which gap-045 raises as an open question. A status of 'supported' converts that silence into an established weakness.",
-      "rationale": "evd-077 states only that 'where repository artifacts are still available, the retry process may reuse previously stored analysis artifacts instead of downloading repository content again', and evd-089 records continued artifact availability as an operational assumption. Neither passage says a retry omits installation-token minting or an access check. evd-061 describes ForgeFlow authenticating as the App and obtaining a short-lived installation token whenever repository access is required, which is at least compatible with a retry re-authenticating. The mechanism links (artifact reuse, retention window, access changes, independent publication retry) are documented and the threat is worth keeping, but the assertion that no entitlement check intervenes rests on what the documents do not say, so partially_supported with the exposure conditioned on gap-045 matches the cited evidence.",
-      "evidence_ids": [
-        "evd-077",
-        "evd-089",
-        "evd-061"
-      ],
-      "recommended_action": "revise",
-      "confidence": "medium"
-    },
-    {
-      "subject_type": "control_mapping",
-      "subject_id": "map-155",
-      "critique_type": "contradictory_analysis",
-      "description": "map-155 concludes req-SECRET-002 'satisfied' for this threat with no assumption and no downgrade recorded, while gap-045 - raised over the same threat - states that whether a retried job mints an installation token and re-verifies repository access is undetermined and that the answer 'would change the satisfaction conclusions for req-SECRET-002 and req-AUTHZ-002'. Both cannot stand as written.",
-      "rationale": "The passages map-155 cites establish the credential model for the ordinary retrieval path only: no permanently stored repository tokens and a short-lived installation token minted when repository access is required (evd-061, evd-037), with worker reach bounded to the installed scope (evd-065). None of them addresses the artifact-reuse path that map-155's own applicability_reason names as the threat's mechanism (evd-077). Either the conclusion should carry the open question as an explicit assumption or drop to unverified pending gap-045, or gap-045 should stop naming req-SECRET-002 among the conclusions its answer would change.",
-      "evidence_ids": [
-        "evd-061",
-        "evd-037",
-        "evd-065",
-        "evd-077"
-      ],
-      "recommended_action": "revise",
-      "confidence": "medium"
-    },
-    {
-      "subject_type": "threat",
-      "subject_id": "thr-014",
-      "critique_type": "weak_attack_path",
-      "description": "The final attack-path step, and the matching clause of the impact, assert that a comment is published to a pull request after the installation was revoked or the repository removed from the installation's selection. The publication mechanism the threat itself cites undercuts that outcome for those variants: evd-031 states the comment service uses a short-lived GitHub installation token and posts through the GitHub API, and evd-068 lists revoked installation and permission changes among the causes of repository access failure, so publication in those variants would fail rather than succeed.",
-      "rationale": "The artifact-reuse and provider-transmission legs (steps 3 and 4) require no GitHub access and stand on evd-077 and evd-078 alone; that is the threat's strongest leg and this critique does not touch it. The publication leg requires a live installation token scoped to the target repository (evd-031, evd-061, evd-065), which by the threat's own precondition no longer exists in the revocation and narrowed-selection cases. It remains viable only where GitHub access persists and only ForgeFlow-side state changed - for example an integration disabled by an operator (evd-083) or automatic comments disabled in product configuration (evd-010). Naming that condition in step 5 and in the impact keeps the threat intact without asserting an externally visible outcome the documented credential path contradicts.",
-      "evidence_ids": [
-        "evd-031",
-        "evd-061",
-        "evd-065",
-        "evd-068",
-        "evd-083",
-        "evd-010"
-      ],
-      "recommended_action": "revise",
-      "confidence": "medium"
-    },
-    {
-      "subject_type": "documentation_gap",
-      "subject_id": "gap-046",
-      "critique_type": "duplicate",
-      "description": "gap-046 records the same unresolved conflict as gap-043: evd-099's statement that source files are deleted after analysis completes against evd-079's 30-day retention target with scheduled cleanup and support-requested extensions. The two gaps cite substantially the same passages (evd-099, evd-079, evd-033, evd-054) and request the same three items - an authoritative retention statement, the mechanism that enforces it, and the approval path for extensions.",
-      "rationale": "One conflict recorded twice produces two requests to the same document owner and two decisions for the reviewer to make about the same question. Merging into a single gap loses nothing: both threat linkages can be retained (gap-043 to thr-013, gap-046 to thr-014) along with gap-046's additional citation of evd-078 for the artifact categories held in object storage.",
-      "evidence_ids": [
-        "evd-099",
-        "evd-079",
-        "evd-033",
-        "evd-078"
-      ],
-      "recommended_action": "merge",
-      "confidence": "high"
-    },
-    {
-      "subject_type": "documentation_gap",
-      "subject_id": "gap-049",
-      "critique_type": "duplicate",
-      "description": "gap-049 restates gap-014 and gap-010. All three record the same contradiction between evd-133 ('Externally visible AI-generated output is reviewed before publication') and the automatic publication sequences in evd-010 and evd-082, cite the same supporting passages (evd-151 recording human_review_required as unknown, evd-054 listing AI-output approval requirements as a gap), and request the same reconciliation.",
-      "rationale": "Three records of one documentation conflict will generate three requests for the same reconciliation and three reviewer decisions about a single question. This threat's particular interest in the answer - whether a person would catch a result derived from stale content before it reaches a customer-visible pull request - is narrower than the other two and can be carried as one entry in the merged gap's importance rather than as a separate gap.",
-      "evidence_ids": [
-        "evd-133",
-        "evd-010",
-        "evd-082",
-        "evd-151",
-        "evd-054"
-      ],
-      "recommended_action": "merge",
-      "confidence": "high"
-    }
-  ]
+  "schema": "CriticalReviewProposal",
+  "response": {
+    "critiques": [
+      {
+        "subject_type": "evidence_assessment",
+        "subject_id": "eas-069",
+        "critique_type": "documentation_gap_only",
+        "description": "eas-069 records validation_status 'supported' with high confidence for thr-014, but the pivotal element of the threat - that stored artifacts are used as a substitute for a live permission check - is not stated in any cited passage. It is inferred from the absence of any description of re-verification on the retry path, which eas-069 itself lists under missing_evidence and which gap-045 raises as an open question. A status of 'supported' converts that silence into an established weakness.",
+        "rationale": "evd-077 states only that 'where repository artifacts are still available, the retry process may reuse previously stored analysis artifacts instead of downloading repository content again', and evd-089 records continued artifact availability as an operational assumption. Neither passage says a retry omits installation-token minting or an access check. evd-061 describes ForgeFlow authenticating as the App and obtaining a short-lived installation token whenever repository access is required, which is at least compatible with a retry re-authenticating. The mechanism links (artifact reuse, retention window, access changes, independent publication retry) are documented and the threat is worth keeping, but the assertion that no entitlement check intervenes rests on what the documents do not say, so partially_supported with the exposure conditioned on gap-045 matches the cited evidence.",
+        "evidence_ids": [
+          "evd-077",
+          "evd-089",
+          "evd-061"
+        ],
+        "recommended_action": "revise",
+        "confidence": "medium"
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-155",
+        "critique_type": "contradictory_analysis",
+        "description": "map-155 concludes req-SECRET-002 'satisfied' for this threat with no assumption and no downgrade recorded, while gap-045 - raised over the same threat - states that whether a retried job mints an installation token and re-verifies repository access is undetermined and that the answer 'would change the satisfaction conclusions for req-SECRET-002 and req-AUTHZ-002'. Both cannot stand as written.",
+        "rationale": "The passages map-155 cites establish the credential model for the ordinary retrieval path only: no permanently stored repository tokens and a short-lived installation token minted when repository access is required (evd-061, evd-037), with worker reach bounded to the installed scope (evd-065). None of them addresses the artifact-reuse path that map-155's own applicability_reason names as the threat's mechanism (evd-077). Either the conclusion should carry the open question as an explicit assumption or drop to unverified pending gap-045, or gap-045 should stop naming req-SECRET-002 among the conclusions its answer would change.",
+        "evidence_ids": [
+          "evd-061",
+          "evd-037",
+          "evd-065",
+          "evd-077"
+        ],
+        "recommended_action": "revise",
+        "confidence": "medium"
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-014",
+        "critique_type": "weak_attack_path",
+        "description": "The final attack-path step, and the matching clause of the impact, assert that a comment is published to a pull request after the installation was revoked or the repository removed from the installation's selection. The publication mechanism the threat itself cites undercuts that outcome for those variants: evd-031 states the comment service uses a short-lived GitHub installation token and posts through the GitHub API, and evd-068 lists revoked installation and permission changes among the causes of repository access failure, so publication in those variants would fail rather than succeed.",
+        "rationale": "The artifact-reuse and provider-transmission legs (steps 3 and 4) require no GitHub access and stand on evd-077 and evd-078 alone; that is the threat's strongest leg and this critique does not touch it. The publication leg requires a live installation token scoped to the target repository (evd-031, evd-061, evd-065), which by the threat's own precondition no longer exists in the revocation and narrowed-selection cases. It remains viable only where GitHub access persists and only ForgeFlow-side state changed - for example an integration disabled by an operator (evd-083) or automatic comments disabled in product configuration (evd-010). Naming that condition in step 5 and in the impact keeps the threat intact without asserting an externally visible outcome the documented credential path contradicts.",
+        "evidence_ids": [
+          "evd-031",
+          "evd-061",
+          "evd-065",
+          "evd-068",
+          "evd-083",
+          "evd-010"
+        ],
+        "recommended_action": "revise",
+        "confidence": "medium"
+      },
+      {
+        "subject_type": "documentation_gap",
+        "subject_id": "gap-046",
+        "critique_type": "duplicate",
+        "description": "gap-046 records the same unresolved conflict as gap-043: evd-099's statement that source files are deleted after analysis completes against evd-079's 30-day retention target with scheduled cleanup and support-requested extensions. The two gaps cite substantially the same passages (evd-099, evd-079, evd-033, evd-054) and request the same three items - an authoritative retention statement, the mechanism that enforces it, and the approval path for extensions.",
+        "rationale": "One conflict recorded twice produces two requests to the same document owner and two decisions for the reviewer to make about the same question. Merging into a single gap loses nothing: both threat linkages can be retained (gap-043 to thr-013, gap-046 to thr-014) along with gap-046's additional citation of evd-078 for the artifact categories held in object storage.",
+        "evidence_ids": [
+          "evd-099",
+          "evd-079",
+          "evd-033",
+          "evd-078"
+        ],
+        "recommended_action": "merge",
+        "confidence": "high"
+      },
+      {
+        "subject_type": "documentation_gap",
+        "subject_id": "gap-049",
+        "critique_type": "duplicate",
+        "description": "gap-049 restates gap-014 and gap-010. All three record the same contradiction between evd-133 ('Externally visible AI-generated output is reviewed before publication') and the automatic publication sequences in evd-010 and evd-082, cite the same supporting passages (evd-151 recording human_review_required as unknown, evd-054 listing AI-output approval requirements as a gap), and request the same reconciliation.",
+        "rationale": "Three records of one documentation conflict will generate three requests for the same reconciliation and three reviewer decisions about a single question. This threat's particular interest in the answer - whether a person would catch a result derived from stale content before it reaches a customer-visible pull request - is narrower than the other two and can be carried as one entry in the merged gap's importance rather than as a separate gap.",
+        "evidence_ids": [
+          "evd-133",
+          "evd-010",
+          "evd-082",
+          "evd-151",
+          "evd-054"
+        ],
+        "recommended_action": "merge",
+        "confidence": "high"
+      }
+    ]
+  }
 }

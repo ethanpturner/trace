@@ -1,49 +1,52 @@
 {
-  "critiques": [
-    {
-      "subject_type": "threat",
-      "subject_id": "thr-009",
-      "critique_type": "missing_precondition",
-      "description": "The attack path and preconditions treat the persistence of the ForgeFlow membership record as automatic once GitHub-side access is withdrawn, but the documents describe a ForgeFlow-side membership management path and assign its use to the customer. The threat needs an explicit precondition that no one has removed the user's ForgeFlow membership through that documented path, and the description's framing of the record as one that is only 'derived from' GitHub should be revised accordingly.",
-      "rationale": "evd-026 lists 'Managing organization membership' among the ForgeFlow API's responsibilities, and evd-104 — the same bullet list the threat already cites for 'Managing GitHub organization access' — also contains 'Removing ForgeFlow access when it is no longer needed'; evd-096 shows customer administrators managing organization users (invitation named explicitly). Read together with evd-027, the documented model is not 'membership is derived from GitHub and never revisited' but 'membership is stored and administered in ForgeFlow, and removing ForgeFlow access is a separate customer action'. This does not defeat the threat: a documented customer responsibility is not an enforced control, and the interval between the GitHub-side removal and a manual ForgeFlow-side removal is precisely the exposure. But it is a condition the attack path depends on, it is documented rather than silent, and stating it changes the threat from 'no revocation mechanism is described' to 'revocation is manual, out of band, and customer-owned', which a reviewer would treat differently.",
-      "evidence_ids": [
-        "evd-026",
-        "evd-104",
-        "evd-096",
-        "evd-027"
-      ],
-      "recommended_action": "revise",
-      "confidence": "medium"
-    },
-    {
-      "subject_type": "documentation_gap",
-      "subject_id": "gap-044",
-      "critique_type": "duplicate",
-      "description": "gap-044 restates gap-022. Both record the same unknown — whether the organization identifier in the artifact path is backed by an enforced access check or is only a naming convention — from the same passages, and the two carry different severities (medium here, high in gap-022) for one question with one answer.",
-      "rationale": "gap-022 cites evd-033, evd-078, evd-130, evd-054 and evd-138 and requests the storage access policy and the enforcement point; gap-044 cites the same set plus evd-026 and requests 'storage access policy configuration showing how reads are constrained per organization'. Both rest on the single line in evd-054 naming 'Object-storage authorization enforcement' as requiring clarification. gap-044's second requested item, the authorization check performed before a time-limited link is issued, is already the subject of gap-023 (evd-026, evd-033). Only its third item — what the administrative interface can reach in object storage, corresponding to evd-054's separate 'Administrative access to source artifacts' entry — is not covered elsewhere, and should survive the merge. Left as they are, two evidence requests chase one answer and the severity conflict goes to the reviewer unexplained.",
-      "evidence_ids": [
-        "evd-033",
-        "evd-078",
-        "evd-130",
-        "evd-054",
-        "evd-026"
-      ],
-      "recommended_action": "merge",
-      "confidence": "high"
-    },
-    {
-      "subject_type": "evidence_assessment",
-      "subject_id": "eas-064",
-      "critique_type": "unsupported_claim",
-      "description": "eas-064 assigns evd-036 the strength 'contradictory' and reasons from evd-036 together with evd-062 that 'the documents do not state that stored membership is never re-derived'. Neither cited passage addresses re-derivation, so neither is evidence pointing against the threat, and labelling one contradictory attributes to it a reading it does not carry.",
-      "rationale": "evd-036 is a list of event types sent to the shared logging platform; the entry 'Organization-membership changes' establishes that such a change is logged when one occurs, not what triggers one and not that a GitHub-side removal produces one. evd-062 lists the subscribed webhook types as installation events and installation permission updates — App-installation lifecycle events — and names no GitHub organization-membership event; its list is introduced as what is 'currently included', which makes the passage silent on membership propagation rather than affirmative about it. Both passages are therefore silent on the point, which is exactly what gap-028 records; the assessment's conclusion that the threat rests on undescribed synchronisation stands, but it stands on silence, not on countervailing evidence. Revise the strength labels and the rationale sentence; the documentation_gap recommendation itself can remain.",
-      "evidence_ids": [
-        "evd-036",
-        "evd-062",
-        "evd-027"
-      ],
-      "recommended_action": "revise",
-      "confidence": "medium"
-    }
-  ]
+  "schema": "CriticalReviewProposal",
+  "response": {
+    "critiques": [
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-009",
+        "critique_type": "missing_precondition",
+        "description": "The attack path and preconditions treat the persistence of the ForgeFlow membership record as automatic once GitHub-side access is withdrawn, but the documents describe a ForgeFlow-side membership management path and assign its use to the customer. The threat needs an explicit precondition that no one has removed the user's ForgeFlow membership through that documented path, and the description's framing of the record as one that is only 'derived from' GitHub should be revised accordingly.",
+        "rationale": "evd-026 lists 'Managing organization membership' among the ForgeFlow API's responsibilities, and evd-104 \u2014 the same bullet list the threat already cites for 'Managing GitHub organization access' \u2014 also contains 'Removing ForgeFlow access when it is no longer needed'; evd-096 shows customer administrators managing organization users (invitation named explicitly). Read together with evd-027, the documented model is not 'membership is derived from GitHub and never revisited' but 'membership is stored and administered in ForgeFlow, and removing ForgeFlow access is a separate customer action'. This does not defeat the threat: a documented customer responsibility is not an enforced control, and the interval between the GitHub-side removal and a manual ForgeFlow-side removal is precisely the exposure. But it is a condition the attack path depends on, it is documented rather than silent, and stating it changes the threat from 'no revocation mechanism is described' to 'revocation is manual, out of band, and customer-owned', which a reviewer would treat differently.",
+        "evidence_ids": [
+          "evd-026",
+          "evd-104",
+          "evd-096",
+          "evd-027"
+        ],
+        "recommended_action": "revise",
+        "confidence": "medium"
+      },
+      {
+        "subject_type": "documentation_gap",
+        "subject_id": "gap-044",
+        "critique_type": "duplicate",
+        "description": "gap-044 restates gap-022. Both record the same unknown \u2014 whether the organization identifier in the artifact path is backed by an enforced access check or is only a naming convention \u2014 from the same passages, and the two carry different severities (medium here, high in gap-022) for one question with one answer.",
+        "rationale": "gap-022 cites evd-033, evd-078, evd-130, evd-054 and evd-138 and requests the storage access policy and the enforcement point; gap-044 cites the same set plus evd-026 and requests 'storage access policy configuration showing how reads are constrained per organization'. Both rest on the single line in evd-054 naming 'Object-storage authorization enforcement' as requiring clarification. gap-044's second requested item, the authorization check performed before a time-limited link is issued, is already the subject of gap-023 (evd-026, evd-033). Only its third item \u2014 what the administrative interface can reach in object storage, corresponding to evd-054's separate 'Administrative access to source artifacts' entry \u2014 is not covered elsewhere, and should survive the merge. Left as they are, two evidence requests chase one answer and the severity conflict goes to the reviewer unexplained.",
+        "evidence_ids": [
+          "evd-033",
+          "evd-078",
+          "evd-130",
+          "evd-054",
+          "evd-026"
+        ],
+        "recommended_action": "merge",
+        "confidence": "high"
+      },
+      {
+        "subject_type": "evidence_assessment",
+        "subject_id": "eas-064",
+        "critique_type": "unsupported_claim",
+        "description": "eas-064 assigns evd-036 the strength 'contradictory' and reasons from evd-036 together with evd-062 that 'the documents do not state that stored membership is never re-derived'. Neither cited passage addresses re-derivation, so neither is evidence pointing against the threat, and labelling one contradictory attributes to it a reading it does not carry.",
+        "rationale": "evd-036 is a list of event types sent to the shared logging platform; the entry 'Organization-membership changes' establishes that such a change is logged when one occurs, not what triggers one and not that a GitHub-side removal produces one. evd-062 lists the subscribed webhook types as installation events and installation permission updates \u2014 App-installation lifecycle events \u2014 and names no GitHub organization-membership event; its list is introduced as what is 'currently included', which makes the passage silent on membership propagation rather than affirmative about it. Both passages are therefore silent on the point, which is exactly what gap-028 records; the assessment's conclusion that the threat rests on undescribed synchronisation stands, but it stands on silence, not on countervailing evidence. Revise the strength labels and the rationale sentence; the documentation_gap recommendation itself can remain.",
+        "evidence_ids": [
+          "evd-036",
+          "evd-062",
+          "evd-027"
+        ],
+        "recommended_action": "revise",
+        "confidence": "medium"
+      }
+    ]
+  }
 }

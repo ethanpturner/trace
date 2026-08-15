@@ -1,66 +1,69 @@
 {
-  "critiques": [
-    {
-      "subject_type": "threat",
-      "subject_id": "thr-003",
-      "critique_type": "unsupported_claim",
-      "description": "The fourth precondition asserts that \"Pull requests may be visible to a wider audience than the ForgeFlow organization\" and cites evd-031 and evd-064; neither passage says this. evd-031 lists the comment service's inputs and its formatting, length-restriction, link-addition and posting steps; evd-064 says organizations may enable comments, lists what a comment contains, and states customers remain responsible for evaluating recommendations. The impact statement then leans on that unevidenced widening when it says the reproduced content is placed \"in a location governed by GitHub repository visibility rather than by ForgeFlow tenant controls\".",
-      "rationale": "The content that would be echoed originates from the repository whose pull request receives the comment: retrieval is scoped to that repository's metadata, diff, changed files, documentation and configuration (evd-005, evd-063). The comment therefore returns repository content to that repository's own pull-request thread, and whether the readership of that thread is broader than the readership of the repository is a GitHub visibility fact stated in no cited passage. The part of the impact the evidence does carry survives without the audience claim: reproduced content also persists in the stored structured result and in model input and output artifacts in object storage (evd-033), whose retention is the open question in gap-013. Recommend the precondition be re-cited, or marked inferred with a rationale and confidence, and the impact restated to what the passages establish, so a downstream finding does not inherit an unsupported disclosure-audience claim.",
-      "evidence_ids": [
-        "evd-031",
-        "evd-064",
-        "evd-005",
-        "evd-063",
-        "evd-033"
-      ],
-      "recommended_action": "revise",
-      "confidence": "medium"
-    },
-    {
-      "subject_type": "documentation_gap",
-      "subject_id": "gap-010",
-      "critique_type": "duplicate",
-      "description": "gap-010 and gap-014 pose the same question over the same passages: whether externally visible AI-generated output receives review before publication, setting evd-133 against the automatic publication sequences in evd-010 and evd-082, with evd-151 (human_review_required: unknown) and evd-054 (AI-output approval requirements listed as a gap) as support. Both entries request reconciliation of evd-133 with evd-010 and evd-082 as their closing item of requested evidence, and both name cmp-006, cmp-007, ast-002 and ctl-004 among related objects.",
-      "rationale": "One undocumented fact is being asked twice with the same citations, the same severity and the same requested evidence, so a single answer closes both and two entries would produce two documentation findings tracing to the same statement. The only material difference is the anchoring threat and the data-flow list, which a merged entry can retain. The same overlap extends to gap-015, whose first requested item restates gap-010's second and whose second restates gap-011's, so consolidation should be considered across all three; I name gap-010 because it is the entry in this threat's chain and it is the narrower framing to fold the others into.",
-      "evidence_ids": [
-        "evd-133",
-        "evd-010",
-        "evd-082",
-        "evd-151",
-        "evd-054"
-      ],
-      "recommended_action": "merge",
-      "confidence": "high"
-    },
-    {
-      "subject_type": "documentation_gap",
-      "subject_id": "gap-012",
-      "critique_type": "duplicate",
-      "description": "gap-012 asks whether AI-derived output is encoded for the GitHub comment markup context, citing evd-031 (formatting, length restriction, removal of unsupported formatting) and evd-054 (rich-content rendering behaviour listed as a known gap). gap-016 asks the same question over the same two passages, adds evd-010 and evd-025 to extend it to the web-application rendering path, and its second requested item — how the comment service constrains or encodes markup submitted to the GitHub API beyond removing unsupported formatting — is gap-012's question restated.",
-      "rationale": "gap-012's question is a strict subset of gap-016's; both are severity low, both name cmp-007 and df-012, and both would be closed by one description of the comment service's rendering and encoding path. Carrying both produces two low-severity documentation items resolved by a single answer, which dilutes the gap list without adding a question. If per-threat anchoring is preferred over merging, gap-012 should at least record the overlap so the two are routed to the same answer.",
-      "evidence_ids": [
-        "evd-031",
-        "evd-054",
-        "evd-010",
-        "evd-025"
-      ],
-      "recommended_action": "merge",
-      "confidence": "medium"
-    },
-    {
-      "subject_type": "control_mapping",
-      "subject_id": "map-019",
-      "critique_type": "unsupported_claim",
-      "description": "map-019 records req-AI-003 as \"satisfied\". Two of the three load-bearing passages are statements of intent rather than of behaviour: \"ForgeFlow attempts to avoid sending unnecessary repository content\" (evd-005) and \"ForgeFlow attempts to retrieve only repository content relevant to the requested analysis\" (evd-063). Only evd-007 is declarative — \"Each request contains only the information required for the requested analysis\" — and it names no mechanism, configuration or check that bounds inclusion; evd-099 restates the same intent to customers. The sole control cited, ctl-007, carries implementation_status \"claimed\" and validation_status \"not_evaluated\", and no evidence assessment in this group covers it.",
-      "rationale": "\"Satisfied\" is the one status that records no shortfall against the requirement, so it should not rest on the single control in this chain that nothing validated, supported by two \"attempts to\" statements. eas-041 arrived at the same objection from a different direction — necessity asserted at category level rather than demonstrated — and recommended revise, but the mapping still stands as satisfied, and the mapping's suppressed_conclusion covers only the redaction argument, not the necessity one, so this reading has not already been declined. Recommend either downgrading the satisfaction status to reflect that necessity is asserted rather than established, or citing a passage that states how inclusion is bounded in practice.",
-      "evidence_ids": [
-        "evd-005",
-        "evd-007",
-        "evd-063",
-        "evd-099"
-      ],
-      "recommended_action": "revise",
-      "confidence": "medium"
-    }
-  ]
+  "schema": "CriticalReviewProposal",
+  "response": {
+    "critiques": [
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-003",
+        "critique_type": "unsupported_claim",
+        "description": "The fourth precondition asserts that \"Pull requests may be visible to a wider audience than the ForgeFlow organization\" and cites evd-031 and evd-064; neither passage says this. evd-031 lists the comment service's inputs and its formatting, length-restriction, link-addition and posting steps; evd-064 says organizations may enable comments, lists what a comment contains, and states customers remain responsible for evaluating recommendations. The impact statement then leans on that unevidenced widening when it says the reproduced content is placed \"in a location governed by GitHub repository visibility rather than by ForgeFlow tenant controls\".",
+        "rationale": "The content that would be echoed originates from the repository whose pull request receives the comment: retrieval is scoped to that repository's metadata, diff, changed files, documentation and configuration (evd-005, evd-063). The comment therefore returns repository content to that repository's own pull-request thread, and whether the readership of that thread is broader than the readership of the repository is a GitHub visibility fact stated in no cited passage. The part of the impact the evidence does carry survives without the audience claim: reproduced content also persists in the stored structured result and in model input and output artifacts in object storage (evd-033), whose retention is the open question in gap-013. Recommend the precondition be re-cited, or marked inferred with a rationale and confidence, and the impact restated to what the passages establish, so a downstream finding does not inherit an unsupported disclosure-audience claim.",
+        "evidence_ids": [
+          "evd-031",
+          "evd-064",
+          "evd-005",
+          "evd-063",
+          "evd-033"
+        ],
+        "recommended_action": "revise",
+        "confidence": "medium"
+      },
+      {
+        "subject_type": "documentation_gap",
+        "subject_id": "gap-010",
+        "critique_type": "duplicate",
+        "description": "gap-010 and gap-014 pose the same question over the same passages: whether externally visible AI-generated output receives review before publication, setting evd-133 against the automatic publication sequences in evd-010 and evd-082, with evd-151 (human_review_required: unknown) and evd-054 (AI-output approval requirements listed as a gap) as support. Both entries request reconciliation of evd-133 with evd-010 and evd-082 as their closing item of requested evidence, and both name cmp-006, cmp-007, ast-002 and ctl-004 among related objects.",
+        "rationale": "One undocumented fact is being asked twice with the same citations, the same severity and the same requested evidence, so a single answer closes both and two entries would produce two documentation findings tracing to the same statement. The only material difference is the anchoring threat and the data-flow list, which a merged entry can retain. The same overlap extends to gap-015, whose first requested item restates gap-010's second and whose second restates gap-011's, so consolidation should be considered across all three; I name gap-010 because it is the entry in this threat's chain and it is the narrower framing to fold the others into.",
+        "evidence_ids": [
+          "evd-133",
+          "evd-010",
+          "evd-082",
+          "evd-151",
+          "evd-054"
+        ],
+        "recommended_action": "merge",
+        "confidence": "high"
+      },
+      {
+        "subject_type": "documentation_gap",
+        "subject_id": "gap-012",
+        "critique_type": "duplicate",
+        "description": "gap-012 asks whether AI-derived output is encoded for the GitHub comment markup context, citing evd-031 (formatting, length restriction, removal of unsupported formatting) and evd-054 (rich-content rendering behaviour listed as a known gap). gap-016 asks the same question over the same two passages, adds evd-010 and evd-025 to extend it to the web-application rendering path, and its second requested item \u2014 how the comment service constrains or encodes markup submitted to the GitHub API beyond removing unsupported formatting \u2014 is gap-012's question restated.",
+        "rationale": "gap-012's question is a strict subset of gap-016's; both are severity low, both name cmp-007 and df-012, and both would be closed by one description of the comment service's rendering and encoding path. Carrying both produces two low-severity documentation items resolved by a single answer, which dilutes the gap list without adding a question. If per-threat anchoring is preferred over merging, gap-012 should at least record the overlap so the two are routed to the same answer.",
+        "evidence_ids": [
+          "evd-031",
+          "evd-054",
+          "evd-010",
+          "evd-025"
+        ],
+        "recommended_action": "merge",
+        "confidence": "medium"
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-019",
+        "critique_type": "unsupported_claim",
+        "description": "map-019 records req-AI-003 as \"satisfied\". Two of the three load-bearing passages are statements of intent rather than of behaviour: \"ForgeFlow attempts to avoid sending unnecessary repository content\" (evd-005) and \"ForgeFlow attempts to retrieve only repository content relevant to the requested analysis\" (evd-063). Only evd-007 is declarative \u2014 \"Each request contains only the information required for the requested analysis\" \u2014 and it names no mechanism, configuration or check that bounds inclusion; evd-099 restates the same intent to customers. The sole control cited, ctl-007, carries implementation_status \"claimed\" and validation_status \"not_evaluated\", and no evidence assessment in this group covers it.",
+        "rationale": "\"Satisfied\" is the one status that records no shortfall against the requirement, so it should not rest on the single control in this chain that nothing validated, supported by two \"attempts to\" statements. eas-041 arrived at the same objection from a different direction \u2014 necessity asserted at category level rather than demonstrated \u2014 and recommended revise, but the mapping still stands as satisfied, and the mapping's suppressed_conclusion covers only the redaction argument, not the necessity one, so this reading has not already been declined. Recommend either downgrading the satisfaction status to reflect that necessity is asserted rather than established, or citing a passage that states how inclusion is bounded in practice.",
+        "evidence_ids": [
+          "evd-005",
+          "evd-007",
+          "evd-063",
+          "evd-099"
+        ],
+        "recommended_action": "revise",
+        "confidence": "medium"
+      }
+    ]
+  }
 }

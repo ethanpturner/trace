@@ -1,102 +1,105 @@
 {
-  "assessments": [
-    {
-      "subject_type": "control_mapping",
-      "subject_id": "map-001",
-      "evidence_ids": [
-        "evd-002",
-        "evd-005"
-      ],
-      "evidence_strengths": {
-        "evd-002": "direct",
-        "evd-005": "direct"
+  "schema": "EvidenceValidationProposal",
+  "response": {
+    "assessments": [
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-001",
+        "evidence_ids": [
+          "evd-002",
+          "evd-005"
+        ],
+        "evidence_strengths": {
+          "evd-002": "direct",
+          "evd-005": "direct"
+        },
+        "validation_status": "supported",
+        "rationale": "The cited passages affirmatively establish that submitted content reaches the model as invoice details and that a denial is pressed for reconsideration with prior messages carried in.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": {}
       },
-      "validation_status": "supported",
-      "rationale": "The cited passages affirmatively establish that submitted content reaches the model as invoice details and that a denial is pressed for reconsideration with prior messages carried in.",
-      "missing_evidence": [],
-      "contradictions": [],
-      "confidence": "medium",
-      "recommendation": "continue",
-      "quoted_text": {}
-    },
-    {
-      "subject_type": "control_mapping",
-      "subject_id": "map-002",
-      "evidence_ids": [
-        "evd-003",
-        "evd-004"
-      ],
-      "evidence_strengths": {
-        "evd-003": "direct",
-        "evd-004": "direct"
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-002",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004"
+        ],
+        "evidence_strengths": {
+          "evd-003": "direct",
+          "evd-004": "direct"
+        },
+        "validation_status": "supported",
+        "rationale": "The cited passages affirmatively state the ceiling is applied by the agent from its instructions and that the schema does not enforce a maximum amount.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": {}
       },
-      "validation_status": "supported",
-      "rationale": "The cited passages affirmatively state the ceiling is applied by the agent from its instructions and that the schema does not enforce a maximum amount.",
-      "missing_evidence": [],
-      "contradictions": [],
-      "confidence": "medium",
-      "recommendation": "continue",
-      "quoted_text": {}
-    },
-    {
-      "subject_type": "control_mapping",
-      "subject_id": "map-003",
-      "evidence_ids": [
-        "evd-005",
-        "evd-006"
-      ],
-      "evidence_strengths": {
-        "evd-005": "indirect",
-        "evd-006": "direct"
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-003",
+        "evidence_ids": [
+          "evd-005",
+          "evd-006"
+        ],
+        "evidence_strengths": {
+          "evd-005": "indirect",
+          "evd-006": "direct"
+        },
+        "validation_status": "supported",
+        "rationale": "The deployment section affirmatively states traces include HTTP request and response bodies, and the data-handling section establishes those bodies carry submitted invoice contents.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": {}
       },
-      "validation_status": "supported",
-      "rationale": "The deployment section affirmatively states traces include HTTP request and response bodies, and the data-handling section establishes those bodies carry submitted invoice contents.",
-      "missing_evidence": [],
-      "contradictions": [],
-      "confidence": "medium",
-      "recommendation": "continue",
-      "quoted_text": {}
-    },
-    {
-      "subject_type": "control_mapping",
-      "subject_id": "map-004",
-      "evidence_ids": [
-        "evd-006"
-      ],
-      "evidence_strengths": {
-        "evd-006": "indirect"
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-004",
+        "evidence_ids": [
+          "evd-006"
+        ],
+        "evidence_strengths": {
+          "evd-006": "indirect"
+        },
+        "validation_status": "unsupported",
+        "rationale": "The cited passage establishes that the credentials exist and nothing more; no passage addresses where either credential is stored, or whether it is scoped or rotated.",
+        "missing_evidence": [
+          "where the model-provider credential is stored",
+          "where the observability credential is stored",
+          "whether either credential is scoped or rotated"
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "documentation_gap",
+        "quoted_text": {}
       },
-      "validation_status": "unsupported",
-      "rationale": "The cited passage establishes that the credentials exist and nothing more; no passage addresses where either credential is stored, or whether it is scoped or rotated.",
-      "missing_evidence": [
-        "where the model-provider credential is stored",
-        "where the observability credential is stored",
-        "whether either credential is scoped or rotated"
-      ],
-      "contradictions": [],
-      "confidence": "low",
-      "recommendation": "documentation_gap",
-      "quoted_text": {}
-    },
-    {
-      "subject_type": "control_mapping",
-      "subject_id": "map-005",
-      "evidence_ids": [
-        "evd-005"
-      ],
-      "evidence_strengths": {
-        "evd-005": "indirect"
-      },
-      "validation_status": "unsupported",
-      "rationale": "The cited passage establishes that the workflow itself does not authenticate submitters; whether an upstream system authenticates them and binds the submitter field to that identity is not addressed either way.",
-      "missing_evidence": [
-        "whether the submission workflow authenticates users before the agent sees a file",
-        "whether the submitter field is bound to an upstream identity"
-      ],
-      "contradictions": [],
-      "confidence": "low",
-      "recommendation": "documentation_gap",
-      "quoted_text": {}
-    }
-  ]
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-005",
+        "evidence_ids": [
+          "evd-005"
+        ],
+        "evidence_strengths": {
+          "evd-005": "indirect"
+        },
+        "validation_status": "unsupported",
+        "rationale": "The cited passage establishes that the workflow itself does not authenticate submitters; whether an upstream system authenticates them and binds the submitter field to that identity is not addressed either way.",
+        "missing_evidence": [
+          "whether the submission workflow authenticates users before the agent sees a file",
+          "whether the submitter field is bound to an upstream identity"
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "documentation_gap",
+        "quoted_text": {}
+      }
+    ]
+  }
 }

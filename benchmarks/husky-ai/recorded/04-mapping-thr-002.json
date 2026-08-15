@@ -1,42 +1,45 @@
 {
-  "controls": [],
-  "mappings": [
-    {
-      "threat_id": "thr-002",
-      "requirement_id": "req-SECRET-001",
-      "control_keys": [],
-      "existing_control_ids": [],
-      "applicability_status": "applicable",
-      "applicability_reason": "The gather application holds long-lived API keys for the external image services, so managed-secret-store custody applies; the keys are stored credentials, not short-lived workload identity.",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "unmet",
-      "evidence_ids": [
-        "evd-010",
-        "evd-011"
-      ],
-      "assumptions": [
-        "No common false positive applies: the conclusion is that the documents place the keys in a blob storage account rather than a managed secret store, not absent detail of a secret store's own encryption or its access-control policy — the false positives the catalog names presuppose a named secret store, and none is named."
-      ],
-      "confidence": "medium"
-    },
-    {
-      "threat_id": "thr-002",
-      "requirement_id": "req-CICD-001",
-      "control_keys": [],
-      "existing_control_ids": [],
-      "applicability_status": "applicable",
-      "applicability_reason": "The deployment service packages and ships the model to production, and the experimental environment pulls from third-party tools, so deliberate trust of the pipeline and its dependencies applies; deployment is a service, not a documented manual procedure.",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "unverified",
-      "evidence_ids": [
-        "evd-009",
-        "evd-012"
-      ],
-      "assumptions": [],
-      "confidence": "low"
-    }
-  ],
-  "documentation_gaps": []
+  "schema": "MappingProposal",
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-SECRET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The gather application holds long-lived API keys for the external image services, so managed-secret-store custody applies; the keys are stored credentials, not short-lived workload identity.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unmet",
+        "evidence_ids": [
+          "evd-010",
+          "evd-011"
+        ],
+        "assumptions": [
+          "No common false positive applies: the conclusion is that the documents place the keys in a blob storage account rather than a managed secret store, not absent detail of a secret store's own encryption or its access-control policy \u2014 the false positives the catalog names presuppose a named secret store, and none is named."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-CICD-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The deployment service packages and ships the model to production, and the experimental environment pulls from third-party tools, so deliberate trust of the pipeline and its dependencies applies; deployment is a service, not a documented manual procedure.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-009",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "low"
+      }
+    ],
+    "documentation_gaps": []
+  }
 }

@@ -1,24 +1,27 @@
 {
-  "controls": [],
-  "mappings": [
-    {
-      "threat_id": "thr-002",
-      "requirement_id": "req-AUTHZ-002",
-      "control_keys": [],
-      "existing_control_ids": [],
-      "applicability_status": "applicable",
-      "applicability_reason": "The connector holds delegated access to the helpdesk platform, so limiting integration privileges to those required applies; the access is neither absent nor read-only-public.",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "unmet",
-      "evidence_ids": [
-        "evd-003"
-      ],
-      "assumptions": [
-        "No common false positive applies: the token's scope is documented as full workspace access chosen for convenience while the integration reads tickets and writes notes — a documented over-grant, not an absent per-permission justification over a narrow documented scope, which the catalog names as the false positive."
-      ],
-      "confidence": "high"
-    }
-  ],
-  "documentation_gaps": []
+  "schema": "MappingProposal",
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-AUTHZ-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The connector holds delegated access to the helpdesk platform, so limiting integration privileges to those required applies; the access is neither absent nor read-only-public.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unmet",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "assumptions": [
+          "No common false positive applies: the token's scope is documented as full workspace access chosen for convenience while the integration reads tickets and writes notes \u2014 a documented over-grant, not an absent per-permission justification over a narrow documented scope, which the catalog names as the false positive."
+        ],
+        "confidence": "high"
+      }
+    ],
+    "documentation_gaps": []
+  }
 }

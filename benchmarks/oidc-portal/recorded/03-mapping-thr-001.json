@@ -1,40 +1,43 @@
 {
-  "controls": [],
-  "mappings": [
-    {
-      "threat_id": "thr-001",
-      "requirement_id": "req-AUTH-001",
-      "control_keys": [],
-      "existing_control_ids": [],
-      "applicability_status": "applicable",
-      "applicability_reason": "The portal is reachable by end users and delegates authentication, so documenting the delegation applies; the document states the delegation explicitly.",
-      "suppressed_conclusion": "The portal lacks a local password-complexity policy, rotation policy, and account lockout.",
-      "suppressed_by": "absent local password complexity policy",
-      "satisfaction_status": "satisfied",
-      "evidence_ids": [
-        "evd-003"
-      ],
-      "assumptions": [
-        "The catalog's common false positives for this requirement — absent local password complexity, rotation, lockout, and credential-storage description — do not apply as conclusions: the portal maintains no password store and issues no credentials, so there is no local policy to lack."
-      ],
-      "confidence": "high"
-    },
-    {
-      "threat_id": "thr-001",
-      "requirement_id": "req-AUTH-002",
-      "control_keys": [],
-      "existing_control_ids": [],
-      "applicability_status": "not_applicable",
-      "applicability_reason": "Authentication and its factor policy are entirely owned by an external provider and documented as such: the document states multi-factor enrolment and factor policy are set at the identity provider organization level, which is the requirement's own non-applicable condition.",
-      "suppressed_conclusion": "The portal does not implement application-managed multi-factor authentication.",
-      "suppressed_by": "authentication and its factor policy are entirely owned by an external provider and documented as such",
-      "satisfaction_status": "not_applicable",
-      "evidence_ids": [
-        "evd-003"
-      ],
-      "assumptions": [],
-      "confidence": "high"
-    }
-  ],
-  "documentation_gaps": []
+  "schema": "MappingProposal",
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AUTH-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The portal is reachable by end users and delegates authentication, so documenting the delegation applies; the document states the delegation explicitly.",
+        "suppressed_conclusion": "The portal lacks a local password-complexity policy, rotation policy, and account lockout.",
+        "suppressed_by": "absent local password complexity policy",
+        "satisfaction_status": "satisfied",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "assumptions": [
+          "The catalog's common false positives for this requirement \u2014 absent local password complexity, rotation, lockout, and credential-storage description \u2014 do not apply as conclusions: the portal maintains no password store and issues no credentials, so there is no local policy to lack."
+        ],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AUTH-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Authentication and its factor policy are entirely owned by an external provider and documented as such: the document states multi-factor enrolment and factor policy are set at the identity provider organization level, which is the requirement's own non-applicable condition.",
+        "suppressed_conclusion": "The portal does not implement application-managed multi-factor authentication.",
+        "suppressed_by": "authentication and its factor policy are entirely owned by an external provider and documented as such",
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      }
+    ],
+    "documentation_gaps": []
+  }
 }

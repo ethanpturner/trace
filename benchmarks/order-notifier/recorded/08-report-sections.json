@@ -1,11 +1,14 @@
 {
-  "executive_summary": "This assessment reviewed the order notifier from its integration guide and operations notes and approved one finding, described below. The same weakness was documented in both sources; the duplicate conclusion was merged rather than reported twice, and what could not be determined is recorded as a documentation gap.",
-  "system_overview": "The system receives order-status callbacks from the payment provider at a public endpoint and posts updates to the operations channel over HTTPS, as the two supplied documents describe.",
-  "risk_summary": "The approved finding concerns the callback endpoint processing any well-formed request without origin verification — a weakness both documents state affirmatively. Whether re-processing a repeated callback is prevented or harmless is not established and is recorded as a documentation gap.",
-  "limitations": [
-    {
-      "limitation_id": "lim-assumptions-fnd-001",
-      "text": "fnd-001 rests on stated assumptions: No common false positive applies: the integration guide affirmatively states no signature is checked while the provider offers a signing feature — a documented absence, not an unstated mechanism.; No common false positive applies: the incident review affirmatively confirmed unsigned intake, and enabling provider signing is recorded as unscheduled backlog work — a documented absence, not an unstated mechanism."
-    }
-  ]
+  "schema": "ReportSections",
+  "response": {
+    "executive_summary": "This assessment reviewed the order notifier from its integration guide and operations notes and approved one finding, described below. The same weakness was documented in both sources; the duplicate conclusion was merged rather than reported twice, and what could not be determined is recorded as a documentation gap.",
+    "system_overview": "The system receives order-status callbacks from the payment provider at a public endpoint and posts updates to the operations channel over HTTPS, as the two supplied documents describe.",
+    "risk_summary": "The approved finding concerns the callback endpoint processing any well-formed request without origin verification \u2014 a weakness both documents state affirmatively. Whether re-processing a repeated callback is prevented or harmless is not established and is recorded as a documentation gap.",
+    "limitations": [
+      {
+        "limitation_id": "lim-assumptions-fnd-001",
+        "text": "fnd-001 rests on stated assumptions: No common false positive applies: the integration guide affirmatively states no signature is checked while the provider offers a signing feature \u2014 a documented absence, not an unstated mechanism.; No common false positive applies: the incident review affirmatively confirmed unsigned intake, and enabling provider signing is recorded as unscheduled backlog work \u2014 a documented absence, not an unstated mechanism."
+      }
+    ]
+  }
 }

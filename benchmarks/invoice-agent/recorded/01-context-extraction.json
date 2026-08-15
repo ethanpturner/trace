@@ -1,324 +1,327 @@
 {
-  "system": {
-    "system_name": "Invoice Agent",
-    "system_purpose": "approve or deny submitted invoices with an LLM-based finance assistant",
-    "business_criticality": null,
-    "environment": [],
-    "deployment_model": null,
-    "data_classifications": []
-  },
-  "claims": [
-    {
-      "key": "untrusted-input",
-      "subject_type": "component",
-      "subject_key": "agent",
-      "predicate": "model_input_trust",
-      "value": "the invoice file's contents are parsed and returned to the model as the invoice details",
-      "status": "documented",
-      "confidence": "high",
-      "rationale": null,
-      "evidence_ids": [
-        "evd-005"
-      ]
+  "schema": "ContextExtractionProposal",
+  "response": {
+    "system": {
+      "system_name": "Invoice Agent",
+      "system_purpose": "approve or deny submitted invoices with an LLM-based finance assistant",
+      "business_criticality": null,
+      "environment": [],
+      "deployment_model": null,
+      "data_classifications": []
     },
-    {
-      "key": "reconsideration",
-      "subject_type": "component",
-      "subject_key": "workflow",
-      "predicate": "denial_followup",
-      "value": "a denied invoice is followed up in the same conversation with an urgency note asking the agent to reconsider, with the agent's prior messages carried in",
-      "status": "documented",
-      "confidence": "high",
-      "rationale": null,
-      "evidence_ids": [
-        "evd-002"
-      ]
-    },
-    {
-      "key": "ceiling-by-instruction",
-      "subject_type": "component",
-      "subject_key": "agent",
-      "predicate": "spending_ceiling_enforcement",
-      "value": "the $20,000 ceiling is applied by the agent from its instructions; the schema does not enforce a maximum amount",
-      "status": "documented",
-      "confidence": "high",
-      "rationale": null,
-      "evidence_ids": [
-        "evd-004"
-      ]
-    },
-    {
-      "key": "trace-bodies",
-      "subject_type": "component",
-      "subject_key": "agent",
-      "predicate": "trace_capture",
-      "value": "request and tool-call traces, including HTTP request and response bodies, are captured for debugging",
-      "status": "documented",
-      "confidence": "high",
-      "rationale": null,
-      "evidence_ids": [
-        "evd-006"
-      ]
-    },
-    {
-      "key": "unauthenticated-submitters",
-      "subject_type": "component",
-      "subject_key": "workflow",
-      "predicate": "submitter_identity",
-      "value": "the submitter field is a value in the uploaded document; submitters are not otherwise authenticated to the workflow",
-      "status": "documented",
-      "confidence": "high",
-      "rationale": null,
-      "evidence_ids": [
-        "evd-005"
-      ]
-    },
-    {
-      "key": "runtime-credentials",
-      "subject_type": "component",
-      "subject_key": "agent",
-      "predicate": "credential_possession",
-      "value": "the agent runs with credentials for the model provider and the observability service",
-      "status": "documented",
-      "confidence": "high",
-      "rationale": null,
-      "evidence_ids": [
-        "evd-006"
-      ]
-    }
-  ],
-  "components": [
-    {
-      "key": "agent",
-      "name": "Invoice Agent",
-      "component_type": "agent",
-      "description": "LLM-based finance assistant that reads a submitted invoice through its processing tool and answers with an approve or deny decision",
-      "technology": [],
-      "ownership": null,
-      "deployment_zone": null,
-      "internet_accessible": null,
-      "externally_managed": null,
-      "data_classifications": [],
-      "authentication_mechanisms": [],
-      "authorization_mechanisms": [],
-      "evidence_ids": [
-        "evd-001",
-        "evd-002"
-      ]
-    },
-    {
-      "key": "workflow",
-      "name": "Submission Workflow",
-      "component_type": "service",
-      "description": "drives the agent: delivers the submitted file path and follows up on denials with an urgency note",
-      "technology": [],
-      "ownership": null,
-      "deployment_zone": null,
-      "internet_accessible": null,
-      "externally_managed": null,
-      "data_classifications": [],
-      "authentication_mechanisms": [],
-      "authorization_mechanisms": [],
-      "evidence_ids": [
-        "evd-002"
-      ]
-    },
-    {
-      "key": "model-provider",
-      "name": "Model Provider",
-      "component_type": "external_service",
-      "description": null,
-      "technology": [],
-      "ownership": null,
-      "deployment_zone": null,
-      "internet_accessible": null,
-      "externally_managed": true,
-      "data_classifications": [],
-      "authentication_mechanisms": [],
-      "authorization_mechanisms": [],
-      "evidence_ids": [
-        "evd-001"
-      ]
-    },
-    {
-      "key": "observability",
-      "name": "Observability Service",
-      "component_type": "external_service",
-      "description": null,
-      "technology": [],
-      "ownership": null,
-      "deployment_zone": null,
-      "internet_accessible": null,
-      "externally_managed": true,
-      "data_classifications": [],
-      "authentication_mechanisms": [],
-      "authorization_mechanisms": [],
-      "evidence_ids": [
-        "evd-001",
-        "evd-006"
-      ]
-    }
-  ],
-  "actors": [
-    {
-      "key": "submitter",
-      "name": "Invoice submitter",
-      "actor_type": "external_user",
-      "trust_level": null,
-      "capabilities": [],
-      "authentication_method": null,
-      "evidence_ids": [
-        "evd-005"
-      ]
-    }
-  ],
-  "assets": [
-    {
-      "key": "invoices",
-      "name": "Submitted invoices",
-      "asset_type": "financial_data",
-      "description": "submitted invoice documents: amount, submitter, category, and due date",
-      "confidentiality_impact": null,
-      "integrity_impact": null,
-      "availability_impact": null,
-      "data_classification": null,
-      "owner": null,
-      "component_keys": [
-        "agent",
-        "workflow"
-      ],
-      "evidence_ids": [
-        "evd-004",
-        "evd-005"
-      ]
-    },
-    {
-      "key": "credentials",
-      "name": "Provider credentials",
-      "asset_type": "credentials",
-      "description": "credentials for the model provider and the observability service, held by the agent runtime",
-      "confidentiality_impact": null,
-      "integrity_impact": null,
-      "availability_impact": null,
-      "data_classification": null,
-      "owner": null,
-      "component_keys": [
-        "agent"
-      ],
-      "evidence_ids": [
-        "evd-006"
-      ]
-    },
-    {
-      "key": "traces",
-      "name": "Request traces",
-      "asset_type": "operational_data",
-      "description": "request and tool-call traces, including HTTP request and response bodies",
-      "confidentiality_impact": null,
-      "integrity_impact": null,
-      "availability_impact": null,
-      "data_classification": null,
-      "owner": null,
-      "component_keys": [
-        "observability"
-      ],
-      "evidence_ids": [
-        "evd-006"
-      ]
-    }
-  ],
-  "data_flows": [
-    {
-      "key": "submission",
-      "name": "Invoice submission",
-      "source_component_key": "workflow",
-      "destination_component_key": "agent",
-      "direction": "one_way",
-      "protocol": null,
-      "data_types": [],
-      "authentication": "unknown",
-      "encryption_in_transit": "unknown",
-      "crosses_trust_boundary_keys": [
-        "untrusted-content"
-      ],
-      "internet_exposed": null,
-      "evidence_ids": [
-        "evd-002"
-      ]
-    },
-    {
-      "key": "model-calls",
-      "name": "Model prompt and completion",
-      "source_component_key": "agent",
-      "destination_component_key": "model-provider",
-      "direction": "bidirectional",
-      "protocol": null,
-      "data_types": [],
-      "authentication": "unknown",
-      "encryption_in_transit": "unknown",
-      "crosses_trust_boundary_keys": [
-        "third-party"
-      ],
-      "internet_exposed": null,
-      "evidence_ids": [
-        "evd-001",
-        "evd-005"
-      ]
-    },
-    {
-      "key": "trace-export",
-      "name": "Trace capture",
-      "source_component_key": "agent",
-      "destination_component_key": "observability",
-      "direction": "one_way",
-      "protocol": null,
-      "data_types": [],
-      "authentication": "unknown",
-      "encryption_in_transit": "unknown",
-      "crosses_trust_boundary_keys": [
-        "third-party"
-      ],
-      "internet_exposed": null,
-      "evidence_ids": [
-        "evd-006"
-      ]
-    }
-  ],
-  "trust_boundaries": [
-    {
-      "key": "untrusted-content",
-      "name": "Untrusted submission content boundary",
-      "boundary_type": "user_to_application",
-      "description": "submitted invoice files carry submitter-authored content into the agent's model conversation",
-      "inside_component_keys": [
-        "agent"
-      ],
-      "outside_component_keys": [
-        "workflow"
-      ],
-      "controls": [],
-      "evidence_ids": [
-        "evd-005"
-      ]
-    },
-    {
-      "key": "third-party",
-      "name": "Third-party service boundary",
-      "boundary_type": "application_to_external_service",
-      "description": null,
-      "inside_component_keys": [
-        "agent"
-      ],
-      "outside_component_keys": [
-        "model-provider",
-        "observability"
-      ],
-      "controls": [],
-      "evidence_ids": [
-        "evd-006"
-      ]
-    }
-  ],
-  "questions": [],
-  "observations": []
+    "claims": [
+      {
+        "key": "untrusted-input",
+        "subject_type": "component",
+        "subject_key": "agent",
+        "predicate": "model_input_trust",
+        "value": "the invoice file's contents are parsed and returned to the model as the invoice details",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-005"
+        ]
+      },
+      {
+        "key": "reconsideration",
+        "subject_type": "component",
+        "subject_key": "workflow",
+        "predicate": "denial_followup",
+        "value": "a denied invoice is followed up in the same conversation with an urgency note asking the agent to reconsider, with the agent's prior messages carried in",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-002"
+        ]
+      },
+      {
+        "key": "ceiling-by-instruction",
+        "subject_type": "component",
+        "subject_key": "agent",
+        "predicate": "spending_ceiling_enforcement",
+        "value": "the $20,000 ceiling is applied by the agent from its instructions; the schema does not enforce a maximum amount",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-004"
+        ]
+      },
+      {
+        "key": "trace-bodies",
+        "subject_type": "component",
+        "subject_key": "agent",
+        "predicate": "trace_capture",
+        "value": "request and tool-call traces, including HTTP request and response bodies, are captured for debugging",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-006"
+        ]
+      },
+      {
+        "key": "unauthenticated-submitters",
+        "subject_type": "component",
+        "subject_key": "workflow",
+        "predicate": "submitter_identity",
+        "value": "the submitter field is a value in the uploaded document; submitters are not otherwise authenticated to the workflow",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-005"
+        ]
+      },
+      {
+        "key": "runtime-credentials",
+        "subject_type": "component",
+        "subject_key": "agent",
+        "predicate": "credential_possession",
+        "value": "the agent runs with credentials for the model provider and the observability service",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-006"
+        ]
+      }
+    ],
+    "components": [
+      {
+        "key": "agent",
+        "name": "Invoice Agent",
+        "component_type": "agent",
+        "description": "LLM-based finance assistant that reads a submitted invoice through its processing tool and answers with an approve or deny decision",
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": null,
+        "internet_accessible": null,
+        "externally_managed": null,
+        "data_classifications": [],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ]
+      },
+      {
+        "key": "workflow",
+        "name": "Submission Workflow",
+        "component_type": "service",
+        "description": "drives the agent: delivers the submitted file path and follows up on denials with an urgency note",
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": null,
+        "internet_accessible": null,
+        "externally_managed": null,
+        "data_classifications": [],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-002"
+        ]
+      },
+      {
+        "key": "model-provider",
+        "name": "Model Provider",
+        "component_type": "external_service",
+        "description": null,
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": null,
+        "internet_accessible": null,
+        "externally_managed": true,
+        "data_classifications": [],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-001"
+        ]
+      },
+      {
+        "key": "observability",
+        "name": "Observability Service",
+        "component_type": "external_service",
+        "description": null,
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": null,
+        "internet_accessible": null,
+        "externally_managed": true,
+        "data_classifications": [],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-001",
+          "evd-006"
+        ]
+      }
+    ],
+    "actors": [
+      {
+        "key": "submitter",
+        "name": "Invoice submitter",
+        "actor_type": "external_user",
+        "trust_level": null,
+        "capabilities": [],
+        "authentication_method": null,
+        "evidence_ids": [
+          "evd-005"
+        ]
+      }
+    ],
+    "assets": [
+      {
+        "key": "invoices",
+        "name": "Submitted invoices",
+        "asset_type": "financial_data",
+        "description": "submitted invoice documents: amount, submitter, category, and due date",
+        "confidentiality_impact": null,
+        "integrity_impact": null,
+        "availability_impact": null,
+        "data_classification": null,
+        "owner": null,
+        "component_keys": [
+          "agent",
+          "workflow"
+        ],
+        "evidence_ids": [
+          "evd-004",
+          "evd-005"
+        ]
+      },
+      {
+        "key": "credentials",
+        "name": "Provider credentials",
+        "asset_type": "credentials",
+        "description": "credentials for the model provider and the observability service, held by the agent runtime",
+        "confidentiality_impact": null,
+        "integrity_impact": null,
+        "availability_impact": null,
+        "data_classification": null,
+        "owner": null,
+        "component_keys": [
+          "agent"
+        ],
+        "evidence_ids": [
+          "evd-006"
+        ]
+      },
+      {
+        "key": "traces",
+        "name": "Request traces",
+        "asset_type": "operational_data",
+        "description": "request and tool-call traces, including HTTP request and response bodies",
+        "confidentiality_impact": null,
+        "integrity_impact": null,
+        "availability_impact": null,
+        "data_classification": null,
+        "owner": null,
+        "component_keys": [
+          "observability"
+        ],
+        "evidence_ids": [
+          "evd-006"
+        ]
+      }
+    ],
+    "data_flows": [
+      {
+        "key": "submission",
+        "name": "Invoice submission",
+        "source_component_key": "workflow",
+        "destination_component_key": "agent",
+        "direction": "one_way",
+        "protocol": null,
+        "data_types": [],
+        "authentication": "unknown",
+        "encryption_in_transit": "unknown",
+        "crosses_trust_boundary_keys": [
+          "untrusted-content"
+        ],
+        "internet_exposed": null,
+        "evidence_ids": [
+          "evd-002"
+        ]
+      },
+      {
+        "key": "model-calls",
+        "name": "Model prompt and completion",
+        "source_component_key": "agent",
+        "destination_component_key": "model-provider",
+        "direction": "bidirectional",
+        "protocol": null,
+        "data_types": [],
+        "authentication": "unknown",
+        "encryption_in_transit": "unknown",
+        "crosses_trust_boundary_keys": [
+          "third-party"
+        ],
+        "internet_exposed": null,
+        "evidence_ids": [
+          "evd-001",
+          "evd-005"
+        ]
+      },
+      {
+        "key": "trace-export",
+        "name": "Trace capture",
+        "source_component_key": "agent",
+        "destination_component_key": "observability",
+        "direction": "one_way",
+        "protocol": null,
+        "data_types": [],
+        "authentication": "unknown",
+        "encryption_in_transit": "unknown",
+        "crosses_trust_boundary_keys": [
+          "third-party"
+        ],
+        "internet_exposed": null,
+        "evidence_ids": [
+          "evd-006"
+        ]
+      }
+    ],
+    "trust_boundaries": [
+      {
+        "key": "untrusted-content",
+        "name": "Untrusted submission content boundary",
+        "boundary_type": "user_to_application",
+        "description": "submitted invoice files carry submitter-authored content into the agent's model conversation",
+        "inside_component_keys": [
+          "agent"
+        ],
+        "outside_component_keys": [
+          "workflow"
+        ],
+        "controls": [],
+        "evidence_ids": [
+          "evd-005"
+        ]
+      },
+      {
+        "key": "third-party",
+        "name": "Third-party service boundary",
+        "boundary_type": "application_to_external_service",
+        "description": null,
+        "inside_component_keys": [
+          "agent"
+        ],
+        "outside_component_keys": [
+          "model-provider",
+          "observability"
+        ],
+        "controls": [],
+        "evidence_ids": [
+          "evd-006"
+        ]
+      }
+    ],
+    "questions": [],
+    "observations": []
+  }
 }
