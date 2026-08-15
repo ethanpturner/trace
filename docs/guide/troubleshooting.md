@@ -124,6 +124,18 @@ elsewhere is not a supported way to run it.
 
 ## Known sharp edges
 
+**A pasted command failed with `unrecognized arguments: # ...` (macOS zsh).**
+zsh does not treat `#` as a comment at an interactive prompt by default, so a copied line with a
+trailing `# comment` passes the comment words as literal arguments — argparse rejects them with
+exit 2, and the command never ran. The command blocks in this repository carry no trailing
+comments for this reason; if a line from elsewhere has one, delete it before pasting, or enable
+comments for the session with `setopt interactive_comments`. The failure matters most on
+`trace reset --force`: a rejected reset silently leaves the stale data root in place, and the
+next `assessment create` mints `asm-002` while every transcript names `asm-001`. Angle-bracket
+placeholders are the same trap in a different shape — zsh parses `<evd-id>` as a redirection —
+so placeholders in this guide are written in capitals (`EVD-ID`) and must be replaced, not
+pasted.
+
 **`trace evidence show asm-001 evd-...` exits 2.**
 The argument order is reversed from most commands: `evidence show` takes the evidence identifier
 first and the assessment as a flag — `trace evidence show evd-... --assessment asm-001`.
