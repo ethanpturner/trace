@@ -270,6 +270,26 @@ class AssessmentService:
         """
         return self._transition(assessment_id, ObjectStatus.ARCHIVED)
 
+    def purge(self, assessment_id: str) -> int:
+        """Delete one assessment entirely -- every row and its whole directory -- and return how
+        many objects were removed (DEC-089).
+
+        Nothing else shrinks the store: every run appends execution records, evaluation results, and
+        prompt snapshots, and an archived assessment keeps them all. `reset` removes the whole data
+        root; this removes exactly one assessment, which the store's scoping makes safe. The rows go
+        first, in one transaction, then the directory -- so a crash between the two leaves an
+        assessment with no rows and a stray directory, which `purge` run again removes, rather than
+        rows pointing at files that are gone.
+        """
+        self.get(assessment_id)  # a named error if it does not exist, before anything is removed
+        removed = self._store.repository(assessment_id).delete_all()
+        artifacts = ArtifactStore(assessment_id, root=self._artifact_root)
+        if artifacts.assessment_root.exists():
+            import shutil
+
+            shutil.rmtree(artifacts.assessment_root)
+        return removed
+
     def begin_review(self, assessment_id: str) -> Assessment:
         """A checkpoint has paused the run and is waiting for a human.
 

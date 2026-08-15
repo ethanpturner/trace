@@ -570,3 +570,29 @@ def test_removing_the_directory_does_not_remove_the_assessment(
     shutil.rmtree(tmp_path / "assessments" / created.id)
 
     assert service.get(created.id).id == created.id
+
+
+def test_purge_removes_one_assessment_and_leaves_the_others(
+    service: AssessmentService, tmp_path: Path
+) -> None:
+    """DEC-089: a per-assessment purge, where `reset` removes the whole data root. It deletes the
+    rows and the directory of exactly one assessment and nothing else's."""
+    doomed = service.create("Doomed", a_configuration())
+    kept = service.create("Kept", a_configuration())
+    # Give the doomed assessment a stored artifact so the directory removal is observable.
+    service.handle(doomed.id).artifacts.store_source("overview.md", b"# Overview\n")
+    doomed_dir = tmp_path / "assessments" / doomed.id
+    assert doomed_dir.exists()
+
+    removed = service.purge(doomed.id)
+
+    assert removed >= 1
+    assert not doomed_dir.exists(), "the assessment's directory was not removed"
+    with pytest.raises(AssessmentNotFoundError):
+        service.get(doomed.id)
+    assert service.get(kept.id).name == "Kept", "another assessment was affected"
+
+
+def test_purge_of_an_unknown_assessment_is_refused(service: AssessmentService) -> None:
+    with pytest.raises(AssessmentNotFoundError):
+        service.purge("asm-404")

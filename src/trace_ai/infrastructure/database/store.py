@@ -60,8 +60,10 @@ __all__ = [
 ]
 
 # Bumped when the *table layout* changes, not when a domain object changes. A model change is
-# invisible here by design, which is the whole reason payloads are JSON.
-SCHEMA_VERSION: Final = 1
+# invisible here by design, which is the whole reason payloads are JSON. v2 added `objects.seq`
+# (DEC-089), so a v1 database is refused rather than migrated (DEC-020) -- the local data root is
+# gitignored and regenerable.
+SCHEMA_VERSION: Final = 2
 
 DATABASE_FILENAME: Final = "trace.db"
 
@@ -79,18 +81,26 @@ CREATE TABLE IF NOT EXISTS store_metadata (
 
 -- Every generated object, of every type. Identity and routing are columns; everything else is
 -- inside `payload`. DEC-020: nothing in the MVP queries inside an object.
+--
+-- `seq` is a monotonic insert order, assigned once when a row is first written and never moved by a
+-- later replacement (DEC-023 edits keep it). It is what `oldest first` orders by: sorting on `id`
+-- text sorts `evd-1000` before `evd-999` (DEC-018 widens past 999 rather than wrapping), which
+-- silently reorders a moderate corpus and, because DEC-018 assigns identifiers in that order on a
+-- rerun, changes which identifier attaches to which object.
 CREATE TABLE IF NOT EXISTS objects (
     assessment_id TEXT NOT NULL,
     id            TEXT NOT NULL,
     object_type   TEXT NOT NULL,
     status        TEXT,
     created_at    TEXT,
+    seq           INTEGER NOT NULL,
     payload       TEXT NOT NULL,
     PRIMARY KEY (assessment_id, id)
 );
 
 CREATE INDEX IF NOT EXISTS objects_by_type ON objects (assessment_id, object_type);
 CREATE INDEX IF NOT EXISTS objects_by_status ON objects (assessment_id, object_type, status);
+CREATE INDEX IF NOT EXISTS objects_by_seq ON objects (seq);
 
 -- DEC-018's monotonic counters. `next_number` is the value the next allocation will use, so a
 -- fresh row starts at 1 and a deleted object's number is never handed back.
@@ -465,9 +475,14 @@ class AssessmentRepository:
         self._store._guard_write_scope(self.assessment_id)
 
         payload = obj.model_dump_json()
+        # `seq` is the next insert order, computed in the same statement as the insert -- a single
+        # atomic statement, and writers are serialized (BEGIN IMMEDIATE / busy_timeout), so two
+        # callers cannot read the same MAX. `ON CONFLICT DO UPDATE` deliberately omits `seq`, so a
+        # replacement (a DEC-023 edit) keeps the row's original position.
         self._connection.execute(
-            "INSERT INTO objects (assessment_id, id, object_type, status, created_at, payload) "
-            "VALUES (?, ?, ?, ?, ?, ?) "
+            "INSERT INTO objects "
+            "(assessment_id, id, object_type, status, created_at, seq, payload) "
+            "VALUES (?, ?, ?, ?, ?, (SELECT COALESCE(MAX(seq), 0) + 1 FROM objects), ?) "
             "ON CONFLICT (assessment_id, id) DO UPDATE SET "
             "object_type = excluded.object_type, status = excluded.status, "
             "created_at = excluded.created_at, payload = excluded.payload",
@@ -500,15 +515,59 @@ class AssessmentRepository:
                 raise
             return None
 
-    def list(self, model: type[ModelT], *, status: str | None = None) -> list[ModelT]:
-        """Every object of one type in this assessment, oldest first by identifier."""
+    # `iterate`, `ids`, and `list_where` are defined before `list` on purpose: within the class body
+    # the name `list` binds to the method below, so a `-> list[...]` annotation in a method defined
+    # *after* it resolves to the method rather than the builtin. Keeping the `list[...]` returns
+    # ahead of that binding keeps them the builtin.
+    def iterate(self, model: type[ModelT], *, status: str | None = None) -> Iterator[ModelT]:
+        """Every object of one type, oldest first, yielded one at a time.
+
+        The generator form of `list`: it validates and yields each row as the cursor produces it,
+        so a caller that folds over a type without needing the whole set in memory does not
+        materialize it. `list` is this collected.
+        """
         sql = "SELECT id, payload FROM objects WHERE assessment_id = ? AND object_type = ?"
         parameters: list[object] = [self.assessment_id, model.__name__]
         if status is not None:
             sql += " AND status = ?"
             parameters.append(status)
-        rows = self._connection.execute(sql + " ORDER BY id", parameters).fetchall()
-        return [self._load(model, row["id"], row["payload"]) for row in rows]
+        cursor = self._connection.execute(sql + " ORDER BY seq", parameters)
+        for row in cursor:
+            yield self._load(model, row["id"], row["payload"])
+
+    def ids(self, model: type[DomainModel], *, status: str | None = None) -> list[str]:
+        """The identifiers of one type, oldest first, without reading or validating a payload.
+
+        For the many call sites that need only "which ids exist" -- the driver reads the evidence
+        identifiers six times a run to hand to an agent, and never the evidence text. Reading the
+        `id` column over the existing index skips the JSON parse and the model validation a full
+        `list` pays for every row.
+        """
+        sql = "SELECT id FROM objects WHERE assessment_id = ? AND object_type = ?"
+        parameters: list[object] = [self.assessment_id, model.__name__]
+        if status is not None:
+            sql += " AND status = ?"
+            parameters.append(status)
+        rows = self._connection.execute(sql + " ORDER BY seq", parameters).fetchall()
+        return [row["id"] for row in rows]
+
+    def list_where(self, model: type[ModelT], column: str, value: object) -> list[ModelT]:
+        """Every object of one type whose `status` column equals `value`, oldest first.
+
+        Only `status` is a queryable column (with `object_type` and `created_at`, the routing fields
+        DEC-020 lifts out of the payload); a request for any other is refused rather than reaching
+        inside the JSON, which DEC-020 says nothing in the MVP does.
+        """
+        if column != "status":
+            raise StoreError(
+                f"only the 'status' column is queryable; {column!r} lives inside the payload, which "
+                f"DEC-020 keeps unqueried"
+            )
+        return self.list(model, status=None if value is None else str(value))
+
+    def list(self, model: type[ModelT], *, status: str | None = None) -> list[ModelT]:
+        """Every object of one type in this assessment, oldest first (insert order)."""
+        return list(self.iterate(model, status=status))
 
     def counts_by_type(self) -> dict[str, int]:
         """How many objects of each type this assessment holds.
@@ -529,6 +588,24 @@ class AssessmentRepository:
             (self.assessment_id, model.__name__),
         ).fetchone()
         return int(row["total"])
+
+    def delete_all(self) -> int:
+        """Delete every row this assessment owns -- its objects and its identifier counters -- in
+        one transaction, and return how many objects were removed.
+
+        Scoped like every other operation here: the `WHERE assessment_id = ?` clauses cannot reach
+        another assessment's rows, which is what makes a per-assessment purge safe where `reset`
+        (which removes the whole data root) is not. The counters go too, so a re-created assessment
+        of the same identifier starts numbering from one rather than continuing a deleted run's.
+        """
+        with self.transaction():
+            removed = self._connection.execute(
+                "DELETE FROM objects WHERE assessment_id = ?", (self.assessment_id,)
+            ).rowcount
+            self._connection.execute(
+                "DELETE FROM identifier_counters WHERE assessment_id = ?", (self.assessment_id,)
+            )
+        return int(removed)
 
     def _load(self, model: type[ModelT], object_id: str, payload: str) -> ModelT:
         """Validate on the way out. A row that no longer parses is an error, not a partial object.

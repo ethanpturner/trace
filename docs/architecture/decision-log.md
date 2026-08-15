@@ -5762,3 +5762,62 @@ Tradeoffs:
   errors; a `CommandInputError` subclass names the CLI's own input errors, but the tuple is not
   yet free of the broad class. Narrowing it further is a domain change (typing `parse_id`'s error)
   left for when that surface is next touched.
+
+## DEC-089: The object store carries an insert-order column, and a per-assessment purge is the way to shrink it
+
+Date: 2026-08-14
+
+Status: Accepted
+
+Decision:
+
+**`objects` gains a `seq` column: a monotonic insert order, assigned once and never moved by a
+later replacement.** `oldest first` orders by it. Sorting on the `id` text was wrong the moment a
+counter crossed 999: DEC-018 widens the identifier (`evd-1000`) rather than wrapping, and `evd-1000`
+sorts lexically before `evd-999`, so a moderate corpus came back reordered — and because DEC-018
+assigns identifiers in iteration order on a rerun, the reorder silently changed which identifier
+attached to which object. The driver's per-object loop sort (`_sorted_by_id`) is keyed on the
+identifier's *number* for the same reason. The column is a table-layout change, so `SCHEMA_VERSION`
+moves to 2 and a v1 database is refused rather than migrated (DEC-020); the data root is gitignored
+and regenerable.
+
+**`trace assessment purge <id>` deletes one assessment entirely — its rows, its identifier counters,
+and its directory.** Nothing else shrank the store: every run appends execution records, evaluation
+results, prompt snapshots, and a failed-attempt file per retry, and an archived assessment kept them
+all; the only remediation was `trace reset`, which removes the whole data root. Purge removes exactly
+one assessment, which the store's scoping (`WHERE assessment_id = ?`) makes safe. It is destructive,
+so it follows `reset`'s shape: a dry run without `--force` previews and refuses (exit 3, DEC-088).
+Rows go first in one transaction, then the directory, so a crash between the two leaves an empty
+assessment a re-run of purge finishes rather than rows pointing at deleted files. A retention cap
+keeps only the most recent failed-attempt artifacts per assessment.
+
+**The store grows an id-only read path.** `ids()` returns identifiers over the `id` column without
+parsing or validating a payload, and `iterate()` yields validated objects one at a time; the many
+call sites that need only "which ids exist" (the driver hands the evidence identifiers to an agent
+six times a run and never the evidence text) use `ids()`. `EvidenceIndex` memoizes the source
+documents and files it reads within one operation, so verifying K references into one document reads
+that file once, not K times.
+
+Why:
+
+- The lexical-ordering hazard was documented in a test that then did nothing about it
+  (`test_identifiers.py`), and evidence references are one per addressable segment, so a benchmark
+  corpus crosses 999 routinely. An ordering that silently reshuffles a rerun is the exact failure
+  the deterministic replay depends on not happening.
+- A store that only ever grows, with `reset` as the sole eraser, makes a single throwaway run cost
+  the whole data root to clean up. A scoped purge is the unit that matches how the data is scoped.
+
+Alternatives Considered:
+
+- Ordering by SQLite's implicit `rowid` (rejected: `rowid` is not stable across `VACUUM`, and an
+  explicit column states the intent the ordering depends on).
+- A `delete` that removes arbitrary objects (rejected: the domain owns referential integrity, so a
+  partial delete could dangle references; purge removes a whole assessment, which cannot).
+
+Tradeoffs:
+
+- The `SCHEMA_VERSION` bump refuses every existing v1 database rather than migrating it. That is
+  DEC-020's standing trade, and the data root is regenerable, but a developer with a local store
+  from before this change re-runs `trace reset` once.
+- `ids()`/`list_where()` only reach the columns DEC-020 lifts out of the payload (`status`); a query
+  on any other field still lists and filters in Python, because DEC-020 keeps the payload unqueried.

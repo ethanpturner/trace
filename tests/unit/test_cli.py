@@ -113,7 +113,7 @@ def test_the_person_performs_archive_and_the_sign_off_and_nothing_else(
     assert "archived" in capsys.readouterr().out
 
     offered = _subcommands("assessment")
-    assert offered == {"create", "list", "status", "candidates", "archive", "approve"}
+    assert offered == {"create", "list", "status", "candidates", "archive", "purge", "approve"}
 
 
 # ------------------------------------------------------------------------------------------
@@ -489,6 +489,7 @@ def test_the_command_surface_is_the_one_dec_032_confirms() -> None:
         "status",
         "candidates",
         "archive",
+        "purge",
         "approve",
     }
     assert _subcommands("findings") == {"show", "review", "approve"}
@@ -1976,3 +1977,31 @@ def test_evaluate_diff_against_a_missing_prior_is_a_message_not_a_traceback(
     assert "Traceback" not in captured.err
     # The scenario's own metrics still printed before the diff was attempted.
     assert "false_negative_rate" in captured.out
+
+
+def test_assessment_purge_dry_run_refuses_and_removes_nothing(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Purge is destructive, so without --force it previews and refuses -- a stated refusal, exit 3
+    (DEC-088), not an error."""
+    identifier = created(data_root, capsys)
+    assert invoke(data_root, "assessment", "purge", identifier) == 3
+    captured = capsys.readouterr()
+    assert "would purge" in captured.out
+    assert "pass --force" in captured.err
+    # It removed nothing: the assessment still lists.
+    assert invoke(data_root, "assessment", "status", identifier) == 0
+
+
+def test_assessment_purge_with_force_removes_the_assessment(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    identifier = created(data_root, capsys)
+    invoke(data_root, "source", "add", identifier, str(FORGEFLOW_INPUT))
+    capsys.readouterr()
+
+    assert invoke(data_root, "assessment", "purge", identifier, "--force") == 0
+    assert "purged" in capsys.readouterr().out
+    assert not (data_root / "assessments" / identifier).exists()
+    # It is gone: status now reports it missing.
+    assert invoke(data_root, "assessment", "status", identifier) == 1

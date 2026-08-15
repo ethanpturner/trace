@@ -44,6 +44,7 @@ from trace_ai.domain.evidence import EvidenceReference
 from trace_ai.domain.evidence_assessment import EvidenceAssessment
 from trace_ai.domain.execution import ExecutionType, WorkflowRun
 from trace_ai.domain.finding import Finding
+from trace_ai.domain.identifiers import parse_id
 from trace_ai.domain.reviewer_decision import ReviewerDecision
 from trace_ai.domain.source_document import IngestionStatus, SourceDocument
 from trace_ai.domain.source_observation import ObservationKind, SourceObservation
@@ -155,8 +156,14 @@ def _blocking_stop(what: str, blocking: Sequence[object]) -> WorkflowError:
 
 
 def _sorted_by_id(objects: Sequence[Any]) -> list[Any]:
-    """Deterministic iteration order for per-object loops, so a replayed run replays."""
-    return sorted(objects, key=lambda item: item.id)
+    """Deterministic iteration order for per-object loops, so a replayed run replays.
+
+    Keyed on the identifier's *number*, not its text: DEC-018 widens past 999 rather than wrapping,
+    so a lexical sort puts `evd-1000` before `evd-999` and silently reorders a moderate corpus --
+    which, because DEC-018 assigns identifiers in iteration order on a rerun, changes which
+    identifier attaches to which object. Prefix then number is the allocation order.
+    """
+    return sorted(objects, key=lambda item: (parse_id(item.id).prefix, parse_id(item.id).number))
 
 
 # -- one-node phases ---------------------------------------------------------------------------
@@ -244,8 +251,8 @@ class EvidenceIndexingNode:
             if document.ingestion_status is IngestionStatus.REGISTERED:
                 produced.extend(reference.id for reference in index_document(handle, document))
 
-        references = handle.objects.list(EvidenceReference)
-        if not references:
+        reference_ids = handle.objects.ids(EvidenceReference)
+        if not reference_ids:
             raise WorkflowError(
                 ErrorClass.MISSING_REQUIRED_RELATIONSHIP,
                 "no evidence references exist after indexing; there is nothing to extract a "
@@ -253,7 +260,7 @@ class EvidenceIndexingNode:
             )
         return NodeResult(
             produced_object_ids=produced,
-            metadata={"evidence_reference_count": len(references)},
+            metadata={"evidence_reference_count": len(reference_ids)},
         )
 
 
@@ -280,7 +287,7 @@ class ContextExtractionAdapter:
         # join the baseline, the parser's excerpts are available to the fence, and the agent
         # extends rather than re-derives. Seeding precedes the evidence listing on purpose.
         seeded = seed_compose_documents(handle)
-        available = sorted(ref.id for ref in handle.objects.list(EvidenceReference))
+        available = handle.objects.ids(EvidenceReference)
         node = ContextExtractionNode(
             ledger=self.ledger,
             index=EvidenceIndex(handle),
@@ -325,7 +332,7 @@ class ContextValidationAdapter:
 
         handle = context.handle
         system_context = current_system_context(handle)
-        available = {ref.id for ref in handle.objects.list(EvidenceReference)}
+        available: set[str] = set(handle.objects.ids(EvidenceReference))
         outcome = validate_context(
             system_context,
             context_objects(handle),
@@ -401,7 +408,7 @@ class ThreatAnalysisAdapter:
             profile=self.profile,
             registry=self.registry,
             context=current_system_context(handle),
-            evidence_ids=sorted(ref.id for ref in handle.objects.list(EvidenceReference)),
+            evidence_ids=handle.objects.ids(EvidenceReference),
             assessment_name=self.assessment_name,
             threat_methodology=assessment.configuration.threat_methodology,
             budget=self.budget,
@@ -476,7 +483,7 @@ class RequirementControlMappingAdapter:
         assessment = handle.objects.get(Assessment, handle.assessment_id)
         catalog = load_catalog(assessment.requirements_catalog_version or current_version())
         system_context = current_system_context(handle)
-        evidence_ids = sorted(ref.id for ref in handle.objects.list(EvidenceReference))
+        evidence_ids = handle.objects.ids(EvidenceReference)
         index = EvidenceIndex(handle)
 
         produced: list[str] = []
@@ -701,6 +708,10 @@ class CriticalReviewAdapter:
 
         consumed: list[str] = []
         self.handoff.outcomes.clear()
+        # One index for the whole phase, not one per threat: it caches the source documents and
+        # files it reads, so building a fresh one each iteration threw that cache away and re-read
+        # every source once per threat.
+        index = EvidenceIndex(handle)
         for threat in _sorted_by_id(handle.objects.list(Threat)):
             selected = select_review_group(
                 threat,
@@ -711,7 +722,7 @@ class CriticalReviewAdapter:
             )
             node = CriticalReviewNode(
                 ledger=self.ledger,
-                index=EvidenceIndex(handle),
+                index=index,
                 profile=self.profile,
                 registry=self.registry,
                 selected=selected,
@@ -1060,7 +1071,7 @@ class AblatedContextApprovalNode:
         validation = validate_context(
             reviewed,
             context_objects(handle),
-            available_evidence={ref.id for ref in handle.objects.list(EvidenceReference)},
+            available_evidence=set(handle.objects.ids(EvidenceReference)),
             previous=previous_approved_context(handle, reviewed),
         )
         package = build_context_review_package(
