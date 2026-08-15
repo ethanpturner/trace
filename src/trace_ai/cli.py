@@ -20,9 +20,14 @@ experience to be command line based or to use structured files, and it is both: 
 takes flags for a decision or two and exports an editable file for a real review. Both write the
 same `ReviewerDecision` rows, because both call the same functions.
 
-**Exit codes are answers.** A refused approval exits non-zero and names what is outstanding, so an
-evaluation script can act on it without parsing prose. `context show` exits non-zero when the
-context is not approvable, for the same reason.
+**Exit codes are answers** (DEC-088). A script can branch on them without parsing prose: 0 is
+success; 1 is an error the operator can fix, named in one line; 2 is argparse rejecting the
+arguments; and 3 is a stated refusal that is an answer rather than a fault — a context not
+approvable, an approval blocked, evidence or a report that drifted, a `reset` dry run. Code 1 and
+code 3 are kept distinct precisely so "refused" and "crashed" are not the same signal, which is what
+the old single non-zero code made them. `EXPECTED_ERRORS` names the failures rendered as a sentence
+under code 1; anything else keeps its traceback, because hiding an unexpected failure is how a tool
+starts lying about what happened.
 """
 
 from __future__ import annotations
@@ -33,13 +38,14 @@ import sys
 from datetime import date
 from typing import TYPE_CHECKING, Any
 
+from pydantic import ValidationError
+
 from trace_ai.config import MissingSettingError, Settings
 from trace_ai.domain.assessment import default_configuration
 from trace_ai.domain.enums import ReviewDisposition, RiskTreatment, Severity, SourceOrigin
 from trace_ai.domain.evidence import EvidenceReference
 from trace_ai.domain.execution import RunStatus, WorkflowRun
 from trace_ai.domain.finding import Finding
-from trace_ai.domain.proposals import ContextExtractionProposal
 from trace_ai.domain.source_document import IngestionStatus, SourceDocument, TrustLevel
 from trace_ai.infrastructure.database.store import AssessmentStore, StoreError
 from trace_ai.infrastructure.filesystem.artifact_store import DEFAULT_ROOT, ArtifactStoreError
@@ -103,6 +109,7 @@ from trace_ai.workflow.phases import Phase
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
+    from decimal import Decimal
     from pathlib import Path
 
     from trace_ai.services.assessment import AssessmentHandle
@@ -117,11 +124,33 @@ __all__ = ["build_parser", "main", "run"]
 DEFAULT_MODEL_PROFILE = "primary-development"
 DEFAULT_THREAT_METHODOLOGY = "stride-scenario-based"
 
-# Errors the services raise by name. These become a message and a non-zero exit code; anything
-# else is a bug and keeps its traceback, because hiding an unexpected failure is how a tool starts
-# lying about what happened. `MissingSettingError` and `ResponsesExhaustedError` are the two an
-# operator causes from the command line — an unset provider key, and fewer `--response` files than
-# the run makes model calls — so both are answered in a sentence rather than a traceback.
+# Exit codes are answers a script can act on without parsing prose (DEC-088):
+#   0  the command did what it was asked
+#   1  an error the operator can fix, named in one line (an EXPECTED_ERRORS failure)
+#   2  argparse rejected the arguments (the standard-library convention)
+#   3  a stated, expected refusal: a context not approvable, an approval blocked, evidence or a
+#      report that drifted, a `reset` dry run. Not an error -- the answer to a yes/no question.
+REFUSED = 3
+
+
+class CommandInputError(ValueError):
+    """An argument the CLI itself rejects: a malformed `ID=VALUE` pair, an unknown identifier, a
+    value that is not one of the enum's, a file the operator named that cannot be read.
+
+    A subclass of `ValueError` so the parsing helpers can raise it naturally. It exists to name the
+    CLI's own input errors rather than conflate them with a bare `ValueError` from deep code, and to
+    let the file-read and enum helpers turn an `OSError` or an enum's `ValueError` into a clean,
+    one-line operator message.
+    """
+
+
+# Errors rendered as a message and a non-zero exit code rather than a traceback. `MissingSettingError`
+# and `ResponsesExhaustedError` are the two an operator causes from the command line. `ValueError`
+# stays because the domain raises it on an operator-supplied identifier (`parse_id`) and a few
+# services raise it on operator input; `FileNotFoundError` stays for an operator-named path. What is
+# *not* swallowed is a `pydantic.ValidationError` -- also a `ValueError` subclass -- from deep in the
+# pipeline: DEC-006 says a domain object never fails validation, so one that does is a bug that keeps
+# its traceback. The dispatch re-raises it explicitly, ahead of this tuple.
 EXPECTED_ERRORS = (
     AssessmentServiceError,
     DocumentLoadError,
@@ -138,6 +167,7 @@ EXPECTED_ERRORS = (
     LimitExceededError,
     MissingSettingError,
     ResponsesExhaustedError,
+    CommandInputError,
     FileNotFoundError,
     ValueError,
     # A write lock held past `busy_timeout` (a second `trace` process, or the view server beside a
@@ -166,6 +196,13 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="trace",
         description="Context-aware security architecture analysis.",
+        epilog=(
+            "Exit codes (DEC-088): 0 success; 1 an error the operator can fix, named in one line; "
+            "2 argparse rejected the arguments; 3 a stated refusal that is an answer, not a fault -- "
+            "a context not approvable, an approval blocked, evidence or a report that drifted, or a "
+            "`reset` dry run. A script can branch on 3 without parsing prose."
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument(
         "--data-root",
@@ -251,22 +288,10 @@ def build_parser() -> argparse.ArgumentParser:
         "extract", help="extract and validate a context, then stop at the review checkpoint"
     )
     extract.add_argument("assessment_id")
-    extract.add_argument(
-        "--model-profile",
-        default=DEFAULT_MODEL_PROFILE,
-        help="the provider, model, and settings bundle to run with",
-    )
-    extract.add_argument(
-        "--response",
-        type=_path,
-        help="a recorded extraction response to replay, for a run that reaches no provider",
-    )
-    extract.add_argument(
-        "--max-model-calls",
-        type=int,
-        help="stop the run before exceeding this many model calls",
-    )
-    extract.add_argument("--max-cost", help="stop the run before exceeding this estimated cost")
+    # The same model flags as `run` and `resume`: one definition, so `--response` is repeatable and
+    # expands a directory of numbered recordings the same way everywhere. Hand-rolling them here gave
+    # `context extract` a singular `--response` that could not take the directory form the demo uses.
+    _model_flags(extract)
 
     show = context_commands.add_parser(
         "show", help="print the review package for the pending checkpoint"
@@ -670,16 +695,49 @@ def _model_flags(parser: argparse.ArgumentParser) -> None:
     )
     parser.add_argument(
         "--max-model-calls",
-        type=int,
+        type=_non_negative_int,
         help="stop the run before exceeding this many model calls",
     )
-    parser.add_argument("--max-cost", help="stop the run before exceeding this estimated cost")
+    parser.add_argument(
+        "--max-cost",
+        type=_decimal,
+        help="stop the run before exceeding this estimated cost",
+    )
 
 
 def _path(value: str) -> Path:
     from pathlib import Path
 
     return Path(value).expanduser()
+
+
+def _decimal(value: str) -> Decimal:
+    """A non-negative estimated cost, rejected by argparse rather than deep in the run.
+
+    `Decimal("abc")` raises `decimal.InvalidOperation` -- an `ArithmeticError`, not a `ValueError` --
+    so an inline construction escaped `EXPECTED_ERRORS` as a traceback. As an argparse `type` it is
+    exit 2 with a message, like `--max-model-calls` and `--treatment-review-by`.
+    """
+    from decimal import Decimal, InvalidOperation
+
+    try:
+        parsed = Decimal(value)
+    except InvalidOperation:
+        raise argparse.ArgumentTypeError(f"{value!r} is not a number") from None
+    if parsed < 0:
+        raise argparse.ArgumentTypeError(f"a cost ceiling cannot be negative: {value!r}")
+    return parsed
+
+
+def _non_negative_int(value: str) -> int:
+    """A count ceiling: a whole number, not negative. `-1` model calls is not a limit."""
+    try:
+        parsed = int(value)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"{value!r} is not a whole number") from None
+    if parsed < 0:
+        raise argparse.ArgumentTypeError(f"a ceiling cannot be negative: {value!r}")
+    return parsed
 
 
 def run(argv: Sequence[str] | None = None) -> int:
@@ -753,6 +811,12 @@ def run(argv: Sequence[str] | None = None) -> int:
     try:
         with AssessmentStore.at_root(args.data_root) as store:
             return handler(args, AssessmentService(store, artifact_root=args.data_root))
+    except ValidationError:
+        # A schema failure from the pipeline is a bug, not operator input: DEC-006 says a domain
+        # object never fails validation, so one that does keeps its traceback rather than being
+        # rendered as a one-line operator error. Caught ahead of EXPECTED_ERRORS because
+        # ValidationError is a ValueError, which that tuple deliberately still catches.
+        raise
     except EXPECTED_ERRORS as error:
         print(f"error: {error}", file=sys.stderr)
         return 1
@@ -793,7 +857,7 @@ def _reset(args: argparse.Namespace) -> int:
         print("nothing to reset: the data root is already fresh")
         return 0
     if not (root / DATABASE_FILENAME).is_file():
-        raise ValueError(
+        raise CommandInputError(
             f"{root.name!r} holds no {DATABASE_FILENAME}, so it does not look like a trace "
             f"data root; refusing to remove anything"
         )
@@ -804,7 +868,7 @@ def _reset(args: argparse.Namespace) -> int:
         for child in entries:
             print(f"  {child.name}")
         print("nothing was removed; pass --force to remove them", file=sys.stderr)
-        return 1
+        return REFUSED
 
     for child in entries:
         if child.is_dir():
@@ -1061,13 +1125,7 @@ def _evidence_verify(args: argparse.Namespace, service: AssessmentService) -> in
     for failure in failures:
         print(f"{failure.evidence_id}  {failure.outcome}  {failure.detail or ''}".rstrip())
     print(f"{len(failures)} reference(s) no longer match", file=sys.stderr)
-    return 1
-
-
-def _evidence_type() -> type:
-    from trace_ai.domain.evidence import EvidenceReference
-
-    return EvidenceReference
+    return REFUSED
 
 
 def main() -> int:
@@ -1099,31 +1157,16 @@ def _context_extract(args: argparse.Namespace, service: AssessmentService) -> in
     profile names, and prints what came back. A CLI that composed the nodes itself would be a
     second place the pipeline lives.
     """
-    from decimal import Decimal
-
-    from trace_ai.workflow.limits import Budget
-
     handle = service.handle(args.assessment_id)
     assessment = service.get(args.assessment_id)
     profile = resolve_profile(args.model_profile)
 
-    responses = []
-    if args.response is not None:
-        responses = [ContextExtractionProposal.model_validate_json(args.response.read_text())]
-
-    budget = None
-    if args.max_model_calls is not None or args.max_cost is not None:
-        budget = Budget(
-            maximum_model_calls=args.max_model_calls,
-            maximum_cost=Decimal(args.max_cost) if args.max_cost else None,
-        )
-
     outcome = run_context_slice(
         handle,
-        model=build_model(profile, responses=responses),
+        model=build_model(profile, responses=_recorded_responses(args)),
         profile=profile,
         assessment_name=assessment.name,
-        budget=budget,
+        budget=_budget_from(args),
     )
 
     counts = outcome.package.counts()
@@ -1218,7 +1261,7 @@ def _context_show(args: argparse.Namespace, service: AssessmentService) -> int:
     print("The context cannot be approved yet:", file=sys.stderr)
     for blocker in package.approval_blockers:
         print(f"  {blocker}", file=sys.stderr)
-    return 1
+    return REFUSED
 
 
 def _print_observations(package: ContextReviewPackage, *, empty_note: bool = False) -> None:
@@ -1301,7 +1344,7 @@ def _context_review(args: argparse.Namespace, service: AssessmentService) -> int
     run_id = run.id if run is not None else None
 
     if args.export is not None:
-        args.export.write_text(write_review_file(_package_for(handle)), encoding="utf-8")
+        _write_named_file(args.export, write_review_file(_package_for(handle)))
         print(f"wrote a review file for {handle.assessment_id}")
         print("Edit it, then apply it with `trace context review --apply`.")
         return 0
@@ -1309,7 +1352,7 @@ def _context_review(args: argparse.Namespace, service: AssessmentService) -> int
     written = []
 
     if args.apply is not None:
-        document = read_review_file(args.apply.read_text(encoding="utf-8"))
+        document = read_review_file(_read_named_file(args.apply))
         reviewer = args.reviewer or document.get("reviewer") or _default_reviewer()
         applied = apply_review_file(handle, document, reviewer_id=reviewer, workflow_run_id=run_id)
         written.extend(applied.decisions)
@@ -1341,7 +1384,7 @@ def _context_review(args: argparse.Namespace, service: AssessmentService) -> int
 
         claim = _require(lookup, identifier, "a claim in this assessment")
         if not isinstance(claim, ContextClaim):
-            raise ValueError(f"{identifier} is not a claim, so there is nothing to confirm")
+            raise CommandInputError(f"{identifier} is not a claim, so there is nothing to confirm")
         _, decision = confirm_assumption(
             handle, claim, reviewer_id=reviewer, workflow_run_id=run_id
         )
@@ -1350,7 +1393,7 @@ def _context_review(args: argparse.Namespace, service: AssessmentService) -> int
     for pair in args.answers:
         identifier, separator, response = pair.partition("=")
         if not separator:
-            raise ValueError(f"--answer takes ID=TEXT; {pair!r} has no '='")
+            raise CommandInputError(f"--answer takes ID=TEXT; {pair!r} has no '='")
         _, decision = answer_question(
             handle,
             _require(questions, identifier.strip(), "an open question"),
@@ -1364,7 +1407,7 @@ def _context_review(args: argparse.Namespace, service: AssessmentService) -> int
         identifier, separator, listed = pair.partition("=")
         evidence_ids = [item.strip() for item in listed.split(",") if item.strip()]
         if not separator or not evidence_ids:
-            raise ValueError(f"--attach takes ID=EVD[,EVD...]; {pair!r} names no evidence")
+            raise CommandInputError(f"--attach takes ID=EVD[,EVD...]; {pair!r} names no evidence")
         _, decision = attach_evidence(
             handle,
             _require(lookup, identifier.strip(), "an object in this assessment"),
@@ -1380,7 +1423,7 @@ def _context_review(args: argparse.Namespace, service: AssessmentService) -> int
         from trace_ai.domain.source_observation import SourceObservation
 
         if not (args.rationale or "").strip():
-            raise ValueError(
+            raise CommandInputError(
                 "--resolve requires --rationale: a resolution with no reasoning is "
                 "indistinguishable from quietly choosing the safer statement"
             )
@@ -1390,7 +1433,7 @@ def _context_review(args: argparse.Namespace, service: AssessmentService) -> int
         for pair in args.resolutions:
             identifier, separator, value = pair.partition("=")
             if not separator:
-                raise ValueError(f"--resolve takes ID=VALUE; {pair!r} has no '='")
+                raise CommandInputError(f"--resolve takes ID=VALUE; {pair!r} has no '='")
             resolved = resolve_contradiction(
                 handle,
                 _require(observations, identifier.strip(), "an observation in this assessment"),
@@ -1432,8 +1475,31 @@ def _context_review(args: argparse.Namespace, service: AssessmentService) -> int
 def _require(lookup: Mapping[str, Any], identifier: str, described_as: str) -> Any:
     found = lookup.get(identifier)
     if found is None:
-        raise ValueError(f"{identifier} is not {described_as}")
+        raise CommandInputError(f"{identifier} is not {described_as}")
     return found
+
+
+def _severity(level: str) -> Severity:
+    """A reviewer's severity string as the enum, or a named refusal listing the choices.
+
+    `Severity(level)` raises a bare `ValueError` on an unknown value; wrapping it in
+    `CommandInputError` keeps that value error out of the pipeline's and names the valid levels."""
+    try:
+        return Severity(level)
+    except ValueError:
+        choices = ", ".join(member.value for member in Severity)
+        raise CommandInputError(f"{level!r} is not a severity; choose one of: {choices}") from None
+
+
+def _risk_treatment(value: str) -> RiskTreatment:
+    """A reviewer's treatment string as the enum, or a named refusal listing the choices."""
+    try:
+        return RiskTreatment(value)
+    except ValueError:
+        choices = ", ".join(member.value for member in RiskTreatment)
+        raise CommandInputError(
+            f"{value!r} is not a risk treatment; choose one of: {choices}"
+        ) from None
 
 
 def _context_approve(args: argparse.Namespace, service: AssessmentService) -> int:
@@ -1459,7 +1525,7 @@ def _context_approve(args: argparse.Namespace, service: AssessmentService) -> in
         print("the context was not approved:", file=sys.stderr)
         for blocker in refused.blockers:
             print(f"  {blocker}", file=sys.stderr)
-        return 1
+        return REFUSED
 
     print(f"approved version {approved.version} as {approved.approved_by}")
     print(f"decision:  {decision.id}")
@@ -1482,15 +1548,15 @@ def _latest_run(handle: AssessmentHandle) -> WorkflowRun | None:
 
 
 def _budget_from(args: argparse.Namespace) -> Any:
-    from decimal import Decimal
-
     from trace_ai.workflow.limits import Budget
 
+    # `--max-cost` and `--max-model-calls` are already parsed and validated by their argparse
+    # converters (`_decimal`, `_non_negative_int`), so they arrive as a Decimal/int or None.
     if args.max_model_calls is None and args.max_cost is None:
         return None
     return Budget(
         maximum_model_calls=args.max_model_calls,
-        maximum_cost=Decimal(args.max_cost) if args.max_cost else None,
+        maximum_cost=args.max_cost,
     )
 
 
@@ -1505,9 +1571,7 @@ def _run(args: argparse.Namespace, service: AssessmentService) -> int:
     outcome = run_assessment(
         service,
         args.assessment_id,
-        model=build_model(
-            profile, responses=load_recorded_responses(_response_files(args.responses))
-        ),
+        model=build_model(profile, responses=_recorded_responses(args)),
         profile=profile,
         budget=_budget_from(args),
     )
@@ -1527,11 +1591,43 @@ def _response_files(supplied: list[Path]) -> list[Path]:
         if path.is_dir():
             numbered = sorted(path.glob("[0-9]*.json"))
             if not numbered:
-                raise ValueError(f"{path} contains no numbered recordings (NN-*.json)")
+                raise CommandInputError(f"{path} contains no numbered recordings (NN-*.json)")
             files.extend(numbered)
         else:
             files.append(path)
     return files
+
+
+def _recorded_responses(args: argparse.Namespace) -> list[Any]:
+    """The `--response` recordings, with a missing or malformed file named rather than tracebacked.
+
+    Reading and parsing an operator-supplied recording can raise `OSError` (the file is absent) or
+    `ValueError` (the JSON fits no proposal schema); both are the operator's mistake to fix, so they
+    become a `CommandInputError` rather than a stack trace."""
+    try:
+        return load_recorded_responses(_response_files(args.responses))
+    except CommandInputError:
+        raise
+    except (OSError, ValueError) as error:
+        raise CommandInputError(f"a recorded response could not be read: {error}") from None
+
+
+def _read_named_file(path: Path) -> str:
+    """Read a file the operator named on the command line, naming an I/O failure rather than
+    tracebacking. A missing `--apply` file is an operator slip, not a bug in the pipeline."""
+    try:
+        return path.read_text(encoding="utf-8")
+    except OSError as error:
+        raise CommandInputError(f"cannot read {path}: {error}") from None
+
+
+def _write_named_file(path: Path, text: str) -> None:
+    """Write to a path the operator named (`--export`), naming an I/O failure rather than
+    tracebacking. A directory or an unwritable location is an operator slip, not a bug."""
+    try:
+        path.write_text(text, encoding="utf-8")
+    except OSError as error:
+        raise CommandInputError(f"cannot write {path}: {error}") from None
 
 
 def _resume(args: argparse.Namespace, service: AssessmentService) -> int:
@@ -1540,9 +1636,7 @@ def _resume(args: argparse.Namespace, service: AssessmentService) -> int:
     outcome = resume_assessment(
         service,
         args.assessment_id,
-        model=build_model(
-            profile, responses=load_recorded_responses(_response_files(args.responses))
-        ),
+        model=build_model(profile, responses=_recorded_responses(args)),
         profile=profile,
         workflow_run_id=args.workflow_run_id,
         budget=_budget_from(args),
@@ -1610,12 +1704,12 @@ def _findings_review(args: argparse.Namespace, service: AssessmentService) -> in
 
     if args.export:
         package = build_finding_review_package(handle, index=EvidenceIndex(handle))
-        args.export.write_text(write_finding_review_file(package), encoding="utf-8")
+        _write_named_file(args.export, write_finding_review_file(package))
         print(f"wrote {args.export}")
         print("Edit it, then apply it with `trace findings review --apply`.")
         return 0
     if args.apply:
-        document = read_finding_review_file(args.apply.read_text(encoding="utf-8"))
+        document = read_finding_review_file(_read_named_file(args.apply))
         if document.get("reviewer"):
             reviewer = str(document["reviewer"])
         applied = apply_finding_review_file(
@@ -1635,12 +1729,12 @@ def _findings_review(args: argparse.Namespace, service: AssessmentService) -> in
     for entry in args.severities:
         identifier, separator, level = entry.partition("=")
         if not separator:
-            raise ValueError(f"--severity takes ID=LEVEL, not {entry!r}")
+            raise CommandInputError(f"--severity takes ID=LEVEL, not {entry!r}")
         finding = _require(findings, identifier, "a finding in this assessment")
         updated, decision = change_severity(
             handle,
             finding,
-            Severity(level),
+            _severity(level),
             reviewer_id=reviewer,
             rationale=args.note,
             workflow_run_id=run_id,
@@ -1651,12 +1745,12 @@ def _findings_review(args: argparse.Namespace, service: AssessmentService) -> in
     for entry in args.treatments:
         identifier, separator, value = entry.partition("=")
         if not separator:
-            raise ValueError(f"--treatment takes ID=VALUE, not {entry!r}")
+            raise CommandInputError(f"--treatment takes ID=VALUE, not {entry!r}")
         finding = _require(findings, identifier, "a finding in this assessment")
         updated, decision = assign_risk_treatment(
             handle,
             finding,
-            RiskTreatment(value),
+            _risk_treatment(value),
             rationale=args.treatment_rationale,
             review_by=args.treatment_review_by,
             reviewer_id=reviewer,
@@ -1668,7 +1762,7 @@ def _findings_review(args: argparse.Namespace, service: AssessmentService) -> in
     for identifier, assignment in args.edits:
         field, separator, value = assignment.partition("=")
         if not separator or not field:
-            raise ValueError(f"--edit takes ID FIELD=VALUE, not {assignment!r}")
+            raise CommandInputError(f"--edit takes ID FIELD=VALUE, not {assignment!r}")
         finding = _require(findings, identifier, "a finding in this assessment")
         updated, decision = edit_finding(
             handle,
@@ -1768,7 +1862,7 @@ def _verify(args: argparse.Namespace, service: AssessmentService) -> int:
         len(outcome.document_drift) + len(outcome.evidence_failures) + len(outcome.manifest_drift)
     )
     print(f"{total} item(s) no longer verify", file=sys.stderr)
-    return 1
+    return REFUSED
 
 
 def _report_show(args: argparse.Namespace, service: AssessmentService) -> int:
@@ -1809,21 +1903,29 @@ def _report_rubric(args: argparse.Namespace, service: AssessmentService) -> int:
     for entry in args.scores:
         category, separator, value = entry.partition("=")
         if not separator or not category or not value:
-            raise ValueError(f"a score is written CATEGORY=N: {entry!r}")
+            raise CommandInputError(f"a score is written CATEGORY=N: {entry!r}")
         if category in scores:
-            raise ValueError(f"category {category!r} is scored twice")
+            raise CommandInputError(f"category {category!r} is scored twice")
         try:
             scores[category] = int(value)
         except ValueError:
-            raise ValueError(f"a rubric score is a whole number one to five: {entry!r}") from None
+            raise CommandInputError(
+                f"a rubric score is a whole number one to five: {entry!r}"
+            ) from None
 
-    results = record_rubric(
-        handle,
-        run,
-        scores,
-        reviewer_id=args.reviewer or _default_reviewer(),
-        comments=args.comments,
-    )
+    # `record_rubric` validates the operator's scores (all seven categories, each one to five) and
+    # raises a bare ValueError; wrap it as a command-input error so it stays a one-line refusal
+    # rather than a traceback now that bare ValueError is no longer swallowed wholesale.
+    try:
+        results = record_rubric(
+            handle,
+            run,
+            scores,
+            reviewer_id=args.reviewer or _default_reviewer(),
+            comments=args.comments,
+        )
+    except ValueError as error:
+        raise CommandInputError(str(error)) from None
     print(f"recorded {len(results)} rubric score(s) for run {run.id}")
     for result in results:
         print(f"  {result.metric_name:<28} {result.metric_value:.0f}")
@@ -2084,7 +2186,21 @@ def _view(args: argparse.Namespace) -> int:
     The server is `trace_ai.interface`'s; this reads the flags and hands off. It opens its own
     store for the server's lifetime, which is why it is dispatched before the request-scoped store.
     """
+    import errno
+
     from trace_ai.interface.server import serve
 
-    serve(args.data_root, port=args.port)
+    try:
+        serve(args.data_root, port=args.port)
+    except OSError as error:
+        # Running the view twice is the likeliest slip for a demonstration command; the port is
+        # taken, which is EADDRINUSE, and a stack trace is the wrong answer to it.
+        if error.errno == errno.EADDRINUSE:
+            print(
+                f"error: port {args.port} is already in use; pass --port to choose another",
+                file=sys.stderr,
+            )
+        else:
+            print(f"error: could not serve on port {args.port}: {error}", file=sys.stderr)
+        return 1
     return 0
