@@ -191,7 +191,10 @@ class CachingModel:
         schema: type[T],
         settings: GenerationSettings | None = None,
         system: str | None = None,
+        cache_prefix: str | None = None,
     ) -> ModelOutcome[T]:
+        # `cache_prefix` is a provider-side hint that does not change the prompt text, so it is not
+        # part of the cache key; it is forwarded to the inner adapter for a live call (WS10).
         resolved = settings if settings is not None else self._profile.settings
         key = cache_key(
             prompt=prompt,
@@ -226,7 +229,11 @@ class CachingModel:
                 metadata={"cache": "hit"},
             )
         outcome = self._inner.generate(
-            prompt=prompt, schema=schema, settings=resolved, system=system
+            prompt=prompt,
+            schema=schema,
+            settings=resolved,
+            system=system,
+            cache_prefix=cache_prefix,
         )
         if isinstance(outcome, ModelSuccess):
             self._cache.put(key, outcome.value.model_dump(mode="json"))

@@ -144,6 +144,7 @@ class AnthropicModel:
         schema: type[T],
         settings: GenerationSettings | None = None,
         system: str | None = None,
+        cache_prefix: str | None = None,
     ) -> ModelOutcome[T]:
         """One attempt at a validated instance of `schema`.
 
@@ -175,7 +176,7 @@ class AnthropicModel:
         request: dict[str, Any] = {
             "model": self._profile.model,
             "max_tokens": resolved.max_output_tokens,
-            "messages": [{"role": "user", "content": prompt}],
+            "messages": [{"role": "user", "content": _user_content(prompt, cache_prefix)}],
             "output_config": {
                 "effort": effort,
                 "format": {"type": "json_schema", "schema": wire_schema},
@@ -248,16 +249,21 @@ class AnthropicModel:
                 raw_output=raw,
             )
 
+        capabilities_used = {
+            ModelCapability.EFFORT,
+            ModelCapability.ADAPTIVE_THINKING,
+            ModelCapability.STRUCTURED_OUTPUT,
+        }
+        # Reported only when the provider actually served or wrote a cache span (DEC-067): the
+        # capability the adapter declares becomes one the result records as *used*, so DEC-067's cost
+        # fields describe a caching that happened rather than one that was merely available.
+        if usage.cache_read_tokens or usage.cache_creation_tokens:
+            capabilities_used.add(ModelCapability.PROMPT_CACHING)
+
         return ModelSuccess(
             value=parsed,
             usage=usage,
-            capabilities_used=frozenset(
-                {
-                    ModelCapability.EFFORT,
-                    ModelCapability.ADAPTIVE_THINKING,
-                    ModelCapability.STRUCTURED_OUTPUT,
-                }
-            ),
+            capabilities_used=frozenset(capabilities_used),
             metadata={
                 "effort": effort,
                 "creativity": resolved.creativity.value,
@@ -320,6 +326,25 @@ class AnthropicModel:
             ),
             duration_seconds=duration,
         )
+
+
+def _user_content(prompt: str, cache_prefix: str | None) -> str | list[dict[str, Any]]:
+    """The user message, split at `cache_prefix` so the stable span is marked cacheable (WS10).
+
+    A prefix that is not actually a prefix of `prompt` — or absent — sends the prompt as one plain
+    block, uncached, so a stale hint degrades to no caching rather than a wrong split. The stable
+    prefix carries `cache_control`; the per-call remainder (source content, retry feedback) does not,
+    so the cache is reused across the calls and retries that share the prefix.
+    """
+    if not cache_prefix or not prompt.startswith(cache_prefix):
+        return prompt
+    ephemeral = {"type": "ephemeral"}
+    if cache_prefix == prompt:
+        return [{"type": "text", "text": prompt, "cache_control": ephemeral}]
+    return [
+        {"type": "text", "text": cache_prefix, "cache_control": ephemeral},
+        {"type": "text", "text": prompt[len(cache_prefix) :]},
+    ]
 
 
 def _text_of(response: Any) -> str | None:

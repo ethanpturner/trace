@@ -31,7 +31,7 @@ if TYPE_CHECKING:
     from trace_ai.services.execution_ledger import Execution
     from trace_ai.workflow.limits import Budget
 
-__all__ = ["call_model", "with_retry_feedback"]
+__all__ = ["cache_prefix_of", "call_model", "with_retry_feedback"]
 
 # The conditions a call actually ran at, copied from the outcome onto the execution record so a
 # reader of an ExecutionRecord can find them (section 29). `schema_grammar` joins `effort` and
@@ -39,6 +39,21 @@ __all__ = ["call_model", "with_retry_feedback"]
 # no server-side grammar and records `too_large_omitted`, and a run where every agent lost schema
 # enforcement was otherwise indistinguishable from one where none did.
 _RECORDED_CONDITIONS = ("effort", "creativity", "schema_grammar")
+
+
+def cache_prefix_of(prompt: str, variable_suffix: str) -> str | None:
+    """The stable leading span of a composed prompt: everything before its per-call source content.
+
+    Every agent prompt ends with its source content (the fenced excerpts, or the report input), so
+    the shared blocks, the body template, and the schema — identical across a node's calls and its
+    retries — are the span before it, and that is what an adapter can cache (WS10). Returns `None`
+    when the suffix is empty or not found, so the caller passes no hint rather than a wrong one; the
+    retry feedback appended after the source keeps the prefix stable across attempts.
+    """
+    if not variable_suffix:
+        return None
+    index = prompt.rfind(variable_suffix)
+    return prompt[:index] if index > 0 else None
 
 
 def with_retry_feedback(base: str, feedback: str | None, *, instruction: str) -> str:
@@ -66,6 +81,7 @@ def call_model[T: BaseModel](
     budget: Budget | None,
     execution: Execution,
     usages: list[ModelUsage],
+    cache_prefix: str | None = None,
 ) -> T:
     """Make one model attempt and return the validated object, or raise `AttemptFailedError`.
 
@@ -97,6 +113,7 @@ def call_model[T: BaseModel](
         schema=schema,
         settings=profile.settings,
         system=system,
+        cache_prefix=cache_prefix,
     )
 
     if isinstance(outcome, ModelFailure):

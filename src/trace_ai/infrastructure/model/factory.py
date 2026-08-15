@@ -87,10 +87,17 @@ class OverlayRoutingModel:
         schema: type[T],
         settings: GenerationSettings | None = None,
         system: str | None = None,
+        cache_prefix: str | None = None,
     ) -> ModelOutcome[T]:
         agent = AGENT_BY_SCHEMA.get(schema.__name__)
         model = self.by_agent.get(agent, self.base) if agent is not None else self.base
-        return model.generate(prompt=prompt, schema=schema, settings=settings, system=system)
+        return model.generate(
+            prompt=prompt,
+            schema=schema,
+            settings=settings,
+            system=system,
+            cache_prefix=cache_prefix,
+        )
 
 
 def build_model(

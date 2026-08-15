@@ -50,7 +50,7 @@ from trace_ai.infrastructure.model.agents import spec_for
 from trace_ai.services.mapping.input_package import assemble_mapping_input
 from trace_ai.workflow.errors import ErrorClass
 from trace_ai.workflow.limits import resolve_retry_policy
-from trace_ai.workflow.model_call import call_model, with_retry_feedback
+from trace_ai.workflow.model_call import cache_prefix_of, call_model, with_retry_feedback
 from trace_ai.workflow.nodes import NodeResult
 from trace_ai.workflow.phases import Phase
 from trace_ai.workflow.retry import AttemptFailedError, RetryPolicy, run_with_retries
@@ -176,6 +176,7 @@ class RequirementControlMappingNode:
         )
         available = package.referenceable_ids()
 
+        cache_prefix = cache_prefix_of(composed.text, package.untrusted)
         usages: list[Any] = []
         attempts = 0
 
@@ -201,6 +202,7 @@ class RequirementControlMappingNode:
                 budget=self.budget,
                 execution=execution,
                 usages=usages,
+                cache_prefix=cache_prefix,
             )
             # Keys first: an unresolved control key and an unknown identifier are different
             # corrections, and reporting the reference problem for a key would send the agent

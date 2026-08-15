@@ -39,7 +39,7 @@ from trace_ai.services.report.prompt_input import (
 )
 from trace_ai.workflow.errors import ErrorClass
 from trace_ai.workflow.limits import resolve_retry_policy
-from trace_ai.workflow.model_call import call_model, with_retry_feedback
+from trace_ai.workflow.model_call import cache_prefix_of, call_model, with_retry_feedback
 from trace_ai.workflow.nodes import NodeResult
 from trace_ai.workflow.phases import Phase
 from trace_ai.workflow.retry import AttemptFailedError, RetryPolicy, run_with_retries
@@ -151,6 +151,7 @@ class ReportGenerationNode:
             limitation.limitation_id for limitation in self.assembled.required_limitations
         ]
 
+        cache_prefix = cache_prefix_of(composed.text, package.substitutions()["input.report"])
         usages: list[Any] = []
         attempts = 0
 
@@ -176,6 +177,7 @@ class ReportGenerationNode:
                 budget=self.budget,
                 execution=execution,
                 usages=usages,
+                cache_prefix=cache_prefix,
             )
 
             # Section 19's retry conditions, in checkable form. The limitation set first: an

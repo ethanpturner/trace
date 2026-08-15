@@ -259,6 +259,7 @@ class StructuredModel(Protocol):
         schema: type[T],
         settings: GenerationSettings | None = None,
         system: str | None = None,
+        cache_prefix: str | None = None,
     ) -> ModelOutcome[T]:
         """One attempt at a validated instance of `schema`.
 
@@ -266,5 +267,11 @@ class StructuredModel(Protocol):
         back to the profile's own settings when a caller passes none, and a `@runtime_checkable`
         Protocol checks attribute presence, not signatures, so a Protocol that disagreed with the
         implementations would hide the disagreement rather than catch it.
+
+        `cache_prefix` is the stable leading span of `prompt` — the shared blocks, the body template,
+        and the schema, before the per-call source content — that an adapter supporting prompt
+        caching may mark for reuse across the calls that share it (WS10). An adapter that does not,
+        or a `cache_prefix` that is not a prefix of `prompt`, ignores it; a provider-neutral hint,
+        never a provider knob (DEC-014).
         """
         ...

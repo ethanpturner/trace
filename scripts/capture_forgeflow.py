@@ -148,9 +148,14 @@ class RecordingModel:
         schema: type[T],
         settings: GenerationSettings | None = None,
         system: str | None = None,
+        cache_prefix: str | None = None,
     ) -> ModelOutcome[T]:
         outcome = self._inner.generate(
-            prompt=prompt, schema=schema, settings=settings, system=system
+            prompt=prompt,
+            schema=schema,
+            settings=settings,
+            system=system,
+            cache_prefix=cache_prefix,
         )
         if isinstance(outcome, ModelSuccess):
             index = len(list(CAPTURE.glob("[0-9]*.json"))) + 1
@@ -198,6 +203,7 @@ class FallbackModel:
         schema: type[T],
         settings: GenerationSettings | None = None,
         system: str | None = None,
+        cache_prefix: str | None = None,
     ) -> ModelOutcome[T]:
         if self._recorded:
             queued = self._recorded.pop(0)
@@ -211,7 +217,13 @@ class FallbackModel:
             print(f"  replayed a recorded {type(value).__name__} (no spend)")
             usage = queued.usage if queued.usage is not None else ModelUsage(model=self._live.name)
             return ModelSuccess(value=value, usage=usage)
-        return self._live.generate(prompt=prompt, schema=schema, settings=settings, system=system)
+        return self._live.generate(
+            prompt=prompt,
+            schema=schema,
+            settings=settings,
+            system=system,
+            cache_prefix=cache_prefix,
+        )
 
 
 def _budget() -> Budget:

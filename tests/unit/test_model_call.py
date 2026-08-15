@@ -28,7 +28,7 @@ from trace_ai.infrastructure.model.seam import (
 from trace_ai.services.execution_ledger import Execution
 from trace_ai.workflow.errors import ErrorClass
 from trace_ai.workflow.limits import Budget
-from trace_ai.workflow.model_call import call_model, with_retry_feedback
+from trace_ai.workflow.model_call import cache_prefix_of, call_model, with_retry_feedback
 from trace_ai.workflow.retry import AttemptFailedError
 
 PROFILE = resolve_profile("primary-development")
@@ -60,8 +60,9 @@ class _Model:
         schema: type[T],
         settings: GenerationSettings | None = None,
         system: str | None = None,
+        cache_prefix: str | None = None,
     ) -> ModelOutcome[T]:
-        self.calls.append({"prompt": prompt, "system": system})
+        self.calls.append({"prompt": prompt, "system": system, "cache_prefix": cache_prefix})
         return self._outcome  # type: ignore[return-value]
 
 
@@ -95,7 +96,7 @@ def test_success_returns_the_value_and_records_usage() -> None:
 
     assert isinstance(value, _Proposal)
     assert len(usages) == 1
-    assert model.calls == [{"prompt": "p", "system": "sys"}]
+    assert model.calls == [{"prompt": "p", "system": "sys", "cache_prefix": None}]
 
 
 def test_success_copies_the_recorded_conditions_including_schema_grammar() -> None:
@@ -202,6 +203,25 @@ def test_a_missing_model_is_an_application_fault_not_a_crash() -> None:
             usages=[],
         )
     assert raised.value.error_class is ErrorClass.UNEXPECTED_APPLICATION_FAILURE
+
+
+def test_cache_prefix_is_everything_before_the_source_suffix() -> None:
+    prompt = "shared blocks\n\nbody template\n\nFENCED SOURCE"
+    assert cache_prefix_of(prompt, "FENCED SOURCE") == "shared blocks\n\nbody template\n\n"
+
+
+def test_cache_prefix_is_stable_across_the_retry_feedback_suffix() -> None:
+    """The prefix must be a prefix of the retry prompt too, so caching survives a retry."""
+    base = "shared\n\nbody\n\nSOURCE"
+    prefix = cache_prefix_of(base, "SOURCE")
+    retry = with_retry_feedback(base, "field x wrong", instruction="Fix it.")
+    assert prefix is not None
+    assert retry.startswith(prefix)
+
+
+def test_cache_prefix_declines_when_the_suffix_is_empty_or_absent() -> None:
+    assert cache_prefix_of("a prompt", "") is None
+    assert cache_prefix_of("a prompt", "not here") is None
 
 
 def test_with_retry_feedback_is_a_no_op_on_the_first_attempt() -> None:
