@@ -19,7 +19,12 @@ from trace_ai.domain.proposals.evidence_validation import EvidenceValidationProp
 from trace_ai.domain.proposals.mapping import MappingProposal
 from trace_ai.domain.proposals.threat_analysis import ThreatAnalysisProposal
 from trace_ai.infrastructure.model.profiles import resolve_profile
-from trace_ai.services.budget import BudgetOutcome, fill_untrusted, schema_overhead
+from trace_ai.services.budget import (
+    BudgetOutcome,
+    fill_untrusted,
+    rank_excerpts,
+    schema_overhead,
+)
 
 PROFILE = resolve_profile("primary-development")
 
@@ -87,6 +92,39 @@ def test_metadata_carries_the_keys_every_package_records() -> None:
         "residual_characters": PROFILE.max_input_characters - 5,
         "budget_characters": PROFILE.max_input_characters,
     }
+
+
+def _excerpt(evidence_id: str, document: str) -> dict[str, object]:
+    return {"evidence_id": evidence_id, "source_filename": document}
+
+
+def test_ranking_without_priority_documents_is_the_identity() -> None:
+    excerpts = [_excerpt("evd-001", "a.md"), _excerpt("evd-002", "b.md")]
+    assert rank_excerpts(excerpts) == excerpts
+
+
+def test_ranking_puts_primary_documents_first_and_keeps_order_within_tiers() -> None:
+    excerpts = [
+        _excerpt("evd-001", "notes.md"),
+        _excerpt("evd-002", "primary.md"),
+        _excerpt("evd-003", "notes.md"),
+        _excerpt("evd-004", "primary.md"),
+    ]
+    ranked = rank_excerpts(excerpts, priority_documents=frozenset({"primary.md"}))
+    assert [e["evidence_id"] for e in ranked] == ["evd-002", "evd-004", "evd-001", "evd-003"]
+
+
+def test_ranking_then_filling_drops_the_lowest_ranked_under_overflow() -> None:
+    """The point of the rank: overflow sheds the non-primary excerpt, not whichever sorts last."""
+    excerpts = [_excerpt("evd-001", "notes.md"), _excerpt("evd-002", "primary.md")]
+    ranked = rank_excerpts(excerpts, priority_documents=frozenset({"primary.md"}))
+    rendered = [(e["evidence_id"], "x" * 10) for e in ranked]
+
+    tiny = replace(PROFILE, max_input_characters=10)
+    outcome = fill_untrusted(rendered, profile=tiny, overhead_characters=0)
+
+    assert outcome.included_ids == ("evd-002",)  # the primary-document excerpt survives
+    assert outcome.excluded_ids == ("evd-001",)
 
 
 def test_outcome_is_frozen() -> None:

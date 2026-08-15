@@ -24,7 +24,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -33,7 +33,30 @@ if TYPE_CHECKING:
 
     from trace_ai.infrastructure.model.profiles import ModelProfile
 
-__all__ = ["BudgetOutcome", "fill_untrusted", "schema_overhead"]
+__all__ = ["BudgetOutcome", "fill_untrusted", "rank_excerpts", "schema_overhead"]
+
+INGESTION_ORDER = "ingestion order"
+STRUCTURED_INPUT_FIRST = "structured-input primary documents first, then ingestion order"
+"""The two ranking bases a package records so an exclusion under overflow is explicable (WS10)."""
+
+
+def rank_excerpts(
+    excerpts: Sequence[dict[str, Any]],
+    *,
+    priority_documents: frozenset[str] = frozenset(),
+) -> list[dict[str, Any]]:
+    """Order excerpts so the fill keeps the highest-signal ones when it cannot keep them all.
+
+    Overflow used to drop whatever sorted last by ingestion order — arbitrary, and worst on a large
+    corpus. Excerpts from the documents the structured input names as primary come first; the rest
+    keep their ingestion order (which is document-then-position). The order within each tier is
+    preserved, so a package with no priority documents, or one that does not overflow, is unmoved.
+    """
+    if not priority_documents:
+        return list(excerpts)
+    prioritized = [e for e in excerpts if e.get("source_filename") in priority_documents]
+    rest = [e for e in excerpts if e.get("source_filename") not in priority_documents]
+    return prioritized + rest
 
 
 def schema_overhead(schema: type[BaseModel]) -> int:
