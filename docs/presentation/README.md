@@ -9,7 +9,7 @@ repository does not carry.
 
 | File | What it is |
 |---|---|
-| [deck.md](deck.md) | The talk, slide by slide: on-slide text and speaker notes, with the demo segment resolved to the committed ForgeFlow walkthrough |
+| [deck.md](deck.md) | The talk, slide by slide: on-slide text and speaker notes, with the demo segment carrying the full eight-step runthrough and the condensed beat table inline |
 | [traceability.md](traceability.md) | Every checkable slide claim mapped to the repository artifact or measured number that backs it, and the rhetorical slides classified as such |
 | [handout.md](handout.md) | The one-page handout: the four questions, the three takeaways, and the measured Trace numbers with their sources |
 
