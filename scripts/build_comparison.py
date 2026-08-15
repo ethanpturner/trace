@@ -18,7 +18,6 @@ import argparse
 import json
 import sys
 import tempfile
-from datetime import UTC, datetime
 from pathlib import Path
 
 import yaml
@@ -27,11 +26,12 @@ from build_scorecard import collect_feeds
 from trace_ai.config import PROJECT_ROOT
 from trace_ai.services.evaluation.comparison import render_comparison
 from trace_ai.services.evaluation.registry import REGISTRY_PATH
+from trace_ai.services.evaluation.stamps import DETERMINISTIC_STAMP
 from trace_ai.services.requirements.loader import current_version
 
 OUTPUT = PROJECT_ROOT / "docs" / "eval" / "comparison.md"
 # Pinned so the committed table changes only when a metric does, never on the clock.
-GENERATED_AT = datetime(2026, 8, 14, 12, 0, 0, tzinfo=UTC)
+GENERATED_AT = DETERMINISTIC_STAMP
 
 
 def _pins() -> dict[str, str]:
@@ -63,8 +63,9 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
-    results_root = Path(tempfile.mkdtemp(prefix="trace-comparison-"))
-    rendered = build(results_root)
+    # Intermediate sweep tree: cleaned up rather than left in /tmp per run.
+    with tempfile.TemporaryDirectory(prefix="trace-comparison-") as tmp:
+        rendered = build(Path(tmp))
 
     if args.check:
         current = OUTPUT.read_text(encoding="utf-8") if OUTPUT.is_file() else ""

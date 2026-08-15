@@ -30,7 +30,6 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 
 import yaml
@@ -65,6 +64,7 @@ from trace_ai.services.evaluation.metrics import (
 )
 from trace_ai.services.evaluation.registry import Scenario
 from trace_ai.services.evaluation.registry import scenario as load_scenario
+from trace_ai.services.evaluation.stamps import DETERMINISTIC_STAMP
 from trace_ai.services.evidence.index import EvidenceIndex
 from trace_ai.services.ingestion.loader import DocumentLoader
 from trace_ai.workflow.context_review import (
@@ -94,8 +94,9 @@ RESULTS_ROOT = PROJECT_ROOT / "benchmarks" / "results"
 FEED_VERSION = "1"
 HARNESS_REVIEWER = "recorded-reviewer"
 
-# The recording's generation timestamp, pinned so replayed reports are byte-stable.
-GENERATED_AT = datetime(2026, 8, 11, 12, 0, 0, tzinfo=UTC)
+# The one deterministic stamp every renderer shares (`stamps.py`), so the harness renders the same
+# ForgeFlow report to the same hash the replay script pins in `report-hash.txt` -- they had drifted.
+GENERATED_AT = DETERMINISTIC_STAMP
 
 # Which recording filenames an ablation makes unconsumable: the file answers a call the ablated
 # agent will not make. Filenames carry their agent's name by convention (see
@@ -311,17 +312,34 @@ def _apply_finding_decisions(
     recorded = yaml.safe_load(
         (entry.recorded_dir_for(condition) / "decisions-findings.yaml").read_text(encoding="utf-8")
     )
-    # Findings are matched by the recording's order rather than by identifier: a shared store
-    # gives this run's findings different identifiers than the recording captured, and the
-    # decisions apply to the candidate set positionally.
     candidates = sorted(
         (finding for finding in handle.objects.list(Finding) if finding.duplicate_of_id is None),
         key=lambda finding: finding.id,
     )
     recorded_findings = recorded.get("findings", [])
-    for decided, candidate in zip(recorded_findings, candidates, strict=False):
+    # A count mismatch means the truth set no longer describes the run -- a pipeline change produced
+    # a different finding set than the decisions were authored against. Silently zipping the shorter
+    # of the two (the old `strict=False`) scored a different assessment than the truth set and said
+    # nothing; a loud failure is the only honest answer.
+    if len(recorded_findings) != len(candidates):
+        raise HarnessError(
+            f"{entry.slug}/{condition}: the recording holds {len(recorded_findings)} finding "
+            f"decision(s) but the run produced {len(candidates)}. The truth set no longer matches "
+            f"the run; re-capture the decisions or investigate the pipeline change."
+        )
+    # Match on the recorded identifier when every one resolves to a produced finding -- the
+    # single-scenario case, where a fresh store re-mints the same identifiers, so a reordering of the
+    # finding set cannot land a decision on the wrong finding. A shared store (the `--all` sweep)
+    # mints different identifiers, so there the documented positional fallback stands: both the
+    # candidates and the recording are in allocation order.
+    by_id = {finding.id: finding for finding in candidates}
+    recorded_ids = [str(decided.get("id")) for decided in recorded_findings]
+    if len(set(recorded_ids)) == len(recorded_ids) and all(rid in by_id for rid in recorded_ids):
+        pairs = [(decided, by_id[str(decided["id"])]) for decided in recorded_findings]
+    else:
+        pairs = list(zip(recorded_findings, candidates, strict=True))
+    for decided, candidate in pairs:
         finding = candidate
-        _ = decided.get("id")  # recorded for provenance; matching is positional
         if "severity" in decided:
             finding, _ = change_severity(
                 handle, finding, Severity(decided["severity"]), reviewer_id=HARNESS_REVIEWER
