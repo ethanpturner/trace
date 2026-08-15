@@ -568,6 +568,46 @@ def test_build_nodes_covers_every_declared_node(prepared: tuple[Path, str]) -> N
         assert len(nodes) == len(built)
 
 
+def test_every_known_ablation_substitutes_at_least_one_node(prepared: tuple[Path, str]) -> None:
+    """DEC-090: an ablation whose node names have drifted out of step substitutes nothing and runs
+    the full pipeline while marking the run non-authoritative -- a measurement that lies. Building
+    with each known ablation must actually replace a node."""
+    from trace_ai.services.driver import KNOWN_ABLATIONS
+    from trace_ai.workflow.phases import Phase
+
+    root, assessment_id = prepared
+    with _Stage(root, assessment_id) as stage:
+        handle = stage.handle
+        run = start_run(handle, workflow_version="0.1", model_profile=PROFILE.name)
+        for ablation in sorted(KNOWN_ABLATIONS):
+            plain = build_nodes(handle, ledger=ExecutionLedger(handle, run), profile=PROFILE)
+            ablated = build_nodes(
+                handle, ledger=ExecutionLedger(handle, run), profile=PROFILE, ablations=[ablation]
+            )
+            assert {(n.phase, n.name) for n in ablated} != {
+                (n.phase, n.name) for n in plain
+            } or any(n.phase is Phase.HUMAN_CONTEXT_REVIEW for n in ablated), (
+                f"{ablation} substituted nothing"
+            )
+
+
+def test_a_stale_ablation_name_raises_rather_than_silently_ablating_nothing() -> None:
+    """A known ablation whose removal map no longer matches any node raises, not silently no-ops."""
+    from dataclasses import dataclass
+
+    from trace_ai.services.driver import _apply_ablations
+    from trace_ai.workflow.phases import Phase
+
+    @dataclass
+    class _Stub:
+        name: str
+        phase: Phase = Phase.THREAT_GENERATION
+
+    # `no-critical-review` removes `critical-review`/`critique-validation`; none is present here.
+    with pytest.raises(ValueError, match="substituted no node"):
+        _apply_ablations([_Stub("threat-analysis")], ["no-critical-review"])  # type: ignore[list-item]
+
+
 def test_resuming_with_subjects_still_undecided_pauses_again(
     prepared: tuple[Path, str],
 ) -> None:

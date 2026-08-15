@@ -8,16 +8,16 @@ Two distinct mechanisms are at work here, and the difference matters:
 
 * `Settings` reads `.env` itself, but does **not** put anything into
   `os.environ`. It is the typed, validated view of configuration.
-* Provider SDKs (`openai`, `anthropic`, `langsmith`) read `os.environ`
-  directly at client-construction time and never see `Settings`. Call
-  `load_env()` once at process start so those SDKs pick up `.env` too.
+* A provider SDK (`anthropic`) reads `os.environ` directly at
+  client-construction time and never sees `Settings`. Call `load_env()` once
+  at process start so it picks up `.env` too.
 """
 
 from __future__ import annotations
 
 from functools import lru_cache
 from pathlib import Path
-from typing import Literal
+from typing import Final, Literal
 
 from dotenv import load_dotenv
 from pydantic import SecretStr, field_validator
@@ -26,6 +26,35 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 # src/trace_ai/config.py -> src/trace_ai -> src -> repo root
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 ENV_FILE = PROJECT_ROOT / ".env"
+
+# Whether the process is running from a source checkout (DEC-090). v0.1 is clone-only: the prompts,
+# the requirements catalog, the report template, and the benchmark scenarios are version-controlled
+# files that live in the repository, not package data in the wheel, so a command that reads any of
+# them needs the repository present. `PROJECT_ROOT` is the repo root from a clone (and an editable
+# `uv sync`) and site-packages' parent from an installed wheel, where no `pyproject.toml` sits
+# beside it -- so its presence is the marker.
+IS_SOURCE_CHECKOUT: Final[bool] = (PROJECT_ROOT / "pyproject.toml").is_file()
+
+
+class SourceCheckoutRequiredError(RuntimeError):
+    """A command that needs the repository's version-controlled assets was run outside a checkout.
+
+    Stated rather than left to surface as a dangling `FileNotFoundError` deep in a report render or
+    a catalog load. DEC-090 makes v0.1 clone-only; installability is a later decision.
+    """
+
+    def __init__(self) -> None:
+        super().__init__(
+            "Trace v0.1 runs from a source checkout, not an installed wheel (DEC-090): its prompts, "
+            "requirements catalog, report template, and benchmark scenarios are version-controlled "
+            "files in the repository. Clone it and run from there, e.g. `uv run trace ...`."
+        )
+
+
+def require_source_checkout() -> None:
+    """Raise `SourceCheckoutRequiredError` unless the repository's assets are present."""
+    if not IS_SOURCE_CHECKOUT:
+        raise SourceCheckoutRequiredError()
 
 
 class MissingSettingError(RuntimeError):
@@ -59,17 +88,13 @@ class Settings(BaseSettings):
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO"
 
     # Model providers. Optional so the app imports cleanly in CI and in tests,
-    # where no key exists; use require() at the point of actual use.
+    # where no key exists; use require() at the point of actual use. `openai_api_key` is here
+    # because the seam is provider-agnostic (DEC-014) and a second adapter would read it; the
+    # `langsmith` settings were removed with the unwired dependency (DEC-090).
     anthropic_api_key: SecretStr | None = None
     openai_api_key: SecretStr | None = None
 
-    # LangSmith tracing.
-    langsmith_api_key: SecretStr | None = None
-    langsmith_tracing: bool = False
-    langsmith_project: str = "trace"
-    langsmith_endpoint: str = "https://api.smith.langchain.com"
-
-    @field_validator("anthropic_api_key", "openai_api_key", "langsmith_api_key", mode="before")
+    @field_validator("anthropic_api_key", "openai_api_key", mode="before")
     @classmethod
     def _blank_is_unset(cls, value: object) -> object:
         """Treat an empty variable as absent rather than as an empty secret.

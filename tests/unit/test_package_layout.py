@@ -98,11 +98,11 @@ FORBIDDEN_IN_DOMAIN = ("trace_ai.services", "trace_ai.infrastructure")
 
 # Third-party packages a domain object must not reach for.
 #
-# Provider and orchestration SDKs. `anthropic` and `langsmith` are declared in pyproject.toml
-# and imported nowhere; `openai`, `langchain`, `langgraph`, and `instructor` were declared and
-# removed by DEC-014 and DEC-016. All six are listed anyway, because the guard is about where an
-# import may appear rather than about which packages happen to be installed this week -- a
-# dependency that comes back should not find `domain/` already open to it.
+# Provider and orchestration SDKs. `anthropic` is the only one declared today; `openai`,
+# `langchain`, `langgraph`, `instructor`, and `langsmith` were declared and removed (DEC-014,
+# DEC-016, DEC-090). All are listed anyway, because the guard is about where an import may appear
+# rather than about which packages happen to be installed this week -- a dependency that comes back
+# should not find `domain/` already open to it.
 #
 # The direction is the same one the layering test asserts. Domain objects are validated data:
 # they are constructed from a model response by a service and persisted by infrastructure, and a
@@ -270,3 +270,51 @@ def test_no_unlisted_package_appeared() -> None:
         f"unexpected packages {sorted(found - set(PACKAGES))}, "
         f"missing {sorted(set(PACKAGES) - found)}"
     )
+
+
+# Runtime distribution names mapped to the module they import as. Distribution name and import name
+# differ often enough (`python-dotenv` -> `dotenv`, `pyyaml` -> `yaml`) that the mapping is stated.
+_IMPORT_NAME = {
+    "anthropic": "anthropic",
+    "pydantic": "pydantic",
+    "pydantic-settings": "pydantic_settings",
+    "python-dotenv": "dotenv",
+    "pyyaml": "yaml",
+}
+
+
+def _declared_runtime_dependencies() -> set[str]:
+    """The distribution names in pyproject's `[project].dependencies`, versions stripped."""
+    import re
+
+    text = (PROJECT_ROOT / "pyproject.toml").read_text(encoding="utf-8")
+    block = text.split("dependencies = [", 1)[1].split("]", 1)[0]
+    names = set()
+    for raw in block.splitlines():
+        line = raw.strip().strip(",").strip('"')
+        if not line or line.startswith("#"):
+            continue
+        names.add(re.split(r"[<>=!~ ]", line, maxsplit=1)[0])
+    return names
+
+
+def test_every_declared_runtime_dependency_is_imported() -> None:
+    """A dependency in the wheel that no code imports is dead weight shipped to every install --
+    `langsmith` was exactly that (DEC-090). Every declared runtime dependency must be imported
+    somewhere in `src/`, so a re-added-and-unwired dependency fails here rather than shipping."""
+    imported: set[str] = set()
+    for source in PACKAGE_ROOT.rglob("*.py"):
+        package = ".".join(source.relative_to(PACKAGE_ROOT.parent).with_suffix("").parts[:-1])
+        for module in imported_modules(source, package=package):
+            imported.add(module.split(".", 1)[0])
+
+    for distribution in _declared_runtime_dependencies():
+        import_name = _IMPORT_NAME.get(distribution)
+        assert import_name is not None, (
+            f"{distribution!r} is declared but this test does not know its import name; add it to "
+            f"_IMPORT_NAME"
+        )
+        assert import_name in imported, (
+            f"{distribution!r} is a declared runtime dependency imported nowhere in src/; wire it "
+            f"or drop it from pyproject"
+        )

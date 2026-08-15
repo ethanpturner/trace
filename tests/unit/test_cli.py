@@ -2005,3 +2005,28 @@ def test_assessment_purge_with_force_removes_the_assessment(
     assert not (data_root / "assessments" / identifier).exists()
     # It is gone: status now reports it missing.
     assert invoke(data_root, "assessment", "status", identifier) == 1
+
+
+def test_a_command_outside_a_source_checkout_is_refused(
+    data_root: Path, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """v0.1 is clone-only (DEC-090): a real command run from an installed wheel gets a clear message
+    naming the source-checkout requirement, not a dangling FileNotFoundError deep in a command."""
+    identifier = created(data_root, capsys)
+    capsys.readouterr()
+    monkeypatch.setattr("trace_ai.cli.IS_SOURCE_CHECKOUT", False)
+
+    assert invoke(data_root, "assessment", "status", identifier) == 1
+    captured = capsys.readouterr()
+    assert "source checkout" in captured.err
+    assert "Traceback" not in captured.err
+
+
+def test_the_banner_works_outside_a_source_checkout(
+    data_root: Path, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """`trace` and `trace --help` must work from a wheel -- the packaging smoke test relies on it --
+    so the clone-only guard is only past the banner."""
+    monkeypatch.setattr("trace_ai.cli.IS_SOURCE_CHECKOUT", False)
+    assert run([]) == 0
+    assert "context-aware security architecture analysis" in capsys.readouterr().out

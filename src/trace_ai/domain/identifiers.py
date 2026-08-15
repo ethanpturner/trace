@@ -35,9 +35,12 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import Annotated, Protocol
+from typing import TYPE_CHECKING, Annotated, Final, Protocol
 
 from pydantic import AfterValidator
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
 
 __all__ = [
     "PREFIXES",
@@ -85,7 +88,7 @@ __all__ = [
 # prefix, which a rule saying what the scheme governs made visible. DEC-052 added `mrg` with
 # FindingMergeRecord, and DEC-065 added `cgc` with CatalogGapCandidate. Section 2.1 is
 # authoritative and lists them.
-PREFIXES: dict[str, str] = {
+PREFIXES: Final[Mapping[str, str]] = {
     "asm": "Assessment",
     "src": "SourceDocument",
     "evd": "EvidenceReference",

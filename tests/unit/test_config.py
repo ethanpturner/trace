@@ -32,7 +32,7 @@ def test_defaults_apply_with_no_environment() -> None:
     assert settings.app_env == "local"
     assert settings.log_level == "INFO"
     assert settings.anthropic_api_key is None
-    assert settings.langsmith_tracing is False
+    assert settings.openai_api_key is None
 
 
 def test_reads_provider_keys_from_environment(monkeypatch: pytest.MonkeyPatch) -> None:

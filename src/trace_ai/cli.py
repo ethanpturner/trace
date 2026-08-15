@@ -40,7 +40,12 @@ from typing import TYPE_CHECKING, Any
 
 from pydantic import ValidationError
 
-from trace_ai.config import MissingSettingError, Settings
+from trace_ai.config import (
+    IS_SOURCE_CHECKOUT,
+    MissingSettingError,
+    Settings,
+    SourceCheckoutRequiredError,
+)
 from trace_ai.domain.assessment import default_configuration
 from trace_ai.domain.enums import ReviewDisposition, RiskTreatment, Severity, SourceOrigin
 from trace_ai.domain.evidence import EvidenceReference
@@ -801,6 +806,13 @@ def run(argv: Sequence[str] | None = None) -> int:
 
     if args.group is None:
         return _banner(settings)
+    if not IS_SOURCE_CHECKOUT:
+        # Every command past the banner reads a repository asset (a prompt, the catalog, the report
+        # template) or the data root under the repo. v0.1 is clone-only (DEC-090); say so plainly
+        # rather than let a dangling path fail deep in a command. `trace` and `trace --help` still
+        # work from a wheel, which is what the packaging smoke test checks.
+        print(f"error: {SourceCheckoutRequiredError()}", file=sys.stderr)
+        return 1
     if args.group == "reset":
         # Before a store opens: `reset` removes the database, and `AssessmentStore.at_root`
         # would first recreate the thing it is about to delete.
@@ -846,7 +858,7 @@ def _banner(settings: Settings) -> int:
     """
     configured = [
         name.removesuffix("_api_key")
-        for name in ("anthropic_api_key", "openai_api_key", "langsmith_api_key")
+        for name in ("anthropic_api_key", "openai_api_key")
         if getattr(settings, name) is not None
     ]
     print("trace: context-aware security architecture analysis")
