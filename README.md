@@ -486,7 +486,10 @@ uv run python scripts/replay_forgeflow.py
 
 That replays the committed ForgeFlow recording through all fourteen phases — six agents, two
 checkpoints answered from recorded reviewer decisions, deterministic rendering — and exits
-non-zero unless the report's content hash matches the pinned one byte for byte.
+non-zero unless the report's content hash matches the pinned one byte for byte. To run Trace on
+your own documents rather than the fixture, start with
+[Getting Started](docs/guide/getting-started.md) and the
+[Assessment Walkthrough](docs/guide/assessment-walkthrough.md).
 
 Driving an assessment yourself is the same pipeline, one command at a time. Every command below
 names `asm-001`, which is the identifier a fresh data root allocates first — so a rerun starts by
@@ -744,6 +747,20 @@ silence — which no Trace run, live or offline, has produced: the comparison ex
 that difference, not to assert it.
 
 ## Documentation
+
+### Using Trace
+
+These describe the system as it runs today.
+
+| Document | What it covers |
+|---|---|
+| [Getting Started](docs/guide/getting-started.md) | Install, configure, and complete an offline assessment in one sitting |
+| [Assessment Walkthrough](docs/guide/assessment-walkthrough.md) | Running Trace on your own documents, both checkpoints included |
+| [CLI Reference](docs/guide/cli-reference.md) | Every command, its flags, and the exit-code contract |
+| [Reading the Report](docs/guide/reading-the-report.md) | The sixteen sections, the vocabularies, and the lineage walk |
+| [Troubleshooting](docs/guide/troubleshooting.md) | Symptoms, what each one means, and the fix |
+
+### Design corpus
 
 These documents describe the intended system, not the implemented one. All are marked *Proposed*,
 version 0.1.

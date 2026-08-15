@@ -606,7 +606,7 @@ def build_parser() -> argparse.ArgumentParser:
         description=(
             "Walks the evidence chain: every stored document against its recorded hash, every "
             "evidence reference against its source, and the report manifest against the store. "
-            "Exit 0 when everything verifies; exit 1 with each drift named — identifier, "
+            "Exit 0 when everything verifies; exit 3 with each drift named — identifier, "
             "expected hash, found hash — and never the content that changed."
         ),
     )
