@@ -130,7 +130,7 @@ class RecordingModel:
         *,
         prompt: str,
         schema: type[T],
-        settings: GenerationSettings,
+        settings: GenerationSettings | None = None,
         system: str | None = None,
     ) -> ModelOutcome[T]:
         outcome = self._inner.generate(
@@ -172,7 +172,7 @@ class FallbackModel:
         *,
         prompt: str,
         schema: type[T],
-        settings: GenerationSettings,
+        settings: GenerationSettings | None = None,
         system: str | None = None,
     ) -> ModelOutcome[T]:
         if self._recorded:

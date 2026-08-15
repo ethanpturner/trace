@@ -22,6 +22,7 @@ from dataclasses import dataclass, field, replace
 from decimal import Decimal
 from typing import Final
 
+from trace_ai.infrastructure.model.agents import AGENTS
 from trace_ai.infrastructure.model.seam import Creativity, GenerationSettings
 
 __all__ = [
@@ -41,16 +42,8 @@ _PER_MILLION: Final = Decimal(1_000_000)
 # `tests/unit/test_agent_cap.py`) in the spelling the workflow nodes use. Overlay keys are
 # validated against this set when a profile is constructed (DEC-069): a misspelling, a
 # deterministic node, or a seventh agent is a configuration error refused at load, not mid-run.
-AGENT_NAMES: Final[frozenset[str]] = frozenset(
-    {
-        "context-extraction",
-        "threat-analysis",
-        "requirement-and-control-mapping",
-        "evidence-validation",
-        "critical-review",
-        "report-generation",
-    }
-)
+# Derived from the one `AGENTS` table (WS11) rather than restated here.
+AGENT_NAMES: Final[frozenset[str]] = frozenset(spec.name for spec in AGENTS)
 
 
 @dataclass(frozen=True, slots=True)

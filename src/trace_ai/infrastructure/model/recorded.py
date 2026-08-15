@@ -19,12 +19,7 @@ from typing import TYPE_CHECKING, Final
 
 from pydantic import ValidationError
 
-from trace_ai.domain.proposals import ContextExtractionProposal
-from trace_ai.domain.proposals.critical_review import CriticalReviewProposal
-from trace_ai.domain.proposals.evidence_validation import EvidenceValidationProposal
-from trace_ai.domain.proposals.mapping import MappingProposal
-from trace_ai.domain.proposals.report_sections import ReportSections
-from trace_ai.domain.proposals.threat_analysis import ThreatAnalysisProposal
+from trace_ai.infrastructure.model.agents import AGENTS
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -34,15 +29,9 @@ if TYPE_CHECKING:
 
 __all__ = ["RESPONSE_SCHEMAS", "load_recorded_responses", "parse_recorded_response"]
 
-RESPONSE_SCHEMAS: Final[tuple[type[BaseModel], ...]] = (
-    ContextExtractionProposal,
-    ThreatAnalysisProposal,
-    MappingProposal,
-    EvidenceValidationProposal,
-    CriticalReviewProposal,
-    ReportSections,
-)
-"""One schema per agent, in pipeline order. The order is presentation only; matching is exact."""
+RESPONSE_SCHEMAS: Final[tuple[type[BaseModel], ...]] = tuple(spec.schema for spec in AGENTS)
+"""One schema per agent, in pipeline order, derived from the one `AGENTS` table (WS11) so it cannot
+disagree with the routing table. The order is presentation only; matching is exact."""
 
 
 def parse_recorded_response(text: str, *, described_as: str = "recorded response") -> BaseModel:

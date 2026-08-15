@@ -41,13 +41,14 @@ from trace_ai.domain.proposals.evidence_validation import (
     EVIDENCE_VALIDATION_AGENT,
     EvidenceValidationProposal,
 )
-from trace_ai.infrastructure.model.seam import Creativity, ModelFailure, ModelSuccess
+from trace_ai.infrastructure.model.agents import spec_for
 from trace_ai.services.evidence.validation_package import (
     EvidenceValidationInput,
     assemble_evidence_input,
 )
-from trace_ai.workflow.errors import ErrorClass, classify_model_failure
+from trace_ai.workflow.errors import ErrorClass
 from trace_ai.workflow.limits import resolve_retry_policy
+from trace_ai.workflow.model_call import call_model, with_retry_feedback
 from trace_ai.workflow.nodes import NodeResult
 from trace_ai.workflow.phases import Phase
 from trace_ai.workflow.retry import AttemptFailedError, RetryPolicy, run_with_retries
@@ -163,9 +164,10 @@ class EvidenceValidationNode:
                 f"node is classified as one in agent-design.md section 4."
             )
 
-        # Section 29's low creativity. Latitude here would mean a looser reading of what a passage
-        # supports, which is the one judgment this step exists to make strictly.
-        profile = self.profile.with_creativity(Creativity.LOW)
+        # Section 29's creativity for this agent, read from the one `AGENTS` table (WS11). Latitude
+        # here would mean a looser reading of what a passage supports, which is the one judgment this
+        # step exists to make strictly.
+        profile = self.profile.with_creativity(spec_for(NODE_NAME).creativity)
 
         package = assemble_evidence_input(
             assessment_id=context.handle.assessment_id,
@@ -189,59 +191,24 @@ class EvidenceValidationNode:
             attempts += 1
             execution.retry_number = attempts - 1
 
-            prompt = (
-                composed.text
-                if state.feedback is None
-                else (
-                    f"{composed.text}\n\n## Validation feedback on your previous attempt\n\n"
-                    f"{state.feedback}\n\nReturn a corrected object. Do not restate the previous "
-                    f"one, and do not raise a classification to make the correction easier."
-                )
+            prompt = with_retry_feedback(
+                composed.text,
+                state.feedback,
+                instruction=(
+                    "Return a corrected object. Do not restate the previous one, and do not raise "
+                    "a classification to make the correction easier."
+                ),
             )
-
-            if self.budget is not None:
-                self.budget.check_model_call(
-                    estimated_cost=profile.cost_of(
-                        input_tokens=len(prompt) // 4,
-                        output_tokens=profile.settings.max_output_tokens,
-                    )
-                )
-
-            outcome = context.model.generate(  # type: ignore[union-attr]
+            proposal = call_model(
+                context.model,
                 prompt=prompt,
                 schema=EvidenceValidationProposal,
-                settings=profile.settings,
+                profile=profile,
                 system=package.trusted,
+                budget=self.budget,
+                execution=execution,
+                usages=usages,
             )
-
-            if isinstance(outcome, ModelFailure):
-                usages.append(outcome.usage)
-                if self.budget is not None:
-                    self.budget.spend_model_call(outcome.usage.estimated_cost)
-                raise AttemptFailedError(
-                    error_class=classify_model_failure(outcome.reason),
-                    message=outcome.message,
-                    raw_output=outcome.raw_output,
-                    feedback=outcome.message,
-                )
-
-            if not isinstance(outcome, ModelSuccess):  # pragma: no cover - the union has two arms
-                raise AttemptFailedError(
-                    error_class=ErrorClass.UNEXPECTED_APPLICATION_FAILURE,
-                    message=f"the model seam returned {type(outcome).__name__}",
-                )
-
-            usages.append(outcome.usage)
-
-            # Section 29: the conditions the call actually ran at, recorded where a reader of the
-            # ExecutionRecord can find them -- a wrong effort mapping is otherwise invisible (#401).
-            for condition_key in ("effort", "creativity"):
-                if condition_key in outcome.metadata:
-                    execution.metadata[condition_key] = outcome.metadata[condition_key]
-            if self.budget is not None:
-                self.budget.spend_model_call(outcome.usage.estimated_cost)
-
-            proposal = outcome.value
 
             # Section 14's four retry conditions, in the order that makes each correction the most
             # useful one to receive. References first: an assessment about something that was not

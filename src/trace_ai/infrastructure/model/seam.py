@@ -257,8 +257,14 @@ class StructuredModel(Protocol):
         *,
         prompt: str,
         schema: type[T],
-        settings: GenerationSettings,
+        settings: GenerationSettings | None = None,
         system: str | None = None,
     ) -> ModelOutcome[T]:
-        """One attempt at a validated instance of `schema`."""
+        """One attempt at a validated instance of `schema`.
+
+        `settings` is optional so the Protocol matches its implementations (WS11): the adapters fall
+        back to the profile's own settings when a caller passes none, and a `@runtime_checkable`
+        Protocol checks attribute presence, not signatures, so a Protocol that disagreed with the
+        implementations would hide the disagreement rather than catch it.
+        """
         ...
