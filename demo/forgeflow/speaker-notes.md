@@ -71,15 +71,22 @@ Reminders:
 ## Beat 3 — Show the findings (about 0:30)
 
 ```bash
-uv run trace findings show asm-001
+uv run trace findings show asm-001 | head -30
 ```
 
 Say: "Five candidate findings, not a wall. Each carries the passages it rests on. The point of
 this system is not finding count — it is that every conclusion can be defended, and I will show
 you one that could not be."
 
-Reminder: the severities read blank here; assigning them is the reviewer's job at this
-checkpoint, which is the beat 9 closer.
+Reminders:
+
+- Pipe through `head`; the full package runs to thousands of lines because every finding embeds
+  its quoted evidence, critiques, and questions verbatim — it is the reviewer's working document,
+  not a stage visual. Unpiped, it scrolls the room while the line above says "not a wall".
+- `uv run trace findings show asm-001 | grep '^## fnd-'` prints exactly the five titles if that
+  is the shot wanted instead.
+- The severities read blank here; assigning them is the reviewer's job at this checkpoint, which
+  is the beat 9 closer.
 
 ## Beat 4 — Pick the finding (about 0:15)
 
@@ -151,7 +158,7 @@ Reminders:
 
 ```bash
 uv run trace findings review asm-001 --reviewer recorded-reviewer --apply demo/forgeflow/recorded/decisions-findings.yaml
-uv run trace findings show asm-001
+uv run trace findings show asm-001 | head -5
 ```
 
 Say: "Here is the recorded decision. Rejected — and the rationale is the heart of the project:
@@ -164,6 +171,9 @@ assigned."
 
 Reminders:
 
+- The verdicts are on screen twice: the review command prints the decision table (nine rows,
+  `reject fnd-003` among them), and the piped summary line confirms every proposed finding now
+  carries a reviewer decision. The full package is thousands of lines; keep the `head`.
 - The rejection rationale is the strongest sentence in the demo; let it land before moving on.
 - If the deck has the scorecard, `docs/eval/comparison.md` is the cross-scenario version of the
   same claim: the generic baseline invents this class of false positive; no Trace run has.
