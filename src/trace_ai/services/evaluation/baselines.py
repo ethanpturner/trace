@@ -98,12 +98,18 @@ def run_baseline(
     registry_path: Path | None = None,
     results_root: Path | None = None,
     response: BaselineFindings | None = None,
+    record_to: Path | None = None,
 ) -> BaselineOutcome:
     """Run one baseline over one scenario and score it against the truth set.
 
     `response` supplies a recorded baseline output for offline replay; without it the baseline
     calls the resolved profile's model. Either way the call goes through the seam, so a recorded
     baseline and a live one are the same path with a different source (DEC-074).
+
+    `record_to` writes the successful response where the replay reads baseline recordings
+    (DEC-100): the bare `BaselineFindings` shape `recorded/baselines/` already holds, not the
+    #461 envelope — the baseline replay path predates the envelope and reads this shape. A
+    failed call records nothing; the schema failure is the recorded result, in the feed.
     """
     if baseline not in BASELINES:
         raise BaselineError(
@@ -138,6 +144,9 @@ def run_baseline(
 
     schema_valid = outcome.succeeded
     produced = list(outcome.value.findings) if isinstance(outcome, ModelSuccess) else []
+    if record_to is not None and isinstance(outcome, ModelSuccess):
+        record_to.parent.mkdir(parents=True, exist_ok=True)
+        record_to.write_text(outcome.value.model_dump_json(indent=2) + "\n", encoding="utf-8")
     scored = _score(entry, produced)
     feed_path = _export_feed(
         entry,

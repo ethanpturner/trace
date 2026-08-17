@@ -169,3 +169,62 @@ def test_a_scenario_catalog_pin_reaches_the_assessment(tmp_path: Path) -> None:
         handle = AssessmentService(store, artifact_root=tmp_path / "capture-data").handle("asm-001")
         assessment = handle.objects.get(Assessment, "asm-001")
     assert assessment.requirements_catalog_version == "0.2"
+
+
+def test_baseline_capture_records_the_replayable_shape_and_scores_it(tmp_path: Path) -> None:
+    """DEC-100: one call, one staged file, shaped exactly as recorded/baselines/ holds it —
+    and scored against the truth set immediately, because a recording nobody judged is a
+    recording nobody can trust."""
+    import json
+
+    from trace_ai.domain.proposals.baseline import BaselineFindings
+    from trace_ai.services.evaluation.capture import stage_baseline
+
+    entry = Scenario(
+        slug="rag-support-bot",
+        name="Relay Answers",
+        path=PROJECT_ROOT / "benchmarks" / "rag-support-bot",
+        status="authored",
+        catalog_version="0.2",
+    )
+    committed = json.loads(
+        (entry.recorded_dir / "baselines" / "baseline-structured.json").read_text(encoding="utf-8")
+    )
+    response = BaselineFindings.model_validate(committed)
+    staged = entry.path / "capture" / "baselines" / "baseline-structured.json"
+    try:
+        stage_baseline(
+            entry,
+            baseline="structured",
+            profile_name="primary-development",
+            response=response,
+        )
+        assert staged.is_file()
+        assert json.loads(staged.read_text(encoding="utf-8")) == committed
+
+        with pytest.raises(CaptureRefusedError, match="re-spend"):
+            stage_baseline(
+                entry,
+                baseline="structured",
+                profile_name="primary-development",
+                response=response,
+            )
+    finally:
+        import shutil
+
+        shutil.rmtree(entry.path / "capture", ignore_errors=True)
+
+
+def test_baseline_capture_refuses_the_fake_profile(tmp_path: Path) -> None:
+    from trace_ai.services.evaluation.capture import stage_baseline
+
+    entry = Scenario(
+        slug="rag-support-bot",
+        name="Relay Answers",
+        path=PROJECT_ROOT / "benchmarks" / "rag-support-bot",
+        status="authored",
+        catalog_version="0.2",
+    )
+    with pytest.raises(CaptureError, match="fake"):
+        stage_baseline(entry, baseline="structured", profile_name="offline-fake")
+    assert not (entry.path / "capture").exists()

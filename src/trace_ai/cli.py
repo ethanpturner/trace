@@ -675,11 +675,12 @@ def build_parser() -> argparse.ArgumentParser:
     capture.add_argument("scenario", help="a registered scenario slug")
     capture.add_argument(
         "stage",
-        choices=["extract", "reason", "report"],
+        choices=["extract", "reason", "report", "baseline-generic", "baseline-structured"],
         help=(
             "extract runs to checkpoint 1 and exports the review file; reason applies the "
             "authored context decisions and runs to checkpoint 2; report applies the authored "
-            "finding decisions and runs to completion"
+            "finding decisions and runs to completion; baseline-generic and baseline-structured "
+            "each make the one DEC-074 baseline call and stage its recording (DEC-100)"
         ),
     )
     capture.add_argument(
@@ -1062,8 +1063,14 @@ def _capture(args: argparse.Namespace) -> int:
         capture_service.stage_reason(
             target, profile_name=args.model_profile, from_recorded=args.from_recorded
         )
-    else:
+    elif args.stage == "report":
         capture_service.stage_report(target, profile_name=args.model_profile)
+    else:
+        capture_service.stage_baseline(
+            target,
+            baseline=args.stage.removeprefix("baseline-"),
+            profile_name=args.model_profile,
+        )
     return 0
 
 
