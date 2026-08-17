@@ -480,9 +480,13 @@ def test_the_command_surface_is_the_one_dec_032_confirms() -> None:
         "capture",
         "export",
         "ledger",
+        "threats",
+        "questions",
+        "catalog",
         "reset",
         "view",
     }
+    assert _subcommands("catalog") == {"show", "validate"}
     assert _subcommands("source") == {"add", "list"}
     assert _subcommands("evidence") == {"list", "show", "verify"}
     assert _subcommands("assessment") == {
@@ -2117,3 +2121,96 @@ def test_ledger_sums_the_usage_a_recorded_envelope_carries(
     assert fields[7] == "1.4375"
     total = next(entry for entry in output.splitlines() if entry.strip().startswith("total"))
     assert "41000" in total and "1.4375" in total
+
+
+# ------------------------------------------------------------------------------------------
+# The JSON contract (#486, DEC-096)
+# ------------------------------------------------------------------------------------------
+
+
+def _parsed_json(captured: str) -> dict[str, object]:
+    import json as json_module
+
+    document = json_module.loads(captured)
+    assert isinstance(document, dict)
+    assert document["data_model_version"] == "0.1"
+    assert isinstance(document["kind"], str)
+    return document
+
+
+def test_json_listings_carry_the_envelope(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    identifier = created(data_root, capsys)
+    capsys.readouterr()
+
+    assert invoke(data_root, "assessment", "list", "--json") == 0
+    document = _parsed_json(capsys.readouterr().out)
+    assert document["kind"] == "assessments"
+    assessments = document["assessments"]
+    assert isinstance(assessments, list)
+    assert assessments[0] == {"id": identifier, "status": "draft", "name": "ForgeFlow"}
+
+
+def test_evidence_list_json_never_carries_quotations(
+    data_root: Path, capsys: pytest.CaptureFixture[str], tmp_path: Path
+) -> None:
+    """DEC-096 keeps the human view's rule: source content appears only where it was asked for.
+    The listing carries locations and identifiers; the quotation stays in `evidence show`."""
+    identifier = extracted(data_root, capsys, tmp_path)
+
+    assert invoke(data_root, "evidence", "list", identifier, "--json") == 0
+    listing = capsys.readouterr().out
+    document = _parsed_json(listing)
+    references = document["evidence_references"]
+    assert isinstance(references, list) and references
+    assert "quoted_text" not in listing
+    first = references[0]
+    assert isinstance(first, dict)
+    evidence_id = str(first["id"])
+
+    assert (
+        invoke(data_root, "evidence", "show", evidence_id, "--assessment", identifier, "--json")
+        == 0
+    )
+    shown = _parsed_json(capsys.readouterr().out)
+    evidence = shown["evidence"]
+    assert isinstance(evidence, dict)
+    assert evidence["quoted_text"], "the quotation is this command's entire purpose"
+
+
+def test_context_show_json_keeps_the_refusal_exit_code(
+    data_root: Path, capsys: pytest.CaptureFixture[str], tmp_path: Path
+) -> None:
+    """DEC-088 holds JSON or not: a context that cannot be approved is exit 3, and the payload
+    says why a script should not approve it."""
+    identifier = extracted(data_root, capsys, tmp_path)
+
+    assert invoke(data_root, "context", "show", identifier, "--json") == 3
+    document = _parsed_json(capsys.readouterr().out)
+    assert document["can_approve"] is False
+    questions = document["questions"]
+    assert isinstance(questions, list) and questions
+
+
+def test_questions_and_catalog_read_commands_answer(
+    data_root: Path, capsys: pytest.CaptureFixture[str], tmp_path: Path
+) -> None:
+    identifier = extracted(data_root, capsys, tmp_path)
+
+    assert invoke(data_root, "questions", identifier, "--json") == 0
+    questions = _parsed_json(capsys.readouterr().out)["questions"]
+    assert isinstance(questions, list) and questions
+
+    assert invoke(data_root, "threats", identifier) == 0
+    assert "no threats" in capsys.readouterr().out
+
+    assert invoke(data_root, "catalog", "show", "--json") == 0
+    catalog = _parsed_json(capsys.readouterr().out)
+    requirements = catalog["requirements"]
+    assert isinstance(requirements, list) and len(requirements) > 20
+
+    assert invoke(data_root, "catalog", "validate") == 0
+    assert "verifies" in capsys.readouterr().out
+
+    assert invoke(data_root, "catalog", "validate", "--catalog-version", "9.9") == 1

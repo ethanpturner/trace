@@ -6206,3 +6206,70 @@ Tradeoffs:
 - The non-strict schema trades some adherence for validity: the provider may deviate where a
   strict grammar would not, and the adapter's own validation plus the orchestrator's retry
   budget are the recovery, exactly as on the Anthropic path after its grammar fallback.
+
+## DEC-096: Read commands speak JSON, and the missing read commands exist
+
+Date: 2026-08-17
+
+Status: Accepted
+
+Decision:
+
+**Every read command takes `--json` and prints one JSON object.** The envelope is three things:
+a `kind` naming what the object is, `data_model_version` naming the schema generation that
+shaped it (DEC-020's version, so a consumer can refuse a payload it does not understand the way
+the store refuses a row), and the payload. The command surface was thirteen groups of
+human-formatted `print` with no machine-readable output anywhere — Trace composed with nothing,
+and its own evaluation tooling lived CI-side because the CLI offered scripts no purchase.
+
+**The JSON view carries the same information as the human view — no more.** This is the
+contract's load-bearing clause. The CLI's standing rule is that source-derived text is printed
+only where it was asked for and no command prints an absolute path; a `--json` flag that dumped
+whole domain objects would have repealed both silently, putting quoted document content and
+storage detail on screen as a side effect of scripting. So `evidence list --json` carries
+locations and identifiers and `evidence show --json` carries the quotation, exactly as their
+human views do; `findings show --json` carries evidence identifiers where the human view prints
+labelled excerpts, and the quotations stay reachable through `evidence show`. Exit codes are
+unchanged by the flag: `context show --json` still answers exit 3 while the context cannot be
+approved (DEC-088), with `can_approve` in the payload saying so.
+
+**Three read commands that should have existed do:** `trace threats` and `trace questions` list
+first-class domain objects that were visible only through the HTML view or the rendered report;
+`trace catalog show` and `trace catalog validate` reach the requirements catalog through the one
+loader that may read it (DEC-010), making the loader's refusals — a moved hash, a manifest
+mismatch — a command a person can run rather than a CI-only fact. `CatalogError` joins the
+CLI's expected errors: exit 1 with the loader's reason, never a traceback.
+
+**The relationship to exports (DEC-072) is division, not overlap.** `--json` is the CLI's own
+view of its own answers, versioned by `data_model_version` and shaped per command; an export
+(TM-BOM, SARIF) is an interchange document in someone else's schema for someone else's tooling.
+Neither substitutes for the other, and the JSON contract deliberately does not promise
+interchange stability beyond the data-model version it stamps.
+
+Why:
+
+- DEC-032 makes the command line the interface; an interface nothing can compose with is one
+  only a person can use, and the assessment diffing candidate (future-features 4.1) wants
+  stable serialized output on both sides before it can exist.
+- Threats and questions are authoritative domain objects a reviewer reasons about; reaching
+  them required rendering a report or starting a web server, which is the wrong shape for both.
+
+Alternatives Considered:
+
+- Dumping domain objects whole via `model_dump` everywhere (rejected: repeals the
+  source-content and path rules silently; the per-command payload is more code and the only
+  honest shape).
+- A `--format json|yaml|table` axis (rejected: one machine shape is a contract, three are a
+  maintenance surface; YAML adds nothing `jq` needs).
+- Schema-versioning the envelope independently of the data model (rejected for now: the
+  payloads are projections of DEC-020-versioned objects, and a second version number with no
+  independent motion would be ceremony).
+
+Tradeoffs:
+
+- Per-command payload construction can drift from the human view it mirrors; the contract tests
+  pin the envelope, the refusal exit code, and the no-quotation rule, which are the clauses
+  that matter.
+- `report show` keeps its Markdown body and `verify` its exit-code answer, without `--json` —
+  the report is the deliverable itself and the manifest already exists for scripts; extending
+  the flag to them is a later, smaller decision if a consumer appears.

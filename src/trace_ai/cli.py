@@ -82,6 +82,7 @@ from trace_ai.services.findings.review_package import (
     render_markdown,
 )
 from trace_ai.services.ingestion.loader import DocumentLoader, DocumentLoadError
+from trace_ai.services.requirements.loader import CatalogError
 from trace_ai.services.verification import verify_assessment
 from trace_ai.workflow.checkpoint import load_state
 from trace_ai.workflow.context_review import (
@@ -159,6 +160,7 @@ class CommandInputError(ValueError):
 # its traceback. The dispatch re-raises it explicitly, ahead of this tuple.
 EXPECTED_ERRORS = (
     AssessmentServiceError,
+    CatalogError,
     DocumentLoadError,
     IndexingError,
     EvidenceNotFoundError,
@@ -194,6 +196,36 @@ def _default_reviewer() -> str:
         return "unknown"
 
 
+def _json_flag(parser: argparse.ArgumentParser) -> None:
+    """The DEC-096 flag every read command shares: the same information, machine-shaped."""
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        dest="as_json",
+        help=(
+            "print the same information as one JSON object (DEC-096), data_model_version "
+            "stamped; quoted source content appears only where the human view prints it"
+        ),
+    )
+
+
+def _print_json(kind: str, payload: Mapping[str, Any]) -> int:
+    """One JSON object to stdout: the DEC-096 envelope.
+
+    `kind` names what the object is, `data_model_version` says which schema generation shaped
+    it, and the payload carries the same information the human view prints -- no more (a listing
+    that dumped fields the human view withholds would put source content and storage paths on
+    screen as a side effect of scripting).
+    """
+    import json
+
+    from trace_ai.domain.assessment import DATA_MODEL_VERSION
+
+    document = {"kind": kind, "data_model_version": DATA_MODEL_VERSION, **payload}
+    print(json.dumps(document, indent=2, default=str))
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     """The command surface DEC-032 confirms.
 
@@ -226,9 +258,11 @@ def build_parser() -> argparse.ArgumentParser:
     created.add_argument("--description")
     created.add_argument("--tag", action="append", dest="tags", default=[])
 
-    assessment_commands.add_parser("list", help="list assessments")
+    assessment_list = assessment_commands.add_parser("list", help="list assessments")
+    _json_flag(assessment_list)
 
     status = assessment_commands.add_parser("status", help="report an assessment's state")
+    _json_flag(status)
     status.add_argument("assessment_id")
 
     candidates = assessment_commands.add_parser(
@@ -285,16 +319,19 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     listed = source_commands.add_parser("list", help="list registered documents")
+    _json_flag(listed)
     listed.add_argument("assessment_id")
 
     evidence = commands.add_parser("evidence", help="inspect evidence references")
     evidence_commands = evidence.add_subparsers(dest="command")
 
     evidence_list = evidence_commands.add_parser("list", help="list evidence references")
+    _json_flag(evidence_list)
     evidence_list.add_argument("assessment_id")
     evidence_list.add_argument("--source", dest="source_document_id")
 
     evidence_show = evidence_commands.add_parser("show", help="print one evidence reference")
+    _json_flag(evidence_show)
     evidence_show.add_argument("evidence_id")
     evidence_show.add_argument("--assessment", dest="assessment_id", required=True)
 
@@ -330,6 +367,7 @@ def build_parser() -> argparse.ArgumentParser:
             "injection attempts and contradictions awaiting resolution"
         ),
     )
+    _json_flag(show)
 
     review = context_commands.add_parser("review", help="record reviewer decisions")
     review.add_argument("assessment_id")
@@ -425,6 +463,7 @@ def build_parser() -> argparse.ArgumentParser:
         "show", help="print the review package for the finding checkpoint"
     )
     findings_show.add_argument("assessment_id")
+    _json_flag(findings_show)
 
     findings_review = findings_commands.add_parser("review", help="record reviewer decisions")
     findings_review.add_argument("assessment_id")
@@ -702,6 +741,59 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     ledger.add_argument("assessment_id")
+    _json_flag(ledger)
+
+    threats = commands.add_parser(
+        "threats",
+        help="list an assessment's threats",
+        description=(
+            "Lists the threats the analysis proposed and validation accepted, with their "
+            "categories and the components and assets each is grounded in. Threats were "
+            "previously visible only through the report or the read-only view (#486)."
+        ),
+    )
+    threats.add_argument("assessment_id")
+    _json_flag(threats)
+
+    questions = commands.add_parser(
+        "questions",
+        help="list an assessment's questions",
+        description=(
+            "Lists every question the assessment holds -- open and answered, blocking and not -- "
+            "with its priority and status (#486)."
+        ),
+    )
+    questions.add_argument("assessment_id")
+    _json_flag(questions)
+
+    catalog = commands.add_parser(
+        "catalog",
+        help="inspect and validate the requirements catalog",
+        description=(
+            "Reads the version-controlled requirements catalog through the one loader that may "
+            "(DEC-010): the manifest and the files checked against each other, every requirement "
+            "validated, the content hash recomputed. `show` lists requirements; `validate` loads "
+            "and reports, exiting 1 with the loader's reason when the catalog does not verify."
+        ),
+    )
+    catalog_commands = catalog.add_subparsers(dest="command")
+    catalog_show = catalog_commands.add_parser("show", help="list a catalog version's requirements")
+    catalog_show.add_argument(
+        "--catalog-version",
+        default="0.1",
+        dest="catalog_version",
+        help="the catalog version to read (default: 0.1)",
+    )
+    _json_flag(catalog_show)
+    catalog_validate = catalog_commands.add_parser(
+        "validate", help="load a catalog version and report what it holds"
+    )
+    catalog_validate.add_argument(
+        "--catalog-version",
+        default="0.1",
+        dest="catalog_version",
+        help="the catalog version to validate (default: 0.1)",
+    )
 
     reset = commands.add_parser(
         "reset",
@@ -852,6 +944,10 @@ def run(argv: Sequence[str] | None = None) -> int:
         ("report", "show"): _report_show,
         ("report", "rubric"): _report_rubric,
         ("ledger", None): _ledger,
+        ("threats", None): _threats,
+        ("questions", None): _questions,
+        ("catalog", "show"): _catalog_show,
+        ("catalog", "validate"): _catalog_validate,
     }
 
     if args.group is None:
@@ -1005,6 +1101,15 @@ def _assessment_create(args: argparse.Namespace, service: AssessmentService) -> 
 
 def _assessment_list(args: argparse.Namespace, service: AssessmentService) -> int:
     assessments = service.list()
+    if args.as_json:
+        return _print_json(
+            "assessments",
+            {
+                "assessments": [
+                    {"id": a.id, "status": str(a.status), "name": a.name} for a in assessments
+                ]
+            },
+        )
     if not assessments:
         print("no assessments")
         return 0
@@ -1029,6 +1134,36 @@ def _assessment_status(args: argparse.Namespace, service: AssessmentService) -> 
     # in for it. Reporting "none" next to "run status: paused" would be the two lines contradicting
     # each other, and the run is the thing a reviewer needs the identifier of.
     active = reported.active_workflow_run_id or (run.id if run is not None else None)
+
+    if args.as_json:
+        payload: dict[str, Any] = {
+            "assessment": {
+                "id": reported.assessment_id,
+                "status": str(reported.status),
+                "workflow_run_id": active,
+                "source_documents": reported.source_documents,
+                "evidence_references": reported.evidence_references,
+            },
+            "run": None,
+            "checkpoint": None,
+        }
+        if run is not None:
+            payload["run"] = {
+                "id": run.id,
+                "status": str(run.status),
+                "phase": run.current_node,
+                "model_calls": run.total_model_calls,
+                "input_tokens": run.total_input_tokens,
+                "output_tokens": run.total_output_tokens,
+                "estimated_cost": run.estimated_cost,
+            }
+            pending = _pending_review(handle, run.id)
+            if pending is not None:
+                payload["checkpoint"] = {
+                    "type": pending.checkpoint_type.value,
+                    "awaiting_object_ids": list(pending.object_ids),
+                }
+        return _print_json("assessment-status", payload)
 
     print(f"assessment:       {reported.assessment_id}")
     print(f"status:           {reported.status}")
@@ -1079,6 +1214,60 @@ def _ledger(args: argparse.Namespace, service: AssessmentService) -> int:
     records_by_run: dict[str, list[ExecutionRecord]] = {}
     for record in handle.objects.list(ExecutionRecord):
         records_by_run.setdefault(record.workflow_run_id, []).append(record)
+
+    if args.as_json:
+        from decimal import Decimal
+
+        def _sum(values: list[int | None]) -> int | None:
+            reported = [value for value in values if value is not None]
+            return sum(reported) if reported else None
+
+        payload_runs = []
+        for run in runs:
+            model_records = [
+                record
+                for record in records_by_run.get(run.id, [])
+                if record.execution_type is ExecutionType.MODEL
+            ]
+            grouped: dict[str, list[ExecutionRecord]] = {}
+            for record in model_records:
+                grouped.setdefault(record.node_name, []).append(record)
+            payload_runs.append(
+                {
+                    "id": run.id,
+                    "status": str(run.status),
+                    "model_calls": run.total_model_calls,
+                    "estimated_cost": run.estimated_cost,
+                    "nodes": [
+                        {
+                            "node": name,
+                            "calls": len(rows),
+                            "input_tokens": _sum([r.input_tokens for r in rows]),
+                            "cache_read_tokens": _sum([r.cache_read_tokens for r in rows]),
+                            "cache_creation_tokens": _sum([r.cache_creation_tokens for r in rows]),
+                            "output_tokens": _sum([r.output_tokens for r in rows]),
+                            "duration_ms": _sum([r.duration_ms for r in rows]),
+                            "estimated_cost": (
+                                sum(
+                                    (
+                                        r.estimated_cost
+                                        for r in rows
+                                        if r.estimated_cost is not None
+                                    ),
+                                    start=Decimal(0),
+                                )
+                                if any(r.estimated_cost is not None for r in rows)
+                                else None
+                            ),
+                        }
+                        for name, rows in grouped.items()
+                    ],
+                }
+            )
+        return _print_json(
+            "execution-ledger",
+            {"assessment_id": args.assessment_id, "runs": payload_runs},
+        )
 
     for run in runs:
         cost = run.estimated_cost if run.estimated_cost is not None else "-"
@@ -1145,6 +1334,84 @@ def _summed_cost(rows: Sequence[Any]) -> str:
 def _seconds(rows: Sequence[Any]) -> str:
     reported = [row.duration_ms for row in rows if row.duration_ms is not None]
     return f"{sum(reported) / 1000:.1f}" if reported else "-"
+
+
+def _threats(args: argparse.Namespace, service: AssessmentService) -> int:
+    """List the threats the analysis produced, grounded objects named (#486)."""
+    from trace_ai.domain.threat import Threat
+
+    threats = service.handle(args.assessment_id).objects.list(Threat)
+    if args.as_json:
+        return _print_json(
+            "threats",
+            {
+                "assessment_id": args.assessment_id,
+                "threats": [threat.model_dump(mode="json") for threat in threats],
+            },
+        )
+    if not threats:
+        print("no threats")
+        return 0
+    for threat in threats:
+        categories = ",".join(str(term) for term in threat.category) or "-"
+        grounded = ", ".join([*threat.affected_component_ids, *threat.affected_asset_ids])
+        print(f"{threat.id}  [{categories}]  {threat.title}  ({grounded})")
+    return 0
+
+
+def _questions(args: argparse.Namespace, service: AssessmentService) -> int:
+    """List every question -- open and answered, blocking and not (#486)."""
+    from trace_ai.domain.question import Question
+
+    questions = service.handle(args.assessment_id).objects.list(Question)
+    if args.as_json:
+        return _print_json(
+            "questions",
+            {
+                "assessment_id": args.assessment_id,
+                "questions": [question.model_dump(mode="json") for question in questions],
+            },
+        )
+    if not questions:
+        print("no questions")
+        return 0
+    for question in questions:
+        marker = "blocking" if question.blocking else str(question.priority)
+        print(f"{question.id}  {question.status!s:<9} {marker:<9} {question.question}")
+    return 0
+
+
+def _catalog_show(args: argparse.Namespace, service: AssessmentService) -> int:
+    """List a catalog version's requirements through the one loader that may (DEC-010)."""
+    from trace_ai.services.requirements.loader import load_catalog
+
+    loaded = load_catalog(args.catalog_version)
+    if args.as_json:
+        return _print_json(
+            "requirements-catalog",
+            {
+                "catalog": loaded.catalog.model_dump(mode="json"),
+                "requirements": [
+                    requirement.model_dump(mode="json") for requirement in loaded.requirements
+                ],
+            },
+        )
+    print(f"catalog: {loaded.catalog.id} version {loaded.version}, {len(loaded)} requirements")
+    for requirement in loaded.requirements:
+        print(f"  {requirement.id}  {requirement.title}")
+    return 0
+
+
+def _catalog_validate(args: argparse.Namespace, service: AssessmentService) -> int:
+    """Load a catalog version and report what it holds; the loader's refusals are the check."""
+    from trace_ai.services.requirements.loader import load_catalog
+
+    loaded = load_catalog(args.catalog_version)
+    print(
+        f"catalog {loaded.catalog.id} version {loaded.version} verifies: "
+        f"{len(loaded)} requirements, content hash {loaded.catalog.content_hash}"
+    )
+    return 0
 
 
 def _pending_review(handle: AssessmentHandle, workflow_run_id: str) -> PendingHumanReview | None:
@@ -1284,6 +1551,22 @@ def _source_add(args: argparse.Namespace, service: AssessmentService) -> int:
 def _source_list(args: argparse.Namespace, service: AssessmentService) -> int:
     handle = service.handle(args.assessment_id)
     documents = handle.objects.list(SourceDocument)
+    if args.as_json:
+        return _print_json(
+            "source-documents",
+            {
+                "assessment_id": args.assessment_id,
+                "source_documents": [
+                    {
+                        "id": d.id,
+                        "ingestion_status": str(d.ingestion_status),
+                        "media_type": d.media_type,
+                        "filename": d.filename,
+                    }
+                    for d in documents
+                ],
+            },
+        )
     if not documents:
         print("no source documents")
         return 0
@@ -1307,6 +1590,23 @@ def _evidence_list(args: argparse.Namespace, service: AssessmentService) -> int:
         if args.source_document_id
         else index.handle.objects.list(EvidenceReference)
     )
+    if args.as_json:
+        return _print_json(
+            "evidence-references",
+            {
+                "assessment_id": args.assessment_id,
+                "evidence_references": [
+                    {
+                        "id": r.id,
+                        "source_document_id": r.source_document_id,
+                        "start_line": r.start_line,
+                        "end_line": r.end_line,
+                        "location": r.section_title or r.json_pointer,
+                    }
+                    for r in references
+                ],
+            },
+        )
     if not references:
         print("no evidence references")
         return 0
@@ -1322,6 +1622,11 @@ def _evidence_list(args: argparse.Namespace, service: AssessmentService) -> int:
 def _evidence_show(args: argparse.Namespace, service: AssessmentService) -> int:
     index = EvidenceIndex(service.handle(args.assessment_id))
     (rendered,) = index.render_for_prompt([args.evidence_id])
+
+    if args.as_json:
+        # The quotation is this command's entire purpose, so the JSON view carries it too --
+        # the one listing where source content appears (DEC-096).
+        return _print_json("evidence", {"evidence": rendered})
 
     print(f"evidence:  {rendered['evidence_id']}")
     print(f"source:    {rendered['source_filename']}")
@@ -1416,6 +1721,43 @@ def _context_show(args: argparse.Namespace, service: AssessmentService) -> int:
     """
     package = _package_for(service.handle(args.assessment_id))
     context = package.system_context
+
+    if args.as_json:
+        _print_json(
+            "context-review-package",
+            {
+                "assessment_id": args.assessment_id,
+                "system_context": {
+                    "system_name": context.system_name,
+                    "version": context.version,
+                    "approved": context.is_approved,
+                    "purpose": context.system_purpose,
+                },
+                "objects": {
+                    group: [obj.model_dump(mode="json") for obj in objects]
+                    for group, objects in package.objects_by_type.items()
+                },
+                "documented_claims": [
+                    item.claim.model_dump(mode="json") for item in package.documented_claims
+                ],
+                "interpreted_claims": [
+                    item.claim.model_dump(mode="json") for item in package.interpreted_claims
+                ],
+                "questions": [q.model_dump(mode="json") for q in package.questions],
+                "triggers": [
+                    {"name": t.name, "detail": t.detail, "object_ids": list(t.object_ids)}
+                    for t in package.triggers
+                ],
+                "outstanding_errors": [
+                    {"object_id": e.object_id, "field": e.field, "message": e.message}
+                    for e in package.outstanding_errors
+                ],
+                "can_approve": package.can_approve,
+            },
+        )
+        # The same answer the human view gives (DEC-088): a context that cannot be approved is
+        # a stated refusal, exit 3, JSON or not.
+        return 0 if package.can_approve else REFUSED
 
     print(f"system:   {context.system_name}")
     print(f"revision: version {context.version}, {'approved' if context.is_approved else 'draft'}")
@@ -1898,9 +2240,54 @@ def _print_run_outcome(outcome: Any) -> int:
 
 
 def _findings_show(args: argparse.Namespace, service: AssessmentService) -> int:
-    """Print the checkpoint-2 review package, findings first, evidence excerpts labelled."""
+    """Print the checkpoint-2 review package, findings first, evidence excerpts labelled.
+
+    The JSON view carries identifiers where the human view prints quotations (DEC-096): the
+    excerpts stay reachable through `evidence show`, which is the command whose purpose they
+    are, and a scripted consumer holding evidence identifiers loses nothing.
+    """
     handle = service.handle(args.assessment_id)
     package = build_finding_review_package(handle, index=EvidenceIndex(handle))
+    if args.as_json:
+        return _print_json(
+            "finding-review-package",
+            {
+                "assessment_id": package.assessment_id,
+                "summary": {
+                    "finding_count": package.summary.finding_count,
+                    "documentation_gap_count": package.summary.documentation_gap_count,
+                    "open_question_count": package.summary.open_question_count,
+                    "awaiting_severity_count": package.summary.awaiting_severity_count,
+                    "statement": package.summary.statement,
+                },
+                "findings": [
+                    {
+                        "finding": item.finding.model_dump(mode="json"),
+                        "supporting_evidence_ids": [x.evidence_id for x in item.supporting],
+                        "contradictory_evidence_ids": [x.evidence_id for x in item.contradictory],
+                        "threat_ids": [t.id for t in item.threats],
+                        "mapping_ids": [m.id for m in item.mappings],
+                        "critiques": [
+                            {
+                                "critique": c.critique.model_dump(mode="json"),
+                                "outcome": c.outcome,
+                            }
+                            for c in item.critiques
+                        ],
+                        "reasons": list(package.reasons_for(item.finding.id)),
+                    }
+                    for item in package.findings
+                ],
+                "documentation_gaps": [
+                    {
+                        "gap": item.gap.model_dump(mode="json"),
+                        "evidence_ids": [x.evidence_id for x in item.excerpts],
+                    }
+                    for item in package.documentation_gaps
+                ],
+                "questions": [q.model_dump(mode="json") for q in package.questions],
+            },
+        )
     print(render_markdown(package))
     return 0
 

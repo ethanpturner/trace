@@ -46,10 +46,12 @@ banner exits 1 with `SourceCheckoutRequiredError`.
 
 **Shared model flags.** `run`, `resume`, and `context extract` take the same four flags:
 
-- `--model-profile MODEL_PROFILE` — the provider, model, and settings bundle. Exactly three
-  profiles exist: `primary-development` (Anthropic, claude-opus-5, the default), `economy`
-  (Anthropic, claude-sonnet-5), and `offline-fake` (a deterministic substitute: no key, no
-  network, zero cost — a first-class way to run, not a test hook).
+- `--model-profile MODEL_PROFILE` — the provider, model, and settings bundle. Five profiles
+  exist: `primary-development` (Anthropic, claude-opus-5, the default), `economy` (Anthropic,
+  claude-sonnet-5), `economy-mapping` (claude-opus-5 with the mapping agent overlaid onto
+  claude-sonnet-5, DEC-094), `openai-experimental` (OpenAI, gpt-5.1, DEC-095), and
+  `offline-fake` (a deterministic substitute: no key, no network, zero cost — a first-class way
+  to run, not a test hook).
 - `--response PATH` — a recorded model response to replay. Repeatable; files are consumed in the
   order given, one per model call the run makes. A directory stands for its numbered recordings
   in sorted order, so `--response demo/forgeflow/recorded/extraction` replays that whole slice.
@@ -57,6 +59,13 @@ banner exits 1 with `SourceCheckoutRequiredError`.
 - `--max-cost COST` — stop the run before exceeding this estimated cost.
 
 Exceeding a ceiling stops the run with a named error; it never skips a step or shrinks a request.
+
+**JSON output.** Read commands take `--json` (DEC-096) and print one JSON object: a `kind`
+naming what it is, `data_model_version` naming the schema generation, and the same information
+the human view prints — no more. Quoted source content appears only where the human view prints
+it (`evidence show`), so a script never puts document content on screen as a side effect of
+listing what exists. Exit codes are unchanged: `context show --json` still exits 3 while the
+context cannot be approved.
 
 **Identifiers in examples.** Identifiers like `asm-001` are allocated in order from a fresh data
 root; on a reused data root the next create mints `asm-002` and any transcript diverges.
@@ -421,6 +430,38 @@ writes, output), local duration, and estimated cost, plus a total line per run (
 Absent prints as a dash, never zero: an offline replay of a recording that captured no usage
 measured nothing. A recording that carries captured usage (a live capture wrote it) replays it,
 and the ledger then shows the real numbers. Exits 0; an unknown assessment identifier exits 1.
+
+## threats
+
+```
+trace threats assessment_id [--json]
+```
+
+Lists the threats the analysis proposed and validation accepted: identifier, categories, title,
+and the components and assets each is grounded in. Threats were previously visible only through
+the report or the read-only view.
+
+## questions
+
+```
+trace questions assessment_id [--json]
+```
+
+Lists every question the assessment holds — open and answered, blocking and not — with its
+status and priority.
+
+## catalog
+
+```
+trace catalog show [--catalog-version CATALOG_VERSION] [--json]
+trace catalog validate [--catalog-version CATALOG_VERSION]
+```
+
+Reads the requirements catalog through the one loader that may (DEC-010): the manifest and the
+files checked against each other in both directions, every requirement validated, the content
+hash recomputed. `show` lists the requirements; `validate` loads and reports the count and the
+hash, exiting 1 with the loader's reason when the catalog does not verify — a moved content
+hash, a manifest mismatch, an unknown version.
 
 ## reset
 
