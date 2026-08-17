@@ -2228,3 +2228,21 @@ def test_diff_refuses_unapproved_sides_with_a_named_error(
 
     assert invoke(data_root, "diff", first, second) == 1
     assert "context" in capsys.readouterr().err
+
+
+def test_evaluate_json_carries_the_envelope_and_the_pin_state(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """DEC-096 reaches the one metrics-emitting command (#505): one envelope, the per-run
+    metrics as a mapping, and the offline replay pin's verdict."""
+    assert invoke(data_root, "evaluate", "forgeflow", "--json") == 0
+    document = _parsed_json(capsys.readouterr().out)
+    assert document["kind"] == "evaluation-runs"
+    runs = document["runs"]
+    assert isinstance(runs, list) and len(runs) == 1
+    run_payload = runs[0]
+    assert isinstance(run_payload, dict)
+    assert run_payload["run_status"] == "completed"
+    assert run_payload["report_hash_verified"] is True
+    metrics = run_payload["metrics"]
+    assert isinstance(metrics, dict) and "false_negative_rate" in metrics
