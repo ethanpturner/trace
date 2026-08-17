@@ -133,9 +133,14 @@ Guidance should be based on approved requirements and architecture context rathe
 
 ## 4.1 Assessment Diffing
 
-**Status:** Candidate
+**Status:** Built (DEC-097, issue #488)
 
-Compare two assessment versions and identify meaningful changes.
+`trace diff <before> <after>` compares two assessments' approved models: added, removed, and
+changed per object family, identity matched by content fingerprint rather than per-assessment
+identifiers, threats and gaps compared by ground and never force-paired. Stale-evidence and
+trend analysis (4.4, 4.5) remain future work.
+
+The original sketch: compare two assessment versions and identify meaningful changes.
 
 Possible outputs include:
 
