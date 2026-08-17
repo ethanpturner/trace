@@ -6008,3 +6008,68 @@ Tradeoffs:
   named next step, not an implied one.
 - Keeping the superseded estimate script means two cost numbers exist in the repository; the
   docstring states which one is quotable and why the other survives.
+
+## DEC-093: Stability-protocol object decisions replay by content fingerprint
+
+Date: 2026-08-17
+
+Status: Accepted
+
+Decision:
+
+**A live run's context-object decisions replay from the recorded review file by content
+fingerprint.** The DEC-077 stability protocol approved every context object under the default
+policy and counted every one as defaulted — the harness disclosed as much
+(`defaulted_decisions: 182` on the committed live measurement), and a sweep run against that
+leniency would measure the harness, not the pipeline. Now a live object whose fingerprint
+uniquely matches an object the recorded reviewer decided replays that disposition under the
+protocol's reviewer identity, and only a genuinely novel or ambiguous object falls to the
+default approval and counts. The defaulted count keeps its meaning as the disclosure — it now
+measures extraction novelty rather than the protocol's own substitution.
+
+**Fingerprints follow the DEC-056 matcher's conventions and are computed in `matching.py`,**
+the one implementation the metrics and the diff already share: components, actors, assets, and
+trust boundaries on normalized name; data flows on normalized (source, destination) component
+names; claims on (subject name or the literal `system`, normalized predicate). Values and
+descriptions are never compared — the fingerprint says "the same object", never "the same
+wording".
+
+**The recorded side's fingerprints come from the recorded extraction proposal.** The review
+file's entries carry allocated identifiers; DEC-018 allocates at insert and insert follows
+proposal order, so a section's entries sorted by identifier correspond to the proposal list
+positionally, and no allocation is re-run. Three refusals keep the replay conservative, and
+each falls to the counted default rather than to a guess: a section whose entry count disagrees
+with its proposal list is skipped whole; a fingerprint occurring more than once on either side
+is dropped as ambiguous; an object whose references cannot be resolved fingerprints as nothing.
+Only `approve` and `reject` dispositions replay — an edit is authored content, not transferable
+to an object its author never saw.
+
+Why:
+
+- The eleven-scenario live sweep (#484) is the largest unconverted claim in the project, and
+  running it before this change would have measured the default policy's leniency. The
+  committed live measurement's 182 defaulted decisions were the harness saying so.
+- The conservative failure mode matters more than match rate: a decision applied to an object
+  its reviewer never saw is DEC-091's unreviewed-approval failure inside the measurement
+  itself.
+
+Alternatives Considered:
+
+- Matching on the DEC-019 content hash of the whole object (rejected: any wording difference —
+  the exact thing a live re-run varies — breaks the match, so it degenerates to the default
+  policy with extra machinery).
+- Reconstructing recorded identifiers by re-running conversion and allocation against a scratch
+  store (rejected: heavier, and it re-derives exactly the positional fact DEC-018 already
+  guarantees).
+- Replaying recorded edits onto matched objects (rejected: an edit constructs new content for a
+  specific object; transplanting it onto a merely-similar one fabricates a review).
+
+Tradeoffs:
+
+- Positional correspondence leans on DEC-018's allocation order; a future change to insert
+  order would silently unmatch everything. The count-mismatch skip bounds the damage to "more
+  defaulted decisions, visibly counted" — the failure is loud in the summary, never wrong in
+  the decisions.
+- The committed `live-stability.json` predates this change; its 182 defaulted decisions are the
+  old protocol's number and are not re-stated. The next live measurement re-derives it under
+  the new matching, which is the honest comparison.
