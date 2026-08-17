@@ -334,3 +334,36 @@ def test_an_unfilled_template_marker_is_still_refused(tmp_path: Path) -> None:
         UnresolvedMarkerError, match=re.escape("schema.context_extraction_proposal")
     ):
         PromptRegistry(tmp_path).compose("extract-context", "v1")
+
+
+def test_the_template_hash_is_shared_across_substitutions(tmp_path: Path) -> None:
+    """DEC-094: the template hash answers "which template produced this" — every composition of
+    the same prompt version shares it whatever was substituted, while the content hash stays
+    the identity of one substituted composition."""
+    shared = tmp_path / "shared"
+    shared.mkdir()
+    for name in ("source-content-boundary-v1", "evidence-policy-v1", "uncertainty-policy-v1"):
+        (shared / f"{name}.md").write_text("policy", encoding="utf-8")
+    (tmp_path / "extract-context-v1.md").write_text(
+        FRONT_MATTER.replace(
+            "Extract context from the documents provided.",
+            "Documents:\n\n{{ input.source_content }}",
+        ),
+        encoding="utf-8",
+    )
+    registry = PromptRegistry(tmp_path)
+    first = registry.compose("extract-context", "v1", {"input.source_content": "corpus one"})
+    second = registry.compose("extract-context", "v1", {"input.source_content": "corpus two"})
+
+    assert first.metadata.content_hash != second.metadata.content_hash
+    assert first.metadata.template_hash == second.metadata.template_hash
+    assert is_content_hash(first.metadata.template_hash)
+
+
+def test_a_shared_block_edit_moves_the_template_hash(tree: Path) -> None:
+    before = PromptRegistry(tree).compose("extract-context", "v1").metadata.template_hash
+    (tree / "shared" / "evidence-policy-v1.md").write_text(
+        "Every documented claim cites at least two evidence references.", encoding="utf-8"
+    )
+    after = PromptRegistry(tree).compose("extract-context", "v1").metadata.template_hash
+    assert before != after

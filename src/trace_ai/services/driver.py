@@ -1166,7 +1166,7 @@ def build_nodes(
         EvidenceIndexingNode(),
         ContextExtractionAdapter(
             ledger=ledger,
-            profile=profile.for_agent("context-extraction"),
+            profile=profile,
             registry=registry,
             assessment_name=assessment.name,
             budget=budget,
@@ -1176,7 +1176,7 @@ def build_nodes(
         ContextReviewNode(),
         ThreatAnalysisAdapter(
             ledger=ledger,
-            profile=profile.for_agent("threat-analysis"),
+            profile=profile,
             registry=registry,
             assessment_name=assessment.name,
             budget=budget,
@@ -1184,14 +1184,14 @@ def build_nodes(
         ThreatValidationAdapter(),
         RequirementControlMappingAdapter(
             ledger=ledger,
-            profile=profile.for_agent("requirement-and-control-mapping"),
+            profile=profile,
             registry=registry,
             budget=budget,
         ),
         MappingValidationAdapter(),
         EvidenceValidationAdapter(
             ledger=ledger,
-            profile=profile.for_agent("evidence-validation"),
+            profile=profile,
             registry=registry,
             handoff=evidence_handoff,
             budget=budget,
@@ -1199,7 +1199,7 @@ def build_nodes(
         EvidenceAssessmentValidationAdapter(handoff=evidence_handoff),
         CriticalReviewAdapter(
             ledger=ledger,
-            profile=profile.for_agent("critical-review"),
+            profile=profile,
             registry=registry,
             handoff=critique_handoff,
             budget=budget,
@@ -1209,7 +1209,7 @@ def build_nodes(
         FindingReviewNode(),
         ReportGenerationAdapter(
             ledger=ledger,
-            profile=profile.for_agent("report-generation"),
+            profile=profile,
             registry=registry,
             handoff=report_handoff,
             budget=budget,

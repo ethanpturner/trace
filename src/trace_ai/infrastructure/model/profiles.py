@@ -48,12 +48,15 @@ AGENT_NAMES: Final[frozenset[str]] = frozenset(spec.name for spec in AGENTS)
 
 @dataclass(frozen=True, slots=True)
 class AgentOverlay:
-    """One agent's model-and-rates override inside a profile (DEC-069).
+    """One agent's model-and-rates override inside a profile (DEC-069, DEC-094).
 
     The four rates are required alongside the model, never inherited: a substituted model priced
     at the base model's rates would make `estimated_cost` describe a call that never happened.
-    `settings` overrides the profile's generation settings when given; `Creativity` stays the
-    agent's own declared intent either way and is applied on top by the node.
+    An overlay names a model and its rates and nothing else: generation settings stay the base
+    profile's, with `Creativity` always the agent's own declared intent applied by the node
+    (DEC-085). A `settings` override existed and was removed with the second resolution path —
+    it could only take effect if the driver resolved overlays too, and DEC-094 makes
+    `build_model` the one place resolution happens.
     """
 
     model: str
@@ -61,7 +64,6 @@ class AgentOverlay:
     output_cost_per_million: Decimal
     cache_read_cost_per_million: Decimal
     cache_creation_cost_per_million: Decimal
-    settings: GenerationSettings | None = None
 
 
 class UnknownModelProfileError(KeyError):
@@ -127,11 +129,18 @@ class ModelProfile:
     def for_agent(self, agent_name: str) -> ModelProfile:
         """The bundle one agent's calls resolve to (DEC-069).
 
-        Without an overlay for `agent_name` this is the profile itself. With one, the model, its
-        rates, and optionally its settings are replaced, and the returned bundle carries no
-        overlays of its own — the adapter sees one resolved bundle, exactly as before. The
-        profile `name` is kept: attribution of *which model answered* rides
-        `ExecutionRecord.model_name`, which snapshots the resolved model per call.
+        **`build_model` is the one caller** (DEC-094): it builds one adapter per overlaid agent
+        from the bundle this returns, and `OverlayRoutingModel` routes each call by its schema.
+        The driver resolved overlays too, once — per-node profiles carrying the same fact a
+        second time, unexercised, free to drift — and that path is gone; nodes receive the base
+        profile, so budget projection prices at the base rates while the resolved adapter prices
+        the recorded usage.
+
+        Without an overlay for `agent_name` this is the profile itself. With one, the model and
+        its rates are replaced and the returned bundle carries no overlays of its own — the
+        adapter sees one resolved bundle. The profile `name` is kept: attribution of *which
+        model answered* rides `ExecutionRecord.model_name`, which snapshots the resolved model
+        per call.
         """
         overlay = self.agent_overlays.get(agent_name)
         if overlay is None:
@@ -143,7 +152,6 @@ class ModelProfile:
             output_cost_per_million=overlay.output_cost_per_million,
             cache_read_cost_per_million=overlay.cache_read_cost_per_million,
             cache_creation_cost_per_million=overlay.cache_creation_cost_per_million,
-            settings=overlay.settings if overlay.settings is not None else self.settings,
             agent_overlays={},
         )
 
