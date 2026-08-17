@@ -49,7 +49,7 @@ from trace_ai.domain.reviewer_decision import ReviewerDecision
 from trace_ai.domain.source_document import IngestionStatus, SourceDocument
 from trace_ai.domain.source_observation import ObservationKind, SourceObservation
 from trace_ai.domain.threat import Threat
-from trace_ai.services.context.compose import seed_compose_documents
+from trace_ai.services.context.parsers import seed_structured_documents
 from trace_ai.services.context.pipeline import context_objects
 from trace_ai.services.critique.input_package import select_review_group
 from trace_ai.services.critique.precedent import select_precedents
@@ -283,10 +283,10 @@ class ContextExtractionAdapter:
 
     def run(self, context: NodeContext) -> NodeResult:
         handle = context.handle
-        # DEC-070: parse machine-readable manifests before the agent runs, so the seeded objects
-        # join the baseline, the parser's excerpts are available to the fence, and the agent
+        # DEC-070: parse machine-readable artifacts before the agent runs, so the seeded objects
+        # join the baseline, the parsers' excerpts are available to the fence, and the agent
         # extends rather than re-derives. Seeding precedes the evidence listing on purpose.
-        seeded = seed_compose_documents(handle)
+        seeded = seed_structured_documents(handle)
         available = handle.objects.ids(EvidenceReference)
         node = ContextExtractionNode(
             ledger=self.ledger,

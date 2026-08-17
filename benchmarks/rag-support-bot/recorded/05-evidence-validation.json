@@ -58,11 +58,11 @@
         "subject_id": "map-004",
         "evidence_ids": [
           "evd-004",
-          "evd-007"
+          "evd-012"
         ],
         "evidence_strengths": {
           "evd-004": "direct",
-          "evd-007": "direct"
+          "evd-012": "direct"
         },
         "validation_status": "partially_supported",
         "rationale": "Both cited passages are about the source store and the index's copy status; neither states whether source deletions propagate to the index, which is the fact the mapping needs.",

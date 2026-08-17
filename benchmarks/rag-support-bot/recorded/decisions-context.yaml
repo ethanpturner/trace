@@ -6,6 +6,22 @@ components:
   decision: approve
   attach_evidence: []
   editable:
+    name: Relay Answers API
+    description: 'Declared in openapi.yaml: 2 operation(s).'
+    component_type: api_service
+    technology: []
+    ownership: null
+    deployment_zone: null
+    internet_accessible: null
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms:
+    - 'workspaceToken: http bearer'
+    authorization_mechanisms: []
+- id: cmp-002
+  decision: approve
+  attach_evidence: []
+  editable:
     name: Help panel
     description: the in-product chat surface, available to every signed-in user of any workspace on any
       plan
@@ -18,7 +34,7 @@ components:
     data_classifications: []
     authentication_mechanisms: []
     authorization_mechanisms: []
-- id: cmp-002
+- id: cmp-003
   decision: approve
   attach_evidence: []
   editable:
@@ -34,7 +50,7 @@ components:
     data_classifications: []
     authentication_mechanisms: []
     authorization_mechanisms: []
-- id: cmp-003
+- id: cmp-004
   decision: approve
   attach_evidence: []
   editable:
@@ -50,7 +66,7 @@ components:
     data_classifications: []
     authentication_mechanisms: []
     authorization_mechanisms: []
-- id: cmp-004
+- id: cmp-005
   decision: approve
   attach_evidence: []
   editable:
@@ -66,7 +82,7 @@ components:
     data_classifications: []
     authentication_mechanisms: []
     authorization_mechanisms: []
-- id: cmp-005
+- id: cmp-006
   decision: approve
   attach_evidence: []
   editable:
@@ -139,8 +155,8 @@ data_flows:
     authentication: unknown
     encryption_in_transit: unknown
     internet_exposed: null
-    source_component_id: cmp-001
-    destination_component_id: cmp-002
+    source_component_id: cmp-002
+    destination_component_id: cmp-003
 - id: df-002
   decision: approve
   attach_evidence: []
@@ -152,8 +168,8 @@ data_flows:
     authentication: unknown
     encryption_in_transit: unknown
     internet_exposed: null
-    source_component_id: cmp-002
-    destination_component_id: cmp-003
+    source_component_id: cmp-003
+    destination_component_id: cmp-004
 - id: df-003
   decision: approve
   attach_evidence: []
@@ -165,8 +181,8 @@ data_flows:
     authentication: unknown
     encryption_in_transit: tls
     internet_exposed: null
-    source_component_id: cmp-002
-    destination_component_id: cmp-005
+    source_component_id: cmp-003
+    destination_component_id: cmp-006
 - id: df-004
   decision: approve
   attach_evidence: []
@@ -178,8 +194,8 @@ data_flows:
     authentication: unknown
     encryption_in_transit: unknown
     internet_exposed: null
-    source_component_id: cmp-004
-    destination_component_id: cmp-003
+    source_component_id: cmp-005
+    destination_component_id: cmp-004
 trust_boundaries:
 - id: tb-001
   decision: approve
@@ -198,13 +214,38 @@ claims:
   confirm: false
   attach_evidence: []
   evidence:
+  - evd-016
+  editable:
+    predicate: declared_security_schemes
+    value: 'workspaceToken: http bearer'
+    rationale: null
+- id: ctx-002
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-015
+  editable:
+    predicate: operation_authentication
+    value: 'GET /v1/health declares `security: []` — the specification''s own affirmative statement that
+      the operation requires no authentication'
+    rationale: null
+- id: ctx-003
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
   - evd-002
   editable:
     predicate: retrieval_authorization
     value: all workspaces are served from one shared index; a query returns the top eight passages ranked
       by embedding similarity, and relevance alone selects the passages that reach the prompt
     rationale: null
-- id: ctx-002
+- id: ctx-004
   status: documented
   confidence: high
   decision: approve
@@ -218,7 +259,7 @@ claims:
       records source and timestamp per indexed item, and help-center content passes the documentation
       team's review before the pipeline sees it
     rationale: null
-- id: ctx-003
+- id: ctx-005
   status: documented
   confidence: high
   decision: approve
@@ -232,7 +273,7 @@ claims:
       material rather than instructions, and the help panel renders answers as plain text without executing
       model output
     rationale: null
-- id: ctx-004
+- id: ctx-006
   status: documented
   confidence: high
   decision: approve
@@ -246,7 +287,7 @@ claims:
     value: workspace and user identifiers are stripped before requests; the provider's terms for this
       traffic exclude training on submitted content; requests are sent over TLS
     rationale: null
-- id: ctx-005
+- id: ctx-007
   status: documented
   confidence: high
   decision: approve
@@ -254,21 +295,21 @@ claims:
   attach_evidence: []
   evidence:
   - evd-004
-  - evd-007
+  - evd-012
   editable:
     predicate: source_retention
     value: resolved tickets are retained on the support platform for two years and then deleted under
       a schedule agreed with customers; the index is the only copy of the embeddings and the nightly run
       replaces changed chunks by source reference
     rationale: null
-- id: ctx-006
+- id: ctx-008
   status: documented
   confidence: high
   decision: approve
   confirm: false
   attach_evidence: []
   evidence:
-  - evd-008
+  - evd-013
   editable:
     predicate: content_sensitivity
     value: ticket text sometimes quotes configuration snippets customers pasted into support conversations,
@@ -276,4 +317,16 @@ claims:
     rationale: null
 contradictions: []
 additions: []
-questions: []
+questions:
+- id: qst-001
+  question: No actor in the context is anonymous or external. If the system is reachable from outside,
+    who reaches it? If it is not, what establishes that?
+  priority: medium
+  blocking: false
+  answer: null
+- id: qst-002
+  question: No actor in the context is administrative or privileged. Who operates and configures the system,
+    and through what?
+  priority: medium
+  blocking: false
+  answer: null

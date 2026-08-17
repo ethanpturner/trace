@@ -8,7 +8,7 @@
         "methodology": "stride-scenario-based",
         "category": ["information_disclosure"],
         "threat_actor_ids": ["act-001"],
-        "affected_component_ids": ["cmp-002", "cmp-003"],
+        "affected_component_ids": ["cmp-003", "cmp-004"],
         "affected_asset_ids": ["ast-001"],
         "related_data_flow_ids": ["df-002"],
         "preconditions": [
@@ -23,7 +23,7 @@
         "impact": "One workspace's support-ticket content, including pasted configuration, is disclosed to users of another workspace.",
         "likelihood": null,
         "confidence": "high",
-        "evidence_ids": ["evd-002", "evd-008"]
+        "evidence_ids": ["evd-002", "evd-013"]
       },
       {
         "title": "Indexed ticket text steers answers for other workspaces",
@@ -31,7 +31,7 @@
         "methodology": "stride-scenario-based",
         "category": ["tampering"],
         "threat_actor_ids": ["act-002"],
-        "affected_component_ids": ["cmp-003", "cmp-004"],
+        "affected_component_ids": ["cmp-004", "cmp-005"],
         "affected_asset_ids": ["ast-001"],
         "related_data_flow_ids": ["df-004", "df-002"],
         "preconditions": [
@@ -45,7 +45,7 @@
         "impact": "Attacker-authored text is placed in other workspaces' prompts wearing the system's citation authority.",
         "likelihood": null,
         "confidence": "medium",
-        "evidence_ids": ["evd-002", "evd-003", "evd-007"]
+        "evidence_ids": ["evd-002", "evd-003", "evd-012"]
       }
     ]
   }

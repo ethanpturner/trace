@@ -22,4 +22,8 @@ silence. It exists to make the 0.2 catalog's retrieval-augmentation requirements
 - `evaluation-contract.yaml` — matching policy; authored against catalog 0.2.
 - `reviewer-notes.md` — the judgment guide used when authoring the recorded decisions.
 
+`../input/openapi.yaml` additionally exercises the DEC-070 OpenAPI parser (#504): the declared
+API component and its `security: []` claim are seeded deterministically and decided at
+checkpoint 1 alongside the agent's proposal.
+
 Every file is authored; the recorded run under `../recorded/` replays offline against it.

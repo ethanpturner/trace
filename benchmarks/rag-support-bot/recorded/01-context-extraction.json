@@ -63,7 +63,7 @@
         "status": "documented",
         "confidence": "high",
         "rationale": null,
-        "evidence_ids": ["evd-004", "evd-007"]
+        "evidence_ids": ["evd-004", "evd-012"]
       },
       {
         "key": "clm_ticket_content",
@@ -74,7 +74,7 @@
         "status": "documented",
         "confidence": "high",
         "rationale": null,
-        "evidence_ids": ["evd-008"]
+        "evidence_ids": ["evd-013"]
       }
     ],
     "components": [
@@ -91,7 +91,7 @@
         "data_classifications": [],
         "authentication_mechanisms": [],
         "authorization_mechanisms": [],
-        "evidence_ids": ["evd-002", "evd-008"]
+        "evidence_ids": ["evd-002", "evd-013"]
       },
       {
         "key": "cmp_answer",
@@ -106,7 +106,7 @@
         "data_classifications": [],
         "authentication_mechanisms": [],
         "authorization_mechanisms": [],
-        "evidence_ids": ["evd-002", "evd-006"]
+        "evidence_ids": ["evd-002", "evd-011"]
       },
       {
         "key": "cmp_index",
@@ -121,7 +121,7 @@
         "data_classifications": [],
         "authentication_mechanisms": [],
         "authorization_mechanisms": [],
-        "evidence_ids": ["evd-002", "evd-007"]
+        "evidence_ids": ["evd-002", "evd-012"]
       },
       {
         "key": "cmp_ingestion",
@@ -171,7 +171,7 @@
         "trust_level": null,
         "capabilities": ["authors the ticket text that the nightly export indexes, including pasted configuration snippets"],
         "authentication_method": null,
-        "evidence_ids": ["evd-007", "evd-008"]
+        "evidence_ids": ["evd-012", "evd-013"]
       }
     ],
     "assets": [
@@ -186,7 +186,7 @@
         "data_classification": null,
         "owner": null,
         "component_keys": ["cmp_index"],
-        "evidence_ids": ["evd-007", "evd-008"]
+        "evidence_ids": ["evd-012", "evd-013"]
       },
       {
         "key": "ast_articles",
