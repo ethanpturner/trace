@@ -1,0 +1,35 @@
+# Relay Answers expected findings
+#
+# One finding: cross-workspace retrieval from the shared index. The architecture overview
+# affirmatively states one shared index serves all workspaces and that relevance alone selects
+# the passages that reach the prompt -- a documented absence of an entitlement filter, which is
+# what separates a finding from a gap (DEC-009). The scenario exists to exercise the catalog's
+# retrieval-augmentation requirements (#489, DEC-098).
+#
+# Nothing in this directory is supplied to Trace during an assessment.
+
+benchmark_version: "1.0"
+scenario: rag-support-bot
+catalog_version: "0.2"
+source: architecture-overview.md, operations-notes.md
+
+findings:
+  - key: FND-RSB-01
+    subject: retrieval is not filtered by the requester's workspace, so one tenant's ticket content reaches another tenant's answers
+    severity_guidance: high
+    requirement_id: req-RAG-002
+    affected_component: Retrieval index
+    arises_from: architecture-overview.md section 1; operations-notes.md section 3
+    evidence_establishes:
+      - All workspaces are served from one shared index, and relevance alone selects the
+        passages that reach the prompt.
+      - Ticket text sometimes quotes configuration snippets customers pasted, and the export's
+        masking covers email addresses only.
+    supported_by:
+      - architecture-overview.md
+      - operations-notes.md
+    notes: >
+      The statement is affirmative: the document describes selection by relevance alone from a
+      shared index. Concluding the same from silence about a filter would be the DEC-009
+      failure; this scenario provides the affirmative statement precisely so the finding is
+      defensible.

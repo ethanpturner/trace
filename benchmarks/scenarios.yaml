@@ -131,6 +131,8 @@ scenarios:
     status: authored
     category: ai-system-retrieval
     catalog_version: "0.2"
+    conditions:
+      - adversarial
 
   - slug: order-notifier
     name: Order Notifier

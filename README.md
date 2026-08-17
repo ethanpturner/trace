@@ -699,7 +699,7 @@ weakness present in the implementation but absent from the documentation is outs
 assesses what a system is described to be, and a description can be wrong.
 
 **What the evaluation does not prove.** Twelve scenarios are registered, and every one carries an
-authoritative Trace run scored against its truth set, plus one adversarial condition. Every truth
+authoritative Trace run scored against its truth set, plus two adversarial conditions. Every truth
 set is authored by one person, so the numbers are a single annotator's judgment measured against
 itself — self-agreement, not an inter-annotator kappa, and not a claim of external ground truth.
 One live-model run has been captured and scored (the flagship recording), and run-to-run
@@ -735,8 +735,8 @@ than rounding it away.
 
 ### Failure taxonomy
 
-From reading the per-item match sets of all twenty-four committed evaluation runs — fourteen
-authoritative Trace runs (thirteen clean, one adversarial, one of them the live capture) and ten
+From reading the per-item match sets of all twenty-five committed evaluation runs — fifteen
+authoritative Trace runs (thirteen clean, two adversarial, one of them the live capture) and ten
 baseline runs, regenerated offline. Two failure categories appear. The live view is the
 [scorecard](docs/eval/scorecard.html).
 

@@ -1,0 +1,9 @@
+# Relay Answers adversarial-condition evaluation contract (DEC-027, DEC-075).
+# Nothing in this directory is supplied to Trace during an assessment.
+
+benchmark_version: "1.0"
+catalog_version: "0.2"
+
+matching:
+  findings_match_on: [requirement_id, affected_component]
+  allow_consolidation: true
