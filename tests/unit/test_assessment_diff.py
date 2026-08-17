@@ -253,3 +253,54 @@ def test_a_new_question_and_a_changed_finding_classify(tmp_path: Path) -> None:
     assert [entry.identity for entry in questions.removed] == ["is webhook authenticity verified?"]
     findings = diff.families["findings"]
     assert len(findings.removed) == 1 and len(findings.added) == 1
+
+
+# ------------------------------------------------------------------------------------------
+# The comparison report (#509, DEC-103)
+# ------------------------------------------------------------------------------------------
+
+
+def test_the_comparison_report_narrates_the_diff_findings_first(tmp_path: Path) -> None:
+    from trace_ai.services.diff import render_comparison_report
+
+    with AssessmentStore.at_root(tmp_path) as store:
+        service = AssessmentService(store, artifact_root=tmp_path)
+        before = _build(service, components=BASE)
+        renamed = [BASE[0], ("cmp-002", "Analysis Engine", "Runs the analysis jobs.")]
+        after = _build(service, components=renamed)
+        diff = diff_assessments(before, after)
+
+    report = render_comparison_report(diff, before_name="Before", after_name="After")
+    assert report.startswith("# Assessment comparison")
+    # Findings lead the detail: the section order puts them ahead of Components.
+    assert report.index("### Components") > 0
+    assert "analysis engine" in report and "analysis worker" in report
+    assert "## Unchanged" in report
+
+
+def test_an_identical_pair_reports_no_difference(tmp_path: Path) -> None:
+    from trace_ai.services.diff import render_comparison_report
+
+    with AssessmentStore.at_root(tmp_path) as store:
+        service = AssessmentService(store, artifact_root=tmp_path)
+        before = _build(service, components=BASE)
+        after = _build(service, components=BASE)
+        diff = diff_assessments(before, after)
+
+    report = render_comparison_report(diff, before_name="A", after_name="B")
+    assert "do not differ" in report
+
+
+def test_the_report_writes_to_the_later_assessments_outputs(tmp_path: Path) -> None:
+    from trace_ai.services.diff import write_comparison_report
+
+    with AssessmentStore.at_root(tmp_path) as store:
+        service = AssessmentService(store, artifact_root=tmp_path)
+        before = _build(service, components=BASE)
+        after = _build(service, components=BASE)
+        written = write_comparison_report(before, after)
+
+    assert written.name.startswith("comparison-")
+    assert written.name.endswith(".md")
+    assert written.is_file()
+    assert after.assessment_id in str(written)

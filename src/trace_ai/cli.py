@@ -855,6 +855,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     diff.add_argument("before", help="the earlier assessment's identifier")
     diff.add_argument("after", help="the later assessment's identifier")
+    diff.add_argument(
+        "--report",
+        action="store_true",
+        help=(
+            "write the comparison as a Markdown report to the later assessment's outputs area "
+            "(DEC-103, future-features 13.3) instead of printing the structural diff"
+        ),
+    )
     _json_flag(diff)
 
     reset = commands.add_parser(
@@ -1492,8 +1500,19 @@ def _diff(args: argparse.Namespace, service: AssessmentService) -> int:
     Two scoped reads through two handles -- never a cross-assessment query -- and the
     conservative matching is `services/diff/`'s: this prints what came back.
     """
-    from trace_ai.services.diff import diff_assessments
+    from trace_ai.services.diff import diff_assessments, write_comparison_report
     from trace_ai.services.export import ExportError
+
+    if args.report:
+        try:
+            written = write_comparison_report(
+                service.handle(args.before), service.handle(args.after)
+            )
+        except ExportError as refused:
+            print(f"error: {refused}", file=sys.stderr)
+            return 1
+        print(f"wrote {written.name} to {args.after}'s outputs area")
+        return 0
 
     try:
         outcome = diff_assessments(service.handle(args.before), service.handle(args.after))

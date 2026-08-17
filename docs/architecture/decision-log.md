@@ -6571,3 +6571,54 @@ Tradeoffs:
 - Replay-through-fake when a test supplies a response leans on `build_model`'s rule that queued
   responses feed only the deterministic substitute; that rule is load-bearing here and is
   already pinned by the factory's own tests.
+
+## DEC-103: The assessment comparison report is the diff's narrative layer, an output artifact
+
+Date: 2026-08-17
+
+Status: Accepted
+
+Decision:
+
+**`trace diff --report` renders the structural diff as a Markdown comparison report** (promotes
+future-features 13.3). DEC-097 shipped `trace diff` with one consumer, the CLI, and structural
+output — families, fingerprints, changed field names. 13.3 is the layer a reviewer actually
+reads: what changed between two approved models, ordered so the things that change a conclusion
+come first — findings, then open questions and gaps, then threats, then context. It carries no
+prose beyond the diff and draws no conclusion the diff did not; every line is derived from the
+two approved models.
+
+**It is an output artifact, not a report.** DEC-035's sixteen-section contract and
+`templates/report-v1.md` are untouched; the comparison is Markdown written to the *later*
+assessment's `outputs/`, content-addressed like the exports — it is that assessment's account of
+what changed since the earlier one. Deterministic: the same diff renders byte-identically, so
+re-running writes a new artifact beside the old rather than overwriting, and two comparisons of
+the same pair agree.
+
+Why:
+
+- The diff had exactly one consumer and its structural shape is not what a reviewer reads; the
+  narrative layer is the reviewer-decision value the roadmap's second question asks for, and it
+  is measurable with what exists (the diff plus the corpus), which is why 13.3 promoted where
+  the other 13.x ideas did not.
+- Writing it to the later assessment's outputs, content-addressed, reuses the export family's
+  rule rather than inventing a second artifact discipline.
+
+Alternatives Considered:
+
+- A new report *format* rather than an output artifact (rejected: DEC-035 makes the report
+  Markdown-only with one owner per section, and a comparison is not the assessment's report — it
+  is a derived artifact about two assessments, exactly the export family's shape).
+- Writing to the earlier assessment, or a shared location (rejected: the comparison is the newer
+  assessment's account of its own changes; the `AssessmentHandle` boundary keeps each
+  assessment's artifacts its own, and the newer one is where a reviewer looks next).
+- A gating exit code (rejected, as for the diff itself: the report is a report, not a gate;
+  DEC-097 already settled that a gating flag is a later decision if a consumer wants one).
+
+Tradeoffs:
+
+- The report reads the diff, which does not detect renames (DEC-097): a renamed object narrates
+  as removed-and-added. The narrative inherits that conservatism, which is the honest shape —
+  the report does not claim a rename the diff refused to guess.
+- Two comparison artifacts accumulate if a pair is compared before and after an edit; content-
+  addressing keeps them distinct and append-only, the export family's accepted cost.

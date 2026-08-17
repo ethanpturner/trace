@@ -19,5 +19,16 @@ from trace_ai.services.diff.assessments import (
     FamilyDiff,
     diff_assessments,
 )
+from trace_ai.services.diff.report import (
+    render_comparison_report,
+    write_comparison_report,
+)
 
-__all__ = ["AssessmentDiff", "DiffEntry", "FamilyDiff", "diff_assessments"]
+__all__ = [
+    "AssessmentDiff",
+    "DiffEntry",
+    "FamilyDiff",
+    "diff_assessments",
+    "render_comparison_report",
+    "write_comparison_report",
+]

@@ -493,7 +493,7 @@ hash, a manifest mismatch, an unknown version.
 ## diff
 
 ```
-trace diff before after [--json]
+trace diff before after [--report] [--json]
 ```
 
 Compares two assessments' approved models (DEC-097): what was added, removed, or changed, per
@@ -503,6 +503,10 @@ changed object names the fields that moved. Threats and documentation gaps are c
 ground (their affected components and assets) and never force-paired: a guessed pairing would
 report an edit nobody made. Both sides must hold an approved context; a side without one is
 refused (exit 1). Exits 0 whether or not differences exist — the diff is a report, not a gate.
+
+`--report` writes the comparison as a Markdown artifact to the later assessment's outputs area
+(DEC-103) — findings and questions first, context after — instead of printing the structural
+diff.
 
 ## reset
 
