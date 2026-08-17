@@ -365,6 +365,12 @@ and never the content that changed.
 TM-BOM document, written to the assessment's outputs area. Exits 0, or 1 when the export is
 refused (for example, with no approved context).
 
+**export mermaid** — `trace export mermaid <assessment_id>`. Exports the approved architecture
+as a deterministic Mermaid flowchart source (`.mmd`) in the assessment's outputs area:
+components as nodes, actors as external entities, data flows as labelled edges (an unknown
+direction renders undirected), trust boundaries as subgraphs. Never model-drawn, never embedded
+in the report. Exits 0, or 1 when refused.
+
 **export sarif** — `trace export sarif <assessment_id>`. Exports the approved findings as a
 SARIF 2.1.0 log, written to the assessment's outputs area. A finding's level follows the
 reviewer-assigned severity; a documentation gap exports as kind `review` at level `none` — it

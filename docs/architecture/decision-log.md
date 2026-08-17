@@ -4783,6 +4783,16 @@ Open Questions:
 - Does the TM-BOM serializer round-trip — can Trace *read* a TM-BOM file as structured input
   (DEC-070's family) — or is export one-way?
 
+Amendment (2026-08-17, #503): **Mermaid is built**, third in the order as decided, closing the
+family's build-out (CycloneDX stays deferred until a consumer exists). The constraints held as
+written: deterministic from approved `Component` and `DataFlow` (plus approved actors as
+external entities and trust boundaries as subgraphs over their inside components), never
+model-drawn, a standalone content-addressed `.mmd` in `outputs/`, and not embedded in the
+report. Labels are escaped so an approved name cannot become diagram syntax, and an `unknown`
+flow direction renders undirected — a directed arrow would draw a claim nobody made. This also
+discharges future-features 13.2 (Architecture Visualization): the visualization reflects
+reviewer-approved state because it is derived from nothing else.
+
 Amendment (2026-08-17, #487): **SARIF is built**, second in the order as decided, and its
 mapping decisions are recorded here rather than in a fresh entry because the decision — the
 family, its order, its post-approval rule — was already made. An approved `Finding` is a result

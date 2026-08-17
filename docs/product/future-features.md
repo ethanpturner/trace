@@ -975,7 +975,14 @@ This is likely valuable for both the demo and eventual product.
 
 ## 13.2 Architecture Visualization
 
-**Status:** Candidate
+**Status:** Built (DEC-072 amendment, issue #503)
+
+`trace export mermaid` renders the approved architecture as a deterministic Mermaid DFD —
+components, actors, labelled flows, trust boundaries as subgraphs — derived from
+reviewer-approved state and nothing else. Interactive or styled visualization beyond the
+diagram source remains future work.
+
+The original sketch follows.
 
 Render components, data flows, assets, and trust boundaries from the approved structured context.
 
