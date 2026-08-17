@@ -114,7 +114,7 @@ from trace_ai.workflow.limits import LimitExceededError
 from trace_ai.workflow.phases import Phase
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping, Sequence
+    from collections.abc import Iterable, Mapping, Sequence
     from decimal import Decimal
     from pathlib import Path
 
@@ -689,6 +689,20 @@ def build_parser() -> argparse.ArgumentParser:
         help="who scored the report (default: the operating-system username, DEC-023)",
     )
 
+    ledger = commands.add_parser(
+        "ledger",
+        help="print an assessment's per-run, per-node token and cost breakdown",
+        description=(
+            "Prints what the execution ledger recorded for each workflow run: one line per "
+            "model-assisted node with its calls, the DEC-067 token spans kept disjoint (uncached "
+            "input, cache reads, cache writes, output), duration, and estimated cost, and a "
+            "total line per run. Absent means the provider reported nothing -- an offline replay "
+            "of a recording without captured usage prints dashes, never zeros pretending to be "
+            "measurements."
+        ),
+    )
+    ledger.add_argument("assessment_id")
+
     reset = commands.add_parser(
         "reset",
         help="return the data root to the fresh-clone state",
@@ -837,6 +851,7 @@ def run(argv: Sequence[str] | None = None) -> int:
         ("findings", "approve"): _findings_approve,
         ("report", "show"): _report_show,
         ("report", "rubric"): _report_rubric,
+        ("ledger", None): _ledger,
     }
 
     if args.group is None:
@@ -1043,6 +1058,93 @@ def _assessment_status(args: argparse.Namespace, service: AssessmentService) -> 
     print(f"checkpoint:       {pending.checkpoint_type.value}")
     print(f"awaiting:         {len(pending.object_ids)} object(s)")
     return 0
+
+
+def _ledger(args: argparse.Namespace, service: AssessmentService) -> int:
+    """Per-run, per-node spend from the execution ledger (#483).
+
+    Prints what the records already carry and computes nothing new: the DEC-067 token spans stay
+    disjoint, and a field no record reported prints as a dash. Zero and absent are different
+    answers — an offline replay of a recording without captured usage measured nothing, and
+    printing 0 would claim it did.
+    """
+    from trace_ai.domain.execution import ExecutionRecord, ExecutionType
+
+    handle = service.handle(args.assessment_id)
+    runs = handle.objects.list(WorkflowRun)
+    if not runs:
+        print("no workflow run has started")
+        return 0
+
+    records_by_run: dict[str, list[ExecutionRecord]] = {}
+    for record in handle.objects.list(ExecutionRecord):
+        records_by_run.setdefault(record.workflow_run_id, []).append(record)
+
+    for run in runs:
+        cost = run.estimated_cost if run.estimated_cost is not None else "-"
+        print(f"run {run.id}  status: {run.status}  model calls: {run.total_model_calls}")
+        model_records = [
+            record
+            for record in records_by_run.get(run.id, [])
+            if record.execution_type is ExecutionType.MODEL
+        ]
+        if not model_records:
+            print("  no model-assisted executions recorded")
+            print()
+            continue
+
+        nodes: dict[str, list[ExecutionRecord]] = {}
+        for record in model_records:
+            nodes.setdefault(record.node_name, []).append(record)
+
+        header = (
+            f"  {'node':<28}{'calls':>6}{'input':>10}{'cache-read':>12}"
+            f"{'cache-write':>13}{'output':>9}{'seconds':>9}  cost"
+        )
+        print(header)
+        for name, rows in nodes.items():
+            print(
+                f"  {name:<28}{len(rows):>6}"
+                f"{_summed(row.input_tokens for row in rows):>10}"
+                f"{_summed(row.cache_read_tokens for row in rows):>12}"
+                f"{_summed(row.cache_creation_tokens for row in rows):>13}"
+                f"{_summed(row.output_tokens for row in rows):>9}"
+                f"{_seconds(rows):>9}"
+                f"  {_summed_cost(rows)}"
+            )
+        print(
+            f"  {'total':<28}{len(model_records):>6}"
+            f"{_summed(row.input_tokens for row in model_records):>10}"
+            f"{_summed(row.cache_read_tokens for row in model_records):>12}"
+            f"{_summed(row.cache_creation_tokens for row in model_records):>13}"
+            f"{_summed(row.output_tokens for row in model_records):>9}"
+            f"{_seconds(model_records):>9}"
+            f"  {cost}"
+        )
+        print()
+    return 0
+
+
+def _summed(values: Iterable[int | None]) -> str:
+    """The sum of the reported values, or a dash when nothing was reported.
+
+    A mix sums what was reported: one measured record beside an unmeasured one is a partial
+    measurement, which is still a measurement — the per-node lines say which rows carried it.
+    """
+    reported = [value for value in values if value is not None]
+    return str(sum(reported)) if reported else "-"
+
+
+def _summed_cost(rows: Sequence[Any]) -> str:
+    from decimal import Decimal
+
+    reported = [row.estimated_cost for row in rows if row.estimated_cost is not None]
+    return str(sum(reported, start=Decimal(0))) if reported else "-"
+
+
+def _seconds(rows: Sequence[Any]) -> str:
+    reported = [row.duration_ms for row in rows if row.duration_ms is not None]
+    return f"{sum(reported) / 1000:.1f}" if reported else "-"
 
 
 def _pending_review(handle: AssessmentHandle, workflow_run_id: str) -> PendingHumanReview | None:

@@ -15,7 +15,10 @@ baselines, ablations, the adversarial condition, and a CI-checked scorecard.
 
 Every model call in `src/` goes through the seam, and no default test makes one: everything runs
 against `DeterministicModel`, and `--model-profile offline-fake --response recorded.json` is a
-supported way to run the pipeline without a provider. No live provider run has been measured.
+supported way to run the pipeline without a provider. Live measurement exists but is thin: the
+flagship ForgeFlow recording is a live capture, and the DEC-077 stability protocol has run once —
+five completed `claude-opus-5` runs of one scenario at $6.92 ± $3.28 each (DEC-092). Everything
+else replays offline, and the eleven other benchmark recordings are authored, not captured.
 
 Read `README.md` for the full picture. The authoritative design lives in `docs/architecture/` and
 `docs/product/` — all plain Markdown, all marked *Proposed, version 0.1*.

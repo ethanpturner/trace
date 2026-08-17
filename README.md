@@ -239,9 +239,9 @@ decomposition into milestones M6 through M9, the assembly (M6), evaluation (M7),
 (M8) milestones: the pipeline the earlier stages specified runs end to end from the command line
 and measures itself offline. The demo-hardening (M10), decision-debt (M12), and
 surface-completion (M13) milestones are closed, and the evaluation milestone (M11) is closed but
-for the recorded prompt- and model-comparison protocols. What remains open is Stage 6's public
-portfolio half of M9: the demo video, the architecture image, the interview package, and the
-presentation folder.
+for the recorded prompt- and model-comparison protocols. Of Stage 6's public portfolio half of
+M9, the architecture image, the interview package, and the presentation folder have landed; what
+remains open is the narrated demo video.
 
 ### What exists today
 
