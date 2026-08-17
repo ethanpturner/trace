@@ -1,0 +1,29 @@
+openapi: 3.1.0
+info:
+  title: Relay Answers API
+  version: "1.2"
+  description: >
+    The in-product surface the help panel calls. One operation asks a question;
+    the workspace token identifies the caller's workspace.
+paths:
+  /v1/answers:
+    post:
+      summary: Ask a question and receive a cited answer
+      responses:
+        "200":
+          description: The answer with the source reference of each cited passage
+  /v1/health:
+    get:
+      summary: Liveness probe for the deployment beside the Relay API
+      security: []
+      responses:
+        "200":
+          description: OK
+components:
+  securitySchemes:
+    workspaceToken:
+      type: http
+      scheme: bearer
+      description: The signed-in user's workspace-scoped session token.
+security:
+  - workspaceToken: []

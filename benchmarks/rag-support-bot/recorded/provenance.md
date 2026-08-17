@@ -25,6 +25,11 @@ catalog's retrieval-augmentation requirements:
 - **Two rejections by construction** (req-AI-001, req-RAG-001): prompt fencing and the governed
   corpus write path are documented, the mappings assess as satisfied, and no finding is built —
   the false positives the baselines commit and the pipeline's structure refuses.
+- **The DEC-070 OpenAPI parser** (#504): `input/openapi.yaml` seeds the declared API component
+  — entry-point types, the bearer scheme as an authentication mechanism, and the documented
+  claim that `GET /v1/health` explicitly disables authentication (`security: []`) — before the
+  agent runs, so the recorded extraction extends the parsed baseline rather than re-deriving
+  it. The parser's objects are decided at checkpoint 1 with everything else.
 
 | | |
 |---|---|
