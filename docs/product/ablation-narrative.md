@@ -95,7 +95,7 @@ number is the anti-pattern the research names, and utility-under-attack and atta
 different questions. That three payload classes fail by construction is the structural argument —
 the attack has nothing to act on because the fence and the checkpoints are not a filter a payload
 can talk past — while the compliance rate measures the classes that are not structural. Zero is the
-measured result on one adversarial scenario, not a general claim.
+measured result on two adversarial scenarios, not a general claim.
 
 ## The framework that was evaluated and not adopted
 
@@ -119,7 +119,7 @@ these systems usually use.
 **Measured.** On three deterministic offline scenarios: evidence validation is load-bearing (its
 removal misses a true finding); the critic and the context checkpoint move no finding-accuracy
 metric; Trace produces no spurious finding where a generic baseline produces five; every Trace
-finding is evidence-linked and no baseline finding can be; and one adversarial scenario shows
+finding is evidence-linked and no baseline finding can be; and two adversarial scenarios show
 preserved utility with 0% injected-instruction compliance.
 
 **Interpretation.** These are the strongest claims the current corpus supports and no stronger. No
