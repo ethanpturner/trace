@@ -87,6 +87,7 @@ __all__ = [
     "RecordingModel",
     "capture_data_root",
     "capture_dir",
+    "stage_baseline",
     "stage_extract",
     "stage_reason",
     "stage_report",
@@ -545,3 +546,65 @@ def stage_report(
         }
         print(json.dumps(summary, indent=2))
         print(f"verify the round trip, then promote {staging.name}/ into recorded/")
+
+
+def stage_baseline(
+    scenario: Scenario,
+    *,
+    baseline: str,
+    profile_name: str,
+    response: object | None = None,
+) -> None:
+    """Capture one baseline recording from a live call, staged beside the pipeline stages.
+
+    The DEC-074 baseline is one model call, so the stage is one file:
+    `capture/baselines/baseline-<name>.json`, shaped exactly as `recorded/baselines/` holds it
+    and the replay reads it. The call runs through `run_baseline`, so the capture is also scored
+    against the truth set immediately — a captured baseline whose quality is unknown would be a
+    recording nobody can judge. The same guards as the pipeline stages: an existing staged file
+    refuses the re-spend (exit 3), and the fake provider is refused before the call.
+
+    `response` is the test seam, mirroring the pipeline stages' `live`: a supplied
+    `BaselineFindings` replays instead of spending, and the fake-provider refusal is waived.
+    """
+    from trace_ai.domain.proposals.baseline import BaselineFindings
+    from trace_ai.infrastructure.model.profiles import resolve_profile
+    from trace_ai.services.evaluation.baselines import run_baseline
+
+    name = baseline if baseline.startswith("baseline-") else f"baseline-{baseline}"
+    staging = capture_dir(scenario) / "baselines" / f"{name}.json"
+    if staging.exists():
+        raise CaptureRefusedError(
+            f"{staging} exists; a re-run would re-spend the call. Remove it to re-capture."
+        )
+    profile = resolve_profile(profile_name)
+    if response is None and profile.provider == "fake":
+        raise CaptureError(
+            f"a capture spends live provider calls; profile {profile.name!r} names the fake "
+            f"provider, which would record the deterministic substitute replay already has"
+        )
+    if response is not None and not isinstance(response, BaselineFindings):
+        raise CaptureError("response must be a BaselineFindings when supplied")
+
+    # A supplied response replays through the fake provider -- build_model feeds queued
+    # responses only to the deterministic substitute, and a real adapter ignores them (its
+    # docstring says why: a caller that could feed a live provider could silently stop calling
+    # it). The profile prices the live path only.
+    outcome = run_baseline(
+        scenario.slug,
+        name,
+        label="capture",
+        profile_name="offline-fake" if response is not None else profile_name,
+        response=response if isinstance(response, BaselineFindings) else None,
+        record_to=staging,
+    )
+    if not outcome.schema_valid:
+        raise CaptureError(
+            f"the {baseline} baseline call did not produce a schema-valid response; nothing was "
+            f"recorded, and the schema failure is the scored result in {outcome.feed_path}"
+        )
+    print(
+        f"  recorded {staging.name}  (matched {len(outcome.matched)}, "
+        f"missed {len(outcome.missed)}, spurious {len(outcome.spurious)})"
+    )
+    print(f"verify the scoring, then promote {staging.parent.name}/ into recorded/baselines/")

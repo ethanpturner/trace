@@ -6487,3 +6487,53 @@ Tradeoffs:
 - Growing the catalog further now means 0.3: the pack's remaining half (fine-tuning and
   training-data supply chains, DEC-098's deferral) pays the minor-version cost when it lands,
   which is exactly the cost DEC-057 designed it to pay.
+
+## DEC-100: Baseline recordings are captured, not only authored
+
+Date: 2026-08-17
+
+Status: Accepted
+
+Decision:
+
+**`trace capture <scenario> baseline-generic|baseline-structured` captures a DEC-074 baseline
+recording from one live call.** DEC-091 promoted pipeline capture to a command and left the
+baselines out; the five scenarios carrying `recorded/baselines/` got them by hand, and #484's
+"live baselines" clause was hard-blocked on there being no capture path at all. The stage is one
+call and one file — `capture/baselines/baseline-<name>.json`, the bare `BaselineFindings` shape
+the replay already reads (the baseline path predates the #461 envelope and keeps its shape) —
+staged beside the pipeline stages with the same promote-by-copy rule.
+
+**A captured baseline is scored immediately.** The stage runs through `run_baseline`, so the
+same call that records also scores against the truth set and writes a feed; the operator sees
+matched/missed/spurious before deciding to promote. A recording nobody judged would be a
+recording nobody can trust, and the baseline exists to be compared.
+
+**The same guards as the pipeline stages, plus one honest asymmetry.** An existing staged file
+refuses the re-spend (exit 3, DEC-088); the fake provider is refused before the call; a
+schema-invalid response records nothing — the schema failure is the scored result, in the feed,
+because DEC-074 counts schema validity as a baseline metric rather than a retryable fault.
+Baseline capture opens no store and needs no data root: the DEC-074 baseline is deliberately
+storeless, and the capture inherits that.
+
+Why:
+
+- The keyed gate (#484, #331, #332) includes live baselines, and every other capture need had a
+  command; this was the last hand-authoring step between a provider key and the gate clearing.
+
+Alternatives Considered:
+
+- Wrapping the baseline call in the #461 envelope with usage (rejected for now: the replay path
+  reads the bare shape, and reshaping the five committed recordings plus the reader to gain
+  usage on a single-call artifact is a separate, smaller decision — the pipeline ledger is
+  where spend accounting lives).
+- A separate `trace baseline capture` command (rejected: capture is one surface with stages,
+  and a second top-level command would restate the same guards and the same staging rule).
+
+Tradeoffs:
+
+- The stage list on `trace capture` now mixes pipeline stages with baseline stages; the help
+  text says which is which, and the alternative was a second command surface.
+- Replay-through-fake when a test supplies a response leans on `build_model`'s rule that queued
+  responses feed only the deterministic substitute; that rule is load-bearing here and is
+  already pinned by the factory's own tests.

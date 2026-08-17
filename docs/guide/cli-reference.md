@@ -401,8 +401,8 @@ Exits 0 on a scored run, 1 on a refusal or error.
 ## capture
 
 ```
-trace capture scenario {extract,reason,report} [--from-recorded]
-              [--model-profile MODEL_PROFILE]
+trace capture scenario {extract,reason,report,baseline-generic,baseline-structured}
+              [--from-recorded] [--model-profile MODEL_PROFILE]
 ```
 
 Captures a registered scenario's recording from a live model run (DEC-091). Every response the
@@ -418,6 +418,9 @@ The three stages pause where a person authors checkpoint decisions:
   and exports `findings-export.yaml`; author `decisions-findings.yaml` from it.
 - `report` applies the authored finding decisions, runs to completion, and writes
   `report-hash.txt` — the value the replay must reproduce before the capture is promoted.
+- `baseline-generic` and `baseline-structured` each make the one DEC-074 baseline call, stage
+  its recording under `capture/baselines/`, and score it against the truth set immediately.
+  Promotion is a copy into `recorded/baselines/`.
 
 Decisions are authored per capture, against the run's own objects; a previous capture's committed
 decision files answer its replay, not a new live run. `--from-recorded` resumes an interrupted
