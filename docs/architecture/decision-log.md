@@ -6572,6 +6572,67 @@ Tradeoffs:
   responses feed only the deterministic substitute; that rule is load-bearing here and is
   already pinned by the factory's own tests.
 
+## DEC-102: Severity concordance is measured against the truth set's guidance, without a second reviewer
+
+Date: 2026-08-17
+
+Status: Accepted
+
+Decision:
+
+**A `severity_concordance` benchmark metric answers DEC-030's open question.** DEC-030 assigned
+severity to the reviewer at checkpoint 2 and recorded, as a standing gap, that "nothing now
+measures severity at all" — and asked specifically for a metric that does not require a second
+reviewer. The data to answer it was already committed: every scenario's
+`expected-findings.yaml` carries `severity_guidance` per finding, and every replayed run carries
+the reviewer's assigned severity. For each matched finding whose expectation carries scalar
+guidance, the metric compares the two: the value is the exact-agreement rate, and the notes
+carry the within-one-level rate beside it. It is a benchmark metric
+(`EvaluatorType.BENCHMARK`), computed by `metrics.py` and surfaced in the scorecard's
+reserved-metrics table.
+
+**It measures agreement, not correctness.** Severity is a risk judgment in business context
+(DEC-030), and the guidance is one author's judgment, not ground truth — the metric's method and
+notes say so. What it detects is drift between the reviewer playing the checkpoint and the
+authored guidance, which is exactly the signal DEC-030 wanted: whether the blank-field
+checkpoint produces severities anyone can predict. A scenario whose matched findings carry no
+scalar guidance (ForgeFlow's `medium-or-high`, or a live run matching none of its truth)
+measures nothing here and reports `None` — absence of guidance is not a spurious zero.
+
+**A consolidated finding is held to the strictest guidance it stands for.** When one finding
+matches several expectations, under-rating the worst weakness it represents is the error that
+matters, so the toughest guidance among its matches is the bar. `unassigned` never appears —
+the approval gate refuses it (DEC-030).
+
+Why:
+
+- DEC-030 named the metric it wanted and the constraint (no second reviewer); the guidance
+  field existed for exactly this and had no consumer. Leaving a decided-open question
+  answerable-with-committed-data unanswered is the kind of gap the roadmap's stop conditions name.
+- It is the honest input future-features 7.7 (automatic severity calculation) would need before
+  it could leave Research: 7.7 stays out (DEC-030 excluded a severity agent, and "new agents
+  without measured benefit" is a stop condition), and this metric is the evidence that would one
+  day argue for or against it.
+
+Alternatives Considered:
+
+- A severity agent proposing the value (rejected: DEC-030 excluded it, and this delivers the
+  measurable half without one).
+- Scoring only exact agreement (rejected as the sole signal: a one-level miss and a three-level
+  miss are different failures, so the within-one-level rate rides in the notes).
+- Requiring a second annotator for a true concordance (rejected: DEC-004 is single-user, and
+  DEC-030 asked precisely for a metric that does not need one; agreement-with-guidance is what
+  a single reviewer can be measured against).
+
+Tradeoffs:
+
+- Guidance is one author's judgment, so a low score can mean the reviewer erred or the guidance
+  did; the metric flags divergence for a human to read, and does not adjudicate it. The method
+  string says "agreement, not correctness" so no reader mistakes it for the latter.
+- Scenarios with non-scalar guidance contribute nothing, so the metric's sample is smaller than
+  the finding count; the sample size rides on every result, and the reserved-metrics column
+  reads `—` where a scenario measures nothing.
+
 ## DEC-103: The assessment comparison report is the diff's narrative layer, an output artifact
 
 Date: 2026-08-17

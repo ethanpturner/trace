@@ -142,6 +142,7 @@ def test_the_history_contains_metrics_and_identifiers_only(tmp_path: Path) -> No
         "question_usefulness",
         "unsupported_claim_rate",
         "token_usage",
+        "severity_concordance",
     }
 
 
