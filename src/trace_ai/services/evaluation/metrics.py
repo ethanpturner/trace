@@ -73,6 +73,55 @@ def _normalized(name: str) -> str:
     return " ".join(name.split()).casefold()
 
 
+_SEVERITY_RANK: dict[str, int] = {
+    "informational": 0,
+    "low": 1,
+    "medium": 2,
+    "high": 3,
+    "critical": 4,
+}
+
+
+def _severity_concordance(
+    approved: list[Finding],
+    expected_findings: list[dict[str, Any]],
+    matched: dict[str, list[str]],
+) -> tuple[int, int, int] | None:
+    """Reviewer severity against the truth set's guidance, over matched findings (#507, DEC-030).
+
+    Returns `(matched_with_guidance, exact_agreements, within_one_level)`, or `None` when no
+    matched finding carries guidance — a scenario without `severity_guidance` measures nothing
+    here rather than scoring a spurious zero. A finding matching more than one expectation is
+    held to the strictest guidance among them: under-rating the worst thing it stands for is the
+    error that matters. `unassigned` cannot appear — the approval gate refuses it (DEC-030).
+    """
+    guidance_by_key = {
+        str(entry["key"]): str(entry["severity_guidance"])
+        for entry in expected_findings
+        if entry.get("severity_guidance")
+    }
+    by_id = {finding.id: finding for finding in approved}
+    matched_count = exact = adjacent = 0
+    for key, finding_ids in matched.items():
+        guidance = guidance_by_key.get(key)
+        if guidance is None or guidance not in _SEVERITY_RANK:
+            continue
+        wanted = _SEVERITY_RANK[guidance]
+        for finding_id in finding_ids:
+            finding = by_id.get(finding_id)
+            if finding is None or finding.severity.value not in _SEVERITY_RANK:
+                continue
+            matched_count += 1
+            assigned = _SEVERITY_RANK[finding.severity.value]
+            if assigned == wanted:
+                exact += 1
+            if abs(assigned - wanted) <= 1:
+                adjacent += 1
+    if matched_count == 0:
+        return None
+    return matched_count, exact, adjacent
+
+
 def _ratio(numerator: int, denominator: int) -> float:
     return numerator / denominator if denominator else 0.0
 
@@ -332,6 +381,33 @@ def _benchmark_metrics(
             ),
         )
     ]
+
+    concordance = _severity_concordance(approved, expected_findings, finding_matches.matched)
+    if concordance is not None:
+        matched_count, exact, adjacent = concordance
+        results.append(
+            _metric(
+                handle,
+                run.id,
+                "severity_concordance",
+                _ratio(exact, matched_count),
+                unit="percentage",
+                evaluator=EvaluatorType.BENCHMARK,
+                method=(
+                    "matched findings whose reviewer-assigned severity equals the truth set's "
+                    "severity_guidance, over matched findings with guidance (DEC-030's open "
+                    "question, answered without a second reviewer). A finding matching more "
+                    "than one expectation takes the strictest guidance among them"
+                ),
+                sample_size=matched_count,
+                notes=(
+                    f"exact: {exact}/{matched_count}; within one level: "
+                    f"{adjacent}/{matched_count}. Severity is the reviewer's judgment "
+                    f"(DEC-030); this measures agreement with the authored guidance, not "
+                    f"correctness"
+                ),
+            )
+        )
 
     expected_gaps = _expected_entries(
         expected_dir, "expected-documentation-gaps.yaml", "documentation_gaps"

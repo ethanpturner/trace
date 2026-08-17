@@ -359,3 +359,76 @@ def test_no_metric_computation_calls_a_model() -> None:
     assert "StructuredModel" not in source
     assert "anthropic" not in source
     assert "generate(" not in source
+
+
+# ------------------------------------------------------------------------------------------
+# Severity concordance (#507, DEC-030's open question)
+# ------------------------------------------------------------------------------------------
+
+
+def test_severity_concordance_is_one_when_the_reviewer_matches_the_guidance(
+    prepared: dict[str, Any],
+) -> None:
+    """FND-003's guidance is `medium`; a finding approved at medium agrees exactly."""
+    handle = prepared["handle"]
+    an_evidence(handle)
+    a_component(handle, "cmp-001", "Managed Object Storage")
+    approve_finding(
+        handle,
+        a_finding(
+            handle,
+            requirement_ids=["req-DATA-002"],
+            affected_component_ids=["cmp-001"],
+            severity=Severity.MEDIUM,
+        ),
+        reviewer_id=REVIEWER,
+    )
+
+    named = metrics_by_name(compute_metrics(handle, prepared["run"], expected_dir=EXPECTED))
+    concordance = named["severity_concordance"]
+    assert concordance.metric_value == pytest.approx(1.0)
+    assert concordance.evaluator_type is EvaluatorType.BENCHMARK
+    assert "DEC-030" in concordance.evaluation_method
+    assert concordance.sample_size == 1
+
+
+def test_severity_concordance_falls_when_the_reviewer_differs_from_the_guidance(
+    prepared: dict[str, Any],
+) -> None:
+    """Approved at informational against `medium` guidance: not exact, and not within one level."""
+    handle = prepared["handle"]
+    an_evidence(handle)
+    a_component(handle, "cmp-001", "Managed Object Storage")
+    approve_finding(
+        handle,
+        a_finding(
+            handle,
+            requirement_ids=["req-DATA-002"],
+            affected_component_ids=["cmp-001"],
+            severity=Severity.INFORMATIONAL,
+        ),
+        reviewer_id=REVIEWER,
+    )
+
+    named = metrics_by_name(compute_metrics(handle, prepared["run"], expected_dir=EXPECTED))
+    concordance = named["severity_concordance"]
+    assert concordance.metric_value == pytest.approx(0.0)
+    assert concordance.notes is not None and "within one level: 0/1" in concordance.notes
+
+
+def test_severity_concordance_is_absent_when_no_matched_finding_has_guidance(
+    prepared: dict[str, Any],
+) -> None:
+    """A matched finding whose expectation carries a non-scalar guidance measures nothing here
+    rather than scoring a spurious zero; FND-001's guidance is `medium-or-high`."""
+    handle = prepared["handle"]
+    an_evidence(handle)
+    a_component(handle, "cmp-001", "GitHub Comment Service")
+    approve_finding(
+        handle,
+        a_finding(handle, requirement_ids=["req-AI-001"], severity=Severity.HIGH),
+        reviewer_id=REVIEWER,
+    )
+
+    named = metrics_by_name(compute_metrics(handle, prepared["run"], expected_dir=EXPECTED))
+    assert "severity_concordance" not in named
