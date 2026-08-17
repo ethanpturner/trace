@@ -17,9 +17,9 @@ supports a weakness. The distinction is enforced structurally — DEC-013's outc
 route from an unverified conclusion to a finding, and the `Finding` schema refuses validation
 statuses the table produces no finding from — not by prompt phrasing.
 
-The measured version: across twelve benchmark scenarios, the generic single-prompt baseline
-invents five false positives over four scenarios; Trace's pipeline produces four candidate
-rejections over twelve, and every one of its seventeen approved findings links to hashed source
+The measured version: across thirteen benchmark scenarios, the generic single-prompt baseline
+invents seven false positives over five scenarios; Trace's pipeline produces four candidate
+rejections over thirteen, and every one of its eighteen approved findings links to hashed source
 evidence where the baselines can cite nothing even in principle (`docs/eval/comparison.md`).
 
 ## 2. Why LangGraph was evaluated and rejected

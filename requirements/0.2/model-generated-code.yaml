@@ -1,0 +1,98 @@
+# Category: model_generated_code
+# Requirements for systems that execute or integrate code a model wrote --
+# scripts run to answer a question, patches proposed against a repository,
+# configuration emitted for another system to apply. The recurring shape is
+# that generated text becomes an instruction stream for something with more
+# privilege than the model was ever meant to hold. Grounded in the GenAI
+# Security Project LLM Top 10 (2026) and OWASP AISVS chapter C10 (#489,
+# DEC-098); statements are in the documentation register so that silence
+# resolves to `unverified` (DEC-009).
+
+requirements:
+
+  - id: req-CODEGEN-001
+    catalog_version: "0.2"
+    title: Model-generated code executes in stated isolation
+    statement: >
+      Where the system executes code a model generated, the documentation must
+      describe the boundary it executes inside -- the process, filesystem,
+      network, and credential reach of the execution environment -- and how
+      that boundary differs from the trust context of the service that invoked
+      the model.
+    rationale: >
+      Generated code is model output with an interpreter attached: everything
+      untrusted about the text becomes untrusted about the execution. The
+      isolation boundary is an architectural fact -- a sandbox, a jail, a
+      separate identity with a stated reach -- and a document that describes
+      execution without describing the boundary has described a capability,
+      not a design. The service's own credentials in the sandbox's reach is
+      the failure this exists to make stateable.
+    category:
+      - model_generated_code
+      - isolation
+    applicable_conditions:
+      - code or commands a model generated are executed by the system
+      - generated queries or expressions are evaluated against live data stores
+    non_applicable_conditions:
+      - generated code is only displayed or stored, never executed by the system
+      - execution happens solely on an end user's own machine at their initiative
+    acceptable_implementations:
+      - a sandbox or container per execution with no ambient credentials and a stated network policy
+      - a dedicated low-privilege execution identity distinct from the invoking service's
+      - resource limits on execution time, memory, and output size enforced outside the model
+      - generated queries executed through parameterized, allow-listed interfaces
+    evidence_expectations:
+      - documentation of the execution environment and its reach
+      - description of the credentials, filesystem, and network available inside it
+      - sandbox or execution-service configuration
+    common_false_positives:
+      - absent formal verification of generated code where the execution boundary is documented
+      - absent human review of every execution where isolation and limits are documented
+    default_severity: critical
+    source_frameworks:
+      - "GenAI Security Project LLM Top 10: LLM05:2026"
+      - "OWASP AISVS: v1.0-C10.2.1"
+    status: active
+
+  - id: req-CODEGEN-002
+    catalog_version: "0.2"
+    title: Model-generated changes pass the same gates as human changes
+    statement: >
+      Where model-generated code, configuration, or infrastructure definitions
+      are integrated into a system -- merged, deployed, or applied -- the
+      documentation must state that they pass the same review and verification
+      gates as human-authored changes, and must name any path by which a
+      generated change reaches integration without one.
+    rationale: >
+      A review gate that generated changes bypass is not a gate; it is a
+      description of how the humans work. The pressure to exempt generated
+      changes grows with their volume, and an exemption made silently -- a
+      bot's pull requests auto-merged, generated configuration applied on a
+      schedule -- rewrites the integrity model without a decision. Whether
+      such a path exists is exactly the kind of fact design documentation can
+      state and reviewers can weigh.
+    category:
+      - model_generated_code
+      - cicd_trust
+    applicable_conditions:
+      - model-generated changes are merged into repositories or applied to systems
+      - generated artifacts feed a build, deployment, or configuration pipeline
+    non_applicable_conditions:
+      - generated output is advisory only and a person authors any resulting change
+      - the system integrates no model-generated artifacts
+    acceptable_implementations:
+      - generated pull requests subject to the same required reviews and status checks as human ones
+      - generated configuration applied only through the standard change pipeline
+      - a stated, bounded auto-merge policy naming what may merge unreviewed and why
+    evidence_expectations:
+      - documentation of the integration path for generated changes
+      - branch protection or pipeline configuration covering generated contributions
+      - a statement of any unreviewed path and its bounds
+    common_false_positives:
+      - absent security review distinct from the ordinary code review, which exceeds this expectation
+      - absent attribution of generated code spans within otherwise-reviewed changes
+    default_severity: high
+    source_frameworks:
+      - "GenAI Security Project LLM Top 10: LLM05:2026"
+      - "NIST SP 800-53 5.2.0: SA-10"
+    status: active

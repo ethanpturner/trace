@@ -141,3 +141,31 @@ def test_the_fake_profile_is_refused_before_any_side_effect(tmp_path: Path) -> N
 def test_the_default_data_root_is_named_for_the_scenario() -> None:
     scenario = Scenario(slug="tiny", name="Tiny", path=PROJECT_ROOT, status="authored")
     assert capture_data_root(scenario) == PROJECT_ROOT / "data" / "capture-tiny"
+
+
+def test_a_scenario_catalog_pin_reaches_the_assessment(tmp_path: Path) -> None:
+    """DEC-098: the registry's catalog_version pins what the scenario's assessments are
+    assessed against; absent means the loader's current version, exactly as before."""
+    from trace_ai.domain.assessment import Assessment
+
+    scenario = _scenario(tmp_path)
+    pinned = Scenario(
+        slug=scenario.slug,
+        name=scenario.name,
+        path=scenario.path,
+        status=scenario.status,
+        catalog_version="0.2",
+    )
+    stage_extract(
+        pinned,
+        profile_name=PROFILE,
+        live=_recorded("extraction"),
+        data_root=tmp_path / "capture-data",
+    )
+    from trace_ai.infrastructure.database.store import AssessmentStore
+    from trace_ai.services.assessment import AssessmentService
+
+    with AssessmentStore.at_root(tmp_path / "capture-data") as store:
+        handle = AssessmentService(store, artifact_root=tmp_path / "capture-data").handle("asm-001")
+        assessment = handle.objects.get(Assessment, "asm-001")
+    assert assessment.requirements_catalog_version == "0.2"

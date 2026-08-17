@@ -443,9 +443,10 @@ remains open is the narrated demo video.
 - **The adversarial condition** — DEC-075's poisoned-document variant with all five payload
   classes, run as an ordinary scenario condition, with the two-axis attack metrics (detection,
   and injected-instruction compliance with a target of zero) reported per payload class.
-- **The twelve benchmark scenarios** — every registered scenario carries a full outcome truth
-  set and an offline recording, every roadmap Stage 5 coverage category has a scenario, and
-  `trace evaluate --all` runs the register with nothing skipped.
+- **The thirteen benchmark scenarios** — every registered scenario carries a full outcome truth
+  set and an offline recording, every roadmap Stage 5 coverage category has a scenario — the
+  thirteenth (rag-support-bot, DEC-098) exercises the 0.2 catalog's AI-system requirements —
+  and `trace evaluate --all` runs the register with nothing skipped.
 - **The M12 decision debt, closed** — DEC-057 through DEC-072 (risk treatment, episodic revisit,
   routing reasons, the STRIDE coverage baseline, the precedent feed, catalog-gap candidates,
   fingerprints, cache accounting, context extensions, profile overlays, parsers, the coverage
@@ -734,20 +735,20 @@ than rounding it away.
 
 ### Failure taxonomy
 
-From reading the per-item match sets of all twenty-one committed evaluation runs — thirteen
-authoritative Trace runs (twelve clean, one adversarial, one of them the live capture) and eight
+From reading the per-item match sets of all twenty-four committed evaluation runs — fourteen
+authoritative Trace runs (thirteen clean, one adversarial, one of them the live capture) and ten
 baseline runs, regenerated offline. Two failure categories appear. The live view is the
 [scorecard](docs/eval/scorecard.html).
 
 | Failure mode | Frequency | Observed in |
 |---|---|---|
-| **Live run answers beside the truth set** — the captured `claude-opus-5` run produces four approved, defensible findings that match none of the three expected, for 0 of 3 matched with 4 spurious by the structural matcher: the model mapped real weaknesses to different requirements than the truth set names. This is the live-model failure mode the offline recordings could not show. | 1 of 13 authoritative Trace runs | forgeflow (clean, live capture) |
-| **Silence read as a weakness** — the generic-prompt baseline invents a finding where the documentation is simply quiet: missing MFA and password policy an inherited identity provider covers, an encryption detail a managed database supplies, absent replay protection, unencrypted exports. This is the DEC-009 failure the pipeline exists to prevent. | 5 spurious findings across 4 runs | baseline-generic on oidc-portal (2), managed-db-service (1), contradictory-docs (1), unsigned-webhooks (1) |
+| **Live run answers beside the truth set** — the captured `claude-opus-5` run produces four approved, defensible findings that match none of the three expected, for 0 of 3 matched with 4 spurious by the structural matcher: the model mapped real weaknesses to different requirements than the truth set names. This is the live-model failure mode the offline recordings could not show. | 1 of 14 authoritative Trace runs | forgeflow (clean, live capture) |
+| **Silence read as a weakness** — a baseline invents a finding where the documentation is simply quiet: missing MFA and password policy an inherited identity provider covers, an encryption detail a managed database supplies, absent replay protection, unencrypted exports, index retention concluded to violate a schedule nothing states it violates. This is the DEC-009 failure the pipeline exists to prevent, and on the retrieval scenario even the structured baseline commits it — structure alone does not stop silence being read as absence. | 8 spurious findings across 6 runs | baseline-generic on oidc-portal (2), managed-db-service (1), contradictory-docs (1), unsigned-webhooks (1), rag-support-bot (2); baseline-structured on rag-support-bot (1) |
 
-The structured single-pass baseline and the twelve offline Trace runs produced no spurious
-finding; the live capture's four are the first row's mismatches, real findings on requirements
-the truth set does not name. The second row stays a baseline failure — inventing weaknesses from
-silence — which no Trace run, live or offline, has produced: the comparison exists to measure
+The thirteen offline Trace runs produced no spurious finding; the live capture's four are the
+first row's mismatches, real findings on requirements the truth set does not name. The second
+row stays a baseline failure — inventing weaknesses from silence — which no Trace run, live or
+offline, has produced: the comparison exists to measure
 that difference, not to assert it.
 
 ## Documentation

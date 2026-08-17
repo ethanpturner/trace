@@ -145,12 +145,14 @@ def test_every_benchmark_directory_is_registered() -> None:
     # `regressions/` is not a scenario: it holds single-behaviour false-positive fixtures
     # consumed directly by unit tests (issue #112, evaluation-plan.md section 11), has no
     # input/expected split, and is never run by the harness — so the registry does not list
-    # it and the silent-omission argument does not apply.
+    # it and the silent-omission argument does not apply. `results/` is DEC-073's derived,
+    # gitignored feed home: any local `trace evaluate` creates it, and it is output, not a
+    # scenario that could be silently omitted.
     unregistered = sorted(
         path.name
         for path in BENCHMARKS.iterdir()
         if path.is_dir()
-        and path.name != "regressions"
+        and path.name not in {"regressions", "results"}
         and path.name not in {str(s["slug"]) for s in scenarios()}
     )
     assert not unregistered, (

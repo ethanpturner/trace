@@ -83,10 +83,13 @@ Create and inspect assessments.
 
 ```
 trace assessment create --name NAME [--description DESCRIPTION] [--tag TAG]
+                        [--catalog-version CATALOG_VERSION]
 ```
 
 Creates an assessment and prints its identifier. `--name` is required; `--tag` is repeatable.
-Exits 0 on success, 1 on a named error.
+`--catalog-version` pins the requirements catalog version the assessment is assessed against
+(DEC-010, DEC-098); the default is the loader's current version. Exits 0 on success, 1 on a
+named error.
 
 ```console
 $ uv run trace assessment create --name "ForgeFlow review" --tag demo

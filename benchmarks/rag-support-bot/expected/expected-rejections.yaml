@@ -1,0 +1,30 @@
+# Relay Answers expected rejections
+#
+# Nothing in this directory is supplied to Trace during an assessment.
+
+benchmark_version: "1.0"
+scenario: rag-support-bot
+catalog_version: "0.2"
+source: architecture-overview.md, operations-notes.md
+
+rejections:
+  - key: REJ-RSB-01
+    claim: Ticket-borne prompt injection is an unmitigated weakness.
+    mechanism: no_evidence
+    requirement_id: req-AI-001
+    entry: >
+      The prompt places retrieved passages in a delimited context block described as reference
+      material, and the panel renders answers as plain text without executing model output.
+    why: >
+      The write path into future prompts is real, but the documents affirmatively describe the
+      handling this requirement asks for; reporting a finding over documented handling would be
+      a false positive the catalog's own common_false_positives entry anticipates.
+  - key: REJ-RSB-02
+    claim: The corpus write path is ungoverned.
+    mechanism: no_evidence
+    requirement_id: req-RAG-001
+    entry: >
+      The ingestion pipeline is documented as the only writer, reading two named sources
+      nightly with provenance recorded per item and help-center content reviewed before
+      indexing.
+    why: The claim contradicts what the documents establish about the write path.

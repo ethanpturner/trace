@@ -186,7 +186,9 @@ def run_scenario(
     with AssessmentStore.at_root(data_root) as store:
         service = AssessmentService(store, artifact_root=data_root)
         created = service.create(
-            entry.name, default_configuration(profile_name, "stride-scenario-based")
+            entry.name,
+            default_configuration(profile_name, "stride-scenario-based"),
+            requirements_catalog_version=entry.catalog_version,
         )
         assessment_id = created.id
         handle = service.handle(assessment_id)

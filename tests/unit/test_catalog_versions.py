@@ -43,7 +43,7 @@ def test_both_versions_load_and_agree_with_their_manifests() -> None:
     old = load_catalog("0.1")
     new = load_catalog("0.2")
     assert len(old) == 23
-    assert len(new) == 32
+    assert len(new) == 37
     assert new.catalog.version == "0.2"
 
 
@@ -118,7 +118,7 @@ def test_new_requirements_resolve_silence_to_unverified_never_unmet() -> None:
     """
     old_ids = set(load_catalog("0.1").by_id())
     new = [r for r in load_catalog("0.2").requirements if r.id not in old_ids]
-    assert {r.id.split("-")[1] for r in new} == {"AGENT", "OPS"}
+    assert {r.id.split("-")[1] for r in new} == {"AGENT", "CODEGEN", "OPS", "RAG"}
 
     register = re.compile(r"documentation must (describe|state|identify)")
     for requirement in new:

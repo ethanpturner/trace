@@ -1,0 +1,18 @@
+# Relay Answers evaluation contract
+#
+# Grading policy for the rag-support-bot benchmark scenario. Layout fixed by DEC-027;
+# no expected-output counts (DEC-028): the expected set is the enumerated content of the
+# expected-*.yaml files in this directory.
+#
+# Nothing in this directory is supplied to Trace during an assessment.
+
+benchmark_version: "1.0"
+
+# The requirements catalog version these expected outputs were authored against (DEC-027,
+# DEC-098). The scenario pins it through the registry so the run is assessed against the
+# same catalog the truth set was authored against.
+catalog_version: "0.2"
+
+matching:
+  findings_match_on: [requirement_id, affected_component]
+  allow_consolidation: true

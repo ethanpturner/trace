@@ -6354,3 +6354,72 @@ Tradeoffs:
   count as content lands in the comparison automatically, while a new identifier-shaped field
   must follow the `_id`/`_ids`/`_at`/`_by` suffix conventions to be excluded — which the domain
   models already follow.
+
+## DEC-098: The AI system threat-modeling pack grows catalog 0.2, and a scenario pins its catalog
+
+Date: 2026-08-17
+
+Status: Accepted
+
+Decision:
+
+**Catalog 0.2 (draft) gains the retrieval-augmentation and model-generated-code categories**
+(future-features 8.1, promoted in part). Five requirements: the retrieval corpus's write path
+is governed (req-RAG-001), retrieval is filtered by the requester's authorization
+(req-RAG-002), the index follows its sources' lifecycle (req-RAG-003), model-generated code
+executes in stated isolation (req-CODEGEN-001), and generated changes pass the same gates as
+human changes (req-CODEGEN-002). Every statement is in the documentation register so silence
+resolves to `unverified` (DEC-009), each carries `common_false_positives` naming what not to
+conclude where AI-system documentation is habitually silent, and the wording is original with
+sources cited by identifier (the catalog's own licensing rule). 0.2 is a draft under DEC-057,
+so the growth is an edit and a re-freeze, not a new version; the fate map is untouched because
+additions carry no prior fate.
+
+**A scenario names the catalog version its assessments pin.** The registry entry gains an
+optional `catalog_version` (absent means the loader's current version, exactly as before);
+the harness and `trace capture` pass it through `AssessmentService.create`, which now accepts
+the pin `new_assessment` always supported, and `trace assessment create --catalog-version`
+exposes the same for an operator. This is DEC-010's pinning rule reaching the one caller that
+could not state a version: without it, a scenario written against a draft catalog would be
+assessed against whatever `current_version()` says, and the truth set and the run would
+silently disagree about which requirements exist.
+
+**The rag-support-bot scenario makes the pack measurable.** A RAG support assistant documented
+well in most respects, with one affirmatively documented weakness and one genuine silence: one
+expected finding (req-RAG-002 — the shared index selecting by relevance alone is a documented
+absence of an entitlement filter, not silence), one expected gap with its paired question
+(req-RAG-003 — deletion propagation unstated either way), and two expected rejections
+(req-AI-001, req-RAG-001 — documented handling a naive pass reports over anyway). The authored
+baselines commit exactly those failures, and the structured baseline's over-claim on
+req-RAG-003 is kept deliberately: structure alone does not stop silence being read as absence,
+which is the ablation narrative's point carried into the comparison. The scenario replays
+offline with a full truth set like the other twelve, and pins catalog 0.2 through the registry.
+
+Why:
+
+- The catalog was the acknowledged weak substrate, and 8.1 is the growth direction the demo
+  and the talk are already about; a pack without a scenario would be asserted value, and the
+  promotion criteria require measured value.
+- DEC-024 sends the whole catalog on every mapping call, and its partitioning cost question
+  (2x or 5x?) is open; growing the catalog raises it, and DEC-092's measured token data is
+  what will answer it. The growth deliberately does not populate `applicable_technologies` or
+  add a pre-filter — that stays DEC-024's own decision, taken on cost evidence.
+
+Alternatives Considered:
+
+- A new catalog version 0.3 for the pack (rejected: 0.2 is a draft, mutable by DEC-057's own
+  rule, and a third version before the second releases would multiply manifests without
+  protecting anything the freeze guard does not already protect).
+- Scoping the scenario's truth set to catalog 0.1 so no pinning plumbing was needed (rejected:
+  0.1 has no retrieval requirements, so the pack's value would be unmeasurable — the exact
+  failure the promotion criteria exist to prevent).
+- Growing further in one change — fine-tuning pipelines, provider-integration depth (deferred:
+  each wants its own scenario to be measurable, and the WIP limit says one primary problem).
+
+Tradeoffs:
+
+- A 37-requirement catalog raises every mapping call's input size under DEC-024; the cost
+  question is now live and named rather than latent.
+- The structured baseline losing its clean no-spurious record is a deliberate narrative trade:
+  the honest comparison beats the tidy sentence, and the failure it now shows is the one the
+  architecture exists to prevent.

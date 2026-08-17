@@ -1,0 +1,18 @@
+{
+  "findings": [
+    {
+      "requirement_id": "req-RAG-002",
+      "affected_component": "Retrieval index",
+      "title": "Shared index serves all workspaces without entitlement filtering",
+      "rationale": "The overview states relevance alone selects passages from one shared index.",
+      "evidence_quote": "all workspaces are served from one shared index; relevance alone selects the passages"
+    },
+    {
+      "requirement_id": "req-RAG-003",
+      "affected_component": "Retrieval index",
+      "title": "Ticket deletions do not propagate to the index",
+      "rationale": "The retention schedule is stated for the source only; index deletion is unstated.",
+      "evidence_quote": "resolved support tickets are retained on the support platform for two years"
+    }
+  ]
+}
