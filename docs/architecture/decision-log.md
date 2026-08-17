@@ -6133,3 +6133,76 @@ Tradeoffs:
 - Snapshot files still accumulate per distinct substituted composition; `template_hash` makes
   the template identity queryable across them, which was the actual gap. Collapsing the
   snapshot granularity is a separate decision if the accumulation ever costs anything.
+
+## DEC-095: A second provider adapter proves the seam, on its own SDK and its own terms
+
+Date: 2026-08-17
+
+Status: Accepted
+
+Decision:
+
+**`infrastructure/model/openai_adapter.py` is the second `StructuredModel` implementation.**
+DEC-014 called the seam populated but not proven agnostic, and the interview package named a
+second provider adapter first among what production would need. The adapter holds the same
+three obligations as the Anthropic one, asserted by the same conformance suite
+(`test_adapter_conformance.py`, now parametrized over both providers): exactly one attempt,
+never raises — every provider condition returns a `ModelFailure` with usage — and `raw_output`
+survives a schema failure while `error_message` stays free of model text.
+
+**Provider-specific decisions, stated:**
+
+- **Creativity maps to `reasoning_effort`** (`LOW → medium`, `MODERATE → high`), the same
+  deliberation reading as the Anthropic mapping, recorded on every result's metadata.
+- **Structured output is requested non-strict and validated by the adapter.** OpenAI's strict
+  mode requires every schema key required and rewrites optionals as explicit nulls — a shape
+  the proposals' defaulted fields would fail to validate. The schema goes as a non-strict
+  `json_schema` response format; a provider that rejects the format falls back to
+  `json_object`, recorded as `schema_grammar: "unsupported_omitted"` — the Anthropic grammar
+  fallback's shape, for the same reason: validation is the application's either way.
+- **Usage is made disjoint before pricing.** The provider's `prompt_tokens` includes the cached
+  span, so the adapter subtracts `cached_tokens` to keep DEC-067's input spans disjoint;
+  caching is automatic on this provider, `cache_prefix` is accepted and unused, and there is no
+  cache-write premium, so `cache_creation_tokens` is always zero.
+- **The boundary rule generalized rather than opened:** each adapter may import exactly its own
+  SDK, and `test_model_boundary.py` asserts it per adapter over the whole tree.
+
+**Two profiles ship with the adapter.** `openai-experimental` (`gpt-5.1`, hand-maintained rates
+like every entry in the table) is the second provider's bundle; `economy-mapping` is the first
+shipped profile carrying a DEC-069 overlay — the mapping agent, the call-heavy node, on
+`claude-sonnet-5` under a `claude-opus-5` base — so the DEC-094 resolution path is exercised by
+configuration that exists, and the #332 model comparison has named bundles to compare.
+
+**What this does not claim:** no live OpenAI pipeline run has been measured. The integration
+round trip (`tests/integration/test_openai_adapter.py`, opt-in, key-gated) is the adapter's
+only live evidence until a `trace capture` or comparison run produces more, and every document
+that states the seam is proven says exactly this much.
+
+Why:
+
+- An unproven claimed property is the kind of debt this project's identity rejects, and the
+  configuration half-promised the proof: `openai_api_key` sat in `Settings` and `.env.example`
+  while `build_model` refused the provider.
+- #332's model comparison is only interesting across providers, and the comparison needs the
+  adapter before the capture.
+
+Alternatives Considered:
+
+- The Responses API instead of Chat Completions (deferred: both exist in the installed SDK;
+  Chat Completions has the simpler response shape for the seam's needs and the stable
+  `response_format`/`reasoning_effort` surface. Moving is an adapter-internal change the seam
+  never sees).
+- Strict structured output with an SDK-transformed schema (rejected: the transformation
+  rewrites optionals into explicit nulls the proposals' validators refuse; adherence help is
+  not worth a schema the application's own models cannot round-trip).
+- A mixed-provider overlay (rejected for now: an overlay carries a model and rates, not a
+  provider, and `build_model` builds one provider's adapters per profile. A provider field on
+  the overlay is a real extension left until a measurement wants it).
+
+Tradeoffs:
+
+- Two SDKs to keep current instead of one, and a second hand-maintained rate row that can go
+  stale independently.
+- The non-strict schema trades some adherence for validity: the provider may deviate where a
+  strict grammar would not, and the adapter's own validation plus the orchestrator's retry
+  budget are the recovery, exactly as on the Anthropic path after its grammar fallback.

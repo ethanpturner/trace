@@ -276,6 +276,7 @@ def test_no_unlisted_package_appeared() -> None:
 # differ often enough (`python-dotenv` -> `dotenv`, `pyyaml` -> `yaml`) that the mapping is stated.
 _IMPORT_NAME = {
     "anthropic": "anthropic",
+    "openai": "openai",
     "pydantic": "pydantic",
     "pydantic-settings": "pydantic_settings",
     "python-dotenv": "dotenv",

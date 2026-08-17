@@ -210,6 +210,42 @@ PROFILES: Final[dict[str, ModelProfile]] = {
         cache_read_cost_per_million=Decimal("0.30"),
         cache_creation_cost_per_million=Decimal("3.75"),
     ),
+    "economy-mapping": ModelProfile(
+        name="economy-mapping",
+        provider="anthropic",
+        model="claude-opus-5",
+        settings=GenerationSettings(creativity=Creativity.LOW),
+        input_cost_per_million=Decimal("5.00"),
+        output_cost_per_million=Decimal("25.00"),
+        cache_read_cost_per_million=Decimal("0.50"),
+        cache_creation_cost_per_million=Decimal("6.25"),
+        # The first shipped overlay (DEC-069, DEC-094): the mapping agent — the call-heavy node,
+        # one call per threat — runs on the economy model while everything else stays primary.
+        # Whether the cheaper mapping costs quality is exactly what the model comparison (#332)
+        # exists to measure; this profile is the measurement's configuration, not a verdict.
+        agent_overlays={
+            "requirement-and-control-mapping": AgentOverlay(
+                model="claude-sonnet-5",
+                input_cost_per_million=Decimal("3.00"),
+                output_cost_per_million=Decimal("15.00"),
+                cache_read_cost_per_million=Decimal("0.30"),
+                cache_creation_cost_per_million=Decimal("3.75"),
+            )
+        },
+    ),
+    "openai-experimental": ModelProfile(
+        name="openai-experimental",
+        provider="openai",
+        model="gpt-5.1",
+        settings=GenerationSettings(creativity=Creativity.LOW),
+        # Published rates at the time of writing (DEC-095); hand-maintained like every rate in
+        # this table. No cache-write premium exists on this provider — caching is automatic —
+        # so the creation rate is zero and the adapter always reports zero creation tokens.
+        input_cost_per_million=Decimal("1.25"),
+        output_cost_per_million=Decimal("10.00"),
+        cache_read_cost_per_million=Decimal("0.125"),
+        cache_creation_cost_per_million=Decimal(0),
+    ),
     "offline-fake": ModelProfile(
         name="offline-fake",
         provider="fake",

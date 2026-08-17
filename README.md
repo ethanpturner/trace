@@ -221,9 +221,9 @@ These are proposed choices except where marked decided. LangGraph was proposed a
 branching, which is the case a graph framework helps least with.
 
 The model interface is designed to be provider-agnostic: the application talks to a seam, and
-provider-specific code lives in an adapter behind it. Anthropic is the default and the only
-adapter specified. A seam with one implementation is not proven agnostic, and nothing behind it
-is built yet.
+provider-specific code lives in an adapter behind it. Anthropic is the default; an OpenAI
+adapter is the second implementation (DEC-095), both held to one behavioural contract by the
+adapter conformance suite. No live OpenAI pipeline run has been measured.
 
 ## Status
 
@@ -356,9 +356,10 @@ remains open is the narrated demo video.
   the application's own export, so the prompt cannot describe a shape the application would reject.
 - **The model seam** — one protocol between the application and any provider (DEC-014), a
   deterministic substitute and a replay cache behind the same interface, and `model_profile`
-  resolving to a provider, a model, generation settings, and published rates. The Anthropic
-  adapter makes exactly one attempt and returns a structured failure carrying the raw output
-  rather than raising; a test asserts no module outside it imports a provider SDK.
+  resolving to a provider, a model, generation settings, and published rates. Each adapter —
+  Anthropic and OpenAI (DEC-095) — makes exactly one attempt and returns a structured failure
+  carrying the raw output rather than raising; a test asserts each may import exactly its own
+  provider SDK and nothing else in the tree imports one.
 - **Identifiers and content hashing** — the twenty-five prefixes of section 2.1 as a closed
   registry, both identifier forms DEC-018 defines, a typed identifier per object so a threat
   identifier cannot be assigned to a finding's field, and the single SHA-256 utility DEC-019
