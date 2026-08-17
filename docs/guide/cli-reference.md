@@ -379,6 +379,35 @@ refused by name.
 
 Exits 0 on a scored run, 1 on a refusal or error.
 
+## capture
+
+```
+trace capture scenario {extract,reason,report} [--from-recorded]
+              [--model-profile MODEL_PROFILE]
+```
+
+Captures a registered scenario's recording from a live model run (DEC-091). Every response the
+run consumes is recorded into the scenario's `capture/` staging directory, shaped exactly as the
+replayer reads it back; promotion into `recorded/` is a deliberate copy after the replay
+round-trip is verified. This command spends real provider calls.
+
+The three stages pause where a person authors checkpoint decisions:
+
+- `extract` runs to checkpoint 1 and exports `review-export.yaml`; author
+  `decisions-context.yaml` in the staging directory from it.
+- `reason` applies the authored context decisions, approves the context, runs to checkpoint 2,
+  and exports `findings-export.yaml`; author `decisions-findings.yaml` from it.
+- `report` applies the authored finding decisions, runs to completion, and writes
+  `report-hash.txt` — the value the replay must reproduce before the capture is promoted.
+
+Decisions are authored per capture, against the run's own objects; a previous capture's committed
+decision files answer its replay, not a new live run. `--from-recorded` resumes an interrupted
+capture: staged recordings answer the calls they cover, and only unanswered calls go live.
+
+Each stage refuses to run twice — a re-run would re-spend it — and the refusal exits 3. The
+offline profile is refused (exit 1) before any side effect. The capture uses its own data root,
+`data/capture-<slug>`, apart from your assessments.
+
 ## reset
 
 ```

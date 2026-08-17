@@ -67,6 +67,7 @@ from trace_ai.services.context.review_file import (
     write_review_file,
 )
 from trace_ai.services.driver import resume_assessment, run_assessment
+from trace_ai.services.evaluation.capture import CaptureRefusedError
 from trace_ai.services.evaluation.report_metrics import RUBRIC_CATEGORIES, record_rubric
 from trace_ai.services.evidence.index import EvidenceIndex, EvidenceNotFoundError
 from trace_ai.services.evidence.indexing import IndexingError, index_document
@@ -600,6 +601,40 @@ def build_parser() -> argparse.ArgumentParser:
         help="where the feed is written (default: benchmarks/results/)",
     )
 
+    capture = commands.add_parser(
+        "capture",
+        help="capture a registered scenario's recording from a live model run",
+        description=(
+            "Runs one capture stage for a scenario from benchmarks/scenarios.yaml against the "
+            "live provider, recording every response the run consumes into the scenario's "
+            "capture/ staging directory (DEC-091). Checkpoint decisions are authored per capture, "
+            "in the staging directory, from the files each stage exports; promotion into "
+            "recorded/ is a deliberate copy after the replay round-trip is verified. Each stage "
+            "spends real money and refuses to run twice; the refusal is exit code 3."
+        ),
+    )
+    capture.add_argument("scenario", help="a registered scenario slug")
+    capture.add_argument(
+        "stage",
+        choices=["extract", "reason", "report"],
+        help=(
+            "extract runs to checkpoint 1 and exports the review file; reason applies the "
+            "authored context decisions and runs to checkpoint 2; report applies the authored "
+            "finding decisions and runs to completion"
+        ),
+    )
+    capture.add_argument(
+        "--from-recorded",
+        action="store_true",
+        dest="from_recorded",
+        help="serve already-staged recordings before going live (resume an interrupted capture)",
+    )
+    capture.add_argument(
+        "--model-profile",
+        default=DEFAULT_MODEL_PROFILE,
+        help="the provider, model, and settings bundle to capture with (the fake one is refused)",
+    )
+
     verify = commands.add_parser(
         "verify",
         help="re-hash stored documents and evidence, and check the report manifest",
@@ -829,6 +864,17 @@ def run(argv: Sequence[str] | None = None) -> int:
         except EXPECTED_ERRORS as error:
             print(f"error: {error}", file=sys.stderr)
             return 1
+    if args.group == "capture":
+        # A capture owns its own data root (data/capture-<slug>), apart from the operator's
+        # assessments, so it opens its own store rather than borrowing the request-scoped one.
+        try:
+            return _capture(args)
+        except CaptureRefusedError as refusal:
+            print(f"refused: {refusal}", file=sys.stderr)
+            return REFUSED
+        except EXPECTED_ERRORS as error:
+            print(f"error: {error}", file=sys.stderr)
+            return 1
     command = getattr(args, "command", None)
     if command is None and (args.group, None) not in handlers:
         parser.parse_args([args.group, "--help"])
@@ -847,6 +893,31 @@ def run(argv: Sequence[str] | None = None) -> int:
     except EXPECTED_ERRORS as error:
         print(f"error: {error}", file=sys.stderr)
         return 1
+
+
+def _capture(args: argparse.Namespace) -> int:
+    """Run one capture stage against the live provider, staging beside the scenario (#482).
+
+    The whole capture is `services/evaluation/capture.py`'s: this reads flags, resolves the
+    scenario through the registry, and dispatches the stage. The staging directory, the spend
+    guards, and the decision flow are the service's — a CLI that composed them itself would be a
+    second place the capture lives.
+    """
+    from trace_ai.services.evaluation import capture as capture_service
+    from trace_ai.services.evaluation.registry import scenario as registered_scenario
+
+    target = registered_scenario(args.scenario)
+    if args.stage == "extract":
+        capture_service.stage_extract(
+            target, profile_name=args.model_profile, from_recorded=args.from_recorded
+        )
+    elif args.stage == "reason":
+        capture_service.stage_reason(
+            target, profile_name=args.model_profile, from_recorded=args.from_recorded
+        )
+    else:
+        capture_service.stage_report(target, profile_name=args.model_profile)
+    return 0
 
 
 def _banner(settings: Settings) -> int:

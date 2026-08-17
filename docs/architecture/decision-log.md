@@ -5883,3 +5883,67 @@ Tradeoffs:
 - `stored_type` as a class attribute set in `__init_subclass__` is a small piece of metaclass-time
   machinery on `DomainModel`; it earns its place by turning a rename from silent data loss into a
   one-line override, and a conformance test pins that every object's `stored_type` is its name.
+
+## DEC-091: Live capture is a command, generalized over the registry; decisions are authored per capture
+
+Date: 2026-08-17
+
+Status: Accepted
+
+Decision:
+
+**`trace capture <scenario> <stage>` replaces `scripts/capture_forgeflow.py`.** The capture logic
+moves to `services/evaluation/capture.py`, parameterized by a registry `Scenario`
+(`benchmarks/scenarios.yaml`, DEC-027): any registered scenario can be captured, not one hardcoded
+demo. The three-stage shape is kept deliberately — `extract` to checkpoint 1, `reason` to
+checkpoint 2, `report` to completion — because the pauses are where a person authors checkpoint
+decisions, and the stages mirror `scripts/replay_forgeflow.py` call for call so a promoted capture
+replays without the replayer changing.
+
+**Checkpoint decisions are authored per capture, in the staging directory, from the files each
+stage exports.** A scenario's committed `recorded/decisions-*.yaml` were authored against the run
+that produced the committed recording; a fresh live run allocates identifiers against its own
+objects (DEC-018), so applying a previous capture's decisions blind would decide objects nobody
+reviewed — a clean approval record over an unreviewed run, which is the DEC-005 failure with extra
+steps. The committed files remain the replay's input and a starting point for authoring, never a
+live run's input. Answering a checkpoint from an authored decision file is not an ablation and
+needs no switch (DEC-012); what this entry adds is only that the file must have been authored
+against the run it decides.
+
+**Everything the script guarded stays guarded.** Staging beside the scenario (`<scenario>/capture/`)
+rather than in `recorded/`, so a partial capture cannot half-replace a committed recording;
+promotion is a deliberate copy after the replay round-trip is verified. Each stage refuses to run
+twice — the refusal is exit code 3, an answer rather than a fault (DEC-088) — and `--from-recorded`
+resumes an interrupted capture by replaying the staged prefix before going live. The fake provider
+is refused at stage entry, before any side effect: a capture of the deterministic substitute would
+record what replay already has. The capture's data root is its own (`data/capture-<slug>`), apart
+from the operator's assessments.
+
+Why:
+
+- The hardcoded script is why the eleven-scenario live sweep never ran and why the #331/#332
+  comparison protocols have plumbing and no recorded execution. Every measurement item queued
+  behind a live run was queued behind one scenario's script.
+- The capture writes real usage into the recorded-response envelope (#461), and a command that any
+  scenario can run is the only practical way those envelopes ever hold real values.
+
+Alternatives Considered:
+
+- Keeping the script and adding a `--scenario` flag (rejected: `--help` is a promise the command
+  surface makes, and a live-spending tool hidden in `scripts/` is exactly the kind of capability
+  the CLI exists to state; the script also duplicated service calls the module now owns once).
+- Applying committed `recorded/decisions-*.yaml` to a fresh live run when present (rejected: the
+  identifiers may not correspond, and a decision applied to an object its author never saw is an
+  unreviewed approval with a reviewer's name on it).
+- A single `trace capture <scenario>` that runs all three stages in one invocation (rejected: the
+  stages pause where a person must author decisions; a one-shot command would either skip the
+  authoring or invent it).
+
+Tradeoffs:
+
+- A test-only `data_root` parameter and an injectable `live` model widen the stage signatures, but
+  they are what let the full three-stage round trip run offline in the default suite, asserting the
+  committed ForgeFlow report hash byte for byte — the promotion criterion, tested without spend.
+- The fake-provider refusal means `trace capture` cannot rehearse its own mechanics offline; the
+  unit tests carry that instead, which keeps a meaningless zero-usage "capture" from ever landing
+  in a staging directory.
