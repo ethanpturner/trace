@@ -160,15 +160,18 @@ Two things are commonly assumed and are **not** decided:
 - **The model interface is provider-agnostic; Anthropic is the default** (DEC-014). The
   application talks to a seam and provider code lives in an adapter behind it. `claude-opus-5` is
   the primary model, and `model_profile` names a provider-model-settings bundle rather than a bare
-  model identifier. Behind the seam today: the Anthropic adapter, the deterministic substitute,
-  the recorded-response loader, the caching wrapper, and the profile registry — one provider, so
-  the seam is populated but not proven agnostic. `anthropic` is the only provider SDK declared;
-  DEC-016 removed the orchestration and model-framework dependencies.
+  model identifier. Behind the seam today: the Anthropic adapter, the OpenAI adapter (DEC-095),
+  the deterministic substitute, the recorded-response loader, the caching wrapper, and the
+  profile registry — two providers held to one contract by `tests/unit/test_adapter_conformance.py`,
+  so the seam is proven to hold a second adapter, though no live OpenAI pipeline run has been
+  measured. `anthropic` and `openai` are the two provider SDKs declared, each importable only by
+  its own adapter; DEC-016 removed the orchestration and model-framework dependencies.
 - **`agent-design.md` section 29's creativity column is provider-neutral intent, not a sampling
   parameter.** Each adapter maps it to its own controls; the Anthropic adapter maps it to effort
   and adaptive thinking, because `temperature`, `top_p`, and `top_k` are rejected on the current
-  Anthropic models. Do not read the column as naming a knob. DEC-085 resolved the table's two
-  "low to moderate" rows: critical review runs at moderate, report generation at low.
+  Anthropic models, and the OpenAI adapter maps it to `reasoning_effort` (DEC-095). Do not read
+  the column as naming a knob. DEC-085 resolved the table's two "low to moderate" rows: critical
+  review runs at moderate, report generation at low.
 
 ## Requirements catalog
 
@@ -394,8 +397,9 @@ Squashing either pull request breaks the chain: the hotfix commit stops being an
   prompt including it. A missing declared block raises: a prompt that composes short still runs and
   still answers, having lost the untrusted-source boundary.
 - **Reach a model through `StructuredModel`, never through a provider SDK** (DEC-014).
-  `infrastructure/model/anthropic_adapter.py` is the only module that may import `anthropic`, and
-  `tests/unit/test_model_boundary.py` fails if another one does. An adapter makes **exactly one
+  Each adapter may import exactly its own SDK — `anthropic_adapter.py` imports `anthropic`,
+  `openai_adapter.py` imports `openai` — and `tests/unit/test_model_boundary.py` fails on any
+  other provider import anywhere in the tree. An adapter makes **exactly one
   attempt** and returns a `ModelFailure` rather than raising — the retry budget is the
   orchestrator's, and a hidden loop would break the `ExecutionRecord` retry count and the cost
   ceiling. A schema failure keeps the raw output (`data-model.md` section 33). `model_profile`

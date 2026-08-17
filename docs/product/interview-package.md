@@ -41,7 +41,9 @@ rejected it once the shape existed, and the reasoning is the story:
   see what a call costs.
 
 The decision removed `langgraph`, `langchain`, and `langchain-anthropic` from the
-dependencies, leaving `anthropic` as the only provider SDK, behind the DEC-014 seam. The
+dependencies, leaving `anthropic` as the only provider SDK behind the DEC-014 seam at the
+time (`openai` joined later as DEC-095's second adapter, each SDK importable only by its own
+adapter). The
 recorded tradeoff is honest: retries, limits, and resume are now owned code, and the trigger
 to revisit is a workflow that stops being a list.
 
@@ -146,18 +148,21 @@ The MVP's constraints are decisions, not accidents, and each names its expansion
   read-only browser boundary is bounded rather than defended (DEC-078). Production means
   re-opening that threat model deliberately: authentication, tenancy, and the storage
   boundary the assessment stores already enforce per-assessment.
-- **The model seam is provider-agnostic with one adapter** (DEC-014) — and honestly noted as
-  unproven agnostic until a second adapter exists. Cost and token accounting already flow
-  through the seam; the live stability run populated them.
+- **The model seam is provider-agnostic with two adapters** (DEC-014, DEC-095) — the second
+  adapter the earlier version of this list named as what production would need. Both are held
+  to one contract by the conformance suite; no live OpenAI pipeline run has been measured yet.
+  Cost and token accounting already flow through the seam; the live stability run populated
+  them.
 - **The evaluation machinery is the production readiness gate.** Scorecard history keyed by
   git ref, prompt digest, and catalog version (DEC-081) plus the prompt- and model-comparison
   protocols (`--label`/`--diff-against`) are how a prompt or model change would be admitted:
   measured against the register, diffed per item, retained.
 - **The catalog versioning already supports growth**: assessments pin a catalog version, so
   a new catalog cannot change what an in-flight run is assessed against (DEC-010, DEC-034).
-- What would need building, stated plainly: a second provider adapter, multi-user review
-  attribution beyond DEC-023's local reviewer string, retention and deletion policies for
-  assessment data, and the interactive lineage view future-features 13.1 sketches.
+- What would need building, stated plainly: multi-user review attribution beyond DEC-023's
+  local reviewer string, retention and deletion policies for assessment data, and the
+  interactive lineage view future-features 13.1 sketches. The second provider adapter this
+  list once named is built (DEC-095); what remains for it is a measured live run.
 
 The closing line of the story is the project's own: the roadmap's exit criterion for the
 public release is that it "does not imply production readiness it has not earned."
