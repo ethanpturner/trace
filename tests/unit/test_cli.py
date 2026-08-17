@@ -479,6 +479,7 @@ def test_the_command_surface_is_the_one_dec_032_confirms() -> None:
         "evaluate",
         "capture",
         "export",
+        "ledger",
         "reset",
         "view",
     }
@@ -2031,3 +2032,88 @@ def test_the_banner_works_outside_a_source_checkout(
     monkeypatch.setattr("trace_ai.cli.IS_SOURCE_CHECKOUT", False)
     assert run([]) == 0
     assert "context-aware security architecture analysis" in capsys.readouterr().out
+
+
+# ------------------------------------------------------------------------------------------
+# The ledger (#483, DEC-092)
+# ------------------------------------------------------------------------------------------
+
+
+def test_ledger_reports_nothing_before_a_run_exists(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    identifier = created(data_root, capsys)
+    assert invoke(data_root, "ledger", identifier) == 0
+    assert "no workflow run has started" in capsys.readouterr().out
+
+
+def _ledger_node_line(output: str) -> list[str]:
+    line = next(entry for entry in output.splitlines() if "context-extraction" in entry)
+    return line.split()
+
+
+def test_ledger_prints_dashes_where_no_usage_was_captured(
+    data_root: Path, capsys: pytest.CaptureFixture[str], tmp_path: Path
+) -> None:
+    """Absent and zero are different answers (DEC-092): a replay of a recording that captured no
+    usage measured nothing, and printing 0 would claim it did."""
+    identifier = extracted(data_root, capsys, tmp_path)
+
+    assert invoke(data_root, "ledger", identifier) == 0
+    output = capsys.readouterr().out
+
+    fields = _ledger_node_line(output)
+    assert fields[0] == "context-extraction"
+    assert fields[1] == "1"
+    assert fields[2:6] == ["-", "-", "-", "-"], "unreported token spans print as dashes"
+    assert fields[7] == "-", "unreported cost prints as a dash"
+
+
+def test_ledger_sums_the_usage_a_recorded_envelope_carries(
+    data_root: Path, capsys: pytest.CaptureFixture[str], tmp_path: Path
+) -> None:
+    """A recording that captured usage (#461) replays it, and the ledger prints the DEC-067
+    spans disjoint -- the numbers a live capture wrote, not zeros and not estimates."""
+    import json as json_module
+
+    identifier = created(data_root, capsys)
+    invoke(data_root, "source", "add", identifier, str(FORGEFLOW_INPUT))
+    bare = recorded_response(tmp_path / "bare.json")
+    envelope = {
+        "schema": "ContextExtractionProposal",
+        "usage": {
+            "model": "claude-opus-5",
+            "input_tokens": 41000,
+            "output_tokens": 9200,
+            "cache_read_tokens": 12000,
+            "cache_creation_tokens": 30000,
+            "estimated_cost": "1.4375",
+            "duration_seconds": 181.2,
+        },
+        "response": json_module.loads(bare.read_text(encoding="utf-8")),
+    }
+    response = tmp_path / "with-usage.json"
+    response.write_text(json_module.dumps(envelope), encoding="utf-8")
+    assert (
+        invoke(
+            data_root,
+            "context",
+            "extract",
+            identifier,
+            "--model-profile",
+            "offline-fake",
+            "--response",
+            str(response),
+        )
+        == 0
+    )
+    capsys.readouterr()
+
+    assert invoke(data_root, "ledger", identifier) == 0
+    output = capsys.readouterr().out
+
+    fields = _ledger_node_line(output)
+    assert fields[1:6] == ["1", "41000", "12000", "30000", "9200"]
+    assert fields[7] == "1.4375"
+    total = next(entry for entry in output.splitlines() if entry.strip().startswith("total"))
+    assert "41000" in total and "1.4375" in total

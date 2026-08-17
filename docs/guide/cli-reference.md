@@ -408,6 +408,20 @@ Each stage refuses to run twice — a re-run would re-spend it — and the refus
 offline profile is refused (exit 1) before any side effect. The capture uses its own data root,
 `data/capture-<slug>`, apart from your assessments.
 
+## ledger
+
+```
+trace ledger assessment_id
+```
+
+Prints what the execution ledger recorded for each workflow run: one line per model-assisted
+node with its calls, the four token spans kept disjoint (uncached input, cache reads, cache
+writes, output), local duration, and estimated cost, plus a total line per run (DEC-092).
+
+Absent prints as a dash, never zero: an offline replay of a recording that captured no usage
+measured nothing. A recording that carries captured usage (a live capture wrote it) replays it,
+and the ledger then shows the real numbers. Exits 0; an unknown assessment identifier exits 1.
+
 ## reset
 
 ```

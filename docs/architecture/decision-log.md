@@ -728,7 +728,7 @@ Tradeoffs:
 
 Open Questions:
 
-- ~~What is the actual cost of one ForgeFlow assessment and one full benchmark sweep at this model and effort level, and does it change the model tier?~~ Estimated in `scripts/estimate_cost.py`: **$2.25 to $5.97** per assessment on `claude-opus-5` and **$27 to $72** for a twelve-scenario sweep, the range driven almost entirely by adaptive thinking depth. **It does not change the tier.** Two corrections to the reasoning above follow from it: thinking tokens billed as output are about 85% of the cost, so prompt caching saves roughly 12% rather than being the dominant lever this entry implies; and effort level, not caching or model tier, is what actually controls spend. The estimate is unmeasured — no product code exists and no `count_tokens` call was available — and should be re-run against real `ExecutionRecord` data once the pipeline runs.
+- ~~What is the actual cost of one ForgeFlow assessment and one full benchmark sweep at this model and effort level, and does it change the model tier?~~ Estimated in `scripts/estimate_cost.py`: **$2.25 to $5.97** per assessment on `claude-opus-5` and **$27 to $72** for a twelve-scenario sweep, the range driven almost entirely by adaptive thinking depth. **It does not change the tier.** Two corrections to the reasoning above follow from it: thinking tokens billed as output are about 85% of the cost, so prompt caching saves roughly 12% rather than being the dominant lever this entry implies; and effort level, not caching or model tier, is what actually controls spend. The estimate is unmeasured — no product code exists and no `count_tokens` call was available — and should be re-run against real `ExecutionRecord` data once the pipeline runs. **Measured (DEC-092):** five completed live runs of one scenario put a run at **$6.92 ± $3.28** — above the estimate's ceiling — and the tier still does not change; `trace ledger` reads any assessment's recorded spend.
 - Does the effort level belong in `model_profile`, or per agent alongside the section 29 intent?
 - Should a second adapter be written before the seam is trusted, or is that premature for a local single-user MVP?
 - Which capabilities must an adapter declare for an evaluation run to be considered comparable to another?
@@ -1075,7 +1075,7 @@ Adding, removing, or retyping a field is therefore a Pydantic change and not a d
 
 **Schema versioning refuses rather than migrates.** Every assessment records `data_model_version`. Loading one written by an incompatible version fails with a message naming both versions; there is no migration machinery. That answers open question 17 for early development.
 
-Re-running is cheaper than migrating, and now measurably so: `scripts/estimate_cost.py` puts a ForgeFlow assessment at $2.25 to $5.97. Regenerating an assessment costs a few dollars and no engineering time; writing a migration for a schema still under active decision costs hours and produces code that will itself need maintaining. The trigger to add migrations is the point at which an assessment becomes expensive or irreplaceable — real rather than fictional source material, or a benchmark run whose provenance matters.
+Re-running is cheaper than migrating, and now measurably so: DEC-092's measurement puts a live assessment at $6.92 ± $3.28 (the earlier `scripts/estimate_cost.py` figure was $2.25 to $5.97). Regenerating an assessment costs a few dollars and no engineering time; writing a migration for a schema still under active decision costs hours and produces code that will itself need maintaining. The trigger to add migrations is the point at which an assessment becomes expensive or irreplaceable — real rather than fictional source material, or a benchmark run whose provenance matters.
 
 **Evaluation results and the longitudinal record are additionally written as version-controlled artifacts.** `evaluation-plan.md` section 17 requires every release to record its evaluation summary and known regressions, and section 16 wants metrics compared across versions. If assessments become unloadable after a schema change, a database-only evaluation history would break exactly when the comparison is most interesting. Writing the summary to a file keeps the history readable independent of whether the assessments behind it still load.
 
@@ -5947,3 +5947,64 @@ Tradeoffs:
 - The fake-provider refusal means `trace capture` cannot rehearse its own mechanics offline; the
   unit tests carry that instead, which keeps a meaningless zero-usage "capture" from ever landing
   in a staging directory.
+
+## DEC-092: The measured cost supersedes the estimate, and `trace ledger` is how spend is read
+
+Date: 2026-08-17
+
+Status: Accepted
+
+Decision:
+
+**The quoted per-assessment cost is the measured one.** DEC-014's open question asked what an
+assessment actually costs and flagged its own answer — `scripts/estimate_cost.py`'s $2.25 to
+$5.97 — as unmeasured, to be re-run against real `ExecutionRecord` data once the pipeline ran.
+The pipeline has run: the DEC-077 stability protocol's five completed `claude-opus-5` runs of
+`unsigned-webhooks` (`docs/eval/live-stability.json`) put a run at **$6.92 ± $3.28** and
+**~41 ± 15 minutes**, with a mean of 15.4 model calls. The measured mean sits above the
+estimate's ceiling. The conclusion the estimate was built to check survives: the cost does not
+change the model tier, and effort-driven thinking depth remains the dominant term. Documents
+that quoted the estimate as the cost of an assessment now quote the measurement; the estimate
+script stays, docstring-marked as superseded for the per-assessment figure, because its
+per-component model is still the only a-priori shape for scenarios never run live. The sweep
+figure is restated from measurement: twelve scenarios at the measured mean is roughly $83, wide
+variance stated rather than rounded away.
+
+**`trace ledger` prints an assessment's recorded spend** — one line per model-assisted node per
+workflow run: calls, the DEC-067 token spans kept disjoint (uncached input, cache reads, cache
+writes, output), local duration, and estimated cost, with a per-run total. It reads what the
+execution records already carry and computes nothing new. **Absent prints as a dash, never
+zero:** an offline replay of a recording that captured no usage measured nothing, and a zero
+would be a claim. A node line whose records partially reported sums what was reported.
+
+**Usage plumbing is complete; values arrive only from live captures.** The #461 envelope carries
+usage; `trace capture` (DEC-091) writes real usage at capture time; `DeterministicModel` replays
+it; the ledger and the scorecard surface it. The 158 recordings migrated without usage stay
+absent — backfilling them is a keyed re-capture per scenario, not an edit, and until one runs the
+dashes are the honest answer.
+
+Why:
+
+- The project's stated identity is honesty about what is measured, and its flagship cost number
+  was an estimate the one existing measurement contradicts. Quoting $2.25–$5.97 beside a committed
+  $6.92 ± $3.28 measurement is the documentation-and-reality divergence the stop conditions name.
+- Spend was visible only as two print lines inside `assessment status` and a run summary; a
+  reviewer asking "which node spent it" had no answer short of querying SQLite by hand.
+
+Alternatives Considered:
+
+- Re-running the character-ratio estimate with tuned constants until it matched the measurement
+  (rejected: a tuned estimate that agrees with one measurement is a curve fit wearing the
+  measurement's authority; the measurement itself is the answer).
+- Backfilling approximate usage into the 158 recordings from token-ratio math (rejected: it would
+  turn every dash into a fabricated measurement and poison the offline ledger's honesty).
+- A `--json` flag on `trace ledger` now (deferred to the CLI-wide JSON output contract, #486,
+  so the ledger does not invent a one-off serialization the contract then has to unify).
+
+Tradeoffs:
+
+- One scenario measured five times is a thin base for a headline figure, and the entry says so:
+  the figure is quoted with its variance and its n, and the eleven-scenario sweep (#484) is the
+  named next step, not an implied one.
+- Keeping the superseded estimate script means two cost numbers exist in the repository; the
+  docstring states which one is quotable and why the other survives.

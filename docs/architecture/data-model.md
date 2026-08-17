@@ -585,7 +585,8 @@ much adaptive thinking the effort level produces — so the original cost limit 
 was exceeded at high effort.
 
 The values are raised to leave headroom rather than to describe a target. They remain examples; a
-real assessment sets its own.
+real assessment sets its own. The DEC-092 measurement later put a live run at $6.92 ± $3.28 —
+above the estimate's ceiling and still inside the raised headroom.
 
 The estimate's dominant finding is that **thinking tokens, billed as output, are roughly 85% of the
 cost**. Effort level is therefore the cost lever, ahead of model tier and well ahead of prompt
@@ -2458,8 +2459,8 @@ Every assessment records `data_model_version`. Loading one written by an incompa
 with a message naming both versions; there is no migration machinery during early development
 (DEC-020).
 
-Re-running is cheaper than migrating and measurably so — `scripts/estimate_cost.py` puts an
-assessment at $2.25 to $5.97. The trigger to add migrations is an assessment becoming expensive or
+Re-running is cheaper than migrating and measurably so — DEC-092's measurement puts a live
+assessment at $6.92 ± $3.28. The trigger to add migrations is an assessment becoming expensive or
 irreplaceable.
 
 # 36. Data Retention
