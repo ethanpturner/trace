@@ -6423,3 +6423,67 @@ Tradeoffs:
 - The structured baseline losing its clean no-spurious record is a deliberate narrative trade:
   the honest comparison beats the tidy sentence, and the failure it now shows is the one the
   architecture exists to prevent.
+
+## DEC-099: A catalog version releases when the first recorded scenario pins it; release is not the default
+
+Date: 2026-08-17
+
+Status: Accepted
+
+Decision:
+
+**The release condition DEC-057 left open is stated: a catalog version releases when the first
+committed recorded scenario pins it.** DEC-057 defined the mechanics — a draft is freely
+editable in place; a released version is immutable at PR time under
+`scripts/check_catalog_freeze.py`; the registry carries lifecycle — and named 0.1's trigger (the
+recorded ForgeFlow fixture) without naming 0.2's. The general rule behind that trigger is now
+explicit: the moment a committed recording depends on a version's content, that content is
+load-bearing for a replay, and content a replay depends on must freeze. `rag-support-bot`
+(DEC-098) pinned 0.2, so the condition fired; `requirements/versions.yaml` records
+0.2 as active, released 2026-08-17, and the freeze guard covers `requirements/0.2/` from this
+change forward.
+
+**Release does not move the default.** The root manifest (`catalog.yaml`) still names 0.1, so an
+assessment that pins nothing is still assessed against 0.1. The two knobs are deliberately
+separate: releasing freezes content a replay depends on; switching the default changes what every
+new unpinned assessment maps against — and, because a mapping call carries the whole catalog
+(DEC-024), it would also change the input surface of every default-profile run and interact with
+the open partitioning cost question. Switching the default to 0.2 is its own later decision,
+taken when the cost question has its measurement.
+
+**Every registered version's citations are checked.** `scripts/asvs_resolver.py` resolved only
+`current_version()`, which left 0.2's fourteen new requirements' ASVS citations unverified —
+a citation in a released version is exactly as load-bearing as one in the default. The resolver
+now iterates the governance registry's versions; all citations across 0.1 and 0.2 resolve.
+
+**The evaluation stamps are version-honest.** `build_comparison.py` and `build_ablation.py`
+stamped the whole corpus with one `current_version()` — structurally incapable of being true
+over a mixed corpus, and false since DEC-098 ("catalog 0.1" over a corpus with a 0.2 scenario).
+`catalog_version_summary()` in the evaluation registry counts what the scenarios actually
+assess against ("0.1 (12), 0.2 (1)"), and the committed evaluation documents are regenerated
+under it.
+
+Why:
+
+- An indefinitely editable version that a committed replay depends on is the drift DEC-057's
+  freeze exists to prevent, one directory over from where the guard was looking.
+- The stamp falsity was the stop condition — documentation and implementation describing
+  different systems — in the project's own measurement artifacts, which is the worst place for it.
+
+Alternatives Considered:
+
+- Releasing on a calendar or review cadence (rejected: DEC-057's whole design keys immutability
+  to what replays depend on, and a cadence would freeze content nothing depends on or leave
+  depended-on content mutable between reviews).
+- Moving the default to 0.2 in the same change (rejected: it changes every unpinned run's
+  mapping input surface and the recorded ForgeFlow replay's environment while the DEC-024 cost
+  question is unmeasured; releasing and defaulting are different risks and get different
+  decisions).
+
+Tradeoffs:
+
+- Two active versions with 0.1 as default reads oddly until the default switches; the registry
+  comment says why, and the alternative — a mutable version under committed replays — is worse.
+- Growing the catalog further now means 0.3: the pack's remaining half (fine-tuning and
+  training-data supply chains, DEC-098's deferral) pays the minor-version cost when it lands,
+  which is exactly the cost DEC-057 designed it to pay.
