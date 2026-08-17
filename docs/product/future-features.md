@@ -990,9 +990,14 @@ The visualization should reflect reviewer-approved state rather than raw model o
 
 ## 13.3 Assessment Comparison Report
 
-**Status:** Idea
+**Status:** Built (DEC-103, issue #509)
 
-Generate a human-readable summary of changes between assessment versions.
+`trace diff --report` renders the structural diff (DEC-097) as a Markdown comparison report in
+the later assessment's outputs area — findings and open questions first, context after, so the
+things that change a conclusion lead. An output artifact like the exports; DEC-035's report
+contract is untouched.
+
+The original sketch: generate a human-readable summary of changes between assessment versions.
 
 ## 13.4 Executive Reporting
 
