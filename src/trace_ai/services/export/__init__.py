@@ -6,6 +6,7 @@ only, and writes to the assessment's `outputs/` area. TM-BOM is first in DEC-072
 and Mermaid follow it, and CycloneDX is deferred until a consumer exists.
 """
 
+from trace_ai.services.export.sarif import export_sarif, write_sarif
 from trace_ai.services.export.tm_bom import (
     TM_BOM_SCHEMA_PATH,
     ExportError,
@@ -13,4 +14,11 @@ from trace_ai.services.export.tm_bom import (
     write_tm_bom,
 )
 
-__all__ = ["TM_BOM_SCHEMA_PATH", "ExportError", "export_tm_bom", "write_tm_bom"]
+__all__ = [
+    "TM_BOM_SCHEMA_PATH",
+    "ExportError",
+    "export_sarif",
+    "export_tm_bom",
+    "write_sarif",
+    "write_tm_bom",
+]

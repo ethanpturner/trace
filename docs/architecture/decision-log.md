@@ -4783,6 +4783,20 @@ Open Questions:
 - Does the TM-BOM serializer round-trip — can Trace *read* a TM-BOM file as structured input
   (DEC-070's family) — or is export one-way?
 
+Amendment (2026-08-17, #487): **SARIF is built**, second in the order as decided, and its
+mapping decisions are recorded here rather than in a fresh entry because the decision — the
+family, its order, its post-approval rule — was already made. An approved `Finding` is a result
+whose `level` follows the reviewer-assigned severity (critical/high → `error`, medium →
+`warning`, low/informational → `note`; `unassigned` cannot appear, the approval gate refuses
+it). A `DocumentationGap` is a result of `kind: "review"` at `level: "none"` — SARIF's own
+vocabulary for "a human should evaluate this" — never an error or a warning, which keeps
+DEC-009 structural in the export. Cited requirements become rules titled from the assessment's
+pinned catalog version, degrading to bare identifiers rather than dropping or guessing;
+locations come from the evidence chain (stored filename, line span) plus logical locations for
+affected components; `EvidenceReference` and DEC-066 fingerprints ride `partialFingerprints`.
+Approved text serializes verbatim, the export refuses an unapproved context, and the artifact
+is content-addressed into `outputs/` like TM-BOM's.
+
 ## DEC-073: The harness is a caller of the ordinary pipeline — registry-driven, offline through replay, one authoritative results home, per-item run diffs
 
 Date: 2026-08-10
