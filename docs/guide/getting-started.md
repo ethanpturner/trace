@@ -65,8 +65,9 @@ cp .env.example .env
 ```
 
 The file has two runtime settings, `APP_ENV` and `LOG_LEVEL`, and the provider keys. For live
-runs, set `ANTHROPIC_API_KEY`; a blank value is treated as unset. **Nothing in this guide needs a
-key** — every offline command works with the file exactly as copied.
+runs, set `ANTHROPIC_API_KEY` — or `OPENAI_API_KEY` for the OpenAI profile (DEC-095); a blank
+value is treated as unset. **Nothing in this guide needs a key** — every offline command works
+with the file exactly as copied.
 
 Bare `uv run trace` with no arguments shows what the process resolved:
 
@@ -80,12 +81,14 @@ It names which credentials are configured and never prints key material.
 
 ## Model profiles
 
-A model profile is a named bundle of provider, model, and settings. There are exactly three:
+A model profile is a named bundle of provider, model, and settings. Five exist:
 
 | Profile | Provider and model | When to use it |
 | --- | --- | --- |
 | `primary-development` | Anthropic, `claude-opus-5` | The default. Live assessments of real documents. |
 | `economy` | Anthropic, `claude-sonnet-5` | Live runs where cost matters more than depth. |
+| `economy-mapping` | Anthropic, `claude-opus-5` with the mapping agent on `claude-sonnet-5` | The DEC-094 overlay bundle; what the model comparison measures. |
+| `openai-experimental` | OpenAI, `gpt-5.1` | The second provider (DEC-095). Needs `OPENAI_API_KEY`. |
 | `offline-fake` | Deterministic substitute | No key, no network, zero cost. Replays and rehearsal. |
 
 `offline-fake` is a first-class way to run, not a test hook. Paired with `--response`, it replays
