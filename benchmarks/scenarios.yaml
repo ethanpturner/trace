@@ -119,6 +119,19 @@ scenarios:
     status: authored
     category: missing-documentation
 
+  - slug: rag-support-bot
+    name: Relay Answers
+    path: benchmarks/rag-support-bot
+    # The AI system threat-modeling pack's scenario (#489, DEC-098): a RAG support assistant
+    # whose shared retrieval index is documented as selecting passages by relevance alone.
+    # Exercises the 0.2 catalog's retrieval-augmentation requirements: one finding from the
+    # documented absence of an entitlement filter (req-RAG-002), one gap where deletion
+    # propagation to the index is unstated (req-RAG-003), and two rejections where documented
+    # handling (req-AI-001, req-RAG-001) makes a finding a false positive.
+    status: authored
+    category: ai-system-retrieval
+    catalog_version: "0.2"
+
   - slug: order-notifier
     name: Order Notifier
     path: benchmarks/order-notifier

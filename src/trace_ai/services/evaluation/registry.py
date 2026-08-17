@@ -64,6 +64,11 @@ class _ScenarioEntry(BaseModel):
     status: str
     conditions: list[str] = Field(default_factory=list)
     category: str | None = None
+    catalog_version: str | None = None
+    """The requirements catalog version the scenario's assessments pin (DEC-098). Absent means
+    the loader's current version, exactly as an interactive assessment defaults; a scenario
+    exercising a draft catalog names it, and `load_catalog(version)` still refuses one that
+    does not verify."""
     narrative: str | None = None
     """Informative: a pointer to a scenario's written narrative (ForgeFlow's feeds Stage 6). The
     registry loader accepts it so the field is not an unknown key, but nothing routes on it."""
@@ -104,6 +109,7 @@ class Scenario:
     status: str
     conditions: tuple[str, ...] = ()
     category: str | None = None
+    catalog_version: str | None = None
     """The roadmap Stage 5 coverage category this scenario exercises (issue #328). Informative:
     nothing routes on it, and scenarios may share one — the registry states which categories are
     covered rather than the filesystem implying it."""
@@ -196,6 +202,7 @@ def load_registry(registry_path: Path | None = None) -> list[Scenario]:
             status=entry.status,
             conditions=tuple(entry.conditions),
             category=entry.category,
+            catalog_version=entry.catalog_version,
         )
         for entry in parsed.scenarios
     ]

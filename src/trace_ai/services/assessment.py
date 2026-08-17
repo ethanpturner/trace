@@ -194,6 +194,7 @@ class AssessmentService:
         description: str | None = None,
         tags: list[str] | None = None,
         created_by: str | None = None,
+        requirements_catalog_version: str | None = None,
     ) -> Assessment:
         """Allocate an identifier, write the directory and the row, or leave neither behind."""
         assessment_id = self._store.allocate_assessment_id()
@@ -213,6 +214,7 @@ class AssessmentService:
             description=description,
             tags=tags or [],
             created_by=created_by,
+            requirements_catalog_version=requirements_catalog_version,
         )
         try:
             with repository.transaction():

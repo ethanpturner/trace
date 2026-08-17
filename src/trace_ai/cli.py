@@ -257,6 +257,14 @@ def build_parser() -> argparse.ArgumentParser:
     created.add_argument("--name", required=True)
     created.add_argument("--description")
     created.add_argument("--tag", action="append", dest="tags", default=[])
+    created.add_argument(
+        "--catalog-version",
+        dest="catalog_version",
+        help=(
+            "the requirements catalog version this assessment pins (DEC-010, DEC-098); "
+            "default: the loader's current version"
+        ),
+    )
 
     assessment_list = assessment_commands.add_parser("list", help="list assessments")
     _json_flag(assessment_list)
@@ -1122,6 +1130,7 @@ def _assessment_create(args: argparse.Namespace, service: AssessmentService) -> 
         default_configuration(DEFAULT_MODEL_PROFILE, DEFAULT_THREAT_METHODOLOGY),
         description=args.description,
         tags=list(args.tags),
+        requirements_catalog_version=args.catalog_version,
     )
     print(assessment.id)
     return 0

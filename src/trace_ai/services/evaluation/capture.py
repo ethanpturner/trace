@@ -354,7 +354,9 @@ def stage_extract(
     with AssessmentStore.at_root(data_root) as store:
         service = AssessmentService(store, artifact_root=data_root)
         created = service.create(
-            scenario.name, default_configuration(profile_name, "stride-scenario-based")
+            scenario.name,
+            default_configuration(profile_name, "stride-scenario-based"),
+            requirements_catalog_version=scenario.catalog_version,
         )
         (staging / "assessment-id.txt").write_text(created.id + "\n", encoding="utf-8")
         loader = DocumentLoader(service.handle(created.id))

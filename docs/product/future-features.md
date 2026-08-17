@@ -523,9 +523,15 @@ Final severity should remain subject to reviewer judgment.
 
 ## 8.1 AI System Threat-Modeling Pack
 
-**Status:** Candidate
+**Status:** Built in part (DEC-098, issue #489)
 
-Add threat patterns and requirements specifically for systems using:
+Catalog 0.2 (draft) carries the pack's first wave: ai-input-handling and agentic-orchestration
+arrived with DEC-058, and retrieval-augmentation (req-RAG-001..003) and model-generated-code
+(req-CODEGEN-001..002) arrive with DEC-098, alongside the rag-support-bot benchmark scenario
+that makes the retrieval requirements measurable. Remaining from the sketch below: fine-tuning
+and training-data supply chains, and deeper model-provider integration coverage.
+
+The original sketch — add threat patterns and requirements specifically for systems using:
 
 - LLM APIs
 - Retrieval-augmented generation

@@ -1,0 +1,17 @@
+# Relay Answers expected questions
+#
+# Nothing in this directory is supplied to Trace during an assessment.
+
+benchmark_version: "1.0"
+scenario: rag-support-bot
+source: architecture-overview.md, operations-notes.md
+
+questions:
+  - key: Q-RSB-01
+    subject: deletion propagation to the index
+    asks: Does a ticket deleted from the support platform get removed from the index and its embeddings, and within what period?
+    arises_from: architecture-overview.md section 3; operations-notes.md section 2
+    requirement_id: req-RAG-003
+    changes: whether GAP-RSB-01 resolves to a satisfied requirement or a finding
+    priority: medium
+    blocking: false
