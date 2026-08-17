@@ -522,7 +522,9 @@ second run against a used root mints `asm-002` while a documented transcript nam
 trace view [--port PORT]
 ```
 
-Serves a read-only rendering of the persisted assessments on `127.0.0.1`, default port 8765:
+Serves a read-only rendering of the persisted assessments on `127.0.0.1`, default port 8765,
+including per-assessment Threats and Ledger pages and a `/diff/<before>/<after>` comparison of
+two assessments' approved models (DEC-097); all read-only GET (DEC-078):
 overview, context, workflow, questions, findings, the finding-lineage walk, and the evaluation
 scorecard. It serves GET only, drives nothing, and edits nothing — review stays on the command
 line. Closing it loses nothing; everything it shows comes from the store. If the port is already

@@ -46,13 +46,16 @@ if TYPE_CHECKING:
 __all__ = [
     "VIEWS",
     "render_context",
+    "render_diff",
     "render_evaluation",
     "render_findings",
     "render_index",
+    "render_ledger",
     "render_lineage",
     "render_overview",
     "render_page",
     "render_questions",
+    "render_threats",
     "render_workflow",
 ]
 
@@ -62,7 +65,9 @@ UNTRUSTED_LABEL = "quoted untrusted source content"
 VIEWS: tuple[tuple[str, str], ...] = (
     ("Overview", "overview"),
     ("Context", "context"),
+    ("Threats", "threats"),
     ("Workflow", "workflow"),
+    ("Ledger", "ledger"),
     ("Questions & decisions", "questions"),
     ("Findings", "findings"),
     ("Lineage", "lineage"),
@@ -164,7 +169,49 @@ def render_index(assessments: Sequence[Assessment]) -> str:
             for a in assessments
         ]
         body = _table_raw(["Assessment", "Name", "Status", "Report"], rows)
+    if len(assessments) > 1:
+        body += (
+            "<h2>Compare two assessments</h2>"
+            '<p class="muted">Pick two of the assessments above to diff their approved models '
+            "at <code>/diff/&lt;before&gt;/&lt;after&gt;</code> (DEC-097).</p>"
+        )
     return render_page("Read-only view", None, "", body)
+
+
+def render_diff(before: str, after: str, diff: object) -> str:
+    """One assessment diff, rendered read-only (#508). `diff` is an `AssessmentDiff`; a family
+    with no movement is a count line, a moved family names its added, removed, and changed."""
+    families = diff.families  # type: ignore[attr-defined]
+    sections: list[str] = []
+    for name, family in families.items():
+        if not family.moved:
+            sections.append(
+                f'<p class="muted">{_e(name.replace("_", " "))}: {family.unchanged} unchanged.</p>'
+            )
+            continue
+        rows: list[list[object]] = []
+        for entry in family.added:
+            rows.append(["added", entry.identity, "", entry.after_id or "—", ""])
+        for entry in family.removed:
+            rows.append(["removed", entry.identity, entry.before_id or "—", "", ""])
+        for entry in family.changed:
+            rows.append(
+                [
+                    "changed",
+                    entry.identity,
+                    entry.before_id or "—",
+                    entry.after_id or "—",
+                    ", ".join(entry.changed_fields),
+                ]
+            )
+        sections.append(
+            f"<h2>{_e(name.replace('_', ' '))} ({family.unchanged} unchanged)</h2>"
+            + _table(["Change", "Identity", "Before", "After", "Fields"], rows)
+        )
+    heading = f"<p>Diff of <code>{_e(before)}</code> → <code>{_e(after)}</code>.</p>"
+    if not diff.moved:  # type: ignore[attr-defined]
+        heading += '<p class="muted">No differences in the approved models.</p>'
+    return render_page("Assessment diff", None, "", heading + "".join(sections))
 
 
 def render_overview(handle: AssessmentHandle, assessment: Assessment) -> str:
@@ -253,6 +300,85 @@ def render_workflow(handle: AssessmentHandle, assessment: Assessment) -> str:
         + _table(["Node", "Type", "Status", "Duration (ms)"], record_rows)
     )
     return render_page("Workflow", assessment.id, "workflow", body)
+
+
+def render_threats(handle: AssessmentHandle, assessment: Assessment) -> str:
+    """The threats the analysis proposed, with the objects each is grounded in (#508).
+
+    Previously reachable only through the report or the CLI; the read-only view now renders
+    threats as a first-class page, DEC-078's read-only GET boundary unchanged.
+    """
+    threats = handle.objects.list(Threat)
+    component_names = {c.id: c.name for c in handle.objects.list(Component)}
+    asset_names = {a.id: a.name for a in handle.objects.list(Asset)}
+    rows = [
+        [
+            threat.id,
+            ", ".join(str(term) for term in threat.category) or "—",
+            threat.status.value,
+            threat.title,
+            ", ".join(
+                [
+                    *(component_names.get(cid, cid) for cid in threat.affected_component_ids),
+                    *(asset_names.get(aid, aid) for aid in threat.affected_asset_ids),
+                ]
+            )
+            or "—",
+        ]
+        for threat in threats
+    ]
+    body = f"<h2>Threats ({len(threats)})</h2>" + _table(
+        ["Identifier", "Category", "Status", "Title", "Grounded in"], rows
+    )
+    return render_page("Threats", assessment.id, "threats", body)
+
+
+def render_ledger(handle: AssessmentHandle, assessment: Assessment) -> str:
+    """Per-run, per-node spend from the execution records (#508, the view of DEC-092's ledger).
+
+    Absent prints as a dash, never zero: an offline replay that captured no usage measured
+    nothing, exactly as `trace ledger` shows it.
+    """
+    runs = handle.objects.list(WorkflowRun)
+    records_by_run: dict[str, list[ExecutionRecord]] = {}
+    for record in handle.objects.list(ExecutionRecord):
+        if record.execution_type.value == "model":
+            records_by_run.setdefault(record.workflow_run_id, []).append(record)
+
+    def _sum(values: list[int | None]) -> object:
+        reported = [v for v in values if v is not None]
+        return sum(reported) if reported else "—"
+
+    sections: list[str] = []
+    for run in runs:
+        nodes: dict[str, list[ExecutionRecord]] = {}
+        for record in records_by_run.get(run.id, []):
+            nodes.setdefault(record.node_name, []).append(record)
+        rows = [
+            [
+                name,
+                len(rows_),
+                _sum([r.input_tokens for r in rows_]),
+                _sum([r.cache_read_tokens for r in rows_]),
+                _sum([r.output_tokens for r in rows_]),
+            ]
+            for name, rows_ in nodes.items()
+        ]
+        cost = f"{run.estimated_cost:.4f}" if run.estimated_cost is not None else "—"
+        sections.append(
+            f"<h2>{_e(run.id)} — {_e(run.status.value)} "
+            f"({run.total_model_calls} calls, est. cost {_e(cost)})</h2>"
+            + (
+                _table(
+                    ["Node", "Calls", "Input", "Cache read", "Output"],
+                    rows,
+                )
+                if rows
+                else '<p class="muted">No model-assisted executions recorded.</p>'
+            )
+        )
+    body = "".join(sections) or '<p class="muted">No workflow run has started.</p>'
+    return render_page("Ledger", assessment.id, "ledger", body)
 
 
 def render_questions(handle: AssessmentHandle, assessment: Assessment) -> str:
