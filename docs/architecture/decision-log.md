@@ -4874,6 +4874,20 @@ Open Questions:
 - Does the results tree live under `benchmarks/results/` in-repo, or stay untracked until the
   scorecard needs CI history?
 
+Amendment (2026-08-17, #505): **Any scenario may pin its offline replay, and the harness
+verifies it.** `recorded/report-hash-offline.txt` pins the harness's own replay of a scenario;
+a completed run compares the rendered bytes and `HarnessOutcome.report_hash_verified` carries
+the verdict — `None` when no pin exists (absence of a pin is not a pass), `False` on drift,
+which the CLI answers as exit 3, the same answer `trace verify` gives a drifted report
+(DEC-088). The pin is deliberately distinct from `report-hash.txt`, the capture-conditions pin
+`scripts/replay_forgeflow.py` checks: the two replay paths stamp different model profiles into
+the report, so one pin cannot serve both; each file names its replay path. ForgeFlow and
+rag-support-bot ship offline pins. And **the evaluation pages are CLI-reachable**:
+`trace evaluate --report scorecard|comparison|ablation [--out PATH]` runs the same sweep and
+renders the same pages the build scripts write, to stdout or a named file — the committed pages
+under `docs/eval/` remain the scripts' deliberate step, with the DEC-081 history snapshotting
+and the CI currency check staying theirs alone.
+
 ## DEC-074: Baselines run through the same seam, emit the same schemas, and see the same inputs — with ties resolved against Trace; the external comparable stays in the portfolio
 
 Date: 2026-08-10
@@ -6300,6 +6314,13 @@ Tradeoffs:
 - `report show` keeps its Markdown body and `verify` its exit-code answer, without `--json` —
   the report is the deliverable itself and the manifest already exists for scripts; extending
   the flag to them is a later, smaller decision if a consumer appears.
+
+Amendment (2026-08-17, #505): **`trace evaluate` and `assessment candidates` take `--json`.**
+The evaluate omission was this entry's unexplained gap — the one command that emits metrics had
+no machine shape. The envelope carries one `runs` list: per run, the identifiers, statuses,
+metrics as a mapping, the DEC-075 adversarial block where the feed holds one, the repo-relative
+feed path, and the offline replay pin's verdict. Exit codes are unchanged by the flag, including
+the drift answer.
 
 ## DEC-097: Assessment diffing compares approved models by content fingerprint, conservatively
 

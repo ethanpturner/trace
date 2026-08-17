@@ -106,7 +106,9 @@ FEED_VERSION = "1"
 HARNESS_REVIEWER = "recorded-reviewer"
 
 # The one deterministic stamp every renderer shares (`stamps.py`), so the harness renders the same
-# ForgeFlow report to the same hash the replay script pins in `report-hash.txt` -- they had drifted.
+# ForgeFlow report deterministically; the offline replay's own pin is `report-hash-offline.txt`
+# (#505), distinct from the script's capture-conditions `report-hash.txt` -- the two replay
+# paths stamp different model profiles into the report, so one pin cannot serve both.
 GENERATED_AT = DETERMINISTIC_STAMP
 
 # Which recording filenames an ablation makes unconsumable: the file answers a call the ablated
@@ -136,6 +138,12 @@ class HarnessOutcome:
     ablations: list[str] = field(default_factory=list)
     metrics: list[EvaluationResult] = field(default_factory=list)
     feed_path: Path | None = None
+
+    report_hash_verified: bool | None = None
+    """`True`/`False` against the scenario's pinned `recorded/report-hash-offline.txt` (#505); `None`
+    when the scenario pins no hash or the run did not render a report. `False` is drift — the
+    replay stopped reproducing the recording's report — and the CLI answers it as exit 3, the
+    same answer `trace verify` gives a drifted report (DEC-088)."""
 
     @property
     def completed(self) -> bool:
@@ -259,6 +267,7 @@ def run_scenario(
             stopped_because=outcome.stopped_because,
             results_root=results_root if results_root is not None else RESULTS_ROOT,
         )
+        report_hash_verified = _verify_report_hash(handle, entry, condition=condition)
 
     return HarnessOutcome(
         scenario=entry.slug,
@@ -271,6 +280,29 @@ def run_scenario(
         ablations=list(run.ablations),
         metrics=metrics,
         feed_path=feed_path,
+        report_hash_verified=report_hash_verified,
+    )
+
+
+def _verify_report_hash(
+    handle: AssessmentHandle, entry: Scenario, *, condition: str
+) -> bool | None:
+    """The replayed report's hash against the scenario's pin, where one exists (#505).
+
+    Generalizes what `scripts/replay_forgeflow.py` pinned for one scenario: any scenario may
+    commit `recorded/report-hash-offline.txt`, and its replay then verifies the rendered bytes. `None`
+    when no pin exists or the run rendered no report — absence of a pin is not a pass.
+    """
+    pin_path = entry.recorded_dir_for(condition) / "report-hash-offline.txt"
+    if not pin_path.is_file():
+        return None
+    assessment = handle.objects.get(Assessment, handle.assessment_id)
+    if assessment.final_report_path is None:
+        return None
+    filename = assessment.final_report_path.rpartition("/")[2]
+    return (
+        handle.artifacts.hash_of("outputs", filename)
+        == pin_path.read_text(encoding="utf-8").strip()
     )
 
 

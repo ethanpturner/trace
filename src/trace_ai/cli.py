@@ -277,6 +277,7 @@ def build_parser() -> argparse.ArgumentParser:
         "candidates", help="list catalog-gap candidates for the catalog owner"
     )
     candidates.add_argument("assessment_id")
+    _json_flag(candidates)
 
     export = commands.add_parser("export", help="serialize approved objects to interop formats")
     export_commands = export.add_subparsers(dest="command")
@@ -671,6 +672,20 @@ def build_parser() -> argparse.ArgumentParser:
         type=_path,
         help="where the feed is written (default: benchmarks/results/)",
     )
+    evaluate.add_argument(
+        "--report",
+        choices=["scorecard", "comparison", "ablation"],
+        help=(
+            "run the offline sweep and render one evaluation page to stdout or --out (#505); "
+            "the committed pages under docs/eval/ stay the build scripts' deliberate step"
+        ),
+    )
+    evaluate.add_argument(
+        "--out",
+        type=_path,
+        help="where --report writes the rendered page (default: stdout)",
+    )
+    _json_flag(evaluate)
 
     capture = commands.add_parser(
         "capture",
@@ -1558,6 +1573,16 @@ def _assessment_candidates(args: argparse.Namespace, service: AssessmentService)
 
     handle = service.handle(args.assessment_id)
     candidates = handle.objects.list(CatalogGapCandidate)
+    if args.as_json:
+        return _print_json(
+            "catalog-gap-candidates",
+            {
+                "assessment_id": args.assessment_id,
+                "catalog_gap_candidates": [
+                    candidate.model_dump(mode="json") for candidate in candidates
+                ],
+            },
+        )
     if not candidates:
         print("no catalog-gap candidates")
         return 0
@@ -2696,7 +2721,7 @@ def _evaluate(args: argparse.Namespace, service: AssessmentService) -> int:
     from trace_ai.services.evaluation.harness import HarnessError, diff_feeds, run_scenario
     from trace_ai.services.evaluation.registry import CLEAN_CONDITION, load_registry
 
-    if args.all_scenarios == bool(args.scenario):
+    if args.report is None and args.all_scenarios == bool(args.scenario):
         print("error: name one scenario or pass --all", file=sys.stderr)
         return 1
 
@@ -2717,6 +2742,9 @@ def _evaluate(args: argparse.Namespace, service: AssessmentService) -> int:
             print("error: --stability runs one named scenario, not --all", file=sys.stderr)
             return 1
         return _evaluate_stability(args)
+
+    if args.report is not None:
+        return _evaluate_report(args)
 
     registry = load_registry()
 
@@ -2744,13 +2772,18 @@ def _evaluate(args: argparse.Namespace, service: AssessmentService) -> int:
         slugs = [args.scenario]
 
     failures = 0
+    drifted = 0
+    runs_payload: list[dict[str, Any]] = []
     for slug in slugs:
         with contextlib.ExitStack() as stack:
             # A named `--work-root` is the operator's to keep and inspect; an unnamed one is a
             # throwaway store and artifact tree, cleaned up when the scenario finishes rather than
             # left behind (one per scenario on `--all`, six full sweeps on the CI scorecard job).
+            # On `--all` each scenario gets its own subdirectory (#505): a shared store would
+            # mint asm-002 onward for later scenarios, and the replayed report's own bytes --
+            # which the offline pin verifies -- carry the assessment identifier.
             if args.work_root is not None:
-                work_root = args.work_root
+                work_root = args.work_root / slug if args.all_scenarios else args.work_root
             else:
                 work_root = _path(
                     stack.enter_context(tempfile.TemporaryDirectory(prefix=f"trace-eval-{slug}-"))
@@ -2769,10 +2802,51 @@ def _evaluate(args: argparse.Namespace, service: AssessmentService) -> int:
                 failures += 1
                 continue
 
+            if outcome.report_hash_verified is False:
+                drifted += 1
+            if args.as_json:
+                import json
+
+                feed_relative = None
+                adversarial = None
+                if outcome.feed_path is not None:
+                    adversarial = json.loads(outcome.feed_path.read_text(encoding="utf-8")).get(
+                        "adversarial"
+                    )
+                    feed_relative = (
+                        str(outcome.feed_path.relative_to(PROJECT_ROOT))
+                        if outcome.feed_path.is_relative_to(PROJECT_ROOT)
+                        else str(outcome.feed_path)
+                    )
+                runs_payload.append(
+                    {
+                        "scenario": outcome.scenario,
+                        "condition": outcome.condition,
+                        "label": outcome.label,
+                        "workflow_run_id": outcome.workflow_run_id,
+                        "run_status": outcome.run_status,
+                        "stopped_because": outcome.stopped_because,
+                        "ablations": outcome.ablations,
+                        "metrics": {
+                            result.metric_name: result.metric_value for result in outcome.metrics
+                        },
+                        "report_hash_verified": outcome.report_hash_verified,
+                        "adversarial": adversarial,
+                        "feed": feed_relative,
+                    }
+                )
+                if not outcome.completed:
+                    failures += 1
+                continue
+
             print(f"scenario:     {outcome.scenario} ({outcome.condition}, label {outcome.label})")
             print(f"workflow run: {outcome.workflow_run_id}  {outcome.run_status}")
             if outcome.ablations:
                 print(f"ablations:    {', '.join(outcome.ablations)} (non-authoritative, DEC-012)")
+            if outcome.report_hash_verified is True:
+                print("report hash:  verified against the scenario's recorded pin")
+            elif outcome.report_hash_verified is False:
+                print("report hash:  DRIFTED from the scenario's recorded pin", file=sys.stderr)
             for result in outcome.metrics:
                 value = f"{result.metric_value:.4g}"
                 print(f"  {result.metric_name:<32} {value}")
@@ -2823,7 +2897,92 @@ def _evaluate(args: argparse.Namespace, service: AssessmentService) -> int:
                     print(f"  {label:<13} {', '.join(keys) if keys else '-'}")
             print()
 
-    return 1 if failures else 0
+    if args.as_json:
+        _print_json("evaluation-runs", {"runs": runs_payload})
+    if failures:
+        return 1
+    # A drifted report hash is the DEC-088 refusal `trace verify` gives the same fact: the
+    # replay stopped reproducing the recording's report. An answer, not a fault.
+    return REFUSED if drifted else 0
+
+
+def _evaluate_report(args: argparse.Namespace) -> int:
+    """Run the offline sweep and render one evaluation page (#505).
+
+    The committed pages under docs/eval/ remain the build scripts' deliberate step -- they carry
+    the DEC-081 history snapshotting and the CI currency check. This renders the same pages from
+    the same sweep for a person or a pipe, to stdout or --out, and stamps nothing into history.
+    """
+    import tempfile
+
+    from trace_ai.config import PROJECT_ROOT
+    from trace_ai.services.evaluation.registry import catalog_version_summary, load_registry
+    from trace_ai.services.evaluation.stamps import DETERMINISTIC_STAMP
+
+    pins = {
+        "registry": "1.0",
+        "catalog": catalog_version_summary(),
+    }
+    with tempfile.TemporaryDirectory(prefix="trace-eval-report-") as tmp:
+        root = _path(tmp)
+        if args.report == "ablation":
+            from trace_ai.services.evaluation.ablation import render_ablation
+            from trace_ai.services.evaluation.stability import run_ablation_set
+
+            comparisons = [
+                run_ablation_set(
+                    entry.slug,
+                    data_root=root / "work" / entry.slug,
+                    label="ablation",
+                    results_root=root / "feeds",
+                )
+                for entry in load_registry()
+                if entry.has_recording_for("clean")
+            ]
+            page = render_ablation(comparisons, generated_at=DETERMINISTIC_STAMP, pins=pins)
+        else:
+            from trace_ai.services.evaluation.sweep import collect_feeds
+
+            feeds = collect_feeds(root)
+            if args.report == "comparison":
+                import json as json_module
+
+                from trace_ai.services.evaluation.comparison import render_comparison
+
+                live_path = PROJECT_ROOT / "docs" / "eval" / "live-stability.json"
+                live = (
+                    json_module.loads(live_path.read_text(encoding="utf-8"))
+                    if live_path.is_file()
+                    else None
+                )
+                page = render_comparison(
+                    feeds, generated_at=DETERMINISTIC_STAMP, pins=pins, live_stability=live
+                )
+            else:
+                import json as json_module
+
+                from trace_ai.services.evaluation.history import load_history
+                from trace_ai.services.evaluation.scorecard import render_scorecard
+
+                history_path = PROJECT_ROOT / "docs" / "eval" / "history.jsonl"
+                live_path = PROJECT_ROOT / "docs" / "eval" / "live-stability.json"
+                live = (
+                    json_module.loads(live_path.read_text(encoding="utf-8"))
+                    if live_path.is_file()
+                    else None
+                )
+                page = render_scorecard(
+                    feeds,
+                    generated_at=DETERMINISTIC_STAMP,
+                    history=load_history(history_path),
+                    live_stability=live,
+                )
+    if args.out is not None:
+        args.out.write_text(page, encoding="utf-8")
+        print(f"wrote {args.out}")
+    else:
+        print(page)
+    return 0
 
 
 def _evaluate_baseline(args: argparse.Namespace) -> int:

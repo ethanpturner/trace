@@ -449,3 +449,72 @@ def test_a_decision_count_mismatch_fails_loudly(tmp_path: Path) -> None:
             registry_path=registry,
             results_root=tmp_path / "results",
         )
+
+
+# ------------------------------------------------------------------------------------------
+# The offline replay pin (#505)
+# ------------------------------------------------------------------------------------------
+
+
+def test_a_pinned_scenario_verifies_its_replayed_report_hash(tmp_path: Path) -> None:
+    """`recorded/report-hash-offline.txt` pins the harness's own replay -- distinct from the
+    script's capture-conditions pin, because the two replay paths stamp different model
+    profiles into the report and one pin cannot serve both."""
+    from trace_ai.services.evaluation.harness import run_scenario
+
+    outcome = run_scenario(
+        "forgeflow",
+        data_root=tmp_path / "work",
+        label="pin-test",
+        results_root=tmp_path / "feeds",
+    )
+    assert outcome.completed
+    assert outcome.report_hash_verified is True
+
+
+def test_a_scenario_without_a_pin_reports_none_not_a_pass(tmp_path: Path) -> None:
+    from trace_ai.services.evaluation.harness import run_scenario
+
+    outcome = run_scenario(
+        "unsigned-webhooks",
+        data_root=tmp_path / "work",
+        label="pin-test",
+        results_root=tmp_path / "feeds",
+    )
+    assert outcome.completed
+    assert outcome.report_hash_verified is None
+
+
+def test_a_wrong_pin_reports_drift(tmp_path: Path) -> None:
+    """Drift is `False`, never an exception: the CLI answers it as exit 3, the same answer
+    `trace verify` gives a drifted report (DEC-088)."""
+    import shutil
+
+    from trace_ai.config import PROJECT_ROOT
+    from trace_ai.services.evaluation.harness import run_scenario
+
+    copy = tmp_path / "scenario"
+    for sub in ("input", "recorded", "expected"):
+        shutil.copytree(PROJECT_ROOT / "demo" / "forgeflow" / sub, copy / sub)
+    (copy / "recorded" / "report-hash-offline.txt").write_text(
+        "sha256:" + "0" * 64 + "\n", encoding="utf-8"
+    )
+    registry = tmp_path / "scenarios.yaml"
+    registry.write_text(
+        'registry_version: "1.0"\n'
+        "scenarios:\n"
+        "  - slug: pin-drift\n"
+        "    name: Pin Drift\n"
+        f"    path: {copy}\n"
+        "    status: authored\n",
+        encoding="utf-8",
+    )
+    outcome = run_scenario(
+        "pin-drift",
+        data_root=tmp_path / "work",
+        label="pin-test",
+        registry_path=registry,
+        results_root=tmp_path / "feeds",
+    )
+    assert outcome.completed
+    assert outcome.report_hash_verified is False

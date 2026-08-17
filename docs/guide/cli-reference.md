@@ -386,6 +386,7 @@ trace evaluate [scenario] [--all] [--condition CONDITION]
                [--stability N] [--model-profile MODEL_PROFILE]
                [--ablate NAME] [--label LABEL] [--work-root WORK_ROOT]
                [--diff-against LABEL] [--results-root RESULTS_ROOT]
+               [--report {scorecard,comparison,ablation}] [--out OUT] [--json]
 ```
 
 Replays a registered benchmark scenario through the ordinary pipeline, offline, from its
@@ -401,8 +402,15 @@ refused by name.
   measure nothing.
 - `--label`, `--condition`, `--work-root`, `--results-root`, and `--diff-against` control where
   the feed lands and what it is compared against.
+- `--report scorecard|comparison|ablation` runs the offline sweep and renders one evaluation
+  page to stdout or `--out`; the committed pages under `docs/eval/` remain the build scripts'
+  deliberate step.
+- `--json` prints one envelope with the per-run metrics, statuses, adversarial block, feed
+  path, and the replay pin's verdict.
 
-Exits 0 on a scored run, 1 on a refusal or error.
+A scenario carrying `recorded/report-hash-offline.txt` has its replayed report verified against
+that pin: verified prints as such, and drift exits 3 — the same answer `verify` gives a drifted
+report. Otherwise exits 0 on a scored run, 1 on a refusal or error.
 
 ## capture
 
