@@ -65,6 +65,34 @@ def route(path: str, service: AssessmentService) -> Response:
         scorecard = SCORECARD.read_text(encoding="utf-8") if SCORECARD.is_file() else None
         return Response(200, render.render_evaluation(scorecard))
 
+    if segments[:1] == ["diff"]:
+        # /diff/<before>/<after> compares two assessments' approved models (DEC-097, #508).
+        # Two scoped reads, never a cross-assessment query -- the diff service opens each handle
+        # in turn, which is why this lives beside the per-assessment routes rather than inside one.
+        if len(segments) != 3:
+            return Response(
+                404,
+                render.render_page(
+                    "Not found", None, "", "<p>Diff is /diff/&lt;before&gt;/&lt;after&gt;.</p>"
+                ),
+            )
+        before, after = segments[1], segments[2]
+        if _find_assessment(service, before) is None or _find_assessment(service, after) is None:
+            return Response(
+                404, render.render_page("Not found", None, "", "<p>No such assessment.</p>")
+            )
+        from trace_ai.services.diff import diff_assessments
+        from trace_ai.services.export import ExportError
+
+        try:
+            diff = diff_assessments(service.handle(before), service.handle(after))
+        except ExportError as refused:
+            return Response(
+                200,
+                render.render_page("Assessment diff", None, "", f"<p>Cannot diff: {refused}</p>"),
+            )
+        return Response(200, render.render_diff(before, after, diff))
+
     assessment_id = segments[0]
     assessment = _find_assessment(service, assessment_id)
     if assessment is None:
@@ -78,8 +106,12 @@ def route(path: str, service: AssessmentService) -> Response:
         return Response(200, render.render_overview(handle, assessment))
     if view == "context":
         return Response(200, render.render_context(handle, assessment))
+    if view == "threats":
+        return Response(200, render.render_threats(handle, assessment))
     if view == "workflow":
         return Response(200, render.render_workflow(handle, assessment))
+    if view == "ledger":
+        return Response(200, render.render_ledger(handle, assessment))
     if view == "questions":
         return Response(200, render.render_questions(handle, assessment))
     if view == "findings":
