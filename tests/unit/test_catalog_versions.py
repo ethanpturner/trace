@@ -90,12 +90,12 @@ def test_a_retired_requirement_would_stay_in_its_file() -> None:
 
 
 def test_the_registry_governs_lifecycle_without_touching_frozen_content() -> None:
-    """DEC-057: 0.1's frozen manifest says draft; the registry says active; the registry wins."""
+    """DEC-057: each frozen manifest says draft; the registry says active; the registry wins."""
     assert VERSIONS_REGISTRY.is_file()
     assert registry_status("0.1") == "active"
-    assert registry_status("0.2") == "draft"
+    assert registry_status("0.2") == "active"
     assert load_catalog("0.1").catalog.status is CatalogStatus.ACTIVE
-    assert load_catalog("0.2").catalog.status is CatalogStatus.DRAFT
+    assert load_catalog("0.2").catalog.status is CatalogStatus.ACTIVE
 
 
 def test_registry_entries_and_version_directories_agree_in_both_directions() -> None:

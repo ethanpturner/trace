@@ -1,7 +1,7 @@
 """Resolve every ASVS citation in the requirements catalog against the pinned ASVS export.
 
 Survey item A1. ASVS publishes a stable flat JSON export at each release tag, keyed by `req_id`
-(e.g. ``V6.1.3``). Every ``source_frameworks`` entry in ``requirements/0.1/*.yaml`` that names
+(e.g. ``V6.1.3``). Every ``source_frameworks`` entry in any registered catalog version that names
 ``OWASP ASVS`` carries the reference token ASVS's own README prescribes for external documents,
 ``v5.0.0-6.1.3`` (issue #222, survey item A2); the export keys the same requirement as ``V6.1.3``,
 so resolution is a version check and a lookup. A typo'd or stale identifier is otherwise silent
@@ -29,8 +29,10 @@ import sys
 from pathlib import Path
 from typing import Final
 
+import yaml
+
 from trace_ai.config import PROJECT_ROOT
-from trace_ai.services.requirements.loader import current_version, load_catalog
+from trace_ai.services.requirements.loader import load_catalog
 
 # Cached OWASP Application Security Verification Standard 5.0.0 flat JSON export.
 # Source tag: https://github.com/OWASP/ASVS/tree/v5.0.0/5.0/docs_en
@@ -69,16 +71,22 @@ def unresolved_citations(export_path: str = str(ASVS_EXPORT)) -> list[tuple[str,
     citation has no row in the ASVS export to resolve against.
     """
     valid = load_req_ids(export_path)
-    catalog = load_catalog(current_version())
+    registry = yaml.safe_load(
+        (PROJECT_ROOT / "requirements" / "versions.yaml").read_text(encoding="utf-8")
+    )
     unresolved: list[tuple[str, str]] = []
-    for requirement in catalog.requirements:
-        for citation in requirement.source_frameworks:
-            framework, separator, token = citation.partition(": ")
-            if not separator or framework != ASVS_FRAMEWORK:
-                continue
-            req_id = asvs_req_id(token.strip())
-            if req_id is None or req_id not in valid:
-                unresolved.append((requirement.id, citation))
+    # Every registered version, not the root manifest's current one (#500): a citation in a
+    # released version is exactly as load-bearing as one in the default, and 0.2's fourteen
+    # new requirements were unchecked while this resolved only `current_version()`.
+    for version in sorted(registry["versions"]):
+        for requirement in load_catalog(str(version)).requirements:
+            for citation in requirement.source_frameworks:
+                framework, separator, token = citation.partition(": ")
+                if not separator or framework != ASVS_FRAMEWORK:
+                    continue
+                req_id = asvs_req_id(token.strip())
+                if req_id is None or req_id not in valid:
+                    unresolved.append((f"{version}:{requirement.id}", citation))
     return unresolved
 
 

@@ -17,7 +17,11 @@ versions:
     last_reviewed: 2026-08-12
 
   "0.2":
-    status: draft
+    status: active
     maintainer: Ethan Turner
-    released: null
-    last_reviewed: 2026-08-12
+    # DEC-099's release condition, fired: a version releases when the first committed recorded
+    # scenario pins it -- rag-support-bot (DEC-098) made 0.2's content load-bearing for a replay,
+    # and content a replay depends on must freeze. Release does not move the default: the root
+    # manifest still names 0.1, and switching the default is its own decision (DEC-099).
+    released: 2026-08-17
+    last_reviewed: 2026-08-17

@@ -24,10 +24,9 @@ import yaml
 
 from trace_ai.config import PROJECT_ROOT
 from trace_ai.services.evaluation.comparison import render_comparison
-from trace_ai.services.evaluation.registry import REGISTRY_PATH
+from trace_ai.services.evaluation.registry import REGISTRY_PATH, catalog_version_summary
 from trace_ai.services.evaluation.stamps import DETERMINISTIC_STAMP
 from trace_ai.services.evaluation.sweep import collect_feeds, load_feeds
-from trace_ai.services.requirements.loader import current_version
 
 OUTPUT = PROJECT_ROOT / "docs" / "eval" / "comparison.md"
 # Pinned so the committed table changes only when a metric does, never on the clock.
@@ -39,7 +38,7 @@ def _pins() -> dict[str, str]:
     registry = yaml.safe_load(REGISTRY_PATH.read_text(encoding="utf-8"))
     return {
         "registry": str(registry["registry_version"]),
-        "catalog": current_version(),
+        "catalog": catalog_version_summary(),
     }
 
 

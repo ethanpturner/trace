@@ -25,6 +25,7 @@ __all__ = [
     "RegistryError",
     "Scenario",
     "UnknownScenarioError",
+    "catalog_version_summary",
     "load_registry",
     "scenario",
 ]
@@ -214,3 +215,23 @@ def scenario(slug: str, *, registry_path: Path | None = None) -> Scenario:
         if entry.slug == slug:
             return entry
     raise UnknownScenarioError(slug, [entry.slug for entry in scenarios])
+
+
+def catalog_version_summary(scenarios: list[Scenario] | None = None) -> str:
+    """The catalog versions the corpus actually assesses against, counted (#500).
+
+    A scenario without a pin (DEC-098) assesses against the loader's current version, exactly
+    as an interactive assessment defaults, so the summary resolves the absence the same way.
+    One version reads as before ("0.1"); a mixed corpus names each with its scenario count
+    ("0.1 (12), 0.2 (1)") — a single stamp over a mixed corpus was structurally incapable of
+    being true.
+    """
+    from collections import Counter
+
+    from trace_ai.services.requirements.loader import current_version
+
+    entries = scenarios if scenarios is not None else load_registry()
+    counts = Counter(entry.catalog_version or current_version() for entry in entries)
+    if len(counts) == 1:
+        return next(iter(counts))
+    return ", ".join(f"{version} ({count})" for version, count in sorted(counts.items()))

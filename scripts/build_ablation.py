@@ -23,10 +23,13 @@ import yaml
 
 from trace_ai.config import PROJECT_ROOT
 from trace_ai.services.evaluation.ablation import render_ablation
-from trace_ai.services.evaluation.registry import REGISTRY_PATH, load_registry
+from trace_ai.services.evaluation.registry import (
+    REGISTRY_PATH,
+    catalog_version_summary,
+    load_registry,
+)
 from trace_ai.services.evaluation.stability import AblationComparison, run_ablation_set
 from trace_ai.services.evaluation.stamps import DETERMINISTIC_STAMP
-from trace_ai.services.requirements.loader import current_version
 
 OUTPUT = PROJECT_ROOT / "docs" / "eval" / "ablation.md"
 # Pinned so the committed table changes only when a metric does, never on the clock.
@@ -35,7 +38,7 @@ GENERATED_AT = DETERMINISTIC_STAMP
 
 def _pins() -> dict[str, str]:
     registry = yaml.safe_load(REGISTRY_PATH.read_text(encoding="utf-8"))
-    return {"registry": str(registry["registry_version"]), "catalog": current_version()}
+    return {"registry": str(registry["registry_version"]), "catalog": catalog_version_summary()}
 
 
 def _comparisons(results_root: Path) -> list[AblationComparison]:
