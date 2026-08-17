@@ -1,10 +1,4 @@
-"""Capture the ForgeFlow recording from a live model run (#324).
-
-    uv run python scripts/capture_forgeflow.py extract
-    # author capture/decisions-context.yaml from the exported review file, then
-    uv run python scripts/capture_forgeflow.py reason
-    # author capture/decisions-findings.yaml from the exported findings summary, then
-    uv run python scripts/capture_forgeflow.py report
+"""Capture a registered scenario's recording from a live model run (#482, DEC-091).
 
 The three stages mirror `scripts/replay_forgeflow.py` exactly — the same service calls, the same
 decision writers, the same pinned report timestamp — because the point of a capture is that the
@@ -12,19 +6,23 @@ replayer can consume it without changing. What differs is the model: every call 
 provider through the seam, and a wrapper records each response the run consumed, in consumption
 order, shaped exactly as `load_recorded_responses` reads them back.
 
-Everything lands in a staging directory (`demo/forgeflow/capture/`) rather than in `recorded/`,
-so a partial capture cannot half-replace the committed recording. Promotion into `recorded/` is a
+Everything lands in a staging directory (`<scenario>/capture/`) rather than in `recorded/`, so a
+partial capture cannot half-replace the committed recording. Promotion into `recorded/` is a
 deliberate copy after the replay round-trip is verified.
 
-The capture spends real money — about 28 calls on `claude-opus-5`, $2.25-$5.97 by the 2026-08-09
-estimate — and each stage refuses to run twice: re-running a stage would re-spend it.
+Checkpoint decisions are authored per capture, in the staging directory, from the files each
+stage exports. A scenario's committed `recorded/decisions-*.yaml` answer the *replay* of the
+recording they were authored against; a fresh live run allocates identifiers against its own
+objects, so applying a previous capture's decisions blind would decide objects nobody reviewed.
+The committed files are a starting point for authoring, never an input to a live run (DEC-091).
+
+The capture spends real money and each stage refuses to run twice: re-running a stage would
+re-spend it. The refusal is an answer, not a fault — the CLI renders it as exit code 3 (DEC-088).
 """
 
 from __future__ import annotations
 
-import argparse
 import json
-import sys
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
@@ -32,14 +30,14 @@ import yaml
 
 from trace_ai.config import PROJECT_ROOT
 from trace_ai.domain.assessment import Assessment, default_configuration
-from trace_ai.domain.enums import SourceOrigin
+from trace_ai.domain.enums import Severity, SourceOrigin
 from trace_ai.domain.evidence import EvidenceReference
+from trace_ai.domain.execution import WorkflowRun
 from trace_ai.domain.finding import Finding
 from trace_ai.domain.question import Question
 from trace_ai.domain.source_document import TrustLevel
 from trace_ai.infrastructure.database.store import AssessmentStore
-from trace_ai.infrastructure.model.anthropic_adapter import AnthropicModel
-from trace_ai.infrastructure.model.profiles import resolve_profile
+from trace_ai.infrastructure.model.recorded import load_recorded_responses
 from trace_ai.infrastructure.model.seam import (
     GenerationSettings,
     ModelCapability,
@@ -75,27 +73,38 @@ from trace_ai.workflow.finding_review import (
 from trace_ai.workflow.limits import Budget
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from pydantic import BaseModel
 
+    from trace_ai.infrastructure.model.profiles import ModelProfile
     from trace_ai.infrastructure.model.recorded import RecordedResponse
+    from trace_ai.services.evaluation.registry import Scenario
 
-INPUT = PROJECT_ROOT / "demo" / "forgeflow" / "input"
-CAPTURE = PROJECT_ROOT / "demo" / "forgeflow" / "capture"
-DATA_ROOT = PROJECT_ROOT / "data" / "capture-forgeflow"
-PROFILE_NAME = "primary-development"
+__all__ = [
+    "CaptureError",
+    "CaptureRefusedError",
+    "RecordingModel",
+    "capture_data_root",
+    "capture_dir",
+    "stage_extract",
+    "stage_reason",
+    "stage_report",
+]
+
 REVIEWER = "recorded-reviewer"
 
 # The capture's generation timestamp, pinned so the replay is byte-identical. The replayer must
-# carry the same value when this capture is promoted.
+# carry the same value when a capture is promoted.
 GENERATED_AT = DETERMINISTIC_STAMP
 
-# A hard stop well above the ~28-call, ~$5 estimate: a runaway costs one order of magnitude,
-# never an open-ended bill.
+# A hard stop well above the ~28-call, single-digit-dollar shape of a scenario run: a runaway
+# costs one order of magnitude, never an open-ended bill.
 BUDGET_CALLS = 60
 BUDGET_COST = Decimal("30")
 """The cost ceiling is checked against a projection of max_output_tokens per call, and the
 64,000-token ceiling makes that projection ~4x any plausible actual spend -- so the guard sits
-well above the ~$5 estimate to stop a runaway without stopping the run it is guarding."""
+well above the estimate to stop a runaway without stopping the run it is guarding."""
 
 _SLUGS = {
     "ContextExtractionProposal": "context-extraction",
@@ -105,6 +114,26 @@ _SLUGS = {
     "CriticalReviewProposal": "critical-review",
     "ReportSections": "report-sections",
 }
+
+
+class CaptureError(ValueError):
+    """A capture input the operator can fix: a missing decisions file, a run that stopped where a
+    pause was expected. Rendered by the CLI as a one-line exit-1 error (DEC-088)."""
+
+
+class CaptureRefusedError(ValueError):
+    """A stage that already ran and would re-spend if run again. The refusal is an answer — the
+    stage's output exists — so the CLI renders it as exit code 3, not a fault (DEC-088)."""
+
+
+def capture_dir(scenario: Scenario) -> Path:
+    """The staging directory a capture writes into, beside the scenario's `recorded/`."""
+    return scenario.path / "capture"
+
+
+def capture_data_root(scenario: Scenario) -> Path:
+    """The capture's own data root, apart from the operator's assessments."""
+    return PROJECT_ROOT / "data" / f"capture-{scenario.slug}"
 
 
 def _usage_dict(usage: ModelUsage) -> dict[str, object]:
@@ -130,8 +159,9 @@ class RecordingModel:
     and does not need to; a live retry that recovered replays as a first-attempt success.
     """
 
-    def __init__(self, inner: StructuredModel) -> None:
+    def __init__(self, inner: StructuredModel, staging: Path) -> None:
         self._inner = inner
+        self._staging = staging
 
     @property
     def name(self) -> str:
@@ -158,9 +188,9 @@ class RecordingModel:
             cache_prefix=cache_prefix,
         )
         if isinstance(outcome, ModelSuccess):
-            index = len(list(CAPTURE.glob("[0-9]*.json"))) + 1
+            index = len(list(self._staging.glob("[0-9]*.json"))) + 1
             slug = _SLUGS.get(type(outcome.value).__name__, "response")
-            path = CAPTURE / f"{index:02d}-{slug}.json"
+            path = self._staging / f"{index:02d}-{slug}.json"
             # The envelope (#461): the named schema, the captured usage the offline ledger replays,
             # and the response. A live capture is the one place real usage exists, so this is where
             # it is written.
@@ -175,13 +205,13 @@ class RecordingModel:
         return outcome
 
 
-class FallbackModel:
+class _FallbackModel:
     """Serves the already-recorded responses in order, then delegates to the live model.
 
-    This is how an interrupted capture resumes without re-spending (#324): a fresh data root
-    replays the recorded prefix — same responses, same conversions, same allocated identifiers —
-    and the first unanswered call goes live. Only the live inner is a `RecordingModel`, so a
-    replayed response is never re-recorded.
+    This is how an interrupted capture resumes without re-spending: a fresh data root replays the
+    recorded prefix — same responses, same conversions, same allocated identifiers — and the first
+    unanswered call goes live. Only the live inner is a `RecordingModel`, so a replayed response
+    is never re-recorded.
     """
 
     def __init__(self, recorded: list[RecordedResponse], live: StructuredModel) -> None:
@@ -209,7 +239,7 @@ class FallbackModel:
             queued = self._recorded.pop(0)
             value = queued.response
             if not isinstance(value, schema):
-                raise SystemExit(
+                raise CaptureError(
                     f"the next recorded response is a {type(value).__name__}, not the "
                     f"{schema.__name__} this call asks for; the capture and the recording have "
                     f"diverged and continuing live would corrupt the sequence"
@@ -240,23 +270,50 @@ def _budget() -> Budget:
     )
 
 
-def _model(*, from_recorded: bool, skip: int = 0) -> StructuredModel:
-    live = RecordingModel(AnthropicModel(PROFILE_NAME))
+def _refuse_fake(profile: ModelProfile, live: StructuredModel | None) -> None:
+    """Refuse the fake provider before a stage takes its first side effect.
+
+    The check runs at stage entry, not at model construction: by construction time the staging
+    directory, the capture data root, and the loaded documents already exist, and a refusal that
+    late leaves half a capture on disk. An injected `live` model (a test's deterministic stand-in)
+    is exempt — the profile then only prices the run.
+    """
+    if live is None and profile.provider == "fake":
+        raise CaptureError(
+            f"a capture spends live provider calls; profile {profile.name!r} names the fake "
+            f"provider, which would record the deterministic substitute replay already has"
+        )
+
+
+def _live_model(profile: ModelProfile) -> StructuredModel:
+    # Deferred so importing this module — and every offline test of it — needs no provider SDK
+    # client construction. The adapter itself defers the API key to the first call.
+    from trace_ai.infrastructure.model.factory import build_model
+
+    return build_model(profile)
+
+
+def _model(
+    scenario: Scenario,
+    *,
+    profile: ModelProfile,
+    from_recorded: bool,
+    skip: int = 0,
+    live: StructuredModel | None = None,
+) -> StructuredModel:
+    staging = capture_dir(scenario)
+    recording = RecordingModel(live if live is not None else _live_model(profile), staging)
     if not from_recorded:
-        return live
-    from trace_ai.infrastructure.model.recorded import load_recorded_responses
-
-    paths = sorted(CAPTURE.glob("[0-9]*.json"))[skip:]
-    return FallbackModel(list(load_recorded_responses(paths)), live)
+        return recording
+    paths = sorted(staging.glob("[0-9]*.json"))[skip:]
+    return _FallbackModel(list(load_recorded_responses(paths)), recording)
 
 
-def _assessment_id() -> str:
-    return (CAPTURE / "assessment-id.txt").read_text(encoding="utf-8").strip()
+def _assessment_id(scenario: Scenario) -> str:
+    return (capture_dir(scenario) / "assessment-id.txt").read_text(encoding="utf-8").strip()
 
 
 def _spent(service: AssessmentService, assessment_id: str) -> str:
-    from trace_ai.domain.execution import WorkflowRun
-
     handle = service.handle(assessment_id)
     runs = handle.objects.list(WorkflowRun)
     cost = sum((run.estimated_cost or Decimal(0) for run in runs), Decimal(0))
@@ -264,43 +321,56 @@ def _spent(service: AssessmentService, assessment_id: str) -> str:
     return f"{calls} calls, ${cost:.2f} per the run rows so far"
 
 
-def stage_extract(*, from_recorded: bool = False) -> None:
-    """Create the assessment, load the inputs, and run to checkpoint 1.
+def stage_extract(
+    scenario: Scenario,
+    *,
+    profile_name: str,
+    from_recorded: bool = False,
+    live: StructuredModel | None = None,
+    data_root: Path | None = None,
+) -> None:
+    """Create the assessment, load the scenario's inputs, and run to checkpoint 1.
 
-    With `--from-recorded`, existing recordings answer the calls they cover (an interrupted
-    capture resumed on a fresh data root) and only unanswered calls go live.
+    With `from_recorded`, existing staged recordings answer the calls they cover (an interrupted
+    capture resumed on a fresh data root) and only unanswered calls go live. `data_root` exists
+    for tests, which must not write under the repository's `data/`.
     """
-    if CAPTURE.exists() and any(CAPTURE.glob("[0-9]*.json")) and not from_recorded:
-        raise SystemExit(
-            f"{CAPTURE} holds recordings; a re-run would re-spend them. Resume with "
+    staging = capture_dir(scenario)
+    if data_root is None:
+        data_root = capture_data_root(scenario)
+    if staging.exists() and any(staging.glob("[0-9]*.json")) and not from_recorded:
+        raise CaptureRefusedError(
+            f"{staging} holds recordings; a re-run would re-spend them. Resume with "
             f"--from-recorded, or remove the directory to start over."
         )
-    CAPTURE.mkdir(parents=True, exist_ok=True)
-    if DATA_ROOT.exists():
-        raise SystemExit(f"{DATA_ROOT} exists; remove it to start a fresh capture")
+    if data_root.exists():
+        raise CaptureError(f"{data_root} exists; remove it to start a fresh capture")
 
-    profile = resolve_profile(PROFILE_NAME)
-    with AssessmentStore.at_root(DATA_ROOT) as store:
-        service = AssessmentService(store, artifact_root=DATA_ROOT)
+    from trace_ai.infrastructure.model.profiles import resolve_profile
+
+    profile = resolve_profile(profile_name)
+    _refuse_fake(profile, live)
+    staging.mkdir(parents=True, exist_ok=True)
+    with AssessmentStore.at_root(data_root) as store:
+        service = AssessmentService(store, artifact_root=data_root)
         created = service.create(
-            "ForgeFlow", default_configuration(PROFILE_NAME, "stride-scenario-based")
+            scenario.name, default_configuration(profile_name, "stride-scenario-based")
         )
-        (CAPTURE / "assessment-id.txt").write_text(created.id + "\n", encoding="utf-8")
+        (staging / "assessment-id.txt").write_text(created.id + "\n", encoding="utf-8")
         loader = DocumentLoader(service.handle(created.id))
-        for path in sorted(INPUT.iterdir()):
-            if path.is_file():
-                loader.load_document(
-                    path, origin=SourceOrigin.UPLOADED_DOCUMENT, trust_level=TrustLevel.UNTRUSTED
-                )
+        for path in scenario.input_documents():
+            loader.load_document(
+                path, origin=SourceOrigin.UPLOADED_DOCUMENT, trust_level=TrustLevel.UNTRUSTED
+            )
         outcome = run_assessment(
             service,
             created.id,
-            model=_model(from_recorded=from_recorded),
+            model=_model(scenario, profile=profile, from_recorded=from_recorded, live=live),
             profile=profile,
             budget=_budget(),
         )
         if not outcome.paused:
-            raise SystemExit(f"expected a pause at checkpoint 1, got {outcome.stopped_because}")
+            raise CaptureError(f"expected a pause at checkpoint 1, got {outcome.stopped_because}")
 
         handle = service.handle(created.id)
         context = current_system_context(handle)
@@ -313,23 +383,38 @@ def stage_extract(*, from_recorded: bool = False) -> None:
         package = build_context_review_package(
             handle, index=EvidenceIndex(handle), validation=validation
         )
-        (CAPTURE / "review-export.yaml").write_text(write_review_file(package), encoding="utf-8")
+        (staging / "review-export.yaml").write_text(write_review_file(package), encoding="utf-8")
         print(f"paused at checkpoint 1; {_spent(service, created.id)}")
-        print(f"author {CAPTURE / 'decisions-context.yaml'} from review-export.yaml, then: reason")
+        print(f"author {staging / 'decisions-context.yaml'} from review-export.yaml, then: reason")
 
 
-def stage_reason(*, from_recorded: bool = False) -> None:
+def stage_reason(
+    scenario: Scenario,
+    *,
+    profile_name: str,
+    from_recorded: bool = False,
+    live: StructuredModel | None = None,
+    data_root: Path | None = None,
+) -> None:
     """Apply the authored context decisions, approve, and run live to checkpoint 2."""
-    decisions = CAPTURE / "decisions-context.yaml"
+    staging = capture_dir(scenario)
+    if data_root is None:
+        data_root = capture_data_root(scenario)
+    decisions = staging / "decisions-context.yaml"
     if not decisions.is_file():
-        raise SystemExit(f"{decisions} does not exist; author it from review-export.yaml first")
-    if (CAPTURE / "findings-export.yaml").exists():
-        raise SystemExit("the reasoning stage already ran; a re-run would re-spend its calls")
+        raise CaptureError(f"{decisions} does not exist; author it from review-export.yaml first")
+    if (staging / "findings-export.yaml").exists():
+        raise CaptureRefusedError(
+            "the reasoning stage already ran; a re-run would re-spend its calls"
+        )
 
-    profile = resolve_profile(PROFILE_NAME)
-    assessment_id = _assessment_id()
-    with AssessmentStore.at_root(DATA_ROOT) as store:
-        service = AssessmentService(store, artifact_root=DATA_ROOT)
+    from trace_ai.infrastructure.model.profiles import resolve_profile
+
+    profile = resolve_profile(profile_name)
+    _refuse_fake(profile, live)
+    assessment_id = _assessment_id(scenario)
+    with AssessmentStore.at_root(data_root) as store:
+        service = AssessmentService(store, artifact_root=data_root)
         handle = service.handle(assessment_id)
         document = read_review_file(decisions.read_text(encoding="utf-8"))
         apply_review_file(handle, document, reviewer_id=REVIEWER)
@@ -348,12 +433,12 @@ def stage_reason(*, from_recorded: bool = False) -> None:
         outcome = resume_assessment(
             service,
             assessment_id,
-            model=_model(from_recorded=from_recorded, skip=1),
+            model=_model(scenario, profile=profile, from_recorded=from_recorded, skip=1, live=live),
             profile=profile,
             budget=_budget(),
         )
         if not outcome.paused:
-            raise SystemExit(f"expected a pause at checkpoint 2, got {outcome.stopped_because}")
+            raise CaptureError(f"expected a pause at checkpoint 2, got {outcome.stopped_because}")
 
         handle = service.handle(assessment_id)
         findings = [
@@ -372,7 +457,7 @@ def stage_reason(*, from_recorded: bool = False) -> None:
             {"id": question.id, "question": question.question, "status": question.status.value}
             for question in handle.objects.list(Question)
         ]
-        (CAPTURE / "findings-export.yaml").write_text(
+        (staging / "findings-export.yaml").write_text(
             yaml.safe_dump(
                 {"assessment_id": assessment_id, "findings": findings, "questions": questions},
                 sort_keys=False,
@@ -382,25 +467,37 @@ def stage_reason(*, from_recorded: bool = False) -> None:
             encoding="utf-8",
         )
         print(f"paused at checkpoint 2; {_spent(service, assessment_id)}")
-        print(f"author {CAPTURE / 'decisions-findings.yaml'}, then: report")
+        print(f"author {staging / 'decisions-findings.yaml'}, then: report")
 
 
-def stage_report() -> None:
+def stage_report(
+    scenario: Scenario,
+    *,
+    profile_name: str,
+    live: StructuredModel | None = None,
+    data_root: Path | None = None,
+) -> None:
     """Apply the authored finding decisions and run live to completion."""
-    decisions = CAPTURE / "decisions-findings.yaml"
+    staging = capture_dir(scenario)
+    if data_root is None:
+        data_root = capture_data_root(scenario)
+    decisions = staging / "decisions-findings.yaml"
     if not decisions.is_file():
-        raise SystemExit(f"{decisions} does not exist; author it from findings-export.yaml first")
-    if (CAPTURE / "report-hash.txt").exists():
-        raise SystemExit("the report stage already ran; a re-run would re-spend its call")
+        raise CaptureError(f"{decisions} does not exist; author it from findings-export.yaml first")
+    if (staging / "report-hash.txt").exists():
+        raise CaptureRefusedError("the report stage already ran; a re-run would re-spend its call")
 
-    profile = resolve_profile(PROFILE_NAME)
-    assessment_id = _assessment_id()
-    with AssessmentStore.at_root(DATA_ROOT) as store:
-        service = AssessmentService(store, artifact_root=DATA_ROOT)
+    from trace_ai.infrastructure.model.profiles import resolve_profile
+
+    profile = resolve_profile(profile_name)
+    _refuse_fake(profile, live)
+    assessment_id = _assessment_id(scenario)
+    with AssessmentStore.at_root(data_root) as store:
+        service = AssessmentService(store, artifact_root=data_root)
         handle = service.handle(assessment_id)
         recorded = yaml.safe_load(decisions.read_text(encoding="utf-8"))
         if recorded.get("assessment_id") != assessment_id:
-            raise SystemExit(
+            raise CaptureError(
                 f"the finding decisions are for {recorded.get('assessment_id')}, "
                 f"not {assessment_id}"
             )
@@ -408,8 +505,6 @@ def stage_report() -> None:
         for entry in recorded.get("findings", []):
             finding = findings[entry["id"]]
             if "severity" in entry:
-                from trace_ai.domain.enums import Severity
-
                 finding, _ = change_severity(
                     handle, finding, Severity(entry["severity"]), reviewer_id=REVIEWER
                 )
@@ -427,46 +522,24 @@ def stage_report() -> None:
         outcome = resume_assessment(
             service,
             assessment_id,
-            model=_model(from_recorded=False),
+            model=_model(scenario, profile=profile, from_recorded=False, live=live),
             profile=profile,
             budget=_budget(),
             generated_at=GENERATED_AT,
         )
         if not outcome.completed:
-            raise SystemExit(f"expected completion, got {outcome.stopped_because}")
+            raise CaptureError(f"expected completion, got {outcome.stopped_because}")
 
         handle = service.handle(assessment_id)
         assessment = handle.objects.get(Assessment, assessment_id)
         if assessment.final_report_path is None:
-            raise SystemExit("the run completed and no report path was recorded")
+            raise CaptureError("the run completed and no report path was recorded")
         filename = assessment.final_report_path.rpartition("/")[2]
         report_hash = handle.artifacts.hash_of("outputs", filename)
-        (CAPTURE / "report-hash.txt").write_text(report_hash + "\n", encoding="utf-8")
-        usage: dict[str, object] = {
+        (staging / "report-hash.txt").write_text(report_hash + "\n", encoding="utf-8")
+        summary: dict[str, object] = {
             "report_hash": report_hash,
             "spent": _spent(service, assessment_id),
         }
-        print(json.dumps(usage, indent=2))
-        print("verify the round trip, then promote capture/ into recorded/")
-
-
-def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("stage", choices=["extract", "reason", "report"])
-    parser.add_argument(
-        "--from-recorded",
-        action="store_true",
-        help="serve existing recordings before going live (resume an interrupted capture)",
-    )
-    args = parser.parse_args(argv)
-    if args.stage == "extract":
-        stage_extract(from_recorded=args.from_recorded)
-    elif args.stage == "reason":
-        stage_reason(from_recorded=args.from_recorded)
-    else:
-        stage_report()
-    return 0
-
-
-if __name__ == "__main__":
-    sys.exit(main())
+        print(json.dumps(summary, indent=2))
+        print(f"verify the round trip, then promote {staging.name}/ into recorded/")

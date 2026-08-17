@@ -30,6 +30,7 @@ uv run trace run asm-001 --model-profile offline-fake --response recorded.json
 uv run trace context show asm-001 --evidence     # the review package, excerpts labelled
 uv run trace context approve asm-001             # non-zero while something blocking is open
 uv run trace evaluate --all                      # replay every recorded benchmark scenario
+uv run trace capture unsigned-webhooks extract   # stage a live recording; spends provider calls
 uv run python scripts/replay_forgeflow.py        # the whole pipeline, hash-checked, no key
 
 uv run pytest                    # unit tests; integration and evaluation are deselected

@@ -9,7 +9,8 @@ no network, and exits non-zero if the report's bytes stop matching `report-hash.
 
 ## What this recording is
 
-The responses were captured from live provider calls by `scripts/capture_forgeflow.py` (#324):
+The responses were captured from live provider calls by `scripts/capture_forgeflow.py` (#324;
+since generalized into `trace capture`, #482, and the script removed):
 a recording wrapper behind the model seam wrote each successful response, in consumption order,
 shaped exactly as `load_recorded_responses` reads them back. The reviewer decisions were authored
 against what the live run actually produced — sixteen components, fifteen threats, five candidate
@@ -40,7 +41,7 @@ calls. Both checkpoints execute and their gates hold; replay is not an ablation 
 | Pin | Value |
 |---|---|
 | Model profile | `primary-development` (provider `anthropic`, model `claude-opus-5`) |
-| Captured | 2026-08-14, by `scripts/capture_forgeflow.py` |
+| Captured | 2026-08-14, by `scripts/capture_forgeflow.py` (now `trace capture`, #482) |
 | Workflow version | `0.1` |
 | Requirements catalog | `0.1` |
 | Report template | `report-v1` |

@@ -477,6 +477,7 @@ def test_the_command_surface_is_the_one_dec_032_confirms() -> None:
         "report",
         "verify",
         "evaluate",
+        "capture",
         "export",
         "reset",
         "view",
