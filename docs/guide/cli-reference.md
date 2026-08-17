@@ -362,6 +362,13 @@ and never the content that changed.
 TM-BOM document, written to the assessment's outputs area. Exits 0, or 1 when the export is
 refused (for example, with no approved context).
 
+**export sarif** — `trace export sarif <assessment_id>`. Exports the approved findings as a
+SARIF 2.1.0 log, written to the assessment's outputs area. A finding's level follows the
+reviewer-assigned severity; a documentation gap exports as kind `review` at level `none` — it
+asserts nothing about the implementation, so it is never an error or a warning. Cited
+requirements become rules, titled from the assessment's pinned catalog version where they
+resolve. Exits 0, or 1 when the export is refused.
+
 ## evaluate
 
 ```

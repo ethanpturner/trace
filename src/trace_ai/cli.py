@@ -272,6 +272,18 @@ def build_parser() -> argparse.ArgumentParser:
 
     export = commands.add_parser("export", help="serialize approved objects to interop formats")
     export_commands = export.add_subparsers(dest="command")
+    sarif = export_commands.add_parser(
+        "sarif",
+        help="serialize approved findings as a SARIF 2.1.0 log",
+        description=(
+            "DEC-072's second serializer: approved findings as SARIF results levelled by the "
+            'reviewer-assigned severity, documentation gaps as kind "review" at level '
+            '"none" -- a gap asserts nothing about the implementation (DEC-009). Refuses an '
+            "assessment with no approved context; writes to the assessment's outputs area."
+        ),
+    )
+    sarif.add_argument("assessment_id")
+
     tm_bom = export_commands.add_parser(
         "tm-bom", help="export the approved model as a TM-BOM document (DEC-072)"
     )
@@ -925,6 +937,7 @@ def run(argv: Sequence[str] | None = None) -> int:
         ("assessment", "purge"): _assessment_purge,
         ("assessment", "approve"): _assessment_approve,
         ("export", "tm-bom"): _export_tm_bom,
+        ("export", "sarif"): _export_sarif,
         ("source", "add"): _source_add,
         ("source", "list"): _source_list,
         ("evidence", "list"): _evidence_list,
@@ -1454,6 +1467,20 @@ def _assessment_candidates(args: argparse.Namespace, service: AssessmentService)
         print(f"  evidence:  {', '.join(candidate.evidence_ids)}")
         for considered in candidate.nearest_requirements:
             print(f"  nearest:   {considered.requirement_id} — {considered.why_not}")
+    return 0
+
+
+def _export_sarif(args: argparse.Namespace, service: AssessmentService) -> int:
+    """DEC-072's second export: approved findings as a SARIF log, to `outputs/` (#487)."""
+    from trace_ai.services.export import ExportError, write_sarif
+
+    handle = service.handle(args.assessment_id)
+    try:
+        written = write_sarif(handle)
+    except ExportError as refused:
+        print(f"error: {refused}", file=sys.stderr)
+        return 1
+    print(f"wrote {written.name} to the assessment's outputs area")
     return 0
 
 
