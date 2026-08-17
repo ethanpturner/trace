@@ -280,6 +280,18 @@ def build_parser() -> argparse.ArgumentParser:
 
     export = commands.add_parser("export", help="serialize approved objects to interop formats")
     export_commands = export.add_subparsers(dest="command")
+    mermaid = export_commands.add_parser(
+        "mermaid",
+        help="serialize the approved architecture as a Mermaid DFD source",
+        description=(
+            "DEC-072's third serializer: the approved components, actors, data flows, and trust "
+            "boundaries as one deterministic Mermaid flowchart -- never model-drawn, standalone "
+            "in the assessment's outputs area, not embedded in the report. Refuses an assessment "
+            "with no approved context."
+        ),
+    )
+    mermaid.add_argument("assessment_id")
+
     sarif = export_commands.add_parser(
         "sarif",
         help="serialize approved findings as a SARIF 2.1.0 log",
@@ -961,6 +973,7 @@ def run(argv: Sequence[str] | None = None) -> int:
         ("assessment", "approve"): _assessment_approve,
         ("export", "tm-bom"): _export_tm_bom,
         ("export", "sarif"): _export_sarif,
+        ("export", "mermaid"): _export_mermaid,
         ("source", "add"): _source_add,
         ("source", "list"): _source_list,
         ("evidence", "list"): _evidence_list,
@@ -1561,6 +1574,20 @@ def _assessment_candidates(args: argparse.Namespace, service: AssessmentService)
         print(f"  evidence:  {', '.join(candidate.evidence_ids)}")
         for considered in candidate.nearest_requirements:
             print(f"  nearest:   {considered.requirement_id} — {considered.why_not}")
+    return 0
+
+
+def _export_mermaid(args: argparse.Namespace, service: AssessmentService) -> int:
+    """DEC-072's third export: the approved architecture as a Mermaid DFD, to `outputs/`."""
+    from trace_ai.services.export import ExportError, write_mermaid
+
+    handle = service.handle(args.assessment_id)
+    try:
+        written = write_mermaid(handle)
+    except ExportError as refused:
+        print(f"error: {refused}", file=sys.stderr)
+        return 1
+    print(f"wrote {written.name} to the assessment's outputs area")
     return 0
 
 
