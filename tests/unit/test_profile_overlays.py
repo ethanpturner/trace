@@ -33,7 +33,6 @@ from trace_ai.infrastructure.model.profiles import (
     resolve_profile,
 )
 from trace_ai.infrastructure.model.seam import (
-    Creativity,
     GenerationSettings,
     ModelSuccess,
     ModelUsage,
@@ -76,11 +75,12 @@ def test_an_overlay_replaces_model_and_rates_and_clears_itself() -> None:
     assert profile.for_agent("critical-review").model == BASE.model
 
 
-def test_an_overlay_may_carry_its_own_settings() -> None:
-    settings = GenerationSettings(creativity=Creativity.LOW, max_output_tokens=2_000)
-    profile = overlaid(**{"threat-analysis": replace(ECONOMY_OVERLAY, settings=settings)})
-    assert profile.for_agent("threat-analysis").settings == settings
-    assert profile.for_agent("evidence-validation").settings == BASE.settings
+def test_an_overlay_never_touches_generation_settings() -> None:
+    """DEC-094: an overlay names a model and its rates, nothing else. Settings stay the base
+    profile's, and creativity stays the AGENTS table's, applied by the node (DEC-085)."""
+    profile = overlaid(**{"threat-analysis": ECONOMY_OVERLAY})
+    assert profile.for_agent("threat-analysis").settings == BASE.settings
+    assert not hasattr(ECONOMY_OVERLAY, "settings")
 
 
 def test_an_unknown_overlay_key_fails_at_load() -> None:

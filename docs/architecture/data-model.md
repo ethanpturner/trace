@@ -2147,7 +2147,8 @@ The prompt body may remain stored in a file, while metadata is available to the 
 | expected_output_schema | string | Yes | Output model name or schema |
 | model_constraints | list[string] | No | Required model capabilities |
 | status | string | Yes | Draft, active, retired |
-| content_hash | string | Yes | `sha256:<hex>` over the **composed** prompt text (DEC-019) |
+| content_hash | string | Yes | `sha256:<hex>` over the **composed**, substituted prompt text (DEC-019) |
+| template_hash | string | Yes | `sha256:<hex>` over the pre-substitution composition — shared blocks merged, markers unfilled (DEC-094): the cross-corpus identity that answers which template produced a request |
 
 # 30. RequirementsCatalog
 

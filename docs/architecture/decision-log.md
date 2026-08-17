@@ -6073,3 +6073,63 @@ Tradeoffs:
 - The committed `live-stability.json` predates this change; its 182 defaulted decisions are the
   old protocol's number and are not re-stated. The next live measurement re-derives it under
   the new matching, which is the honest comparison.
+
+## DEC-094: One overlay-resolution path, and a template hash beside the composed one
+
+Date: 2026-08-17
+
+Status: Accepted
+
+Decision:
+
+**`build_model` is the one place a DEC-069 overlay resolves.** Two resolution paths existed and
+neither was exercised: the factory built one adapter per overlaid agent
+(`OverlayRoutingModel`, routing each call by its response schema), and the driver independently
+handed every node `profile.for_agent(name)` — the same fact resolved a second time, free to
+drift from the first. The factory path survives because it is the only one that can change the
+model on the wire: the model identity lives in the adapter, and a single `StructuredModel`
+object is load-bearing for replays (a per-agent model set would break recorded-response
+ordering). The driver now passes the base profile to every node. Two consequences are accepted
+and stated: budget *projection* prices at the base profile's rates while the resolved adapter
+prices the recorded usage; and `AgentOverlay.settings` is removed — it could only take effect
+through the driver path, and an overlay now names a model and its rates, nothing else.
+Generation settings stay the base profile's, with creativity always the agent's own DEC-085
+intent applied by the node from the AGENTS table.
+
+**`PromptDefinition` carries a `template_hash` beside `content_hash`.** The DEC-019 hash is
+computed over the composed, *substituted* text — the request, source corpus included — so it
+identifies one composition and cannot answer "which template produced this": the same template
+over two corpora hashes differently. The new `template_hash` covers the pre-substitution
+composition — shared blocks merged, markers unfilled — so every composition of a prompt version
+shares it across assessments, and a shared-block edit still moves it in every prompt that
+includes the block, which is DEC-019's stated purpose. Both hashes persist in the
+`traces/prompts/` snapshot and `resolve_definition` accepts either (or the reference).
+`data-model.md` section 29 and the `hashing.py` input table carry the field.
+
+Why:
+
+- WS11's theme: facts written in two places with nothing asserting they agree drift silently.
+  An overlay resolving in the driver and the factory was that shape, waiting for the first
+  shipped overlay to expose whichever copy had rotted.
+- The #331 prompt-version comparison needs to attribute results to prompt versions honestly,
+  and the substituted hash cannot do that across scenarios — every corpus moves it.
+
+Alternatives Considered:
+
+- Keeping the driver path and deleting the factory's routing (rejected: `GenerationSettings` is
+  deliberately model-free and the adapter's profile names the model, so the driver path cannot
+  change what model answers; keeping only it would make overlays decorative).
+- Redefining `content_hash` to the pre-substitution composition instead of adding a second hash
+  (rejected: the append-only snapshot history — one definition per distinct substituted
+  composition — is a pinned, deliberate property, and retiring the substituted hash would erase
+  the record of what was actually sent).
+
+Tradeoffs:
+
+- Base-rate budget projection under-guards slightly when an overlay names a pricier model and
+  over-guards when it names a cheaper one; projection is a pre-call ceiling check, the recorded
+  cost is the adapter's, and the asymmetry is stated here rather than hidden in a resolution
+  path nobody exercises.
+- Snapshot files still accumulate per distinct substituted composition; `template_hash` makes
+  the template identity queryable across them, which was the actual gap. Collapsing the
+  snapshot granularity is a separate decision if the accumulation ever costs anything.

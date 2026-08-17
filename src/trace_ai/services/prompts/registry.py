@@ -151,6 +151,14 @@ class PromptMetadata:
     expected_output_schema: str
     status: str
     content_hash: str
+    """DEC-019 over the composed, substituted text: what this composition actually sent."""
+
+    template_hash: str
+    """DEC-019 over the pre-substitution composition — shared blocks merged, markers unfilled
+    (DEC-094). This is the hash that answers "which template produced this": every composition
+    of the same prompt version shares it whatever the source corpus, and a shared-block edit
+    still moves it in every prompt that includes the block."""
+
     model_constraints: list[str] = field(default_factory=list)
 
     @property
@@ -352,8 +360,11 @@ class PromptRegistry:
         # rather than treated as a marker, and substitution is not order-dependent.
         body = _MARKER.sub(lambda match: supplied.get(match.group(1), match.group(0)), found.body)
 
-        parts.append(body)
         composed_from.append(str(found.path.relative_to(self.root)))
+        # The template composition: shared blocks merged, body unsubstituted. Its hash is the
+        # cross-corpus identity (DEC-094); the substituted text's hash is this composition's.
+        template = _JOIN.join([*parts, found.body])
+        parts.append(body)
         text = _JOIN.join(parts)
 
         constraints = found.front_matter.get("model_constraints") or []
@@ -367,6 +378,7 @@ class PromptRegistry:
             expected_output_schema=str(found.front_matter["expected_output_schema"]),
             status=str(found.front_matter["status"]),
             content_hash=content_hash(text.encode("utf-8")),
+            template_hash=content_hash(template.encode("utf-8")),
             model_constraints=[str(value) for value in constraints],
         )
         return ComposedPrompt(metadata=metadata, text=text, composed_from=tuple(composed_from))
