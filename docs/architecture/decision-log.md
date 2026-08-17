@@ -5658,11 +5658,14 @@ Tradeoffs:
 - The legacy-form acceptance is one more input path. It is a loader's tolerance, not a schema
   the model is offered, and it retires whenever the recordings are next recaptured.
 
-## DEC-083: Report section 7 carries the threats the approved findings rest on; duplicate questions collapse at render
+## DEC-101: Report section 7 carries the threats the approved findings rest on; duplicate questions collapse at render
 
 Date: 2026-08-14
 
 Status: Accepted
+
+(Originally misfiled under a duplicate DEC-083 heading on 2026-08-14; renumbered 2026-08-17,
+#502. The number changed; the decision did not.)
 
 Decision:
 

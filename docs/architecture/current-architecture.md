@@ -1411,7 +1411,7 @@ The following questions require decisions or implementation experiments:
 7. ~~What minimum evidence threshold should be required for a finding?~~ Resolved by DEC-013.
 8. Which parts of the workflow require separate agents versus deterministic functions?
 9. How should semantic duplicate detection work?
-10. Should LangSmith be used in the public demonstration?
+10. ~~Should LangSmith be used in the public demonstration?~~ Resolved by DEC-090: the unused `langsmith` dependency and its settings were removed; tracing integration is its own decision if it ever happens.
 11. How much reasoning information should be exposed to users?
 12. ~~How should prompt injection in source documentation be tested?~~ Resolved by DEC-075: as
     scenario conditions — an authored payload corpus run as input variants, reported on two

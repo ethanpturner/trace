@@ -114,7 +114,7 @@ The evaluation harness is not a report card bolted on; it repeatedly changed wha
 - **Authoring recordings surfaced real defects.** The reserved-metrics work found that report
   metrics had no pipeline caller at all; recording authorship exposed a stale run-row counter
   (`model_call_count`, fixed in #424); demo preparation found report section 7 structurally
-  empty because its filter was never satisfiable (DEC-083).
+  empty because its filter was never satisfiable (DEC-101, renumbered from a duplicate DEC-083 heading).
 - **The live capture measured the miss.** The flagship run matched none of the three authored
   expected findings and approved four defensible ones under different requirement identifiers
   — real weaknesses, wrong requirement lens — and that number is on the public scorecard with

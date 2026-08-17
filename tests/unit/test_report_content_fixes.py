@@ -1,6 +1,6 @@
 """Report section 7's threat filter, the section 11 collapse, and the question clause (#430).
 
-DEC-083: the threats the approved findings rest on render in section 7; byte-identical asks
+DEC-101: the threats the approved findings rest on render in section 7; byte-identical asks
 collapse at render with the duplicate identifier shown; missing-evidence entries interpolate
 as clauses rather than sentences.
 """

@@ -85,7 +85,7 @@ class ModelProfile:
 
     name: str
     provider: str
-    """Which adapter serves it. `anthropic` is the only one implemented (DEC-014)."""
+    """Which adapter serves it: `anthropic`, `openai` (DEC-095), or `fake` (DEC-014)."""
 
     model: str
     settings: GenerationSettings

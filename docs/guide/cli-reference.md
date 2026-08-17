@@ -433,7 +433,7 @@ offline profile is refused (exit 1) before any side effect. The capture uses its
 ## ledger
 
 ```
-trace ledger assessment_id
+trace ledger assessment_id [--json]
 ```
 
 Prints what the execution ledger recorded for each workflow run: one line per model-assisted

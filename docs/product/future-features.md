@@ -1160,15 +1160,15 @@ Initial integrations should remain read-only or require explicit human approval.
 
 None of the features in this document should interrupt the active roadmap sequence.
 
-The current priorities remain:
+The original Stage 0–2 priority list this section carried is delivered in full; what bounds
+promotion now is the delivered system's own gates:
 
-1. Complete product and architecture documentation.
-2. Define the fictional developer-platform scenario.
-3. Create the initial benchmark fixtures.
-4. Draft the initial requirements catalog.
-5. Establish the repository and development environment.
-6. Implement evidence-backed context extraction.
-7. Evaluate context extraction before adding additional agents.
+1. The keyed measurements come before new capability: the live sweep, the comparison
+   recordings, and the usage backfill (#484, #331, #332) are the standing evidence debt.
+2. Decided-but-unbuilt items are executed in their decided order before new decisions are
+   opened (DEC-070's parsers, DEC-072's serializers).
+3. A promotion carries its measurement with it (DEC-097 and DEC-098 are the precedents), and
+   the nine criteria in section 15 all hold.
 
 New ideas should be added here and revisited only during planned roadmap reviews.
 

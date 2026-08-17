@@ -1019,25 +1019,23 @@ Pause or simplify development when:
 
 # 9. Near-Term Sequence
 
-The immediate sequence is:
+The original nine-step sequence this section carried — documents, scenario, fixtures, catalog,
+repository, environment, the evidence slice, the extraction slice, evaluation before more
+agents — is delivered in full. The immediate sequence now:
 
-1. Complete the product-document set.
-2. Define the fictional developer-platform scenario.
-3. Create the first three benchmark fixtures.
-4. Draft the first 10–20 security requirements.
-5. Prepare the repository structure and development checklist.
-6. Set up the new laptop and development environment.
-7. Implement assessment, sources, and evidence references.
-8. Complete the Context Extraction vertical slice.
-9. Evaluate context quality before adding more agents.
+1. Record the keyed measurements: the eleven-scenario live sweep with live baselines (#484),
+   the prompt- and model-comparison protocols (#331, #332), and the usage backfill.
+2. Record the demo video (#353), the last Stage 6 asset.
+3. Execute the remaining decided items in their decided order (DEC-070's OpenAPI parser,
+   DEC-072's Mermaid serializer) before opening new decisions.
+
+The standing non-instructions hold in their original form:
 
 Do not begin with the web interface.
 
 Do not begin with all six agents.
 
 Do not begin with GitHub integration.
-
-Begin with evidence-backed context extraction.
 
 # 10. Roadmap Success
 

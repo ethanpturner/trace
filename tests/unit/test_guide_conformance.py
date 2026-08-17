@@ -176,3 +176,85 @@ def test_the_validator_accepts_a_real_invocation_with_values_and_pipes() -> None
     invocations = _trace_invocations(text)
     assert len(invocations) == 4
     assert all(validate(tokens) == [] for tokens in invocations)
+
+
+# ------------------------------------------------------------------------------------------
+# The reverse direction (#502): every parser flag is documented where its command is
+# ------------------------------------------------------------------------------------------
+
+
+def _reference_sections() -> dict[str, str]:
+    """The cli-reference text, split by `## ` heading, keyed by the heading's first word.
+
+    The reference's own layout rule: one `## <group>` section per command group, subcommands
+    inside it. Splitting on headings scopes the flag check to the command's own section, so a
+    flag documented under a different command cannot vouch for this one.
+    """
+    text = (GUIDE_DIR / "cli-reference.md").read_text(encoding="utf-8")
+    sections: dict[str, str] = {}
+    current: list[str] = []
+    lines: list[str] = []
+    for line in text.splitlines():
+        if line.startswith("## "):
+            for key in current:
+                sections[key] = sections.get(key, "") + "\n".join(lines)
+            # A heading names every command it documents ("run and resume" documents both).
+            current = [word for word in line.removeprefix("## ").strip().split() if word != "and"]
+            lines = []
+        else:
+            lines.append(line)
+    for key in current:
+        sections[key] = sections.get(key, "") + "\n".join(lines)
+    return sections
+
+
+def _documented_flags_hold(group: str, parser: argparse.ArgumentParser, section: str) -> list[str]:
+    missing: list[str] = []
+    for action in parser._actions:
+        for option in action.option_strings:
+            if option in {"-h", "--help"}:
+                continue
+            if option.startswith("--") and option not in section:
+                missing.append(option)
+            break  # one spelling per action is enough
+    return missing
+
+
+def test_every_parser_flag_is_documented_in_its_reference_section() -> None:
+    """The guard's missing direction (#502): the forward check validates that documented flags
+    exist, and was structurally incapable of catching a flag that exists but is undocumented —
+    which is exactly how a wave of new flags strands the reference silently. Every long option
+    of every command must appear somewhere in its group's `## ` section of cli-reference.md."""
+    parser = build_parser()
+    sections = _reference_sections()
+    # The shared model flags are documented once, deliberately ("Shared model flags" under
+    # Global behavior); the global sections vouch for any command, so single-sourcing survives.
+    global_text = "".join(text for key, text in sections.items() if key in {"Exit", "Global"})
+    failures: list[str] = []
+    for group, group_parser in _subparser_choices(parser).items():
+        section = sections.get(group)
+        if section is None:
+            failures.append(f"group {group!r} has no `## {group}` section in cli-reference.md")
+            continue
+        scoped = section + global_text
+        failures.extend(
+            f"{group}: {flag} exists and is undocumented in its section"
+            for flag in _documented_flags_hold(group, group_parser, scoped)
+        )
+        for sub_name, sub_parser in _subparser_choices(group_parser).items():
+            failures.extend(
+                f"{group} {sub_name}: {flag} exists and is undocumented in its section"
+                for flag in _documented_flags_hold(group, sub_parser, scoped)
+            )
+    assert not failures, "\n".join(failures)
+
+
+def test_the_reverse_guard_has_teeth() -> None:
+    """A guard that passes because its vouching absorbed everything is a guard about nothing:
+    an option string absent from both the section and the global text must be reported."""
+    probe = argparse.ArgumentParser()
+    probe.add_argument("--flag-nobody-documented")
+    assert _documented_flags_hold("probe", probe, "a section without the flag") == [
+        "--flag-nobody-documented"
+    ]
+    assert _documented_flags_hold("probe", probe, "mentions --flag-nobody-documented") == []

@@ -316,7 +316,7 @@ def a_threat(handle: AssessmentHandle, identifier: str) -> None:
 
 
 def test_section_seven_carries_the_approved_findings_threats(handle: AssessmentHandle) -> None:
-    """DEC-083: threats have no approval verb; the set the reviewer transitively validated by
+    """DEC-101: threats have no approval verb; the set the reviewer transitively validated by
     approving the findings is what renders — and only that set."""
     a_threat(handle, "thr-001")
     a_threat(handle, "thr-002")
