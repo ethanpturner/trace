@@ -807,6 +807,20 @@ def build_parser() -> argparse.ArgumentParser:
         help="the catalog version to validate (default: 0.1)",
     )
 
+    diff = commands.add_parser(
+        "diff",
+        help="compare two assessments' approved models",
+        description=(
+            "Compares two assessments of the same system (DEC-097): what was added, removed, or "
+            "changed, per object family, with identity matched by content fingerprint rather "
+            "than per-assessment identifiers. Both sides must hold an approved context. Threats "
+            "and documentation gaps are compared by ground, never force-paired."
+        ),
+    )
+    diff.add_argument("before", help="the earlier assessment's identifier")
+    diff.add_argument("after", help="the later assessment's identifier")
+    _json_flag(diff)
+
     reset = commands.add_parser(
         "reset",
         help="return the data root to the fresh-clone state",
@@ -961,6 +975,7 @@ def run(argv: Sequence[str] | None = None) -> int:
         ("questions", None): _questions,
         ("catalog", "show"): _catalog_show,
         ("catalog", "validate"): _catalog_validate,
+        ("diff", None): _diff,
     }
 
     if args.group is None:
@@ -1424,6 +1439,69 @@ def _catalog_validate(args: argparse.Namespace, service: AssessmentService) -> i
         f"catalog {loaded.catalog.id} version {loaded.version} verifies: "
         f"{len(loaded)} requirements, content hash {loaded.catalog.content_hash}"
     )
+    return 0
+
+
+def _diff(args: argparse.Namespace, service: AssessmentService) -> int:
+    """Compare two assessments' approved models (#488, DEC-097).
+
+    Two scoped reads through two handles -- never a cross-assessment query -- and the
+    conservative matching is `services/diff/`'s: this prints what came back.
+    """
+    from trace_ai.services.diff import diff_assessments
+    from trace_ai.services.export import ExportError
+
+    try:
+        outcome = diff_assessments(service.handle(args.before), service.handle(args.after))
+    except ExportError as refused:
+        print(f"error: {refused}", file=sys.stderr)
+        return 1
+
+    if args.as_json:
+        from dataclasses import asdict
+
+        def _entries(entries: list[Any]) -> list[dict[str, Any]]:
+            return [
+                asdict(entry) | {"changed_fields": list(entry.changed_fields)} for entry in entries
+            ]
+
+        return _print_json(
+            "assessment-diff",
+            {
+                "before": outcome.before,
+                "after": outcome.after,
+                "moved": outcome.moved,
+                "families": {
+                    name: {
+                        "unchanged": family.unchanged,
+                        "added": _entries(family.added),
+                        "removed": _entries(family.removed),
+                        "changed": _entries(family.changed),
+                    }
+                    for name, family in outcome.families.items()
+                },
+            },
+        )
+
+    print(f"diff: {outcome.before} -> {outcome.after}")
+    if not outcome.moved:
+        print("no differences in the approved models")
+        return 0
+    for name, family in outcome.families.items():
+        if not family.moved:
+            continue
+        print()
+        print(f"{name.replace('_', ' ')}  ({family.unchanged} unchanged)")
+        for entry in family.added:
+            print(f"  added    {entry.identity}  [{entry.after_id or '-'}]")
+        for entry in family.removed:
+            print(f"  removed  {entry.identity}  [{entry.before_id or '-'}]")
+        for entry in family.changed:
+            fields = ", ".join(entry.changed_fields)
+            print(
+                f"  changed  {entry.identity}  [{entry.before_id or '-'} -> "
+                f"{entry.after_id or '-'}]  {fields}"
+            )
     return 0
 
 

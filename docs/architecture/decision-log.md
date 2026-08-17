@@ -6287,3 +6287,70 @@ Tradeoffs:
 - `report show` keeps its Markdown body and `verify` its exit-code answer, without `--json` —
   the report is the deliverable itself and the manifest already exists for scripts; extending
   the flag to them is a later, smaller decision if a consumer appears.
+
+## DEC-097: Assessment diffing compares approved models by content fingerprint, conservatively
+
+Date: 2026-08-17
+
+Status: Accepted
+
+Decision:
+
+**`trace diff <before> <after>` compares two assessments' approved models** (future-features
+4.1, promoted). Each side is read through its own scoped handle — two scoped reads, never a
+cross-assessment query, so the store's scoping rule stands. Both sides must hold an approved
+context, the refusal every export makes (DEC-072): a diff over candidates would report changes
+no reviewer saw.
+
+**Identity across assessments is the content fingerprint, and the matching is conservative.**
+Identifiers are allocated per assessment (DEC-018), so the same component in two assessments
+carries different identifiers; pairing reuses the conventions the evaluation matcher already
+owns rather than inventing a second identity: DEC-093's fingerprints for context objects (names;
+(source, destination) for flows; (subject, predicate) for claims), the persisted DEC-066 content
+fingerprint for findings, normalized text for open questions. A fingerprint occurring more than
+once on either side is ambiguous, and its objects report as added and removed rather than
+paired — the diff must never guess, because a guessed pairing reports an edit nobody made.
+
+**Threats and documentation gaps are not paired in v1.** A threat's identity is model-authored
+wording plus its ground, both expected to vary across runs; they compare by ground (normalized
+affected component and asset names) as counts with added/removed lists, stated as such, and
+their "changed" list is empty by construction. Pairing them semantically is DEC-043's deferred
+territory and waits for the same evidence.
+
+**Changed means the content fields moved.** Matched objects compare on their model dump minus
+the volatile fields — identifiers, timestamps, provenance, `status`, cross-references carrying
+per-assessment identifiers — and the diff names the fields that differ. The command exits 0
+whether or not differences exist: the diff is a report, not a gate, and a gating flag is a
+later decision if a consumer wants one.
+
+Why:
+
+- future-features 4.1 called this one of the strongest extensions because it builds directly on
+  the structured data model, and the promotion criteria were all met: a re-run assessment
+  previously produced a wholly new report with no relation to the last, and the reviewer's
+  actual question — what changed, what needs re-review — had no answer short of reading both.
+- The matching conventions already existed (DEC-056, DEC-066, DEC-093); the diff consumes them
+  rather than minting a competing identity, so the evaluation matcher and the diff cannot
+  disagree about what "the same object" means.
+
+Alternatives Considered:
+
+- Pairing renamed objects by field similarity (rejected: a similarity threshold is a guess with
+  a number on it, and the conservative failure mode — removed plus added — is both honest and
+  actionable).
+- Diffing all objects rather than approved models (rejected: candidates are proposals nobody
+  reviewed, and DEC-072 already establishes that serialized comparisons speak for approved
+  state).
+- A separate persisted diff artifact (rejected: the diff is derived, regenerable from the two
+  stores by one command, and DEC-073's rule for derived artifacts applies — no place in
+  history).
+
+Tradeoffs:
+
+- Rename detection is deliberately absent: a renamed component reports as removed and added.
+  The reviewer holding both reports can pair them by eye; the tool refusing to guess is the
+  point.
+- The volatile-field list is a judgment call pinned by tests; a new domain field that should
+  count as content lands in the comparison automatically, while a new identifier-shaped field
+  must follow the `_id`/`_ids`/`_at`/`_by` suffix conventions to be excluded — which the domain
+  models already follow.

@@ -483,6 +483,7 @@ def test_the_command_surface_is_the_one_dec_032_confirms() -> None:
         "threats",
         "questions",
         "catalog",
+        "diff",
         "reset",
         "view",
     }
@@ -2214,3 +2215,16 @@ def test_questions_and_catalog_read_commands_answer(
     assert "verifies" in capsys.readouterr().out
 
     assert invoke(data_root, "catalog", "validate", "--catalog-version", "9.9") == 1
+
+
+def test_diff_refuses_unapproved_sides_with_a_named_error(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """The DEC-097 refusal mirrors the exports': a diff over candidates would report changes no
+    reviewer saw."""
+    first = created(data_root, capsys)
+    second = created(data_root, capsys)
+    capsys.readouterr()
+
+    assert invoke(data_root, "diff", first, second) == 1
+    assert "context" in capsys.readouterr().err

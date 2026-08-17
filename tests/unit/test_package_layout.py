@@ -79,6 +79,9 @@ PACKAGES = (
     # The interop exports (DEC-072, issue #347): post-approval serializers of approved objects,
     # TM-BOM first. Not report formats — no prose, no model call, `outputs/` artifacts only.
     "trace_ai.services.export",
+    # Assessment diffing (DEC-097, issue #488): two assessments' approved models compared by
+    # content fingerprint, conservatively — two scoped reads, never a cross-assessment query.
+    "trace_ai.services.diff",
     "trace_ai.infrastructure",
     "trace_ai.infrastructure.filesystem",
     "trace_ai.infrastructure.database",

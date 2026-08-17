@@ -470,6 +470,20 @@ hash recomputed. `show` lists the requirements; `validate` loads and reports the
 hash, exiting 1 with the loader's reason when the catalog does not verify — a moved content
 hash, a manifest mismatch, an unknown version.
 
+## diff
+
+```
+trace diff before after [--json]
+```
+
+Compares two assessments' approved models (DEC-097): what was added, removed, or changed, per
+object family, with identity matched by content fingerprint rather than per-assessment
+identifiers — the same component under different allocated identifiers is the same component. A
+changed object names the fields that moved. Threats and documentation gaps are compared by
+ground (their affected components and assets) and never force-paired: a guessed pairing would
+report an edit nobody made. Both sides must hold an approved context; a side without one is
+refused (exit 1). Exits 0 whether or not differences exist — the diff is a report, not a gate.
+
 ## reset
 
 ```
