@@ -8033,3 +8033,62 @@ Tradeoffs:
 - The measurement is fixture-level (corpus-measured claims over committed fixtures, JSON/YAML
   parity, pinned intrinsic refusals), not a scenario re-record — the #569 precedent: extending
   a live scenario's inputs would invalidate its recorded decisions for no new measurement.
+
+## DEC-125: The webhook pack completes its category as catalog 0.4, cut mid-sweep as draft with no pin moved
+
+Date: 2026-08-18
+
+Status: Accepted
+
+Decision:
+
+**Catalog 0.4 adds req-WEBHOOK-003 and req-WEBHOOK-004, completing the webhook-validation
+category** (future-features 5.4's promotion shape, #596). Origin verification and replay were
+0.1's `req-WEBHOOK-001` and `req-WEBHOOK-002`; the pack adds the two subjects the category
+lacked: source restriction — where the platform publishes stable source addresses or a
+restricted delivery channel, the documentation states whether the endpoint applies it, severity
+`low` because reachability is defence in depth behind the signature — and delivery-secret
+lifecycle — where authenticity rests on a shared secret, the documentation describes where it is
+held and how it rotates without dropping deliveries. Both are original requirements citing NIST
+only, for the reason the category file has recorded since 0.1: ASVS 5.0 carries no general
+inbound-event surface. Everything in 0.3 carries forward unchanged
+(`mappings/0.3-to-0.4.yaml`); 0.3 froze under DEC-111 and its hash is untouched.
+
+**0.4 registers `draft`, and no scenario pin moved with the cut.** DEC-099's release condition
+stands: the version flips `active` when the first committed recorded scenario pins it. The cut
+was authored while the #484 live sweep was capturing recordings, and a catalog pin is part of
+what an in-flight capture is assessed against — so the issue's named measurement, the
+unsigned-webhooks truth set engaging the pack through `expected-control-mappings.yaml`, is
+deferred to land with that scenario's post-sweep pin move rather than under it. Until then the
+measurement the pack carries is the loader's: 0.4 loads under both-direction manifest
+validation, the fate map is referentially complete, and the register test holds the new
+statements to the documentation register (silence resolves to `unverified`, never `unmet`).
+
+Why:
+
+- The promotion bar for a technology pack is a pre-existing measuring scenario, and webhooks
+  have two: unsigned-webhooks is the flagship's other half, and the forgeflow signature surface
+  is the original demo finding. A pack cut against scenarios already committed is the DEC-111
+  move at zero new-scenario cost.
+- The two new requirements exist to prevent conclusions, in the DEC-011 sense: an open endpoint
+  behind a documented signature is not a finding, and a documented managed secret store with an
+  unstated rotation cadence is not a static secret. Both `common_false_positives` fields say so.
+
+Alternatives Considered:
+
+- Landing the unsigned-webhooks truth-set engagement and the 0.4 pin in this change (rejected:
+  the live sweep was mid-capture on that scenario; a pin or truth-set move under an in-flight
+  keyed run alters what the spend is assessed against — the same reasoning `load_catalog`
+  takes a version for).
+- Citing ASVS chapter 13 for the source-restriction requirement (rejected: the resolver holds
+  citations to the vendored 5.0.0 export, and ASVS scopes itself to the application rather than
+  its network placement — the same reason req-NET-001 cites `SC-7` for the placement half).
+
+Tradeoffs:
+
+- A draft version is editable in place, so nothing yet pins 0.4's content; the freeze arrives
+  with the first recorded scenario that does. Deliberate, and the same posture 0.2 and 0.3 held
+  between cut and release.
+- `req-WEBHOOK-003`'s severity `low` understates the cases where source restriction is the only
+  control present; the mapping step's severity judgment, and ultimately the reviewer's
+  (DEC-030), owns that distinction — a default is a starting point, not a verdict.

@@ -1,0 +1,51 @@
+# The DEC-057 fate map at the 0.3 -> 0.4 boundary, authored with 0.4 (#596). The loader
+# never reads this file; its consumers are people and longitudinal tooling. Every 0.3
+# requirement carries forward unchanged: 0.4 grows the webhook-validation category and
+# touches nothing else. Each entry's `catalog_version` field moved from "0.3" to "0.4"
+# mechanically; that carriage is what `unchanged` means at a minor version, not byte identity.
+
+fates:
+  req-ADMIN-001: { fate: unchanged }
+  req-AGENT-001: { fate: unchanged }
+  req-AGENT-002: { fate: unchanged }
+  req-AGENT-003: { fate: unchanged }
+  req-AGENT-004: { fate: unchanged }
+  req-AI-001: { fate: unchanged }
+  req-AI-002: { fate: unchanged }
+  req-AI-003: { fate: unchanged }
+  req-AI-004: { fate: unchanged }
+  req-AUTH-001: { fate: unchanged }
+  req-AUTH-002: { fate: unchanged }
+  req-AUTHZ-001: { fate: unchanged }
+  req-AUTHZ-002: { fate: unchanged }
+  req-CICD-001: { fate: unchanged }
+  req-CODEGEN-001: { fate: unchanged }
+  req-CODEGEN-002: { fate: unchanged }
+  req-DATA-001: { fate: unchanged }
+  req-DATA-002: { fate: unchanged }
+  req-DATA-003: { fate: unchanged }
+  req-DATA-004: { fate: unchanged }
+  req-LOG-001: { fate: unchanged }
+  req-LOG-002: { fate: unchanged }
+  req-NET-001: { fate: unchanged }
+  req-OIDC-001: { fate: unchanged }
+  req-OIDC-002: { fate: unchanged }
+  req-OIDC-003: { fate: unchanged }
+  req-OIDC-004: { fate: unchanged }
+  req-OPS-001: { fate: unchanged }
+  req-OPS-002: { fate: unchanged }
+  req-OPS-003: { fate: unchanged }
+  req-OPS-004: { fate: unchanged }
+  req-OPS-005: { fate: unchanged }
+  req-RAG-001: { fate: unchanged }
+  req-RAG-002: { fate: unchanged }
+  req-RAG-003: { fate: unchanged }
+  req-SECRET-001: { fate: unchanged }
+  req-SECRET-002: { fate: unchanged }
+  req-TRAIN-001: { fate: unchanged }
+  req-TRAIN-002: { fate: unchanged }
+  req-TRAIN-003: { fate: unchanged }
+  req-TPI-001: { fate: unchanged }
+  req-TPI-002: { fate: unchanged }
+  req-WEBHOOK-001: { fate: unchanged }
+  req-WEBHOOK-002: { fate: unchanged }
