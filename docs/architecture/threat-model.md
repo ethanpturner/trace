@@ -78,6 +78,20 @@ test data and is committed unaltered on purpose: sanitizing it would destroy the
 | A source document is edited after ingestion and conclusions still cite it | `content_hash` over the original file's raw bytes, verifiable on re-read (DEC-019) | `trace_ai.domain.hashing`, `ArtifactStore.hash_of` | **Enforced** — nothing re-verifies on a schedule; see section 8 |
 | Storing a document silently replaces a different one under the same name | Re-storing identical bytes is idempotent; different bytes under a used name raise | `ArtifactStore._write` | **Enforced** |
 
+**The repository channel is this boundary, not a new one** (#597). `trace source add-repo`
+fetches an allowlisted file set from a named repository at a pinned commit; everything fetched
+enters through the same loader as an uploaded document — untrusted, format from the extension,
+content never read at ingestion. What the channel adds is transport, and the transport rows
+follow:
+
+| Risk | Mitigation | Where | Status |
+|---|---|---|---|
+| A moving reference changes the source set under an assessment | Only a full forty-hex commit SHA is accepted; after checkout, HEAD is re-resolved and compared to the requested SHA before any byte registers | `services/ingestion/repository.py` | **Enforced** |
+| The fetch surface reaches an agent | The fetch is application code at ingestion time; nothing behind the model seam imports it, and agents keep no internet | import graph; `tests/unit/test_model_boundary.py` posture | **Enforced** |
+| A repository executes code at fetch time | `git clone` and a detached checkout run no repository-provided code: hooks are not cloned and no filter drivers are configured; prompting is disabled (`GIT_TERMINAL_PROMPT=0`) | `services/ingestion/repository.py` | **Enforced** |
+| The access token leaks through metadata, logs, or errors | The token lives in `Settings` as `SecretStr`, reaches only the subprocess clone URL, is refused when embedded in an operator-typed URL, and is replaced in any surfaced error text; recorded metadata carries the credential-free URL | `config.Settings.github_token`, `services/ingestion/repository.py` | **Enforced** |
+| A nested repository path escapes the assessment directory | Paths flatten to separator-free names before registration, and the artifact store's shape-and-resolution refusals still apply | `services/ingestion/repository.py`, `ArtifactStore._safe_path` | **Enforced** |
+
 **The failure this boundary exists to prevent is not compromise.** It is a reviewer taking a
 conclusion to an engineering team that a document talked Trace into. Nothing crashes and nothing
 alerts; the output looks exactly like a real finding.

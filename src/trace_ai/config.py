@@ -101,7 +101,13 @@ class Settings(BaseSettings):
     tracing_endpoint: str | None = None
     tracing_api_key: SecretStr | None = None
 
-    @field_validator("anthropic_api_key", "openai_api_key", "tracing_api_key", mode="before")
+    # Repository ingestion (#597). Optional: public repositories fetch unauthenticated, and a
+    # configured token reaches only the clone subprocess's URL — never metadata, never a log.
+    github_token: SecretStr | None = None
+
+    @field_validator(
+        "anthropic_api_key", "openai_api_key", "tracing_api_key", "github_token", mode="before"
+    )
     @classmethod
     def _blank_is_unset(cls, value: object) -> object:
         """Treat an empty variable as absent rather than as an empty secret.

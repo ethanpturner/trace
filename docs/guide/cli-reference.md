@@ -137,11 +137,31 @@ trace source add [--no-index] <assessment_id> <path>
 Registers a file or a directory of files. Accepted formats are `.md`, `.markdown`, `.txt`, `.tf`,
 `.json`, `.yaml`, `.yml`, and `.pdf`, each at most 10 MB; text formats must be valid UTF-8 and
 JSON/YAML must parse. A PDF is read text-layer only (DEC-123) and an image-only PDF is refused
-with a named error. Office, repository, and web ingestion are deferred and refused with a named
-error (exit 1). `--no-index` registers without normalizing and indexing. Exits 0 on success.
+with a named error. Office and web ingestion are deferred and refused with a named error
+(exit 1); repository ingestion is `source add-repo` below. `--no-index` registers without normalizing and indexing. Exits 0 on success.
 
 ```console
 $ uv run trace source add asm-001 demo/forgeflow/input
+```
+
+### source add-repo
+
+```
+trace source add-repo [--no-index] <assessment_id> <url> <commit>
+```
+
+Registers a repository's readable files at a pinned commit, read-only (#597, DEC-132). The URL
+speaks `https://` (`file://` for local fixtures) and must not embed credentials; the commit must
+be a full forty-character SHA — a branch, tag, or abbreviated SHA is refused, because a moving
+reference is not a reproducible identity. Selection is decided, not everything: every file whose
+suffix `source add` accepts, excluding dot-directories except `.github/workflows`. Nested paths
+register under flattened names with the true path, repository, and commit recorded in each
+document's metadata. A configured `GITHUB_TOKEN` authenticates private repositories and never
+reaches metadata or logs. Exits 1 with a named error when the pin cannot hold or nothing in the
+repository is readable.
+
+```console
+$ uv run trace source add-repo asm-001 https://github.com/org/service-docs 4f0c...a91d
 ```
 
 **source list** — `trace source list <assessment_id>`. Lists registered documents. Exits 0.
