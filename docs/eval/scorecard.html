@@ -190,5 +190,31 @@ over the authoritative rows of each snapshot; per-row detail is retained in
 </tbody>
 </table>
 </div>
+
+<h2>F1 across versions</h2>
+<p class="meta">One row per authoritative scenario and condition, one column per retained
+snapshot, oldest first (#535). The pooled History table hides a single scenario regressing while
+the pool barely moves; this matrix keeps the scenario axis. A dash is a pair the snapshot did
+not run, or an undefined ratio.</p>
+<div class="scroll">
+<table>
+<thead><tr><th>Scenario</th><th>Condition</th><th>2026-08-12<br><code>654664d</code></th><th>2026-08-12<br><code>da7b134</code></th><th>2026-08-12<br><code>7f163c9</code></th><th>2026-08-12<br><code>b5a83c7</code></th><th>2026-08-12<br><code>4019943</code></th><th>2026-08-14<br><code>0f3348e</code></th></tr></thead>
+<tbody>
+<tr><td>contradictory-docs</td><td>clean</td><td>100%</td><td>100%</td><td>100%</td><td>100%</td><td>100%</td><td>100%</td></tr>
+<tr><td>crypto-wallet</td><td>clean</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+<tr><td>forgeflow</td><td>clean</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+<tr><td>husky-ai</td><td>clean</td><td>—</td><td>—</td><td>100%</td><td>100%</td><td>100%</td><td>100%</td></tr>
+<tr><td>invoice-agent</td><td>clean</td><td>—</td><td>100%</td><td>100%</td><td>100%</td><td>100%</td><td>100%</td></tr>
+<tr><td>managed-db-service</td><td>clean</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+<tr><td>missing-docs</td><td>clean</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+<tr><td>oidc-portal</td><td>clean</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+<tr><td>order-notifier</td><td>clean</td><td>—</td><td>—</td><td>—</td><td>100%</td><td>100%</td><td>100%</td></tr>
+<tr><td>parcel-platform</td><td>clean</td><td>—</td><td>—</td><td>—</td><td>100%</td><td>100%</td><td>100%</td></tr>
+<tr><td>translation-gateway</td><td>clean</td><td>—</td><td>—</td><td>—</td><td>100%</td><td>100%</td><td>100%</td></tr>
+<tr><td>unsigned-webhooks</td><td>adversarial</td><td>100%</td><td>100%</td><td>100%</td><td>100%</td><td>100%</td><td>100%</td></tr>
+<tr><td>unsigned-webhooks</td><td>clean</td><td>100%</td><td>100%</td><td>100%</td><td>100%</td><td>100%</td><td>100%</td></tr>
+</tbody>
+</table>
+</div>
 </body>
 </html>
