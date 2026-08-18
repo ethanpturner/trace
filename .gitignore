@@ -45,3 +45,8 @@ scripts/.staged/
 # it lives in-repo for the scorecard and CI to read, and out of history because a derived
 # artifact that regenerates on demand earns no place there.
 /benchmarks/results/
+
+# The rendered documentation site (DEC-104): mkdocs builds docs/ into site/, locally and in CI.
+# The Pages deploy consumes it as a workflow artifact, so the rendering never enters history;
+# the Markdown sources under docs/ are the authoritative copies.
+/site/

@@ -6701,3 +6701,65 @@ Tradeoffs:
   the report does not claim a rename the diff refused to guess.
 - Two comparison artifacts accumulate if a pair is compared before and after an edit; content-
   addressing keeps them distinct and append-only, the export family's accepted cost.
+
+## DEC-104: The documentation site is a rendered view of committed sources, published from main
+
+Date: 2026-08-17
+
+Status: Accepted
+
+Decision:
+
+**`docs/` publishes as a static site — MkDocs Material, built by CI, deployed to GitHub Pages
+from `main` through the Pages artifact flow.** The Markdown sources stay where they are and
+remain authoritative: `mkdocs.yml` sits at the repository root with `docs_dir: docs`, so the
+tree the conformance tests read by path is untouched, and nothing about the site changes what
+any test or loader sees. A hand-authored `docs/index.md` is the site's landing page; the README
+stays the repository's front page and is not copied in. The handful of links that escaped
+`docs/` (into the README and `demo/forgeflow/`) became absolute repository URLs, which resolve
+identically on GitHub and on the site. The build runs `mkdocs build --strict` on every pull
+request that touches the sources, so a broken intra-site link fails CI; only a push to `main`
+deploys. The rendered `site/` directory is gitignored and never committed.
+
+This does not reopen DEC-076. The scorecard remains a committed artifact whose history is the
+git history; the site copies `docs/eval/scorecard.html` verbatim rather than regenerating it at
+deploy time. What DEC-076 rejected was leaving the scorecard *only* in a CI artifact with no
+committed copy. The site's rendering is a different class of output: derived presentation of
+committed Markdown, with no history of its own worth keeping — the same standing as the wheel
+CI builds and discards.
+
+Why:
+
+- Stage 6's audience reads documentation as a navigable site with search, not as a file tree.
+  The corpus is complete — guide, architecture, product, evaluation — and raw Markdown in a
+  repository browser undersells it.
+- Publishing from `main` keeps the site an account of released Trace. `develop` describes what
+  the next release will do, and a site that tracks it would drift into the tense-discipline
+  failure the working norms name: describing the pipeline as if the unreleased part exists.
+- The artifact flow rather than a `gh-pages` branch: branch protection blocks CI pushes here by
+  design (the scorecard and demo workflows already note this), and a rendered branch is a second
+  copy of derived content in history.
+
+Alternatives Considered:
+
+- A GitHub wiki (rejected: a wiki is a separate repository outside pull requests, CI, and the
+  conformance tests that hold `docs/` and the code in agreement; a doc edit would stop being
+  reviewable and stop versioning with the code it describes).
+- Committing the rendered site (rejected: DEC-076 committed the scorecard because its history is
+  the record; a themed rendering of already-committed Markdown has no history of its own, and
+  regenerated `site/` churn on every docs edit would bury real diffs).
+- Publishing from `develop` (rejected: see Why; the integration branch is the wrong tense for a
+  public account of the system).
+- Restructuring `docs/` for the site — an `index.md`-per-directory layout or a `docs/src/` split
+  (rejected: roughly twenty tests read these files by path, and the site is not worth a test
+  migration; `docs_dir: docs` with an explicit nav gets the same structure for free).
+
+Tradeoffs:
+
+- The site lags `develop` by one release. Accepted: that is the point of publishing from `main`,
+  and the sources on any branch remain readable in the repository.
+- `mkdocs-material` joins the lockfile, and the existing CI jobs install it because they sync
+  `--all-groups`. Accepted: pure-Python wheels, cached by the uv action; the docs workflow
+  itself syncs `--only-group docs` and skips the project entirely.
+- The scorecard page renders without the site's chrome, because it is copied verbatim as DEC-076
+  requires. Accepted: it carries its own styling and always has.

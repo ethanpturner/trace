@@ -52,6 +52,10 @@ dev = [
     "types-jsonschema>=4.26.0.20260518",
     "types-pyyaml>=6.0.12",
 ]
+# Builds the documentation site from docs/ (DEC-104); nothing in src/ or tests/ imports it.
+docs = [
+    "mkdocs-material>=9.5",
+]
 
 [tool.ruff]
 target-version = "py314"
