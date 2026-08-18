@@ -126,7 +126,7 @@ preserved utility with 0% injected-instruction compliance.
 live-model run has been measured, so run-to-run stability is unmeasured and costs read zero; the
 truth sets are a single annotator's, scored as self-agreement rather than an inter-annotator kappa;
 and the null results for the critic and the checkpoint are an absence of measured effect, not
-evidence of absence. The [limitations section](../../README.md#limitations-and-failure-modes)
+evidence of absence. The [limitations section](https://github.com/ethanpturner/trace/blob/main/README.md#limitations-and-failure-modes)
 carries the full account. The tables above regenerate from the recordings on every change, so the
 next scenario or the first live run updates this narrative's numbers without a word of it being
 rewritten by hand.

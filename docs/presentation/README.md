@@ -19,15 +19,15 @@ Each is committed elsewhere in the repository and referenced rather than duplica
 
 - **Demo script and recovery plan** — [`docs/product/demo-script.md`](../product/demo-script.md),
   the ten-beat offline walkthrough. The spoken narration for the presentation's eight-step
-  variant is [`demo/forgeflow/speaker-notes.md`](../../demo/forgeflow/speaker-notes.md).
-- **Demo recording** — [`demo/forgeflow/assets/pipeline-demo.gif`](../../demo/forgeflow/assets/pipeline-demo.gif),
+  variant is [`demo/forgeflow/speaker-notes.md`](https://github.com/ethanpturner/trace/blob/main/demo/forgeflow/speaker-notes.md).
+- **Demo recording** — [`demo/forgeflow/assets/pipeline-demo.gif`](https://github.com/ethanpturner/trace/blob/main/demo/forgeflow/assets/pipeline-demo.gif),
   rendered by CI from `pipeline-demo.tape` so it cannot drift from the command surface. This is
   the silent fallback; the narrated video is issue #353 and is not yet recorded.
 - **Screenshots** — frames of that GIF, derived on demand rather than committed, because CI
   re-renders the GIF and committed stills would drift:
   `ffmpeg -i demo/forgeflow/assets/pipeline-demo.gif -vf "select=eq(n\,FRAME)" -vframes 1 still.png`.
   The committed source guarantees a still cannot show something the pipeline does not produce.
-- **Rendered report** — [`demo/forgeflow/assets/forgeflow-report.md`](../../demo/forgeflow/assets/forgeflow-report.md),
+- **Rendered report** — [`demo/forgeflow/assets/forgeflow-report.md`](https://github.com/ethanpturner/trace/blob/main/demo/forgeflow/assets/forgeflow-report.md),
   hash-pinned to `demo/forgeflow/recorded/report-hash.txt`.
 - **Scorecard and comparison** — [`docs/eval/scorecard.html`](../eval/scorecard.html) and
   [`docs/eval/comparison.md`](../eval/comparison.md), regenerated offline from recorded runs.

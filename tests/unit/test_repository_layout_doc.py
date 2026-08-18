@@ -8,8 +8,9 @@ that does not exist fails, and so does a directory the section omits within its 
 top-level directories, the packages under `src/trace_ai`, and the subdirectories of `tests/`
 and `docs/`.
 
-`data/` and everything below it is the gitignored runtime data root, named in the section's
-prose rather than its tree, and is the one deliberate exclusion here.
+`data/` and everything below it is the gitignored runtime data root, and `site/` is the
+gitignored rendered documentation site (DEC-104); both are named in the section's prose rather
+than its tree, and they are the two deliberate exclusions here.
 """
 
 from __future__ import annotations
@@ -50,7 +51,7 @@ def _actual() -> set[Path]:
     """The directories the declared scope holds it to: top level, the package, tests, docs."""
     actual: set[Path] = set()
     for child in PROJECT_ROOT.iterdir():
-        if child.name.startswith(".") or child.name == "data" or not child.is_dir():
+        if child.name.startswith(".") or child.name in ("data", "site") or not child.is_dir():
             continue
         actual.add(Path(child.name))
     package = PROJECT_ROOT / "src" / "trace_ai"
