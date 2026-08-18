@@ -80,7 +80,7 @@ def test_parse_reads_the_allowlist_and_only_the_allowlist() -> None:
 
 def test_a_split_container_statement_yields_nothing() -> None:
     """Two containers stating opposite values have not stated one self-contained fact about
-    the workload; the split yields silence, never a chosen side (DEC-125)."""
+    the workload; the split yields silence, never a chosen side (DEC-128)."""
     parsed = parse_kubernetes(
         """\
 kind: Deployment
@@ -169,7 +169,7 @@ def test_seeding_enters_the_proposal_path_with_per_document_excerpts(tmp_path: P
 
 
 def test_a_multi_document_stream_passes_the_loader_boundary(tmp_path: Path) -> None:
-    """DEC-125's loader change: a `---`-separated stream is valid YAML with the same safety
+    """DEC-128's loader change: a `---`-separated stream is valid YAML with the same safety
     properties, validated document by document; an unaddressable member still refuses."""
     from trace_ai.domain.assessment import default_configuration
     from trace_ai.domain.source_document import TrustLevel

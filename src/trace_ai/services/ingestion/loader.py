@@ -349,7 +349,7 @@ class DocumentLoader:
             # `yaml.safe_load_all` rather than `yaml.load`: the safe loader constructs no
             # arbitrary Python objects from document content, which the default loader would —
             # code execution chosen by an untrusted input file. The `_all` form admits a
-            # multi-document stream (DEC-125): a Kubernetes manifest is conventionally several
+            # multi-document stream (DEC-128): a Kubernetes manifest is conventionally several
             # documents separated by `---`, that is valid YAML with the same safety properties,
             # and each document is held to the same addressability bar a single one is. JSON has
             # no equivalent hazard and needs no equivalent care.

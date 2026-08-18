@@ -12,7 +12,7 @@ A Deployment is the workload whose pod spec states the admitted booleans; the ot
 architecture surface a reviewer needs on the component list. Kinds outside the allowlist yield
 nothing — a CRD's semantics are its own, and reading one would be interpretation.
 
-**Multi-document streams are the convention and are in scope** (DEC-125): the ingestion loader
+**Multi-document streams are the convention and are in scope** (DEC-128): the ingestion loader
 validates a YAML stream with the same safe loader it validates a single document with, and this
 parser reads every document on the allowlist. Recognition is by suffix — ``*.k8s.yaml``,
 ``*.k8s.yml``, ``*.k8s.json`` — and content is never sniffed.
@@ -60,7 +60,7 @@ __all__ = [
 
 KUBERNETES_PARSER: Final = "kubernetes-parser-v1"
 
-# The kind allowlist (DEC-125), each mapped to the family's open-vocabulary component spelling
+# The kind allowlist (DEC-128), each mapped to the family's open-vocabulary component spelling
 # (DEC-036). Kinds outside the allowlist yield nothing.
 _KINDS: Final[dict[str, str]] = {
     "Deployment": "workload",
@@ -131,7 +131,7 @@ def _stated_of(declared: dict[str, Any]) -> tuple[tuple[str, bool], ...]:
         if len(values) == 1:
             stated.append((attribute, values.pop()))
         # Zero statements is silence; a split statement is not one self-contained fact about
-        # the workload, and yields nothing either (DEC-125).
+        # the workload, and yields nothing either (DEC-128).
     return tuple(stated)
 
 
