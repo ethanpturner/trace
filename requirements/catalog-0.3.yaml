@@ -5,11 +5,13 @@ catalog:
   name: "Core Architecture Requirements"
   version: "0.3"
   description: >
-    The third catalog minor version (DEC-057, DEC-111). Everything in 0.2
-    carries forward under its identifier; the delegated-authentication
+    The third catalog minor version (DEC-057, DEC-111, DEC-114). Everything
+    in 0.2 carries forward under its identifier; the delegated-authentication
     category arrives with the OAuth/OIDC requirement pack (#537), measured
-    against the oidc-portal scenario from its first commit. The fate of every
-    0.2 requirement is recorded in mappings/0.2-to-0.3.yaml.
+    against the oidc-portal scenario, and the fine-tuning category completes
+    the AI system threat-modeling pack (#531), measured against the
+    reply-tuner scenario. The fate of every 0.2 requirement is recorded in
+    mappings/0.2-to-0.3.yaml.
   created_at: 2026-08-17
   status: draft
 
@@ -17,7 +19,7 @@ catalog:
   # (DEC-019), computed and verified by src/trace_ai/services/requirements/loader.py
   # every time the catalog is read. Do not edit by hand; run
   #   uv run python scripts/catalog_hash.py --version 0.3 --write
-  content_hash: sha256:97725a99effb221e1054bcae3adf0e051b349636bb848a0ef4ed10e1e260a75b
+  content_hash: sha256:57b7061501a86ddb87b4b7d7800554b9387f0a9c6052dee799a3566fbc4a4c3f
 
   requirement_ids:
 
@@ -71,6 +73,10 @@ catalog:
 
     - req-SECRET-001
     - req-SECRET-002
+
+    - req-TRAIN-001
+    - req-TRAIN-002
+    - req-TRAIN-003
 
     - req-TPI-001
     - req-TPI-002

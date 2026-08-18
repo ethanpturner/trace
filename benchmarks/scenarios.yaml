@@ -137,6 +137,17 @@ scenarios:
     conditions:
       - adversarial
 
+  - slug: reply-tuner
+    name: Reply Tuner
+    path: benchmarks/reply-tuner
+    # Fine-tuning on collected customer content: the fine-tuning pack's scenario (#531,
+    # DEC-114). One finding (unminimized transcripts train the model, documented), one gap
+    # (artifact lineage, silence), one satisfied mapping (the governed write path) whose
+    # suppressed conclusion is the pack's own false-positive class. Pins catalog 0.3.
+    status: authored
+    category: fine-tuning
+    catalog_version: "0.3"
+
   - slug: order-notifier
     name: Order Notifier
     path: benchmarks/order-notifier

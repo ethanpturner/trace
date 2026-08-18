@@ -443,10 +443,11 @@ remains open is the narrated demo video.
 - **The adversarial condition** — DEC-075's poisoned-document variant with all five payload
   classes, run as an ordinary scenario condition, with the two-axis attack metrics (detection,
   and injected-instruction compliance with a target of zero) reported per payload class.
-- **The thirteen benchmark scenarios** — every registered scenario carries a full outcome truth
+- **The fourteen benchmark scenarios** — every registered scenario carries a full outcome truth
   set and an offline recording, every roadmap Stage 5 coverage category has a scenario — the
-  thirteenth (rag-support-bot, DEC-098) exercises the 0.2 catalog's AI-system requirements —
-  and `trace evaluate --all` runs the register with nothing skipped.
+  thirteenth (rag-support-bot, DEC-098) exercises the 0.2 catalog's AI-system requirements, and
+  the fourteenth (reply-tuner, DEC-114) exercises the 0.3 catalog's fine-tuning pack — and
+  `trace evaluate --all` runs the register with nothing skipped.
 - **The M12 decision debt, closed** — DEC-057 through DEC-072 (risk treatment, episodic revisit,
   routing reasons, the STRIDE coverage baseline, the precedent feed, catalog-gap candidates,
   fingerprints, cache accounting, context extensions, profile overlays, parsers, the coverage
@@ -468,7 +469,7 @@ remains open is the narrated demo video.
   ($6.92 ± $3.28 and ~41 ± 15 minutes each; the expected finding matched in 2 of 5), on the
   [scorecard](docs/eval/scorecard.html) with three failed attempts disclosed — but only one
   scenario is measured, the offline table's cost cells still read zero because its feeds
-  regenerate from replays, and the eleven benchmark recordings remain authored offline. The
+  regenerate from replays, and the thirteen benchmark recordings remain authored offline. The
   model and prompt comparisons (#331, #332) have no recorded run.
 - **The public release packaging.** Milestone M9's demonstration surface is built — the read-only
   view, the finding-lineage view, the demo script and its recovery plan, and the measured ablation
@@ -698,7 +699,7 @@ read source code, run a program, connect to a cloud account, or inspect a runnin
 weakness present in the implementation but absent from the documentation is outside its reach. It
 assesses what a system is described to be, and a description can be wrong.
 
-**What the evaluation does not prove.** Twelve scenarios are registered, and every one carries an
+**What the evaluation does not prove.** Fourteen scenarios are registered, and every one carries an
 authoritative Trace run scored against its truth set, plus two adversarial conditions. Every truth
 set is authored by one person, so the numbers are a single annotator's judgment measured against
 itself — self-agreement, not an inter-annotator statistic, and not a claim of external ground
@@ -708,7 +709,7 @@ run matcher uses, and the scorecard reports it — but no second set has been au
 agreement section is empty and this limitation stands as written until a person records one.
 One live-model run has been captured and scored (the flagship recording), and run-to-run
 stability (DEC-077) has been measured once: over five completed live runs of one scenario, the
-expected finding matched in two — instability is real, reported, and gates nothing. The eleven
+expected finding matched in two — instability is real, reported, and gates nothing. The thirteen
 benchmark recordings are deterministic and offline, and the scorecard's offline cost cells read
 zero because its feeds regenerate from replays; the measured live costs live in the scorecard's
 own live-stability section. The
