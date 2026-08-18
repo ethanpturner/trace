@@ -7130,6 +7130,66 @@ Tradeoffs:
 
 ## DEC-111: Catalog 0.3 carries the delegated-authentication pack, measured against oidc-portal from its first commit
 
+Date: 2026-08-17
+
+Status: Accepted
+
+Decision:
+
+**Catalog 0.3 exists: everything in 0.2 carries forward unchanged, plus the
+`delegated_authentication` category — `req-OIDC-001` through `req-OIDC-004` (#537).** The four
+requirements cover the protocol surface delegation leaves behind: redirect registration, token
+validation, the bound the relying party's own session puts on the provider's authentication
+event, and the binding of the authorization-code exchange. Every statement is in the
+documentation register so silence resolves to `unverified` (DEC-009), each carries the
+`common_false_positives` entries its own false-positive class needs, and citations resolve
+against the pinned ASVS 5.0.0 export. The fate of every 0.2 requirement is recorded in
+`mappings/0.2-to-0.3.yaml`, all `unchanged`.
+
+**The pack is measurable on the day it lands — the DEC-098 pattern at zero new-scenario cost.**
+`oidc-portal` pins catalog 0.3, gains `expected-control-mappings.yaml` (six expected pairs:
+the documented delegation satisfied, the four OIDC requirements and the reachability
+restriction honestly `unverified`, plus the scenario's two `must_not_conclude` negatives), and
+its recorded thr-001 mapping is re-authored to engage the pack — appended after the existing
+mappings so earlier allocated identifiers stay stable, with the one shifted identifier
+(`map-003` → `map-007`) moved in the evidence-validation recording with it. The replay
+completes offline with `requirement_mapping_accuracy` at 1.0 over the six pairs, and zero
+findings remains the recorded outcome — the scenario's original point stands beside the pack.
+
+**0.3 registers as `draft` in the change that authors it; the flip to `active` is a
+registry-only follow-up.** DEC-099's release condition has fired — a committed recording pins
+0.3 — but the DEC-057 freeze guard forbids touching a released version's directory, and a
+change that both created the content and marked it released would trip its own guard. The
+sequencing is deliberate: content and pin land under `draft` (the registry entry says so in
+place), and the lifecycle flip rides the next release cut, touching only `versions.yaml` —
+exactly the registry-outside-content separation DEC-057 built.
+
+Why:
+
+- Technology packs (future-features 5.4) had failed the instruments-measure-something bar as
+  catalog growth without a scenario; here the measuring scenario already existed, and the pack
+  diversifies the catalog beyond the AI axis DEC-098 grew.
+- The oidc-portal scenario exists for the delegated-authentication false-positive class, and
+  until now the catalog had no requirements for the surface delegation actually leaves — the
+  scenario could prove what a correct assessment does not say, but not what it should examine.
+
+Alternatives Considered:
+
+- Growing 0.2 in place (rejected: 0.2 released when rag-support-bot's recording pinned it, and
+  a released version is immutable — "any content change, however small, is a new minor
+  version", DEC-057's own words, enforced by the freeze guard).
+- A per-scenario requirements file (rejected long ago and still: DEC-024 sends the whole
+  catalog, and a scenario-scoped list could only narrow what the pipeline sees).
+
+Tradeoffs:
+
+- The catalog now rides every mapping call at 41 requirements for 0.3-pinned scenarios.
+  DEC-105 made the catalog the cached span and DEC-107 measured the fan-out alternative as
+  strictly worse, which is the cost posture this growth was sequenced behind.
+- Appending mappings to a recorded response edits a committed recording; the provenance file
+  records exactly what changed and why, and the replay's completed run plus the stable earlier
+  identifiers bound what the edit can have touched.
+
 ## DEC-112: Truth-set agreement is measurable; the first set stays authoritative
 
 Date: 2026-08-17
@@ -7298,3 +7358,73 @@ Tradeoffs:
   sequenced behind.
 - The scenario's system is small enough to author precisely, which also means it cannot
   exercise scale effects; the large-architecture coverage category remains parcel-platform's.
+
+## DEC-115: The organizational control catalog exists, read-only, and asserts existence only
+
+Date: 2026-08-18
+
+Status: Accepted
+
+Decision:
+
+**`org-controls/` holds a versioned, hash-verified catalog of controls the organization
+provides, `services/org_controls/loader.py` is its only reader, and an assessment consumes it
+only as documented claims through the parser family (#528).** The catalog follows the
+requirements pattern scaled to its size: one file per version, names not identifiers
+(`enterprise-idp-mfa`, DEC-034), a DEC-019 content hash over the parsed document recomputed on
+every load, and a caller that names the version it wants. `OrganizationalControl` is a domain
+object (data-model.md section 30a) with the registry flipped in the same change. Deliberately
+v0: a flat catalog, no inheritance graph — future-features 5.2 stays Research.
+
+**The pipeline entry is an assertion the parser verifies, never an import it trusts.** An
+assessment opts in by registering an `org-controls.yaml` document naming a catalog version and
+the control names asserted to bear on this system. The parser — the DEC-070 family's fourth
+member — verifies every asserted name against the loaded central version and seeds one
+documented claim per control, its value carrying the catalog's own statement with
+`(name, catalog version)` provenance and its evidence quoting the registered assertion. A
+failed verification seeds nothing and stops with the reason: an unknown name is an
+unverifiable claim about the organization, and partial seeding would let a typo drop a control
+silently.
+
+**An org control asserts that a mechanism exists organizationally, and nothing else.** Whether
+*this system* inherits it is the pipeline's ordinary work: the claim is decided at checkpoint 1
+like every parser product, and evidence validation still judges what any mapping concludes from
+it. This is DEC-009 run in the other direction — a documented organizational mechanism is
+evidence a conclusion may rest on, never a conclusion — and it is what keeps the catalog from
+becoming a bypass around the evidence chain.
+
+**The corpus exercises it from the first commit.** `oidc-portal` asserts `enterprise-idp-mfa`:
+the scenario's standing negative — multi-factor authentication is not to be reported absent —
+now rests on the organization's documented factor policy with catalog provenance, beside the
+overview's own sentence. The replay completes with every expected metric unchanged.
+
+Why:
+
+- The false-positive class this project exists to eliminate is exactly the org-control shape:
+  central logging exists, secrets come from the enterprise vault, and no system document
+  repeats it — so every assessment re-derives the same DocumentationGap noise. Future-features
+  5.1 was the highest-status unclaimed candidate, and the interview package promises the
+  inherited-controls story.
+- Entering through the parser family reuses every boundary already built: untrusted-document
+  handling, `structured_input` provenance, checkpoint-1 decision, the fence.
+
+Alternatives Considered:
+
+- Seeding `Control` objects directly (rejected: a Control asserts something about *this
+  system's* protection surface, which is precisely the judgment the org catalog must not make;
+  claims carry the fact and leave the judgment to the pipeline).
+- An `AssessmentConfiguration` field naming the catalog version (rejected: the assertion is
+  per-assessment *content* — which controls bear on this system — not a setting, and a
+  configuration field could not carry the asserted subset).
+- Trusting the registered document's own statements without the central catalog (rejected: a
+  source document is attacker-authorable, and "the organization provides X" from an untrusted
+  file is the exact laundering the hash-verified central catalog exists to refuse).
+
+Tradeoffs:
+
+- The asserted-name indirection means an assessment cannot carry an org control the central
+  catalog lacks; adding one is a catalog edit with a hash rewrite. Deliberate: the catalog is
+  the reviewable place organizational facts live.
+- v0 has no per-control evidence linking to organizational documentation (policy pages, audit
+  reports); the claim cites the assertion document. A future version can carry references, and
+  the gap is stated here rather than papered over.

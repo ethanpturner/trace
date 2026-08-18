@@ -1,0 +1,40 @@
+# The organizational control catalog, version 0.1 (#528, DEC-115).
+#
+# One file per version. Each entry names a control the organization provides — a mechanism
+# that exists organizationally, which individual system documents routinely do not repeat.
+# The catalog asserts existence only: whether a given system actually inherits a control is
+# the assessment's ordinary work, decided at checkpoint 1 and judged by evidence validation
+# like any other claim. `services/org_controls/loader.py` is this file's only reader; it
+# recomputes `content_hash` over the parsed catalog (the DEC-019 rule) on every load and
+# refuses a drifted file. Regenerate the hash after an edit with
+#   uv run python scripts/org_controls_hash.py --version 0.1 --write
+#
+# Entries carry names, not identifiers (DEC-034): a control is identified by
+# (name, catalog_version).
+
+org_controls_catalog:
+  version: "0.1"
+  content_hash: sha256:99b094082adf8ac07da1051ded6590106e9f916fb5469c5cdd7a2d574d498303
+  controls:
+
+    - name: enterprise-idp-mfa
+      catalog_version: "0.1"
+      title: Enterprise identity provider enforces multi-factor authentication
+      statement: >
+        Workforce authentication is delegated to the enterprise identity provider, and
+        multi-factor enrolment and factor policy are set and enforced at the identity
+        provider organization level for all workforce identities.
+      mechanism: enterprise identity provider factor policy
+      applies_when:
+        - the system delegates workforce authentication to the enterprise identity provider
+
+    - name: central-logging
+      catalog_version: "0.1"
+      title: Platform workloads ship logs to the central logging service
+      statement: >
+        Workloads deployed on the platform ship their runtime logs to the central logging
+        service by default through the platform's log forwarding, with retention managed
+        centrally.
+      mechanism: platform log forwarding to the central logging service
+      applies_when:
+        - the system runs on the platform's standard workload deployment
