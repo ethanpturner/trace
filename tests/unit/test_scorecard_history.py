@@ -182,6 +182,7 @@ def test_the_history_contains_metrics_and_identifiers_only(tmp_path: Path) -> No
         "token_usage",
         "severity_concordance",
         "duplicate_miss_rate",
+        "annotation_agreement",
     }
 
 

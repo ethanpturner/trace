@@ -701,7 +701,11 @@ assesses what a system is described to be, and a description can be wrong.
 **What the evaluation does not prove.** Twelve scenarios are registered, and every one carries an
 authoritative Trace run scored against its truth set, plus two adversarial conditions. Every truth
 set is authored by one person, so the numbers are a single annotator's judgment measured against
-itself — self-agreement, not an inter-annotator kappa, and not a claim of external ground truth.
+itself — self-agreement, not an inter-annotator statistic, and not a claim of external ground
+truth. The instrument for the stronger claim exists (DEC-112): a second annotation set placed at
+`benchmarks/<slug>/annotations/second/` is scored for agreement over the same identity forms the
+run matcher uses, and the scorecard reports it — but no second set has been authored yet, so the
+agreement section is empty and this limitation stands as written until a person records one.
 One live-model run has been captured and scored (the flagship recording), and run-to-run
 stability (DEC-077) has been measured once: over five completed live runs of one scenario, the
 expected finding matched in two — instability is real, reported, and gates nothing. The eleven

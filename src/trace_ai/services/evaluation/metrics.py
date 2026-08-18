@@ -490,6 +490,37 @@ def _benchmark_metrics(
         _duplicate_miss_metrics(handle, run, expected_dir, component_names=component_names)
     )
 
+    # Annotator agreement (#530, DEC-112): a statement about the truth set itself, computed
+    # beside the run metrics because the feed is where per-scenario numbers travel. Gates
+    # nothing; absent while no second annotation set exists — unmeasured, never zero.
+    from trace_ai.services.evaluation.agreement import compute_agreement, second_annotation_dir
+
+    agreement = compute_agreement(expected_dir, second_annotation_dir(expected_dir.parent))
+    if agreement is not None and agreement.pooled is not None:
+        per_artifact = "; ".join(
+            f"{entry.artifact}: {entry.in_both} shared, {entry.only_first} first-only, "
+            f"{entry.only_second} second-only"
+            for entry in agreement.artifacts
+        )
+        results.append(
+            _metric(
+                handle,
+                run.id,
+                "annotation_agreement",
+                agreement.pooled,
+                unit="percentage",
+                evaluator=EvaluatorType.BENCHMARK,
+                method=(
+                    "Jaccard agreement between the authoritative truth set and the second "
+                    "annotation set over DEC-056 identity forms, pooled across artifacts "
+                    "(DEC-112). A statement about the truth set, not the run; the first set "
+                    "stays authoritative and the statistic gates nothing"
+                ),
+                sample_size=sum(entry.union for entry in agreement.artifacts),
+                notes=per_artifact,
+            )
+        )
+
     expected_gaps = _expected_entries(
         expected_dir, "expected-documentation-gaps.yaml", "documentation_gaps"
     )
