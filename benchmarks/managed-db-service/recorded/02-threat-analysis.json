@@ -11,7 +11,7 @@
         ],
         "threat_actor_ids": [],
         "affected_component_ids": [
-          "cmp-002"
+          "cmp-003"
         ],
         "affected_asset_ids": [
           "ast-001"
@@ -45,7 +45,7 @@
         ],
         "threat_actor_ids": [],
         "affected_component_ids": [
-          "cmp-002"
+          "cmp-003"
         ],
         "affected_asset_ids": [
           "ast-001"

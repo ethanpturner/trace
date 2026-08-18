@@ -1,0 +1,12 @@
+{
+  "resource": {
+    "aws_db_instance": {
+      "metrics_db": {
+        "engine": "postgres",
+        "instance_class": "db.t3.medium",
+        "storage_encrypted": true,
+        "publicly_accessible": false
+      }
+    }
+  }
+}

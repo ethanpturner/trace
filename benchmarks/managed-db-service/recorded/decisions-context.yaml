@@ -5,6 +5,20 @@ components:
 - id: cmp-001
   decision: approve
   editable:
+    name: metrics db
+    description: Declared in terraform-db.tf.json as aws_db_instance.
+    component_type: managed_database
+    technology: []
+    ownership: null
+    deployment_zone: null
+    internet_accessible: null
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+- id: cmp-002
+  decision: approve
+  editable:
     name: Metrics API
     description: internal HTTP service that accepts metric writes from product services and answers metric queries from the dashboard
     component_type: service
@@ -16,7 +30,7 @@ components:
     data_classifications: []
     authentication_mechanisms: []
     authorization_mechanisms: []
-- id: cmp-002
+- id: cmp-003
   decision: approve
   editable:
     name: Managed Metrics Database
@@ -70,8 +84,8 @@ data_flows:
     authentication: unknown
     encryption_in_transit: platform_transport_encryption
     internet_exposed: false
-    source_component_id: cmp-001
-    destination_component_id: cmp-002
+    source_component_id: cmp-002
+    destination_component_id: cmp-003
 trust_boundaries:
 - id: tb-001
   decision: approve
@@ -87,12 +101,34 @@ claims:
   decision: approve
   confirm: false
   evidence:
+  - evd-006
+  editable:
+    predicate: storage_encrypted
+    value: true
+    rationale: null
+- id: ctx-002
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  evidence:
+  - evd-006
+  editable:
+    predicate: publicly_accessible
+    value: false
+    rationale: null
+- id: ctx-003
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  evidence:
   - evd-002
   editable:
     predicate: encryption_at_rest
     value: the platform encrypts the database at rest by default, and key management is handled by the platform's key management service
     rationale: null
-- id: ctx-002
+- id: ctx-004
   status: documented
   confidence: high
   decision: approve
@@ -103,7 +139,7 @@ claims:
     predicate: encryption_in_transit
     value: the connection from the metrics API to the database uses the platform's transport encryption terminated at the managed endpoint
     rationale: null
-- id: ctx-003
+- id: ctx-005
   status: documented
   confidence: high
   decision: approve
@@ -114,7 +150,7 @@ claims:
     predicate: data_sensitivity
     value: metrics records associate a product account with usage counters and are treated as confidential business data
     rationale: null
-- id: ctx-004
+- id: ctx-006
   status: documented
   confidence: high
   decision: approve
