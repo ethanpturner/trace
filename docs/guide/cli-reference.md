@@ -330,11 +330,12 @@ final sign-off — that is `assessment approve`, after the report exists.
 ### report show
 
 ```
-trace report show [--manifest] <assessment_id>
+trace report show [--manifest] [--json] <assessment_id>
 ```
 
 Prints the rendered Markdown report, or with `--manifest` the report's manifest instead. Exits 1
-while no report exists.
+while no report exists. `--json` wraps the same body — the report text, or the parsed manifest —
+in the DEC-096 envelope.
 
 ### report rubric
 
@@ -351,13 +352,14 @@ and `overall_confidence`. Exits 0 when all seven are scored, 1 otherwise.
 ## verify
 
 ```
-trace verify <assessment_id>
+trace verify [--json] <assessment_id>
 ```
 
 Walks the whole evidence chain: every stored document against its recorded hash, every evidence
 reference against its source, and the report manifest against the store. Exits 0 when everything
 verifies. Exits 3 on any drift, with each drift named — identifier, expected hash, found hash —
-and never the content that changed.
+and never the content that changed. `--json` carries the walk's counts and the same drift
+entries in the DEC-096 envelope; the exit codes are unchanged by the flag.
 
 ## export
 
