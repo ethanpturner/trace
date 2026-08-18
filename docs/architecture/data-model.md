@@ -2199,6 +2199,7 @@ conclusion).
 | mechanism | string | Yes | The mechanism class that provides it |
 | applies_when | list[string] | No | Conditions under which the control bears on a system |
 | catalog_version | string | Yes | The org-controls catalog version that defines it |
+| references | list[string] | No | Pointers to the organizational documentation that evidences the control (DEC-122); pointers a reviewer can check, never authority, and never an EvidenceReference |
 
 ## Note on identity
 

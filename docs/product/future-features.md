@@ -225,14 +225,17 @@ Trend analysis should not reduce complex risk to a misleading single score.
 
 ## 5.1 Organizational Control Catalog
 
-**Status:** Built in part (DEC-115, issue #528)
+**Status:** Built (DEC-115 and DEC-122, issues #528 and #568)
 
 A deliberate v0 shipped with DEC-115: a flat, version-controlled `org-controls/` catalog read by
 its own loader, a fourth structured parser, and existence-only assertions — an organizational
 control enters context as a documented claim, never as authority. The oidc-portal scenario
-asserts `enterprise-idp-mfa` from its first commit. Remaining from the sketch: a real operator's
-fact set and per-control evidence links (issue #568). The inheritance graph is 5.2 and stays
-Research.
+asserts `enterprise-idp-mfa` from its first commit. DEC-122 filled in what v0 stated as gaps:
+catalog 0.2 is the operator fact set, each control carries `references` — pointers to
+organizational documentation, riding in the seeded claim's value, never authority — and the
+fifteenth scenario (nightly-reconciler) measures the suppression the sketch promised: two
+false positives a generic review raises, answered by asserted organizational facts. The
+inheritance graph is 5.2 and stays Research.
 
 The original sketch — maintain a reusable catalog of organization-wide controls.
 

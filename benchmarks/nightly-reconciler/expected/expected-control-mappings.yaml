@@ -1,0 +1,69 @@
+# nightly-reconciler expected control mappings (#568, DEC-122)
+#
+# Benchmark truth for the requirement-and-control-mapping step. Layout is fixed by DEC-027;
+# the satisfaction rules are DEC-013's. Requirements are referenced, never restated (see
+# forgeflow's file for the reasoning); `catalog_version` fixes which text the identifiers
+# mean.
+#
+# The scenario's point is the two `expected_suppression` entries: each rests on an asserted
+# org-controls entry (catalog 0.2), verified against the central catalog and approved as a
+# documented claim at checkpoint 1 — the organizational mechanism answering a silence a
+# generic review reads as absence.
+#
+# Nothing in this directory is supplied to Trace during an assessment.
+
+benchmark_version: "1.0"
+scenario: nightly-reconciler
+catalog_version: "0.3"
+
+mappings:
+  - threat_key: THR-NR-01
+    applicable:
+      - requirement_id: req-SECRET-001
+        expected_satisfaction: satisfied
+        reason: >
+          The overview states the credential is provisioned through the standard workload
+          deployment, and the asserted secrets-vault control (org-controls catalog 0.2)
+          documents that credentials provisioned that way are held in the enterprise secrets
+          service and rotated. The store is named, which is what the requirement asks the
+          documentation to state.
+        expected_suppression:
+          suppressed_conclusion: that the credential is held outside a managed secret store, unrotated
+          suppressed_by: >
+            secrets-vault (org-controls catalog 0.2): workload credentials are provisioned
+            into the enterprise secrets service, injected at deploy time, and rotated on a
+            ninety-day schedule
+
+  - threat_key: THR-NR-02
+    applicable:
+      - requirement_id: req-NET-001
+        expected_satisfaction: unverified
+        reason: >
+          The billing database is stated to be reachable only from the reconciler job inside
+          the application subnet; what enforces that reachability is not described.
+      - requirement_id: req-DATA-001
+        expected_satisfaction: satisfied
+        reason: >
+          The overview states the billing database is a managed relational database provided
+          by the cloud platform and that the reporting API is served over HTTPS; the asserted
+          managed-db-encryption control (org-controls catalog 0.2) identifies the platform as
+          the party providing encryption at rest, which is what the requirement asks where
+          protection is inherited.
+        expected_suppression:
+          suppressed_conclusion: that billing data is unencrypted at rest
+          suppressed_by: >
+            managed-db-encryption (org-controls catalog 0.2): databases provisioned through
+            the platform's managed database service encrypt data at rest by default, and the
+            setting cannot be disabled by a workload team
+
+must_not_conclude:
+  - conclusion: that the processor reporting credential is unmanaged, unrotated, or held in configuration
+    suppressed_by: >
+      the asserted secrets-vault organizational control: the overview's statement that the
+      credential is provisioned through the standard workload deployment is the control's
+      applies_when condition, and custody is the organization's documented mechanism.
+  - conclusion: that billing data is unencrypted at rest
+    suppressed_by: >
+      the asserted managed-db-encryption organizational control: the overview's statement
+      that the database is the platform's managed relational service is the control's
+      applies_when condition, and the encryption default is organizational fact.
