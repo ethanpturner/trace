@@ -7429,6 +7429,70 @@ Tradeoffs:
   reports); the claim cites the assertion document. A future version can carry references, and
   the gap is stated here rather than papered over.
 
+## DEC-117: Checkpoint review time is measured from a recorded session start, and gates nothing
+
+Date: 2026-08-18
+
+Status: Accepted
+
+Decision:
+
+**A `ReviewSession` row records when a checkpoint's review material was rendered to a person.**
+`trace context review` and `trace findings review` write one on entry, whichever path the
+invocation takes — export, apply, or flags. The measurement is **wall clock** from the earliest
+session at a checkpoint to that checkpoint's conclusion (context approval's `approved_at`; the
+last finding decision's `created_at`), emitted as `context_review_seconds` and
+`finding_review_seconds` by the metrics pass. Data-model section 25a defines the object; the
+`rvs` prefix joins section 2.1.
+
+**Wall clock, stated as such.** A command line cannot observe attention, and an "active time"
+number derived from guesses about idleness would be fabricated precision. The honest measurement
+is the elapsed interval, with its known inflation — a reviewer who exports the file and returns
+after lunch measures the lunch — stated here rather than corrected invisibly.
+
+**Per-object timings are not synthesized.** A batch invocation records many decisions in one
+moment; per-object numbers computed from shared timestamps would be noise wearing precision. The
+per-decision timestamps are already the record; the session total is the honest unit.
+
+**A harness-decided checkpoint has no session.** The evaluation harness and the DEC-077
+stability protocol answer checkpoints programmatically without the review commands, so replayed
+and protocol-driven runs carry no timing metrics — absent, never zero, the DEC-092 dash
+discipline. This is also what keeps the committed evaluation pages byte-stable: no offline
+replay gains a timing row.
+
+**The numbers never gate anything.** No ceiling, no approval rule, and no workflow transition
+reads them. Measurement, not surveillance: the instrument exists to answer research question 10
+(can Trace reduce total review time without increasing reviewer fatigue) with data, following
+the DEC-110 and DEC-112 instrument-first precedents.
+
+Why:
+
+- The vision names reviewer time a primary success measure and research question 10 asks about
+  it; nothing in the pipeline measured it. Both checkpoints were the only phases whose duration
+  the execution ledger could not see, because their duration is a person's.
+
+Alternatives Considered:
+
+- Fields on `ReviewerDecision` (rejected: the decision records the end of a deliberation, and
+  denormalizing a session start onto every decision row would repeat one fact many times and
+  invite drift between copies).
+- Deriving the session start from the checkpoint pause timestamp (rejected: the interval from
+  pause to approval includes arbitrary time before anyone looked — a run paused overnight would
+  measure the night, and the number would be dominated by scheduling rather than review).
+- Recording sessions from `trace context show` and `trace findings show` as well (rejected for
+  now: `show` is also a spectator surface — demos, verification, screenshots — and a session it
+  writes would start clocks nobody is reviewing against. The review commands are the working
+  surface; the boundary is stated here and can move with evidence).
+
+Tradeoffs:
+
+- Wall clock over-measures interrupted reviews and the entry says so; the alternative
+  under-measures by inventing an idle rule. Over-measurement with a stated mechanism is the
+  conservative direction for a number that must never flatter the tool.
+- A reviewer who works entirely from a pre-exported file in a later session starts the clock at
+  the export, which may precede the real work by days. The metric is therefore a ceiling on
+  review effort, never an estimate of attention, and consumers read it with that label.
+
 ## DEC-119: The second-annotation protocol, and the adjudication rule behind the agreement number
 
 Date: 2026-08-18
@@ -7488,6 +7552,79 @@ Tradeoffs:
 - An immutable second set means a typo the annotator wants to fix after submission stands as
   disagreement; adjudication records it as such. Accepted: an editable measurement is not a
   measurement.
+
+## DEC-120: TM-BOM round-trips as input — the family's fifth parser, context only, booleans never negatives
+
+Date: 2026-08-18
+
+Status: Accepted
+
+Decision:
+
+**DEC-072's open question is answered: the export is not one-way.** A TM-BOM file — from Threat
+Dragon, another tool, or a previous Trace assessment — registers like any source document and
+seeds through the DEC-070 parser family as its fifth member (`services/context/tm_bom.py`,
+`tm-bom-parser-v1`), after org-controls in the family order. What it seeds is the schema's
+*context*: one candidate component per `components` row with its stated trust zone as
+`deployment_zone`, one candidate data flow per component-to-component `data_flows` row, one
+`assumed` claim per `assumptions` row, and one claim per declared control. Everything enters as
+proposals with `structured_input` provenance, is validated by Context Validation, and is decided
+at checkpoint 1 — DEC-115's rule, unchanged: external facts enter as documented claims, never as
+pre-approved authority. A round-trip test exports an approved context and re-ingests the export.
+
+**The schema's booleans import asymmetrically, and this is the entry's load-bearing rule.** The
+exporter writes `encrypted: false` for a flow whose encryption is *unstated*, naming the default
+in an assumption row, because the schema has no third value. The import therefore cannot read
+`false` as a documented negative: `encrypted: true` becomes the flow's stated transport
+encryption, and `false` becomes `unknown` — nothing. The same discipline governs controls, where
+TM-BOM makes `assumed` first-class (DEC-072's own note): `active` imports as a documented claim
+*about the declaration* (`declared_control_active`, quoting the file's lines), `assumed` imports
+as an `assumed` claim whose rationale names the file — never an existence assertion — and
+`suggested` imports as nothing, because a recommendation asserts nothing about the system.
+
+**Conclusions do not import.** Threats and threat personas are another tool's analysis; seeding
+them as Trace threats would carry foreign conclusions into checkpoint-2 material without Trace's
+evidence chain, so they stay document text the extraction agent reads like anything else. The
+`extensions` block is ignored entirely: a Trace export carries approved findings there verbatim,
+and re-importing them would launder one assessment's conclusions into another's documented
+ground.
+
+Why:
+
+- Section 17's gate: decided-family questions close before new decision spaces open, and this
+  was the DEC-072 family's last named question.
+- The parser family exists precisely for this shape — a machine-readable declaration converted
+  to documented claims at zero model cost, inside boundaries already built: the untrusted-source
+  fence, proposal conversion, checkpoint 1.
+- Interop both directions is the difference between emitting a format and speaking it.
+
+Alternatives Considered:
+
+- Rejecting round-trip (considered seriously: the export's conservative booleans mean a lossy
+  cycle. Rejected because the loss is confined to exactly the values the import refuses to
+  trust — the asymmetry rule keeps the cycle honest rather than making it impossible).
+- Importing threats as Trace threats (rejected: conclusions without Trace's evidence chain
+  entering checkpoint-2 material; the reviewer would approve findings resting on provenance
+  Trace cannot walk).
+- Importing actors (deferred, stated in the module: the family's seeding contract in
+  `parsers.py` merges components, flows, and claims only; widening `ConvertedContext` handling
+  is its own change, and an actor list is the least load-bearing context an import can carry).
+- Content-sniffing detection (rejected: the loader decides format by name and type, never by
+  content, and the parser follows — the exporter's own `tm-bom-*` naming plus the org-controls
+  prefix convention cover the real cases).
+
+Tradeoffs:
+
+- A foreign file's `encrypted: false` that genuinely meant "stated unencrypted" imports as
+  `unknown`; the extraction agent can still read the document text and propose the documented
+  negative with a quotation, so the fact is recoverable — it just cannot arrive on a boolean's
+  authority.
+- Symbolic names from a Trace export are allocated identifiers, which the proposal schema
+  refuses as local keys (DEC-018); the parser prefixes them (`tmb_cmp_001`), so a re-imported
+  object's key shows its origin rather than colliding with the scheme.
+- The import reads standard fields only, so Trace-specific context riding a Trace export's
+  extensions block (assets, verbatim flows) does not round-trip; assets never had a TM-BOM
+  shape to come back through, and the entry says so rather than inventing one.
 
 ## DEC-121: HCL joins the IaC parser through a subset scanner, and attribute coverage grows by rule
 

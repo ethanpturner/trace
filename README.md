@@ -360,7 +360,7 @@ remains open is the narrated demo video.
   Anthropic and OpenAI (DEC-095) — makes exactly one attempt and returns a structured failure
   carrying the raw output rather than raising; a test asserts each may import exactly its own
   provider SDK and nothing else in the tree imports one.
-- **Identifiers and content hashing** — the twenty-five prefixes of section 2.1 as a closed
+- **Identifiers and content hashing** — the twenty-six prefixes of section 2.1 as a closed
   registry, both identifier forms DEC-018 defines, a typed identifier per object so a threat
   identifier cannot be assigned to a finding's field, and the single SHA-256 utility DEC-019
   requires. The scheme governs objects an assessment produces (DEC-034); authored configuration —

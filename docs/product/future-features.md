@@ -1040,8 +1040,9 @@ report formats, and the family is delivered: TM-BOM (issue #383), SARIF (issue #
 standalone Mermaid DFD (issue #503) all ship as deterministic serializers over approved
 objects; CycloneDX for the catalog stays deferred until a consumer exists. No export contains
 prose or a model call. DEC-108 (issue #527) added HTML rendering as a derived view of the
-Markdown report — a rendering, not a second format. The family's one open question — whether
-TM-BOM round-trips as input — is issue #573.
+Markdown report — a rendering, not a second format. The family's last open question is closed:
+TM-BOM round-trips as input through the DEC-070 parser family (DEC-120, issue #573), with the
+schema's conservative booleans refused as negatives on the way back in.
 
 Still ideas, not decided: PDF, ticketing-system formats, audit packages, and any
 executive-report format.
