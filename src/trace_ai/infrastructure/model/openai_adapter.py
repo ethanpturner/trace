@@ -16,18 +16,26 @@ committing, exactly as the Anthropic adapter reads it; on this provider that con
 `reasoning_effort`. The mapping is recorded on every result's metadata, because a wrong mapping
 produces plausible output rather than an error.
 
+**The wire surface is the Responses API** (DEC-095's amendment, #539). Chat Completions was the
+original landing and its own entry records the deferral; Responses is where the provider's new
+capability lands, and the migration is proven the way the adapter arrived — offline, under the
+conformance suite, through stub-shaped requests. The seam contract is unchanged: `system`
+becomes the request's `instructions`, the prompt is the one `input` message, creativity's
+effort rides `reasoning.effort`, and an incomplete response reports why through
+`incomplete_details` rather than a finish reason.
+
 **Structured output is requested non-strict and validated here.** OpenAI's strict mode requires
 every schema key listed as required and rewrites optionals as explicit nulls — a shape the
 proposals' defaulted fields would then fail to validate. The schema is sent as a non-strict
-`json_schema` response format (guidance the provider honors well), and this adapter validates
+`json_schema` text format (guidance the provider honors well), and this adapter validates
 the text itself, exactly as the Anthropic adapter does after its grammar fallback: validation
 is the application's either way, and `raw_output` survives a failure (data-model.md section 33).
 A provider that rejects the schema format falls back to `json_object`, recorded as
 `schema_grammar: "unsupported_omitted"` — a degradation that is visible, never silent.
 
 **Prompt caching is the provider's, automatic, and reported disjoint.** OpenAI caches long
-prompt prefixes without markers, so `cache_prefix` is accepted and unused. The provider's
-`prompt_tokens` *includes* the cached span, so the adapter subtracts: DEC-067 keeps the input
+prompt prefixes without markers, so both cache hints are accepted and unused. The provider's
+`input_tokens` *includes* the cached span, so the adapter subtracts: DEC-067 keeps the input
 spans disjoint, and folding a cached read into full-rate input would misprice every cached call.
 There is no cache-write premium on this provider; `cache_creation_tokens` is always zero.
 
@@ -84,15 +92,15 @@ _CAPABILITIES: Final = frozenset(
     }
 )
 
-# Provider finish reasons that mean no usable object, mapped to why.
-_FINISH_REASON_FAILURES: Final[dict[str, FailureReason]] = {
-    "length": FailureReason.OUTPUT_TRUNCATED,
+# Provider incomplete reasons that mean no usable object, mapped to why.
+_INCOMPLETE_FAILURES: Final[dict[str, FailureReason]] = {
+    "max_output_tokens": FailureReason.OUTPUT_TRUNCATED,
     "content_filter": FailureReason.REFUSED,
 }
 
 
 class OpenAIModel:
-    """A `StructuredModel` backed by the OpenAI Chat Completions API."""
+    """A `StructuredModel` backed by the OpenAI Responses API."""
 
     def __init__(
         self,
@@ -156,25 +164,22 @@ class OpenAIModel:
         client = self._api()
         started = time.monotonic()
 
-        messages: list[dict[str, Any]] = []
-        if system is not None:
-            messages.append({"role": "system", "content": system})
-        messages.append({"role": "user", "content": prompt})
-
         request: dict[str, Any] = {
             "model": self._profile.model,
-            "max_completion_tokens": resolved.max_output_tokens,
-            "messages": messages,
-            "reasoning_effort": effort,
-            "response_format": {
-                "type": "json_schema",
-                "json_schema": {
+            "max_output_tokens": resolved.max_output_tokens,
+            "input": [{"role": "user", "content": prompt}],
+            "reasoning": {"effort": effort},
+            "text": {
+                "format": {
+                    "type": "json_schema",
                     "name": schema.__name__,
                     "schema": schema.model_json_schema(),
                     "strict": False,
                 },
             },
         }
+        if system is not None:
+            request["instructions"] = system
         schema_grammar = "requested"
 
         try:
@@ -188,7 +193,7 @@ class OpenAIModel:
             # either way; the format was adherence help, not the validation. Recorded on the
             # outcome's metadata, because a silent degradation is invisible exactly when it
             # matters.
-            request["response_format"] = {"type": "json_object"}
+            request["text"] = {"format": {"type": "json_object"}}
             schema_grammar = "unsupported_omitted"
             try:
                 response = self._send(client, request, timeout=resolved.timeout_seconds)
@@ -198,16 +203,9 @@ class OpenAIModel:
             return self._classified(error, started)
 
         usage = self._usage(response, time.monotonic() - started)
-        choice = _first_choice(response)
-        if choice is None:
-            return ModelFailure(
-                reason=FailureReason.SCHEMA_VALIDATION_FAILURE,
-                message=f"the response carried no choice to validate as {schema.__name__}",
-                usage=usage,
-            )
 
-        refusal = getattr(getattr(choice, "message", None), "refusal", None)
-        if isinstance(refusal, str) and refusal:
+        refusal = _refusal_of(response)
+        if refusal is not None:
             return ModelFailure(
                 reason=FailureReason.REFUSED,
                 message="the provider returned a refusal instead of a completion",
@@ -215,16 +213,20 @@ class OpenAIModel:
                 raw_output=refusal,
             )
 
-        finish_reason = getattr(choice, "finish_reason", None)
-        if isinstance(finish_reason, str) and finish_reason in _FINISH_REASON_FAILURES:
+        status = getattr(response, "status", None)
+        if status == "incomplete":
+            details = getattr(response, "incomplete_details", None)
+            reason = getattr(details, "reason", None)
             return ModelFailure(
-                reason=_FINISH_REASON_FAILURES[finish_reason],
-                message=f"the provider stopped with finish_reason={finish_reason!r}",
+                reason=_INCOMPLETE_FAILURES.get(
+                    str(reason), FailureReason.SCHEMA_VALIDATION_FAILURE
+                ),
+                message=f"the provider stopped incomplete with reason={reason!r}",
                 usage=usage,
-                raw_output=_text_of(choice),
+                raw_output=_text_of(response),
             )
 
-        raw = _text_of(choice)
+        raw = _text_of(response)
         if raw is None:
             return ModelFailure(
                 reason=FailureReason.SCHEMA_VALIDATION_FAILURE,
@@ -266,7 +268,7 @@ class OpenAIModel:
         )
 
     def _send(self, client: Any, request: dict[str, Any], *, timeout: float) -> Any:
-        return client.with_options(timeout=timeout).chat.completions.create(**request)
+        return client.with_options(timeout=timeout).responses.create(**request)
 
     def _classified(self, error: openai.APIError, started: float) -> ModelFailure:
         """The exception ladder as a function, so the schema fallback shares it exactly."""
@@ -297,15 +299,15 @@ class OpenAIModel:
     def _usage(self, response: Any, duration: float) -> ModelUsage:
         """The provider's usage figures, made disjoint and priced at this profile's rates.
 
-        The provider's `prompt_tokens` includes the cached span, so the cached tokens are
+        The provider's `input_tokens` includes the cached span, so the cached tokens are
         subtracted to keep DEC-067's input spans disjoint: `input_tokens` is uncached input at
         the full rate, `cache_read_tokens` is the cached span at its discounted rate, and there
         is no cache-write premium on this provider.
         """
         reported = getattr(response, "usage", None)
-        prompt_tokens = int(getattr(reported, "prompt_tokens", 0) or 0)
-        output_tokens = int(getattr(reported, "completion_tokens", 0) or 0)
-        details = getattr(reported, "prompt_tokens_details", None)
+        prompt_tokens = int(getattr(reported, "input_tokens", 0) or 0)
+        output_tokens = int(getattr(reported, "output_tokens", 0) or 0)
+        details = getattr(reported, "input_tokens_details", None)
         cache_read = int(getattr(details, "cached_tokens", 0) or 0)
         input_tokens = max(prompt_tokens - cache_read, 0)
         return ModelUsage(
@@ -324,15 +326,39 @@ class OpenAIModel:
         )
 
 
-def _first_choice(response: Any) -> Any | None:
-    choices = getattr(response, "choices", None)
-    if not isinstance(choices, list) or not choices:
-        return None
-    return choices[0]
+def _message_parts(response: Any) -> list[Any]:
+    """The content parts of the response's message items, in output order."""
+    output = getattr(response, "output", None)
+    if not isinstance(output, list):
+        return []
+    parts: list[Any] = []
+    for item in output:
+        if getattr(item, "type", None) != "message":
+            continue
+        content = getattr(item, "content", None)
+        if isinstance(content, list):
+            parts.extend(content)
+    return parts
 
 
-def _text_of(choice: Any) -> str | None:
-    """The choice's message content, for a failure to carry as raw output. Untrusted, read by a
-    person debugging a schema failure, never parsed a second time."""
-    content = getattr(getattr(choice, "message", None), "content", None)
-    return content if isinstance(content, str) and content else None
+def _text_of(response: Any) -> str | None:
+    """The response's output text, joined, for validation and for a failure to carry as raw
+    output. Untrusted, read by a person debugging a schema failure, never parsed a second time."""
+    texts = [
+        text
+        for part in _message_parts(response)
+        if getattr(part, "type", None) == "output_text"
+        and isinstance(text := getattr(part, "text", None), str)
+        and text
+    ]
+    return "".join(texts) if texts else None
+
+
+def _refusal_of(response: Any) -> str | None:
+    """The refusal text, when any message part is one."""
+    for part in _message_parts(response):
+        if getattr(part, "type", None) == "refusal":
+            refusal = getattr(part, "refusal", None)
+            if isinstance(refusal, str) and refusal:
+                return refusal
+    return None
