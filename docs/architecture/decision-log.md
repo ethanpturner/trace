@@ -7188,3 +7188,57 @@ Tradeoffs:
   extra finding lowers the number even though the truth set should grow. Accepted and
   intended — that disagreement is exactly what the truth set's owner should review, and the
   per-artifact counts keep the direction visible.
+
+## DEC-114: The fine-tuning pack completes future-features 8.1, measured by the reply-tuner scenario
+
+Date: 2026-08-17
+
+Status: Accepted
+
+Decision:
+
+**Catalog 0.3 gains the `fine_tuning` category — `req-TRAIN-001` through `req-TRAIN-003` — and
+the fourteenth scenario, `reply-tuner`, measures the pack from its first commit (#531).** The
+three requirements cover the surface fine-tuning creates: the training corpus as a write path
+into the model's weights, minimization of sensitive content before it becomes memorizable, and
+lineage on the tuned artifacts that serve. Statements are in the documentation register with
+their own `common_false_positives`; citations ground in the GenAI Security Project LLM Top 10
+(2026) and OWASP AISVS chapter C1. This is the remaining slice future-features 8.1 named when
+DEC-098 built the pack's first half, and it rides catalog 0.3 while 0.3 is still draft — no
+fourth version needed, and the DEC-111 release sequencing is unchanged.
+
+**The scenario exercises all three of the pack's shapes at once, which is the DEC-098 pattern's
+point.** A documented negative that is a finding: transcripts exported in full, customer names
+and message bodies included, "no redaction or filtering step" — req-TRAIN-002 unmet, one
+approved finding, severity high, matched with severity concordance 1.0. A silence that is a
+gap: date-named artifacts with no registry and no lineage — req-TRAIN-003 unverified, the
+evidence assessment recommends a gap, documentation-gap precision 1.0. And a documented control
+a generic review asserts is missing anyway: the exporter's job identity as the store's only
+writer — req-TRAIN-001 satisfied with the suppressed conclusion recorded, the pack's own
+false-positive class held as a rejection. The recording is authored offline, replays to
+completion, and its provenance says which; baselines await the keyed capture step (DEC-100).
+
+Why:
+
+- Fine-tuning pipelines are where the catalog's AI axis was thinnest against 2026 systems, and
+  the deferral was explicit: "pending its own scenario." The scenario now exists, so the pack
+  does.
+- One scenario carrying a finding, a gap, and a suppression exercises the project's central
+  distinction three ways in one replay — the corpus's best return per authored line.
+
+Alternatives Considered:
+
+- Growing the pack inside `ai-input-handling` (rejected: fine-tuning's surface is the corpus
+  and the artifact, not the prompt; a category boundary that follows the surface keeps
+  `applicable_conditions` honest).
+- Waiting for a live capture to found the scenario (rejected: authored recordings are the
+  corpus's convention, provenance states it, and the keyed track remains where live evidence
+  lands).
+
+Tradeoffs:
+
+- Catalog 0.3 now carries 44 requirements on every 0.3-pinned mapping call. The cost posture
+  is DEC-105's cached span and DEC-107's closed fan-out path, which is what this growth was
+  sequenced behind.
+- The scenario's system is small enough to author precisely, which also means it cannot
+  exercise scale effects; the large-architecture coverage category remains parcel-platform's.

@@ -1,0 +1,7 @@
+assessment_id: asm-001
+reviewer: recorded-reviewer
+findings:
+- id: fnd-001
+  severity: high
+  decision: approve
+  rationale: The documents state directly that unminimized customer content trains the model; memorized content surfacing in another customer's thread is a disclosure the pipeline's own description supports.

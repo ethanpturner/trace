@@ -1,0 +1,14 @@
+# Reply Tuner expected questions
+#
+# None authored: the scenario's two undetermined surfaces resolve to a documentation gap
+# (artifact lineage, GAP-RT-01) and to `unverified` mappings rather than to blocking
+# questions. Questions the pipeline raises on its own — the DEC-068 privilege-extreme
+# prompts — are not part of this scenario's truth.
+#
+# Nothing in this directory is supplied to Trace during an assessment.
+
+benchmark_version: "1.0"
+scenario: reply-tuner
+catalog_version: "0.3"
+
+questions: []
