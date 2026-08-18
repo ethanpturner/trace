@@ -19,6 +19,21 @@ minus the volatile fields — identifiers (allocated per assessment), timestamps
 cross-references that carry per-assessment identifiers. What remains is what a reviewer would
 call the object's content, and the diff names the fields that differ rather than only saying
 "changed".
+
+**A rename is declared as a candidate, never applied** (#529, DEC-097 amendment). A renamed
+component reads as removed-plus-added because the name is part of the fingerprint. When exactly
+one removed and one added object in a named family agree on every content field except the
+name, the pair is reported as a `RenameCandidate` beside — not instead of — its removed and
+added entries: the Context Validation ethos, report and never correct. Any ambiguity (two
+plausible partners on either side, or any other field moved) declares nothing.
+
+**A finding↔gap shift is the signature distinction, diffed** (#529). A DocumentationGap says a
+control's existence could not be determined; a Finding says evidence supports a weakness. When
+the before side holds one and the after side holds the other over the same requirements and the
+same ground — keyed the DEC-066 way, requirements plus normalized component names, the gap's
+resolved through its related mappings — the diff reports a `ResolutionShift` in the direction
+it moved. Conservative like everything here: the key must be unique on both sides and genuinely
+absent from its own kind on the other side, or nothing is claimed.
 """
 
 from __future__ import annotations
@@ -30,6 +45,7 @@ from trace_ai.domain.actor import Actor
 from trace_ai.domain.asset import Asset
 from trace_ai.domain.component import Component
 from trace_ai.domain.context_claim import ContextClaim
+from trace_ai.domain.control_mapping import ControlMapping
 from trace_ai.domain.data_flow import DataFlow
 from trace_ai.domain.documentation_gap import DocumentationGap
 from trace_ai.domain.enums import ObjectStatus
@@ -43,9 +59,17 @@ from trace_ai.workflow.context_review import current_system_context
 
 if TYPE_CHECKING:
     from trace_ai.domain.base import DomainModel
+    from trace_ai.domain.finding import Finding
     from trace_ai.services.assessment import AssessmentHandle
 
-__all__ = ["AssessmentDiff", "DiffEntry", "FamilyDiff", "diff_assessments"]
+__all__ = [
+    "AssessmentDiff",
+    "DiffEntry",
+    "FamilyDiff",
+    "RenameCandidate",
+    "ResolutionShift",
+    "diff_assessments",
+]
 
 # Fields that never make two objects different things: identifiers are allocated per assessment
 # (DEC-018), timestamps and provenance describe the run rather than the object, and *_id fields
@@ -75,6 +99,35 @@ class DiffEntry:
     changed_fields: tuple[str, ...] = ()
 
 
+@dataclass(frozen=True, slots=True)
+class RenameCandidate:
+    """One removed/added pair whose every content field but the name agrees (#529).
+
+    A candidate, declared beside its removed and added entries and never applied: the diff
+    reports what a rename would explain, and the reviewer decides whether it was one.
+    """
+
+    before_identity: str
+    after_identity: str
+    before_id: str | None = None
+    after_id: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class ResolutionShift:
+    """A finding↔gap move over the same requirements and ground (#529).
+
+    `direction` is `gap_to_finding` when the earlier assessment recorded an undeterminable
+    control and the later one supports a weakness there, and `finding_to_gap` for the reverse.
+    """
+
+    direction: str
+    requirement_ids: tuple[str, ...]
+    ground: str
+    before_id: str | None = None
+    after_id: str | None = None
+
+
 @dataclass(slots=True)
 class FamilyDiff:
     """One object family's diff: matched-and-unchanged is a count, everything else is named."""
@@ -83,6 +136,7 @@ class FamilyDiff:
     added: list[DiffEntry] = field(default_factory=list)
     removed: list[DiffEntry] = field(default_factory=list)
     changed: list[DiffEntry] = field(default_factory=list)
+    rename_candidates: list[RenameCandidate] = field(default_factory=list)
 
     @property
     def moved(self) -> bool:
@@ -96,6 +150,7 @@ class AssessmentDiff:
     before: str
     after: str
     families: dict[str, FamilyDiff] = field(default_factory=dict)
+    resolution_shifts: list[ResolutionShift] = field(default_factory=list)
 
     @property
     def moved(self) -> bool:
@@ -186,6 +241,142 @@ def _diff_family(
     return outcome
 
 
+def _rename_candidates(
+    family: FamilyDiff,
+    before: list[tuple[tuple[str, ...], DomainModel]],
+    after: list[tuple[tuple[str, ...], DomainModel]],
+) -> list[RenameCandidate]:
+    """Removed/added pairs a rename alone would explain: identical content, different name.
+
+    The key is the object's content minus `name`, serialized canonically. Exactly one removed
+    and one added object per key declares a candidate; any other count is ambiguity, and
+    ambiguity declares nothing. Objects without a `name` field never participate.
+    """
+    import json
+
+    removed_ids = {entry.before_id for entry in family.removed}
+    added_ids = {entry.after_id for entry in family.added}
+
+    def keyed(
+        pairs: list[tuple[tuple[str, ...], DomainModel]], ids: set[str | None]
+    ) -> dict[str, list[DomainModel]]:
+        table: dict[str, list[DomainModel]] = {}
+        for _, obj in pairs:
+            if getattr(obj, "id", None) not in ids or not hasattr(obj, "name"):
+                continue
+            content = {k: v for k, v in _content(obj).items() if k != "name"}
+            table.setdefault(json.dumps(content, sort_keys=True), []).append(obj)
+        return table
+
+    removed_by_key = keyed(before, removed_ids)
+    added_by_key = keyed(after, added_ids)
+    candidates = []
+    for key, removed_objects in sorted(removed_by_key.items()):
+        added_objects = added_by_key.get(key, [])
+        if len(removed_objects) == 1 and len(added_objects) == 1:
+            gone, came = removed_objects[0], added_objects[0]
+            candidates.append(
+                RenameCandidate(
+                    before_identity=str(getattr(gone, "name", "")),
+                    after_identity=str(getattr(came, "name", "")),
+                    before_id=getattr(gone, "id", None),
+                    after_id=getattr(came, "id", None),
+                )
+            )
+    return candidates
+
+
+def _finding_keys(
+    handle: AssessmentHandle,
+) -> list[tuple[tuple[tuple[str, ...], tuple[str, ...]], Finding]]:
+    """Each approved finding under its DEC-066 identity: requirements and normalized ground."""
+    names = _names_by_id(handle)
+    keys = []
+    for finding in approved_findings(handle):
+        requirements = tuple(sorted(finding.requirement_ids))
+        ground = tuple(sorted(names.get(cid, cid) for cid in finding.affected_component_ids))
+        keys.append(((requirements, ground), finding))
+    return keys
+
+
+def _gap_keys(
+    handle: AssessmentHandle,
+) -> list[tuple[tuple[tuple[str, ...], tuple[str, ...]], DocumentationGap]]:
+    """Each approved gap under the same identity, resolved through its related mappings —
+    `gap_fingerprint`'s resolution, unhashed so it can meet a finding's key across kinds."""
+    names = _names_by_id(handle)
+    mappings = {mapping.id: mapping for mapping in handle.objects.list(ControlMapping)}
+    threats = {threat.id: threat for threat in handle.objects.list(Threat)}
+    keys = []
+    for gap in handle.objects.list(DocumentationGap):
+        if gap.status is not ObjectStatus.APPROVED:
+            continue
+        related = [mappings[r] for r in gap.related_object_ids if r in mappings]
+        requirements = tuple(sorted({mapping.requirement_id for mapping in related}))
+        ground = tuple(
+            sorted(
+                {
+                    names.get(cid, cid)
+                    for mapping in related
+                    if mapping.threat_id in threats
+                    for cid in threats[mapping.threat_id].affected_component_ids
+                }
+            )
+        )
+        if requirements:
+            keys.append(((requirements, ground), gap))
+    return keys
+
+
+def _resolution_shifts(before: AssessmentHandle, after: AssessmentHandle) -> list[ResolutionShift]:
+    """Finding↔gap moves over the same identity, both directions, uniqueness required.
+
+    A shift is claimed only when the key is unique among its kind on its own side and its kind
+    is genuinely absent from the other side — a gap that persists beside a new finding is two
+    statements coexisting, not one resolving into the other.
+    """
+
+    def unique(pairs: list[tuple[Any, Any]]) -> dict[Any, Any]:
+        counts: dict[Any, int] = {}
+        for key, _ in pairs:
+            counts[key] = counts.get(key, 0) + 1
+        return {key: obj for key, obj in pairs if counts[key] == 1}
+
+    before_gaps = unique(list(_gap_keys(before)))
+    before_findings = unique(list(_finding_keys(before)))
+    after_gaps = unique(list(_gap_keys(after)))
+    after_findings = unique(list(_finding_keys(after)))
+
+    shifts = []
+    for key, gap in sorted(before_gaps.items()):
+        finding = after_findings.get(key)
+        if finding is not None and key not in after_gaps and key not in before_findings:
+            requirements, ground = key
+            shifts.append(
+                ResolutionShift(
+                    direction="gap_to_finding",
+                    requirement_ids=requirements,
+                    ground=", ".join(ground) or "-",
+                    before_id=gap.id,
+                    after_id=finding.id,
+                )
+            )
+    for key, finding in sorted(before_findings.items()):
+        gap = after_gaps.get(key)
+        if gap is not None and key not in after_findings and key not in before_gaps:
+            requirements, ground = key
+            shifts.append(
+                ResolutionShift(
+                    direction="finding_to_gap",
+                    requirement_ids=requirements,
+                    ground=", ".join(ground) or "-",
+                    before_id=finding.id,
+                    after_id=gap.id,
+                )
+            )
+    return shifts
+
+
 def _context_pairs(
     handle: AssessmentHandle, model: type[DomainModel]
 ) -> list[tuple[tuple[str, ...], DomainModel]]:
@@ -250,9 +441,11 @@ def diff_assessments(before: AssessmentHandle, after: AssessmentHandle) -> Asses
 
     diff = AssessmentDiff(before=before.assessment_id, after=after.assessment_id)
     for family_name, model in _CONTEXT_FAMILIES:
-        diff.families[family_name] = _diff_family(
-            _context_pairs(before, model), _context_pairs(after, model)
-        )
+        before_pairs = _context_pairs(before, model)
+        after_pairs = _context_pairs(after, model)
+        family = _diff_family(before_pairs, after_pairs)
+        family.rename_candidates = _rename_candidates(family, before_pairs, after_pairs)
+        diff.families[family_name] = family
     diff.families["findings"] = _diff_family(_finding_pairs(before), _finding_pairs(after))
     diff.families["open_questions"] = _diff_family(_question_pairs(before), _question_pairs(after))
 
@@ -283,4 +476,6 @@ def diff_assessments(before: AssessmentHandle, after: AssessmentHandle) -> Asses
                 family.removed.append(DiffEntry(identity=ground))
         family.added.extend(DiffEntry(identity=ground) for ground in remaining)
         diff.families[family_name] = family
+
+    diff.resolution_shifts = _resolution_shifts(before, after)
     return diff
