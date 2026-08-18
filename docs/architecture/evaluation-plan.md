@@ -4,11 +4,16 @@
 
 **Subtitle:** Context-Aware Security Architecture Analysis
 
-**Evaluation Plan Version:** 0.1
+**Evaluation Plan Version:** 0.2
 
-**Status:** Proposed
+**Status:** Accepted
 
-**Last Updated:** 2026-08-05
+**Last Updated:** 2026-08-18
+
+The 0.2 revision (DEC-131) reconciles this plan with the system that shipped and measured
+itself under it: the section 9 rubric is struck by decision, section 5's file rule admits the
+instrument classes DEC-110 and DEC-119 added beside it, and section 19 strikes the questions
+later decisions answered. What a section states in the present indicative runs today.
 
 # 1. Purpose
 
@@ -112,7 +117,7 @@ baseline protocol is DEC-074's; stability measurement is DEC-077's.
 
 # 5. Evaluation Dataset
 
-Every benchmark scenario should be stored in version control. The layout is fixed by DEC-027.
+Every benchmark scenario is stored in version control. The layout is fixed by DEC-027.
 
 Each scenario directory has two subdirectories: `input/` holds the material supplied to Trace, and
 `expected/` holds the truth set. **Nothing under `expected/` is ever supplied to Trace during an
@@ -130,16 +135,36 @@ assessment.** A benchmark that hands the system under test its own answer key me
     expected-documentation-gaps.yaml
     expected-observations.yaml
     expected-rejections.yaml
+    expected-duplicates.yaml
+    annotations/second/             the independent second set, once a pass exists
     reviewer-notes.md
     evaluation-contract.yaml
+    README.md
 ```
 
-**The expected file list is derived, not enumerated.** There is one `expected-*.yaml` per domain
-object type the pipeline produces and the benchmark grades, plus `expected-rejections.yaml` for the
-negative set — claims a correct assessment should decline to make. Adding an object type to
-`data-model.md` adds a file here by construction. The list above is what that rule produces under
-the current object model, not an independent specification of it; where the two disagree, the rule
-governs and the list is stale.
+**The expected file list is derived, not enumerated, and the rule has three classes** (the 0.1
+rule had one; DEC-110 flagged that its file fell outside it rather than silently widening it,
+and the 0.2 revision is that widening, decided):
+
+1. **Graded object classes** — one `expected-*.yaml` per domain object type the pipeline
+   produces and the benchmark grades, plus `expected-rejections.yaml` for the negative set:
+   claims a correct assessment should decline to make. Adding an object type to `data-model.md`
+   adds a file class here by construction. A scenario carries the files for what it grades; an
+   absent graded class means the scenario does not grade that type and yields no metric —
+   unmeasured, never zero.
+2. **Instrument annotations** — files an evaluation instrument defines and reads, grading the
+   instrument's question rather than a pipeline object: `expected-duplicates.yaml` (DEC-110's
+   authored duplicate pairs behind `duplicate_miss_rate`) and `annotations/second/` with its
+   `adjudication.md` (DEC-112 and DEC-119 — the independent second annotation set and the
+   adjudication record, present once a second annotator's pass exists).
+3. **Scenario apparatus** — `evaluation-contract.yaml`, `reviewer-notes.md`, and `README.md`:
+   the contract, the authoring rationale, and the directory's own guide. None is graded.
+
+The listing above is what those rules produce under the current object model and instruments,
+not an independent specification; where the two disagree, the rules govern and the listing is
+stale. `tests/unit/test_evaluation_plan_conformance.py` holds the committed truth-set
+directories to these classes, so a file class no rule admits fails there instead of accreting
+silently.
 
 `expected-observations.yaml` covers both `SourceObservation` kinds defined in DEC-021 —
 contradictions and injection attempts — because they are one object type.
@@ -161,13 +186,19 @@ lives at `demo/forgeflow/` because it is the demo as well as the first benchmark
 scenarios two onward live under `benchmarks/`. Both use the layout above, and the registry is what
 makes two locations safe.
 
-The expected outputs should evolve as understanding improves.
+The expected outputs evolve as understanding improves, through DEC-119's adjudication rule: a
+disagreement the truth-set owner agrees with changes `expected/` in an ordinary,
+separately-committed edit that moves the benchmark going forward and never rewrites a recorded
+agreement statistic.
 
 # 6. Initial Benchmark Scenarios
 
-The MVP should contain approximately 8–12 carefully designed scenarios.
+Fifteen scenarios are registered in `benchmarks/scenarios.yaml` — the authoritative list — and
+every registered scenario is fully authored and replays offline. The sketch below is the 0.1
+plan's; every row has at least one realized scenario, and the registry, not this section,
+governs what exists.
 
-Examples include:
+The original sketch — the MVP should contain approximately 8–12 carefully designed scenarios:
 
 ### Scenario 1
 
@@ -325,7 +356,11 @@ Measures:
 
 # 8. Primary Metrics
 
-The following metrics will be tracked for every evaluation.
+The following metrics are computed deterministically from persisted objects on every evaluation
+(`services/evaluation/metrics.py`; DEC-056 fixes the matching rule). Later decisions added
+metrics beside them without displacing them: `evidence_assessment_coverage` (DEC-116),
+`severity_concordance` (#507), `duplicate_miss_rate` (DEC-110), and the checkpoint review-time
+seconds (DEC-117). The scorecard is the surface; nothing gates on any of them.
 
 ## Context Accuracy
 
@@ -401,7 +436,11 @@ Higher.
 
 ## Clarifying Question Usefulness
 
-Reviewer rating.
+Definition:
+
+Matched expected questions over the expected set, through the DEC-056 matcher; paired
+questions are excluded from the denominator. The 0.1 draft called this a reviewer rating; the
+shipped metric is computed against the authored truth set.
 
 Goal:
 
@@ -433,21 +472,25 @@ Lower.
 
 # 9. Human Review Rubric
 
-Each evaluation should include reviewer scoring.
+**Struck by decision (DEC-131, this revision).** The 0.1 plan proposed seven reviewer-scored
+categories — context accuracy, threat quality, finding usefulness, false positives, evidence
+quality, report quality, overall confidence — each 1 to 5 on every evaluation. It was never
+implemented, and no decision had deferred it; unimplemented-and-undeferred is the one state
+this corpus does not tolerate, so the revision decides it.
 
-Suggested rubric:
+Five of the seven are measured deterministically against authored truth sets today — context
+accuracy, threat coverage, the finding match sets and false-negative rate, the
+reviewer-decision rates that carry false positives, and evidence coverage with the
+unsupported-claim rate — and a 1-to-5 re-score of a computed number is a weaker duplicate of
+it. The two genuinely subjective categories would be scored by the truth sets' own author, and
+DEC-112 already declined that shape: self-agreement is not a statistic. When an independent
+scorer exists, the judgment arrives item-anchored through DEC-119's annotation pass and
+adjudication record rather than as a seven-row average; arithmetic over judgments is the shape
+section 20 warns against.
 
-| Category | Score |
-|---|---|
-| Context accuracy | 1–5 |
-| Threat quality | 1–5 |
-| Finding usefulness | 1–5 |
-| False positives | 1–5 |
-| Evidence quality | 1–5 |
-| Report quality | 1–5 |
-| Overall confidence | 1–5 |
-
-Reviewers should also record qualitative comments.
+Qualitative comments land where they always have: `reviewer-notes.md` in the truth set, and
+`annotations/second/adjudication.md` once a second pass exists. Reviewer time, the one review
+quantity a rule can hold, is DEC-117's instrument and gates nothing.
 
 # 10. Benchmark Fixture Design
 
@@ -617,21 +660,12 @@ without excessive runtime or cost.
 
 # 16. Dashboard Metrics
 
-Eventually, Trace should automatically calculate:
-
-- Findings proposed
-- Findings approved
-- Findings rejected
-- Questions generated
-- Documentation gaps
-- Average confidence
-- Evidence coverage
-- Cost
-- Runtime
-- Tokens
-- Model calls
-
-These metrics should be viewable across versions.
+The scorecard computes these today (DEC-076; per-scenario precision, recall, and F1 with
+cross-version trends per #535): finding counts and match sets, questions, documentation gaps,
+evidence coverage, cost, runtime, tokens, and model calls, rendered from the committed runs by
+`scripts/build_scorecard.py` and held against a fresh offline sweep in CI. Absent measurements
+render as a dash, never zero (DEC-092). Cross-version viewing is the retained history
+(DEC-081, `docs/eval/history.jsonl`) and the release record (`docs/eval/releases.md`, #524).
 
 # 17. Longitudinal Tracking
 
@@ -668,15 +702,26 @@ Potential future evaluations include:
 
 # 19. Open Questions
 
-1. How should "expected findings" be established?
-2. Should reviewers score independently?
-3. How should disagreement between reviewers be handled?
+1. ~~How should "expected findings" be established?~~ Answered: authored by one person against
+   the input documents alone, with reliability measured by an independent second annotation set
+   (DEC-112, DEC-119).
+2. ~~Should reviewers score independently?~~ Answered: independence is the second set's whole
+   value; the annotator reads `input/` and nothing else (DEC-112, DEC-119).
+3. ~~How should disagreement between reviewers be handled?~~ Answered by DEC-119's adjudication
+   rule: the second set is immutable, the first stays authoritative, and each disagreement is
+   recorded as agree, hold, or out of scope.
 4. How many benchmark scenarios are enough?
-5. Should benchmarks include intentionally malicious documentation?
+5. ~~Should benchmarks include intentionally malicious documentation?~~ Answered: yes — the
+   adversarial condition runs poisoned-document variants across five payload classes, scored on
+   detection and injected-instruction compliance (DEC-075).
 6. How should business context be evaluated?
-7. Should Trace benchmark itself against commercial tools?
+7. ~~Should Trace benchmark itself against commercial tools?~~ Answered: the in-repo baselines
+   are DEC-074's prompt baselines and DEC-126's single-pass condition; the external comparable
+   is scored in the portfolio write-up, not in-repo (DEC-074).
 8. Which metrics best predict reviewer trust?
-9. When should evaluation block a release?
+9. ~~When should evaluation block a release?~~ Answered: never, as decided repeatedly — the
+   coverage baseline, the stability protocol, the agreement instrument, and the review-time
+   instrument all report and gate nothing (DEC-063, DEC-077, DEC-112, DEC-117).
 10. How should benchmark scenarios evolve over time?
 
 # 20. Core Evaluation Philosophy
