@@ -6828,3 +6828,66 @@ Tradeoffs:
 - Marking the stable span costs the cache-write surcharge on the first mapping call of a run;
   every subsequent call reads it back. A run with one threat gains nothing and pays the
   surcharge once — the degenerate case, accepted.
+
+## DEC-106: Data-model section 39's remaining questions are answered by practice or re-deferred with a trigger
+
+Date: 2026-08-17
+
+Status: Accepted
+
+Decision:
+
+Seven of section 39's questions were still open while the code had already chosen. Each is now
+resolved by ratifying the practice, resolved by an existing decision the section never cited, or
+re-deferred with the trigger named — the M12 pattern (#541). Per question:
+
+- **Q1, claim shape:** both, with a division of labor. Typed objects carry the structured facts;
+  `ContextClaim` keeps subject-predicate-value for the assertions about them, `value` as
+  `JsonValue` domain-side and scalar-narrowed on the proposal side (DEC-083). The shipped
+  pipeline uses exactly this split, and neither half substitutes for the other: typed models
+  alone cannot carry an open assertion, and claims alone would untype the architecture.
+- **Q5, machine-readable applicability:** re-deferred, trigger named. The DEC-024 partitioning
+  measurement (#532) decides whether partitioning the catalog pays; machine-readable
+  applicability is its representation question and waits on the same evidence.
+- **Q8, merging multiple model outputs:** dissolved by the fixed pipeline (DEC-016). Every
+  object has exactly one proposing call; a retry replaces the whole proposal (retry the attempt,
+  never the conclusion); duplicates across calls belong to the deterministic consolidation rule
+  and the reviewer. Model outputs are never merged with each other, and building a merge would
+  invite the ambiguity the pipeline exists to prevent.
+- **Q9, revision storage:** DEC-023 answered it — update in place under the same identifier,
+  with `ReviewerDecision` history; `SystemContext`'s approved versions are the one revisioned
+  lineage. No general revision store.
+- **Q11, generation metadata:** `generated_by` and `created_at` on the object, and nothing
+  more. The generation's conditions — model, profile, effort, retries, cost, raw failed output —
+  are the `ExecutionRecord`'s and `traces/`, keyed by run. An object carrying its whole
+  generation story would be a second execution ledger drifting from the first.
+- **Q12, state contents:** DEC-016 answered it — identifiers and routing only, section 31's
+  state-design rule.
+- **Q16, rejected-object retention:** in place. Status `rejected`, `duplicate_of_id` where
+  deduplication merged, decision history attached; DEC-040 keeps rejected objects out of
+  approved baselines by revision membership, and the harness grades the negative set against
+  `expected-rejections.yaml`. The only deletion is DEC-089's per-assessment purge.
+
+Why:
+
+- Pre-release, a shareable data-model document whose own open-questions section does not know
+  what the code decided reads as a specification nobody reconciled. Ratifying practice on the
+  record is cheap exactly because the code has already borne the decisions' weight; the
+  expensive alternative — reopening each question as if undecided — would relitigate settled
+  ground without new evidence.
+- A re-deferral with a named trigger is an answer: Q5 now says *what evidence* reopens it,
+  which is the difference between deferred and forgotten.
+
+Alternatives Considered:
+
+- One DEC per question (rejected: five of the seven are ratifications or citations with no new
+  design content; seven entries would bury the two that carry any).
+- Answering Q5 now by populating `applicable_technologies` (rejected: DEC-024 and DEC-098 both
+  hold that the pre-filter decision is taken on cost evidence, and #532 is that evidence's
+  issue).
+
+Tradeoffs:
+
+- Ratification risks blessing an accident as a decision. Mitigated by stating each answer's
+  reason here rather than pointing at the code alone — if the reason stops holding, the entry
+  is what a successor argues against.

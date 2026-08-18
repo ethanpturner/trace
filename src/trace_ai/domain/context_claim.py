@@ -26,9 +26,11 @@ they disagree.
 **`value` is `JsonValue`**, which is Pydantic's recursive JSON union: scalars, lists, and
 string-keyed mappings, to whatever depth. Section 10 types the field `any`, which strict typing
 cannot express, and JSON-compatibility is the real constraint — DEC-020 persists these objects as
-JSON payloads, so a value that will not serialize is a value that cannot be stored. This is a typing
-decision and not an answer to section 39's open question 1, which asks whether claims should use
-this subject-predicate-value shape at all or move to typed models. That stays open.
+JSON payloads, so a value that will not serialize is a value that cannot be stored. Section 39's
+open question 1 — this subject-predicate-value shape, or typed models — is resolved by DEC-106
+the way the code already chose: both, with a division of labor. The typed objects carry the
+structured facts; claims carry the assertions about them, in this shape, with the proposal side
+scalar-narrowed (DEC-083).
 
 The proposal-side field is narrower on purpose: `ProposedContextClaim.value` is a scalar or a list
 of scalars (DEC-083), because that schema crosses the wire and the provider's structured-output
