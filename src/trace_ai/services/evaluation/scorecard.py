@@ -59,9 +59,12 @@ class ScorecardRow:
     unsupported_claim_rate: float | None = None
     token_usage: float | None = None
     severity_concordance: float | None = None
-    """The reserved truth-set and run metrics (#329, #507). None where the scenario authors no
-    truth for the metric or the run reported no measurement — unmeasured, never zero.
-    `severity_concordance` (DEC-030) is None when no matched finding carries scalar guidance."""
+    duplicate_miss_rate: float | None = None
+    """The reserved truth-set and run metrics (#329, #507, #536). None where the scenario
+    authors no truth for the metric or the run reported no measurement — unmeasured, never
+    zero. `severity_concordance` (DEC-030) is None when no matched finding carries scalar
+    guidance; `duplicate_miss_rate` (DEC-110) is None when the scenario authors no duplicate
+    pairs or none was evaluable."""
 
     @property
     def precision(self) -> float | None:
@@ -129,6 +132,7 @@ def rows_from_feeds(feeds: Sequence[dict[str, Any]]) -> list[ScorecardRow]:
             unsupported_claim_rate=_metric(feed, "unsupported_claim_rate"),
             token_usage=_metric(feed, "token_usage"),
             severity_concordance=_metric(feed, "severity_concordance"),
+            duplicate_miss_rate=_metric(feed, "duplicate_miss_rate"),
         )
         for feed in feeds
     ]
@@ -300,6 +304,7 @@ def _truth_section(rows: Sequence[ScorecardRow]) -> str:
             f"<td>{_pct(row.mapping_accuracy)}</td><td>{_pct(row.question_usefulness)}</td>"
             f"<td>{_pct(row.unsupported_claim_rate)}</td>"
             f"<td>{_pct(row.severity_concordance)}</td>"
+            f"<td>{_pct(row.duplicate_miss_rate)}</td>"
             f"<td>{_count(row.token_usage)}</td></tr>"
         )
     return f"""
@@ -319,7 +324,7 @@ is recorded in each metric's notes.</p>
 <thead><tr>
 <th>Scenario</th><th>Condition</th>
 <th>Context</th><th>Threats</th><th>Mappings</th><th>Questions</th>
-<th>Unsupported</th><th>Severity</th><th>Tokens</th>
+<th>Unsupported</th><th>Severity</th><th>Dup miss</th><th>Tokens</th>
 </tr></thead>
 <tbody>
 {chr(10).join(lines)}

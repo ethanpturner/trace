@@ -7074,3 +7074,56 @@ Tradeoffs:
 - One attempt per batch loses spans on a transient endpoint failure. Accepted: tracing is a
   copy of an authoritative local record, and a retry queue would be state the pipeline does
   not want.
+
+## DEC-110: Duplicate misses are measured against authored pairs; the DEC-043 trigger has its instrument
+
+Date: 2026-08-17
+
+Status: Accepted
+
+Decision:
+
+**`expected-duplicates.yaml` joins the truth-set schema, and `duplicate_miss_rate` measures
+what the deterministic merge rule missed.** DEC-043 deferred semantic threat-duplicate pairing
+and named its own revisit trigger: a measured duplicate rate the deterministic rule misses. The
+metric that existed — `duplicate_finding_rate` — counts merges the rule *performed*, which
+structurally cannot measure a miss; a miss is only measurable against authored truth. The new
+file names duplicate pairs: one weakness a run could plausibly state twice, identified by the
+two requirement lenses it splits across, each side in the DEC-056 identity form
+(`requirement_id` plus `affected_component`). Scoring is over the produced set: a pair is
+evaluable when both identities matched produced findings; a miss when the two sides resolve to
+distinct canonical findings (`canonical_finding_id`, so an explicit `duplicate_of_id` merge
+detects); detected when they share one. No file, or no evaluable pair, yields no metric —
+unmeasured, never zero — and the scorecard's truth section carries the rate beside severity
+concordance. The first annotation is `husky-ai`'s: the experimental environment's
+password-only reachability stated under `req-AUTH-002` and under `req-NET-001` on the same
+component is one weakness under two lenses — the flagship live capture's wrong-requirement-lens
+failure mode, made checkable.
+
+**This does not build the semantic consolidation DEC-043 deferred.** It builds the instrument
+that would ever justify it: a DEC-043 revisit is warranted when this rate is measurably nonzero
+over runs that matter, and not before.
+
+Why:
+
+- An unfireable trigger is a deferral in name only; every duplicate-handling discussion
+  re-litigated DEC-043 because nothing could ever produce the number it asked for.
+- The annotation is honest about unevaluability: a run that never split the weakness proves
+  nothing about the merge rule, and scoring it as a success would inflate the instrument.
+
+Alternatives Considered:
+
+- Measuring misses without truth, as same-identity unmerged groups in the produced set
+  (rejected: the deterministic rule already merges exact identities, so the measurable residue
+  is empty by construction — the misses that matter are semantic, and semantic needs authored
+  judgment).
+- A per-scenario expected `duplicate_finding_rate` target (rejected: a rate target is a quota
+  shape; the instrument names the pairs, not a number).
+
+Tradeoffs:
+
+- Authored pairs encode an author's judgment about which splits are one weakness; a
+  wrong pair mismeasures. Each pair carries its reasoning in `note`, so the judgment is
+  reviewable where it sits.
+- The file is a truth-set schema addition outside evaluation-plan section 5's derived
+  per-object-type rule — recorded here rather than silently widening that rule.
