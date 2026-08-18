@@ -27,10 +27,13 @@ versions:
     last_reviewed: 2026-08-17
 
   "0.3":
-    status: draft
+    status: active
     maintainer: Ethan Turner
-    # The delegated-authentication (OAuth/OIDC) pack (#537, DEC-111): everything in 0.2
-    # carries forward unchanged, plus req-OIDC-001..004. Draft in the change that authors it,
-    # because the freeze guard forbids touching a released version's directory in the same
-    # change that releases it; DEC-099's release condition has already fired (the oidc-portal
-    # recording pins 0.3), and the registry-only flip to active rides the next release cut.
+    # The delegated-authentication pack (#537, DEC-111) and the fine-tuning pack (#531,
+    # DEC-114): everything in 0.2 carries forward unchanged, plus req-OIDC-001..004 and
+    # req-TRAIN-001..003. Authored as draft because the freeze guard forbids touching a
+    # released version's directory in the same change that releases it; DEC-099's release
+    # condition fired when the oidc-portal and reply-tuner recordings pinned 0.3, and this
+    # registry-only flip rode the v0.1 release cut as DEC-111 sequenced. Frozen from this date.
+    released: 2026-08-18
+    last_reviewed: 2026-08-18

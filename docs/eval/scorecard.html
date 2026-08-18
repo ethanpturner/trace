@@ -184,6 +184,7 @@ over the authoritative rows of each snapshot; per-row detail is retained in
 <th>Precision</th><th>Recall</th><th>F1</th><th>Cost</th>
 </tr></thead>
 <tbody>
+<tr><td>2026-08-18</td><td>cfedb65</td><td>89802d7c5f31</td><td>0.1</td><td>80%</td><td>84%</td><td>82%</td><td>—</td></tr>
 <tr><td>2026-08-14</td><td>0f3348e</td><td>89802d7c5f31</td><td>0.1</td><td>76%</td><td>81%</td><td>79%</td><td>—</td></tr>
 <tr><td>2026-08-12</td><td>4019943</td><td>f9be61e8ad61</td><td>0.1</td><td>93%</td><td>81%</td><td>87%</td><td>—</td></tr>
 <tr><td>2026-08-12</td><td>b5a83c7</td><td>f9be61e8ad61</td><td>0.1</td><td>93%</td><td>81%</td><td>87%</td><td>—</td></tr>
@@ -201,21 +202,24 @@ the pool barely moves; this matrix keeps the scenario axis. A dash is a pair the
 not run, or an undefined ratio.</p>
 <div class="scroll">
 <table>
-<thead><tr><th>Scenario</th><th>Condition</th><th>2026-08-12<br><code>654664d</code></th><th>2026-08-12<br><code>da7b134</code></th><th>2026-08-12<br><code>7f163c9</code></th><th>2026-08-12<br><code>b5a83c7</code></th><th>2026-08-12<br><code>4019943</code></th><th>2026-08-14<br><code>0f3348e</code></th></tr></thead>
+<thead><tr><th>Scenario</th><th>Condition</th><th>2026-08-12<br><code>654664d</code></th><th>2026-08-12<br><code>da7b134</code></th><th>2026-08-12<br><code>7f163c9</code></th><th>2026-08-12<br><code>b5a83c7</code></th><th>2026-08-12<br><code>4019943</code></th><th>2026-08-14<br><code>0f3348e</code></th><th>2026-08-18<br><code>cfedb65</code></th></tr></thead>
 <tbody>
-<tr><td>contradictory-docs</td><td>clean</td><td>100%</td><td>100%</td><td>100%</td><td>100%</td><td>100%</td><td>100%</td></tr>
-<tr><td>crypto-wallet</td><td>clean</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
-<tr><td>forgeflow</td><td>clean</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
-<tr><td>husky-ai</td><td>clean</td><td>—</td><td>—</td><td>100%</td><td>100%</td><td>100%</td><td>100%</td></tr>
-<tr><td>invoice-agent</td><td>clean</td><td>—</td><td>100%</td><td>100%</td><td>100%</td><td>100%</td><td>100%</td></tr>
-<tr><td>managed-db-service</td><td>clean</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
-<tr><td>missing-docs</td><td>clean</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
-<tr><td>oidc-portal</td><td>clean</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
-<tr><td>order-notifier</td><td>clean</td><td>—</td><td>—</td><td>—</td><td>100%</td><td>100%</td><td>100%</td></tr>
-<tr><td>parcel-platform</td><td>clean</td><td>—</td><td>—</td><td>—</td><td>100%</td><td>100%</td><td>100%</td></tr>
-<tr><td>translation-gateway</td><td>clean</td><td>—</td><td>—</td><td>—</td><td>100%</td><td>100%</td><td>100%</td></tr>
-<tr><td>unsigned-webhooks</td><td>adversarial</td><td>100%</td><td>100%</td><td>100%</td><td>100%</td><td>100%</td><td>100%</td></tr>
-<tr><td>unsigned-webhooks</td><td>clean</td><td>100%</td><td>100%</td><td>100%</td><td>100%</td><td>100%</td><td>100%</td></tr>
+<tr><td>contradictory-docs</td><td>clean</td><td>100%</td><td>100%</td><td>100%</td><td>100%</td><td>100%</td><td>100%</td><td>100%</td></tr>
+<tr><td>crypto-wallet</td><td>clean</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+<tr><td>forgeflow</td><td>clean</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+<tr><td>husky-ai</td><td>clean</td><td>—</td><td>—</td><td>100%</td><td>100%</td><td>100%</td><td>100%</td><td>100%</td></tr>
+<tr><td>invoice-agent</td><td>clean</td><td>—</td><td>100%</td><td>100%</td><td>100%</td><td>100%</td><td>100%</td><td>100%</td></tr>
+<tr><td>managed-db-service</td><td>clean</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+<tr><td>missing-docs</td><td>clean</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+<tr><td>oidc-portal</td><td>clean</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+<tr><td>order-notifier</td><td>clean</td><td>—</td><td>—</td><td>—</td><td>100%</td><td>100%</td><td>100%</td><td>100%</td></tr>
+<tr><td>parcel-platform</td><td>clean</td><td>—</td><td>—</td><td>—</td><td>100%</td><td>100%</td><td>100%</td><td>100%</td></tr>
+<tr><td>rag-support-bot</td><td>adversarial</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>100%</td></tr>
+<tr><td>rag-support-bot</td><td>clean</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>100%</td></tr>
+<tr><td>reply-tuner</td><td>clean</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>100%</td></tr>
+<tr><td>translation-gateway</td><td>clean</td><td>—</td><td>—</td><td>—</td><td>100%</td><td>100%</td><td>100%</td><td>100%</td></tr>
+<tr><td>unsigned-webhooks</td><td>adversarial</td><td>100%</td><td>100%</td><td>100%</td><td>100%</td><td>100%</td><td>100%</td><td>100%</td></tr>
+<tr><td>unsigned-webhooks</td><td>clean</td><td>100%</td><td>100%</td><td>100%</td><td>100%</td><td>100%</td><td>100%</td><td>100%</td></tr>
 </tbody>
 </table>
 </div>
