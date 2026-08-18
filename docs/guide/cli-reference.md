@@ -150,7 +150,7 @@ $ uv run trace source add asm-001 demo/forgeflow/input
 trace source add-repo [--no-index] <assessment_id> <url> <commit>
 ```
 
-Registers a repository's readable files at a pinned commit, read-only (#597, DEC-131). The URL
+Registers a repository's readable files at a pinned commit, read-only (#597, DEC-132). The URL
 speaks `https://` (`file://` for local fixtures) and must not embed credentials; the commit must
 be a full forty-character SHA — a branch, tag, or abbreviated SHA is refused, because a moving
 reference is not a reproducible identity. Selection is decided, not everything: every file whose

@@ -47,7 +47,7 @@ Most items in this document should remain Idea or Deferred.
 
 ## 3.1 GitHub Repository Ingestion
 
-**Status:** Built (DEC-131, issue #597)
+**Status:** Built (DEC-132, issue #597)
 
 `trace source add-repo` fetches an allowlisted, loader-readable file set from a named repository
 at a pinned full-SHA commit — read-only, the commit as the capture identity, fetched content
