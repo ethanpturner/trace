@@ -263,6 +263,141 @@ def test_a_zone_crossing_flow_with_no_boundary_is_reported_and_blocks_nothing() 
     assert not outcome.retry_instructions()
 
 
+# ------------------------------------------------------------------------------------------
+# The cross-claim consistency checks: DEC-070's residual, the same warn-only posture (#526)
+# ------------------------------------------------------------------------------------------
+
+
+def _flow_stating(flow_id: str, **changes: Any) -> DataFlow:
+    payload: dict[str, Any] = {
+        "id": flow_id,
+        "assessment_id": "asm-001",
+        "name": "events",
+        "source_component_id": "cmp-001",
+        "destination_component_id": "cmp-002",
+        "direction": "one_way",
+        "source_origin": SourceOrigin.UPLOADED_DOCUMENT,
+        "status": ObjectStatus.CANDIDATE,
+    }
+    payload.update(changes)
+    return DataFlow.model_validate(payload)
+
+
+def _claim(claim_id: str, predicate: str, value: Any, *, status: str = "documented") -> Any:
+    from trace_ai.domain.context_claim import ContextClaim
+
+    payload: dict[str, Any] = {
+        "id": claim_id,
+        "assessment_id": "asm-001",
+        "subject_type": "component",
+        "subject_id": "cmp-001",
+        "predicate": predicate,
+        "value": value,
+        "status": status,
+        "confidence": "medium",
+        "source_origin": SourceOrigin.UPLOADED_DOCUMENT,
+        "created_at": "2026-08-17T00:00:00Z",
+        "updated_at": "2026-08-17T00:00:00Z",
+    }
+    if status == "documented":
+        payload["evidence_ids"] = ["evd-001"]
+    if status in ("inferred", "assumed"):
+        payload["evidence_ids"] = ["evd-001"] if status == "inferred" else []
+        payload["rationale"] = "stated for the test"
+    return ContextClaim.model_validate(payload)
+
+
+def test_an_exposure_conflict_between_a_flow_and_its_destination_is_reported() -> None:
+    objects = [
+        component("cmp-001", "Webhook Receiver", None),
+        Component.model_validate(
+            {
+                "id": "cmp-002",
+                "assessment_id": "asm-001",
+                "name": "Internal Worker",
+                "component_type": "service",
+                "internet_accessible": False,
+                "source_origin": SourceOrigin.UPLOADED_DOCUMENT,
+                "status": ObjectStatus.CANDIDATE,
+            }
+        ),
+        _flow_stating("df-001", internet_exposed=True),
+    ]
+    outcome = validate_context(
+        a_context(component_ids=["cmp-001", "cmp-002"], data_flow_ids=["df-001"]), objects
+    )
+
+    (observation,) = [
+        entry for entry in outcome.cross_claim_observations if entry.kind == "exposure_conflict"
+    ]
+    assert observation.object_ids == ("df-001", "cmp-002")
+    # Warn-only, structurally, like the zone check.
+    assert outcome.ready_for_review
+    assert not outcome.retry_instructions()
+
+
+def test_a_tls_protocol_stating_no_encryption_is_a_transport_conflict() -> None:
+    objects = [
+        component("cmp-001", "Webhook Receiver", None),
+        component("cmp-002", "Managed Database", None),
+        _flow_stating("df-001", protocol="HTTPS", encryption_in_transit="none"),
+    ]
+    outcome = validate_context(
+        a_context(component_ids=["cmp-001", "cmp-002"], data_flow_ids=["df-001"]), objects
+    )
+    (observation,) = [
+        entry for entry in outcome.cross_claim_observations if entry.kind == "transport_conflict"
+    ]
+    assert "HTTPS" in observation.detail
+
+
+def test_silence_is_never_a_side_of_a_conflict() -> None:
+    """DEC-009 held by the checks themselves: an unstated value conflicts with nothing."""
+    quiet = [
+        component("cmp-001", "Webhook Receiver", None),
+        component("cmp-002", "Managed Database", None),
+        # No exposure statement on the destination; unknown transport on the flow.
+        _flow_stating("df-001", internet_exposed=True, protocol="https"),
+    ]
+    outcome = validate_context(
+        a_context(component_ids=["cmp-001", "cmp-002"], data_flow_ids=["df-001"]), quiet
+    )
+    assert outcome.cross_claim_observations == ()
+
+
+def test_two_asserting_claims_on_one_fact_with_different_values_conflict() -> None:
+    objects = [
+        component("cmp-001", "Webhook Receiver", None),
+        _claim("ctx-001", "operation_authentication", "bearer"),
+        _claim("ctx-002", "operation_authentication", "none"),
+    ]
+    outcome = validate_context(
+        a_context(component_ids=["cmp-001"], context_claim_ids=["ctx-001", "ctx-002"]), objects
+    )
+    (observation,) = [
+        entry for entry in outcome.cross_claim_observations if entry.kind == "claim_conflict"
+    ]
+    assert observation.object_ids == ("ctx-001", "ctx-002")
+
+
+def test_an_assumed_claim_never_conflicts_and_agreement_never_conflicts() -> None:
+    assumed_side = [
+        component("cmp-001", "Webhook Receiver", None),
+        _claim("ctx-001", "operation_authentication", "bearer"),
+        _claim("ctx-002", "operation_authentication", "none", status="assumed"),
+    ]
+    agreeing = [
+        component("cmp-001", "Webhook Receiver", None),
+        _claim("ctx-001", "operation_authentication", "bearer"),
+        _claim("ctx-002", "Operation Authentication", "bearer"),
+    ]
+    for objects in (assumed_side, agreeing):
+        outcome = validate_context(a_context(component_ids=["cmp-001"]), objects)
+        assert not [
+            entry for entry in outcome.cross_claim_observations if entry.kind == "claim_conflict"
+        ]
+
+
 def test_a_declared_crossing_or_a_silent_zone_is_no_mismatch() -> None:
     declared = [
         component("cmp-001", "Webhook Receiver", "public"),
