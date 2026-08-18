@@ -1,552 +1,555 @@
 {
-  "controls": [
-    {
-      "key": "org-scoping-authz",
-      "name": "Application-enforced organization scoping of customer data access",
-      "description": "Customer-associated records carry an organization identifier and application services are documented as responsible for applying organization-aware access rules when querying customer data (evd-032). Customer API requests are described as evaluated using authenticated user identity together with organization membership (evd-124), the product documentation states users should only be able to access organizations in which they hold approved membership (evd-102, evd-124), and the architecture declares an organization boundary that applies across API authorization, database queries, object paths, background jobs and analysis results (evd-049, evd-130). No reviewed document names the enforcement point (shared data access layer, middleware, or datastore-level constraint) or states whether the organization context accompanying a request (evd-026) is derived from server-side session state or accepted from the client, and the security overview lists internal authorization implementation among intentionally omitted details (evd-138). The control is therefore asserted rather than established.",
-      "control_type": "implemented",
-      "provider_component_id": null,
-      "protected_component_ids": [
-        "cmp-003",
-        "cmp-009"
-      ],
-      "protected_asset_ids": [
-        "ast-002",
-        "ast-003",
-        "ast-004",
-        "ast-009"
-      ],
-      "implementation_status": "claimed",
-      "evidence_ids": [
-        "evd-032",
-        "evd-124",
-        "evd-102",
-        "evd-130",
-        "evd-049",
-        "evd-026"
-      ],
-      "owner": "ForgeFlow Platform Engineering",
-      "limitations": [
-        "The enforcement point is not named; responsibility is placed on 'application services' generally (evd-032).",
-        "Whether the organization context on a request is derived from server-side session state or supplied with the request is not stated (evd-026).",
-        "Internal authorization implementation is explicitly omitted from the security overview (evd-138).",
-        "Detailed tenant-isolation tests are a named documentation gap (evd-054)."
-      ]
-    },
-    {
-      "key": "org-scoped-artifact-paths",
-      "name": "Organization-scoped object-storage paths with time-limited customer access links",
-      "description": "Artifacts are stored in managed object storage under paths that include the ForgeFlow organization identifier and job identifier, with a documented path template (evd-033), repeated in the operations guide (evd-078) and in the tenant-isolation section of the security overview (evd-130). The ForgeFlow API may generate time-limited access links for permitted customer downloads (evd-033, evd-026). The architecture's own known-gaps list names object-storage authorization enforcement as a detail requiring further clarification (evd-054), so the layout is documented while enforcement on access is not.",
-      "control_type": "implemented",
-      "provider_component_id": "cmp-010",
-      "protected_component_ids": [
-        "cmp-010",
-        "cmp-003"
-      ],
-      "protected_asset_ids": [
-        "ast-009",
-        "ast-002"
-      ],
-      "implementation_status": "claimed",
-      "evidence_ids": [
-        "evd-033",
-        "evd-078",
-        "evd-130",
-        "evd-026"
-      ],
-      "owner": "ForgeFlow Platform Engineering / managed cloud provider",
-      "limitations": [
-        "Object-storage authorization enforcement is a named documentation gap (evd-054).",
-        "Predictable, template-described paths mean the layout alone does not constrain reads (evd-033).",
-        "The conditions under which a time-limited link is issued, and how the requesting user's organization membership is checked before issuance, are not described (evd-026, evd-033)."
-      ]
-    },
-    {
-      "key": "delegated-customer-auth",
-      "name": "Delegated customer authentication to GitHub with ForgeFlow-held membership and roles",
-      "description": "Customer users authenticate through GitHub OAuth; ForgeFlow maintains no local password database and establishes a browser session after the GitHub flow completes (evd-027, evd-059, evd-097, evd-123). The boundary is stated: GitHub confirms user identity, while ForgeFlow stores the organization membership and role information used for access decisions (evd-027, evd-097, evd-124). The structured input records GitHub OAuth as the primary identity provider with local passwords disabled (evd-143).",
-      "control_type": "inherited",
-      "provider_component_id": null,
-      "protected_component_ids": [
-        "cmp-003",
-        "cmp-002"
-      ],
-      "protected_asset_ids": [
-        "ast-004"
-      ],
-      "implementation_status": "implemented",
-      "evidence_ids": [
-        "evd-027",
-        "evd-059",
-        "evd-097",
-        "evd-123",
-        "evd-143"
-      ],
-      "owner": "GitHub (identity), ForgeFlow Platform Engineering (session, membership, roles)",
-      "limitations": [
-        "The control establishes identity only; the organization scoping applied after authentication is a separate control whose enforcement is not documented (evd-124, evd-138)."
-      ]
-    }
-  ],
-  "mappings": [
-    {
-      "threat_id": "thr-006",
-      "requirement_id": "req-AUTHZ-001",
-      "control_keys": [
-        "org-scoping-authz"
-      ],
-      "existing_control_ids": [],
-      "applicability_status": "applicable",
-      "applicability_reason": "Both applicable conditions hold for this threat: ForgeFlow is a multi-customer service (evd-022, evd-102) and records belonging to distinct organizations share the managed PostgreSQL store (evd-032), which is exactly the boundary this threat crosses on the df-002 / df-013 customer request path. The requirement's two halves separate here: the tenant boundary and the inputs to the decision are documented (evd-032, evd-124, evd-049, evd-130), while the enforcement point and the requirement's explicit expectation that tenant context be derived from server-side state rather than a client-supplied value are not established, because evd-026 states only that requests operating on customer resources 'include an organization context' and evd-138 omits internal authorization implementation. Neither common false positive covers this shortfall: the missing facts are the enforcement location and the derivation of tenant context, not the name of an authorization library and not a per-endpoint permission matrix.",
-      "suppressed_conclusion": "That organization scoping is absent or bypassable on one or more customer request paths (an unmet status). The documents do not enumerate per-endpoint enforcement and do not describe the control as inadequate, so that negative inference rests on silence and was not drawn.",
-      "suppressed_by": "absent per-endpoint permission matrix",
-      "satisfaction_status": "partially_satisfied",
-      "evidence_ids": [
-        "evd-032",
-        "evd-124",
-        "evd-102",
-        "evd-130",
-        "evd-049",
-        "evd-026",
-        "evd-138",
-        "evd-054"
-      ],
-      "assumptions": [
-        "Assumed that 'organization context' in evd-026 refers to the tenant scope used in the authorization decision, since evd-032 and evd-124 describe organization-aware querying and membership-based evaluation in the same terms."
-      ],
-      "confidence": "medium"
-    },
-    {
-      "threat_id": "thr-006",
-      "requirement_id": "req-DATA-003",
-      "control_keys": [
-        "org-scoped-artifact-paths"
-      ],
-      "existing_control_ids": [],
-      "applicability_status": "applicable",
-      "applicability_reason": "Both applicable conditions hold for the artifact leg of this threat: artifacts from multiple customers share one managed object store (evd-033, evd-078), and stored objects are addressable by a predictable path whose template is published (organizations/{organization_id}/jobs/{job_id}/artifacts/{artifact_name}, evd-033). The threat's artifact-link step (ast-009 via df-014) turns on whether that separation is enforced when a read or signed link is requested. The separation mechanism is documented (evd-033, evd-078, evd-130); enforcement on access is not, and the architecture's own gap list names 'Object-storage authorization enforcement' (evd-054). Neither common false positive applies: the first presupposes that logical separation is enforced and documented, which is precisely what evd-054 says is unclarified, and per-tenant encryption keys are not the conclusion drawn.",
-      "suppressed_conclusion": "That stored artifacts are effectively unseparated across organizations (an unmet status). The documented organization-scoped path layout is a real separation mechanism, so the negative conclusion was reduced to the unestablished enforcement-on-access half rather than drawn in full.",
-      "suppressed_by": "absent description of a physical separation mechanism where logical separation is enforced and documented",
-      "satisfaction_status": "partially_satisfied",
-      "evidence_ids": [
-        "evd-033",
-        "evd-078",
-        "evd-130",
-        "evd-026",
-        "evd-054"
-      ],
-      "assumptions": [],
-      "confidence": "medium"
-    },
-    {
-      "threat_id": "thr-006",
-      "requirement_id": "req-AUTH-001",
-      "control_keys": [
-        "delegated-customer-auth"
-      ],
-      "existing_control_ids": [],
-      "applicability_status": "applicable",
-      "applicability_reason": "The first applicable condition holds and bears directly on this threat: the authorization inputs the threat exploits are 'authenticated user identity together with organization membership' (evd-124), and that identity is established by delegation to GitHub (evd-027, evd-059, evd-097). The requirement asks only that the delegation be documented, the provider named, and the boundary of its responsibility stated.",
-      "suppressed_conclusion": "That local credential controls (password policy, rotation, lockout, credential hashing) are missing. evd-027 and evd-097 state ForgeFlow maintains no password database, so those four are false positives for a delegated-authentication system and were not raised.",
-      "suppressed_by": "absent local password complexity policy",
-      "satisfaction_status": "satisfied",
-      "evidence_ids": [
-        "evd-027",
-        "evd-059",
-        "evd-097",
-        "evd-123",
-        "evd-143"
-      ],
-      "assumptions": [],
-      "confidence": "high"
-    },
-    {
-      "threat_id": "thr-006",
-      "requirement_id": "req-AUTHZ-002",
-      "control_keys": [],
-      "existing_control_ids": [],
-      "applicability_status": "not_applicable",
-      "applicability_reason": "The applicable conditions concern delegated privileges held on an external platform. This threat's attack path runs entirely through ForgeFlow's own API to ForgeFlow-held records (cmp-003, cmp-009, cmp-010); the GitHub App permission scope (evd-060, evd-065) neither enables nor constrains an authenticated member reading another organization's stored results, so narrowing or widening that grant would not change this threat.",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "not_applicable",
-      "evidence_ids": [
-        "evd-060",
-        "evd-065"
-      ],
-      "assumptions": [],
-      "confidence": "high"
-    },
-    {
-      "threat_id": "thr-006",
-      "requirement_id": "req-ADMIN-001",
-      "control_keys": [],
-      "existing_control_ids": [],
-      "applicability_status": "not_applicable",
-      "applicability_reason": "The applicable conditions concern an operator interface and operator reach into customer data. The threat actors here are authenticated customer users and customer administrators (act-001, act-002) acting through the normal customer login flow, which the architecture states is separate from the administrative interface (evd-035). Restricting the operator access path would not affect this cross-organization customer request path.",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "not_applicable",
-      "evidence_ids": [
-        "evd-035"
-      ],
-      "assumptions": [],
-      "confidence": "high"
-    },
-    {
-      "threat_id": "thr-006",
-      "requirement_id": "req-LOG-002",
-      "control_keys": [],
-      "existing_control_ids": [],
-      "applicability_status": "not_applicable",
-      "applicability_reason": "The applicable conditions require a privileged interface and operator actions on customer data. No step of this attack path is a privileged administrative action (the requests are ordinary authenticated customer API calls over df-002), so an administrative audit trail is not the control that bears on it.",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "not_applicable",
-      "evidence_ids": [
-        "evd-132"
-      ],
-      "assumptions": [],
-      "confidence": "medium"
-    },
-    {
-      "threat_id": "thr-006",
-      "requirement_id": "req-DATA-001",
-      "control_keys": [],
-      "existing_control_ids": [],
-      "applicability_status": "not_applicable",
-      "applicability_reason": "Although the system stores confidential and restricted data, this threat's disclosure occurs through an accepted, TLS-protected application request that the API itself answers (evd-126, df-002). Encryption in transit and at rest does not bear on an application-layer authorization scope failure, because the data is decrypted and returned by the authorized-looking path itself.",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "not_applicable",
-      "evidence_ids": [
-        "evd-126"
-      ],
-      "assumptions": [],
-      "confidence": "medium"
-    },
-    {
-      "threat_id": "thr-006",
-      "requirement_id": "req-DATA-002",
-      "control_keys": [],
-      "existing_control_ids": [],
-      "applicability_status": "not_applicable",
-      "applicability_reason": "The applicable conditions concern how long working copies persist. Retention (a 30-day target with scheduled cleanup, evd-079) governs the existence window of ast-009 artifacts, not whether an organization predicate is applied when another organization's member requests one; shortening or lengthening it would not change the outcome of this attack path.",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "not_applicable",
-      "evidence_ids": [
-        "evd-079"
-      ],
-      "assumptions": [
-        "Assumed that this threat is scoped to authorization scope failure rather than exposure duration; if a reviewer treats the 30-day artifact window as part of this threat's impact, req-DATA-002 would become applicable."
-      ],
-      "confidence": "low"
-    },
-    {
-      "threat_id": "thr-006",
-      "requirement_id": "req-DATA-004",
-      "control_keys": [],
-      "existing_control_ids": [],
-      "applicability_status": "not_applicable",
-      "applicability_reason": "The applicable conditions concern removal of customer data on request. Deletion capability (evd-026, evd-096) is orthogonal to this threat: the records disclosed here are live records the platform is meant to retain and serve to their own organization.",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "not_applicable",
-      "evidence_ids": [
-        "evd-026",
-        "evd-096"
-      ],
-      "assumptions": [],
-      "confidence": "high"
-    },
-    {
-      "threat_id": "thr-006",
-      "requirement_id": "req-LOG-001",
-      "control_keys": [],
-      "existing_control_ids": [],
-      "applicability_status": "not_applicable",
-      "applicability_reason": "The applicable conditions concern restricted content reaching logs and log destinations. This threat's disclosure channel is the API response to a customer request (df-002), not a log record; log hygiene statements (evd-036, evd-131) would neither prevent nor worsen it.",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "not_applicable",
-      "evidence_ids": [
-        "evd-036",
-        "evd-131"
-      ],
-      "assumptions": [],
-      "confidence": "high"
-    },
-    {
-      "threat_id": "thr-006",
-      "requirement_id": "req-NET-001",
-      "control_keys": [],
-      "existing_control_ids": [],
-      "applicability_status": "not_applicable",
-      "applicability_reason": "PostgreSQL and object storage do hold multi-tenant data, but the third applicable condition — a component relying on network position because callers are assumed trusted — is not what this threat exercises: the attacker reaches the stores only through the ForgeFlow API using its own credentials (df-013, df-014), so network placement of cmp-009 and cmp-010 is not the control at issue. A separate threat about direct reachability of those stores would engage this requirement.",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "not_applicable",
-      "evidence_ids": [
-        "evd-032",
-        "evd-033",
-        "evd-050"
-      ],
-      "assumptions": [],
-      "confidence": "medium"
-    },
-    {
-      "threat_id": "thr-006",
-      "requirement_id": "req-AUTH-002",
-      "control_keys": [],
-      "existing_control_ids": [],
-      "applicability_status": "not_applicable",
-      "applicability_reason": "The applicable conditions require administrative access or privileged access crossing an untrusted network. This threat is carried out by a legitimately authenticated, non-privileged customer member (act-001, act-002); a stronger factor policy would authenticate the same actor and leave the cross-organization request unchanged.",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "not_applicable",
-      "evidence_ids": [
-        "evd-123",
-        "evd-143"
-      ],
-      "assumptions": [],
-      "confidence": "high"
-    },
-    {
-      "threat_id": "thr-006",
-      "requirement_id": "req-WEBHOOK-001",
-      "control_keys": [],
-      "existing_control_ids": [],
-      "applicability_status": "not_applicable",
-      "applicability_reason": "The applicable conditions concern an inbound event endpoint and event-triggered processing. No step of this attack path involves the webhook receiver or an inbound GitHub event; the path begins with an authenticated browser/API request over df-002.",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "not_applicable",
-      "evidence_ids": [
-        "evd-028"
-      ],
-      "assumptions": [],
-      "confidence": "high"
-    },
-    {
-      "threat_id": "thr-006",
-      "requirement_id": "req-WEBHOOK-002",
-      "control_keys": [],
-      "existing_control_ids": [],
-      "applicability_status": "not_applicable",
-      "applicability_reason": "The applicable conditions concern replay of inbound events. This threat repeats authenticated customer API requests across endpoints, not delivery of a previously valid platform event, so event-uniqueness handling does not bear on it.",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "not_applicable",
-      "evidence_ids": [
-        "evd-062"
-      ],
-      "assumptions": [],
-      "confidence": "high"
-    },
-    {
-      "threat_id": "thr-006",
-      "requirement_id": "req-AI-001",
-      "control_keys": [],
-      "existing_control_ids": [],
-      "applicability_status": "not_applicable",
-      "applicability_reason": "The applicable conditions concern content passed into a model. This threat does not involve prompt construction or model invocation; it concerns retrieval of already-stored results and artifacts through the API (df-002, df-013, df-014).",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "not_applicable",
-      "evidence_ids": [
-        "evd-006"
-      ],
-      "assumptions": [],
-      "confidence": "high"
-    },
-    {
-      "threat_id": "thr-006",
-      "requirement_id": "req-AI-002",
-      "control_keys": [],
-      "existing_control_ids": [],
-      "applicability_status": "not_applicable",
-      "applicability_reason": "The applicable conditions concern publication of model output to a destination outside the system. The disclosure in this threat is to another authenticated ForgeFlow user through the API, not a publication path such as the pull-request comment flow (evd-010).",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "not_applicable",
-      "evidence_ids": [
-        "evd-010"
-      ],
-      "assumptions": [],
-      "confidence": "high"
-    },
-    {
-      "threat_id": "thr-006",
-      "requirement_id": "req-AI-003",
-      "control_keys": [],
-      "existing_control_ids": [],
-      "applicability_status": "not_applicable",
-      "applicability_reason": "The applicable conditions concern customer content crossing the boundary to an external model provider. That flow (worker to provider, evd-038) is not part of this attack path, which stays inside ForgeFlow's own API and stores.",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "not_applicable",
-      "evidence_ids": [
-        "evd-038"
-      ],
-      "assumptions": [],
-      "confidence": "high"
-    },
-    {
-      "threat_id": "thr-006",
-      "requirement_id": "req-AI-004",
-      "control_keys": [],
-      "existing_control_ids": [],
-      "applicability_status": "not_applicable",
-      "applicability_reason": "The applicable conditions concern encoding model output for a rendering destination. This threat is about who may read a stored result, not how a result is rendered; nothing in the attack path depends on markup interpretation.",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "not_applicable",
-      "evidence_ids": [
-        "evd-008"
-      ],
-      "assumptions": [],
-      "confidence": "high"
-    },
-    {
-      "threat_id": "thr-006",
-      "requirement_id": "req-SECRET-001",
-      "control_keys": [],
-      "existing_control_ids": [],
-      "applicability_status": "not_applicable",
-      "applicability_reason": "The applicable conditions concern custody of external-platform credentials and signing keys. This threat requires no credential the attacker does not already legitimately hold (their own customer session); the secrets in evd-034 are not in the attack path.",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "not_applicable",
-      "evidence_ids": [
-        "evd-034"
-      ],
-      "assumptions": [],
-      "confidence": "high"
-    },
-    {
-      "threat_id": "thr-006",
-      "requirement_id": "req-SECRET-002",
-      "control_keys": [],
-      "existing_control_ids": [],
-      "applicability_status": "not_applicable",
-      "applicability_reason": "The applicable conditions concern credentials used to reach customer resources on an external platform. Installation tokens (evd-061) are used by the worker toward GitHub and play no part in an authenticated customer reading another organization's ForgeFlow records.",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "not_applicable",
-      "evidence_ids": [
-        "evd-061"
-      ],
-      "assumptions": [],
-      "confidence": "high"
-    },
-    {
-      "threat_id": "thr-006",
-      "requirement_id": "req-TPI-001",
-      "control_keys": [],
-      "existing_control_ids": [],
-      "applicability_status": "not_applicable",
-      "applicability_reason": "The applicable conditions concern customer data sent to an external processor. The cross-organization disclosure in this threat occurs inside ForgeFlow's trust boundary; no external processor relationship (evd-129) is engaged.",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "not_applicable",
-      "evidence_ids": [
-        "evd-129"
-      ],
-      "assumptions": [],
-      "confidence": "high"
-    },
-    {
-      "threat_id": "thr-006",
-      "requirement_id": "req-TPI-002",
-      "control_keys": [],
-      "existing_control_ids": [],
-      "applicability_status": "not_applicable",
-      "applicability_reason": "The applicable conditions concern work that consumes a metered external service or is triggered by an external event. Enumerating identifiers on read endpoints consumes no metered analysis capacity and triggers no provider call, so bounding triggered work would not affect this threat.",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "not_applicable",
-      "evidence_ids": [
-        "evd-046",
-        "evd-103"
-      ],
-      "assumptions": [],
-      "confidence": "medium"
-    },
-    {
-      "threat_id": "thr-006",
-      "requirement_id": "req-CICD-001",
-      "control_keys": [],
-      "existing_control_ids": [],
-      "applicability_status": "not_applicable",
-      "applicability_reason": "The applicable conditions concern pipeline authentication and third-party build components. Neither appears in this attack path, which is exercised at runtime by an authenticated customer user against deployed API endpoints.",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "not_applicable",
-      "evidence_ids": [
-        "evd-134"
-      ],
-      "assumptions": [],
-      "confidence": "high"
-    }
-  ],
-  "documentation_gaps": [
-    {
-      "title": "Where organization scoping is enforced in the ForgeFlow API, and how tenant context is derived",
-      "description": "The documents establish that customer records carry an organization identifier and that application services are responsible for organization-aware querying (evd-032), and that customer API requests are evaluated using authenticated identity together with organization membership (evd-124, evd-102). They do not establish where that predicate is applied (a shared data access layer, request middleware, or per-query code), nor whether the organization context accompanying a request (evd-026) is derived from server-side session state or accepted from the client. Internal authorization implementation is explicitly omitted from the security overview (evd-138), and detailed tenant-isolation tests are a named architecture gap (evd-054). Trace therefore cannot determine whether the organization predicate is applied uniformly across result, artifact-link and membership endpoints. This records an inability to verify; it does not assert that the control is missing.",
-      "importance": "Tenant separation is the control whose failure is least recoverable in a multi-tenant platform, and the platform states maintaining tenant separation as a security objective (evd-122). Without knowing the enforcement point and the derivation of tenant context, a reviewer cannot distinguish a boundary enforced by construction from a convention applied per query.",
-      "related_object_ids": [
-        "thr-006",
-        "cmp-003",
-        "cmp-009",
-        "ast-002",
-        "ast-003",
-        "ast-004",
-        "df-002",
-        "df-013"
-      ],
-      "requested_evidence": [
-        "Description of the data access layer or request middleware that applies the organization predicate, and whether it is mandatory or opt-in per query",
-        "A statement of whether the organization/tenant identifier used in authorization is read from the authenticated session or from the request payload or path",
-        "Any datastore-level constraint (for example row-level security) applied to organization-scoped tables",
-        "Results or description of the tenant-isolation tests referenced as a gap in evd-054, including coverage of result, artifact-link and membership endpoints"
-      ],
-      "evidence_ids": [
-        "evd-032",
-        "evd-124",
-        "evd-102",
-        "evd-026",
-        "evd-138",
-        "evd-054",
-        "evd-122"
-      ],
-      "severity": "high"
-    },
-    {
-      "title": "Authorization enforcement for organization-scoped object-storage artifacts and signed links",
-      "description": "Artifacts are stored under published, predictable organization- and job-scoped paths (evd-033, evd-078), and the API may issue time-limited access links for permitted customer downloads (evd-026, evd-033). The architecture's own gap list names object-storage authorization enforcement as requiring clarification (evd-054), and no document states what membership check precedes link issuance or direct artifact retrieval. Trace cannot determine whether the path layout is accompanied by an enforced access check.",
-      "importance": "Analysis artifacts (ast-009) include repository diffs, selected source files and model input/output, classified restricted. If path-based organization scoping is an organizational convention rather than an enforced check, a predictable path or a mis-scoped signed link discloses another customer's source material.",
-      "related_object_ids": [
-        "thr-006",
-        "cmp-010",
-        "cmp-003",
-        "ast-009",
-        "df-014"
-      ],
-      "requested_evidence": [
-        "Description of the authorization check performed before a signed artifact link is issued, including how the requesting user's organization membership is verified against the artifact path",
-        "Storage access policy configuration showing which identities may read artifact prefixes",
-        "A statement of signed-link lifetime and whether links are scoped to a single object and requester"
-      ],
-      "evidence_ids": [
-        "evd-033",
-        "evd-078",
-        "evd-026",
-        "evd-054",
-        "evd-130"
-      ],
-      "severity": "medium"
-    }
-  ],
-  "catalog_gap_candidates": []
+  "schema": "MappingProposal",
+  "response": {
+    "controls": [
+      {
+        "key": "org-scoping-authz",
+        "name": "Application-enforced organization scoping of customer data access",
+        "description": "Customer-associated records carry an organization identifier and application services are documented as responsible for applying organization-aware access rules when querying customer data (evd-032). Customer API requests are described as evaluated using authenticated user identity together with organization membership (evd-124), the product documentation states users should only be able to access organizations in which they hold approved membership (evd-102, evd-124), and the architecture declares an organization boundary that applies across API authorization, database queries, object paths, background jobs and analysis results (evd-049, evd-130). No reviewed document names the enforcement point (shared data access layer, middleware, or datastore-level constraint) or states whether the organization context accompanying a request (evd-026) is derived from server-side session state or accepted from the client, and the security overview lists internal authorization implementation among intentionally omitted details (evd-138). The control is therefore asserted rather than established.",
+        "control_type": "implemented",
+        "provider_component_id": null,
+        "protected_component_ids": [
+          "cmp-003",
+          "cmp-009"
+        ],
+        "protected_asset_ids": [
+          "ast-002",
+          "ast-003",
+          "ast-004",
+          "ast-009"
+        ],
+        "implementation_status": "claimed",
+        "evidence_ids": [
+          "evd-032",
+          "evd-124",
+          "evd-102",
+          "evd-130",
+          "evd-049",
+          "evd-026"
+        ],
+        "owner": "ForgeFlow Platform Engineering",
+        "limitations": [
+          "The enforcement point is not named; responsibility is placed on 'application services' generally (evd-032).",
+          "Whether the organization context on a request is derived from server-side session state or supplied with the request is not stated (evd-026).",
+          "Internal authorization implementation is explicitly omitted from the security overview (evd-138).",
+          "Detailed tenant-isolation tests are a named documentation gap (evd-054)."
+        ]
+      },
+      {
+        "key": "org-scoped-artifact-paths",
+        "name": "Organization-scoped object-storage paths with time-limited customer access links",
+        "description": "Artifacts are stored in managed object storage under paths that include the ForgeFlow organization identifier and job identifier, with a documented path template (evd-033), repeated in the operations guide (evd-078) and in the tenant-isolation section of the security overview (evd-130). The ForgeFlow API may generate time-limited access links for permitted customer downloads (evd-033, evd-026). The architecture's own known-gaps list names object-storage authorization enforcement as a detail requiring further clarification (evd-054), so the layout is documented while enforcement on access is not.",
+        "control_type": "implemented",
+        "provider_component_id": "cmp-010",
+        "protected_component_ids": [
+          "cmp-010",
+          "cmp-003"
+        ],
+        "protected_asset_ids": [
+          "ast-009",
+          "ast-002"
+        ],
+        "implementation_status": "claimed",
+        "evidence_ids": [
+          "evd-033",
+          "evd-078",
+          "evd-130",
+          "evd-026"
+        ],
+        "owner": "ForgeFlow Platform Engineering / managed cloud provider",
+        "limitations": [
+          "Object-storage authorization enforcement is a named documentation gap (evd-054).",
+          "Predictable, template-described paths mean the layout alone does not constrain reads (evd-033).",
+          "The conditions under which a time-limited link is issued, and how the requesting user's organization membership is checked before issuance, are not described (evd-026, evd-033)."
+        ]
+      },
+      {
+        "key": "delegated-customer-auth",
+        "name": "Delegated customer authentication to GitHub with ForgeFlow-held membership and roles",
+        "description": "Customer users authenticate through GitHub OAuth; ForgeFlow maintains no local password database and establishes a browser session after the GitHub flow completes (evd-027, evd-059, evd-097, evd-123). The boundary is stated: GitHub confirms user identity, while ForgeFlow stores the organization membership and role information used for access decisions (evd-027, evd-097, evd-124). The structured input records GitHub OAuth as the primary identity provider with local passwords disabled (evd-143).",
+        "control_type": "inherited",
+        "provider_component_id": null,
+        "protected_component_ids": [
+          "cmp-003",
+          "cmp-002"
+        ],
+        "protected_asset_ids": [
+          "ast-004"
+        ],
+        "implementation_status": "implemented",
+        "evidence_ids": [
+          "evd-027",
+          "evd-059",
+          "evd-097",
+          "evd-123",
+          "evd-143"
+        ],
+        "owner": "GitHub (identity), ForgeFlow Platform Engineering (session, membership, roles)",
+        "limitations": [
+          "The control establishes identity only; the organization scoping applied after authentication is a separate control whose enforcement is not documented (evd-124, evd-138)."
+        ]
+      }
+    ],
+    "mappings": [
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-AUTHZ-001",
+        "control_keys": [
+          "org-scoping-authz"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Both applicable conditions hold for this threat: ForgeFlow is a multi-customer service (evd-022, evd-102) and records belonging to distinct organizations share the managed PostgreSQL store (evd-032), which is exactly the boundary this threat crosses on the df-002 / df-013 customer request path. The requirement's two halves separate here: the tenant boundary and the inputs to the decision are documented (evd-032, evd-124, evd-049, evd-130), while the enforcement point and the requirement's explicit expectation that tenant context be derived from server-side state rather than a client-supplied value are not established, because evd-026 states only that requests operating on customer resources 'include an organization context' and evd-138 omits internal authorization implementation. Neither common false positive covers this shortfall: the missing facts are the enforcement location and the derivation of tenant context, not the name of an authorization library and not a per-endpoint permission matrix.",
+        "suppressed_conclusion": "That organization scoping is absent or bypassable on one or more customer request paths (an unmet status). The documents do not enumerate per-endpoint enforcement and do not describe the control as inadequate, so that negative inference rests on silence and was not drawn.",
+        "suppressed_by": "absent per-endpoint permission matrix",
+        "satisfaction_status": "partially_satisfied",
+        "evidence_ids": [
+          "evd-032",
+          "evd-124",
+          "evd-102",
+          "evd-130",
+          "evd-049",
+          "evd-026",
+          "evd-138",
+          "evd-054"
+        ],
+        "assumptions": [
+          "Assumed that 'organization context' in evd-026 refers to the tenant scope used in the authorization decision, since evd-032 and evd-124 describe organization-aware querying and membership-based evaluation in the same terms."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-DATA-003",
+        "control_keys": [
+          "org-scoped-artifact-paths"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Both applicable conditions hold for the artifact leg of this threat: artifacts from multiple customers share one managed object store (evd-033, evd-078), and stored objects are addressable by a predictable path whose template is published (organizations/{organization_id}/jobs/{job_id}/artifacts/{artifact_name}, evd-033). The threat's artifact-link step (ast-009 via df-014) turns on whether that separation is enforced when a read or signed link is requested. The separation mechanism is documented (evd-033, evd-078, evd-130); enforcement on access is not, and the architecture's own gap list names 'Object-storage authorization enforcement' (evd-054). Neither common false positive applies: the first presupposes that logical separation is enforced and documented, which is precisely what evd-054 says is unclarified, and per-tenant encryption keys are not the conclusion drawn.",
+        "suppressed_conclusion": "That stored artifacts are effectively unseparated across organizations (an unmet status). The documented organization-scoped path layout is a real separation mechanism, so the negative conclusion was reduced to the unestablished enforcement-on-access half rather than drawn in full.",
+        "suppressed_by": "absent description of a physical separation mechanism where logical separation is enforced and documented",
+        "satisfaction_status": "partially_satisfied",
+        "evidence_ids": [
+          "evd-033",
+          "evd-078",
+          "evd-130",
+          "evd-026",
+          "evd-054"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-AUTH-001",
+        "control_keys": [
+          "delegated-customer-auth"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The first applicable condition holds and bears directly on this threat: the authorization inputs the threat exploits are 'authenticated user identity together with organization membership' (evd-124), and that identity is established by delegation to GitHub (evd-027, evd-059, evd-097). The requirement asks only that the delegation be documented, the provider named, and the boundary of its responsibility stated.",
+        "suppressed_conclusion": "That local credential controls (password policy, rotation, lockout, credential hashing) are missing. evd-027 and evd-097 state ForgeFlow maintains no password database, so those four are false positives for a delegated-authentication system and were not raised.",
+        "suppressed_by": "absent local password complexity policy",
+        "satisfaction_status": "satisfied",
+        "evidence_ids": [
+          "evd-027",
+          "evd-059",
+          "evd-097",
+          "evd-123",
+          "evd-143"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-AUTHZ-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The applicable conditions concern delegated privileges held on an external platform. This threat's attack path runs entirely through ForgeFlow's own API to ForgeFlow-held records (cmp-003, cmp-009, cmp-010); the GitHub App permission scope (evd-060, evd-065) neither enables nor constrains an authenticated member reading another organization's stored results, so narrowing or widening that grant would not change this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-060",
+          "evd-065"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-ADMIN-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The applicable conditions concern an operator interface and operator reach into customer data. The threat actors here are authenticated customer users and customer administrators (act-001, act-002) acting through the normal customer login flow, which the architecture states is separate from the administrative interface (evd-035). Restricting the operator access path would not affect this cross-organization customer request path.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-035"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-LOG-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The applicable conditions require a privileged interface and operator actions on customer data. No step of this attack path is a privileged administrative action (the requests are ordinary authenticated customer API calls over df-002), so an administrative audit trail is not the control that bears on it.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-132"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Although the system stores confidential and restricted data, this threat's disclosure occurs through an accepted, TLS-protected application request that the API itself answers (evd-126, df-002). Encryption in transit and at rest does not bear on an application-layer authorization scope failure, because the data is decrypted and returned by the authorized-looking path itself.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-126"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-DATA-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The applicable conditions concern how long working copies persist. Retention (a 30-day target with scheduled cleanup, evd-079) governs the existence window of ast-009 artifacts, not whether an organization predicate is applied when another organization's member requests one; shortening or lengthening it would not change the outcome of this attack path.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-079"
+        ],
+        "assumptions": [
+          "Assumed that this threat is scoped to authorization scope failure rather than exposure duration; if a reviewer treats the 30-day artifact window as part of this threat's impact, req-DATA-002 would become applicable."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-DATA-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The applicable conditions concern removal of customer data on request. Deletion capability (evd-026, evd-096) is orthogonal to this threat: the records disclosed here are live records the platform is meant to retain and serve to their own organization.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-026",
+          "evd-096"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-LOG-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The applicable conditions concern restricted content reaching logs and log destinations. This threat's disclosure channel is the API response to a customer request (df-002), not a log record; log hygiene statements (evd-036, evd-131) would neither prevent nor worsen it.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-036",
+          "evd-131"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-NET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "PostgreSQL and object storage do hold multi-tenant data, but the third applicable condition \u2014 a component relying on network position because callers are assumed trusted \u2014 is not what this threat exercises: the attacker reaches the stores only through the ForgeFlow API using its own credentials (df-013, df-014), so network placement of cmp-009 and cmp-010 is not the control at issue. A separate threat about direct reachability of those stores would engage this requirement.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-032",
+          "evd-033",
+          "evd-050"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-AUTH-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The applicable conditions require administrative access or privileged access crossing an untrusted network. This threat is carried out by a legitimately authenticated, non-privileged customer member (act-001, act-002); a stronger factor policy would authenticate the same actor and leave the cross-organization request unchanged.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-123",
+          "evd-143"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-WEBHOOK-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The applicable conditions concern an inbound event endpoint and event-triggered processing. No step of this attack path involves the webhook receiver or an inbound GitHub event; the path begins with an authenticated browser/API request over df-002.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-028"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-WEBHOOK-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The applicable conditions concern replay of inbound events. This threat repeats authenticated customer API requests across endpoints, not delivery of a previously valid platform event, so event-uniqueness handling does not bear on it.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-062"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-AI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The applicable conditions concern content passed into a model. This threat does not involve prompt construction or model invocation; it concerns retrieval of already-stored results and artifacts through the API (df-002, df-013, df-014).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-006"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-AI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The applicable conditions concern publication of model output to a destination outside the system. The disclosure in this threat is to another authenticated ForgeFlow user through the API, not a publication path such as the pull-request comment flow (evd-010).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-010"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-AI-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The applicable conditions concern customer content crossing the boundary to an external model provider. That flow (worker to provider, evd-038) is not part of this attack path, which stays inside ForgeFlow's own API and stores.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-038"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-AI-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The applicable conditions concern encoding model output for a rendering destination. This threat is about who may read a stored result, not how a result is rendered; nothing in the attack path depends on markup interpretation.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-008"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-SECRET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The applicable conditions concern custody of external-platform credentials and signing keys. This threat requires no credential the attacker does not already legitimately hold (their own customer session); the secrets in evd-034 are not in the attack path.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-034"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-SECRET-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The applicable conditions concern credentials used to reach customer resources on an external platform. Installation tokens (evd-061) are used by the worker toward GitHub and play no part in an authenticated customer reading another organization's ForgeFlow records.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-061"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-TPI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The applicable conditions concern customer data sent to an external processor. The cross-organization disclosure in this threat occurs inside ForgeFlow's trust boundary; no external processor relationship (evd-129) is engaged.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-129"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-TPI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The applicable conditions concern work that consumes a metered external service or is triggered by an external event. Enumerating identifiers on read endpoints consumes no metered analysis capacity and triggers no provider call, so bounding triggered work would not affect this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-046",
+          "evd-103"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-CICD-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The applicable conditions concern pipeline authentication and third-party build components. Neither appears in this attack path, which is exercised at runtime by an authenticated customer user against deployed API endpoints.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-134"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Where organization scoping is enforced in the ForgeFlow API, and how tenant context is derived",
+        "description": "The documents establish that customer records carry an organization identifier and that application services are responsible for organization-aware querying (evd-032), and that customer API requests are evaluated using authenticated identity together with organization membership (evd-124, evd-102). They do not establish where that predicate is applied (a shared data access layer, request middleware, or per-query code), nor whether the organization context accompanying a request (evd-026) is derived from server-side session state or accepted from the client. Internal authorization implementation is explicitly omitted from the security overview (evd-138), and detailed tenant-isolation tests are a named architecture gap (evd-054). Trace therefore cannot determine whether the organization predicate is applied uniformly across result, artifact-link and membership endpoints. This records an inability to verify; it does not assert that the control is missing.",
+        "importance": "Tenant separation is the control whose failure is least recoverable in a multi-tenant platform, and the platform states maintaining tenant separation as a security objective (evd-122). Without knowing the enforcement point and the derivation of tenant context, a reviewer cannot distinguish a boundary enforced by construction from a convention applied per query.",
+        "related_object_ids": [
+          "thr-006",
+          "cmp-003",
+          "cmp-009",
+          "ast-002",
+          "ast-003",
+          "ast-004",
+          "df-002",
+          "df-013"
+        ],
+        "requested_evidence": [
+          "Description of the data access layer or request middleware that applies the organization predicate, and whether it is mandatory or opt-in per query",
+          "A statement of whether the organization/tenant identifier used in authorization is read from the authenticated session or from the request payload or path",
+          "Any datastore-level constraint (for example row-level security) applied to organization-scoped tables",
+          "Results or description of the tenant-isolation tests referenced as a gap in evd-054, including coverage of result, artifact-link and membership endpoints"
+        ],
+        "evidence_ids": [
+          "evd-032",
+          "evd-124",
+          "evd-102",
+          "evd-026",
+          "evd-138",
+          "evd-054",
+          "evd-122"
+        ],
+        "severity": "high"
+      },
+      {
+        "title": "Authorization enforcement for organization-scoped object-storage artifacts and signed links",
+        "description": "Artifacts are stored under published, predictable organization- and job-scoped paths (evd-033, evd-078), and the API may issue time-limited access links for permitted customer downloads (evd-026, evd-033). The architecture's own gap list names object-storage authorization enforcement as requiring clarification (evd-054), and no document states what membership check precedes link issuance or direct artifact retrieval. Trace cannot determine whether the path layout is accompanied by an enforced access check.",
+        "importance": "Analysis artifacts (ast-009) include repository diffs, selected source files and model input/output, classified restricted. If path-based organization scoping is an organizational convention rather than an enforced check, a predictable path or a mis-scoped signed link discloses another customer's source material.",
+        "related_object_ids": [
+          "thr-006",
+          "cmp-010",
+          "cmp-003",
+          "ast-009",
+          "df-014"
+        ],
+        "requested_evidence": [
+          "Description of the authorization check performed before a signed artifact link is issued, including how the requesting user's organization membership is verified against the artifact path",
+          "Storage access policy configuration showing which identities may read artifact prefixes",
+          "A statement of signed-link lifetime and whether links are scoped to a single object and requester"
+        ],
+        "evidence_ids": [
+          "evd-033",
+          "evd-078",
+          "evd-026",
+          "evd-054",
+          "evd-130"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": []
+  }
 }

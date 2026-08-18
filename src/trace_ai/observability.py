@@ -1,9 +1,16 @@
 """Structured logging, and the two things that must never reach a log line.
 
-`current-architecture.md` section 5.17 requires the audit record to carry run identifiers, node
-names, versions, timings, errors, retries, and status transitions -- which is a set of fields, not
-a sentence, and a plain format string turns fields into sentences that nothing can query later.
-So records are emitted as JSON with the context attached as keys.
+**This module is not the audit record.** The authoritative account of a run -- run identifiers,
+node names, versions, timings, errors, retries, and status transitions, the fields
+`current-architecture.md` section 5.17 asks for -- is the execution ledger
+(`services/execution_ledger.py`), which persists structured `ExecutionRecord` rows the pipeline
+owns. What this module governs is different and narrower: whatever *does* reach a log line, from
+`trace_ai` code or from a third-party library, is emitted as JSON with its context as keys, and is
+stripped of the two things a log line must never carry. The redaction filter earns its place even
+with no first-party producers, because once `bootstrap()` runs for a real command the `anthropic`
+and `httpx` clients log through this handler, and their records pass the same filter. `bind()` and
+`bound_context()` are the first-party path for when a caller does want a structured record; they
+are deliberately available rather than mandatory.
 
 Two categories of content are excluded, for different reasons.
 

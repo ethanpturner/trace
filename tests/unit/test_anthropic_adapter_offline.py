@@ -121,6 +121,132 @@ def test_the_request_sends_the_transformed_schema_the_sdk_would_send() -> None:
     assert client.timeout == 30.0
 
 
+def _cached_response(*, cache_read: int = 0, cache_creation: int = 0) -> SimpleNamespace:
+    return SimpleNamespace(
+        model="claude-opus-5",
+        stop_reason="end_turn",
+        content=[SimpleNamespace(type="text", text='{"name": "x"}')],
+        usage=SimpleNamespace(
+            input_tokens=100,
+            output_tokens=50,
+            cache_read_input_tokens=cache_read,
+            cache_creation_input_tokens=cache_creation,
+        ),
+    )
+
+
+def test_a_cache_prefix_splits_the_user_message_and_marks_the_prefix_ephemeral() -> None:
+    """WS10: the stable span carries cache_control; the per-call remainder does not."""
+    client = _StubClient(_response('{"name": "x"}'))
+    adapter = AnthropicModel("primary-development", client=client)
+
+    adapter.generate(
+        prompt="STABLE PREFIX::variable tail",
+        schema=Proposal,
+        settings=GenerationSettings(),
+        cache_prefix="STABLE PREFIX::",
+    )
+
+    (request,) = client.messages.requests
+    assert request["messages"][0]["content"] == [
+        {"type": "text", "text": "STABLE PREFIX::", "cache_control": {"type": "ephemeral"}},
+        {"type": "text", "text": "variable tail"},
+    ]
+
+
+def test_no_cache_prefix_sends_a_plain_user_message() -> None:
+    _, client = _generate(_response('{"name": "x"}'))
+    (request,) = client.messages.requests
+    assert request["messages"] == [{"role": "user", "content": "the prompt"}]
+
+
+def test_a_stale_cache_prefix_that_is_not_a_prefix_is_ignored() -> None:
+    """A hint that no longer matches degrades to no caching, never a wrong split."""
+    client = _StubClient(_response('{"name": "x"}'))
+    adapter = AnthropicModel("primary-development", client=client)
+
+    adapter.generate(
+        prompt="the actual prompt",
+        schema=Proposal,
+        settings=GenerationSettings(),
+        cache_prefix="a different prefix",
+    )
+
+    (request,) = client.messages.requests
+    assert request["messages"][0]["content"] == "the actual prompt"
+
+
+def test_a_system_cache_prefix_splits_the_system_region_and_marks_the_prefix(  # DEC-105
+) -> None:
+    """The system region's own stable span (mapping's catalog) carries cache_control, so it is
+    reused across calls whose system regions differ after it — the case the user-message marker
+    structurally cannot serve, because the varying system precedes it in the cacheable sequence."""
+    client = _StubClient(_response('{"name": "x"}'))
+    adapter = AnthropicModel("primary-development", client=client)
+
+    adapter.generate(
+        prompt="the prompt",
+        schema=Proposal,
+        settings=GenerationSettings(),
+        system="CATALOG SPAN::per-threat tail",
+        system_cache_prefix="CATALOG SPAN::",
+    )
+
+    (request,) = client.messages.requests
+    assert request["system"] == [
+        {"type": "text", "text": "CATALOG SPAN::", "cache_control": {"type": "ephemeral"}},
+        {"type": "text", "text": "per-threat tail"},
+    ]
+
+
+def test_a_stale_system_cache_prefix_sends_the_system_region_plain() -> None:
+    client = _StubClient(_response('{"name": "x"}'))
+    adapter = AnthropicModel("primary-development", client=client)
+
+    adapter.generate(
+        prompt="the prompt",
+        schema=Proposal,
+        settings=GenerationSettings(),
+        system="the actual system region",
+        system_cache_prefix="something that is not a prefix",
+    )
+
+    (request,) = client.messages.requests
+    assert request["system"] == "the actual system region"
+
+
+def test_no_system_cache_prefix_sends_the_system_region_as_before() -> None:
+    client = _StubClient(_response('{"name": "x"}'))
+    adapter = AnthropicModel("primary-development", client=client)
+
+    adapter.generate(
+        prompt="the prompt",
+        schema=Proposal,
+        settings=GenerationSettings(),
+        system="plain system",
+    )
+
+    (request,) = client.messages.requests
+    assert request["system"] == "plain system"
+
+
+def test_prompt_caching_is_reported_only_when_the_response_serves_cache_tokens() -> None:
+    client = _StubClient(_cached_response(cache_read=800))
+    adapter = AnthropicModel("primary-development", client=client)
+
+    outcome = adapter.generate(prompt="p", schema=Proposal, settings=GenerationSettings())
+
+    assert isinstance(outcome, ModelSuccess)
+    assert ModelCapability.PROMPT_CACHING in outcome.capabilities_used
+    assert outcome.usage.cache_read_tokens == 800
+
+
+def test_prompt_caching_is_not_reported_when_no_cache_tokens_are_served() -> None:
+    outcome, _ = _generate(_response('{"name": "x"}'))
+    assert isinstance(outcome, ModelSuccess)
+    assert ModelCapability.PROMPT_CACHING not in outcome.capabilities_used
+
+
 def test_a_truncated_response_is_a_truncation_failure_with_the_raw_output() -> None:
     """The case #395 exists for: a `max_tokens` stop leaves text no schema can parse. The stop
     reason is checked before validation, so it reports as what happened — truncation — and the

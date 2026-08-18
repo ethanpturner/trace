@@ -339,3 +339,17 @@ def test_an_object_type_has_one_vocabulary_spelling() -> None:
 def test_every_prefix_is_reachable_by_its_term() -> None:
     assert set(PREFIX_BY_TERM.values()) == set(PREFIXES)
     assert PREFIX_BY_TERM["evidence_reference"] == "evd"
+
+
+def test_every_prefix_has_an_exported_annotated_alias() -> None:
+    """`PREFIXES`, `__all__`, and the `Annotated` aliases are hand-written (mypy visibility, stated
+    in the module). Nothing checked they agreed, so a prefix added to `PREFIXES` with no alias
+    validated as `str` everywhere. Each prefix's object type must have a `{ObjectType}Id` alias,
+    exported and defined, and no `*Id` alias exists without a prefix behind it."""
+    import trace_ai.domain.identifiers as ids
+
+    expected = {f"{object_type}Id" for object_type in PREFIXES.values()}
+    exported = {name for name in ids.__all__ if name.endswith("Id")}
+    assert exported == expected, "an alias and a prefix have drifted out of step"
+    for name in expected:
+        assert hasattr(ids, name), f"{name} is exported but not defined"

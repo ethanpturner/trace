@@ -45,7 +45,14 @@ class PromptDefinition(DomainModel):
 
     content_hash: ContentHash
     """`sha256:<hex>` over the **composed** prompt text (DEC-019), never over the file alone:
-    an edit to a shared block moves the hash of every prompt that includes it."""
+    an edit to a shared block moves the hash of every prompt that includes it. Substituted
+    values are inside it, so this hash identifies one composition — what was actually sent."""
+
+    template_hash: ContentHash
+    """`sha256:<hex>` over the pre-substitution composition — shared blocks merged, markers
+    unfilled (DEC-094). The cross-corpus identity: every composition of the same prompt version
+    shares it, so "which template produced this" is answerable across assessments, and a
+    shared-block edit still moves it in every prompt that includes the block."""
 
     @property
     def reference(self) -> str:

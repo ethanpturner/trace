@@ -1,70 +1,73 @@
 {
-  "threats": [
-    {
-      "title": "Ticket access under a stolen or forged employee identity",
-      "description": "An attacker who defeats employee authentication reads and comments on customer support correspondence. Authentication is documented as delegated entirely to the enterprise OpenID Connect provider, which also owns the factor policy; the portal itself holds no accounts or credentials to attack locally.",
-      "methodology": "stride-scenario-based",
-      "category": [
-        "spoofing"
-      ],
-      "threat_actor_ids": [],
-      "affected_component_ids": [
-        "cmp-001"
-      ],
-      "affected_asset_ids": [
-        "ast-001"
-      ],
-      "related_data_flow_ids": [
-        "df-002"
-      ],
-      "preconditions": [
-        "an attacker holds or forges an employee identity accepted by the identity provider"
-      ],
-      "attack_path": [
-        "obtain an employee identity at the identity provider",
-        "authenticate to the portal with it"
-      ],
-      "impact": "Customer support correspondence is read or altered under a false identity.",
-      "likelihood": null,
-      "confidence": "medium",
-      "evidence_ids": [
-        "evd-003"
-      ],
-      "assumption_ids": [],
-      "open_question_ids": []
-    },
-    {
-      "title": "Direct access to the ticket service bypassing the portal",
-      "description": "The ticket service is stated to be reachable only from the portal inside the application subnet, but how that restriction is enforced — network policy or assumed topology — is not described. A workload elsewhere on the network that can reach the service would bypass the portal's authenticated path entirely.",
-      "methodology": "stride-scenario-based",
-      "category": [
-        "elevation_of_privilege"
-      ],
-      "threat_actor_ids": [],
-      "affected_component_ids": [
-        "cmp-002"
-      ],
-      "affected_asset_ids": [
-        "ast-001"
-      ],
-      "related_data_flow_ids": [
-        "df-001"
-      ],
-      "preconditions": [
-        "the stated reachability restriction is not enforced by network policy"
-      ],
-      "attack_path": [
-        "reach the application subnet from elsewhere on the corporate network",
-        "call the ticket service directly"
-      ],
-      "impact": "Ticket data is reachable without the portal's authenticated path.",
-      "likelihood": null,
-      "confidence": "medium",
-      "evidence_ids": [
-        "evd-002"
-      ],
-      "assumption_ids": [],
-      "open_question_ids": []
-    }
-  ]
+  "schema": "ThreatAnalysisProposal",
+  "response": {
+    "threats": [
+      {
+        "title": "Ticket access under a stolen or forged employee identity",
+        "description": "An attacker who defeats employee authentication reads and comments on customer support correspondence. Authentication is documented as delegated entirely to the enterprise OpenID Connect provider, which also owns the factor policy; the portal itself holds no accounts or credentials to attack locally.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "spoofing"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-001"
+        ],
+        "affected_asset_ids": [
+          "ast-001"
+        ],
+        "related_data_flow_ids": [
+          "df-002"
+        ],
+        "preconditions": [
+          "an attacker holds or forges an employee identity accepted by the identity provider"
+        ],
+        "attack_path": [
+          "obtain an employee identity at the identity provider",
+          "authenticate to the portal with it"
+        ],
+        "impact": "Customer support correspondence is read or altered under a false identity.",
+        "likelihood": null,
+        "confidence": "medium",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Direct access to the ticket service bypassing the portal",
+        "description": "The ticket service is stated to be reachable only from the portal inside the application subnet, but how that restriction is enforced \u2014 network policy or assumed topology \u2014 is not described. A workload elsewhere on the network that can reach the service would bypass the portal's authenticated path entirely.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "elevation_of_privilege"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-002"
+        ],
+        "affected_asset_ids": [
+          "ast-001"
+        ],
+        "related_data_flow_ids": [
+          "df-001"
+        ],
+        "preconditions": [
+          "the stated reachability restriction is not enforced by network policy"
+        ],
+        "attack_path": [
+          "reach the application subnet from elsewhere on the corporate network",
+          "call the ticket service directly"
+        ],
+        "impact": "Ticket data is reachable without the portal's authenticated path.",
+        "likelihood": null,
+        "confidence": "medium",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      }
+    ]
+  }
 }

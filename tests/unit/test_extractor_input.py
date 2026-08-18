@@ -219,6 +219,37 @@ def test_exceeding_the_budget_names_what_was_dropped(loaded: AssessmentHandle) -
     )
 
 
+def test_the_structured_inputs_primary_documents_are_ranked_first(
+    loaded: AssessmentHandle,
+) -> None:
+    """WS10: overflow drops the lowest-ranked excerpt, not whichever sorts last. The documents the
+    structured input names as primary come first, and the basis is recorded."""
+    structured_input = {"documentation": {"primary_documents": ["security-overview.md"]}}
+    built = package(loaded, structured_input=structured_input)
+
+    assert (
+        built.metadata["ranking_basis"]
+        == "structured-input primary documents first, then ingestion order"
+    )
+    ordered = EvidenceIndex(loaded).render_for_prompt(list(built.evidence_ids))
+    first_documents = {excerpt["source_filename"] for excerpt in ordered[:1]}
+    assert first_documents == {"security-overview.md"}
+    # Every primary-document excerpt precedes every non-primary one.
+    primary_positions = [
+        i for i, e in enumerate(ordered) if e["source_filename"] == "security-overview.md"
+    ]
+    other_positions = [
+        i for i, e in enumerate(ordered) if e["source_filename"] != "security-overview.md"
+    ]
+    assert max(primary_positions) < min(other_positions)
+
+
+def test_ranking_basis_without_structured_input_is_ingestion_order(
+    loaded: AssessmentHandle,
+) -> None:
+    assert package(loaded).metadata["ranking_basis"] == "ingestion order"
+
+
 def test_the_full_forgeflow_corpus_assembles_without_a_model(loaded: AssessmentHandle) -> None:
     built = package(loaded)
     assert built.metadata["documents"] == 8

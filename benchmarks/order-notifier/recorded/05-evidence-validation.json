@@ -1,59 +1,62 @@
 {
-  "assessments": [
-    {
-      "subject_type": "control_mapping",
-      "subject_id": "map-001",
-      "evidence_ids": [
-        "evd-002"
-      ],
-      "evidence_strengths": {
-        "evd-002": "direct"
+  "schema": "EvidenceValidationProposal",
+  "response": {
+    "assessments": [
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-001",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": {
+          "evd-002": "direct"
+        },
+        "validation_status": "supported",
+        "rationale": "The integration guide affirmatively states the receiver processes any well-formed callback, that callbacks are not signed, and that the provider's signing feature is not enabled.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": {}
       },
-      "validation_status": "supported",
-      "rationale": "The integration guide affirmatively states the receiver processes any well-formed callback, that callbacks are not signed, and that the provider's signing feature is not enabled.",
-      "missing_evidence": [],
-      "contradictions": [],
-      "confidence": "high",
-      "recommendation": "continue",
-      "quoted_text": {}
-    },
-    {
-      "subject_type": "control_mapping",
-      "subject_id": "map-002",
-      "evidence_ids": [
-        "evd-005"
-      ],
-      "evidence_strengths": {
-        "evd-005": "direct"
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-002",
+        "evidence_ids": [
+          "evd-005"
+        ],
+        "evidence_strengths": {
+          "evd-005": "direct"
+        },
+        "validation_status": "supported",
+        "rationale": "The incident review affirmatively confirmed the endpoint accepts unsigned requests from anywhere and that enabling signing is unscheduled backlog work.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": {}
       },
-      "validation_status": "supported",
-      "rationale": "The incident review affirmatively confirmed the endpoint accepts unsigned requests from anywhere and that enabling signing is unscheduled backlog work.",
-      "missing_evidence": [],
-      "contradictions": [],
-      "confidence": "high",
-      "recommendation": "continue",
-      "quoted_text": {}
-    },
-    {
-      "subject_type": "control_mapping",
-      "subject_id": "map-003",
-      "evidence_ids": [
-        "evd-005",
-        "evd-006"
-      ],
-      "evidence_strengths": {
-        "evd-005": "indirect",
-        "evd-006": "indirect"
-      },
-      "validation_status": "unsupported",
-      "rationale": "The notes record safe retries during outages and nothing about repeated deliveries of the same callback; whether repetition is prevented or harmless is not established either way.",
-      "missing_evidence": [
-        "whether re-processing a previously delivered callback is prevented or idempotent"
-      ],
-      "contradictions": [],
-      "confidence": "low",
-      "recommendation": "documentation_gap",
-      "quoted_text": {}
-    }
-  ]
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-003",
+        "evidence_ids": [
+          "evd-005",
+          "evd-006"
+        ],
+        "evidence_strengths": {
+          "evd-005": "indirect",
+          "evd-006": "indirect"
+        },
+        "validation_status": "unsupported",
+        "rationale": "The notes record safe retries during outages and nothing about repeated deliveries of the same callback; whether repetition is prevented or harmless is not established either way.",
+        "missing_evidence": [
+          "whether re-processing a previously delivered callback is prevented or idempotent"
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "documentation_gap",
+        "quoted_text": {}
+      }
+    ]
+  }
 }

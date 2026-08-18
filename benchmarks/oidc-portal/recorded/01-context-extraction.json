@@ -1,224 +1,227 @@
 {
-  "system": {
-    "system_name": "Support Portal",
-    "system_purpose": "let employees view and comment on customer support tickets",
-    "business_criticality": null,
-    "environment": [],
-    "deployment_model": null,
-    "data_classifications": []
-  },
-  "claims": [
-    {
-      "key": "delegated-auth",
-      "subject_type": "component",
-      "subject_key": "portal",
-      "predicate": "authentication_delegation",
-      "value": "all access is authenticated through the enterprise identity provider using OpenID Connect; the portal maintains no password store of its own and issues no credentials",
-      "status": "documented",
-      "confidence": "high",
-      "rationale": null,
-      "evidence_ids": [
-        "evd-003"
-      ]
+  "schema": "ContextExtractionProposal",
+  "response": {
+    "system": {
+      "system_name": "Support Portal",
+      "system_purpose": "let employees view and comment on customer support tickets",
+      "business_criticality": null,
+      "environment": [],
+      "deployment_model": null,
+      "data_classifications": []
     },
-    {
-      "key": "factor-policy",
-      "subject_type": "component",
-      "subject_key": "portal",
-      "predicate": "mfa_responsibility",
-      "value": "multi-factor enrolment and factor policy are set at the identity provider organization level",
-      "status": "documented",
-      "confidence": "high",
-      "rationale": null,
-      "evidence_ids": [
-        "evd-003"
-      ]
-    },
-    {
-      "key": "internal-reachability",
-      "subject_type": "component",
-      "subject_key": "ticket-service",
-      "predicate": "network_reachability",
-      "value": "the ticket service is reachable only from the portal web application inside the application subnet",
-      "status": "documented",
-      "confidence": "high",
-      "rationale": null,
-      "evidence_ids": [
-        "evd-002"
-      ]
-    },
-    {
-      "key": "portal-exposure",
-      "subject_type": "component",
-      "subject_key": "portal",
-      "predicate": "network_exposure",
-      "value": "the portal is served over HTTPS and reachable only from the corporate network and the company VPN",
-      "status": "documented",
-      "confidence": "high",
-      "rationale": null,
-      "evidence_ids": [
-        "evd-001"
-      ]
-    }
-  ],
-  "components": [
-    {
-      "key": "portal",
-      "name": "Portal Web Application",
-      "component_type": "web_application",
-      "description": "server-rendered web application that presents tickets, accepts comments, and calls the ticket service for data; it holds no local user accounts",
-      "technology": [],
-      "ownership": null,
-      "deployment_zone": null,
-      "internet_accessible": false,
-      "externally_managed": null,
-      "data_classifications": [],
-      "authentication_mechanisms": [
-        "openid_connect"
-      ],
-      "authorization_mechanisms": [],
-      "evidence_ids": [
-        "evd-001",
-        "evd-002"
-      ]
-    },
-    {
-      "key": "ticket-service",
-      "name": "Ticket Service",
-      "component_type": "service",
-      "description": "internal HTTP service that stores and retrieves tickets",
-      "technology": [],
-      "ownership": null,
-      "deployment_zone": null,
-      "internet_accessible": false,
-      "externally_managed": null,
-      "data_classifications": [],
-      "authentication_mechanisms": [],
-      "authorization_mechanisms": [],
-      "evidence_ids": [
-        "evd-002"
-      ]
-    },
-    {
-      "key": "identity-provider",
-      "name": "Identity Provider",
-      "component_type": "external_service",
-      "description": "the enterprise OpenID Connect provider that authenticates employees and enforces the factor policy",
-      "technology": [],
-      "ownership": null,
-      "deployment_zone": null,
-      "internet_accessible": null,
-      "externally_managed": true,
-      "data_classifications": [],
-      "authentication_mechanisms": [],
-      "authorization_mechanisms": [],
-      "evidence_ids": [
-        "evd-003",
-        "evd-005"
-      ]
-    }
-  ],
-  "actors": [
-    {
-      "key": "employee",
-      "name": "Employee",
-      "actor_type": "internal_user",
-      "trust_level": null,
-      "capabilities": [],
-      "authentication_method": "openid_connect",
-      "evidence_ids": [
-        "evd-005"
-      ]
-    }
-  ],
-  "assets": [
-    {
-      "key": "tickets",
-      "name": "Support tickets",
-      "asset_type": "customer_data",
-      "description": "customer support correspondence, persisted in a managed relational database",
-      "confidentiality_impact": null,
-      "integrity_impact": null,
-      "availability_impact": null,
-      "data_classification": null,
-      "owner": null,
-      "component_keys": [
-        "ticket-service"
-      ],
-      "evidence_ids": [
-        "evd-004"
-      ]
-    }
-  ],
-  "data_flows": [
-    {
-      "key": "ticket-reads",
-      "name": "Ticket reads and comments",
-      "source_component_key": "portal",
-      "destination_component_key": "ticket-service",
-      "direction": "bidirectional",
-      "protocol": null,
-      "data_types": [],
-      "authentication": "unknown",
-      "encryption_in_transit": "unknown",
-      "crosses_trust_boundary_keys": [],
-      "internet_exposed": false,
-      "evidence_ids": [
-        "evd-002"
-      ]
-    },
-    {
-      "key": "oidc-redirect",
-      "name": "OpenID Connect authentication",
-      "source_component_key": "portal",
-      "destination_component_key": "identity-provider",
-      "direction": "bidirectional",
-      "protocol": null,
-      "data_types": [],
-      "authentication": "openid_connect",
-      "encryption_in_transit": "unknown",
-      "crosses_trust_boundary_keys": [
-        "identity"
-      ],
-      "internet_exposed": null,
-      "evidence_ids": [
-        "evd-003"
-      ]
-    }
-  ],
-  "trust_boundaries": [
-    {
-      "key": "corporate-network",
-      "name": "Corporate network boundary",
-      "boundary_type": "network_perimeter",
-      "description": "the portal is reachable only from the corporate network and the company VPN",
-      "inside_component_keys": [
-        "portal",
-        "ticket-service"
-      ],
-      "outside_component_keys": [],
-      "controls": [],
-      "evidence_ids": [
-        "evd-001"
-      ]
-    },
-    {
-      "key": "identity",
-      "name": "Identity provider boundary",
-      "boundary_type": "application_to_external_service",
-      "description": null,
-      "inside_component_keys": [
-        "portal"
-      ],
-      "outside_component_keys": [
-        "identity-provider"
-      ],
-      "controls": [],
-      "evidence_ids": [
-        "evd-003"
-      ]
-    }
-  ],
-  "questions": [],
-  "observations": []
+    "claims": [
+      {
+        "key": "delegated-auth",
+        "subject_type": "component",
+        "subject_key": "portal",
+        "predicate": "authentication_delegation",
+        "value": "all access is authenticated through the enterprise identity provider using OpenID Connect; the portal maintains no password store of its own and issues no credentials",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-003"
+        ]
+      },
+      {
+        "key": "factor-policy",
+        "subject_type": "component",
+        "subject_key": "portal",
+        "predicate": "mfa_responsibility",
+        "value": "multi-factor enrolment and factor policy are set at the identity provider organization level",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-003"
+        ]
+      },
+      {
+        "key": "internal-reachability",
+        "subject_type": "component",
+        "subject_key": "ticket-service",
+        "predicate": "network_reachability",
+        "value": "the ticket service is reachable only from the portal web application inside the application subnet",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-002"
+        ]
+      },
+      {
+        "key": "portal-exposure",
+        "subject_type": "component",
+        "subject_key": "portal",
+        "predicate": "network_exposure",
+        "value": "the portal is served over HTTPS and reachable only from the corporate network and the company VPN",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-001"
+        ]
+      }
+    ],
+    "components": [
+      {
+        "key": "portal",
+        "name": "Portal Web Application",
+        "component_type": "web_application",
+        "description": "server-rendered web application that presents tickets, accepts comments, and calls the ticket service for data; it holds no local user accounts",
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": null,
+        "internet_accessible": false,
+        "externally_managed": null,
+        "data_classifications": [],
+        "authentication_mechanisms": [
+          "openid_connect"
+        ],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ]
+      },
+      {
+        "key": "ticket-service",
+        "name": "Ticket Service",
+        "component_type": "service",
+        "description": "internal HTTP service that stores and retrieves tickets",
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": null,
+        "internet_accessible": false,
+        "externally_managed": null,
+        "data_classifications": [],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-002"
+        ]
+      },
+      {
+        "key": "identity-provider",
+        "name": "Identity Provider",
+        "component_type": "external_service",
+        "description": "the enterprise OpenID Connect provider that authenticates employees and enforces the factor policy",
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": null,
+        "internet_accessible": null,
+        "externally_managed": true,
+        "data_classifications": [],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ]
+      }
+    ],
+    "actors": [
+      {
+        "key": "employee",
+        "name": "Employee",
+        "actor_type": "internal_user",
+        "trust_level": null,
+        "capabilities": [],
+        "authentication_method": "openid_connect",
+        "evidence_ids": [
+          "evd-005"
+        ]
+      }
+    ],
+    "assets": [
+      {
+        "key": "tickets",
+        "name": "Support tickets",
+        "asset_type": "customer_data",
+        "description": "customer support correspondence, persisted in a managed relational database",
+        "confidentiality_impact": null,
+        "integrity_impact": null,
+        "availability_impact": null,
+        "data_classification": null,
+        "owner": null,
+        "component_keys": [
+          "ticket-service"
+        ],
+        "evidence_ids": [
+          "evd-004"
+        ]
+      }
+    ],
+    "data_flows": [
+      {
+        "key": "ticket-reads",
+        "name": "Ticket reads and comments",
+        "source_component_key": "portal",
+        "destination_component_key": "ticket-service",
+        "direction": "bidirectional",
+        "protocol": null,
+        "data_types": [],
+        "authentication": "unknown",
+        "encryption_in_transit": "unknown",
+        "crosses_trust_boundary_keys": [],
+        "internet_exposed": false,
+        "evidence_ids": [
+          "evd-002"
+        ]
+      },
+      {
+        "key": "oidc-redirect",
+        "name": "OpenID Connect authentication",
+        "source_component_key": "portal",
+        "destination_component_key": "identity-provider",
+        "direction": "bidirectional",
+        "protocol": null,
+        "data_types": [],
+        "authentication": "openid_connect",
+        "encryption_in_transit": "unknown",
+        "crosses_trust_boundary_keys": [
+          "identity"
+        ],
+        "internet_exposed": null,
+        "evidence_ids": [
+          "evd-003"
+        ]
+      }
+    ],
+    "trust_boundaries": [
+      {
+        "key": "corporate-network",
+        "name": "Corporate network boundary",
+        "boundary_type": "network_perimeter",
+        "description": "the portal is reachable only from the corporate network and the company VPN",
+        "inside_component_keys": [
+          "portal",
+          "ticket-service"
+        ],
+        "outside_component_keys": [],
+        "controls": [],
+        "evidence_ids": [
+          "evd-001"
+        ]
+      },
+      {
+        "key": "identity",
+        "name": "Identity provider boundary",
+        "boundary_type": "application_to_external_service",
+        "description": null,
+        "inside_component_keys": [
+          "portal"
+        ],
+        "outside_component_keys": [
+          "identity-provider"
+        ],
+        "controls": [],
+        "evidence_ids": [
+          "evd-003"
+        ]
+      }
+    ],
+    "questions": [],
+    "observations": []
+  }
 }

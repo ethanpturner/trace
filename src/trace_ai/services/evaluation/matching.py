@@ -37,8 +37,10 @@ __all__ = [
     "CoverageOutcome",
     "FindingMatchOutcome",
     "GapMatchOutcome",
+    "context_decision_fingerprints",
     "finding_fingerprint",
     "gap_fingerprint",
+    "live_context_fingerprint",
     "match_context",
     "match_expected_mappings",
     "match_findings",
@@ -355,3 +357,127 @@ def match_questions(
         )
         (outcome.matched_keys if matched else outcome.missed_keys).append(key)
     return outcome
+
+
+# ------------------------------------------------------------------------------------------
+# Stability-protocol object-decision fingerprints (#484, DEC-093)
+# ------------------------------------------------------------------------------------------
+
+# The review-file sections that decide proposal lists of the same name. The review file entries
+# carry allocated identifiers; the proposal lists carry the objects those identifiers were
+# allocated for, in allocation order (DEC-018 allocates at insert, insert follows proposal
+# order), so sorting a section's entries by identifier recovers the correspondence without
+# re-running the allocation.
+_DECISION_SECTIONS: tuple[str, ...] = (
+    "components",
+    "actors",
+    "assets",
+    "data_flows",
+    "trust_boundaries",
+    "claims",
+)
+
+
+def _unique_only(
+    pairs: Sequence[tuple[tuple[str, ...], str]],
+) -> dict[tuple[str, ...], str]:
+    """Keep only fingerprints that occur once. Two objects sharing a fingerprint make every
+    match to either ambiguous, and an ambiguous replay would decide an object its reviewer
+    never saw — the conservative answer is to leave both to the default policy."""
+    counts: dict[tuple[str, ...], int] = {}
+    for fingerprint, _ in pairs:
+        counts[fingerprint] = counts.get(fingerprint, 0) + 1
+    return {fp: decision for fp, decision in pairs if counts[fp] == 1}
+
+
+def context_decision_fingerprints(
+    proposal: Any, document: Mapping[str, Any]
+) -> dict[tuple[str, ...], str]:
+    """Fingerprint → recorded disposition, from a recorded extraction proposal and the review
+    file authored against its run (DEC-093).
+
+    Fingerprints follow `match_context`'s conventions: components, actors, assets, and trust
+    boundaries on normalized name; data flows on normalized (source, destination) component
+    names; claims on (subject name or the literal `system`, normalized predicate). Values and
+    descriptions are never compared — the fingerprint says "the same object", not "the same
+    wording", and the reviewer's recorded disposition is what replays.
+
+    A section whose entry count disagrees with its proposal list is skipped whole: the
+    correspondence is positional, and a partial match against a reshaped section would pair
+    decisions with objects their reviewer never saw. Fingerprints that occur more than once on
+    the recorded side are dropped for the same reason.
+    """
+    names_by_key: dict[str, str] = {}
+    for group in ("components", "actors", "assets", "trust_boundaries"):
+        for item in getattr(proposal, group, ()):
+            names_by_key[item.key] = normalized_name(item.name)
+
+    pairs: list[tuple[tuple[str, ...], str]] = []
+    for group_name in _DECISION_SECTIONS:
+        entries = sorted(
+            (entry for entry in document.get(group_name) or []),
+            key=lambda entry: str(entry.get("id", "")),
+        )
+        proposed = list(getattr(proposal, group_name, ()))
+        if len(entries) != len(proposed) or not entries:
+            continue
+        for entry, item in zip(entries, proposed, strict=True):
+            decision = str(entry.get("decision", "")).strip()
+            if not decision:
+                continue
+            fingerprint = _proposal_fingerprint(group_name, item, names_by_key)
+            if fingerprint is not None:
+                pairs.append((fingerprint, decision))
+    return _unique_only(pairs)
+
+
+def _proposal_fingerprint(
+    group: str, item: Any, names_by_key: Mapping[str, str]
+) -> tuple[str, ...] | None:
+    if group in {"components", "actors", "assets", "trust_boundaries"}:
+        return (group, normalized_name(item.name))
+    if group == "data_flows":
+        source = names_by_key.get(item.source_component_key)
+        destination = names_by_key.get(item.destination_component_key)
+        if source is None or destination is None:
+            return None
+        return ("data_flows", source, destination)
+    if group == "claims":
+        subject = "system" if item.subject_key is None else names_by_key.get(item.subject_key)
+        if subject is None:
+            return None
+        return ("claims", subject, normalized_name(item.predicate))
+    return None
+
+
+def live_context_fingerprint(obj: Any, names_by_id: Mapping[str, str]) -> tuple[str, ...] | None:
+    """The fingerprint of a live run's context object, comparable with the recorded side.
+
+    `names_by_id` maps the live run's allocated identifiers to already-normalized names for
+    every named context object. An object whose references cannot be resolved fingerprints as
+    nothing and falls to the default policy — never to a guessed match.
+    """
+    kind = type(obj).__name__
+    if kind in {"Component", "Actor", "Asset"}:
+        return (_GROUP_BY_CLASS[kind], normalized_name(obj.name))
+    if kind == "TrustBoundary":
+        return ("trust_boundaries", normalized_name(obj.name))
+    if kind == "DataFlow":
+        source = names_by_id.get(obj.source_component_id)
+        destination = names_by_id.get(obj.destination_component_id)
+        if source is None or destination is None:
+            return None
+        return ("data_flows", source, destination)
+    if kind == "ContextClaim":
+        subject = "system" if obj.subject_id is None else names_by_id.get(obj.subject_id)
+        if subject is None:
+            return None
+        return ("claims", subject, normalized_name(obj.predicate))
+    return None
+
+
+_GROUP_BY_CLASS: dict[str, str] = {
+    "Component": "components",
+    "Actor": "actors",
+    "Asset": "assets",
+}

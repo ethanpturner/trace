@@ -73,6 +73,55 @@ def _normalized(name: str) -> str:
     return " ".join(name.split()).casefold()
 
 
+_SEVERITY_RANK: dict[str, int] = {
+    "informational": 0,
+    "low": 1,
+    "medium": 2,
+    "high": 3,
+    "critical": 4,
+}
+
+
+def _severity_concordance(
+    approved: list[Finding],
+    expected_findings: list[dict[str, Any]],
+    matched: dict[str, list[str]],
+) -> tuple[int, int, int] | None:
+    """Reviewer severity against the truth set's guidance, over matched findings (#507, DEC-030).
+
+    Returns `(matched_with_guidance, exact_agreements, within_one_level)`, or `None` when no
+    matched finding carries guidance — a scenario without `severity_guidance` measures nothing
+    here rather than scoring a spurious zero. A finding matching more than one expectation is
+    held to the strictest guidance among them: under-rating the worst thing it stands for is the
+    error that matters. `unassigned` cannot appear — the approval gate refuses it (DEC-030).
+    """
+    guidance_by_key = {
+        str(entry["key"]): str(entry["severity_guidance"])
+        for entry in expected_findings
+        if entry.get("severity_guidance")
+    }
+    by_id = {finding.id: finding for finding in approved}
+    matched_count = exact = adjacent = 0
+    for key, finding_ids in matched.items():
+        guidance = guidance_by_key.get(key)
+        if guidance is None or guidance not in _SEVERITY_RANK:
+            continue
+        wanted = _SEVERITY_RANK[guidance]
+        for finding_id in finding_ids:
+            finding = by_id.get(finding_id)
+            if finding is None or finding.severity.value not in _SEVERITY_RANK:
+                continue
+            matched_count += 1
+            assigned = _SEVERITY_RANK[finding.severity.value]
+            if assigned == wanted:
+                exact += 1
+            if abs(assigned - wanted) <= 1:
+                adjacent += 1
+    if matched_count == 0:
+        return None
+    return matched_count, exact, adjacent
+
+
 def _ratio(numerator: int, denominator: int) -> float:
     return numerator / denominator if denominator else 0.0
 
@@ -293,6 +342,83 @@ def compute_metrics(
     return results
 
 
+def _duplicate_miss_metrics(
+    handle: AssessmentHandle,
+    run: WorkflowRun,
+    expected_dir: Path,
+    *,
+    component_names: dict[str, str],
+) -> list[EvaluationResult]:
+    """DEC-043's revisit trigger, given its instrument (#536, DEC-110).
+
+    `duplicate_finding_rate` counts merges the deterministic rule *performed*, which structurally
+    cannot measure a miss. A miss is only measurable against authored truth:
+    `expected-duplicates.yaml` names pairs of finding identities — one weakness a run could
+    plausibly split across two requirement lenses — and this scores the produced set against
+    them. A pair is **evaluable** when both identities matched produced findings; a **miss**
+    when the two sides resolve to distinct canonical findings (two unmerged statements of one
+    weakness); **detected** when they share a canonical finding — consolidation or an explicit
+    merge. No file, or no evaluable pair, yields no metric: unmeasured, never zero.
+    """
+    from trace_ai.domain.finding import canonical_finding_id
+
+    path = expected_dir / "expected-duplicates.yaml"
+    if not path.is_file():
+        return []
+    parsed: Any = yaml.safe_load(path.read_text(encoding="utf-8"))
+    pairs: list[dict[str, Any]] = list((parsed or {}).get("duplicate_pairs", []))
+    if not pairs:
+        return []
+
+    produced = handle.objects.list(Finding)
+
+    def matching(identity: dict[str, Any]) -> list[Finding]:
+        wanted_requirement = str(identity["requirement_id"])
+        wanted_component = _normalized(str(identity["affected_component"]))
+        return [
+            finding
+            for finding in produced
+            if wanted_requirement in finding.requirement_ids
+            and any(
+                component_names.get(component_id) == wanted_component
+                for component_id in finding.affected_component_ids
+            )
+        ]
+
+    evaluable = 0
+    missed: list[str] = []
+    for pair in pairs:
+        first = matching(pair["first"])
+        second = matching(pair["second"])
+        if not first or not second:
+            continue
+        evaluable += 1
+        first_canonical = {canonical_finding_id(finding, produced) for finding in first}
+        second_canonical = {canonical_finding_id(finding, produced) for finding in second}
+        if not (first_canonical & second_canonical):
+            missed.append(f"{pair['first']['requirement_id']}+{pair['second']['requirement_id']}")
+    if not evaluable:
+        return []
+    return [
+        _metric(
+            handle,
+            run.id,
+            "duplicate_miss_rate",
+            _ratio(len(missed), evaluable),
+            unit="percentage",
+            evaluator=EvaluatorType.BENCHMARK,
+            method=(
+                "authored duplicate pairs whose two identities resolved to distinct canonical "
+                "findings, over pairs where both identities matched produced findings "
+                "(DEC-110). Detection is consolidation or an explicit duplicate_of_id merge; "
+                "a pair with an unmatched side is unevaluable and excluded"
+            ),
+            sample_size=evaluable,
+            notes=f"missed pairs: {', '.join(missed) or 'none'}",
+        )
+    ]
+
+
 def _benchmark_metrics(
     handle: AssessmentHandle,
     run: WorkflowRun,
@@ -332,6 +458,68 @@ def _benchmark_metrics(
             ),
         )
     ]
+
+    concordance = _severity_concordance(approved, expected_findings, finding_matches.matched)
+    if concordance is not None:
+        matched_count, exact, adjacent = concordance
+        results.append(
+            _metric(
+                handle,
+                run.id,
+                "severity_concordance",
+                _ratio(exact, matched_count),
+                unit="percentage",
+                evaluator=EvaluatorType.BENCHMARK,
+                method=(
+                    "matched findings whose reviewer-assigned severity equals the truth set's "
+                    "severity_guidance, over matched findings with guidance (DEC-030's open "
+                    "question, answered without a second reviewer). A finding matching more "
+                    "than one expectation takes the strictest guidance among them"
+                ),
+                sample_size=matched_count,
+                notes=(
+                    f"exact: {exact}/{matched_count}; within one level: "
+                    f"{adjacent}/{matched_count}. Severity is the reviewer's judgment "
+                    f"(DEC-030); this measures agreement with the authored guidance, not "
+                    f"correctness"
+                ),
+            )
+        )
+
+    results.extend(
+        _duplicate_miss_metrics(handle, run, expected_dir, component_names=component_names)
+    )
+
+    # Annotator agreement (#530, DEC-112): a statement about the truth set itself, computed
+    # beside the run metrics because the feed is where per-scenario numbers travel. Gates
+    # nothing; absent while no second annotation set exists — unmeasured, never zero.
+    from trace_ai.services.evaluation.agreement import compute_agreement, second_annotation_dir
+
+    agreement = compute_agreement(expected_dir, second_annotation_dir(expected_dir.parent))
+    if agreement is not None and agreement.pooled is not None:
+        per_artifact = "; ".join(
+            f"{entry.artifact}: {entry.in_both} shared, {entry.only_first} first-only, "
+            f"{entry.only_second} second-only"
+            for entry in agreement.artifacts
+        )
+        results.append(
+            _metric(
+                handle,
+                run.id,
+                "annotation_agreement",
+                agreement.pooled,
+                unit="percentage",
+                evaluator=EvaluatorType.BENCHMARK,
+                method=(
+                    "Jaccard agreement between the authoritative truth set and the second "
+                    "annotation set over DEC-056 identity forms, pooled across artifacts "
+                    "(DEC-112). A statement about the truth set, not the run; the first set "
+                    "stays authoritative and the statistic gates nothing"
+                ),
+                sample_size=sum(entry.union for entry in agreement.artifacts),
+                notes=per_artifact,
+            )
+        )
 
     expected_gaps = _expected_entries(
         expected_dir, "expected-documentation-gaps.yaml", "documentation_gaps"

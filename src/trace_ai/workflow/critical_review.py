@@ -38,10 +38,11 @@ from trace_ai.domain.proposals.critical_review import (
     CRITICAL_REVIEW_AGENT,
     CriticalReviewProposal,
 )
-from trace_ai.infrastructure.model.seam import Creativity, ModelFailure, ModelSuccess
+from trace_ai.infrastructure.model.agents import spec_for
 from trace_ai.services.critique.input_package import ReviewGroup, assemble_review_group
-from trace_ai.workflow.errors import ErrorClass, classify_model_failure
+from trace_ai.workflow.errors import ErrorClass
 from trace_ai.workflow.limits import resolve_retry_policy
+from trace_ai.workflow.model_call import cache_prefix_of, call_model, with_retry_feedback
 from trace_ai.workflow.nodes import NodeResult
 from trace_ai.workflow.phases import Phase
 from trace_ai.workflow.retry import AttemptFailedError, RetryPolicy, run_with_retries
@@ -130,7 +131,8 @@ class CriticalReviewNode:
                 f"node is classified as one in agent-design.md section 4."
             )
 
-        profile = self.profile.with_creativity(Creativity.MODERATE)
+        # Section 29's creativity for this agent, read from the one `AGENTS` table (WS11).
+        profile = self.profile.with_creativity(spec_for(NODE_NAME).creativity)
 
         group = assemble_review_group(
             assessment_id=context.handle.assessment_id,
@@ -146,6 +148,7 @@ class CriticalReviewNode:
         )
         available = group.referenceable_ids()
 
+        cache_prefix = cache_prefix_of(composed.text, group.untrusted)
         usages: list[Any] = []
         attempts = 0
 
@@ -154,60 +157,25 @@ class CriticalReviewNode:
             attempts += 1
             execution.retry_number = attempts - 1
 
-            prompt = (
-                composed.text
-                if state.feedback is None
-                else (
-                    f"{composed.text}\n\n## Validation feedback on your previous attempt\n\n"
-                    f"{state.feedback}\n\nReturn a corrected object. Do not restate the previous "
-                    f"one, and do not add critiques to compensate — an empty list is a valid "
-                    f"answer."
-                )
+            prompt = with_retry_feedback(
+                composed.text,
+                state.feedback,
+                instruction=(
+                    "Return a corrected object. Do not restate the previous one, and do not add "
+                    "critiques to compensate — an empty list is a valid answer."
+                ),
             )
-
-            if self.budget is not None:
-                self.budget.check_model_call(
-                    estimated_cost=profile.cost_of(
-                        input_tokens=len(prompt) // 4,
-                        output_tokens=profile.settings.max_output_tokens,
-                    )
-                )
-
-            outcome = context.model.generate(  # type: ignore[union-attr]
+            proposal = call_model(
+                context.model,
                 prompt=prompt,
                 schema=CriticalReviewProposal,
-                settings=profile.settings,
+                profile=profile,
                 system=group.trusted,
+                budget=self.budget,
+                execution=execution,
+                usages=usages,
+                cache_prefix=cache_prefix,
             )
-
-            if isinstance(outcome, ModelFailure):
-                usages.append(outcome.usage)
-                if self.budget is not None:
-                    self.budget.spend_model_call(outcome.usage.estimated_cost)
-                raise AttemptFailedError(
-                    error_class=classify_model_failure(outcome.reason),
-                    message=outcome.message,
-                    raw_output=outcome.raw_output,
-                    feedback=outcome.message,
-                )
-
-            if not isinstance(outcome, ModelSuccess):  # pragma: no cover - the union has two arms
-                raise AttemptFailedError(
-                    error_class=ErrorClass.UNEXPECTED_APPLICATION_FAILURE,
-                    message=f"the model seam returned {type(outcome).__name__}",
-                )
-
-            usages.append(outcome.usage)
-
-            # Section 29: the conditions the call actually ran at, recorded where a reader of the
-            # ExecutionRecord can find them -- a wrong effort mapping is otherwise invisible (#401).
-            for condition_key in ("effort", "creativity"):
-                if condition_key in outcome.metadata:
-                    execution.metadata[condition_key] = outcome.metadata[condition_key]
-            if self.budget is not None:
-                self.budget.spend_model_call(outcome.usage.estimated_cost)
-
-            proposal = outcome.value
 
             # Section 15's retry conditions. References first: a critique of something outside the
             # group is the scope error, and correcting it is different from correcting a shallow

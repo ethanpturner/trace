@@ -21,3 +21,16 @@ REJ-MD-03 is not mapped at all — no passage addresses it, and an unverified ma
 manufacture a second gap the truth set does not expect. The finding review concludes over an
 empty candidate set, and the report carries the `lim-empty-findings` limitation the assembler
 requires of a zero-finding run.
+
+## Re-authored for the IaC parser (#525, DEC-113)
+
+The scenario gained `input/terraform-db.tf.json`, a Terraform JSON declaration of the managed
+database with `storage_encrypted: true` and `publicly_accessible: false` stated. The IaC
+parser seeds one component and two documented claims from it before the recorded extraction
+converts, which shifts the component and claim allocation: the agent's components moved from
+`cmp-001`/`cmp-002` to `cmp-002`/`cmp-003` and its claims from `ctx-001..004` to
+`ctx-003..006`, and every recorded reference moved with them. `decisions-context.yaml` gained
+approvals for the parser's component and both claims — the declared encryption is now
+machine-documented evidence beside the prose, which is the scenario's inherited-encryption
+point restated by a declaration. Per-prefix counters keep every other identifier stable; the
+replay completes with the same expected outcomes.

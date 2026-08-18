@@ -244,7 +244,7 @@ def assemble_report_input(
         for control in repository.list(Control)
         if control.validation_status is ValidationStatus.SUPPORTED
     ]
-    # DEC-083: section 7 carries the threats the approved findings rest on. Threats have no
+    # DEC-101: section 7 carries the threats the approved findings rest on. Threats have no
     # approval verb of their own — the old `status is APPROVED` filter was never satisfiable and
     # rendered the section structurally empty — and the set a reviewer transitively validated by
     # approving the findings is the defensible one to print. A zero-finding assessment therefore

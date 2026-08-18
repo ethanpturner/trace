@@ -118,6 +118,16 @@ def test_every_model_failure_reason_classifies(reason: FailureReason) -> None:
     assert isinstance(classify_model_failure(reason), ErrorClass)
 
 
+def test_the_model_failure_map_is_explicitly_total() -> None:
+    """`classify_model_failure` defaults an unmapped reason to a safe, non-retryable class so it
+    never `KeyError`s at runtime -- but every reason must still be mapped *explicitly*, so a new
+    `FailureReason` fails this test rather than silently taking the default. The default is the
+    runtime safety net; this test is the design guard."""
+    from trace_ai.workflow.errors import _MODEL_FAILURES
+
+    assert set(_MODEL_FAILURES) == set(FailureReason)
+
+
 def test_a_refusal_is_an_application_fault_rather_than_a_provider_condition() -> None:
     """Nothing the workflow can retry changes a refusal, and the request came from us."""
     assert classify_model_failure(FailureReason.REFUSED) is (
@@ -163,6 +173,16 @@ def test_backoff_is_exponential_and_capped() -> None:
     assert all(policy.delay_for(n) <= DEFAULT_MAXIMUM_DELAY_SECONDS for n in range(20))
 
 
+def test_jitter_defaults_to_none_and_is_injectable() -> None:
+    """The default is identity, so delays are deterministic for tests and for a single local
+    process; a deployment with concurrent clients can inject jitter to avoid lockstep retries."""
+    default = RetryPolicy(base_delay_seconds=1.0)
+    assert default.delay_for(1) == 1.0, "the default applies no jitter"
+
+    jittered = RetryPolicy(base_delay_seconds=1.0, jitter=lambda delay: delay / 2)
+    assert jittered.delay_for(2) == 1.0, "the injected jitter is applied to the capped delay"
+
+
 # ------------------------------------------------------------------------------------------
 # The loop
 # ------------------------------------------------------------------------------------------
@@ -201,6 +221,65 @@ def test_validation_feedback_reaches_the_next_attempt() -> None:
         None,
         "`claims[0].status` must be one of the seven documented values",
     ]
+
+
+def test_feedback_accumulates_across_attempts() -> None:
+    """Attempt three must see what attempt one complained about, or a field it fixed on attempt two
+    is free to regress on attempt three because nothing still asks it to hold."""
+    seen: list[AttemptContext] = []
+    complaints = ["fix field A", "fix field B"]
+
+    def attempt(context: AttemptContext) -> str:
+        seen.append(context)
+        if context.attempt_number < len(complaints):
+            raise AttemptFailedError(
+                error_class=ErrorClass.SCHEMA_VALIDATION_FAILURE,
+                message="did not validate",
+                feedback=complaints[context.attempt_number],
+            )
+        return "ok"
+
+    assert (
+        run_with_retries(attempt, policy=RetryPolicy(maximum_retries_per_node=2), node_name="n")
+        == "ok"
+    )
+    # The third attempt carries both prior complaints, not just the most recent one.
+    assert seen[2].feedback is not None
+    assert "fix field A" in seen[2].feedback
+    assert "fix field B" in seen[2].feedback
+
+
+def test_an_unexpected_exception_stops_the_run_as_an_application_fault() -> None:
+    """Anything the attempt raises that is not a classified AttemptFailedError -- here a bare
+    RuntimeError standing in for a store error or an escaped ValidationError -- is a fault in this
+    application. It is non-retryable and stops the run rather than escaping the loop."""
+    attempts = 0
+
+    def attempt(_context: AttemptContext) -> str:
+        nonlocal attempts
+        attempts += 1
+        raise RuntimeError("a store write failed mid-attempt")
+
+    with pytest.raises(WorkflowError) as caught:
+        run_with_retries(attempt, policy=RetryPolicy(maximum_retries_per_node=3), node_name="n")
+
+    assert attempts == 1, "an application fault is not retried"
+    assert caught.value.error_class is ErrorClass.UNEXPECTED_APPLICATION_FAILURE
+    assert not caught.value.retryable
+    assert "a store write failed mid-attempt" in str(caught.value)
+
+
+def test_a_classified_workflow_error_from_the_attempt_is_not_re_wrapped() -> None:
+    """A WorkflowError raised inside the attempt already carries its class; the catch-all must not
+    re-label it as an application fault."""
+
+    def attempt(_context: AttemptContext) -> str:
+        raise WorkflowError(ErrorClass.INSUFFICIENT_EVIDENCE, "cannot conclude")
+
+    with pytest.raises(WorkflowError) as caught:
+        run_with_retries(attempt, policy=RetryPolicy(), node_name="n")
+
+    assert caught.value.error_class is ErrorClass.INSUFFICIENT_EVIDENCE
 
 
 def test_an_insufficient_evidence_condition_produces_no_retry() -> None:

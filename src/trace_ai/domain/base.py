@@ -16,6 +16,7 @@ the agent that caused it.
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from typing import Any, ClassVar
 
 from pydantic import BaseModel, ConfigDict
 
@@ -81,3 +82,29 @@ class DomainModel(BaseModel):
         validate_assignment=True,
         str_strip_whitespace=True,
     )
+
+    stored_type: ClassVar[str] = "DomainModel"
+    """The type key this model's rows are stored under (DEC-090). The store writes and filters on it
+    rather than on `type(obj).__name__`, so renaming a domain class no longer silently makes every
+    existing row unreadable -- the class overrides `stored_type = "OldName"` in one line and keeps
+    reading them. Defaults to the class name, set for every subclass in `__init_subclass__`."""
+
+    def __init_subclass__(cls, **kwargs: Any) -> None:
+        super().__init_subclass__(**kwargs)
+        if "stored_type" not in cls.__dict__:
+            cls.stored_type = cls.__name__
+
+    def row_key(self) -> str:
+        """The key this object's row is stored under: its identifier by default.
+
+        An object with no `id` (only `SystemContext` today, keyed by `(assessment_id, version)`)
+        overrides this. The base raises rather than inventing a key, so a *new* id-less object is a
+        loud decision for its author rather than a silent collision with `SystemContext`'s key.
+        """
+        identifier = getattr(self, "id", None)
+        if isinstance(identifier, str):
+            return identifier
+        raise ValueError(
+            f"{type(self).__name__} has no `id` and does not override row_key(); the store cannot "
+            f"key it"
+        )

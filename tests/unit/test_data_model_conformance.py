@@ -74,6 +74,7 @@ from trace_ai.domain.execution import ExecutionRecord, WorkflowRun
 from trace_ai.domain.finding import Finding
 from trace_ai.domain.finding_merge_record import FindingMergeRecord
 from trace_ai.domain.identifiers import PREFIXES, parse_id
+from trace_ai.domain.org_control import OrganizationalControl
 from trace_ai.domain.prompt_definition import PromptDefinition
 from trace_ai.domain.question import Question
 from trace_ai.domain.requirement import Requirement
@@ -282,6 +283,9 @@ REGISTRY: dict[str, Registration] = {
     # every mapping call, so the loader in `services/requirements/` needed the object before the
     # workflow began operating rather than after.
     "30": Registration("RequirementsCatalog", Status.IMPLEMENTED, RequirementsCatalog),
+    # Documented as `30a` for the same reason `10a`, `21a`, and `23a` are: DEC-115 added it
+    # after the rest were numbered. Authored configuration, named not identified (DEC-034).
+    "30a": Registration("OrganizationalControl", Status.IMPLEMENTED, OrganizationalControl),
     # Workflow state, described as a proposed structure rather than a field table. It is not a
     # persisted object and has nothing to conform to.
     "31": Registration("Assessment State", Status.NOT_AN_OBJECT),
@@ -297,7 +301,9 @@ OBJECT_SECTIONS = [
     "22",
     "23",
     "23a",
-    *(str(number) for number in range(24, 32)),
+    *(str(number) for number in range(24, 31)),
+    "30a",
+    "31",
 ]
 
 
@@ -328,7 +334,7 @@ def test_the_first_four_tables_have_the_row_counts_the_document_shows() -> None:
     wrong reason.
     """
     tables = documented_fields()
-    assert len(tables["5"]) == 15, "Assessment"
+    assert len(tables["5"]) == 16, "Assessment"
     assert len(tables["6"]) == 8, "AssessmentConfiguration"
     assert len(tables["7"]) == 14, "SourceDocument"
     assert len(tables["8"]) == 14, "EvidenceReference"
@@ -360,7 +366,7 @@ def test_every_field_row_has_a_description() -> None:
 
 def test_section_forty_parses_into_two_lists() -> None:
     first, later = implementation_priority()
-    assert len(first) == 29, first
+    assert len(first) == 30, first
     assert later == []
 
 
@@ -524,6 +530,7 @@ class Section5Shape(DomainModel):
     configuration: str
     active_workflow_run_id: str | None = None
     final_report_path: str | None = None
+    final_report_run_id: str | None = None
     tags: list[str] | None = None
 
 

@@ -110,6 +110,44 @@ def test_the_rendered_page_shows_the_history_newest_first() -> None:
     assert "sha256:" not in page
 
 
+def test_the_trend_matrix_keeps_the_scenario_axis_across_snapshots() -> None:
+    """#535: the pooled History table hides one scenario regressing while the pool barely moves;
+    the trend matrix renders per-scenario F1, one column per snapshot, oldest first, dashes where
+    a snapshot did not run the pair, authoritative rows only."""
+    other = ScorecardRow(
+        scenario="oidc-portal",
+        condition="clean",
+        authoritative=True,
+        matched=1,
+        missed=1,
+        spurious=0,
+        schema_valid=True,
+        cost=0.0,
+    )
+    page = render_scorecard(
+        [],
+        generated_at=GENERATED_AT,
+        history=[
+            snapshot("abc1234"),
+            snapshot("def5678", recorded_at="2026-08-13", rows=(*rows(), other)),
+        ],
+    )
+    assert "<h2>F1 across versions</h2>" in page
+    trend = page[page.index("F1 across versions") :]
+    # Oldest column first: the matrix reads left to right as history.
+    assert trend.index("abc1234") < trend.index("def5678")
+    # oidc-portal ran only in the second snapshot: one dash cell, then its F1.
+    row = trend[trend.index("oidc-portal") :]
+    assert "<td>—</td>" in row[: row.index("</tr>")]
+    # The non-authoritative forgeflow row contributes no pair of its own.
+    assert trend.count("forgeflow") == 1
+
+
+def test_a_single_snapshot_renders_no_trend_matrix() -> None:
+    page = render_scorecard([], generated_at=GENERATED_AT, history=[snapshot()])
+    assert "F1 across versions" not in page
+
+
 def test_the_history_contains_metrics_and_identifiers_only(tmp_path: Path) -> None:
     """DEC-076's content boundary, applied to the committed history file."""
     history_file = tmp_path / "history.jsonl"
@@ -142,6 +180,9 @@ def test_the_history_contains_metrics_and_identifiers_only(tmp_path: Path) -> No
         "question_usefulness",
         "unsupported_claim_rate",
         "token_usage",
+        "severity_concordance",
+        "duplicate_miss_rate",
+        "annotation_agreement",
     }
 
 

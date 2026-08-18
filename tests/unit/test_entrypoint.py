@@ -15,12 +15,7 @@ import pytest
 from trace_ai import bootstrap, configure_logging
 from trace_ai.cli import run
 from trace_ai.config import Settings, get_settings
-
-
-@pytest.fixture(autouse=True)
-def _clear_settings_cache() -> None:
-    """Stop a cached Settings from leaking between tests."""
-    get_settings.cache_clear()
+from trace_ai.observability import RedactionFilter
 
 
 def test_main_reports_environment_without_leaking_secrets(
@@ -68,19 +63,19 @@ def test_bootstrap_discards_settings_cached_before_dotenv_load(
 ) -> None:
     """A pre-bootstrap read must not pin stale values for the whole process."""
     env_file = tmp_path / ".env"
-    env_file.write_text("LANGSMITH_PROJECT=from-dotenv\n", encoding="utf-8")
+    env_file.write_text("APP_ENV=staging\n", encoding="utf-8")
     monkeypatch.setattr("trace_ai.config.ENV_FILE", env_file)
-    monkeypatch.delenv("LANGSMITH_PROJECT", raising=False)
+    monkeypatch.delenv("APP_ENV", raising=False)
 
     # Something reads settings too early, before .env has been loaded.
     stale = Settings(_env_file=None)
-    assert stale.langsmith_project == "trace"
+    assert stale.app_env == "local"
     get_settings.cache_clear()
     get_settings()
 
     settings = bootstrap()
 
-    assert settings.langsmith_project == "from-dotenv"
+    assert settings.app_env == "staging"
 
 
 def test_configure_logging_applies_the_settings_level(
@@ -101,3 +96,35 @@ def test_bootstrap_returns_usable_settings(monkeypatch: pytest.MonkeyPatch, tmp_
     settings = bootstrap()
 
     assert settings.app_env == "ci"
+
+
+def _root_handler_has_redaction_filter() -> bool:
+    root = logging.getLogger()
+    return any(
+        any(isinstance(flt, RedactionFilter) for flt in handler.filters)
+        for handler in root.handlers
+    )
+
+
+def test_run_bootstraps_for_a_real_command_not_only_the_banner(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """The redaction filter must guard commands that process source documents, not just `trace`
+    with no arguments -- `run`, `resume`, and `evaluate` used to skip bootstrap entirely."""
+    monkeypatch.setattr("trace_ai.config.ENV_FILE", tmp_path / "absent.env")
+
+    exit_code = run(["--data-root", str(tmp_path / "data"), "assessment", "list"])
+
+    assert exit_code == 0
+    assert _root_handler_has_redaction_filter()
+
+
+def test_run_applies_the_configured_log_level(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    monkeypatch.setattr("trace_ai.config.ENV_FILE", tmp_path / "absent.env")
+    monkeypatch.setenv("LOG_LEVEL", "WARNING")
+
+    run([])
+
+    assert logging.getLogger().level == logging.WARNING

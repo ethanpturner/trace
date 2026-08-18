@@ -17,25 +17,28 @@ from __future__ import annotations
 import argparse
 import sys
 import tempfile
-from datetime import UTC, datetime
 from pathlib import Path
 
 import yaml
 
 from trace_ai.config import PROJECT_ROOT
 from trace_ai.services.evaluation.ablation import render_ablation
-from trace_ai.services.evaluation.registry import REGISTRY_PATH, load_registry
+from trace_ai.services.evaluation.registry import (
+    REGISTRY_PATH,
+    catalog_version_summary,
+    load_registry,
+)
 from trace_ai.services.evaluation.stability import AblationComparison, run_ablation_set
-from trace_ai.services.requirements.loader import current_version
+from trace_ai.services.evaluation.stamps import DETERMINISTIC_STAMP
 
 OUTPUT = PROJECT_ROOT / "docs" / "eval" / "ablation.md"
 # Pinned so the committed table changes only when a metric does, never on the clock.
-GENERATED_AT = datetime(2026, 8, 14, 12, 0, 0, tzinfo=UTC)
+GENERATED_AT = DETERMINISTIC_STAMP
 
 
 def _pins() -> dict[str, str]:
     registry = yaml.safe_load(REGISTRY_PATH.read_text(encoding="utf-8"))
-    return {"registry": str(registry["registry_version"]), "catalog": current_version()}
+    return {"registry": str(registry["registry_version"]), "catalog": catalog_version_summary()}
 
 
 def _comparisons(results_root: Path) -> list[AblationComparison]:
@@ -67,8 +70,9 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
-    results_root = Path(tempfile.mkdtemp(prefix="trace-ablation-"))
-    rendered = build(results_root)
+    # Intermediate sweep tree: cleaned up rather than left in /tmp per run.
+    with tempfile.TemporaryDirectory(prefix="trace-ablation-") as tmp:
+        rendered = build(Path(tmp))
 
     if args.check:
         current = OUTPUT.read_text(encoding="utf-8") if OUTPUT.is_file() else ""

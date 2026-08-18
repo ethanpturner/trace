@@ -1,0 +1,126 @@
+# Category: fine_tuning
+# Requirements for systems that fine-tune a model on collected data and serve the tuned
+# artifact. The recurring shape is that the training corpus is a write path into the model's
+# weights: whoever can place content in it speaks through the model later, and whatever
+# sensitive content enters it can be memorized and emitted. The remaining slice of the AI
+# system threat-modeling pack (future-features 8.1, #531, DEC-114), grounded in the GenAI
+# Security Project LLM Top 10 (2026) and OWASP AISVS chapter C1; every statement is written
+# in the documentation register so that silence resolves to `unverified` (DEC-009).
+
+requirements:
+
+  - id: req-TRAIN-001
+    catalog_version: "0.3"
+    title: Training data enters through a governed write path
+    statement: >
+      Where a model is fine-tuned on collected data, the documentation must
+      state who and what can add or modify the training corpus, and how
+      content enters it -- an authored export job, a review step, a named
+      pipeline from a stated source.
+    rationale: >
+      Fine-tuning moves the injection surface from the prompt to the weights:
+      content placed in the corpus today is behavior in every answer after the
+      next training run, delivered with the model's own authority and no
+      per-request trace. Who can write to the corpus is an architectural fact
+      a design document can state, and a document that treats the corpus as
+      simply existing has not decided whose content the model learns.
+    category:
+      - fine_tuning
+      - integrity
+    applicable_conditions:
+      - a model is fine-tuned or continually trained on data the system collects
+      - the training corpus accepts content from more than one source or author
+    non_applicable_conditions:
+      - the system serves only base models it does not train
+      - the training corpus is a fixed, versioned artifact written by no runtime path
+    acceptable_implementations:
+      - a single authored export job as the corpus's only writer, with its identity stated
+      - write access to the training store restricted to a named pipeline identity
+      - a review or approval step before collected content enters the corpus
+    evidence_expectations:
+      - documentation of the corpus's sources and the path content takes into it
+      - description of who or what may write to the training store and how that is enforced
+    common_false_positives:
+      - absent content-level sanitization prose where the write path itself is governed
+      - absent re-review of already-ingested content on every training run, which exceeds this expectation
+    default_severity: high
+    source_frameworks:
+      - "GenAI Security Project LLM Top 10: LLM04:2026"
+      - "OWASP AISVS: v1.0-C1.2.1"
+    status: active
+
+  - id: req-TRAIN-002
+    catalog_version: "0.3"
+    title: Sensitive content is minimized before training
+    statement: >
+      Where training data derives from user, customer, or otherwise sensitive
+      content, the documentation must describe how sensitive elements are
+      excluded or transformed before training, or state the decision to train
+      on them and its basis.
+    rationale: >
+      A tuned model can memorize its training data and emit it to whoever can
+      prompt it, detached from every access control the source system
+      enforced. Minimization before training is the one point where that
+      surface is bounded, and it is a pipeline step a design document can
+      describe. A document that states the corpus contains raw customer
+      content has documented the exposure; a document silent about content
+      handling has left it undetermined.
+    category:
+      - fine_tuning
+      - data_protection
+    applicable_conditions:
+      - training data derives from user, customer, or production content
+    non_applicable_conditions:
+      - the corpus is synthetic, public, or contains no sensitive elements by construction
+    acceptable_implementations:
+      - redaction or pseudonymization of identifiers and free text before export
+      - filtering to fields the training purpose needs, with the field list stated
+      - a stated, reviewed decision to train on named sensitive fields with its justification
+    evidence_expectations:
+      - documentation of the minimization or filtering step in the training pipeline
+      - a statement of what the exported training records contain
+    common_false_positives:
+      - absent differential-privacy or unlearning prose where minimization before training is documented
+      - treating a stated, justified decision to train on named fields as an undocumented one
+    default_severity: high
+    source_frameworks:
+      - "GenAI Security Project LLM Top 10: LLM02:2026"
+      - "OWASP AISVS: v1.0-C1.3.1"
+    status: active
+
+  - id: req-TRAIN-003
+    catalog_version: "0.3"
+    title: Tuned artifacts carry their lineage
+    statement: >
+      Where tuned model artifacts are produced and served, the documentation
+      must identify where artifacts are registered and what each records of
+      its lineage -- the base model and the training-data version it was
+      trained from.
+    rationale: >
+      A tuned artifact with no recorded lineage cannot be answered for: when
+      training data turns out poisoned or a base model is recalled, lineage is
+      what says which serving artifacts are affected and which are clean.
+      Registration is infrastructure a design document can name, and its
+      absence leaves incident response reconstructing history from job logs.
+    category:
+      - fine_tuning
+      - integrity
+    applicable_conditions:
+      - tuned model artifacts are produced and any of them is served or shared
+    non_applicable_conditions:
+      - no tuned artifact leaves the experiment that produced it
+    acceptable_implementations:
+      - a model registry recording base model and data version per artifact
+      - artifact metadata embedding the training-run identity, with the registry named
+      - versioned artifact storage whose entries reference the corpus snapshot trained from
+    evidence_expectations:
+      - documentation naming the registry or artifact store and its recorded fields
+      - description of how a served artifact is traced to its training inputs
+    common_false_positives:
+      - absent automated rollback machinery where lineage recording itself is documented
+      - treating a named registry as unverified because its schema is described elsewhere
+    default_severity: medium
+    source_frameworks:
+      - "GenAI Security Project LLM Top 10: LLM04:2026"
+      - "OWASP AISVS: v1.0-C1.4.1"
+    status: active

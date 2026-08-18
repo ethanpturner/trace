@@ -8,18 +8,34 @@ which is a stated fact rather than a silent omission.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 import yaml
+from pydantic import BaseModel, ConfigDict, Field
+from pydantic import ValidationError as PydanticValidationError
 
 from trace_ai.config import PROJECT_ROOT
 
 if TYPE_CHECKING:
     from pathlib import Path
 
-__all__ = ["REGISTRY_PATH", "Scenario", "UnknownScenarioError", "load_registry", "scenario"]
+__all__ = [
+    "REGISTRY_PATH",
+    "SUPPORTED_REGISTRY_VERSIONS",
+    "RegistryError",
+    "Scenario",
+    "UnknownScenarioError",
+    "catalog_version_summary",
+    "load_registry",
+    "scenario",
+]
 
 REGISTRY_PATH = PROJECT_ROOT / "benchmarks" / "scenarios.yaml"
+
+# Registry-file layouts this build understands. A future `2.0` reshapes the entries, and a build
+# that read it as `1.0` would misparse silently; refusing an unsupported version is the DEC-010
+# rule for the requirements catalog applied to the scenario registry.
+SUPPORTED_REGISTRY_VERSIONS: Final = frozenset({"1.0"})
 
 
 class UnknownScenarioError(ValueError):
@@ -30,6 +46,49 @@ class UnknownScenarioError(ValueError):
             f"{slug!r} is not a registered scenario; the registry carries {', '.join(known)}. "
             f"Scenarios are discovered from benchmarks/scenarios.yaml and never by scanning."
         )
+
+
+class RegistryError(ValueError):
+    """The registry file is not the document this module reads: a missing or misspelled key, a
+    non-list `scenarios`, an unsupported `registry_version`. Named, with the offending entry, rather
+    than a `KeyError`/`TypeError` traceback from a raw dictionary index."""
+
+
+class _ScenarioEntry(BaseModel):
+    """One `scenarios:` entry. `extra="forbid"` so a misspelled key is named, not ignored."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    slug: str
+    name: str
+    path: str
+    status: str
+    conditions: list[str] = Field(default_factory=list)
+    category: str | None = None
+    catalog_version: str | None = None
+    """The requirements catalog version the scenario's assessments pin (DEC-098). Absent means
+    the loader's current version, exactly as an interactive assessment defaults; a scenario
+    exercising a draft catalog names it, and `load_catalog(version)` still refuses one that
+    does not verify."""
+    narrative: str | None = None
+    """Informative: a pointer to a scenario's written narrative (ForgeFlow's feeds Stage 6). The
+    registry loader accepts it so the field is not an unknown key, but nothing routes on it."""
+
+
+class _RegistryFile(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    registry_version: str
+    scenarios: list[_ScenarioEntry]
+
+
+def _render_registry_error(error: PydanticValidationError, path: Path) -> str:
+    parts = []
+    for detail in error.errors():
+        location = ".".join(str(part) for part in detail["loc"]) or "(root)"
+        kind = "unknown key" if detail["type"] == "extra_forbidden" else detail["type"]
+        parts.append(f"{location}: {kind}")
+    return f"{path} is not a valid scenario registry: " + "; ".join(parts)
 
 
 CLEAN_CONDITION = "clean"
@@ -51,6 +110,7 @@ class Scenario:
     status: str
     conditions: tuple[str, ...] = ()
     category: str | None = None
+    catalog_version: str | None = None
     """The roadmap Stage 5 coverage category this scenario exercises (issue #328). Informative:
     nothing routes on it, and scenarios may share one — the registry states which categories are
     covered rather than the filesystem implying it."""
@@ -121,18 +181,31 @@ class Scenario:
 
 def load_registry(registry_path: Path | None = None) -> list[Scenario]:
     path = registry_path if registry_path is not None else REGISTRY_PATH
-    parsed = yaml.safe_load(path.read_text(encoding="utf-8"))
+    raw = yaml.safe_load(path.read_text(encoding="utf-8"))
+    if not isinstance(raw, dict):
+        raise RegistryError(f"{path} is not a mapping; a scenario registry is a YAML mapping")
+    try:
+        parsed = _RegistryFile.model_validate(raw)
+    except PydanticValidationError as invalid:
+        raise RegistryError(_render_registry_error(invalid, path)) from None
+    if parsed.registry_version not in SUPPORTED_REGISTRY_VERSIONS:
+        raise RegistryError(
+            f"{path} declares registry_version {parsed.registry_version!r}; this build supports "
+            f"{sorted(SUPPORTED_REGISTRY_VERSIONS)}. A newer registry reshapes the entries and must "
+            f"not be read as an older one."
+        )
     root = path.parent.parent
     return [
         Scenario(
-            slug=str(entry["slug"]),
-            name=str(entry["name"]),
-            path=root / str(entry["path"]),
-            status=str(entry["status"]),
-            conditions=tuple(str(name) for name in entry.get("conditions", ())),
-            category=str(entry["category"]) if entry.get("category") else None,
+            slug=entry.slug,
+            name=entry.name,
+            path=root / entry.path,
+            status=entry.status,
+            conditions=tuple(entry.conditions),
+            category=entry.category,
+            catalog_version=entry.catalog_version,
         )
-        for entry in parsed["scenarios"]
+        for entry in parsed.scenarios
     ]
 
 
@@ -142,3 +215,23 @@ def scenario(slug: str, *, registry_path: Path | None = None) -> Scenario:
         if entry.slug == slug:
             return entry
     raise UnknownScenarioError(slug, [entry.slug for entry in scenarios])
+
+
+def catalog_version_summary(scenarios: list[Scenario] | None = None) -> str:
+    """The catalog versions the corpus actually assesses against, counted (#500).
+
+    A scenario without a pin (DEC-098) assesses against the loader's current version, exactly
+    as an interactive assessment defaults, so the summary resolves the absence the same way.
+    One version reads as before ("0.1"); a mixed corpus names each with its scenario count
+    ("0.1 (12), 0.2 (1)") — a single stamp over a mixed corpus was structurally incapable of
+    being true.
+    """
+    from collections import Counter
+
+    from trace_ai.services.requirements.loader import current_version
+
+    entries = scenarios if scenarios is not None else load_registry()
+    counts = Counter(entry.catalog_version or current_version() for entry in entries)
+    if len(counts) == 1:
+        return next(iter(counts))
+    return ", ".join(f"{version} ({count})" for version, count in sorted(counts.items()))

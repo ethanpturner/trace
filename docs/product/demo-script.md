@@ -9,14 +9,22 @@ actually said — including the four retried calls, replayed in position.
 
 It is the source for the roadmap Stage 6 presentation's demo segment as well as the live
 walkthrough. The live-model variant is the same commands with a live `--model-profile` and every
-`--response` dropped; it is an option, never a dependency, and nothing below needs it.
+`--response` dropped; it is an option, never a dependency, and nothing below needs it. The spoken
+narration for the presentation's eight-step variant is
+[`demo/forgeflow/speaker-notes.md`](https://github.com/ethanpturner/trace/blob/main/demo/forgeflow/speaker-notes.md).
 
 ## Before the room
 
 ```bash
-uv sync                       # once, on the demo machine
-uv run trace reset --force    # returns the data root to the fresh-clone state
+uv sync
+uv run trace reset --force
 ```
+
+`uv sync` is needed once on the demo machine; `reset --force` returns the data root to the
+fresh-clone state. The block carries no trailing comments deliberately: the default macOS zsh
+does not treat `#` as a comment at an interactive prompt, so a pasted trailing comment becomes
+literal arguments and the command is rejected — which, for the reset line, leaves the stale data
+root in place and desynchronizes every identifier below.
 
 Every command names `asm-001`, the identifier a fresh data root allocates first. Reset before the
 talk, or a leftover `asm-001` makes the next `assessment create` mint `asm-002` and the transcript
@@ -36,7 +44,7 @@ fall back to if a live command misbehaves — see the recovery plan for what eac
 | # | Beat | Command | Say | ≈ | Fallback |
 |---|---|---|---|---|---|
 | 1 | Input documentation | `uv run trace assessment create --name "ForgeFlow Security Review"`<br>`uv run trace source add asm-001 demo/forgeflow/input` | Eight untrusted documents describe an AI code-review product. Trace reads documents, not diagrams — and one of these documents carries a deliberate prompt-injection payload, which we will meet again. | 0:45 | `demo/forgeflow/input/` |
-| 2 | Extracted context, and the injection caught | `uv run trace run asm-001 --model-profile offline-fake --response demo/forgeflow/recorded/extraction`<br>`uv run trace context show asm-001 \| head -40`<br>`uv run trace context show asm-001 --observations` | The run paused itself: checkpoint 1 is a phase in the transition table, not an option a flag can skip. Sixteen components, sixty-three claims — fourteen of them honestly `unknown` — each showing the passage it rests on, labelled quoted untrusted source content. Then the observation view: the model flagged the scratch-notes injection attempt, named the four claims it tried to poison, and surfaced both planted contradictions with the identifiers a `--resolve-contradiction` needs. | 1:45 | `recorded/extraction/01-context-extraction.json` |
+| 2 | Extracted context, and the injection caught | `uv run trace run asm-001 --model-profile offline-fake --response demo/forgeflow/recorded/extraction`<br>`uv run trace context show asm-001 \| head -40`<br>`uv run trace context show asm-001 --observations` | The run paused itself: checkpoint 1 is a phase in the transition table, not an option a flag can skip. Sixteen components, sixty-three claims — fourteen of them honestly `unknown` — each showing the passage it rests on, labelled quoted untrusted source content. Then the observation view: the model flagged the scratch-notes injection attempt, named the four claims it tried to poison, and surfaced both planted contradictions with the identifiers a `--resolve` needs. | 1:45 | `recorded/extraction/01-context-extraction.json` |
 | 3 | Human correction | `uv run trace context review asm-001 --apply demo/forgeflow/recorded/decisions-context.yaml`<br>`uv run trace context approve asm-001` | A person decides each subject — 131 of them here. The applied file is a recorded review; interactively it is `--export`, edit, `--apply`. The checkpoint advances only once every subject has a decision. | 0:45 | `recorded/decisions-context.yaml` |
 | 4 | Reasoning | `uv run trace resume asm-001 --model-profile offline-fake --response demo/forgeflow/recorded/reasoning` | Thirty-five model calls replay in order: fifteen threats, two hundred twenty-five requirement mappings, seventy-four evidence assessments, sixty-three critiques — then the run pauses again at checkpoint 2. | 0:45 | `recorded/reasoning/` |
 | 5 | Quality over volume | `uv run trace findings show asm-001 \| head -30` | All of that reasoning collapsed to five provisional findings, not a wall of them. Requirements the documents satisfy through inherited controls never became findings; the false-positive classes the catalog names were addressed by name in the mappings. | 0:45 | `demo/forgeflow/assets/forgeflow-report.md` §8 |

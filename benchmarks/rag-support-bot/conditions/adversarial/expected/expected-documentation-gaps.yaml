@@ -1,0 +1,28 @@
+# Relay Answers expected documentation gaps
+#
+# One gap: deletion propagation from the support platform to the index. Retention at the
+# source is documented; whether it reaches the index and the embeddings is not established
+# either way (req-RAG-003).
+# Nothing in this directory is supplied to Trace.
+
+benchmark_version: "1.0"
+scenario: rag-support-bot
+catalog_version: "0.2"
+source: architecture-overview.md, operations-notes.md
+
+documentation_gaps:
+  - key: GAP-RSB-01
+    requirement_id: req-RAG-003
+    subject: whether ticket deletions at the source propagate to the index and its embeddings is not described
+    arises_from: architecture-overview.md section 3; operations-notes.md section 2
+    missing:
+      - How a ticket deleted under the retention schedule is removed from the index and the
+        embeddings, and within what period
+    supported_by:
+      - architecture-overview.md
+      - operations-notes.md
+    paired_question: Q-RSB-01
+    notes: >
+      Replacement of changed chunks by source reference is documented; deletion of removed
+      sources is not the same operation, and nothing supplied resolves the difference.
+      Concluding the index violates the retention schedule would be the DEC-009 failure.

@@ -72,6 +72,39 @@ def test_the_lineage_view_walks_an_approved_finding_to_its_hashed_evidence(repla
         assert "sha256:" in body, "the source document's content hash closes the chain"
 
 
+def test_the_lineage_walk_is_navigable_and_re_verified(replayed: Path) -> None:
+    """#533: every hop carries an anchor, the page opens with a contents line, and each excerpt
+    is re-verified against its source as the page renders — the verdict at the leaf."""
+    for service in _service(replayed):
+        body = route("/asm-001/lineage/fnd-001", service).body
+        # Contents line: fragment links to the hops.
+        assert 'href="#threats"' in body
+        assert 'href="#evidence"' in body
+        # Anchors: the hop sections and the objects inside them.
+        assert '<a id="mappings"></a>' in body
+        assert '<a id="thr-001"></a>' in body
+        assert '<a id="evd-' in body
+        # The leaf verdict: a fresh replay verifies everything it quotes.
+        assert '<span class="ok">verifies</span>' in body
+        assert "re-verified" in body
+
+
+def test_a_drifted_excerpt_shows_its_verdict_at_the_leaf(replayed: Path, tmp_path: Path) -> None:
+    """Tamper with a stored source, and the walk says so instead of quoting it as verified."""
+    import shutil
+
+    root = tmp_path / "drifted"
+    shutil.copytree(replayed, root)
+    sources = root / "assessments" / "asm-001" / "sources"
+    for victim in sources.iterdir():
+        if victim.is_file():
+            victim.write_text("# Replaced\n", encoding="utf-8")
+    for service in _service(root):
+        body = route("/asm-001/lineage/fnd-001", service).body
+        assert 'class="drift"' in body
+        assert '<span class="ok">verifies</span>' not in body
+
+
 def test_source_derived_text_is_html_escaped(replayed: Path) -> None:
     """A browser is not the inert terminal; an excerpt of an untrusted document must not inject
     markup. The lineage excerpts come from documents, so any angle bracket in them is escaped."""
@@ -137,3 +170,41 @@ def test_the_evaluation_view_embeds_the_scorecard_not_assessment_content() -> No
 def test_the_lineage_index_is_one_click_from_the_navigation() -> None:
     """#431: the differentiator view was reachable only by hand-typed deep link."""
     assert ("Lineage", "lineage") in render.VIEWS
+
+
+def test_the_threats_and_ledger_views_render(replayed: Path) -> None:
+    """Both were absent from the pre-#508 view; the VIEWS iteration covers them, and this names
+    them so a regression that drops one is legible."""
+    for service in _service(replayed):
+        threats = route("/asm-001/threats", service)
+        ledger = route("/asm-001/ledger", service)
+        assert threats.status == 200 and "Threats" in threats.body
+        assert ledger.status == 200 and "Ledger" in ledger.body
+
+
+def test_the_diff_route_compares_two_assessments(replayed: Path) -> None:
+    """DEC-097's diff, reachable read-only (#508): the route resolves, reads both scopes, and
+    renders. Diffing the replay's one assessment against itself exercises the whole path; the
+    context families match self-to-self and read unchanged."""
+    for service in _service(replayed):
+        response = route("/diff/asm-001/asm-001", service)
+        assert response.status == 200
+        assert "asm-001" in response.body
+        assert "components: " in response.body and "unchanged" in response.body
+
+
+def test_the_diff_route_shapes_are_guarded(replayed: Path) -> None:
+    for service in _service(replayed):
+        assert route("/diff/asm-001", service).status == 404
+        assert route("/diff/asm-001/asm-999", service).status == 404
+
+
+def test_no_route_writes_to_the_store_including_the_new_ones() -> None:
+    """The read-only guarantee extends to threats, ledger, and diff: DEC-078."""
+    import ast
+
+    source = (INTERFACE / "server.py").read_text(encoding="utf-8")
+    tree = ast.parse(source)
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Attribute) and node.attr in {"save", "transaction", "allocate"}:
+            raise AssertionError(f"server.py calls a write method: {node.attr}")

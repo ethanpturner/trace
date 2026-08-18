@@ -43,8 +43,37 @@ def test_both_versions_load_and_agree_with_their_manifests() -> None:
     old = load_catalog("0.1")
     new = load_catalog("0.2")
     assert len(old) == 23
-    assert len(new) == 32
+    assert len(new) == 37
     assert new.catalog.version == "0.2"
+
+
+def test_the_third_version_loads_and_carries_everything_forward() -> None:
+    """Catalog 0.3 (#537, #531; DEC-111, DEC-114): 0.2 plus the delegated-authentication and
+    fine-tuning packs, fates complete
+    in both directions, and the new requirements phrased in the documentation register."""
+    third = load_catalog("0.3")
+    assert len(third) == 44
+    assert third.catalog.version == "0.3"
+
+    fate_map = yaml.safe_load(
+        (CATALOG_ROOT / "mappings" / "0.2-to-0.3.yaml").read_text(encoding="utf-8")
+    )
+    mapped = set(fate_map["fates"])
+    assert mapped == set(load_catalog("0.2").by_id())
+    assert all(
+        (entry if isinstance(entry, dict) else {"fate": entry})["fate"] in MINOR_FATES
+        for entry in fate_map["fates"].values()
+    )
+
+    register = re.compile(r"documentation must (describe|state|identify)")
+    new_ids = set(third.by_id()) - set(load_catalog("0.2").by_id())
+    assert {identifier.split("-")[1] for identifier in new_ids} == {"OIDC", "TRAIN"}
+    for requirement in third.requirements:
+        if requirement.id not in new_ids:
+            continue
+        statement = " ".join(str(requirement.statement).split())
+        assert register.search(statement), requirement.id
+        assert "verify that" not in statement.lower(), requirement.id
 
 
 def test_every_old_identifier_has_a_fate_and_every_fate_names_an_old_identifier() -> None:
@@ -90,12 +119,12 @@ def test_a_retired_requirement_would_stay_in_its_file() -> None:
 
 
 def test_the_registry_governs_lifecycle_without_touching_frozen_content() -> None:
-    """DEC-057: 0.1's frozen manifest says draft; the registry says active; the registry wins."""
+    """DEC-057: each frozen manifest says draft; the registry says active; the registry wins."""
     assert VERSIONS_REGISTRY.is_file()
     assert registry_status("0.1") == "active"
-    assert registry_status("0.2") == "draft"
+    assert registry_status("0.2") == "active"
     assert load_catalog("0.1").catalog.status is CatalogStatus.ACTIVE
-    assert load_catalog("0.2").catalog.status is CatalogStatus.DRAFT
+    assert load_catalog("0.2").catalog.status is CatalogStatus.ACTIVE
 
 
 def test_registry_entries_and_version_directories_agree_in_both_directions() -> None:
@@ -118,7 +147,7 @@ def test_new_requirements_resolve_silence_to_unverified_never_unmet() -> None:
     """
     old_ids = set(load_catalog("0.1").by_id())
     new = [r for r in load_catalog("0.2").requirements if r.id not in old_ids]
-    assert {r.id.split("-")[1] for r in new} == {"AGENT", "OPS"}
+    assert {r.id.split("-")[1] for r in new} == {"AGENT", "CODEGEN", "OPS", "RAG"}
 
     register = re.compile(r"documentation must (describe|state|identify)")
     for requirement in new:

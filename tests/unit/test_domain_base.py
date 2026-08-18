@@ -205,3 +205,30 @@ def test_a_naive_datetime_is_not_what_now_returns() -> None:
     """
     with pytest.raises(TypeError):
         _ = now() < datetime.now()  # a deliberately naive call; the mismatch is the point
+
+
+def test_stored_type_defaults_to_the_class_name() -> None:
+    """DEC-090: the store keys rows on `stored_type`, defaulting to the class name for every
+    subclass, so nothing changes for a class that does not rename."""
+    assert Sample.stored_type == "Sample"
+    assert Sample(name="x").stored_type == "Sample"
+
+
+def test_stored_type_is_a_one_line_override() -> None:
+    class Renamed(Sample):
+        stored_type = "Sample"
+
+    assert Renamed.stored_type == "Sample", "a rename keeps reading rows written under the old name"
+
+
+def test_row_key_is_the_identifier_and_id_less_objects_must_override() -> None:
+    class WithId(DomainModel):
+        id: str
+
+    assert WithId(id="fnd-001").row_key() == "fnd-001"
+
+    class NoId(DomainModel):
+        name: str
+
+    with pytest.raises(ValueError, match="does not override row_key"):
+        NoId(name="anonymous").row_key()

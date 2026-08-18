@@ -1,177 +1,180 @@
 {
-  "system": {
-    "system_name": "Kiosk Sync Service",
-    "system_purpose": "receive customer order records from field kiosks and store them for the fulfillment system",
-    "business_criticality": null,
-    "environment": [],
-    "deployment_model": null,
-    "data_classifications": []
-  },
-  "claims": [
-    {
-      "key": "order-contents",
-      "subject_type": "component",
-      "subject_key": "sync",
-      "predicate": "data_sensitivity",
-      "value": "order records carry the customer's name, delivery address, and order contents",
-      "status": "documented",
-      "confidence": "high",
-      "rationale": null,
-      "evidence_ids": [
-        "evd-001"
-      ]
+  "schema": "ContextExtractionProposal",
+  "response": {
+    "system": {
+      "system_name": "Kiosk Sync Service",
+      "system_purpose": "receive customer order records from field kiosks and store them for the fulfillment system",
+      "business_criticality": null,
+      "environment": [],
+      "deployment_model": null,
+      "data_classifications": []
     },
-    {
-      "key": "topology",
-      "subject_type": "component",
-      "subject_key": "sync",
-      "predicate": "deployment_placement",
-      "value": "the service runs on a virtual machine in the operations subnet; kiosks call it over the store network and the fulfillment system polls it hourly",
-      "status": "documented",
-      "confidence": "high",
-      "rationale": null,
-      "evidence_ids": [
-        "evd-001"
-      ]
-    }
-  ],
-  "components": [
-    {
-      "key": "sync",
-      "name": "Kiosk Sync Service",
-      "component_type": "service",
-      "description": "receives customer order records from the field kiosks and stores them for the fulfillment system to read",
-      "technology": [],
-      "ownership": null,
-      "deployment_zone": "operations_subnet",
-      "internet_accessible": null,
-      "externally_managed": null,
-      "data_classifications": [],
-      "authentication_mechanisms": [],
-      "authorization_mechanisms": [],
-      "evidence_ids": [
-        "evd-001"
-      ]
-    },
-    {
-      "key": "kiosks",
-      "name": "Field Kiosks",
-      "component_type": "edge_device",
-      "description": "submit customer order records over the store network",
-      "technology": [],
-      "ownership": null,
-      "deployment_zone": "store_network",
-      "internet_accessible": null,
-      "externally_managed": null,
-      "data_classifications": [],
-      "authentication_mechanisms": [],
-      "authorization_mechanisms": [],
-      "evidence_ids": [
-        "evd-001"
-      ]
-    },
-    {
-      "key": "fulfillment",
-      "name": "Fulfillment System",
-      "component_type": "service",
-      "description": "polls the sync service hourly for stored order records",
-      "technology": [],
-      "ownership": null,
-      "deployment_zone": null,
-      "internet_accessible": null,
-      "externally_managed": null,
-      "data_classifications": [],
-      "authentication_mechanisms": [],
-      "authorization_mechanisms": [],
-      "evidence_ids": [
-        "evd-001"
-      ]
-    }
-  ],
-  "actors": [
-    {
-      "key": "kiosk-operator",
-      "name": "Store kiosk",
-      "actor_type": "internal_service",
-      "trust_level": null,
-      "capabilities": [],
-      "authentication_method": null,
-      "evidence_ids": [
-        "evd-001"
-      ]
-    }
-  ],
-  "assets": [
-    {
-      "key": "orders",
-      "name": "Customer order records",
-      "asset_type": "customer_data",
-      "description": "customer name, delivery address, and order contents",
-      "confidentiality_impact": null,
-      "integrity_impact": null,
-      "availability_impact": null,
-      "data_classification": null,
-      "owner": null,
-      "component_keys": [
-        "sync"
-      ],
-      "evidence_ids": [
-        "evd-001"
-      ]
-    }
-  ],
-  "data_flows": [
-    {
-      "key": "kiosk-submit",
-      "name": "Kiosk order submission",
-      "source_component_key": "kiosks",
-      "destination_component_key": "sync",
-      "direction": "one_way",
-      "protocol": null,
-      "data_types": [],
-      "authentication": "unknown",
-      "encryption_in_transit": "unknown",
-      "crosses_trust_boundary_keys": [],
-      "internet_exposed": null,
-      "evidence_ids": [
-        "evd-001"
-      ]
-    },
-    {
-      "key": "fulfillment-poll",
-      "name": "Fulfillment polling",
-      "source_component_key": "fulfillment",
-      "destination_component_key": "sync",
-      "direction": "bidirectional",
-      "protocol": null,
-      "data_types": [],
-      "authentication": "unknown",
-      "encryption_in_transit": "unknown",
-      "crosses_trust_boundary_keys": [],
-      "internet_exposed": null,
-      "evidence_ids": [
-        "evd-001"
-      ]
-    }
-  ],
-  "trust_boundaries": [
-    {
-      "key": "store-ops",
-      "name": "Store network to operations subnet boundary",
-      "boundary_type": "network_perimeter",
-      "description": null,
-      "inside_component_keys": [
-        "sync"
-      ],
-      "outside_component_keys": [
-        "kiosks"
-      ],
-      "controls": [],
-      "evidence_ids": [
-        "evd-001"
-      ]
-    }
-  ],
-  "questions": [],
-  "observations": []
+    "claims": [
+      {
+        "key": "order-contents",
+        "subject_type": "component",
+        "subject_key": "sync",
+        "predicate": "data_sensitivity",
+        "value": "order records carry the customer's name, delivery address, and order contents",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-001"
+        ]
+      },
+      {
+        "key": "topology",
+        "subject_type": "component",
+        "subject_key": "sync",
+        "predicate": "deployment_placement",
+        "value": "the service runs on a virtual machine in the operations subnet; kiosks call it over the store network and the fulfillment system polls it hourly",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-001"
+        ]
+      }
+    ],
+    "components": [
+      {
+        "key": "sync",
+        "name": "Kiosk Sync Service",
+        "component_type": "service",
+        "description": "receives customer order records from the field kiosks and stores them for the fulfillment system to read",
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": "operations_subnet",
+        "internet_accessible": null,
+        "externally_managed": null,
+        "data_classifications": [],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-001"
+        ]
+      },
+      {
+        "key": "kiosks",
+        "name": "Field Kiosks",
+        "component_type": "edge_device",
+        "description": "submit customer order records over the store network",
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": "store_network",
+        "internet_accessible": null,
+        "externally_managed": null,
+        "data_classifications": [],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-001"
+        ]
+      },
+      {
+        "key": "fulfillment",
+        "name": "Fulfillment System",
+        "component_type": "service",
+        "description": "polls the sync service hourly for stored order records",
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": null,
+        "internet_accessible": null,
+        "externally_managed": null,
+        "data_classifications": [],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-001"
+        ]
+      }
+    ],
+    "actors": [
+      {
+        "key": "kiosk-operator",
+        "name": "Store kiosk",
+        "actor_type": "internal_service",
+        "trust_level": null,
+        "capabilities": [],
+        "authentication_method": null,
+        "evidence_ids": [
+          "evd-001"
+        ]
+      }
+    ],
+    "assets": [
+      {
+        "key": "orders",
+        "name": "Customer order records",
+        "asset_type": "customer_data",
+        "description": "customer name, delivery address, and order contents",
+        "confidentiality_impact": null,
+        "integrity_impact": null,
+        "availability_impact": null,
+        "data_classification": null,
+        "owner": null,
+        "component_keys": [
+          "sync"
+        ],
+        "evidence_ids": [
+          "evd-001"
+        ]
+      }
+    ],
+    "data_flows": [
+      {
+        "key": "kiosk-submit",
+        "name": "Kiosk order submission",
+        "source_component_key": "kiosks",
+        "destination_component_key": "sync",
+        "direction": "one_way",
+        "protocol": null,
+        "data_types": [],
+        "authentication": "unknown",
+        "encryption_in_transit": "unknown",
+        "crosses_trust_boundary_keys": [],
+        "internet_exposed": null,
+        "evidence_ids": [
+          "evd-001"
+        ]
+      },
+      {
+        "key": "fulfillment-poll",
+        "name": "Fulfillment polling",
+        "source_component_key": "fulfillment",
+        "destination_component_key": "sync",
+        "direction": "bidirectional",
+        "protocol": null,
+        "data_types": [],
+        "authentication": "unknown",
+        "encryption_in_transit": "unknown",
+        "crosses_trust_boundary_keys": [],
+        "internet_exposed": null,
+        "evidence_ids": [
+          "evd-001"
+        ]
+      }
+    ],
+    "trust_boundaries": [
+      {
+        "key": "store-ops",
+        "name": "Store network to operations subnet boundary",
+        "boundary_type": "network_perimeter",
+        "description": null,
+        "inside_component_keys": [
+          "sync"
+        ],
+        "outside_component_keys": [
+          "kiosks"
+        ],
+        "controls": [],
+        "evidence_ids": [
+          "evd-001"
+        ]
+      }
+    ],
+    "questions": [],
+    "observations": []
+  }
 }

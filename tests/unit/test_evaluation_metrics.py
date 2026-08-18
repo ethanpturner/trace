@@ -307,6 +307,93 @@ def test_documentation_gap_precision_matches_through_the_requirement(
 
 
 # ------------------------------------------------------------------------------------------
+# The duplicate-miss instrument (#536, DEC-110)
+# ------------------------------------------------------------------------------------------
+
+
+def _duplicates_dir(tmp_path: Any, *, from_dir: Any = EXPECTED) -> Any:
+    """A truth directory that adds one authored duplicate pair to the ForgeFlow set."""
+    import shutil
+
+    target = tmp_path / "expected"
+    shutil.copytree(from_dir, target)
+    (target / "expected-duplicates.yaml").write_text(
+        "duplicate_pairs:\n"
+        "  - note: one weakness, two lenses\n"
+        "    first:\n"
+        "      requirement_id: req-AI-002\n"
+        "      affected_component: Comment Service\n"
+        "    second:\n"
+        "      requirement_id: req-AI-001\n"
+        "      affected_component: Comment Service\n",
+        encoding="utf-8",
+    )
+    return target
+
+
+def test_a_split_weakness_scores_as_a_duplicate_miss(
+    prepared: dict[str, Any], tmp_path: Any
+) -> None:
+    """Two unmerged findings on the pair's two lenses: the deterministic rule missed a merge."""
+    handle = prepared["handle"]
+    an_evidence(handle)
+    a_component(handle, "cmp-001", "Comment Service")
+    a_finding(handle, id="fnd-001", requirement_ids=["req-AI-002"])
+    a_finding(handle, id="fnd-002", requirement_ids=["req-AI-001"])
+
+    named = metrics_by_name(
+        compute_metrics(handle, prepared["run"], expected_dir=_duplicates_dir(tmp_path))
+    )
+    assert named["duplicate_miss_rate"].metric_value == 1.0
+    assert named["duplicate_miss_rate"].sample_size == 1
+    assert "req-AI-002+req-AI-001" in (named["duplicate_miss_rate"].notes or "")
+
+
+def test_a_merged_or_consolidated_pair_is_detected_not_missed(
+    prepared: dict[str, Any], tmp_path: Any
+) -> None:
+    handle = prepared["handle"]
+    an_evidence(handle)
+    a_component(handle, "cmp-001", "Comment Service")
+    # Merged: the second finding resolves to the first through duplicate_of_id.
+    a_finding(handle, id="fnd-001", requirement_ids=["req-AI-002"])
+    a_finding(handle, id="fnd-002", requirement_ids=["req-AI-001"], duplicate_of_id="fnd-001")
+
+    named = metrics_by_name(
+        compute_metrics(handle, prepared["run"], expected_dir=_duplicates_dir(tmp_path))
+    )
+    assert named["duplicate_miss_rate"].metric_value == 0.0
+
+
+def test_a_consolidated_finding_carrying_both_lenses_is_detected(
+    prepared: dict[str, Any], tmp_path: Any
+) -> None:
+    handle = prepared["handle"]
+    an_evidence(handle)
+    a_component(handle, "cmp-001", "Comment Service")
+    a_finding(handle, id="fnd-001", requirement_ids=["req-AI-001", "req-AI-002"])
+
+    named = metrics_by_name(
+        compute_metrics(handle, prepared["run"], expected_dir=_duplicates_dir(tmp_path))
+    )
+    assert named["duplicate_miss_rate"].metric_value == 0.0
+
+
+def test_an_unevaluable_pair_yields_no_metric(prepared: dict[str, Any], tmp_path: Any) -> None:
+    """One side never matched: the run did not split the weakness, and nothing is measured —
+    unmeasured, never zero."""
+    handle = prepared["handle"]
+    an_evidence(handle)
+    a_component(handle, "cmp-001", "Comment Service")
+    a_finding(handle, id="fnd-001", requirement_ids=["req-AI-002"])
+
+    named = metrics_by_name(
+        compute_metrics(handle, prepared["run"], expected_dir=_duplicates_dir(tmp_path))
+    )
+    assert "duplicate_miss_rate" not in named
+
+
+# ------------------------------------------------------------------------------------------
 # Zero findings is a successful outcome
 # ------------------------------------------------------------------------------------------
 
@@ -359,3 +446,76 @@ def test_no_metric_computation_calls_a_model() -> None:
     assert "StructuredModel" not in source
     assert "anthropic" not in source
     assert "generate(" not in source
+
+
+# ------------------------------------------------------------------------------------------
+# Severity concordance (#507, DEC-030's open question)
+# ------------------------------------------------------------------------------------------
+
+
+def test_severity_concordance_is_one_when_the_reviewer_matches_the_guidance(
+    prepared: dict[str, Any],
+) -> None:
+    """FND-003's guidance is `medium`; a finding approved at medium agrees exactly."""
+    handle = prepared["handle"]
+    an_evidence(handle)
+    a_component(handle, "cmp-001", "Managed Object Storage")
+    approve_finding(
+        handle,
+        a_finding(
+            handle,
+            requirement_ids=["req-DATA-002"],
+            affected_component_ids=["cmp-001"],
+            severity=Severity.MEDIUM,
+        ),
+        reviewer_id=REVIEWER,
+    )
+
+    named = metrics_by_name(compute_metrics(handle, prepared["run"], expected_dir=EXPECTED))
+    concordance = named["severity_concordance"]
+    assert concordance.metric_value == pytest.approx(1.0)
+    assert concordance.evaluator_type is EvaluatorType.BENCHMARK
+    assert "DEC-030" in concordance.evaluation_method
+    assert concordance.sample_size == 1
+
+
+def test_severity_concordance_falls_when_the_reviewer_differs_from_the_guidance(
+    prepared: dict[str, Any],
+) -> None:
+    """Approved at informational against `medium` guidance: not exact, and not within one level."""
+    handle = prepared["handle"]
+    an_evidence(handle)
+    a_component(handle, "cmp-001", "Managed Object Storage")
+    approve_finding(
+        handle,
+        a_finding(
+            handle,
+            requirement_ids=["req-DATA-002"],
+            affected_component_ids=["cmp-001"],
+            severity=Severity.INFORMATIONAL,
+        ),
+        reviewer_id=REVIEWER,
+    )
+
+    named = metrics_by_name(compute_metrics(handle, prepared["run"], expected_dir=EXPECTED))
+    concordance = named["severity_concordance"]
+    assert concordance.metric_value == pytest.approx(0.0)
+    assert concordance.notes is not None and "within one level: 0/1" in concordance.notes
+
+
+def test_severity_concordance_is_absent_when_no_matched_finding_has_guidance(
+    prepared: dict[str, Any],
+) -> None:
+    """A matched finding whose expectation carries a non-scalar guidance measures nothing here
+    rather than scoring a spurious zero; FND-001's guidance is `medium-or-high`."""
+    handle = prepared["handle"]
+    an_evidence(handle)
+    a_component(handle, "cmp-001", "GitHub Comment Service")
+    approve_finding(
+        handle,
+        a_finding(handle, requirement_ids=["req-AI-001"], severity=Severity.HIGH),
+        reviewer_id=REVIEWER,
+    )
+
+    named = metrics_by_name(compute_metrics(handle, prepared["run"], expected_dir=EXPECTED))
+    assert "severity_concordance" not in named

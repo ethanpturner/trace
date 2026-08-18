@@ -24,13 +24,15 @@ memory across a human review, and a paused run waits indefinitely.
 
 from __future__ import annotations
 
+import contextlib
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from trace_ai.domain.base import now
 from trace_ai.domain.execution import ExecutionType, RunStatus
+from trace_ai.services.execution_ledger import safe_message
 from trace_ai.workflow.checkpoint import save_state
-from trace_ai.workflow.errors import WorkflowError
+from trace_ai.workflow.errors import ErrorClass, WorkflowError
 from trace_ai.workflow.limits import Budget, LimitExceededError
 from trace_ai.workflow.nodes import NodeContext
 from trace_ai.workflow.phases import NODES_BY_PHASE, PAUSE_PHASES, Phase, successor
@@ -128,59 +130,71 @@ class Orchestrator:
         started_at = now()
         current = state
 
-        while True:
-            phase = current.current_phase
+        # One try around the whole loop, not just `_execute`. A `WorkflowError` or a ceiling is a
+        # classified stop; anything else -- a `StoreError`, a `ValidationError` from a typo'd state
+        # key in `absorb`, a `TransitionError` from `advance`, an `OSError` from a node -- used to
+        # escape and leave the run row `running` forever, with no classified error and no way for
+        # `_paused_run` to find it. It is now `unexpected_application_failure` (section 11's class
+        # for a fault in this application), recorded and persisted like any other stop.
+        try:
+            while True:
+                phase = current.current_phase
 
-            if phase is Phase.ASSESSMENT_COMPLETION:
-                completed = self._complete(current)
-                return RunOutcome(state=completed, stopped_because="completed")
+                if phase is Phase.ASSESSMENT_COMPLETION:
+                    completed = self._complete(current)
+                    return RunOutcome(state=completed, stopped_because="completed")
 
-            slots = self._nodes.get(phase, {})
-            if not slots:
-                return self._stop(current, f"no node is registered for phase {phase.value}")
+                slots = self._nodes.get(phase, {})
+                if not slots:
+                    return self._stop(current, f"no node is registered for phase {phase.value}")
 
-            for name in NODES_BY_PHASE[phase]:
-                node = slots.get(name)
-                if node is None:
-                    return self._stop(
-                        current,
-                        f"phase {phase.value} declares node {name!r} and none is registered; "
-                        f"a run that continued would have skipped it",
-                    )
+                for name in NODES_BY_PHASE[phase]:
+                    node = slots.get(name)
+                    if node is None:
+                        return self._stop(
+                            current,
+                            f"phase {phase.value} declares node {name!r} and none is registered; "
+                            f"a run that continued would have skipped it",
+                        )
 
-                try:
                     self.budget.check_duration(started_at=started_at, at=now())
                     self.budget.check_node_execution()
-                except LimitExceededError as error:
-                    return self._stop(current, str(error), kind=error.kind.value)
 
-                try:
                     result = self._execute(node, current)
-                except LimitExceededError as error:
-                    return self._stop(current, str(error), kind=error.kind.value)
-                except WorkflowError as error:
-                    return self._stop(current, str(error), kind=error.error_class.value)
 
-                current = current.absorb(**result.state_changes).with_limits(
-                    self.budget.remaining()
-                )
+                    current = current.absorb(**result.state_changes).with_limits(
+                        self.budget.remaining()
+                    )
 
-                if phase in PAUSE_PHASES and result.awaiting_review:
-                    paused = current.paused_for(phase, result.awaiting_review)
-                    self._persist_pause(paused)
-                    return RunOutcome(state=paused, stopped_because="paused")
+                    if phase in PAUSE_PHASES and result.awaiting_review:
+                        paused = current.paused_for(phase, result.awaiting_review)
+                        self._persist_pause(paused)
+                        return RunOutcome(state=paused, stopped_because="paused")
 
-            if phase in PAUSE_PHASES and current.pending_human_review is not None:
-                current = current.resumed()
+                if phase in PAUSE_PHASES and current.pending_human_review is not None:
+                    current = current.resumed()
 
-            destination = successor(phase)
-            if destination is None:  # pragma: no cover - completion is handled above
-                return self._stop(current, f"{phase.value} is terminal and did not complete")
-            if destination is stop_before:
-                return RunOutcome(
-                    state=current, stopped_because=f"stopped_before_{destination.value}"
-                )
-            current = current.advance(destination)
+                destination = successor(phase)
+                if destination is None:  # pragma: no cover - completion is handled above
+                    return self._stop(current, f"{phase.value} is terminal and did not complete")
+                if destination is stop_before:
+                    return RunOutcome(
+                        state=current, stopped_because=f"stopped_before_{destination.value}"
+                    )
+                current = current.advance(destination)
+                # Persist after every advance so a crash or a stop leaves an accurate, resumable
+                # record of where the run reached -- not a state file frozen at the last pause.
+                save_state(self.handle, current)
+        except LimitExceededError as error:
+            return self._stop(current, str(error), kind=error.kind.value)
+        except WorkflowError as error:
+            return self._stop(current, str(error), kind=error.error_class.value)
+        except Exception as error:
+            return self._stop(
+                current,
+                safe_message(error),
+                kind=ErrorClass.UNEXPECTED_APPLICATION_FAILURE.value,
+            )
 
     # -- one node --------------------------------------------------------------------------
 
@@ -231,18 +245,39 @@ class Orchestrator:
 
     def _stop(self, state: AssessmentState, message: str, *, kind: str | None = None) -> RunOutcome:
         failed = state.failed(message)
+        # Persist the failed state before closing the run, so `traces/` records where it stopped and
+        # why -- `resume_assessment` reads this to restart from the failed phase rather than
+        # re-running the whole pipeline. Best-effort: a stop that cannot even write its own state
+        # must still mark the run failed rather than raise a second, masking exception.
+        self._save_state_quietly(failed)
         self.ledger.complete(error_summary=message)
         return RunOutcome(state=failed, stopped_because=kind or "error")
 
     def _complete(self, state: AssessmentState) -> AssessmentState:
-        self.ledger.complete()
-        return AssessmentState.model_validate(
+        completed = AssessmentState.model_validate(
             state.model_dump()
             | {
                 "status": RunStatus.COMPLETED,
                 "next_action": {"action": "stop", "phase": Phase.ASSESSMENT_COMPLETION},
             }
         )
+        # The state file used to be frozen at the last pause forever; now a completed run's record
+        # says completed.
+        self._save_state_quietly(completed)
+        self.ledger.complete()
+        return completed
+
+    def _save_state_quietly(self, state: AssessmentState) -> None:
+        """Persist state without letting a write failure mask the outcome being recorded.
+
+        Called only from the stop/complete paths, where the run's fate is already decided: a failed
+        `save_state` there must not turn a recorded failure into an unrecorded one, so it is
+        swallowed. The ordinary per-phase `save_state` in `run` is not guarded -- a write failure
+        mid-run is itself a stop.
+        """
+        # pragma: no cover - disk-full on the failure path is not reproducible here
+        with contextlib.suppress(OSError):
+            save_state(self.handle, state)
 
     def _persist_pause(self, state: AssessmentState) -> None:
         """Record the pause on the run and write the state file a resumed invocation reads.
@@ -255,9 +290,14 @@ class Orchestrator:
         which requires the assessment's move to `pending_review` to commit with the pause that
         causes it — the driver supplies the callback because the deliverable's lifecycle belongs to
         `AssessmentService`, not to this loop.
+
+        The state file is written *after* the transaction commits, not before. If `on_pause` were to
+        raise, the transaction rolls back the run-row pause; writing the state file first would then
+        leave a `paused` state file for a run whose row never became paused -- the two stores
+        disagreeing about whether a pause happened.
         """
-        save_state(self.handle, state)
         with self.handle.objects.transaction():
             self.ledger.pause(current_node=state.current_phase.value)
             if self._on_pause is not None:
                 self._on_pause(state)
+        save_state(self.handle, state)

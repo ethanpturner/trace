@@ -1,63 +1,66 @@
 {
-  "assessments": [
-    {
-      "subject_type": "control_mapping",
-      "subject_id": "map-001",
-      "evidence_ids": [
-        "evd-001"
-      ],
-      "evidence_strengths": {
-        "evd-001": "indirect"
+  "schema": "EvidenceValidationProposal",
+  "response": {
+    "assessments": [
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-001",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": {
+          "evd-001": "indirect"
+        },
+        "validation_status": "unsupported",
+        "rationale": "The note establishes what the records contain and how they move; it says nothing about protection of the traffic or the store, in either direction.",
+        "missing_evidence": [
+          "whether kiosk-to-service traffic is encrypted",
+          "whether stored order records are encrypted at rest"
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "documentation_gap",
+        "quoted_text": {}
       },
-      "validation_status": "unsupported",
-      "rationale": "The note establishes what the records contain and how they move; it says nothing about protection of the traffic or the store, in either direction.",
-      "missing_evidence": [
-        "whether kiosk-to-service traffic is encrypted",
-        "whether stored order records are encrypted at rest"
-      ],
-      "contradictions": [],
-      "confidence": "low",
-      "recommendation": "documentation_gap",
-      "quoted_text": {}
-    },
-    {
-      "subject_type": "control_mapping",
-      "subject_id": "map-002",
-      "evidence_ids": [
-        "evd-001"
-      ],
-      "evidence_strengths": {
-        "evd-001": "indirect"
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-002",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": {
+          "evd-001": "indirect"
+        },
+        "validation_status": "unsupported",
+        "rationale": "The note establishes who calls the service and says nothing about how callers are identified or what they are allowed to do.",
+        "missing_evidence": [
+          "how the service identifies the kiosks and the fulfillment system",
+          "whether anything besides network placement limits who can submit or read records"
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "documentation_gap",
+        "quoted_text": {}
       },
-      "validation_status": "unsupported",
-      "rationale": "The note establishes who calls the service and says nothing about how callers are identified or what they are allowed to do.",
-      "missing_evidence": [
-        "how the service identifies the kiosks and the fulfillment system",
-        "whether anything besides network placement limits who can submit or read records"
-      ],
-      "contradictions": [],
-      "confidence": "low",
-      "recommendation": "documentation_gap",
-      "quoted_text": {}
-    },
-    {
-      "subject_type": "control_mapping",
-      "subject_id": "map-003",
-      "evidence_ids": [
-        "evd-001"
-      ],
-      "evidence_strengths": {
-        "evd-001": "indirect"
-      },
-      "validation_status": "unsupported",
-      "rationale": "The note establishes that records are stored for fulfillment to read and says nothing about how long they are kept.",
-      "missing_evidence": [
-        "how long order records are retained after fulfillment reads them"
-      ],
-      "contradictions": [],
-      "confidence": "low",
-      "recommendation": "documentation_gap",
-      "quoted_text": {}
-    }
-  ]
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-003",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": {
+          "evd-001": "indirect"
+        },
+        "validation_status": "unsupported",
+        "rationale": "The note establishes that records are stored for fulfillment to read and says nothing about how long they are kept.",
+        "missing_evidence": [
+          "how long order records are retained after fulfillment reads them"
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "documentation_gap",
+        "quoted_text": {}
+      }
+    ]
+  }
 }

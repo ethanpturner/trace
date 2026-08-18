@@ -1199,8 +1199,8 @@ def test_the_review_file_reaches_additions_attachments_and_resolutions(reviewed:
     entry["resolution"] = "Source files are deleted after analysis completes."
     entry["rationale"] = "The operations guide is the authoritative retention statement."
 
-    decisions = apply_review_file(handle, document, reviewer_id=REVIEWER)
-    assert decisions, "the edited file produced no decisions"
+    applied = apply_review_file(handle, document, reviewer_id=REVIEWER)
+    assert applied.decisions, "the edited file produced no decisions"
 
     added = next(
         item for item in handle.objects.list(Component) if item.name == "Managed Redis Queue"
@@ -1237,10 +1237,13 @@ def test_the_edited_file_applied_twice_applies_once(reviewed: Any) -> None:
     entry["rationale"] = "The operations guide is authoritative."
 
     first_pass = apply_review_file(handle, document, reviewer_id=REVIEWER)
-    assert first_pass
+    assert first_pass.decisions
 
     second_pass = apply_review_file(handle, document, reviewer_id=REVIEWER)
-    assert second_pass == []
+    assert second_pass.decisions == []
+    # The re-applied addition is a namesake of the one added on the first pass: skipped, and now
+    # reported rather than swallowed.
+    assert second_pass.skipped_additions == ["Managed Redis Queue"]
     namesakes = [
         item for item in handle.objects.list(Component) if item.name == "Managed Redis Queue"
     ]
@@ -1276,3 +1279,70 @@ def test_re_extraction_feedback_carries_the_validators_instructions(reviewed: An
     assert feedback is not None
     assert "missed the queue" in feedback
     assert "evd-999" in feedback, "the validator's correctable error did not reach the feedback"
+
+
+def test_a_misspelled_group_is_refused_rather_than_silently_dropped(reviewed: Any) -> None:
+    """A reviewer who writes `question:` for `questions:` used to lose every answer under it with no
+    error, at a structural checkpoint. The file is validated with `extra="forbid"`, so an unknown
+    top-level key is named."""
+    import yaml
+
+    from trace_ai.services.context.review_file import (
+        ReviewFileError,
+        export_review_file,
+        read_review_file,
+    )
+
+    handle, _ = reviewed
+    document = export_review_file(package_for(handle))
+    document["question"] = document.pop("questions")  # the typo
+
+    with pytest.raises(ReviewFileError, match="question"):
+        read_review_file(yaml.safe_dump(document))
+
+
+def test_a_misspelled_field_inside_an_entry_is_refused(reviewed: Any) -> None:
+    """The same guarantee one level down: a typo'd key inside an entry is not silently ignored."""
+    import yaml
+
+    from trace_ai.services.context.review_file import (
+        ReviewFileError,
+        export_review_file,
+        read_review_file,
+    )
+
+    handle, _ = reviewed
+    document = export_review_file(package_for(handle))
+    document["components"][0]["decison"] = "approve"  # the typo
+
+    with pytest.raises(ReviewFileError, match="decison"):
+        read_review_file(yaml.safe_dump(document))
+
+
+def test_a_failed_apply_rolls_back_everything(reviewed: Any) -> None:
+    """The apply is one transaction: a refusal partway through leaves nothing behind, so a file
+    never lands half-applied."""
+    from trace_ai.services.context.review_file import (
+        ReviewFileError,
+        apply_review_file,
+        export_review_file,
+    )
+
+    handle, _ = reviewed
+    document = export_review_file(package_for(handle))
+    # A valid addition, followed by a question entry naming a nonexistent question — which raises.
+    document["additions"] = [
+        {
+            "type": "components",
+            "fields": {"name": "Rolled Back Component", "component_type": "service"},
+        }
+    ]
+    document["questions"] = [{"id": "que-404", "answer": "this question does not exist"}]
+
+    before = {obj.id for obj in handle.objects.list(Component)}
+    with pytest.raises(ReviewFileError, match="que-404"):
+        apply_review_file(handle, document, reviewer_id=REVIEWER)
+
+    after = {obj.id for obj in handle.objects.list(Component)}
+    assert after == before, "the valid addition was committed despite the later failure"
+    assert not any(obj.name == "Rolled Back Component" for obj in handle.objects.list(Component))

@@ -1,42 +1,45 @@
 {
-  "controls": [],
-  "mappings": [
-    {
-      "threat_id": "thr-001",
-      "requirement_id": "req-WEBHOOK-001",
-      "control_keys": [],
-      "existing_control_ids": [],
-      "applicability_status": "applicable",
-      "applicability_reason": "The receiver processes inbound provider callbacks, so origin verification applies. Drawn from the integration guide, which states callbacks are not signed and the provider's signing feature is not enabled.",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "unmet",
-      "evidence_ids": [
-        "evd-002"
-      ],
-      "assumptions": [
-        "No common false positive applies: the integration guide affirmatively states no signature is checked while the provider offers a signing feature — a documented absence, not an unstated mechanism."
-      ],
-      "confidence": "high"
-    },
-    {
-      "threat_id": "thr-001",
-      "requirement_id": "req-WEBHOOK-001",
-      "control_keys": [],
-      "existing_control_ids": [],
-      "applicability_status": "applicable",
-      "applicability_reason": "The receiver processes inbound provider callbacks, so origin verification applies. Drawn from the operations notes, whose incident review confirmed the endpoint accepts unsigned requests from anywhere.",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "unmet",
-      "evidence_ids": [
-        "evd-005"
-      ],
-      "assumptions": [
-        "No common false positive applies: the incident review affirmatively confirmed unsigned intake, and enabling provider signing is recorded as unscheduled backlog work — a documented absence, not an unstated mechanism."
-      ],
-      "confidence": "high"
-    }
-  ],
-  "documentation_gaps": []
+  "schema": "MappingProposal",
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-WEBHOOK-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The receiver processes inbound provider callbacks, so origin verification applies. Drawn from the integration guide, which states callbacks are not signed and the provider's signing feature is not enabled.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unmet",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [
+          "No common false positive applies: the integration guide affirmatively states no signature is checked while the provider offers a signing feature \u2014 a documented absence, not an unstated mechanism."
+        ],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-WEBHOOK-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The receiver processes inbound provider callbacks, so origin verification applies. Drawn from the operations notes, whose incident review confirmed the endpoint accepts unsigned requests from anywhere.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unmet",
+        "evidence_ids": [
+          "evd-005"
+        ],
+        "assumptions": [
+          "No common false positive applies: the incident review affirmatively confirmed unsigned intake, and enabling provider signing is recorded as unscheduled backlog work \u2014 a documented absence, not an unstated mechanism."
+        ],
+        "confidence": "high"
+      }
+    ],
+    "documentation_gaps": []
+  }
 }

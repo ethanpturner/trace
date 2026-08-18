@@ -9,7 +9,7 @@ detect.*
 |---|---|
 | `SourceDocument` | the original file's raw bytes, before any normalization |
 | `EvidenceReference` | the UTF-8 bytes of `quoted_text` |
-| `PromptDefinition` | the UTF-8 bytes of the composed prompt, after shared blocks merge in |
+| `PromptDefinition` | two hashes: `content_hash` over the composed, substituted prompt text; `template_hash` over the pre-substitution composition, shared blocks merged (DEC-094) |
 | `RequirementsCatalog` | a canonical re-serialization of the parsed catalog |
 
 The first two have helpers here. The last two do not: they are computed at prompt load and

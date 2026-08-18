@@ -1,0 +1,52 @@
+{
+  "schema": "ThreatAnalysisProposal",
+  "response": {
+    "threats": [
+      {
+        "title": "Cross-workspace disclosure through shared-index retrieval",
+        "description": "The architecture overview states that all workspaces are served from one shared retrieval index and that relevance alone selects the passages that reach the prompt. A workspace user's question that is semantically close to another workspace's resolved tickets retrieves those tickets' text, and the operations notes state ticket text sometimes includes configuration snippets customers pasted, with only email addresses masked. The retrieved passages reach the prompt and can surface in the cited answer.",
+        "methodology": "stride-scenario-based",
+        "category": ["information_disclosure"],
+        "threat_actor_ids": ["act-001"],
+        "affected_component_ids": ["cmp-003", "cmp-004"],
+        "affected_asset_ids": ["ast-001"],
+        "related_data_flow_ids": ["df-002"],
+        "preconditions": [
+          "the asking user belongs to a different workspace than the ticket's",
+          "a question embeds close to another workspace's ticket text"
+        ],
+        "attack_path": [
+          "ask the assistant a question shaped toward another tenant's subject matter",
+          "the shared index returns that tenant's ticket passages by similarity",
+          "the answer cites or paraphrases the other tenant's ticket content"
+        ],
+        "impact": "One workspace's support-ticket content, including pasted configuration, is disclosed to users of another workspace.",
+        "likelihood": null,
+        "confidence": "high",
+        "evidence_ids": ["evd-002", "evd-013"]
+      },
+      {
+        "title": "Indexed ticket text steers answers for other workspaces",
+        "description": "Resolved tickets are authored by support customers and indexed nightly. Text a customer writes into a ticket becomes retrievable content that later enters other users' prompts through the shared index. The prompt places retrieved passages in a delimited context block described as reference material, and the panel renders answers as plain text, but a crafted ticket remains a write path into future prompts.",
+        "methodology": "stride-scenario-based",
+        "category": ["tampering"],
+        "threat_actor_ids": ["act-002"],
+        "affected_component_ids": ["cmp-004", "cmp-005"],
+        "affected_asset_ids": ["ast-001"],
+        "related_data_flow_ids": ["df-004", "df-002"],
+        "preconditions": [
+          "the attacker can author ticket text that reaches the resolved-tickets export"
+        ],
+        "attack_path": [
+          "file a support ticket carrying instruction-shaped text",
+          "the nightly ingestion embeds it into the shared index",
+          "similar questions retrieve it into other users' prompts"
+        ],
+        "impact": "Attacker-authored text is placed in other workspaces' prompts wearing the system's citation authority.",
+        "likelihood": null,
+        "confidence": "medium",
+        "evidence_ids": ["evd-002", "evd-003", "evd-012"]
+      }
+    ]
+  }
+}

@@ -1,87 +1,90 @@
 {
-  "assessments": [
-    {
-      "subject_type": "control_mapping",
-      "subject_id": "map-001",
-      "evidence_ids": [
-        "evd-010",
-        "evd-011"
-      ],
-      "evidence_strengths": {
-        "evd-010": "direct",
-        "evd-011": "direct"
+  "schema": "EvidenceValidationProposal",
+  "response": {
+    "assessments": [
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-001",
+        "evidence_ids": [
+          "evd-010",
+          "evd-011"
+        ],
+        "evidence_strengths": {
+          "evd-010": "direct",
+          "evd-011": "direct"
+        },
+        "validation_status": "supported",
+        "rationale": "The components section states the gather application uses API keys held in the API key store, and the data-store table places that store among the blob storage accounts; where the keys live is affirmatively documented.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": {}
       },
-      "validation_status": "supported",
-      "rationale": "The components section states the gather application uses API keys held in the API key store, and the data-store table places that store among the blob storage accounts; where the keys live is affirmatively documented.",
-      "missing_evidence": [],
-      "contradictions": [],
-      "confidence": "medium",
-      "recommendation": "continue",
-      "quoted_text": {}
-    },
-    {
-      "subject_type": "control_mapping",
-      "subject_id": "map-002",
-      "evidence_ids": [
-        "evd-009",
-        "evd-012"
-      ],
-      "evidence_strengths": {
-        "evd-009": "indirect",
-        "evd-012": "indirect"
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-002",
+        "evidence_ids": [
+          "evd-009",
+          "evd-012"
+        ],
+        "evidence_strengths": {
+          "evd-009": "indirect",
+          "evd-012": "indirect"
+        },
+        "validation_status": "unsupported",
+        "rationale": "The cited passages establish that third-party tools feed the experimental environment and that the deployment service ships its output to production; no passage addresses how what enters that path is identified or controlled.",
+        "missing_evidence": [
+          "how third-party tools and libraries pulled into the experimental environment are identified before use",
+          "whether anything validates what the image-gathering and training path consumes"
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "documentation_gap",
+        "quoted_text": {}
       },
-      "validation_status": "unsupported",
-      "rationale": "The cited passages establish that third-party tools feed the experimental environment and that the deployment service ships its output to production; no passage addresses how what enters that path is identified or controlled.",
-      "missing_evidence": [
-        "how third-party tools and libraries pulled into the experimental environment are identified before use",
-        "whether anything validates what the image-gathering and training path consumes"
-      ],
-      "contradictions": [],
-      "confidence": "low",
-      "recommendation": "documentation_gap",
-      "quoted_text": {}
-    },
-    {
-      "subject_type": "control_mapping",
-      "subject_id": "map-003",
-      "evidence_ids": [
-        "evd-007",
-        "evd-001",
-        "evd-009"
-      ],
-      "evidence_strengths": {
-        "evd-007": "direct",
-        "evd-001": "direct",
-        "evd-009": "direct"
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-003",
+        "evidence_ids": [
+          "evd-007",
+          "evd-001",
+          "evd-009"
+        ],
+        "evidence_strengths": {
+          "evd-007": "direct",
+          "evd-001": "direct",
+          "evd-009": "direct"
+        },
+        "validation_status": "supported",
+        "rationale": "The authentication summary names password authentication for the public-to-experimental boundary, the notes state they record what is implemented with no planned work listed, and the environments section states the same mechanism \u2014 a documented enumeration, not silence.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": {}
       },
-      "validation_status": "supported",
-      "rationale": "The authentication summary names password authentication for the public-to-experimental boundary, the notes state they record what is implemented with no planned work listed, and the environments section states the same mechanism — a documented enumeration, not silence.",
-      "missing_evidence": [],
-      "contradictions": [],
-      "confidence": "medium",
-      "recommendation": "continue",
-      "quoted_text": {}
-    },
-    {
-      "subject_type": "control_mapping",
-      "subject_id": "map-004",
-      "evidence_ids": [
-        "evd-010",
-        "evd-012"
-      ],
-      "evidence_strengths": {
-        "evd-010": "indirect",
-        "evd-012": "indirect"
-      },
-      "validation_status": "unsupported",
-      "rationale": "The cited passages establish that end users drive classification through the public API and that the gateway enforces request validation; no passage addresses whether the volume of classification work is bounded.",
-      "missing_evidence": [
-        "whether classification requests are rate-limited or otherwise bounded per user"
-      ],
-      "contradictions": [],
-      "confidence": "low",
-      "recommendation": "documentation_gap",
-      "quoted_text": {}
-    }
-  ]
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-004",
+        "evidence_ids": [
+          "evd-010",
+          "evd-012"
+        ],
+        "evidence_strengths": {
+          "evd-010": "indirect",
+          "evd-012": "indirect"
+        },
+        "validation_status": "unsupported",
+        "rationale": "The cited passages establish that end users drive classification through the public API and that the gateway enforces request validation; no passage addresses whether the volume of classification work is bounded.",
+        "missing_evidence": [
+          "whether classification requests are rate-limited or otherwise bounded per user"
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "documentation_gap",
+        "quoted_text": {}
+      }
+    ]
+  }
 }

@@ -221,9 +221,9 @@ These are proposed choices except where marked decided. LangGraph was proposed a
 branching, which is the case a graph framework helps least with.
 
 The model interface is designed to be provider-agnostic: the application talks to a seam, and
-provider-specific code lives in an adapter behind it. Anthropic is the default and the only
-adapter specified. A seam with one implementation is not proven agnostic, and nothing behind it
-is built yet.
+provider-specific code lives in an adapter behind it. Anthropic is the default; an OpenAI
+adapter is the second implementation (DEC-095), both held to one behavioural contract by the
+adapter conformance suite. No live OpenAI pipeline run has been measured.
 
 ## Status
 
@@ -239,9 +239,9 @@ decomposition into milestones M6 through M9, the assembly (M6), evaluation (M7),
 (M8) milestones: the pipeline the earlier stages specified runs end to end from the command line
 and measures itself offline. The demo-hardening (M10), decision-debt (M12), and
 surface-completion (M13) milestones are closed, and the evaluation milestone (M11) is closed but
-for the recorded prompt- and model-comparison protocols. What remains open is Stage 6's public
-portfolio half of M9: the demo video, the architecture image, the interview package, and the
-presentation folder.
+for the recorded prompt- and model-comparison protocols. Of Stage 6's public portfolio half of
+M9, the architecture image, the interview package, and the presentation folder have landed; what
+remains open is the narrated demo video.
 
 ### What exists today
 
@@ -356,9 +356,10 @@ presentation folder.
   the application's own export, so the prompt cannot describe a shape the application would reject.
 - **The model seam** — one protocol between the application and any provider (DEC-014), a
   deterministic substitute and a replay cache behind the same interface, and `model_profile`
-  resolving to a provider, a model, generation settings, and published rates. The Anthropic
-  adapter makes exactly one attempt and returns a structured failure carrying the raw output
-  rather than raising; a test asserts no module outside it imports a provider SDK.
+  resolving to a provider, a model, generation settings, and published rates. Each adapter —
+  Anthropic and OpenAI (DEC-095) — makes exactly one attempt and returns a structured failure
+  carrying the raw output rather than raising; a test asserts each may import exactly its own
+  provider SDK and nothing else in the tree imports one.
 - **Identifiers and content hashing** — the twenty-five prefixes of section 2.1 as a closed
   registry, both identifier forms DEC-018 defines, a typed identifier per object so a threat
   identifier cannot be assigned to a finding's field, and the single SHA-256 utility DEC-019
@@ -442,8 +443,10 @@ presentation folder.
 - **The adversarial condition** — DEC-075's poisoned-document variant with all five payload
   classes, run as an ordinary scenario condition, with the two-axis attack metrics (detection,
   and injected-instruction compliance with a target of zero) reported per payload class.
-- **The twelve benchmark scenarios** — every registered scenario carries a full outcome truth
-  set and an offline recording, every roadmap Stage 5 coverage category has a scenario, and
+- **The fourteen benchmark scenarios** — every registered scenario carries a full outcome truth
+  set and an offline recording, every roadmap Stage 5 coverage category has a scenario — the
+  thirteenth (rag-support-bot, DEC-098) exercises the 0.2 catalog's AI-system requirements, and
+  the fourteenth (reply-tuner, DEC-114) exercises the 0.3 catalog's fine-tuning pack — and
   `trace evaluate --all` runs the register with nothing skipped.
 - **The M12 decision debt, closed** — DEC-057 through DEC-072 (risk treatment, episodic revisit,
   routing reasons, the STRIDE coverage baseline, the precedent feed, catalog-gap candidates,
@@ -466,7 +469,7 @@ presentation folder.
   ($6.92 ± $3.28 and ~41 ± 15 minutes each; the expected finding matched in 2 of 5), on the
   [scorecard](docs/eval/scorecard.html) with three failed attempts disclosed — but only one
   scenario is measured, the offline table's cost cells still read zero because its feeds
-  regenerate from replays, and the eleven benchmark recordings remain authored offline. The
+  regenerate from replays, and the thirteen benchmark recordings remain authored offline. The
   model and prompt comparisons (#331, #332) have no recorded run.
 - **The public release packaging.** Milestone M9's demonstration surface is built — the read-only
   view, the finding-lineage view, the demo script and its recovery plan, and the measured ablation
@@ -486,15 +489,20 @@ uv run python scripts/replay_forgeflow.py
 
 That replays the committed ForgeFlow recording through all fourteen phases — six agents, two
 checkpoints answered from recorded reviewer decisions, deterministic rendering — and exits
-non-zero unless the report's content hash matches the pinned one byte for byte.
+non-zero unless the report's content hash matches the pinned one byte for byte. To run Trace on
+your own documents rather than the fixture, start with
+[Getting Started](docs/guide/getting-started.md) and the
+[Assessment Walkthrough](docs/guide/assessment-walkthrough.md).
 
 Driving an assessment yourself is the same pipeline, one command at a time. Every command below
-names `asm-001`, which is the identifier a fresh data root allocates first — so a rerun starts by
-resetting the root, or the second `assessment create` mints `asm-002` and the transcript diverges
-from this walkthrough:
+names `asm-001`, which is the identifier a fresh data root allocates first — so a rerun starts
+with `reset --force`, which returns the data root to the fresh state, or the second
+`assessment create` mints `asm-002` and the transcript diverges from this walkthrough. The blocks
+below carry no trailing comments, so they paste cleanly into a default macOS zsh, which does not
+treat `#` as a comment at the prompt:
 
 ```bash
-uv run trace reset --force    # only when rerunning: returns the data root to the fresh state
+uv run trace reset --force
 uv run trace assessment create --name "ForgeFlow Security Review"
 uv run trace source add asm-001 demo/forgeflow/input
 uv run trace run asm-001 --model-profile offline-fake \
@@ -502,11 +510,12 @@ uv run trace run asm-001 --model-profile offline-fake \
 ```
 
 The run stops at checkpoint 1, because the checkpoint is a phase in the transition table rather
-than a conditional something could skip. Review and approve the context:
+than a conditional something could skip. Review and approve the context — the exported
+`review.yaml` is edited in place and applied back with `--apply review.yaml`:
 
 ```bash
 uv run trace context show asm-001 --evidence
-uv run trace context review asm-001 --export review.yaml   # edit it, then --apply it
+uv run trace context review asm-001 --export review.yaml
 uv run trace context approve asm-001
 uv run trace resume asm-001 --model-profile offline-fake \
     --response demo/forgeflow/recorded/reasoning
@@ -571,10 +580,10 @@ schema-validated objects that are the authoritative state; **services** operate 
 service or a store, and a test asserts that direction, because it is the one that erodes without
 anyone deciding to erode it.
 
-The layout is narrower than
-[`current-architecture.md`](docs/architecture/current-architecture.md) section 15 proposes. `api/`,
-`application/`, `reporting/`, and `evaluation/` are absent until something belongs in them; an empty
-package reads as a commitment that has not been made. `workflow/` arrived when the orchestrator did.
+[`current-architecture.md`](docs/architecture/current-architecture.md) section 15 records this
+layout, and a conformance test parses its tree against the filesystem in both directions. The
+original proposal's `api/`, `application/`, `reporting/`, and `evaluation/` packages are absent
+until something belongs in them; an empty package reads as a commitment that has not been made.
 
 ## Roadmap
 
@@ -690,13 +699,17 @@ read source code, run a program, connect to a cloud account, or inspect a runnin
 weakness present in the implementation but absent from the documentation is outside its reach. It
 assesses what a system is described to be, and a description can be wrong.
 
-**What the evaluation does not prove.** Twelve scenarios are registered, and every one carries an
-authoritative Trace run scored against its truth set, plus one adversarial condition. Every truth
+**What the evaluation does not prove.** Fourteen scenarios are registered, and every one carries an
+authoritative Trace run scored against its truth set, plus two adversarial conditions. Every truth
 set is authored by one person, so the numbers are a single annotator's judgment measured against
-itself — self-agreement, not an inter-annotator kappa, and not a claim of external ground truth.
+itself — self-agreement, not an inter-annotator statistic, and not a claim of external ground
+truth. The instrument for the stronger claim exists (DEC-112): a second annotation set placed at
+`benchmarks/<slug>/annotations/second/` is scored for agreement over the same identity forms the
+run matcher uses, and the scorecard reports it — but no second set has been authored yet, so the
+agreement section is empty and this limitation stands as written until a person records one.
 One live-model run has been captured and scored (the flagship recording), and run-to-run
 stability (DEC-077) has been measured once: over five completed live runs of one scenario, the
-expected finding matched in two — instability is real, reported, and gates nothing. The eleven
+expected finding matched in two — instability is real, reported, and gates nothing. The thirteen
 benchmark recordings are deterministic and offline, and the scorecard's offline cost cells read
 zero because its feeds regenerate from replays; the measured live costs live in the scorecard's
 own live-stability section. The
@@ -727,23 +740,37 @@ than rounding it away.
 
 ### Failure taxonomy
 
-From reading the per-item match sets of all twenty-one committed evaluation runs — thirteen
-authoritative Trace runs (twelve clean, one adversarial, one of them the live capture) and eight
+From reading the per-item match sets of all twenty-five committed evaluation runs — fifteen
+authoritative Trace runs (thirteen clean, two adversarial, one of them the live capture) and ten
 baseline runs, regenerated offline. Two failure categories appear. The live view is the
 [scorecard](docs/eval/scorecard.html).
 
 | Failure mode | Frequency | Observed in |
 |---|---|---|
-| **Live run answers beside the truth set** — the captured `claude-opus-5` run produces four approved, defensible findings that match none of the three expected, for 0 of 3 matched with 4 spurious by the structural matcher: the model mapped real weaknesses to different requirements than the truth set names. This is the live-model failure mode the offline recordings could not show. | 1 of 13 authoritative Trace runs | forgeflow (clean, live capture) |
-| **Silence read as a weakness** — the generic-prompt baseline invents a finding where the documentation is simply quiet: missing MFA and password policy an inherited identity provider covers, an encryption detail a managed database supplies, absent replay protection, unencrypted exports. This is the DEC-009 failure the pipeline exists to prevent. | 5 spurious findings across 4 runs | baseline-generic on oidc-portal (2), managed-db-service (1), contradictory-docs (1), unsigned-webhooks (1) |
+| **Live run answers beside the truth set** — the captured `claude-opus-5` run produces four approved, defensible findings that match none of the three expected, for 0 of 3 matched with 4 spurious by the structural matcher: the model mapped real weaknesses to different requirements than the truth set names. This is the live-model failure mode the offline recordings could not show. | 1 of 14 authoritative Trace runs | forgeflow (clean, live capture) |
+| **Silence read as a weakness** — a baseline invents a finding where the documentation is simply quiet: missing MFA and password policy an inherited identity provider covers, an encryption detail a managed database supplies, absent replay protection, unencrypted exports, index retention concluded to violate a schedule nothing states it violates. This is the DEC-009 failure the pipeline exists to prevent, and on the retrieval scenario even the structured baseline commits it — structure alone does not stop silence being read as absence. | 8 spurious findings across 6 runs | baseline-generic on oidc-portal (2), managed-db-service (1), contradictory-docs (1), unsigned-webhooks (1), rag-support-bot (2); baseline-structured on rag-support-bot (1) |
 
-The structured single-pass baseline and the twelve offline Trace runs produced no spurious
-finding; the live capture's four are the first row's mismatches, real findings on requirements
-the truth set does not name. The second row stays a baseline failure — inventing weaknesses from
-silence — which no Trace run, live or offline, has produced: the comparison exists to measure
+The thirteen offline Trace runs produced no spurious finding; the live capture's four are the
+first row's mismatches, real findings on requirements the truth set does not name. The second
+row stays a baseline failure — inventing weaknesses from silence — which no Trace run, live or
+offline, has produced: the comparison exists to measure
 that difference, not to assert it.
 
 ## Documentation
+
+### Using Trace
+
+These describe the system as it runs today.
+
+| Document | What it covers |
+|---|---|
+| [Getting Started](docs/guide/getting-started.md) | Install, configure, and complete an offline assessment in one sitting |
+| [Assessment Walkthrough](docs/guide/assessment-walkthrough.md) | Running Trace on your own documents, both checkpoints included |
+| [CLI Reference](docs/guide/cli-reference.md) | Every command, its flags, and the exit-code contract |
+| [Reading the Report](docs/guide/reading-the-report.md) | The sixteen sections, the vocabularies, and the lineage walk |
+| [Troubleshooting](docs/guide/troubleshooting.md) | Symptoms, what each one means, and the fix |
+
+### Design corpus
 
 These documents describe the intended system, not the implemented one. All are marked *Proposed*,
 version 0.1.

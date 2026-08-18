@@ -133,9 +133,14 @@ Guidance should be based on approved requirements and architecture context rathe
 
 ## 4.1 Assessment Diffing
 
-**Status:** Candidate
+**Status:** Built (DEC-097, issue #488)
 
-Compare two assessment versions and identify meaningful changes.
+`trace diff <before> <after>` compares two assessments' approved models: added, removed, and
+changed per object family, identity matched by content fingerprint rather than per-assessment
+identifiers, threats and gaps compared by ground and never force-paired. Stale-evidence and
+trend analysis (4.4, 4.5) remain future work.
+
+The original sketch: compare two assessment versions and identify meaningful changes.
 
 Possible outputs include:
 
@@ -518,9 +523,15 @@ Final severity should remain subject to reviewer judgment.
 
 ## 8.1 AI System Threat-Modeling Pack
 
-**Status:** Candidate
+**Status:** Built in part (DEC-098, issue #489)
 
-Add threat patterns and requirements specifically for systems using:
+Catalog 0.2 (draft) carries the pack's first wave: ai-input-handling and agentic-orchestration
+arrived with DEC-058, and retrieval-augmentation (req-RAG-001..003) and model-generated-code
+(req-CODEGEN-001..002) arrive with DEC-098, alongside the rag-support-bot benchmark scenario
+that makes the retrieval requirements measurable. Remaining from the sketch below: fine-tuning
+and training-data supply chains, and deeper model-provider integration coverage.
+
+The original sketch — add threat patterns and requirements specifically for systems using:
 
 - LLM APIs
 - Retrieval-augmented generation
@@ -964,7 +975,14 @@ This is likely valuable for both the demo and eventual product.
 
 ## 13.2 Architecture Visualization
 
-**Status:** Candidate
+**Status:** Built (DEC-072 amendment, issue #503)
+
+`trace export mermaid` renders the approved architecture as a deterministic Mermaid DFD —
+components, actors, labelled flows, trust boundaries as subgraphs — derived from
+reviewer-approved state and nothing else. Interactive or styled visualization beyond the
+diagram source remains future work.
+
+The original sketch follows.
 
 Render components, data flows, assets, and trust boundaries from the approved structured context.
 
@@ -972,9 +990,14 @@ The visualization should reflect reviewer-approved state rather than raw model o
 
 ## 13.3 Assessment Comparison Report
 
-**Status:** Idea
+**Status:** Built (DEC-103, issue #509)
 
-Generate a human-readable summary of changes between assessment versions.
+`trace diff --report` renders the structural diff (DEC-097) as a Markdown comparison report in
+the later assessment's outputs area — findings and open questions first, context after, so the
+things that change a conclusion lead. An output artifact like the exports; DEC-035's report
+contract is untouched.
+
+The original sketch: generate a human-readable summary of changes between assessment versions.
 
 ## 13.4 Executive Reporting
 
@@ -1149,15 +1172,15 @@ Initial integrations should remain read-only or require explicit human approval.
 
 None of the features in this document should interrupt the active roadmap sequence.
 
-The current priorities remain:
+The original Stage 0–2 priority list this section carried is delivered in full; what bounds
+promotion now is the delivered system's own gates:
 
-1. Complete product and architecture documentation.
-2. Define the fictional developer-platform scenario.
-3. Create the initial benchmark fixtures.
-4. Draft the initial requirements catalog.
-5. Establish the repository and development environment.
-6. Implement evidence-backed context extraction.
-7. Evaluate context extraction before adding additional agents.
+1. The keyed measurements come before new capability: the live sweep, the comparison
+   recordings, and the usage backfill (#484, #331, #332) are the standing evidence debt.
+2. Decided-but-unbuilt items are executed in their decided order before new decisions are
+   opened (DEC-070's parsers, DEC-072's serializers).
+3. A promotion carries its measurement with it (DEC-097 and DEC-098 are the precedents), and
+   the nine criteria in section 15 all hold.
 
 New ideas should be added here and revisited only during planned roadmap reviews.
 

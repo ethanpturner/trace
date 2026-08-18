@@ -22,6 +22,7 @@ from dataclasses import dataclass, field, replace
 from decimal import Decimal
 from typing import Final
 
+from trace_ai.infrastructure.model.agents import AGENTS
 from trace_ai.infrastructure.model.seam import Creativity, GenerationSettings
 
 __all__ = [
@@ -41,26 +42,21 @@ _PER_MILLION: Final = Decimal(1_000_000)
 # `tests/unit/test_agent_cap.py`) in the spelling the workflow nodes use. Overlay keys are
 # validated against this set when a profile is constructed (DEC-069): a misspelling, a
 # deterministic node, or a seventh agent is a configuration error refused at load, not mid-run.
-AGENT_NAMES: Final[frozenset[str]] = frozenset(
-    {
-        "context-extraction",
-        "threat-analysis",
-        "requirement-and-control-mapping",
-        "evidence-validation",
-        "critical-review",
-        "report-generation",
-    }
-)
+# Derived from the one `AGENTS` table (WS11) rather than restated here.
+AGENT_NAMES: Final[frozenset[str]] = frozenset(spec.name for spec in AGENTS)
 
 
 @dataclass(frozen=True, slots=True)
 class AgentOverlay:
-    """One agent's model-and-rates override inside a profile (DEC-069).
+    """One agent's model-and-rates override inside a profile (DEC-069, DEC-094).
 
     The four rates are required alongside the model, never inherited: a substituted model priced
     at the base model's rates would make `estimated_cost` describe a call that never happened.
-    `settings` overrides the profile's generation settings when given; `Creativity` stays the
-    agent's own declared intent either way and is applied on top by the node.
+    An overlay names a model and its rates and nothing else: generation settings stay the base
+    profile's, with `Creativity` always the agent's own declared intent applied by the node
+    (DEC-085). A `settings` override existed and was removed with the second resolution path —
+    it could only take effect if the driver resolved overlays too, and DEC-094 makes
+    `build_model` the one place resolution happens.
     """
 
     model: str
@@ -68,7 +64,6 @@ class AgentOverlay:
     output_cost_per_million: Decimal
     cache_read_cost_per_million: Decimal
     cache_creation_cost_per_million: Decimal
-    settings: GenerationSettings | None = None
 
 
 class UnknownModelProfileError(KeyError):
@@ -90,7 +85,7 @@ class ModelProfile:
 
     name: str
     provider: str
-    """Which adapter serves it. `anthropic` is the only one implemented (DEC-014)."""
+    """Which adapter serves it: `anthropic`, `openai` (DEC-095), or `fake` (DEC-014)."""
 
     model: str
     settings: GenerationSettings
@@ -134,11 +129,18 @@ class ModelProfile:
     def for_agent(self, agent_name: str) -> ModelProfile:
         """The bundle one agent's calls resolve to (DEC-069).
 
-        Without an overlay for `agent_name` this is the profile itself. With one, the model, its
-        rates, and optionally its settings are replaced, and the returned bundle carries no
-        overlays of its own — the adapter sees one resolved bundle, exactly as before. The
-        profile `name` is kept: attribution of *which model answered* rides
-        `ExecutionRecord.model_name`, which snapshots the resolved model per call.
+        **`build_model` is the one caller** (DEC-094): it builds one adapter per overlaid agent
+        from the bundle this returns, and `OverlayRoutingModel` routes each call by its schema.
+        The driver resolved overlays too, once — per-node profiles carrying the same fact a
+        second time, unexercised, free to drift — and that path is gone; nodes receive the base
+        profile, so budget projection prices at the base rates while the resolved adapter prices
+        the recorded usage.
+
+        Without an overlay for `agent_name` this is the profile itself. With one, the model and
+        its rates are replaced and the returned bundle carries no overlays of its own — the
+        adapter sees one resolved bundle. The profile `name` is kept: attribution of *which
+        model answered* rides `ExecutionRecord.model_name`, which snapshots the resolved model
+        per call.
         """
         overlay = self.agent_overlays.get(agent_name)
         if overlay is None:
@@ -150,7 +152,6 @@ class ModelProfile:
             output_cost_per_million=overlay.output_cost_per_million,
             cache_read_cost_per_million=overlay.cache_read_cost_per_million,
             cache_creation_cost_per_million=overlay.cache_creation_cost_per_million,
-            settings=overlay.settings if overlay.settings is not None else self.settings,
             agent_overlays={},
         )
 
@@ -208,6 +209,42 @@ PROFILES: Final[dict[str, ModelProfile]] = {
         output_cost_per_million=Decimal("15.00"),
         cache_read_cost_per_million=Decimal("0.30"),
         cache_creation_cost_per_million=Decimal("3.75"),
+    ),
+    "economy-mapping": ModelProfile(
+        name="economy-mapping",
+        provider="anthropic",
+        model="claude-opus-5",
+        settings=GenerationSettings(creativity=Creativity.LOW),
+        input_cost_per_million=Decimal("5.00"),
+        output_cost_per_million=Decimal("25.00"),
+        cache_read_cost_per_million=Decimal("0.50"),
+        cache_creation_cost_per_million=Decimal("6.25"),
+        # The first shipped overlay (DEC-069, DEC-094): the mapping agent — the call-heavy node,
+        # one call per threat — runs on the economy model while everything else stays primary.
+        # Whether the cheaper mapping costs quality is exactly what the model comparison (#332)
+        # exists to measure; this profile is the measurement's configuration, not a verdict.
+        agent_overlays={
+            "requirement-and-control-mapping": AgentOverlay(
+                model="claude-sonnet-5",
+                input_cost_per_million=Decimal("3.00"),
+                output_cost_per_million=Decimal("15.00"),
+                cache_read_cost_per_million=Decimal("0.30"),
+                cache_creation_cost_per_million=Decimal("3.75"),
+            )
+        },
+    ),
+    "openai-experimental": ModelProfile(
+        name="openai-experimental",
+        provider="openai",
+        model="gpt-5.1",
+        settings=GenerationSettings(creativity=Creativity.LOW),
+        # Published rates at the time of writing (DEC-095); hand-maintained like every rate in
+        # this table. No cache-write premium exists on this provider — caching is automatic —
+        # so the creation rate is zero and the adapter always reports zero creation tokens.
+        input_cost_per_million=Decimal("1.25"),
+        output_cost_per_million=Decimal("10.00"),
+        cache_read_cost_per_million=Decimal("0.125"),
+        cache_creation_cost_per_million=Decimal(0),
     ),
     "offline-fake": ModelProfile(
         name="offline-fake",

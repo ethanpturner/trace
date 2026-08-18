@@ -476,6 +476,7 @@ Represents one complete security architecture analysis.
 | configuration | AssessmentConfiguration | Yes | Runtime configuration |
 | active_workflow_run_id | string | No | Current workflow run |
 | final_report_path | string | No | Generated report location |
+| final_report_run_id | string | No | Workflow run that rendered the report |
 | tags | list[string] | No | User-defined labels |
 
 ## Note on `status`
@@ -584,7 +585,8 @@ much adaptive thinking the effort level produces — so the original cost limit 
 was exceeded at high effort.
 
 The values are raised to leave headroom rather than to describe a target. They remain examples; a
-real assessment sets its own.
+real assessment sets its own. The DEC-092 measurement later put a live run at $6.92 ± $3.28 —
+above the estimate's ceiling and still inside the raised headroom.
 
 The estimate's dominant finding is that **thinking tokens, billed as output, are roughly 85% of the
 cost**. Effort level is therefore the cost lever, ahead of model tier and well ahead of prompt
@@ -2145,7 +2147,8 @@ The prompt body may remain stored in a file, while metadata is available to the 
 | expected_output_schema | string | Yes | Output model name or schema |
 | model_constraints | list[string] | No | Required model capabilities |
 | status | string | Yes | Draft, active, retired |
-| content_hash | string | Yes | `sha256:<hex>` over the **composed** prompt text (DEC-019) |
+| content_hash | string | Yes | `sha256:<hex>` over the **composed**, substituted prompt text (DEC-019) |
+| template_hash | string | Yes | `sha256:<hex>` over the pre-substitution composition — shared blocks merged, markers unfilled (DEC-094): the cross-corpus identity that answers which template produced a request |
 
 # 30. RequirementsCatalog
 
@@ -2173,6 +2176,37 @@ version names the edition, and DEC-010 gives each version its own directory. Eve
 to a catalog refers to the version — `Assessment.requirements_catalog_version`, each requirement's
 own `catalog_version`, and the `catalog_version` a benchmark scenario pins under DEC-027. Nothing
 joins on `id`.
+
+# 30a. OrganizationalControl
+
+## Purpose
+
+Represents one control the organization provides — a mechanism that exists organizationally,
+which individual system documents routinely do not repeat. Added by DEC-115 after the sections
+were numbered, the way 10a, 21a, and 23a were. An organizational control asserts existence
+only: whether a given system inherits it is the assessment's ordinary work, decided at
+checkpoint 1 and judged by evidence validation like any other claim (DEC-009 in the other
+direction — a documented organizational mechanism is evidence a conclusion can rest on, not a
+conclusion).
+
+## Fields
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| name | string | Yes | Control name: a lowercase slug, outside the identifier scheme (DEC-034) |
+| title | string | Yes | Short title |
+| statement | string | Yes | What the organization provides |
+| mechanism | string | Yes | The mechanism class that provides it |
+| applies_when | list[string] | No | Conditions under which the control bears on a system |
+| catalog_version | string | Yes | The org-controls catalog version that defines it |
+
+## Note on identity
+
+An organizational control is identified by `(name, catalog_version)`, exactly as a
+requirements catalog is identified by `(id, version)`: authored configuration carries a name,
+never a DEC-018 identifier. The catalog under `org-controls/` is version-controlled with a
+DEC-019 content hash over the parsed document, and `services/org_controls/loader.py` is its
+only reader.
 
 # 31. Assessment State
 
@@ -2457,8 +2491,8 @@ Every assessment records `data_model_version`. Loading one written by an incompa
 with a message naming both versions; there is no migration machinery during early development
 (DEC-020).
 
-Re-running is cheaper than migrating and measurably so — `scripts/estimate_cost.py` puts an
-assessment at $2.25 to $5.97. The trigger to add migrations is an assessment becoming expensive or
+Re-running is cheaper than migrating and measurably so — DEC-092's measurement puts a live
+assessment at $6.92 ± $3.28. The trigger to add migrations is an assessment becoming expensive or
 irreplaceable.
 
 # 36. Data Retention
@@ -2536,22 +2570,22 @@ These can be added later without expanding the initial MVP unnecessarily.
 
 # 39. Open Data-Model Questions
 
-1. Should context claims use a flexible subject-predicate-value structure or more specific typed models?
+1. ~~Should context claims use a flexible subject-predicate-value structure or more specific typed models?~~ Resolved by DEC-106, ratifying what shipped: both, with a division of labor. Typed objects (`Component`, `Asset`, `Actor`, `DataFlow`, `TrustBoundary`, `Control`) carry the structured facts; `ContextClaim` keeps subject-predicate-value for the assertions about them, `value` as `JsonValue` domain-side and scalar-narrowed on the proposal side (DEC-083).
 2. ~~Should evidence excerpts be duplicated in the database or loaded from normalized source files?~~ Resolved by DEC-015: `quoted_text` is stored verbatim from the original and is immutable, with `content_hash` covering it. Where the row is stored is a persistence question (DEC-012's successor), not a location one.
 3. ~~How should evidence locations be represented consistently across Markdown, text, JSON, YAML, and future PDF inputs?~~ Resolved by DEC-015.
 4. ~~Should actors be separate first-class objects in the MVP?~~ Resolved by DEC-037: yes. `SystemContext` gains `actor_ids`, and section 40's list gains `Actor`. An extracted actor that the approved baseline does not reference would be approved by nobody and reachable by nothing.
-5. How should requirement applicability conditions be represented in machine-readable form? Catalog version 0.1 leaves them as free text deliberately, so the vocabulary can be observed before it is fixed. DEC-024 confirms they stay free text for now: with `applicable_technologies` populated on zero requirements there is nothing to filter on deterministically, so the whole catalog is passed and applicability is the agent's judgment.
+5. How should requirement applicability conditions be represented in machine-readable form? Catalog version 0.1 leaves them as free text deliberately, so the vocabulary can be observed before it is fixed. DEC-024 confirms they stay free text for now: with `applicable_technologies` populated on zero requirements there is nothing to filter on deterministically, so the whole catalog is passed and applicability is the agent's judgment. DEC-106 re-defers it with a named trigger: the DEC-024 partitioning measurement (#532). Machine-readable applicability is worth representing only if partitioning the catalog pays, and that is measured, not assumed.
 6. ~~How should inherited-control scope be modeled?~~ Resolved by DEC-026: with the fields `Control` already has. `inheritance_scope` is removed.
 7. ~~Should confidence scores be generated numerically or only categorically?~~ Resolved by DEC-022: categorically only. `confidence_score` is removed, and `EvidenceStrength` moves onto `EvidenceAssessment` so model confidence and evidence strength stay separate, as design principle 15 requires.
-8. How should multiple model outputs proposing the same object be merged?
-9. How should object revisions be stored?
+8. ~~How should multiple model outputs proposing the same object be merged?~~ Resolved by DEC-106: the question dissolved under the fixed pipeline (DEC-016). Every object has exactly one proposing call; a retry replaces the whole proposal (the attempt, never the conclusion); duplicates that arise across calls are the deterministic consolidation rule's and the reviewer's — model outputs are never merged with each other.
+9. ~~How should object revisions be stored?~~ Resolved by DEC-106, ratifying DEC-023: objects update in place under the same identifier with `ReviewerDecision` history; `SystemContext`'s approved versions are the one revisioned lineage. There is no general revision store.
 10. ~~Should reviewer edits create new object versions or update the current object with decision history?~~ Resolved by DEC-023: update in place with decision history. Section 2.6 already declined full event sourcing, and `ReviewerDecision`'s `prior_value` and `updated_value` exist for exactly this.
-11. How much model-generation metadata belongs on each object?
-12. Should workflow state store objects directly or only identifiers?
+11. ~~How much model-generation metadata belongs on each object?~~ Resolved by DEC-106, ratifying practice: `generated_by` and `created_at`, and nothing more. The generation's conditions — model, profile, effort, retries, cost, raw failed output — belong to the `ExecutionRecord` and `traces/`, keyed by run; an object carrying its whole generation story would be a second execution ledger.
+12. ~~Should workflow state store objects directly or only identifiers?~~ Resolved by DEC-016: identifiers and routing only, section 31's state-design rule — a state carrying content is a second copy of the authoritative data.
 13. ~~Which objects belong in SQLite versus version-controlled YAML or JSON?~~ Resolved by DEC-020: the split is by authorship. Authored artifacts are version-controlled files; generated objects are rows; generated files live under `data/`.
 14. ~~How should severity be calculated?~~ Resolved by DEC-030: it is not calculated. The reviewer assigns it at the finding checkpoint, findings are created `unassigned`, and an approval carrying `unassigned` is rejected. No agent and no deterministic node proposes a value.
 15. ~~What is the minimum evidence required to approve a finding?~~ Resolved by DEC-013.
-16. How should rejected threats and findings be retained for evaluation?
+16. ~~How should rejected threats and findings be retained for evaluation?~~ Resolved by DEC-106, ratifying practice: in place. A rejected object keeps its row with status `rejected`, `duplicate_of_id` where deduplication merged it, and its `ReviewerDecision` history; DEC-040 keeps it out of approved baselines by revision membership, and the harness grades rejections against `expected-rejections.yaml`. Retention is the default; the only deletion is DEC-089's per-assessment purge.
 17. ~~How should data-model migrations be handled during early development?~~ Resolved by DEC-020: they are not. An incompatible `data_model_version` refuses to load, and the assessment is re-run — which the cost estimate makes cheaper than writing a migration against a schema still under decision.
 
 Consequential answers should be recorded in decision log.md.
@@ -2591,6 +2625,7 @@ Implement these first:
 27. EvaluationResult
 28. CatalogGapCandidate
 29. PromptDefinition
+30. OrganizationalControl
 
 `SourceObservation` (section 10a) was added by DEC-021 after this list was written, and the list
 was not updated with it. It is not optional: DEC-021 makes contradictions and detected

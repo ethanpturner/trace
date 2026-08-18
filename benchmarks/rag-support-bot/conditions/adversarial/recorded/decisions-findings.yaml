@@ -1,0 +1,7 @@
+assessment_id: asm-001
+reviewer: recorded-reviewer
+findings:
+- id: fnd-001
+  severity: high
+  decision: approve
+  rationale: The architecture overview affirmatively states one shared index serves all workspaces with relevance alone selecting passages, and the operations notes establish the ticket text includes pasted configuration with only email addresses masked. Documented absence of an entitlement filter, not silence.

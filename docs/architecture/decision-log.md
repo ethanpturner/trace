@@ -728,7 +728,7 @@ Tradeoffs:
 
 Open Questions:
 
-- ~~What is the actual cost of one ForgeFlow assessment and one full benchmark sweep at this model and effort level, and does it change the model tier?~~ Estimated in `scripts/estimate_cost.py`: **$2.25 to $5.97** per assessment on `claude-opus-5` and **$27 to $72** for a twelve-scenario sweep, the range driven almost entirely by adaptive thinking depth. **It does not change the tier.** Two corrections to the reasoning above follow from it: thinking tokens billed as output are about 85% of the cost, so prompt caching saves roughly 12% rather than being the dominant lever this entry implies; and effort level, not caching or model tier, is what actually controls spend. The estimate is unmeasured — no product code exists and no `count_tokens` call was available — and should be re-run against real `ExecutionRecord` data once the pipeline runs.
+- ~~What is the actual cost of one ForgeFlow assessment and one full benchmark sweep at this model and effort level, and does it change the model tier?~~ Estimated in `scripts/estimate_cost.py`: **$2.25 to $5.97** per assessment on `claude-opus-5` and **$27 to $72** for a twelve-scenario sweep, the range driven almost entirely by adaptive thinking depth. **It does not change the tier.** Two corrections to the reasoning above follow from it: thinking tokens billed as output are about 85% of the cost, so prompt caching saves roughly 12% rather than being the dominant lever this entry implies; and effort level, not caching or model tier, is what actually controls spend. The estimate is unmeasured — no product code exists and no `count_tokens` call was available — and should be re-run against real `ExecutionRecord` data once the pipeline runs. **Measured (DEC-092):** five completed live runs of one scenario put a run at **$6.92 ± $3.28** — above the estimate's ceiling — and the tier still does not change; `trace ledger` reads any assessment's recorded spend.
 - Does the effort level belong in `model_profile`, or per agent alongside the section 29 intent?
 - Should a second adapter be written before the seam is trusted, or is that premature for a local single-user MVP?
 - Which capabilities must an adapter declare for an evaluation run to be considered comparable to another?
@@ -1075,7 +1075,7 @@ Adding, removing, or retyping a field is therefore a Pydantic change and not a d
 
 **Schema versioning refuses rather than migrates.** Every assessment records `data_model_version`. Loading one written by an incompatible version fails with a message naming both versions; there is no migration machinery. That answers open question 17 for early development.
 
-Re-running is cheaper than migrating, and now measurably so: `scripts/estimate_cost.py` puts a ForgeFlow assessment at $2.25 to $5.97. Regenerating an assessment costs a few dollars and no engineering time; writing a migration for a schema still under active decision costs hours and produces code that will itself need maintaining. The trigger to add migrations is the point at which an assessment becomes expensive or irreplaceable — real rather than fictional source material, or a benchmark run whose provenance matters.
+Re-running is cheaper than migrating, and now measurably so: DEC-092's measurement puts a live assessment at $6.92 ± $3.28 (the earlier `scripts/estimate_cost.py` figure was $2.25 to $5.97). Regenerating an assessment costs a few dollars and no engineering time; writing a migration for a schema still under active decision costs hours and produces code that will itself need maintaining. The trigger to add migrations is the point at which an assessment becomes expensive or irreplaceable — real rather than fictional source material, or a benchmark run whose provenance matters.
 
 **Evaluation results and the longitudinal record are additionally written as version-controlled artifacts.** `evaluation-plan.md` section 17 requires every release to record its evaluation summary and known regressions, and section 16 wants metrics compared across versions. If assessments become unloadable after a schema change, a database-only evaluation history would break exactly when the comparison is most interesting. Writing the summary to a file keeps the history readable independent of whether the assessments behind it still load.
 
@@ -1362,6 +1362,15 @@ Open Questions:
 - What applicability-precision figure is low enough to trigger partitioning, and over how many assessments must it hold before the trigger fires?
 - Partitioning trades money for discrimination at an unmeasured exchange rate. How much less does a call over a fifth of the catalog think, and is the total increase closer to 2x or 5x?
 - Does the coverage gap from threat-gating need a system-level applicability pass, and would that be a seventh agent?
+
+Amendment (2026-08-17, #532): **The exchange rate is measured, and the partition path is closed**
+(DEC-107, `docs/eval/mapping-variants.md`). Offline, over all thirteen scenarios: partitioning
+by primary category multiplies cache-adjusted estimated input roughly ninefold, and even the
+coarsest two-way split costs ~1.8x — the per-call remainder duplicates into every partition, and
+DEC-105 already made the catalog the cheap span. The second open question above is answered
+(closer to 9x than 2x, in the wrong direction); the first is moot while no partition path
+exists; the third stays what it was — a seventh-agent question requiring DEC-030's evidence,
+untouched here.
 
 ## DEC-025: Record suppressed conclusions on the mapping that suppressed them
 
@@ -4783,6 +4792,30 @@ Open Questions:
 - Does the TM-BOM serializer round-trip — can Trace *read* a TM-BOM file as structured input
   (DEC-070's family) — or is export one-way?
 
+Amendment (2026-08-17, #503): **Mermaid is built**, third in the order as decided, closing the
+family's build-out (CycloneDX stays deferred until a consumer exists). The constraints held as
+written: deterministic from approved `Component` and `DataFlow` (plus approved actors as
+external entities and trust boundaries as subgraphs over their inside components), never
+model-drawn, a standalone content-addressed `.mmd` in `outputs/`, and not embedded in the
+report. Labels are escaped so an approved name cannot become diagram syntax, and an `unknown`
+flow direction renders undirected — a directed arrow would draw a claim nobody made. This also
+discharges future-features 13.2 (Architecture Visualization): the visualization reflects
+reviewer-approved state because it is derived from nothing else.
+
+Amendment (2026-08-17, #487): **SARIF is built**, second in the order as decided, and its
+mapping decisions are recorded here rather than in a fresh entry because the decision — the
+family, its order, its post-approval rule — was already made. An approved `Finding` is a result
+whose `level` follows the reviewer-assigned severity (critical/high → `error`, medium →
+`warning`, low/informational → `note`; `unassigned` cannot appear, the approval gate refuses
+it). A `DocumentationGap` is a result of `kind: "review"` at `level: "none"` — SARIF's own
+vocabulary for "a human should evaluate this" — never an error or a warning, which keeps
+DEC-009 structural in the export. Cited requirements become rules titled from the assessment's
+pinned catalog version, degrading to bare identifiers rather than dropping or guessing;
+locations come from the evidence chain (stored filename, line span) plus logical locations for
+affected components; `EvidenceReference` and DEC-066 fingerprints ride `partialFingerprints`.
+Approved text serializes verbatim, the export refuses an unapproved context, and the artifact
+is content-addressed into `outputs/` like TM-BOM's.
+
 ## DEC-073: The harness is a caller of the ordinary pipeline — registry-driven, offline through replay, one authoritative results home, per-item run diffs
 
 Date: 2026-08-10
@@ -4849,6 +4882,20 @@ Open Questions:
 
 - Does the results tree live under `benchmarks/results/` in-repo, or stay untracked until the
   scorecard needs CI history?
+
+Amendment (2026-08-17, #505): **Any scenario may pin its offline replay, and the harness
+verifies it.** `recorded/report-hash-offline.txt` pins the harness's own replay of a scenario;
+a completed run compares the rendered bytes and `HarnessOutcome.report_hash_verified` carries
+the verdict — `None` when no pin exists (absence of a pin is not a pass), `False` on drift,
+which the CLI answers as exit 3, the same answer `trace verify` gives a drifted report
+(DEC-088). The pin is deliberately distinct from `report-hash.txt`, the capture-conditions pin
+`scripts/replay_forgeflow.py` checks: the two replay paths stamp different model profiles into
+the report, so one pin cannot serve both; each file names its replay path. ForgeFlow and
+rag-support-bot ship offline pins. And **the evaluation pages are CLI-reachable**:
+`trace evaluate --report scorecard|comparison|ablation [--out PATH]` runs the same sweep and
+renders the same pages the build scripts write, to stdout or a named file — the committed pages
+under `docs/eval/` remain the scripts' deliberate step, with the DEC-081 history snapshotting
+and the CI currency check staying theirs alone.
 
 ## DEC-074: Baselines run through the same seam, emit the same schemas, and see the same inputs — with ties resolved against Trace; the external comparable stays in the portfolio
 
@@ -5644,11 +5691,14 @@ Tradeoffs:
 - The legacy-form acceptance is one more input path. It is a loader's tolerance, not a schema
   the model is offered, and it retires whenever the recordings are next recaptured.
 
-## DEC-083: Report section 7 carries the threats the approved findings rest on; duplicate questions collapse at render
+## DEC-101: Report section 7 carries the threats the approved findings rest on; duplicate questions collapse at render
 
 Date: 2026-08-14
 
 Status: Accepted
+
+(Originally misfiled under a duplicate DEC-083 heading on 2026-08-14; renumbered 2026-08-17,
+#502. The number changed; the decision did not.)
 
 Decision:
 
@@ -5708,3 +5758,1673 @@ Tradeoffs:
 - The render-time collapse leaves duplicate Question rows in the store; the count metrics see
   them. That is honest — the model did ask twice — and the DEC-081 history will show the
   duplicate rate fall when a future capture dedupes at the source.
+
+## DEC-088: The CLI has four exit codes, and a stated refusal is code 3 rather than code 1
+
+Date: 2026-08-14
+
+Status: Accepted
+
+Decision:
+
+**The command line uses four exit codes, and "refused" is not "crashed".** `0` is success; `1` is
+an error the operator can fix, named in one line; `2` is argparse rejecting the arguments (the
+standard-library convention); and `3` is a stated refusal that is an answer rather than a fault —
+a context that is not approvable, an approval blocked by an open question, evidence or a report
+that no longer verifies, a `reset` dry run. Before this the CLI returned `1` for both a genuine
+error and every one of those refusals, so a script could not tell the two apart without parsing
+the prose the code was supposed to make unnecessary.
+
+Two supporting changes land with it. `--max-cost` and `--max-model-calls` are parsed by argparse
+converters that reject a non-number and a negative as exit `2`, rather than an inline `Decimal(...)`
+whose `decimal.InvalidOperation` (an `ArithmeticError`, not a `ValueError`) escaped as a traceback.
+And a `pydantic.ValidationError` from the pipeline is re-raised with its traceback instead of being
+rendered as a one-line error: DEC-006 says a domain object never fails validation, so one that does
+is a bug, not operator input — even though `ValidationError` is a `ValueError`, which the CLI still
+catches for the domain's own operator-facing value errors (a malformed identifier through
+`parse_id`, an out-of-range rubric score).
+
+Why:
+
+- DEC-032 makes the command line the interface a reviewer and an evaluation script both use, and the
+  module's own docstring already promised "exit codes are answers ... a script can act on without
+  parsing prose." A single non-zero code broke that promise for exactly the case it named: a refused
+  approval and a crashed run were the same signal.
+- The `--max-cost` traceback and the swallowed `ValidationError` were the same bug in two
+  directions: a value the taxonomy did not classify surfacing raw, and a value the taxonomy
+  over-classified being hidden. Both are the error contract failing to say what actually happened.
+
+Alternatives Considered:
+
+- Leaving one non-zero code and documenting that callers parse stderr (the thing the exit-code
+  contract exists to avoid).
+- Removing bare `ValueError` from the caught set entirely (rejected: the domain raises it on an
+  operator-supplied identifier, so removal would traceback a mistyped `asm-001`; the narrower
+  re-raise of `ValidationError` fixes the actual bug without that cost).
+
+Tradeoffs:
+
+- Code `3` is a new value a caller may not expect; a script that treated "non-zero" as failure now
+  sees a refusal as failure, which is the old behaviour, so nothing regresses, but a script that
+  wants to act on a refusal must learn the code. The `--help` epilog and the module docstring both
+  state the table.
+- The CLI still catches bare `ValueError` for the domain's and services' operator-facing value
+  errors; a `CommandInputError` subclass names the CLI's own input errors, but the tuple is not
+  yet free of the broad class. Narrowing it further is a domain change (typing `parse_id`'s error)
+  left for when that surface is next touched.
+
+## DEC-089: The object store carries an insert-order column, and a per-assessment purge is the way to shrink it
+
+Date: 2026-08-14
+
+Status: Accepted
+
+Decision:
+
+**`objects` gains a `seq` column: a monotonic insert order, assigned once and never moved by a
+later replacement.** `oldest first` orders by it. Sorting on the `id` text was wrong the moment a
+counter crossed 999: DEC-018 widens the identifier (`evd-1000`) rather than wrapping, and `evd-1000`
+sorts lexically before `evd-999`, so a moderate corpus came back reordered — and because DEC-018
+assigns identifiers in iteration order on a rerun, the reorder silently changed which identifier
+attached to which object. The driver's per-object loop sort (`_sorted_by_id`) is keyed on the
+identifier's *number* for the same reason. The column is a table-layout change, so `SCHEMA_VERSION`
+moves to 2 and a v1 database is refused rather than migrated (DEC-020); the data root is gitignored
+and regenerable.
+
+**`trace assessment purge <id>` deletes one assessment entirely — its rows, its identifier counters,
+and its directory.** Nothing else shrank the store: every run appends execution records, evaluation
+results, prompt snapshots, and a failed-attempt file per retry, and an archived assessment kept them
+all; the only remediation was `trace reset`, which removes the whole data root. Purge removes exactly
+one assessment, which the store's scoping (`WHERE assessment_id = ?`) makes safe. It is destructive,
+so it follows `reset`'s shape: a dry run without `--force` previews and refuses (exit 3, DEC-088).
+Rows go first in one transaction, then the directory, so a crash between the two leaves an empty
+assessment a re-run of purge finishes rather than rows pointing at deleted files. A retention cap
+keeps only the most recent failed-attempt artifacts per assessment.
+
+**The store grows an id-only read path.** `ids()` returns identifiers over the `id` column without
+parsing or validating a payload, and `iterate()` yields validated objects one at a time; the many
+call sites that need only "which ids exist" (the driver hands the evidence identifiers to an agent
+six times a run and never the evidence text) use `ids()`. `EvidenceIndex` memoizes the source
+documents and files it reads within one operation, so verifying K references into one document reads
+that file once, not K times.
+
+Why:
+
+- The lexical-ordering hazard was documented in a test that then did nothing about it
+  (`test_identifiers.py`), and evidence references are one per addressable segment, so a benchmark
+  corpus crosses 999 routinely. An ordering that silently reshuffles a rerun is the exact failure
+  the deterministic replay depends on not happening.
+- A store that only ever grows, with `reset` as the sole eraser, makes a single throwaway run cost
+  the whole data root to clean up. A scoped purge is the unit that matches how the data is scoped.
+
+Alternatives Considered:
+
+- Ordering by SQLite's implicit `rowid` (rejected: `rowid` is not stable across `VACUUM`, and an
+  explicit column states the intent the ordering depends on).
+- A `delete` that removes arbitrary objects (rejected: the domain owns referential integrity, so a
+  partial delete could dangle references; purge removes a whole assessment, which cannot).
+
+Tradeoffs:
+
+- The `SCHEMA_VERSION` bump refuses every existing v1 database rather than migrating it. That is
+  DEC-020's standing trade, and the data root is regenerable, but a developer with a local store
+  from before this change re-runs `trace reset` once.
+- `ids()`/`list_where()` only reach the columns DEC-020 lifts out of the payload (`status`); a query
+  on any other field still lists and filters in Python, because DEC-020 keeps the payload unqueried.
+
+## DEC-090: v0.1 is clone-only; the unused LangSmith dependency and the implicit store identities go
+
+Date: 2026-08-14
+
+Status: Accepted
+
+Decision:
+
+**v0.1 runs from a source checkout, not an installed wheel.** The prompts, the requirements
+catalog, the report template, and the benchmark scenarios are version-controlled files in the
+repository, read through `PROJECT_ROOT`-relative paths; they are not package data in the wheel.
+`config.IS_SOURCE_CHECKOUT` detects the difference (a `pyproject.toml` beside `PROJECT_ROOT`), and a
+command that would read those assets from outside a checkout stops with a clear
+`SourceCheckoutRequiredError` rather than a dangling `FileNotFoundError` deep in a render or a
+catalog load. `trace` and `trace --help` still work from an install, so the console script is honest
+about what an install can do. Making the package installable -- moving the assets under
+`src/trace_ai/` and reading them through `importlib.resources` -- is a later decision; this one makes
+the current stance explicit instead of a metadata claim the code contradicts.
+
+**The `langsmith` runtime dependency and its four settings are removed.** It was declared in
+`pyproject.toml` and imported nowhere, shipping dead weight to every install, and the `langsmith_*`
+settings it fed were read only by the banner. `openai_api_key` stays: it ships no dependency and the
+seam is provider-agnostic by design (DEC-014), so a second adapter would read it. A package-layout
+test now asserts every declared runtime dependency is imported somewhere in `src/`, so a
+re-added-and-unwired dependency fails there rather than shipping.
+
+**Two store identities that were implicit are now explicit.** The stored `object_type` was
+`type(obj).__name__`, so renaming a domain class silently made every existing row unreadable; it is
+now `DomainModel.stored_type`, a class attribute defaulting to the class name that a rename overrides
+in one line. The row key for the one id-less object (`SystemContext`) was duck-typed ("no `id`? key
+by `(assessment_id, version)`"), so any new id-less object would silently collide with it; it is now
+`DomainModel.row_key()`, which `SystemContext` overrides and the base raises for -- a new id-less
+object is a loud decision, not a collision. And `store_metadata` records `trace_version` at creation,
+so a `CorruptRecordError` names the build that wrote the row, which keeps DEC-020's refuse-don't-
+migrate stance while making the refusal actionable.
+
+Why:
+
+- The packaging metadata claimed installability (`[project.scripts]`, a distribution name) while
+  `pip install trace && trace run` would fail on the first asset read, and nothing in CI caught it
+  because `uv sync` is editable with the repo present. An MVP that DEC-004 scopes to a local
+  single-user run does not need distribution; it needs its packaging to stop lying.
+- Each store identity that lived only as `__name__` or a duck-typed branch was a rename or a new
+  object away from silent data loss -- the one place the otherwise-explicit persistence layer
+  guessed.
+
+Alternatives Considered:
+
+- Making the wheel self-contained now (rejected for v0.1: moving the requirements catalog and its
+  content hash, the prompt tree, and the templates under the package, and rewriting every reader to
+  `importlib.resources`, is a real migration for a distribution nobody is consuming yet).
+- Keeping `langsmith` for a future tracing integration (rejected: an unwired dependency is dead
+  weight now, and wiring tracing is its own decision when it happens).
+
+Tradeoffs:
+
+- A `SourceCheckoutRequiredError` from a wheel is less convenient than a working install, but it is
+  honest, and the guard is one check past the banner rather than scattered through the readers.
+- `stored_type` as a class attribute set in `__init_subclass__` is a small piece of metaclass-time
+  machinery on `DomainModel`; it earns its place by turning a rename from silent data loss into a
+  one-line override, and a conformance test pins that every object's `stored_type` is its name.
+
+## DEC-091: Live capture is a command, generalized over the registry; decisions are authored per capture
+
+Date: 2026-08-17
+
+Status: Accepted
+
+Decision:
+
+**`trace capture <scenario> <stage>` replaces `scripts/capture_forgeflow.py`.** The capture logic
+moves to `services/evaluation/capture.py`, parameterized by a registry `Scenario`
+(`benchmarks/scenarios.yaml`, DEC-027): any registered scenario can be captured, not one hardcoded
+demo. The three-stage shape is kept deliberately — `extract` to checkpoint 1, `reason` to
+checkpoint 2, `report` to completion — because the pauses are where a person authors checkpoint
+decisions, and the stages mirror `scripts/replay_forgeflow.py` call for call so a promoted capture
+replays without the replayer changing.
+
+**Checkpoint decisions are authored per capture, in the staging directory, from the files each
+stage exports.** A scenario's committed `recorded/decisions-*.yaml` were authored against the run
+that produced the committed recording; a fresh live run allocates identifiers against its own
+objects (DEC-018), so applying a previous capture's decisions blind would decide objects nobody
+reviewed — a clean approval record over an unreviewed run, which is the DEC-005 failure with extra
+steps. The committed files remain the replay's input and a starting point for authoring, never a
+live run's input. Answering a checkpoint from an authored decision file is not an ablation and
+needs no switch (DEC-012); what this entry adds is only that the file must have been authored
+against the run it decides.
+
+**Everything the script guarded stays guarded.** Staging beside the scenario (`<scenario>/capture/`)
+rather than in `recorded/`, so a partial capture cannot half-replace a committed recording;
+promotion is a deliberate copy after the replay round-trip is verified. Each stage refuses to run
+twice — the refusal is exit code 3, an answer rather than a fault (DEC-088) — and `--from-recorded`
+resumes an interrupted capture by replaying the staged prefix before going live. The fake provider
+is refused at stage entry, before any side effect: a capture of the deterministic substitute would
+record what replay already has. The capture's data root is its own (`data/capture-<slug>`), apart
+from the operator's assessments.
+
+Why:
+
+- The hardcoded script is why the eleven-scenario live sweep never ran and why the #331/#332
+  comparison protocols have plumbing and no recorded execution. Every measurement item queued
+  behind a live run was queued behind one scenario's script.
+- The capture writes real usage into the recorded-response envelope (#461), and a command that any
+  scenario can run is the only practical way those envelopes ever hold real values.
+
+Alternatives Considered:
+
+- Keeping the script and adding a `--scenario` flag (rejected: `--help` is a promise the command
+  surface makes, and a live-spending tool hidden in `scripts/` is exactly the kind of capability
+  the CLI exists to state; the script also duplicated service calls the module now owns once).
+- Applying committed `recorded/decisions-*.yaml` to a fresh live run when present (rejected: the
+  identifiers may not correspond, and a decision applied to an object its author never saw is an
+  unreviewed approval with a reviewer's name on it).
+- A single `trace capture <scenario>` that runs all three stages in one invocation (rejected: the
+  stages pause where a person must author decisions; a one-shot command would either skip the
+  authoring or invent it).
+
+Tradeoffs:
+
+- A test-only `data_root` parameter and an injectable `live` model widen the stage signatures, but
+  they are what let the full three-stage round trip run offline in the default suite, asserting the
+  committed ForgeFlow report hash byte for byte — the promotion criterion, tested without spend.
+- The fake-provider refusal means `trace capture` cannot rehearse its own mechanics offline; the
+  unit tests carry that instead, which keeps a meaningless zero-usage "capture" from ever landing
+  in a staging directory.
+
+Amendment (2026-08-17, #534): **`trace capture <scenario> <stage> --rehearse` runs the stage
+offline, and nothing it stages can be promoted.** The tradeoff above bit harder than expected:
+the entire keyed track queues behind `trace capture`, and the first run of the three-stage flow
+for a new scenario happened with live spend. A rehearsal runs the same stage functions against
+the deterministic substitute serving `--response` recordings, staging into its own
+`capture-rehearsal/` directory beside the real one, with a `REHEARSAL` marker file for the
+operator. The refusal this entry traded on is kept, structurally: every envelope a rehearsal
+stages carries a `rehearsal` key, and `load_recorded_responses` — the reader behind the replay,
+the harness, and any promoted recording — refuses such an envelope everywhere except inside the
+rehearsal's own resume. A zero-usage artifact still cannot land where a recording is expected;
+what changed is that the mechanics-validation pass no longer costs a dollar. Baseline stages are
+excluded: one call has no mechanics to rehearse.
+
+Date: 2026-08-17
+
+Status: Accepted
+
+Decision:
+
+**The quoted per-assessment cost is the measured one.** DEC-014's open question asked what an
+assessment actually costs and flagged its own answer — `scripts/estimate_cost.py`'s $2.25 to
+$5.97 — as unmeasured, to be re-run against real `ExecutionRecord` data once the pipeline ran.
+The pipeline has run: the DEC-077 stability protocol's five completed `claude-opus-5` runs of
+`unsigned-webhooks` (`docs/eval/live-stability.json`) put a run at **$6.92 ± $3.28** and
+**~41 ± 15 minutes**, with a mean of 15.4 model calls. The measured mean sits above the
+estimate's ceiling. The conclusion the estimate was built to check survives: the cost does not
+change the model tier, and effort-driven thinking depth remains the dominant term. Documents
+that quoted the estimate as the cost of an assessment now quote the measurement; the estimate
+script stays, docstring-marked as superseded for the per-assessment figure, because its
+per-component model is still the only a-priori shape for scenarios never run live. The sweep
+figure is restated from measurement: twelve scenarios at the measured mean is roughly $83, wide
+variance stated rather than rounded away.
+
+**`trace ledger` prints an assessment's recorded spend** — one line per model-assisted node per
+workflow run: calls, the DEC-067 token spans kept disjoint (uncached input, cache reads, cache
+writes, output), local duration, and estimated cost, with a per-run total. It reads what the
+execution records already carry and computes nothing new. **Absent prints as a dash, never
+zero:** an offline replay of a recording that captured no usage measured nothing, and a zero
+would be a claim. A node line whose records partially reported sums what was reported.
+
+**Usage plumbing is complete; values arrive only from live captures.** The #461 envelope carries
+usage; `trace capture` (DEC-091) writes real usage at capture time; `DeterministicModel` replays
+it; the ledger and the scorecard surface it. The 158 recordings migrated without usage stay
+absent — backfilling them is a keyed re-capture per scenario, not an edit, and until one runs the
+dashes are the honest answer.
+
+Why:
+
+- The project's stated identity is honesty about what is measured, and its flagship cost number
+  was an estimate the one existing measurement contradicts. Quoting $2.25–$5.97 beside a committed
+  $6.92 ± $3.28 measurement is the documentation-and-reality divergence the stop conditions name.
+- Spend was visible only as two print lines inside `assessment status` and a run summary; a
+  reviewer asking "which node spent it" had no answer short of querying SQLite by hand.
+
+Alternatives Considered:
+
+- Re-running the character-ratio estimate with tuned constants until it matched the measurement
+  (rejected: a tuned estimate that agrees with one measurement is a curve fit wearing the
+  measurement's authority; the measurement itself is the answer).
+- Backfilling approximate usage into the 158 recordings from token-ratio math (rejected: it would
+  turn every dash into a fabricated measurement and poison the offline ledger's honesty).
+- A `--json` flag on `trace ledger` now (deferred to the CLI-wide JSON output contract, #486,
+  so the ledger does not invent a one-off serialization the contract then has to unify).
+
+Tradeoffs:
+
+- One scenario measured five times is a thin base for a headline figure, and the entry says so:
+  the figure is quoted with its variance and its n, and the eleven-scenario sweep (#484) is the
+  named next step, not an implied one.
+- Keeping the superseded estimate script means two cost numbers exist in the repository; the
+  docstring states which one is quotable and why the other survives.
+
+## DEC-093: Stability-protocol object decisions replay by content fingerprint
+
+Date: 2026-08-17
+
+Status: Accepted
+
+Decision:
+
+**A live run's context-object decisions replay from the recorded review file by content
+fingerprint.** The DEC-077 stability protocol approved every context object under the default
+policy and counted every one as defaulted — the harness disclosed as much
+(`defaulted_decisions: 182` on the committed live measurement), and a sweep run against that
+leniency would measure the harness, not the pipeline. Now a live object whose fingerprint
+uniquely matches an object the recorded reviewer decided replays that disposition under the
+protocol's reviewer identity, and only a genuinely novel or ambiguous object falls to the
+default approval and counts. The defaulted count keeps its meaning as the disclosure — it now
+measures extraction novelty rather than the protocol's own substitution.
+
+**Fingerprints follow the DEC-056 matcher's conventions and are computed in `matching.py`,**
+the one implementation the metrics and the diff already share: components, actors, assets, and
+trust boundaries on normalized name; data flows on normalized (source, destination) component
+names; claims on (subject name or the literal `system`, normalized predicate). Values and
+descriptions are never compared — the fingerprint says "the same object", never "the same
+wording".
+
+**The recorded side's fingerprints come from the recorded extraction proposal.** The review
+file's entries carry allocated identifiers; DEC-018 allocates at insert and insert follows
+proposal order, so a section's entries sorted by identifier correspond to the proposal list
+positionally, and no allocation is re-run. Three refusals keep the replay conservative, and
+each falls to the counted default rather than to a guess: a section whose entry count disagrees
+with its proposal list is skipped whole; a fingerprint occurring more than once on either side
+is dropped as ambiguous; an object whose references cannot be resolved fingerprints as nothing.
+Only `approve` and `reject` dispositions replay — an edit is authored content, not transferable
+to an object its author never saw.
+
+Why:
+
+- The eleven-scenario live sweep (#484) is the largest unconverted claim in the project, and
+  running it before this change would have measured the default policy's leniency. The
+  committed live measurement's 182 defaulted decisions were the harness saying so.
+- The conservative failure mode matters more than match rate: a decision applied to an object
+  its reviewer never saw is DEC-091's unreviewed-approval failure inside the measurement
+  itself.
+
+Alternatives Considered:
+
+- Matching on the DEC-019 content hash of the whole object (rejected: any wording difference —
+  the exact thing a live re-run varies — breaks the match, so it degenerates to the default
+  policy with extra machinery).
+- Reconstructing recorded identifiers by re-running conversion and allocation against a scratch
+  store (rejected: heavier, and it re-derives exactly the positional fact DEC-018 already
+  guarantees).
+- Replaying recorded edits onto matched objects (rejected: an edit constructs new content for a
+  specific object; transplanting it onto a merely-similar one fabricates a review).
+
+Tradeoffs:
+
+- Positional correspondence leans on DEC-018's allocation order; a future change to insert
+  order would silently unmatch everything. The count-mismatch skip bounds the damage to "more
+  defaulted decisions, visibly counted" — the failure is loud in the summary, never wrong in
+  the decisions.
+- The committed `live-stability.json` predates this change; its 182 defaulted decisions are the
+  old protocol's number and are not re-stated. The next live measurement re-derives it under
+  the new matching, which is the honest comparison.
+
+## DEC-094: One overlay-resolution path, and a template hash beside the composed one
+
+Date: 2026-08-17
+
+Status: Accepted
+
+Decision:
+
+**`build_model` is the one place a DEC-069 overlay resolves.** Two resolution paths existed and
+neither was exercised: the factory built one adapter per overlaid agent
+(`OverlayRoutingModel`, routing each call by its response schema), and the driver independently
+handed every node `profile.for_agent(name)` — the same fact resolved a second time, free to
+drift from the first. The factory path survives because it is the only one that can change the
+model on the wire: the model identity lives in the adapter, and a single `StructuredModel`
+object is load-bearing for replays (a per-agent model set would break recorded-response
+ordering). The driver now passes the base profile to every node. Two consequences are accepted
+and stated: budget *projection* prices at the base profile's rates while the resolved adapter
+prices the recorded usage; and `AgentOverlay.settings` is removed — it could only take effect
+through the driver path, and an overlay now names a model and its rates, nothing else.
+Generation settings stay the base profile's, with creativity always the agent's own DEC-085
+intent applied by the node from the AGENTS table.
+
+**`PromptDefinition` carries a `template_hash` beside `content_hash`.** The DEC-019 hash is
+computed over the composed, *substituted* text — the request, source corpus included — so it
+identifies one composition and cannot answer "which template produced this": the same template
+over two corpora hashes differently. The new `template_hash` covers the pre-substitution
+composition — shared blocks merged, markers unfilled — so every composition of a prompt version
+shares it across assessments, and a shared-block edit still moves it in every prompt that
+includes the block, which is DEC-019's stated purpose. Both hashes persist in the
+`traces/prompts/` snapshot and `resolve_definition` accepts either (or the reference).
+`data-model.md` section 29 and the `hashing.py` input table carry the field.
+
+Why:
+
+- WS11's theme: facts written in two places with nothing asserting they agree drift silently.
+  An overlay resolving in the driver and the factory was that shape, waiting for the first
+  shipped overlay to expose whichever copy had rotted.
+- The #331 prompt-version comparison needs to attribute results to prompt versions honestly,
+  and the substituted hash cannot do that across scenarios — every corpus moves it.
+
+Alternatives Considered:
+
+- Keeping the driver path and deleting the factory's routing (rejected: `GenerationSettings` is
+  deliberately model-free and the adapter's profile names the model, so the driver path cannot
+  change what model answers; keeping only it would make overlays decorative).
+- Redefining `content_hash` to the pre-substitution composition instead of adding a second hash
+  (rejected: the append-only snapshot history — one definition per distinct substituted
+  composition — is a pinned, deliberate property, and retiring the substituted hash would erase
+  the record of what was actually sent).
+
+Tradeoffs:
+
+- Base-rate budget projection under-guards slightly when an overlay names a pricier model and
+  over-guards when it names a cheaper one; projection is a pre-call ceiling check, the recorded
+  cost is the adapter's, and the asymmetry is stated here rather than hidden in a resolution
+  path nobody exercises.
+- Snapshot files still accumulate per distinct substituted composition; `template_hash` makes
+  the template identity queryable across them, which was the actual gap. Collapsing the
+  snapshot granularity is a separate decision if the accumulation ever costs anything.
+
+## DEC-095: A second provider adapter proves the seam, on its own SDK and its own terms
+
+Date: 2026-08-17
+
+Status: Accepted
+
+Decision:
+
+**`infrastructure/model/openai_adapter.py` is the second `StructuredModel` implementation.**
+DEC-014 called the seam populated but not proven agnostic, and the interview package named a
+second provider adapter first among what production would need. The adapter holds the same
+three obligations as the Anthropic one, asserted by the same conformance suite
+(`test_adapter_conformance.py`, now parametrized over both providers): exactly one attempt,
+never raises — every provider condition returns a `ModelFailure` with usage — and `raw_output`
+survives a schema failure while `error_message` stays free of model text.
+
+**Provider-specific decisions, stated:**
+
+- **Creativity maps to `reasoning_effort`** (`LOW → medium`, `MODERATE → high`), the same
+  deliberation reading as the Anthropic mapping, recorded on every result's metadata.
+- **Structured output is requested non-strict and validated by the adapter.** OpenAI's strict
+  mode requires every schema key required and rewrites optionals as explicit nulls — a shape
+  the proposals' defaulted fields would fail to validate. The schema goes as a non-strict
+  `json_schema` response format; a provider that rejects the format falls back to
+  `json_object`, recorded as `schema_grammar: "unsupported_omitted"` — the Anthropic grammar
+  fallback's shape, for the same reason: validation is the application's either way.
+- **Usage is made disjoint before pricing.** The provider's `prompt_tokens` includes the cached
+  span, so the adapter subtracts `cached_tokens` to keep DEC-067's input spans disjoint;
+  caching is automatic on this provider, `cache_prefix` is accepted and unused, and there is no
+  cache-write premium, so `cache_creation_tokens` is always zero.
+- **The boundary rule generalized rather than opened:** each adapter may import exactly its own
+  SDK, and `test_model_boundary.py` asserts it per adapter over the whole tree.
+
+**Two profiles ship with the adapter.** `openai-experimental` (`gpt-5.1`, hand-maintained rates
+like every entry in the table) is the second provider's bundle; `economy-mapping` is the first
+shipped profile carrying a DEC-069 overlay — the mapping agent, the call-heavy node, on
+`claude-sonnet-5` under a `claude-opus-5` base — so the DEC-094 resolution path is exercised by
+configuration that exists, and the #332 model comparison has named bundles to compare.
+
+**What this does not claim:** no live OpenAI pipeline run has been measured. The integration
+round trip (`tests/integration/test_openai_adapter.py`, opt-in, key-gated) is the adapter's
+only live evidence until a `trace capture` or comparison run produces more, and every document
+that states the seam is proven says exactly this much.
+
+Why:
+
+- An unproven claimed property is the kind of debt this project's identity rejects, and the
+  configuration half-promised the proof: `openai_api_key` sat in `Settings` and `.env.example`
+  while `build_model` refused the provider.
+- #332's model comparison is only interesting across providers, and the comparison needs the
+  adapter before the capture.
+
+Alternatives Considered:
+
+- The Responses API instead of Chat Completions (deferred: both exist in the installed SDK;
+  Chat Completions has the simpler response shape for the seam's needs and the stable
+  `response_format`/`reasoning_effort` surface. Moving is an adapter-internal change the seam
+  never sees).
+- Strict structured output with an SDK-transformed schema (rejected: the transformation
+  rewrites optionals into explicit nulls the proposals' validators refuse; adherence help is
+  not worth a schema the application's own models cannot round-trip).
+- A mixed-provider overlay (rejected for now: an overlay carries a model and rates, not a
+  provider, and `build_model` builds one provider's adapters per profile. A provider field on
+  the overlay is a real extension left until a measurement wants it).
+
+Tradeoffs:
+
+- Two SDKs to keep current instead of one, and a second hand-maintained rate row that can go
+  stale independently.
+- The non-strict schema trades some adherence for validity: the provider may deviate where a
+  strict grammar would not, and the adapter's own validation plus the orchestrator's retry
+  budget are the recovery, exactly as on the Anthropic path after its grammar fallback.
+
+Amendment (2026-08-17, #539): **The adapter's wire surface is the Responses API.** The
+deferral above is discharged: Chat Completions is the provider's legacy surface, and Responses
+is where its new capability lands — including the caching semantics any future mapping of the
+seam's cache hints would want. The move is exactly what the entry predicted, an
+adapter-internal change the seam never sees: `system` becomes `instructions`, the prompt is
+the one `input` message, creativity's effort rides `reasoning.effort`, the non-strict schema
+rides `text.format` with the same `json_object` fallback and the same visible
+`schema_grammar` degradation, truncation and filtering arrive as an `incomplete` status
+rather than a finish reason, and usage disjointing subtracts `input_tokens_details.cached_tokens`
+as before. Proven the way the adapter arrived: offline, the conformance suite unchanged in
+what it asserts, stub shapes updated to the provider's. The one live OpenAI pipeline run
+remains unmeasured and remains the keyed track's business.
+
+## DEC-096: Read commands speak JSON, and the missing read commands exist
+
+Date: 2026-08-17
+
+Status: Accepted
+
+Decision:
+
+**Every read command takes `--json` and prints one JSON object.** The envelope is three things:
+a `kind` naming what the object is, `data_model_version` naming the schema generation that
+shaped it (DEC-020's version, so a consumer can refuse a payload it does not understand the way
+the store refuses a row), and the payload. The command surface was thirteen groups of
+human-formatted `print` with no machine-readable output anywhere — Trace composed with nothing,
+and its own evaluation tooling lived CI-side because the CLI offered scripts no purchase.
+
+**The JSON view carries the same information as the human view — no more.** This is the
+contract's load-bearing clause. The CLI's standing rule is that source-derived text is printed
+only where it was asked for and no command prints an absolute path; a `--json` flag that dumped
+whole domain objects would have repealed both silently, putting quoted document content and
+storage detail on screen as a side effect of scripting. So `evidence list --json` carries
+locations and identifiers and `evidence show --json` carries the quotation, exactly as their
+human views do; `findings show --json` carries evidence identifiers where the human view prints
+labelled excerpts, and the quotations stay reachable through `evidence show`. Exit codes are
+unchanged by the flag: `context show --json` still answers exit 3 while the context cannot be
+approved (DEC-088), with `can_approve` in the payload saying so.
+
+**Three read commands that should have existed do:** `trace threats` and `trace questions` list
+first-class domain objects that were visible only through the HTML view or the rendered report;
+`trace catalog show` and `trace catalog validate` reach the requirements catalog through the one
+loader that may read it (DEC-010), making the loader's refusals — a moved hash, a manifest
+mismatch — a command a person can run rather than a CI-only fact. `CatalogError` joins the
+CLI's expected errors: exit 1 with the loader's reason, never a traceback.
+
+**The relationship to exports (DEC-072) is division, not overlap.** `--json` is the CLI's own
+view of its own answers, versioned by `data_model_version` and shaped per command; an export
+(TM-BOM, SARIF) is an interchange document in someone else's schema for someone else's tooling.
+Neither substitutes for the other, and the JSON contract deliberately does not promise
+interchange stability beyond the data-model version it stamps.
+
+Why:
+
+- DEC-032 makes the command line the interface; an interface nothing can compose with is one
+  only a person can use, and the assessment diffing candidate (future-features 4.1) wants
+  stable serialized output on both sides before it can exist.
+- Threats and questions are authoritative domain objects a reviewer reasons about; reaching
+  them required rendering a report or starting a web server, which is the wrong shape for both.
+
+Alternatives Considered:
+
+- Dumping domain objects whole via `model_dump` everywhere (rejected: repeals the
+  source-content and path rules silently; the per-command payload is more code and the only
+  honest shape).
+- A `--format json|yaml|table` axis (rejected: one machine shape is a contract, three are a
+  maintenance surface; YAML adds nothing `jq` needs).
+- Schema-versioning the envelope independently of the data model (rejected for now: the
+  payloads are projections of DEC-020-versioned objects, and a second version number with no
+  independent motion would be ceremony).
+
+Tradeoffs:
+
+- Per-command payload construction can drift from the human view it mirrors; the contract tests
+  pin the envelope, the refusal exit code, and the no-quotation rule, which are the clauses
+  that matter.
+- `report show` keeps its Markdown body and `verify` its exit-code answer, without `--json` —
+  the report is the deliverable itself and the manifest already exists for scripts; extending
+  the flag to them is a later, smaller decision if a consumer appears.
+
+Amendment (2026-08-17, #505): **`trace evaluate` and `assessment candidates` take `--json`.**
+The evaluate omission was this entry's unexplained gap — the one command that emits metrics had
+no machine shape. The envelope carries one `runs` list: per run, the identifiers, statuses,
+metrics as a mapping, the DEC-075 adversarial block where the feed holds one, the repo-relative
+feed path, and the offline replay pin's verdict. Exit codes are unchanged by the flag, including
+the drift answer.
+
+Amendment (2026-08-17, #523): **`report show` and `verify` take `--json`.** The consumer this
+entry's tradeoff waited for appeared: the release-record machinery (#524) reads `verify --json`
+as its integrity gate. `report show --json` carries the report body — or, with `--manifest`,
+the parsed manifest — exactly as the human view prints it; `verify --json` carries the walk's
+counts and every drifted item by identifier and hash, never content. Exit codes are unchanged
+by the flag: drift is still exit 3 (DEC-088).
+
+## DEC-097: Assessment diffing compares approved models by content fingerprint, conservatively
+
+Date: 2026-08-17
+
+Status: Accepted
+
+Decision:
+
+**`trace diff <before> <after>` compares two assessments' approved models** (future-features
+4.1, promoted). Each side is read through its own scoped handle — two scoped reads, never a
+cross-assessment query, so the store's scoping rule stands. Both sides must hold an approved
+context, the refusal every export makes (DEC-072): a diff over candidates would report changes
+no reviewer saw.
+
+**Identity across assessments is the content fingerprint, and the matching is conservative.**
+Identifiers are allocated per assessment (DEC-018), so the same component in two assessments
+carries different identifiers; pairing reuses the conventions the evaluation matcher already
+owns rather than inventing a second identity: DEC-093's fingerprints for context objects (names;
+(source, destination) for flows; (subject, predicate) for claims), the persisted DEC-066 content
+fingerprint for findings, normalized text for open questions. A fingerprint occurring more than
+once on either side is ambiguous, and its objects report as added and removed rather than
+paired — the diff must never guess, because a guessed pairing reports an edit nobody made.
+
+**Threats and documentation gaps are not paired in v1.** A threat's identity is model-authored
+wording plus its ground, both expected to vary across runs; they compare by ground (normalized
+affected component and asset names) as counts with added/removed lists, stated as such, and
+their "changed" list is empty by construction. Pairing them semantically is DEC-043's deferred
+territory and waits for the same evidence.
+
+**Changed means the content fields moved.** Matched objects compare on their model dump minus
+the volatile fields — identifiers, timestamps, provenance, `status`, cross-references carrying
+per-assessment identifiers — and the diff names the fields that differ. The command exits 0
+whether or not differences exist: the diff is a report, not a gate, and a gating flag is a
+later decision if a consumer wants one.
+
+Why:
+
+- future-features 4.1 called this one of the strongest extensions because it builds directly on
+  the structured data model, and the promotion criteria were all met: a re-run assessment
+  previously produced a wholly new report with no relation to the last, and the reviewer's
+  actual question — what changed, what needs re-review — had no answer short of reading both.
+- The matching conventions already existed (DEC-056, DEC-066, DEC-093); the diff consumes them
+  rather than minting a competing identity, so the evaluation matcher and the diff cannot
+  disagree about what "the same object" means.
+
+Alternatives Considered:
+
+- Pairing renamed objects by field similarity (rejected: a similarity threshold is a guess with
+  a number on it, and the conservative failure mode — removed plus added — is both honest and
+  actionable).
+- Diffing all objects rather than approved models (rejected: candidates are proposals nobody
+  reviewed, and DEC-072 already establishes that serialized comparisons speak for approved
+  state).
+- A separate persisted diff artifact (rejected: the diff is derived, regenerable from the two
+  stores by one command, and DEC-073's rule for derived artifacts applies — no place in
+  history).
+
+Tradeoffs:
+
+- Rename detection is deliberately absent: a renamed component reports as removed and added.
+  The reviewer holding both reports can pair them by eye; the tool refusing to guess is the
+  point.
+- The volatile-field list is a judgment call pinned by tests; a new domain field that should
+  count as content lands in the comparison automatically, while a new identifier-shaped field
+  must follow the `_id`/`_ids`/`_at`/`_by` suffix conventions to be excluded — which the domain
+  models already follow.
+
+Amendment (2026-08-17, #529): **Renames are declared as candidates, and finding↔gap shifts are
+reported with their direction.** The refusal to guess stands; what changed is that the diff now
+*states* what a rename alone would explain: when exactly one removed and one added object in a
+named family agree on every content field but the name, a `RenameCandidate` is reported beside
+— never instead of — the removed and added entries, and any ambiguity declares nothing. And the
+project's signature distinction is now diffed: when one side holds a DocumentationGap and the
+other a Finding over the same requirements and the same normalized ground (the gap's resolved
+through its related mappings, the DEC-066 identity unhashed), a `ResolutionShift` reports which
+way it moved — claimed only when the key is unique on both sides and its own kind is genuinely
+absent on the other, so a gap persisting beside a new finding is two statements, not a shift.
+Threats remain unpaired; the comparison report continues to narrate the diff it is given.
+
+## DEC-098: The AI system threat-modeling pack grows catalog 0.2, and a scenario pins its catalog
+
+Date: 2026-08-17
+
+Status: Accepted
+
+Decision:
+
+**Catalog 0.2 (draft) gains the retrieval-augmentation and model-generated-code categories**
+(future-features 8.1, promoted in part). Five requirements: the retrieval corpus's write path
+is governed (req-RAG-001), retrieval is filtered by the requester's authorization
+(req-RAG-002), the index follows its sources' lifecycle (req-RAG-003), model-generated code
+executes in stated isolation (req-CODEGEN-001), and generated changes pass the same gates as
+human changes (req-CODEGEN-002). Every statement is in the documentation register so silence
+resolves to `unverified` (DEC-009), each carries `common_false_positives` naming what not to
+conclude where AI-system documentation is habitually silent, and the wording is original with
+sources cited by identifier (the catalog's own licensing rule). 0.2 is a draft under DEC-057,
+so the growth is an edit and a re-freeze, not a new version; the fate map is untouched because
+additions carry no prior fate.
+
+**A scenario names the catalog version its assessments pin.** The registry entry gains an
+optional `catalog_version` (absent means the loader's current version, exactly as before);
+the harness and `trace capture` pass it through `AssessmentService.create`, which now accepts
+the pin `new_assessment` always supported, and `trace assessment create --catalog-version`
+exposes the same for an operator. This is DEC-010's pinning rule reaching the one caller that
+could not state a version: without it, a scenario written against a draft catalog would be
+assessed against whatever `current_version()` says, and the truth set and the run would
+silently disagree about which requirements exist.
+
+**The rag-support-bot scenario makes the pack measurable.** A RAG support assistant documented
+well in most respects, with one affirmatively documented weakness and one genuine silence: one
+expected finding (req-RAG-002 — the shared index selecting by relevance alone is a documented
+absence of an entitlement filter, not silence), one expected gap with its paired question
+(req-RAG-003 — deletion propagation unstated either way), and two expected rejections
+(req-AI-001, req-RAG-001 — documented handling a naive pass reports over anyway). The authored
+baselines commit exactly those failures, and the structured baseline's over-claim on
+req-RAG-003 is kept deliberately: structure alone does not stop silence being read as absence,
+which is the ablation narrative's point carried into the comparison. The scenario replays
+offline with a full truth set like the other twelve, and pins catalog 0.2 through the registry.
+
+Why:
+
+- The catalog was the acknowledged weak substrate, and 8.1 is the growth direction the demo
+  and the talk are already about; a pack without a scenario would be asserted value, and the
+  promotion criteria require measured value.
+- DEC-024 sends the whole catalog on every mapping call, and its partitioning cost question
+  (2x or 5x?) is open; growing the catalog raises it, and DEC-092's measured token data is
+  what will answer it. The growth deliberately does not populate `applicable_technologies` or
+  add a pre-filter — that stays DEC-024's own decision, taken on cost evidence.
+
+Alternatives Considered:
+
+- A new catalog version 0.3 for the pack (rejected: 0.2 is a draft, mutable by DEC-057's own
+  rule, and a third version before the second releases would multiply manifests without
+  protecting anything the freeze guard does not already protect).
+- Scoping the scenario's truth set to catalog 0.1 so no pinning plumbing was needed (rejected:
+  0.1 has no retrieval requirements, so the pack's value would be unmeasurable — the exact
+  failure the promotion criteria exist to prevent).
+- Growing further in one change — fine-tuning pipelines, provider-integration depth (deferred:
+  each wants its own scenario to be measurable, and the WIP limit says one primary problem).
+
+Tradeoffs:
+
+- A 37-requirement catalog raises every mapping call's input size under DEC-024; the cost
+  question is now live and named rather than latent.
+- The structured baseline losing its clean no-spurious record is a deliberate narrative trade:
+  the honest comparison beats the tidy sentence, and the failure it now shows is the one the
+  architecture exists to prevent.
+
+## DEC-099: A catalog version releases when the first recorded scenario pins it; release is not the default
+
+Date: 2026-08-17
+
+Status: Accepted
+
+Decision:
+
+**The release condition DEC-057 left open is stated: a catalog version releases when the first
+committed recorded scenario pins it.** DEC-057 defined the mechanics — a draft is freely
+editable in place; a released version is immutable at PR time under
+`scripts/check_catalog_freeze.py`; the registry carries lifecycle — and named 0.1's trigger (the
+recorded ForgeFlow fixture) without naming 0.2's. The general rule behind that trigger is now
+explicit: the moment a committed recording depends on a version's content, that content is
+load-bearing for a replay, and content a replay depends on must freeze. `rag-support-bot`
+(DEC-098) pinned 0.2, so the condition fired; `requirements/versions.yaml` records
+0.2 as active, released 2026-08-17, and the freeze guard covers `requirements/0.2/` from this
+change forward.
+
+**Release does not move the default.** The root manifest (`catalog.yaml`) still names 0.1, so an
+assessment that pins nothing is still assessed against 0.1. The two knobs are deliberately
+separate: releasing freezes content a replay depends on; switching the default changes what every
+new unpinned assessment maps against — and, because a mapping call carries the whole catalog
+(DEC-024), it would also change the input surface of every default-profile run and interact with
+the open partitioning cost question. Switching the default to 0.2 is its own later decision,
+taken when the cost question has its measurement.
+
+**Every registered version's citations are checked.** `scripts/asvs_resolver.py` resolved only
+`current_version()`, which left 0.2's fourteen new requirements' ASVS citations unverified —
+a citation in a released version is exactly as load-bearing as one in the default. The resolver
+now iterates the governance registry's versions; all citations across 0.1 and 0.2 resolve.
+
+**The evaluation stamps are version-honest.** `build_comparison.py` and `build_ablation.py`
+stamped the whole corpus with one `current_version()` — structurally incapable of being true
+over a mixed corpus, and false since DEC-098 ("catalog 0.1" over a corpus with a 0.2 scenario).
+`catalog_version_summary()` in the evaluation registry counts what the scenarios actually
+assess against ("0.1 (12), 0.2 (1)"), and the committed evaluation documents are regenerated
+under it.
+
+Why:
+
+- An indefinitely editable version that a committed replay depends on is the drift DEC-057's
+  freeze exists to prevent, one directory over from where the guard was looking.
+- The stamp falsity was the stop condition — documentation and implementation describing
+  different systems — in the project's own measurement artifacts, which is the worst place for it.
+
+Alternatives Considered:
+
+- Releasing on a calendar or review cadence (rejected: DEC-057's whole design keys immutability
+  to what replays depend on, and a cadence would freeze content nothing depends on or leave
+  depended-on content mutable between reviews).
+- Moving the default to 0.2 in the same change (rejected: it changes every unpinned run's
+  mapping input surface and the recorded ForgeFlow replay's environment while the DEC-024 cost
+  question is unmeasured; releasing and defaulting are different risks and get different
+  decisions).
+
+Tradeoffs:
+
+- Two active versions with 0.1 as default reads oddly until the default switches; the registry
+  comment says why, and the alternative — a mutable version under committed replays — is worse.
+- Growing the catalog further now means 0.3: the pack's remaining half (fine-tuning and
+  training-data supply chains, DEC-098's deferral) pays the minor-version cost when it lands,
+  which is exactly the cost DEC-057 designed it to pay.
+
+## DEC-100: Baseline recordings are captured, not only authored
+
+Date: 2026-08-17
+
+Status: Accepted
+
+Decision:
+
+**`trace capture <scenario> baseline-generic|baseline-structured` captures a DEC-074 baseline
+recording from one live call.** DEC-091 promoted pipeline capture to a command and left the
+baselines out; the five scenarios carrying `recorded/baselines/` got them by hand, and #484's
+"live baselines" clause was hard-blocked on there being no capture path at all. The stage is one
+call and one file — `capture/baselines/baseline-<name>.json`, the bare `BaselineFindings` shape
+the replay already reads (the baseline path predates the #461 envelope and keeps its shape) —
+staged beside the pipeline stages with the same promote-by-copy rule.
+
+**A captured baseline is scored immediately.** The stage runs through `run_baseline`, so the
+same call that records also scores against the truth set and writes a feed; the operator sees
+matched/missed/spurious before deciding to promote. A recording nobody judged would be a
+recording nobody can trust, and the baseline exists to be compared.
+
+**The same guards as the pipeline stages, plus one honest asymmetry.** An existing staged file
+refuses the re-spend (exit 3, DEC-088); the fake provider is refused before the call; a
+schema-invalid response records nothing — the schema failure is the scored result, in the feed,
+because DEC-074 counts schema validity as a baseline metric rather than a retryable fault.
+Baseline capture opens no store and needs no data root: the DEC-074 baseline is deliberately
+storeless, and the capture inherits that.
+
+Why:
+
+- The keyed gate (#484, #331, #332) includes live baselines, and every other capture need had a
+  command; this was the last hand-authoring step between a provider key and the gate clearing.
+
+Alternatives Considered:
+
+- Wrapping the baseline call in the #461 envelope with usage (rejected for now: the replay path
+  reads the bare shape, and reshaping the five committed recordings plus the reader to gain
+  usage on a single-call artifact is a separate, smaller decision — the pipeline ledger is
+  where spend accounting lives).
+- A separate `trace baseline capture` command (rejected: capture is one surface with stages,
+  and a second top-level command would restate the same guards and the same staging rule).
+
+Tradeoffs:
+
+- The stage list on `trace capture` now mixes pipeline stages with baseline stages; the help
+  text says which is which, and the alternative was a second command surface.
+- Replay-through-fake when a test supplies a response leans on `build_model`'s rule that queued
+  responses feed only the deterministic substitute; that rule is load-bearing here and is
+  already pinned by the factory's own tests.
+
+## DEC-102: Severity concordance is measured against the truth set's guidance, without a second reviewer
+
+Date: 2026-08-17
+
+Status: Accepted
+
+Decision:
+
+**A `severity_concordance` benchmark metric answers DEC-030's open question.** DEC-030 assigned
+severity to the reviewer at checkpoint 2 and recorded, as a standing gap, that "nothing now
+measures severity at all" — and asked specifically for a metric that does not require a second
+reviewer. The data to answer it was already committed: every scenario's
+`expected-findings.yaml` carries `severity_guidance` per finding, and every replayed run carries
+the reviewer's assigned severity. For each matched finding whose expectation carries scalar
+guidance, the metric compares the two: the value is the exact-agreement rate, and the notes
+carry the within-one-level rate beside it. It is a benchmark metric
+(`EvaluatorType.BENCHMARK`), computed by `metrics.py` and surfaced in the scorecard's
+reserved-metrics table.
+
+**It measures agreement, not correctness.** Severity is a risk judgment in business context
+(DEC-030), and the guidance is one author's judgment, not ground truth — the metric's method and
+notes say so. What it detects is drift between the reviewer playing the checkpoint and the
+authored guidance, which is exactly the signal DEC-030 wanted: whether the blank-field
+checkpoint produces severities anyone can predict. A scenario whose matched findings carry no
+scalar guidance (ForgeFlow's `medium-or-high`, or a live run matching none of its truth)
+measures nothing here and reports `None` — absence of guidance is not a spurious zero.
+
+**A consolidated finding is held to the strictest guidance it stands for.** When one finding
+matches several expectations, under-rating the worst weakness it represents is the error that
+matters, so the toughest guidance among its matches is the bar. `unassigned` never appears —
+the approval gate refuses it (DEC-030).
+
+Why:
+
+- DEC-030 named the metric it wanted and the constraint (no second reviewer); the guidance
+  field existed for exactly this and had no consumer. Leaving a decided-open question
+  answerable-with-committed-data unanswered is the kind of gap the roadmap's stop conditions name.
+- It is the honest input future-features 7.7 (automatic severity calculation) would need before
+  it could leave Research: 7.7 stays out (DEC-030 excluded a severity agent, and "new agents
+  without measured benefit" is a stop condition), and this metric is the evidence that would one
+  day argue for or against it.
+
+Alternatives Considered:
+
+- A severity agent proposing the value (rejected: DEC-030 excluded it, and this delivers the
+  measurable half without one).
+- Scoring only exact agreement (rejected as the sole signal: a one-level miss and a three-level
+  miss are different failures, so the within-one-level rate rides in the notes).
+- Requiring a second annotator for a true concordance (rejected: DEC-004 is single-user, and
+  DEC-030 asked precisely for a metric that does not need one; agreement-with-guidance is what
+  a single reviewer can be measured against).
+
+Tradeoffs:
+
+- Guidance is one author's judgment, so a low score can mean the reviewer erred or the guidance
+  did; the metric flags divergence for a human to read, and does not adjudicate it. The method
+  string says "agreement, not correctness" so no reader mistakes it for the latter.
+- Scenarios with non-scalar guidance contribute nothing, so the metric's sample is smaller than
+  the finding count; the sample size rides on every result, and the reserved-metrics column
+  reads `—` where a scenario measures nothing.
+
+## DEC-103: The assessment comparison report is the diff's narrative layer, an output artifact
+
+Date: 2026-08-17
+
+Status: Accepted
+
+Decision:
+
+**`trace diff --report` renders the structural diff as a Markdown comparison report** (promotes
+future-features 13.3). DEC-097 shipped `trace diff` with one consumer, the CLI, and structural
+output — families, fingerprints, changed field names. 13.3 is the layer a reviewer actually
+reads: what changed between two approved models, ordered so the things that change a conclusion
+come first — findings, then open questions and gaps, then threats, then context. It carries no
+prose beyond the diff and draws no conclusion the diff did not; every line is derived from the
+two approved models.
+
+**It is an output artifact, not a report.** DEC-035's sixteen-section contract and
+`templates/report-v1.md` are untouched; the comparison is Markdown written to the *later*
+assessment's `outputs/`, content-addressed like the exports — it is that assessment's account of
+what changed since the earlier one. Deterministic: the same diff renders byte-identically, so
+re-running writes a new artifact beside the old rather than overwriting, and two comparisons of
+the same pair agree.
+
+Why:
+
+- The diff had exactly one consumer and its structural shape is not what a reviewer reads; the
+  narrative layer is the reviewer-decision value the roadmap's second question asks for, and it
+  is measurable with what exists (the diff plus the corpus), which is why 13.3 promoted where
+  the other 13.x ideas did not.
+- Writing it to the later assessment's outputs, content-addressed, reuses the export family's
+  rule rather than inventing a second artifact discipline.
+
+Alternatives Considered:
+
+- A new report *format* rather than an output artifact (rejected: DEC-035 makes the report
+  Markdown-only with one owner per section, and a comparison is not the assessment's report — it
+  is a derived artifact about two assessments, exactly the export family's shape).
+- Writing to the earlier assessment, or a shared location (rejected: the comparison is the newer
+  assessment's account of its own changes; the `AssessmentHandle` boundary keeps each
+  assessment's artifacts its own, and the newer one is where a reviewer looks next).
+- A gating exit code (rejected, as for the diff itself: the report is a report, not a gate;
+  DEC-097 already settled that a gating flag is a later decision if a consumer wants one).
+
+Tradeoffs:
+
+- The report reads the diff, which does not detect renames (DEC-097): a renamed object narrates
+  as removed-and-added. The narrative inherits that conservatism, which is the honest shape —
+  the report does not claim a rename the diff refused to guess.
+- Two comparison artifacts accumulate if a pair is compared before and after an edit; content-
+  addressing keeps them distinct and append-only, the export family's accepted cost.
+
+## DEC-104: The documentation site is a rendered view of committed sources, published from main
+
+Date: 2026-08-17
+
+Status: Accepted
+
+Decision:
+
+**`docs/` publishes as a static site — MkDocs Material, built by CI, deployed to GitHub Pages
+from `main` through the Pages artifact flow.** The Markdown sources stay where they are and
+remain authoritative: `mkdocs.yml` sits at the repository root with `docs_dir: docs`, so the
+tree the conformance tests read by path is untouched, and nothing about the site changes what
+any test or loader sees. A hand-authored `docs/index.md` is the site's landing page; the README
+stays the repository's front page and is not copied in. The handful of links that escaped
+`docs/` (into the README and `demo/forgeflow/`) became absolute repository URLs, which resolve
+identically on GitHub and on the site. The build runs `mkdocs build --strict` on every pull
+request that touches the sources, so a broken intra-site link fails CI; only a push to `main`
+deploys. The rendered `site/` directory is gitignored and never committed.
+
+This does not reopen DEC-076. The scorecard remains a committed artifact whose history is the
+git history; the site copies `docs/eval/scorecard.html` verbatim rather than regenerating it at
+deploy time. What DEC-076 rejected was leaving the scorecard *only* in a CI artifact with no
+committed copy. The site's rendering is a different class of output: derived presentation of
+committed Markdown, with no history of its own worth keeping — the same standing as the wheel
+CI builds and discards.
+
+Why:
+
+- Stage 6's audience reads documentation as a navigable site with search, not as a file tree.
+  The corpus is complete — guide, architecture, product, evaluation — and raw Markdown in a
+  repository browser undersells it.
+- Publishing from `main` keeps the site an account of released Trace. `develop` describes what
+  the next release will do, and a site that tracks it would drift into the tense-discipline
+  failure the working norms name: describing the pipeline as if the unreleased part exists.
+- The artifact flow rather than a `gh-pages` branch: branch protection blocks CI pushes here by
+  design (the scorecard and demo workflows already note this), and a rendered branch is a second
+  copy of derived content in history.
+
+Alternatives Considered:
+
+- A GitHub wiki (rejected: a wiki is a separate repository outside pull requests, CI, and the
+  conformance tests that hold `docs/` and the code in agreement; a doc edit would stop being
+  reviewable and stop versioning with the code it describes).
+- Committing the rendered site (rejected: DEC-076 committed the scorecard because its history is
+  the record; a themed rendering of already-committed Markdown has no history of its own, and
+  regenerated `site/` churn on every docs edit would bury real diffs).
+- Publishing from `develop` (rejected: see Why; the integration branch is the wrong tense for a
+  public account of the system).
+- Restructuring `docs/` for the site — an `index.md`-per-directory layout or a `docs/src/` split
+  (rejected: roughly twenty tests read these files by path, and the site is not worth a test
+  migration; `docs_dir: docs` with an explicit nav gets the same structure for free).
+
+Tradeoffs:
+
+- The site lags `develop` by one release. Accepted: that is the point of publishing from `main`,
+  and the sources on any branch remain readable in the repository.
+- `mkdocs-material` joins the lockfile, and the existing CI jobs install it because they sync
+  `--all-groups`. Accepted: pure-Python wheels, cached by the uv action; the docs workflow
+  itself syncs `--only-group docs` and skips the project entirely.
+- The scorecard page renders without the site's chrome, because it is copied verbatim as DEC-076
+  requires. Accepted: it carries its own styling and always has.
+
+## DEC-105: The catalog leads the mapping trusted region, and the seam carries a system-region cache hint
+
+Date: 2026-08-17
+
+Status: Accepted
+
+Decision:
+
+**The mapping trusted region opens with its stable span — the assessment header and the whole
+requirements catalog — and everything the threat varies follows it.** The section order was
+Assessment, Threat, Catalog, Controls, architecture, Evidence; it is now Assessment, Catalog,
+Threat, Controls, architecture, Evidence. The reorder changes no content, only position, and the
+composed prompt files are untouched — this is the runtime system region only.
+
+**The seam gains `system_cache_prefix`, the same provider-neutral hint `cache_prefix` already
+is, for the system region.** `MappingInput` carries the stable span as `trusted_cache_prefix`,
+and the mapping node passes it through. The Anthropic adapter splits the system region at the
+hint and marks the stable block ephemeral, with the same degradation rules as the user-message
+split: no hint, or a hint that is not a prefix, sends the plain string. The OpenAI adapter
+accepts and ignores it — that provider caches prefixes automatically and has no marker. Both
+remain one contract under the adapter conformance suite.
+
+Why:
+
+- DEC-024 sends the full catalog on every mapping call and defends the cost by calling the
+  catalog "a stable cacheable prefix on every mapping call" — but it was not one. The cache
+  marker sat in the user message, after a system region that varies per threat, so across an
+  assessment's ~15 mapping calls the catalog was re-sent uncached every time; only one threat's
+  retries ever hit. DEC-098 grew the catalog to 37 requirements riding every call, making this
+  the cheapest real cost lever available before the DEC-092-funded live sweep measures the
+  pipeline again.
+- The user-message marker stays: within one threat's retries the whole system region is
+  identical, so the longer prefix still hits there, and the two markers compose.
+
+Alternatives Considered:
+
+- Moving the per-threat trusted content into the user message so the whole system region is
+  stable (rejected: the trusted/untrusted boundary is decided surface — the system region is
+  the application's voice and the user message carries the fenced source content; relocating
+  approved objects across that line to serve a cache is the tail wagging the dog).
+- Partitioning the catalog instead (deferred, unchanged: that is DEC-024's own open question,
+  to be taken on cost evidence; this change extracts the available win without deciding it).
+
+Tradeoffs:
+
+- The seam's `generate` widens by one optional parameter across every implementation, including
+  the test doubles. Accepted: the alternative was a mapping-only side channel past the seam,
+  which DEC-014 exists to prevent.
+- Marking the stable span costs the cache-write surcharge on the first mapping call of a run;
+  every subsequent call reads it back. A run with one threat gains nothing and pays the
+  surcharge once — the degenerate case, accepted.
+
+## DEC-106: Data-model section 39's remaining questions are answered by practice or re-deferred with a trigger
+
+Date: 2026-08-17
+
+Status: Accepted
+
+Decision:
+
+Seven of section 39's questions were still open while the code had already chosen. Each is now
+resolved by ratifying the practice, resolved by an existing decision the section never cited, or
+re-deferred with the trigger named — the M12 pattern (#541). Per question:
+
+- **Q1, claim shape:** both, with a division of labor. Typed objects carry the structured facts;
+  `ContextClaim` keeps subject-predicate-value for the assertions about them, `value` as
+  `JsonValue` domain-side and scalar-narrowed on the proposal side (DEC-083). The shipped
+  pipeline uses exactly this split, and neither half substitutes for the other: typed models
+  alone cannot carry an open assertion, and claims alone would untype the architecture.
+- **Q5, machine-readable applicability:** re-deferred, trigger named. The DEC-024 partitioning
+  measurement (#532) decides whether partitioning the catalog pays; machine-readable
+  applicability is its representation question and waits on the same evidence.
+- **Q8, merging multiple model outputs:** dissolved by the fixed pipeline (DEC-016). Every
+  object has exactly one proposing call; a retry replaces the whole proposal (retry the attempt,
+  never the conclusion); duplicates across calls belong to the deterministic consolidation rule
+  and the reviewer. Model outputs are never merged with each other, and building a merge would
+  invite the ambiguity the pipeline exists to prevent.
+- **Q9, revision storage:** DEC-023 answered it — update in place under the same identifier,
+  with `ReviewerDecision` history; `SystemContext`'s approved versions are the one revisioned
+  lineage. No general revision store.
+- **Q11, generation metadata:** `generated_by` and `created_at` on the object, and nothing
+  more. The generation's conditions — model, profile, effort, retries, cost, raw failed output —
+  are the `ExecutionRecord`'s and `traces/`, keyed by run. An object carrying its whole
+  generation story would be a second execution ledger drifting from the first.
+- **Q12, state contents:** DEC-016 answered it — identifiers and routing only, section 31's
+  state-design rule.
+- **Q16, rejected-object retention:** in place. Status `rejected`, `duplicate_of_id` where
+  deduplication merged, decision history attached; DEC-040 keeps rejected objects out of
+  approved baselines by revision membership, and the harness grades the negative set against
+  `expected-rejections.yaml`. The only deletion is DEC-089's per-assessment purge.
+
+Why:
+
+- Pre-release, a shareable data-model document whose own open-questions section does not know
+  what the code decided reads as a specification nobody reconciled. Ratifying practice on the
+  record is cheap exactly because the code has already borne the decisions' weight; the
+  expensive alternative — reopening each question as if undecided — would relitigate settled
+  ground without new evidence.
+- A re-deferral with a named trigger is an answer: Q5 now says *what evidence* reopens it,
+  which is the difference between deferred and forgotten.
+
+Alternatives Considered:
+
+- One DEC per question (rejected: five of the seven are ratifications or citations with no new
+  design content; seven entries would bury the two that carry any).
+- Answering Q5 now by populating `applicable_technologies` (rejected: DEC-024 and DEC-098 both
+  hold that the pre-filter decision is taken on cost evidence, and #532 is that evidence's
+  issue).
+
+Tradeoffs:
+
+- Ratification risks blessing an accident as a decision. Mitigated by stating each answer's
+  reason here rather than pointing at the code alone — if the reason stops holding, the entry
+  is what a successor argues against.
+
+## DEC-107: The catalog is not partitioned; DEC-024's escalation path closes on measured shape
+
+Date: 2026-08-17
+
+Status: Accepted
+
+Decision:
+
+**The mapping step keeps sending the whole catalog on every call, and the partition-and-fan-out
+escalation DEC-024 named is closed rather than deferred.** The evidence is the committed
+`docs/eval/mapping-variants.md` (#532): every registered scenario replayed offline, every
+mapping call rebuilt exactly as the pipeline built it, re-composed under partition schemes, and
+sized. Pooled over the thirteen scenarios, partitioning by primary category multiplies
+cache-adjusted estimated input roughly ninefold (~14,230k tokens against ~1,519k), and even the
+coarsest two-way split costs ~1.8x — because everything that is *not* the catalog (the threat,
+the narrowed architecture, the evidence manifest, the composed prompt and schema) is duplicated
+into every partition's call, and with DEC-105 the catalog is the one span that is already
+cheap. Partitioning duplicates the expensive part to shrink the cheap part.
+
+**Machine-readable applicability stays free text**, completing the answer DEC-106 re-deferred
+to this measurement: a pre-filter's representation question is moot while there is no
+partitioning for it to feed, and DEC-024's structural reasons (a filter is a silent scope
+decision no reviewer sees) stand unweakened.
+
+The table regenerates in CI beside the scorecard checks, so the evidence tracks the corpus.
+
+Why:
+
+- DEC-024 said the escalation is taken "on cost evidence"; the cost evidence now exists and
+  points the other way. Closing the question on the record beats leaving an open path that
+  every catalog-growth discussion re-litigates.
+- The figures are estimates (3.8 chars/token, DEC-092 discipline, labeled in the artifact),
+  but the *ratio* is structural: fan-out duplicates the per-call remainder, and no token
+  heuristic changes which side of 1x that lands on.
+
+Alternatives Considered:
+
+- Leaving the question open pending live token counts from #484 (rejected: the live sweep will
+  refine the absolute numbers, not the ratio; a ninefold structural multiplier does not invert
+  under a different chars-per-token constant).
+- Partitioning only for very large future catalogs (not adopted as a standing trigger: if a
+  future catalog's stable span ever dwarfs the per-call remainder *and* live evidence shows
+  quality loss from long catalogs, that is a new decision with new evidence, not this one
+  reopening).
+
+Tradeoffs:
+
+- The measurement models cache economics with Anthropic's multipliers; a provider with no
+  cache discount would narrow the gap but not invert it — the duplicated remainder dominates
+  at any discount.
+- The mapping-variants check adds a second replay to the scorecard workflow's wall clock,
+  accepted for evidence that regenerates rather than rots.
+
+## DEC-108: The report renders to HTML as a derived view; Markdown remains the deliverable
+
+Date: 2026-08-17
+
+Status: Accepted
+
+Decision:
+
+**`trace report render --format html` writes an HTML page to the assessment's outputs area,
+derived from the rendered Markdown report by a deterministic transform.** DEC-035 is not
+amended: Markdown remains the report format, the sixteen sections and their single owners are
+unchanged, and there is no second template and no second renderer — the HTML holds a section
+because the render holds it, with the same heading, the same anchors, and the same text. The
+transform (`services/report/html.py`) escapes every line as untrusted and turns only the
+constructs the Markdown renderer itself emits into markup: headings, tables, fenced evidence
+blocks, list lines, the exact `<a id="..."></a>` anchor form, bold, single-star emphasis, and
+fragment-only links. A `<script>` in a finding description renders as text; an external link
+stays literal. The page carries no clock, path, or environment value, and two conversions of
+the same render are byte-identical. The derived page is not added to the report manifest: it is
+regenerable from the deliverable by one command, and the manifest guards the deliverable.
+
+Why:
+
+- Stage 6's demo materials want a presentation-safe report artifact, and the read-only view
+  wants a page to serve; both are presentation needs, not report-format needs. Deriving from
+  the one render is what keeps DEC-035's one-owner-per-section rule structurally intact — a
+  second renderer over `ReportInput` could disagree with the first about what was approved.
+- Escaping-by-default is the fence discipline applied to output: the report body carries
+  source-derived text end to end, and a converter that trusted it would let a document under
+  review inject markup into the deliverable's presentation.
+
+Alternatives Considered:
+
+- Amending DEC-035 to add HTML as a second report format (rejected: a format has owners and a
+  template; this is a view of the existing format, and calling it a format would put two
+  renderers where the decision put one).
+- A Markdown library dependency (rejected for now: the renderer emits a small closed set of
+  constructs, a general parser interprets far more than that set — every extra construct is
+  markup a source document could reach for — and the supply-chain posture prefers no new
+  runtime dependency for a bounded transform).
+
+Tradeoffs:
+
+- The subset converter must track the renderer's emitted constructs; a new construct in the
+  Markdown renderer degrades to escaped text in the HTML until the converter learns it —
+  visible and safe, rather than silently wrong.
+- Prose lines that begin with Markdown-significant characters inside descriptions can be read
+  structurally (a description line starting `# ` becomes a heading). The renderer flattens
+  cell text and the template controls line starts today; the risk is accepted and the
+  escape-first rule bounds it to formatting, never to markup injection.
+
+## DEC-109: The tracing integration exists, and a span structurally cannot carry content
+
+Date: 2026-08-17
+
+Status: Accepted
+
+Decision:
+
+**Execution spans export to an external destination when an assessment opts in, and the span is
+built so content cannot travel in it.** `infrastructure/tracing/` holds the emitter. A span is a
+projection of one `ExecutionRecord` — the section 5.17 fields: run and record identifiers, node
+name and version, prompt *version*, model name, input and output object identifiers, timestamps,
+status, retry number, safe error type and message, duration, the disjoint token counts, and
+cost. There is no field a prompt, a source excerpt, or a document could occupy, and the test
+suite holds the span's key set closed, so adding a content-bearing field is a visible decision
+rather than a drift. The driver emits after the orchestrator returns — paused, failed, and
+completed runs alike — when `enable_external_tracing` is on; the destination is
+`Settings.tracing_endpoint` (`file://` appends JSON lines, `http(s)://` posts one batch with
+one attempt and the key in a header); emission failures are logged with identifiers and counts
+and swallowed. The local ledger remains the authoritative execution record, exactly as
+section 5.17 requires, and the threat model's one Designed row flips to Enforced.
+
+**This entry is the section 5.17 data-handling review.** What leaves the machine when the flag
+is on: the span fields above, nothing else. What cannot leave: prompt text (only the prompt
+*version* travels), source-document content, evidence quotations, proposal payloads, and raw
+failed output (which goes to `traces/` and never into `error_message`, per section 27). The
+`error_message` field is included because section 27 already requires it safe; the observability
+module's known gap — a secret interpolated into a message before `logging` sees it — does not
+extend here, because span fields are projected from typed record fields, never formatted prose.
+
+Why:
+
+- The threat model carried exactly one Designed row, and Stage 6 publishes that document; a
+  shareable threat model whose only unbuilt mitigation is its observability boundary invites
+  the question this entry answers. The keyed track's live runs (#484) also want spans.
+- Structural inability beats policy: a reviewer of `span_of` can enumerate everything that can
+  ever leave, which is design principle 13's "understand which external services receive
+  assessment information" made checkable.
+
+Alternatives Considered:
+
+- An OpenTelemetry SDK (rejected for now: a heavy dependency for what is one projection and two
+  sinks; the span shape is ours and section 27 already fixes its safety rules. An OTLP exporter
+  is an adapter behind the same `TracingEmitter` protocol if a consumer wants one).
+- Emitting per-node during the run (rejected: a slow endpoint would sit inside the pipeline's
+  latency, and a failed POST mid-run would tangle with the orchestrator's error taxonomy;
+  after-the-run batch emission keeps observability out of the control path).
+- Restoring LangSmith (rejected: DEC-090 removed it unwired, and nothing here needs a vendor).
+
+Tradeoffs:
+
+- After-the-run emission means a run killed mid-flight exports nothing until its resume
+  finishes; the local ledger holds the records either way, which is the authority order 5.17
+  fixes.
+- One attempt per batch loses spans on a transient endpoint failure. Accepted: tracing is a
+  copy of an authoritative local record, and a retry queue would be state the pipeline does
+  not want.
+
+## DEC-110: Duplicate misses are measured against authored pairs; the DEC-043 trigger has its instrument
+
+Date: 2026-08-17
+
+Status: Accepted
+
+Decision:
+
+**`expected-duplicates.yaml` joins the truth-set schema, and `duplicate_miss_rate` measures
+what the deterministic merge rule missed.** DEC-043 deferred semantic threat-duplicate pairing
+and named its own revisit trigger: a measured duplicate rate the deterministic rule misses. The
+metric that existed — `duplicate_finding_rate` — counts merges the rule *performed*, which
+structurally cannot measure a miss; a miss is only measurable against authored truth. The new
+file names duplicate pairs: one weakness a run could plausibly state twice, identified by the
+two requirement lenses it splits across, each side in the DEC-056 identity form
+(`requirement_id` plus `affected_component`). Scoring is over the produced set: a pair is
+evaluable when both identities matched produced findings; a miss when the two sides resolve to
+distinct canonical findings (`canonical_finding_id`, so an explicit `duplicate_of_id` merge
+detects); detected when they share one. No file, or no evaluable pair, yields no metric —
+unmeasured, never zero — and the scorecard's truth section carries the rate beside severity
+concordance. The first annotation is `husky-ai`'s: the experimental environment's
+password-only reachability stated under `req-AUTH-002` and under `req-NET-001` on the same
+component is one weakness under two lenses — the flagship live capture's wrong-requirement-lens
+failure mode, made checkable.
+
+**This does not build the semantic consolidation DEC-043 deferred.** It builds the instrument
+that would ever justify it: a DEC-043 revisit is warranted when this rate is measurably nonzero
+over runs that matter, and not before.
+
+Why:
+
+- An unfireable trigger is a deferral in name only; every duplicate-handling discussion
+  re-litigated DEC-043 because nothing could ever produce the number it asked for.
+- The annotation is honest about unevaluability: a run that never split the weakness proves
+  nothing about the merge rule, and scoring it as a success would inflate the instrument.
+
+Alternatives Considered:
+
+- Measuring misses without truth, as same-identity unmerged groups in the produced set
+  (rejected: the deterministic rule already merges exact identities, so the measurable residue
+  is empty by construction — the misses that matter are semantic, and semantic needs authored
+  judgment).
+- A per-scenario expected `duplicate_finding_rate` target (rejected: a rate target is a quota
+  shape; the instrument names the pairs, not a number).
+
+Tradeoffs:
+
+- Authored pairs encode an author's judgment about which splits are one weakness; a
+  wrong pair mismeasures. Each pair carries its reasoning in `note`, so the judgment is
+  reviewable where it sits.
+- The file is a truth-set schema addition outside evaluation-plan section 5's derived
+  per-object-type rule — recorded here rather than silently widening that rule.
+
+## DEC-111: Catalog 0.3 carries the delegated-authentication pack, measured against oidc-portal from its first commit
+
+Date: 2026-08-17
+
+Status: Accepted
+
+Decision:
+
+**Catalog 0.3 exists: everything in 0.2 carries forward unchanged, plus the
+`delegated_authentication` category — `req-OIDC-001` through `req-OIDC-004` (#537).** The four
+requirements cover the protocol surface delegation leaves behind: redirect registration, token
+validation, the bound the relying party's own session puts on the provider's authentication
+event, and the binding of the authorization-code exchange. Every statement is in the
+documentation register so silence resolves to `unverified` (DEC-009), each carries the
+`common_false_positives` entries its own false-positive class needs, and citations resolve
+against the pinned ASVS 5.0.0 export. The fate of every 0.2 requirement is recorded in
+`mappings/0.2-to-0.3.yaml`, all `unchanged`.
+
+**The pack is measurable on the day it lands — the DEC-098 pattern at zero new-scenario cost.**
+`oidc-portal` pins catalog 0.3, gains `expected-control-mappings.yaml` (six expected pairs:
+the documented delegation satisfied, the four OIDC requirements and the reachability
+restriction honestly `unverified`, plus the scenario's two `must_not_conclude` negatives), and
+its recorded thr-001 mapping is re-authored to engage the pack — appended after the existing
+mappings so earlier allocated identifiers stay stable, with the one shifted identifier
+(`map-003` → `map-007`) moved in the evidence-validation recording with it. The replay
+completes offline with `requirement_mapping_accuracy` at 1.0 over the six pairs, and zero
+findings remains the recorded outcome — the scenario's original point stands beside the pack.
+
+**0.3 registers as `draft` in the change that authors it; the flip to `active` is a
+registry-only follow-up.** DEC-099's release condition has fired — a committed recording pins
+0.3 — but the DEC-057 freeze guard forbids touching a released version's directory, and a
+change that both created the content and marked it released would trip its own guard. The
+sequencing is deliberate: content and pin land under `draft` (the registry entry says so in
+place), and the lifecycle flip rides the next release cut, touching only `versions.yaml` —
+exactly the registry-outside-content separation DEC-057 built.
+
+Why:
+
+- Technology packs (future-features 5.4) had failed the instruments-measure-something bar as
+  catalog growth without a scenario; here the measuring scenario already existed, and the pack
+  diversifies the catalog beyond the AI axis DEC-098 grew.
+- The oidc-portal scenario exists for the delegated-authentication false-positive class, and
+  until now the catalog had no requirements for the surface delegation actually leaves — the
+  scenario could prove what a correct assessment does not say, but not what it should examine.
+
+Alternatives Considered:
+
+- Growing 0.2 in place (rejected: 0.2 released when rag-support-bot's recording pinned it, and
+  a released version is immutable — "any content change, however small, is a new minor
+  version", DEC-057's own words, enforced by the freeze guard).
+- A per-scenario requirements file (rejected long ago and still: DEC-024 sends the whole
+  catalog, and a scenario-scoped list could only narrow what the pipeline sees).
+
+Tradeoffs:
+
+- The catalog now rides every mapping call at 41 requirements for 0.3-pinned scenarios.
+  DEC-105 made the catalog the cached span and DEC-107 measured the fan-out alternative as
+  strictly worse, which is the cost posture this growth was sequenced behind.
+- Appending mappings to a recorded response edits a committed recording; the provenance file
+  records exactly what changed and why, and the replay's completed run plus the stable earlier
+  identifiers bound what the edit can have touched.
+
+## DEC-112: Truth-set agreement is measurable; the first set stays authoritative
+
+Date: 2026-08-17
+
+Status: Accepted
+
+Decision:
+
+**A scenario may carry a second annotation set at `annotations/second/`, and the harness scores
+agreement between it and the authoritative `expected/` set (#530).** The second set mirrors the
+expected file shapes; comparison is over the DEC-056 identity forms the run matcher already
+uses — a finding is its requirement and normalized component, a gap its requirement, a question
+its normalized text — and wording is never compared, exactly as the run-side matcher never
+compares it. The statistic is Jaccard set agreement per artifact, pooled for the headline
+(`annotation_agreement` in the feed, an "Annotator agreement" section on the scorecard).
+Chance-corrected kappa is deliberately not computed: kappa needs a negative universe, and an
+open-world truth set has no enumerable set of findings both annotators declined.
+
+**Three rules keep the instrument honest.** The first set stays authoritative whatever the
+number: disagreement is a review question for the truth set's owner, never an automatic edit.
+The statistic gates nothing (the DEC-063 posture). And absence measures nothing: a scenario
+with no second set, or an artifact the second pass has not covered, contributes no
+disagreement — silence is not an empty annotation, which is DEC-009 applied to annotators.
+
+**The machinery lands without data, and says so.** No second set is authored in this change,
+because a second annotation authored by the same session that wrote the machinery would be
+self-agreement wearing independence's clothes — the exact confusion the instrument exists to
+dissolve. The README's limitation paragraph now names the instrument and states that it stands
+empty until a person records a genuinely second pass; the documented fallback for a solo
+maintainer is blind test-retest — the same annotator, months later, without consulting the
+first set — reported as test-retest agreement, never as inter-annotator agreement.
+
+Why:
+
+- The README's own limitation — every number is one person's judgment measured against
+  itself — is the portfolio's most probeable claim, and the difference between "my numbers
+  agree with me" and a measured agreement statistic is the difference a skeptical reader acts
+  on. Building the instrument first makes the second pass a bounded afternoon instead of a
+  project.
+- Reusing the run matcher's identity forms means the agreement number and the benchmark
+  numbers disagree about nothing structural: what counts as "the same finding" is decided in
+  one place.
+
+Alternatives Considered:
+
+- Authoring the second set now (rejected: see above — the labor is deliberately left to a
+  person, and the issue closes on the machinery with the pass recorded as the operator's own
+  session).
+- Krippendorff's alpha or kappa over a constructed negative universe (rejected: constructing
+  the universe *is* the judgment being measured, and a statistic built on it would smuggle the
+  first annotator's frame into the correction term).
+
+Tradeoffs:
+
+- Jaccard punishes scope differences as disagreement: a second annotator who found a real
+  extra finding lowers the number even though the truth set should grow. Accepted and
+  intended — that disagreement is exactly what the truth set's owner should review, and the
+  per-artifact counts keep the direction visible.
+
+## DEC-113: The IaC parser completes DEC-070's family, scoped to Terraform JSON syntax
+
+Date: 2026-08-17
+
+Status: Accepted
+
+Decision:
+
+**`services/context/iac.py` is DEC-070's third and last parser: one component per declared
+resource, one documented claim per security-relevant attribute the declaration states, through
+the proposal path like the other two (#525).** Scope is Terraform's JSON syntax (`*.tf.json`),
+deliberately: the JSON form is a first-class documented equivalent of HCL and parses with the
+standard library — no HCL dependency to vet under the supply-chain posture, determinism held
+trivially, and the ingestion loader's accepted formats already admit it. HCL stays future work
+with that stated reason, the same way the OpenAPI parser scoped to YAML. Resource types map to
+open-vocabulary component families (DEC-036; an unmatched type stays a generic
+`infrastructure_resource`), and the two attributes read are `storage_encrypted` and
+`publicly_accessible` — read only when *stated*, in either direction: a stated `false` is a
+documented negative with a line number, while a silent declaration yields nothing, which is
+DEC-009's line held by a parser. Excerpts quote the resource's own line span with a hash;
+output converts with `structured_input` provenance and candidate status for checkpoint 1.
+
+**The corpus exercises it from the first commit: `managed-db-service` gains a Terraform
+declaration of its managed database.** The declared `storage_encrypted: true` becomes
+machine-documented evidence beside the prose — the scenario's inherited-encryption point,
+restated by a declaration. Seeding before extraction shifts the component and claim
+allocation; the recorded references and the checkpoint decisions moved with it, the decisions
+file gained approvals for the parser's objects, provenance records exactly what changed, and
+the replay completes with the same expected outcomes.
+
+Why:
+
+- DEC-070's own argument lands hardest here: infrastructure code declares the largest surface
+  of verifiable ground, and every mechanically-derived claim shrinks the DocumentationGap
+  surface at zero model cost.
+- With three parsers emitting claims beside the agent's, the DEC-070 cross-claim observations
+  (#526) have the material they were built for: a declaration and a prose document disagreeing
+  about the same fact is now a detectable, stated conflict.
+
+Alternatives Considered:
+
+- An HCL parser dependency (deferred, stated: the vetted candidates are heavyweight for two
+  attributes and a resource list, and the JSON syntax covers the deterministic ground without
+  one. Revisit if a real corpus arrives HCL-only).
+- Deriving exposure from security-group and network declarations (rejected for v1: reachability
+  is a graph judgment across resources, not a stated attribute, and a parser that inferred it
+  would be doing analysis the agents own).
+
+Tradeoffs:
+
+- Terraform-JSON-only means most real repositories' `.tf` files pass through unparsed until
+  the HCL decision is taken; the parser's silence there is ordinary silence, not a wrong claim.
+- Two stated attributes is a narrow read of a rich surface. Narrow is the family's pattern —
+  the OpenAPI parser reads three declaration kinds — and each addition is a visible diff to a
+  small table rather than a schema excursion.
+
+## DEC-114: The fine-tuning pack completes future-features 8.1, measured by the reply-tuner scenario
+
+Date: 2026-08-17
+
+Status: Accepted
+
+Decision:
+
+**Catalog 0.3 gains the `fine_tuning` category — `req-TRAIN-001` through `req-TRAIN-003` — and
+the fourteenth scenario, `reply-tuner`, measures the pack from its first commit (#531).** The
+three requirements cover the surface fine-tuning creates: the training corpus as a write path
+into the model's weights, minimization of sensitive content before it becomes memorizable, and
+lineage on the tuned artifacts that serve. Statements are in the documentation register with
+their own `common_false_positives`; citations ground in the GenAI Security Project LLM Top 10
+(2026) and OWASP AISVS chapter C1. This is the remaining slice future-features 8.1 named when
+DEC-098 built the pack's first half, and it rides catalog 0.3 while 0.3 is still draft — no
+fourth version needed, and the DEC-111 release sequencing is unchanged.
+
+**The scenario exercises all three of the pack's shapes at once, which is the DEC-098 pattern's
+point.** A documented negative that is a finding: transcripts exported in full, customer names
+and message bodies included, "no redaction or filtering step" — req-TRAIN-002 unmet, one
+approved finding, severity high, matched with severity concordance 1.0. A silence that is a
+gap: date-named artifacts with no registry and no lineage — req-TRAIN-003 unverified, the
+evidence assessment recommends a gap, documentation-gap precision 1.0. And a documented control
+a generic review asserts is missing anyway: the exporter's job identity as the store's only
+writer — req-TRAIN-001 satisfied with the suppressed conclusion recorded, the pack's own
+false-positive class held as a rejection. The recording is authored offline, replays to
+completion, and its provenance says which; baselines await the keyed capture step (DEC-100).
+
+Why:
+
+- Fine-tuning pipelines are where the catalog's AI axis was thinnest against 2026 systems, and
+  the deferral was explicit: "pending its own scenario." The scenario now exists, so the pack
+  does.
+- One scenario carrying a finding, a gap, and a suppression exercises the project's central
+  distinction three ways in one replay — the corpus's best return per authored line.
+
+Alternatives Considered:
+
+- Growing the pack inside `ai-input-handling` (rejected: fine-tuning's surface is the corpus
+  and the artifact, not the prompt; a category boundary that follows the surface keeps
+  `applicable_conditions` honest).
+- Waiting for a live capture to found the scenario (rejected: authored recordings are the
+  corpus's convention, provenance states it, and the keyed track remains where live evidence
+  lands).
+
+Tradeoffs:
+
+- Catalog 0.3 now carries 44 requirements on every 0.3-pinned mapping call. The cost posture
+  is DEC-105's cached span and DEC-107's closed fan-out path, which is what this growth was
+  sequenced behind.
+- The scenario's system is small enough to author precisely, which also means it cannot
+  exercise scale effects; the large-architecture coverage category remains parcel-platform's.
+
+## DEC-115: The organizational control catalog exists, read-only, and asserts existence only
+
+Date: 2026-08-18
+
+Status: Accepted
+
+Decision:
+
+**`org-controls/` holds a versioned, hash-verified catalog of controls the organization
+provides, `services/org_controls/loader.py` is its only reader, and an assessment consumes it
+only as documented claims through the parser family (#528).** The catalog follows the
+requirements pattern scaled to its size: one file per version, names not identifiers
+(`enterprise-idp-mfa`, DEC-034), a DEC-019 content hash over the parsed document recomputed on
+every load, and a caller that names the version it wants. `OrganizationalControl` is a domain
+object (data-model.md section 30a) with the registry flipped in the same change. Deliberately
+v0: a flat catalog, no inheritance graph — future-features 5.2 stays Research.
+
+**The pipeline entry is an assertion the parser verifies, never an import it trusts.** An
+assessment opts in by registering an `org-controls.yaml` document naming a catalog version and
+the control names asserted to bear on this system. The parser — the DEC-070 family's fourth
+member — verifies every asserted name against the loaded central version and seeds one
+documented claim per control, its value carrying the catalog's own statement with
+`(name, catalog version)` provenance and its evidence quoting the registered assertion. A
+failed verification seeds nothing and stops with the reason: an unknown name is an
+unverifiable claim about the organization, and partial seeding would let a typo drop a control
+silently.
+
+**An org control asserts that a mechanism exists organizationally, and nothing else.** Whether
+*this system* inherits it is the pipeline's ordinary work: the claim is decided at checkpoint 1
+like every parser product, and evidence validation still judges what any mapping concludes from
+it. This is DEC-009 run in the other direction — a documented organizational mechanism is
+evidence a conclusion may rest on, never a conclusion — and it is what keeps the catalog from
+becoming a bypass around the evidence chain.
+
+**The corpus exercises it from the first commit.** `oidc-portal` asserts `enterprise-idp-mfa`:
+the scenario's standing negative — multi-factor authentication is not to be reported absent —
+now rests on the organization's documented factor policy with catalog provenance, beside the
+overview's own sentence. The replay completes with every expected metric unchanged.
+
+Why:
+
+- The false-positive class this project exists to eliminate is exactly the org-control shape:
+  central logging exists, secrets come from the enterprise vault, and no system document
+  repeats it — so every assessment re-derives the same DocumentationGap noise. Future-features
+  5.1 was the highest-status unclaimed candidate, and the interview package promises the
+  inherited-controls story.
+- Entering through the parser family reuses every boundary already built: untrusted-document
+  handling, `structured_input` provenance, checkpoint-1 decision, the fence.
+
+Alternatives Considered:
+
+- Seeding `Control` objects directly (rejected: a Control asserts something about *this
+  system's* protection surface, which is precisely the judgment the org catalog must not make;
+  claims carry the fact and leave the judgment to the pipeline).
+- An `AssessmentConfiguration` field naming the catalog version (rejected: the assertion is
+  per-assessment *content* — which controls bear on this system — not a setting, and a
+  configuration field could not carry the asserted subset).
+- Trusting the registered document's own statements without the central catalog (rejected: a
+  source document is attacker-authorable, and "the organization provides X" from an untrusted
+  file is the exact laundering the hash-verified central catalog exists to refuse).
+
+Tradeoffs:
+
+- The asserted-name indirection means an assessment cannot carry an org control the central
+  catalog lacks; adding one is a catalog edit with a hash rewrite. Deliberate: the catalog is
+  the reviewable place organizational facts live.
+- v0 has no per-control evidence linking to organizational documentation (policy pages, audit
+  reports); the claim cites the assertion document. A future version can carry references, and
+  the gap is stated here rather than papered over.

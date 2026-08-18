@@ -1,7 +1,13 @@
 """Estimate the model cost of one assessment and one benchmark sweep.
 
-Answers the first open question on DEC-014: what does a ForgeFlow assessment cost at the
-selected model and effort level, and does the answer change the model tier?
+**Superseded for the per-assessment figure (DEC-092).** The DEC-077 stability protocol measured
+five completed live runs at $6.92 ± $3.28 each — above this script's $2.25 to $5.97 ceiling — and
+the measurement, not this model, is the quotable cost. The script survives because its
+per-component shape is still the only a-priori estimate for a scenario never run live, and
+because the conclusion it was built to check (the cost does not change the model tier) held.
+
+It originally answered the first open question on DEC-014: what does a ForgeFlow assessment cost
+at the selected model and effort level, and does the answer change the model tier?
 
 **This is an estimate, not a measurement.** No product code exists, so there is nothing to
 instrument; and with no provider credential configured there is no `count_tokens` call available

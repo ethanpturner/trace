@@ -18,20 +18,19 @@ import argparse
 import json
 import sys
 import tempfile
-from datetime import UTC, datetime
 from pathlib import Path
 
 import yaml
-from build_scorecard import collect_feeds
 
 from trace_ai.config import PROJECT_ROOT
 from trace_ai.services.evaluation.comparison import render_comparison
-from trace_ai.services.evaluation.registry import REGISTRY_PATH
-from trace_ai.services.requirements.loader import current_version
+from trace_ai.services.evaluation.registry import REGISTRY_PATH, catalog_version_summary
+from trace_ai.services.evaluation.stamps import DETERMINISTIC_STAMP
+from trace_ai.services.evaluation.sweep import collect_feeds, load_feeds
 
 OUTPUT = PROJECT_ROOT / "docs" / "eval" / "comparison.md"
 # Pinned so the committed table changes only when a metric does, never on the clock.
-GENERATED_AT = datetime(2026, 8, 14, 12, 0, 0, tzinfo=UTC)
+GENERATED_AT = DETERMINISTIC_STAMP
 
 
 def _pins() -> dict[str, str]:
@@ -39,15 +38,15 @@ def _pins() -> dict[str, str]:
     registry = yaml.safe_load(REGISTRY_PATH.read_text(encoding="utf-8"))
     return {
         "registry": str(registry["registry_version"]),
-        "catalog": current_version(),
+        "catalog": catalog_version_summary(),
     }
 
 
-def build(results_root: Path) -> str:
+def build_page(feeds: list[dict[str, object]]) -> str:
     live_path = PROJECT_ROOT / "docs" / "eval" / "live-stability.json"
     live = json.loads(live_path.read_text(encoding="utf-8")) if live_path.is_file() else None
     return render_comparison(
-        collect_feeds(results_root),
+        feeds,
         generated_at=GENERATED_AT,
         pins=_pins(),
         live_stability=live,
@@ -61,10 +60,20 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="regenerate and fail if it differs from the committed table, without writing",
     )
+    parser.add_argument(
+        "--from-feeds",
+        metavar="PATH",
+        type=Path,
+        help="render from a feed file written by build_scorecard.py --sweep-to instead of sweeping",
+    )
     args = parser.parse_args(argv)
 
-    results_root = Path(tempfile.mkdtemp(prefix="trace-comparison-"))
-    rendered = build(results_root)
+    if args.from_feeds:
+        rendered = build_page(load_feeds(args.from_feeds))
+    else:
+        # Intermediate sweep tree: cleaned up rather than left in /tmp per run.
+        with tempfile.TemporaryDirectory(prefix="trace-comparison-") as tmp:
+            rendered = build_page(collect_feeds(Path(tmp)))
 
     if args.check:
         current = OUTPUT.read_text(encoding="utf-8") if OUTPUT.is_file() else ""

@@ -1,22 +1,25 @@
 {
-  "controls": [],
-  "mappings": [
-    {
-      "threat_id": "thr-003",
-      "requirement_id": "req-DATA-002",
-      "control_keys": [],
-      "existing_control_ids": [],
-      "applicability_status": "applicable",
-      "applicability_reason": "The warehouse persists copies of customer names and addresses, so a defined retention applies; the data is neither memory-only nor public.",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "unverified",
-      "evidence_ids": [
-        "evd-004"
-      ],
-      "assumptions": [],
-      "confidence": "low"
-    }
-  ],
-  "documentation_gaps": []
+  "schema": "MappingProposal",
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-DATA-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The warehouse persists copies of customer names and addresses, so a defined retention applies; the data is neither memory-only nor public.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "low"
+      }
+    ],
+    "documentation_gaps": []
+  }
 }

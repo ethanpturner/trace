@@ -97,6 +97,24 @@ def test_the_database_lives_under_the_artifact_store_root(tmp_path: Path) -> Non
         assert store.path.is_file()
 
 
+def test_the_database_file_and_its_root_are_owner_only(tmp_path: Path) -> None:
+    """The database holds every payload, including verbatim confidential excerpts; sqlite creates
+    it at 0o644 and mkdir leaves the root at the umask default unless each is tightened."""
+    import sys
+
+    if sys.platform == "win32":  # pragma: no cover -- POSIX mode bits do not apply
+        pytest.skip("POSIX permissions")
+    root = tmp_path / "data"
+    with AssessmentStore.at_root(root) as store:
+        store.repository("asm-001").save(an_assessment())
+        assert store.path.stat().st_mode & 0o777 == 0o600
+        assert root.stat().st_mode & 0o777 == 0o700
+        for companion in ("trace.db-wal", "trace.db-shm"):
+            path = root / companion
+            if path.exists():
+                assert path.stat().st_mode & 0o777 == 0o600
+
+
 def test_the_schema_version_is_readable_from_a_fresh_database(store: AssessmentStore) -> None:
     assert store.schema_version == SCHEMA_VERSION
 
@@ -123,6 +141,83 @@ def test_an_incompatible_schema_version_refuses_to_open(tmp_path: Path) -> None:
 
     assert "99" in str(caught.value)
     assert str(SCHEMA_VERSION) in str(caught.value)
+
+
+def test_a_malformed_schema_version_refuses_to_open(tmp_path: Path) -> None:
+    """A hand-edited or corrupted version that is not an integer is refused, not a bare ValueError."""
+    with AssessmentStore.at_root(tmp_path):
+        pass
+    connection = sqlite3.connect(tmp_path / "trace.db")
+    connection.execute(
+        "UPDATE store_metadata SET value = 'not-a-number' WHERE key = 'schema_version'"
+    )
+    connection.commit()
+    connection.close()
+
+    with pytest.raises(IncompatibleSchemaError) as caught:
+        AssessmentStore.at_root(tmp_path)
+
+    assert "not-a-number" in str(caught.value)
+
+
+def test_an_incompatible_database_is_not_written_to_and_its_connection_is_closed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """DEC-020 refuses rather than migrates, so the refusal must precede any write, and the raise
+    happens in __init__ where __exit__ never runs -- the connection must be closed explicitly."""
+    with AssessmentStore.at_root(tmp_path):
+        pass
+    connection = sqlite3.connect(tmp_path / "trace.db")
+    connection.execute("UPDATE store_metadata SET value = '99' WHERE key = 'schema_version'")
+    connection.commit()
+    connection.close()
+
+    class _TrackingConnection:
+        """The minimal surface `AssessmentStore.__init__` touches, recording the two facts under
+        test: whether the schema was created, and whether the connection was closed."""
+
+        def __init__(self, real: sqlite3.Connection) -> None:
+            self._real = real
+            self.close_calls = 0
+            self.executed_script = False
+
+        @property
+        def row_factory(self) -> object:
+            return self._real.row_factory
+
+        @row_factory.setter
+        def row_factory(self, value: object) -> None:
+            self._real.row_factory = value  # type: ignore[assignment]
+
+        def execute(self, sql: str, *parameters: object) -> sqlite3.Cursor:
+            return self._real.execute(sql, *parameters)  # type: ignore[arg-type]
+
+        def executescript(self, script: str) -> sqlite3.Cursor:
+            self.executed_script = True
+            return self._real.executescript(script)
+
+        def close(self) -> None:
+            self.close_calls += 1
+            self._real.close()
+
+    tracked: dict[str, _TrackingConnection] = {}
+    real_connect = sqlite3.connect
+
+    def tracking_connect(*args: object, **kwargs: object) -> _TrackingConnection:
+        wrapper = _TrackingConnection(real_connect(*args, **kwargs))  # type: ignore[call-overload]
+        tracked["connection"] = wrapper
+        return wrapper
+
+    # store.py does `import sqlite3` and calls `sqlite3.connect`; the module object is shared, so
+    # patching connect here patches the store's call too.
+    monkeypatch.setattr(sqlite3, "connect", tracking_connect)
+
+    with pytest.raises(IncompatibleSchemaError):
+        AssessmentStore.at_root(tmp_path)
+
+    wrapper = tracked["connection"]
+    assert wrapper.executed_script is False, "the schema was created before the version was checked"
+    assert wrapper.close_calls == 1, "the connection leaked when the schema was refused"
 
 
 # ------------------------------------------------------------------------------------------
@@ -304,6 +399,110 @@ def test_an_object_without_an_assessment_id_is_refused(store: AssessmentStore) -
 
 
 # ------------------------------------------------------------------------------------------
+# Ordering, id-only reads, and deletion (#449)
+# ------------------------------------------------------------------------------------------
+
+
+def _document(identifier: str) -> FakeDocument:
+    return FakeDocument(
+        id=identifier,
+        assessment_id="asm-001",
+        filename=f"{identifier}.md",
+        content_hash="sha256:" + "d" * 64,
+        created_at=now(),
+    )
+
+
+def test_list_orders_by_insert_order_not_lexical_id(store: AssessmentStore) -> None:
+    """DEC-018 widens past 999 rather than wrapping, so `src-1000` sorts lexically before `src-999`.
+    `list` orders by the monotonic `seq` (insert order), so a moderate corpus is not reordered."""
+    repository = store.repository("asm-001")
+    repository.save(_document("src-999"))
+    repository.save(_document("src-1000"))
+    assert [doc.id for doc in repository.list(FakeDocument)] == ["src-999", "src-1000"]
+
+
+def test_a_replacement_keeps_its_insert_position(store: AssessmentStore) -> None:
+    """A DEC-023 edit re-saves under the same identifier; `seq` is not moved, so the object keeps
+    its place in the oldest-first order."""
+    repository = store.repository("asm-001")
+    repository.save(_document("src-001"))
+    repository.save(_document("src-002"))
+    repository.save(_document("src-001"))  # a re-save of the first
+    assert [doc.id for doc in repository.list(FakeDocument)] == ["src-001", "src-002"]
+
+
+def test_ids_returns_identifiers_without_parsing_the_payload(store: AssessmentStore) -> None:
+    """`ids` reads the id column only, so it returns even for a row whose payload no longer parses --
+    which `list` would raise on. That is the property that makes it cheap: no JSON, no validation."""
+    repository = store.repository("asm-001")
+    repository.save(_document("src-001"))
+
+    connection = sqlite3.connect(store.path)
+    connection.execute("UPDATE objects SET payload = '{}' WHERE id = 'src-001'")
+    connection.commit()
+    connection.close()
+
+    assert repository.ids(FakeDocument) == ["src-001"], "ids must not parse the payload"
+    with pytest.raises(CorruptRecordError):
+        repository.list(FakeDocument)
+
+
+def test_ids_are_in_insert_order(store: AssessmentStore) -> None:
+    repository = store.repository("asm-001")
+    repository.save(_document("src-999"))
+    repository.save(_document("src-1000"))
+    assert repository.ids(FakeDocument) == ["src-999", "src-1000"]
+
+
+def test_a_renamed_class_reads_its_rows_through_stored_type(store: AssessmentStore) -> None:
+    """The stored `object_type` is `stored_type`, not `type(obj).__name__`, so a class overriding it
+    keeps reading rows written under the old name (DEC-090) -- a rename no longer silently makes
+    every existing row unreadable."""
+    store.repository("asm-001").save(_document("src-001"))
+
+    class RenamedDocument(FakeDocument):
+        # A rename of FakeDocument that keeps its stored key: rows written as `FakeDocument` are
+        # still this class's.
+        stored_type = "FakeDocument"
+
+    got = store.repository("asm-001").get(RenamedDocument, "src-001")
+    assert got.id == "src-001"
+    assert store.repository("asm-001").ids(RenamedDocument) == ["src-001"]
+
+
+def test_a_corrupt_record_names_the_writing_build(store: AssessmentStore) -> None:
+    """The store records `trace_version` at creation, so a `CorruptRecordError` names the build that
+    wrote the row (DEC-090) rather than leaving only the pydantic error."""
+    store.repository("asm-001").save(an_assessment())
+
+    connection = sqlite3.connect(store.path)
+    connection.execute("UPDATE objects SET payload = '{}' WHERE id = 'asm-001'")
+    connection.commit()
+    connection.close()
+
+    assert store.trace_version, "the store records a trace_version at creation"
+    with pytest.raises(CorruptRecordError) as caught:
+        store.repository("asm-001").get(FakeAssessment, "asm-001")
+    assert store.trace_version in str(caught.value)
+
+
+def test_delete_all_removes_one_assessment_and_leaves_the_others(store: AssessmentStore) -> None:
+    store.repository("asm-001").save(an_assessment("asm-001"))
+    store.repository("asm-001").save(_document("src-001"))
+    store.repository("asm-002").save(an_assessment("asm-002"))
+
+    removed = store.repository("asm-001").delete_all()
+
+    assert removed == 2
+    assert store.repository("asm-001").count(FakeAssessment) == 0
+    assert store.repository("asm-001").count(FakeDocument) == 0
+    assert store.repository("asm-002").get(FakeAssessment, "asm-002").name
+    # The counter went too, so a re-created object numbers from one again.
+    assert store.repository("asm-001").allocate("thr") == "thr-001"
+
+
+# ------------------------------------------------------------------------------------------
 # Identifier allocation
 # ------------------------------------------------------------------------------------------
 
@@ -370,6 +569,89 @@ def test_a_committed_transaction_keeps_the_number(store: AssessmentStore) -> Non
         allocated = scoped.allocate("thr")
     assert allocated == "thr-001"
     assert repository.allocate("thr") == "thr-002"
+
+
+# ------------------------------------------------------------------------------------------
+# Nested transactions and concurrency
+# ------------------------------------------------------------------------------------------
+
+
+def test_a_nested_transaction_that_succeeds_commits_with_the_outer(store: AssessmentStore) -> None:
+    """Real nesting via savepoints: the inner allocation persists when both complete."""
+    repository = store.repository("asm-001")
+    with repository.transaction() as outer:
+        first = outer.allocate("thr")
+        with repository.transaction() as inner:
+            second = inner.allocate("thr")
+    assert (first, second) == ("thr-001", "thr-002")
+    assert repository.allocate("thr") == "thr-003"
+
+
+def test_a_swallowed_nested_rollback_dooms_the_outer_transaction(store: AssessmentStore) -> None:
+    """The reproduction from #443: a swallowed inner failure must not commit a partial result.
+
+    Before the fix, the inner rollback rolled back the whole connection, the counter was restored,
+    and `c` was re-issued `thr-001` -- two live objects with one identifier. Now the inner failure
+    dooms the outer: nothing commits, and the outer `with` raises rather than persisting half.
+    """
+    repository = store.repository("asm-001")
+    with (
+        pytest.raises(StoreError, match="nested transaction rolled back"),
+        repository.transaction(),
+    ):
+        repository.allocate("thr")  # thr-001
+        try:
+            with repository.transaction():
+                repository.allocate("thr")  # thr-002
+                raise RuntimeError("inner node failed")
+        except RuntimeError:
+            pass  # the swallow that used to corrupt the counter
+        repository.allocate("thr")
+
+    # The whole unit rolled back, so the next allocation starts from one again -- no partial commit,
+    # and no identifier handed out twice.
+    assert repository.allocate("thr") == "thr-001"
+
+
+def test_a_propagated_nested_failure_rolls_the_whole_unit_back(store: AssessmentStore) -> None:
+    repository = store.repository("asm-001")
+    with pytest.raises(RuntimeError, match="inner node failed"), repository.transaction():
+        repository.allocate("thr")
+        with repository.transaction():
+            repository.allocate("thr")
+            raise RuntimeError("inner node failed")
+
+    assert repository.allocate("thr") == "thr-001"
+
+
+def test_a_transaction_refuses_a_write_from_another_assessment(store: AssessmentStore) -> None:
+    """The connection is shared, so an open transaction on one assessment cannot absorb another's
+    write -- doing so would discard or early-commit an unrelated assessment's work."""
+    first = store.repository("asm-001")
+    second = store.repository("asm-002")
+    with first.transaction():
+        first.allocate("thr")
+        with pytest.raises(StoreError, match="scoped to asm-001"):
+            second.allocate("thr")
+        with pytest.raises(StoreError, match="scoped to asm-001"):
+            second.save(an_assessment("asm-002"))
+
+
+def test_two_connections_allocate_distinct_identifiers(tmp_path: Path) -> None:
+    """Two processes -- a run and the view server -- share the database file, not a connection.
+
+    The read-modify-write allocate used to let both read the same `next_number`; the single
+    `INSERT ... RETURNING` statement plus `BEGIN IMMEDIATE`/`busy_timeout` serializes them so the
+    same identifier is never minted twice.
+    """
+    with AssessmentStore.at_root(tmp_path) as one, AssessmentStore.at_root(tmp_path) as two:
+        issued = [
+            one.repository("asm-001").allocate("thr"),
+            two.repository("asm-001").allocate("thr"),
+            one.repository("asm-001").allocate("thr"),
+            two.repository("asm-001").allocate("thr"),
+        ]
+    assert sorted(issued) == ["thr-001", "thr-002", "thr-003", "thr-004"]
 
 
 # ------------------------------------------------------------------------------------------

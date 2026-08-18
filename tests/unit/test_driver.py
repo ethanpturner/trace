@@ -403,6 +403,80 @@ def test_the_assessment_lifecycle_moves_with_the_run(prepared: tuple[Path, str])
         approved = stage.service.approve(assessment_id)
         assert approved.status is ObjectStatus.APPROVED
 
+    # A revision: re-running an approved assessment returns it to draft (begin_revision) and starts
+    # a fresh run that pauses at checkpoint 1, rather than crashing on approved -> pending_review at
+    # the pause.
+    with _Stage(root, assessment_id) as stage:
+        revised = run_assessment(
+            stage.service, assessment_id, model=_extraction_model(), profile=PROFILE
+        )
+        assert revised.paused
+        assert (
+            stage.handle.objects.get(Assessment, assessment_id).status
+            is ObjectStatus.PENDING_REVIEW
+        )
+
+
+def test_re_running_an_abandoned_review_returns_to_draft_and_pauses_again(
+    prepared: tuple[Path, str],
+) -> None:
+    """A run left at checkpoint 1 (a review nobody finished) can be re-run. Before the fix the fresh
+    run reached the pause and tried pending_review -> pending_review, which raised deep in the loop
+    and left the run row `running`; now `run_assessment` returns the assessment to draft first."""
+    root, assessment_id = prepared
+    with _Stage(root, assessment_id) as stage:
+        run_assessment(stage.service, assessment_id, model=_extraction_model(), profile=PROFILE)
+        assert (
+            stage.handle.objects.get(Assessment, assessment_id).status
+            is ObjectStatus.PENDING_REVIEW
+        )
+
+    with _Stage(root, assessment_id) as stage:
+        outcome = run_assessment(
+            stage.service, assessment_id, model=_extraction_model(), profile=PROFILE
+        )
+        assert outcome.paused
+        assert outcome.state.current_phase is Phase.HUMAN_CONTEXT_REVIEW
+        assert (
+            stage.handle.objects.get(Assessment, assessment_id).status
+            is ObjectStatus.PENDING_REVIEW
+        )
+
+
+def test_resuming_a_failed_run_restarts_from_the_failed_phase(prepared: tuple[Path, str]) -> None:
+    """A budget of zero model calls fails the run at the first model phase, after the deterministic
+    ingestion phases completed. Resuming restarts that run from context extraction -- it does not
+    start a new run from initialization and re-mint everything."""
+    from trace_ai.domain.evidence import EvidenceReference
+
+    root, assessment_id = prepared
+    with _Stage(root, assessment_id) as stage:
+        outcome = run_assessment(
+            stage.service,
+            assessment_id,
+            model=_extraction_model(),
+            profile=PROFILE,
+            budget=Budget(maximum_model_calls=0),
+        )
+        assert outcome.state.status is RunStatus.FAILED
+        assert outcome.state.current_phase is Phase.CONTEXT_EXTRACTION
+        run_id = outcome.state.workflow_run_id
+        run = stage.handle.objects.get(WorkflowRun, run_id)
+        assert run.status is RunStatus.FAILED
+        # Ingestion happened before the failure and its objects survive the failed run.
+        assert stage.handle.objects.list(EvidenceReference)
+
+    with _Stage(root, assessment_id) as stage:
+        outcome = resume_assessment(
+            stage.service, assessment_id, model=_extraction_model(), profile=PROFILE
+        )
+        assert outcome.paused
+        assert outcome.state.current_phase is Phase.HUMAN_CONTEXT_REVIEW
+        assert outcome.state.workflow_run_id == run_id, "a new run was started instead of resuming"
+        assert len(stage.handle.objects.list(WorkflowRun)) == 1, "the failed run was not reused"
+        run = stage.handle.objects.get(WorkflowRun, run_id)
+        assert run.status is RunStatus.PAUSED
+
 
 def test_stop_before_halts_cleanly_without_the_named_phase(prepared: tuple[Path, str]) -> None:
     """A clean early stop is neither a failure nor a checkpoint pause; the named phase never runs.
@@ -494,6 +568,46 @@ def test_build_nodes_covers_every_declared_node(prepared: tuple[Path, str]) -> N
         assert len(nodes) == len(built)
 
 
+def test_every_known_ablation_substitutes_at_least_one_node(prepared: tuple[Path, str]) -> None:
+    """DEC-090: an ablation whose node names have drifted out of step substitutes nothing and runs
+    the full pipeline while marking the run non-authoritative -- a measurement that lies. Building
+    with each known ablation must actually replace a node."""
+    from trace_ai.services.driver import KNOWN_ABLATIONS
+    from trace_ai.workflow.phases import Phase
+
+    root, assessment_id = prepared
+    with _Stage(root, assessment_id) as stage:
+        handle = stage.handle
+        run = start_run(handle, workflow_version="0.1", model_profile=PROFILE.name)
+        for ablation in sorted(KNOWN_ABLATIONS):
+            plain = build_nodes(handle, ledger=ExecutionLedger(handle, run), profile=PROFILE)
+            ablated = build_nodes(
+                handle, ledger=ExecutionLedger(handle, run), profile=PROFILE, ablations=[ablation]
+            )
+            assert {(n.phase, n.name) for n in ablated} != {
+                (n.phase, n.name) for n in plain
+            } or any(n.phase is Phase.HUMAN_CONTEXT_REVIEW for n in ablated), (
+                f"{ablation} substituted nothing"
+            )
+
+
+def test_a_stale_ablation_name_raises_rather_than_silently_ablating_nothing() -> None:
+    """A known ablation whose removal map no longer matches any node raises, not silently no-ops."""
+    from dataclasses import dataclass
+
+    from trace_ai.services.driver import _apply_ablations
+    from trace_ai.workflow.phases import Phase
+
+    @dataclass
+    class _Stub:
+        name: str
+        phase: Phase = Phase.THREAT_GENERATION
+
+    # `no-critical-review` removes `critical-review`/`critique-validation`; none is present here.
+    with pytest.raises(ValueError, match="substituted no node"):
+        _apply_ablations([_Stub("threat-analysis")], ["no-critical-review"])  # type: ignore[list-item]
+
+
 def test_resuming_with_subjects_still_undecided_pauses_again(
     prepared: tuple[Path, str],
 ) -> None:
@@ -514,7 +628,7 @@ def test_resuming_without_a_paused_run_is_refused(prepared: tuple[Path, str]) ->
     root, assessment_id = prepared
     with (
         _Stage(root, assessment_id) as stage,
-        pytest.raises(ValueError, match="no paused workflow run"),
+        pytest.raises(ValueError, match="no paused or failed workflow run"),
     ):
         resume_assessment(stage.service, assessment_id, model=DeterministicModel(), profile=PROFILE)
 

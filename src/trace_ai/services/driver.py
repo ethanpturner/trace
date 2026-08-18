@@ -32,7 +32,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, ClassVar, Final
 
-from trace_ai.domain.assessment import Assessment
+from trace_ai.domain.assessment import Assessment, AssessmentConfiguration
 from trace_ai.domain.component import Component
 from trace_ai.domain.context_claim import ContextClaim
 from trace_ai.domain.control import Control
@@ -44,11 +44,12 @@ from trace_ai.domain.evidence import EvidenceReference
 from trace_ai.domain.evidence_assessment import EvidenceAssessment
 from trace_ai.domain.execution import ExecutionType, WorkflowRun
 from trace_ai.domain.finding import Finding
+from trace_ai.domain.identifiers import parse_id
 from trace_ai.domain.reviewer_decision import ReviewerDecision
 from trace_ai.domain.source_document import IngestionStatus, SourceDocument
 from trace_ai.domain.source_observation import ObservationKind, SourceObservation
 from trace_ai.domain.threat import Threat
-from trace_ai.services.context.compose import seed_compose_documents
+from trace_ai.services.context.parsers import seed_structured_documents
 from trace_ai.services.context.pipeline import context_objects
 from trace_ai.services.critique.input_package import select_review_group
 from trace_ai.services.critique.precedent import select_precedents
@@ -155,8 +156,14 @@ def _blocking_stop(what: str, blocking: Sequence[object]) -> WorkflowError:
 
 
 def _sorted_by_id(objects: Sequence[Any]) -> list[Any]:
-    """Deterministic iteration order for per-object loops, so a replayed run replays."""
-    return sorted(objects, key=lambda item: item.id)
+    """Deterministic iteration order for per-object loops, so a replayed run replays.
+
+    Keyed on the identifier's *number*, not its text: DEC-018 widens past 999 rather than wrapping,
+    so a lexical sort puts `evd-1000` before `evd-999` and silently reorders a moderate corpus --
+    which, because DEC-018 assigns identifiers in iteration order on a rerun, changes which
+    identifier attaches to which object. Prefix then number is the allocation order.
+    """
+    return sorted(objects, key=lambda item: (parse_id(item.id).prefix, parse_id(item.id).number))
 
 
 # -- one-node phases ---------------------------------------------------------------------------
@@ -244,8 +251,8 @@ class EvidenceIndexingNode:
             if document.ingestion_status is IngestionStatus.REGISTERED:
                 produced.extend(reference.id for reference in index_document(handle, document))
 
-        references = handle.objects.list(EvidenceReference)
-        if not references:
+        reference_ids = handle.objects.ids(EvidenceReference)
+        if not reference_ids:
             raise WorkflowError(
                 ErrorClass.MISSING_REQUIRED_RELATIONSHIP,
                 "no evidence references exist after indexing; there is nothing to extract a "
@@ -253,7 +260,7 @@ class EvidenceIndexingNode:
             )
         return NodeResult(
             produced_object_ids=produced,
-            metadata={"evidence_reference_count": len(references)},
+            metadata={"evidence_reference_count": len(reference_ids)},
         )
 
 
@@ -276,11 +283,11 @@ class ContextExtractionAdapter:
 
     def run(self, context: NodeContext) -> NodeResult:
         handle = context.handle
-        # DEC-070: parse machine-readable manifests before the agent runs, so the seeded objects
-        # join the baseline, the parser's excerpts are available to the fence, and the agent
+        # DEC-070: parse machine-readable artifacts before the agent runs, so the seeded objects
+        # join the baseline, the parsers' excerpts are available to the fence, and the agent
         # extends rather than re-derives. Seeding precedes the evidence listing on purpose.
-        seeded = seed_compose_documents(handle)
-        available = sorted(ref.id for ref in handle.objects.list(EvidenceReference))
+        seeded = seed_structured_documents(handle)
+        available = handle.objects.ids(EvidenceReference)
         node = ContextExtractionNode(
             ledger=self.ledger,
             index=EvidenceIndex(handle),
@@ -325,7 +332,7 @@ class ContextValidationAdapter:
 
         handle = context.handle
         system_context = current_system_context(handle)
-        available = {ref.id for ref in handle.objects.list(EvidenceReference)}
+        available: set[str] = set(handle.objects.ids(EvidenceReference))
         outcome = validate_context(
             system_context,
             context_objects(handle),
@@ -371,6 +378,7 @@ class ContextValidationAdapter:
                 "error_count": len(outcome.errors),
                 "trigger_count": len(outcome.triggers),
                 "zone_mismatch_count": len(outcome.zone_mismatches),
+                "cross_claim_observation_count": len(outcome.cross_claim_observations),
                 "privilege_extreme_questions": len(raised),
             },
         )
@@ -401,7 +409,7 @@ class ThreatAnalysisAdapter:
             profile=self.profile,
             registry=self.registry,
             context=current_system_context(handle),
-            evidence_ids=sorted(ref.id for ref in handle.objects.list(EvidenceReference)),
+            evidence_ids=handle.objects.ids(EvidenceReference),
             assessment_name=self.assessment_name,
             threat_methodology=assessment.configuration.threat_methodology,
             budget=self.budget,
@@ -476,7 +484,7 @@ class RequirementControlMappingAdapter:
         assessment = handle.objects.get(Assessment, handle.assessment_id)
         catalog = load_catalog(assessment.requirements_catalog_version or current_version())
         system_context = current_system_context(handle)
-        evidence_ids = sorted(ref.id for ref in handle.objects.list(EvidenceReference))
+        evidence_ids = handle.objects.ids(EvidenceReference)
         index = EvidenceIndex(handle)
 
         produced: list[str] = []
@@ -701,6 +709,10 @@ class CriticalReviewAdapter:
 
         consumed: list[str] = []
         self.handoff.outcomes.clear()
+        # One index for the whole phase, not one per threat: it caches the source documents and
+        # files it reads, so building a fresh one each iteration threw that cache away and re-read
+        # every source once per threat.
+        index = EvidenceIndex(handle)
         for threat in _sorted_by_id(handle.objects.list(Threat)):
             selected = select_review_group(
                 threat,
@@ -711,7 +723,7 @@ class CriticalReviewAdapter:
             )
             node = CriticalReviewNode(
                 ledger=self.ledger,
-                index=EvidenceIndex(handle),
+                index=index,
                 profile=self.profile,
                 registry=self.registry,
                 selected=selected,
@@ -1060,7 +1072,7 @@ class AblatedContextApprovalNode:
         validation = validate_context(
             reviewed,
             context_objects(handle),
-            available_evidence={ref.id for ref in handle.objects.list(EvidenceReference)},
+            available_evidence=set(handle.objects.ids(EvidenceReference)),
             previous=previous_approved_context(handle, reviewed),
         )
         package = build_context_review_package(
@@ -1081,26 +1093,44 @@ class AblatedContextApprovalNode:
         )
 
 
+# Which registered node names each ablation removes. Kept beside `KNOWN_ABLATIONS`, and
+# `_apply_ablations` asserts every requested ablation matched at least one -- a name that has drifted
+# out of step with the node it removes would otherwise substitute nothing and run the full pipeline
+# while marking the run non-authoritative, which is a measurement that lies rather than one that
+# stops.
+_ABLATION_NODE_NAMES: Final = {
+    "no-evidence-validation": frozenset({"evidence-validation", "evidence-assessment-validation"}),
+    "no-critical-review": frozenset({"critical-review", "critique-validation"}),
+    "no-context-approval": frozenset({"human-context-review"}),
+}
+
+
 def _apply_ablations(nodes: list[Node], ablations: Sequence[str]) -> list[Node]:
     """Substitute stand-ins for the nodes each ablation removes. Unknown names were refused."""
-    removed_names = {
-        "no-evidence-validation": {"evidence-validation", "evidence-assessment-validation"},
-        "no-critical-review": {"critical-review", "critique-validation"},
-    }
+    substitutions: dict[str, int] = dict.fromkeys(ablations, 0)
     replaced: list[Node] = []
     for node in nodes:
         substituted = False
         for ablation in ablations:
-            if node.name in removed_names.get(ablation, set()):
-                replaced.append(AblatedNode(name=node.name, phase=node.phase, ablation=ablation))
-                substituted = True
-                break
-            if ablation == "no-context-approval" and node.name == "human-context-review":
+            if node.name not in _ABLATION_NODE_NAMES.get(ablation, frozenset()):
+                continue
+            if ablation == "no-context-approval":
                 replaced.append(AblatedContextApprovalNode())
-                substituted = True
-                break
+            else:
+                replaced.append(AblatedNode(name=node.name, phase=node.phase, ablation=ablation))
+            substitutions[ablation] += 1
+            substituted = True
+            break
         if not substituted:
             replaced.append(node)
+
+    unmatched = sorted(ablation for ablation, count in substitutions.items() if count == 0)
+    if unmatched:
+        raise ValueError(
+            f"ablation(s) {unmatched} substituted no node; the removal map is stale (a node name "
+            f"changed). A run marked non-authoritative that in fact ran the full pipeline is worse "
+            f"than one that stops, so this refuses rather than silently ablating nothing."
+        )
     return replaced
 
 
@@ -1137,7 +1167,7 @@ def build_nodes(
         EvidenceIndexingNode(),
         ContextExtractionAdapter(
             ledger=ledger,
-            profile=profile.for_agent("context-extraction"),
+            profile=profile,
             registry=registry,
             assessment_name=assessment.name,
             budget=budget,
@@ -1147,7 +1177,7 @@ def build_nodes(
         ContextReviewNode(),
         ThreatAnalysisAdapter(
             ledger=ledger,
-            profile=profile.for_agent("threat-analysis"),
+            profile=profile,
             registry=registry,
             assessment_name=assessment.name,
             budget=budget,
@@ -1155,14 +1185,14 @@ def build_nodes(
         ThreatValidationAdapter(),
         RequirementControlMappingAdapter(
             ledger=ledger,
-            profile=profile.for_agent("requirement-and-control-mapping"),
+            profile=profile,
             registry=registry,
             budget=budget,
         ),
         MappingValidationAdapter(),
         EvidenceValidationAdapter(
             ledger=ledger,
-            profile=profile.for_agent("evidence-validation"),
+            profile=profile,
             registry=registry,
             handoff=evidence_handoff,
             budget=budget,
@@ -1170,7 +1200,7 @@ def build_nodes(
         EvidenceAssessmentValidationAdapter(handoff=evidence_handoff),
         CriticalReviewAdapter(
             ledger=ledger,
-            profile=profile.for_agent("critical-review"),
+            profile=profile,
             registry=registry,
             handoff=critique_handoff,
             budget=budget,
@@ -1180,7 +1210,7 @@ def build_nodes(
         FindingReviewNode(),
         ReportGenerationAdapter(
             ledger=ledger,
-            profile=profile.for_agent("report-generation"),
+            profile=profile,
             registry=registry,
             handoff=report_handoff,
             budget=budget,
@@ -1222,6 +1252,16 @@ def run_assessment(
     """
     handle = service.handle(assessment_id)
     assessment = handle.objects.get(Assessment, assessment_id)
+    # A fresh run reaches checkpoint 1 and, on pausing, moves the assessment to `pending_review`
+    # (DEC-031). That move is only valid from `draft`, so an assessment left at `pending_review` (a
+    # prior run abandoned mid-review) or `approved` (a revision) must return to `draft` first --
+    # otherwise the pause raised `InvalidStatusTransitionError` deep in the loop and left the run
+    # row, the state file, and the assessment disagreeing. `begin_revision` is the named verb for
+    # the approved case; `resume_from_review` for the pending case.
+    if assessment.status is ObjectStatus.PENDING_REVIEW:
+        service.resume_from_review(assessment_id)
+    elif assessment.status is ObjectStatus.APPROVED:
+        service.begin_revision(assessment_id)
     spend = budget if budget is not None else Budget.from_configuration(assessment.configuration)
     run = start_run(
         handle,
@@ -1246,10 +1286,12 @@ def run_assessment(
         model=model,
         on_pause=_begin_review_on_pause(service, assessment_id),
     )
-    return orchestrator.run(
+    outcome = orchestrator.run(
         AssessmentState.begin(assessment_id=assessment_id, workflow_run_id=run.id),
         stop_before=stop_before,
     )
+    _emit_external_tracing(handle, assessment.configuration, run.id)
+    return outcome
 
 
 def resume_assessment(
@@ -1274,14 +1316,32 @@ def resume_assessment(
     the re-pause moves it right back. `trace findings approve` concludes the review through the
     same verb, so an assessment already back in `draft` is left alone.
     """
+    from trace_ai.domain.execution import RunStatus
+    from trace_ai.workflow.checkpoint import load_state
+
     handle = service.handle(assessment_id)
-    run = _paused_run(handle, workflow_run_id)
-    state, _pending = resume(handle, run.id)
-    assessment = handle.objects.get(Assessment, assessment_id)
-    if assessment.status is ObjectStatus.PENDING_REVIEW:
-        service.resume_from_review(assessment_id)
+    run = _resumable_run(handle, workflow_run_id)
+    if run.status is RunStatus.PAUSED:
+        # A checkpoint pause: the checkpoint node re-runs and decides nothing new.
+        state, _pending = resume(handle, run.id)
+        assessment = handle.objects.get(Assessment, assessment_id)
+        if assessment.status is ObjectStatus.PENDING_REVIEW:
+            service.resume_from_review(assessment_id)
+    elif run.status is RunStatus.FAILED:
+        # A failed run: restart from the phase it stopped in. The phases before it completed, so
+        # their objects exist and are not re-run; only the failed phase re-executes.
+        state = load_state(handle, run.id).restarted()
+        assessment = handle.objects.get(Assessment, assessment_id)
+    else:
+        raise ValueError(
+            f"{run.id} is {run.status.value}, not paused or failed; there is nothing to resume"
+        )
     spend = budget if budget is not None else Budget.from_configuration(assessment.configuration)
     ledger = ExecutionLedger(handle, run)
+    if run.status is RunStatus.FAILED:
+        # Clear the failed run's completion stamp and error before it runs again, so its row is a
+        # running run's rather than a completed one carrying a `running` status.
+        ledger.reopen()
     orchestrator = Orchestrator(
         handle,
         ledger=ledger,
@@ -1297,7 +1357,38 @@ def resume_assessment(
         model=model,
         on_pause=_begin_review_on_pause(service, assessment_id),
     )
-    return orchestrator.run(state, stop_before=stop_before)
+    outcome = orchestrator.run(state, stop_before=stop_before)
+    _emit_external_tracing(handle, assessment.configuration, run.id)
+    return outcome
+
+
+def _emit_external_tracing(
+    handle: AssessmentHandle, configuration: AssessmentConfiguration, workflow_run_id: str
+) -> None:
+    """Export the run's execution records as spans when the assessment opted in (#538).
+
+    Runs after the orchestrator returns, whatever the outcome — a paused, failed, or completed
+    run's records all export, because observability of a failure is the point. The flag is the
+    assessment's (`enable_external_tracing`, default off, DEC-012's limits-are-configuration
+    side); the destination is the operator's (`Settings.tracing_endpoint`). Emission failures
+    are logged and swallowed inside `emit_run`: the local ledger stays authoritative
+    (section 5.17), and no run fails because its observability endpoint did.
+    """
+    if not configuration.enable_external_tracing:
+        return
+    from trace_ai.config import get_settings
+    from trace_ai.infrastructure.tracing import emit_run, emitter_from_settings
+
+    emitter = emitter_from_settings(get_settings())
+    if emitter is None:
+        import logging
+
+        logging.getLogger(__name__).info(
+            "external tracing is enabled but no tracing endpoint is configured; nothing emitted",
+            extra={"workflow_run_id": workflow_run_id},
+        )
+        return
+    emit_run(handle, workflow_run_id, emitter)
 
 
 def _begin_review_on_pause(
@@ -1311,12 +1402,24 @@ def _begin_review_on_pause(
     return on_pause
 
 
-def _paused_run(handle: AssessmentHandle, workflow_run_id: str | None) -> WorkflowRun:
+def _resumable_run(handle: AssessmentHandle, workflow_run_id: str | None) -> WorkflowRun:
+    """The run a resume acts on: a named one, or the most recent paused-or-failed one.
+
+    A paused run resumes at its checkpoint; a failed run restarts from the phase it stopped in
+    (DEC-017, both are a read in a new process). A named run is returned whatever its status, so a
+    caller that knows the identifier can inspect the refusal a resume would give it.
+    """
     from trace_ai.domain.execution import RunStatus
 
     if workflow_run_id is not None:
         return handle.objects.get(WorkflowRun, workflow_run_id)
-    paused = [run for run in handle.objects.list(WorkflowRun) if run.status is RunStatus.PAUSED]
-    if not paused:
-        raise ValueError(f"assessment {handle.assessment_id} has no paused workflow run to resume")
-    return paused[-1]
+    resumable = [
+        run
+        for run in handle.objects.list(WorkflowRun)
+        if run.status in (RunStatus.PAUSED, RunStatus.FAILED)
+    ]
+    if not resumable:
+        raise ValueError(
+            f"assessment {handle.assessment_id} has no paused or failed workflow run to resume"
+        )
+    return resumable[-1]

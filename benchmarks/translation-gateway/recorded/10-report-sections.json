@@ -1,15 +1,18 @@
 {
-  "executive_summary": "This assessment reviewed the helpdesk translation connector from its supplied overview and approved two findings, described below. Where the token is held could not be determined and is recorded as a documentation gap.",
-  "system_overview": "The system is a connector between the helpdesk and an external translation SaaS: agents trigger a translation, the full ticket body is sent to the provider over HTTPS, and the returned translation is written back as an internal note, as the supplied document describes.",
-  "risk_summary": "The approved findings concern customer ticket content leaving the trust boundary under provider terms nobody has reviewed and with no retention or secondary-use agreement, and a helpdesk token whose full-workspace scope is documented as convenience rather than need. Both rest on the document's own statements.",
-  "limitations": [
-    {
-      "limitation_id": "lim-assumptions-fnd-001",
-      "text": "fnd-001 rests on stated assumptions: No common false positive applies: what is sent is documented, and the shortfall is the documents' own statement that no retention or secondary-use agreement exists and the standard terms are unreviewed — not an absent copy of a provider contract whose terms are summarized, nor absent certification detail, which the catalog names as false positives."
-    },
-    {
-      "limitation_id": "lim-assumptions-fnd-002",
-      "text": "fnd-002 rests on stated assumptions: No common false positive applies: the token's scope is documented as full workspace access chosen for convenience while the integration reads tickets and writes notes — a documented over-grant, not an absent per-permission justification over a narrow documented scope, which the catalog names as the false positive."
-    }
-  ]
+  "schema": "ReportSections",
+  "response": {
+    "executive_summary": "This assessment reviewed the helpdesk translation connector from its supplied overview and approved two findings, described below. Where the token is held could not be determined and is recorded as a documentation gap.",
+    "system_overview": "The system is a connector between the helpdesk and an external translation SaaS: agents trigger a translation, the full ticket body is sent to the provider over HTTPS, and the returned translation is written back as an internal note, as the supplied document describes.",
+    "risk_summary": "The approved findings concern customer ticket content leaving the trust boundary under provider terms nobody has reviewed and with no retention or secondary-use agreement, and a helpdesk token whose full-workspace scope is documented as convenience rather than need. Both rest on the document's own statements.",
+    "limitations": [
+      {
+        "limitation_id": "lim-assumptions-fnd-001",
+        "text": "fnd-001 rests on stated assumptions: No common false positive applies: what is sent is documented, and the shortfall is the documents' own statement that no retention or secondary-use agreement exists and the standard terms are unreviewed \u2014 not an absent copy of a provider contract whose terms are summarized, nor absent certification detail, which the catalog names as false positives."
+      },
+      {
+        "limitation_id": "lim-assumptions-fnd-002",
+        "text": "fnd-002 rests on stated assumptions: No common false positive applies: the token's scope is documented as full workspace access chosen for convenience while the integration reads tickets and writes notes \u2014 a documented over-grant, not an absent per-permission justification over a narrow documented scope, which the catalog names as the false positive."
+      }
+    ]
+  }
 }

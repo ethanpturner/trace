@@ -647,7 +647,10 @@ Known regressions
 
 Outstanding issues
 
-This creates a history of improvement.
+This creates a history of improvement. The record exists as `docs/eval/releases.md` (#524):
+sections are authored, the evaluation-summary block is assembled from the committed artifacts
+by `scripts/build_release_record.py`, and `tests/unit/test_release_record.py` holds every
+section to this shape and every git tag to a section.
 
 # 18. Future Research
 

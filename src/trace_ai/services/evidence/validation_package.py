@@ -38,9 +38,28 @@ from trace_ai.domain.context_claim import ContextClaim
 from trace_ai.domain.control import Control
 from trace_ai.domain.control_mapping import ControlMapping
 from trace_ai.domain.evidence_assessment import SubjectType
+from trace_ai.domain.proposals.evidence_validation import EvidenceValidationProposal
 from trace_ai.domain.source_observation import ObservationKind
 from trace_ai.domain.threat import Threat
+from trace_ai.services.budget import fill_untrusted, schema_overhead
 from trace_ai.services.context.input_package import fenced_excerpt
+
+
+def _manifest(excerpts: Sequence[dict[str, Any]]) -> list[dict[str, Any]]:
+    """The evidence manifest for the trusted region: identifiers and locations, never text."""
+    return [
+        {
+            "evidence_id": excerpt["evidence_id"],
+            "document": excerpt.get("source_filename"),
+            "location": {
+                key: value
+                for key, value in (excerpt.get("location") or {}).items()
+                if value is not None
+            },
+        }
+        for excerpt in excerpts
+    ]
+
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -88,6 +107,10 @@ class EvidenceValidationInput:
     Carried so the node can run section 14's misquotation check without a second read of the
     store. It is not sent to the model in this form — the passages reach the model once, inside
     the fence, and this is the copy the application compares against."""
+
+    excluded_evidence_ids: tuple[str, ...] = ()
+    """Cited evidence the budget shed (WS10). Named rather than silently dropped: a validation the
+    passage would have informed is otherwise indistinguishable from one that needed no passage."""
 
     metadata: dict[str, Any] = field(default_factory=dict)
 
@@ -229,42 +252,47 @@ def assemble_evidence_input(
                 cited.append(evidence_id)
 
     excerpts = index.render_for_prompt(cited)
-    untrusted = "\n\n".join(fenced_excerpt(excerpt) for excerpt in excerpts)
 
-    manifest = [
-        {
-            "evidence_id": excerpt["evidence_id"],
-            "document": excerpt.get("source_filename"),
-            "location": {
-                key: value
-                for key, value in (excerpt.get("location") or {}).items()
-                if value is not None
-            },
-        }
-        for excerpt in excerpts
-    ]
+    # This package rendered every cited excerpt unconditionally and enforced no budget (WS10). It
+    # now charges the trusted region and the schema export as fixed overhead and fills the untrusted
+    # region against what is left, naming anything it has to shed rather than silently overrunning
+    # the ceiling the profile declares.
+    rendered = [(excerpt["evidence_id"], fenced_excerpt(excerpt)) for excerpt in excerpts]
+    trusted_estimate = _trusted_region(
+        assessment_id=assessment_id,
+        subjects=entries,
+        contradictions=contradiction_entries,
+        manifest=_manifest(excerpts),
+    )
+    outcome = fill_untrusted(
+        rendered,
+        profile=profile,
+        overhead_characters=len(trusted_estimate) + schema_overhead(EvidenceValidationProposal),
+    )
 
+    included = set(outcome.included_ids)
+    present = [excerpt for excerpt in excerpts if excerpt["evidence_id"] in included]
     trusted = _trusted_region(
         assessment_id=assessment_id,
         subjects=entries,
         contradictions=contradiction_entries,
-        manifest=manifest,
+        manifest=_manifest(present),
     )
 
-    size = len(trusted) + len(untrusted)
     return EvidenceValidationInput(
         trusted=trusted,
-        untrusted=untrusted,
+        untrusted=outcome.untrusted,
         assessment_id=assessment_id,
         subject_ids=tuple(entry["id"] for entry in entries),
-        evidence_ids=tuple(excerpt["evidence_id"] for excerpt in excerpts),
+        evidence_ids=outcome.included_ids,
         contradiction_ids=tuple(entry["id"] for entry in contradiction_entries),
-        quoted_text={excerpt["evidence_id"]: excerpt["quoted_text"] for excerpt in excerpts},
+        quoted_text={excerpt["evidence_id"]: excerpt["quoted_text"] for excerpt in present},
+        excluded_evidence_ids=outcome.excluded_ids,
         metadata={
             "subjects": len(entries),
             "contradictions": len(contradiction_entries),
             "evidence": len(excerpts),
-            "characters": size,
-            "budget_characters": profile.max_input_characters,
+            "trusted_characters": len(trusted),
+            **outcome.metadata(),
         },
     )

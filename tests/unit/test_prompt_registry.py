@@ -159,6 +159,17 @@ def test_a_missing_shared_block_names_the_block(tree: Path) -> None:
         PromptRegistry(tree).compose("extract-context", "v1")
 
 
+def test_two_shared_blocks_with_the_same_stem_are_refused(tree: Path) -> None:
+    """A shared block is addressed by its stem, so two files with the same stem in different subtrees
+    would overwrite each other last-write-wins and change the composed text of every prompt that
+    includes the block. Symmetric with the duplicate-(id, version) refusal (WS11)."""
+    nested = tree / "shared" / "nested"
+    nested.mkdir()
+    (nested / "evidence-policy-v1.md").write_text("A colliding block.", encoding="utf-8")
+    with pytest.raises(PromptSyntaxError, match="evidence-policy-v1"):
+        PromptRegistry(tree)
+
+
 def test_a_prompt_without_front_matter_is_refused(tmp_path: Path) -> None:
     (tmp_path / "orphan.md").write_text("Just some text.", encoding="utf-8")
     with pytest.raises(PromptSyntaxError, match="front matter"):
@@ -275,3 +286,84 @@ def test_a_prompt_composed_with_an_unfilled_marker_is_refused() -> None:
         UnresolvedMarkerError, match=re.escape("schema.context_extraction_proposal")
     ):
         PromptRegistry().compose("extract-context", "v1")
+
+
+def test_a_marker_inside_a_substituted_value_is_not_read_as_unfilled(tmp_path: Path) -> None:
+    """Untrusted source content may legitimately contain `{{ x.y }}` — Helm values, a Jinja config
+    sample, `{{ site.url }}` in an architecture doc. Substituted into `input.source_content`, it
+    must be inserted verbatim, not mistaken for an unfilled application marker that fails the run
+    before any model call. The unfilled-marker check runs over the template, not the merged body."""
+    shared = tmp_path / "shared"
+    shared.mkdir()
+    for name in ("source-content-boundary-v1", "evidence-policy-v1", "uncertainty-policy-v1"):
+        (shared / f"{name}.md").write_text("policy", encoding="utf-8")
+    (tmp_path / "extract-context-v1.md").write_text(
+        FRONT_MATTER.replace(
+            "Extract context from the documents provided.",
+            "Documents:\n\n{{ input.source_content }}",
+        ),
+        encoding="utf-8",
+    )
+
+    composed = PromptRegistry(tmp_path).compose(
+        "extract-context",
+        "v1",
+        {"input.source_content": "image: {{ values.image }}\nhost: {{ site.url }}"},
+    )
+
+    assert "{{ values.image }}" in composed.text, "a marker in the value was consumed or rejected"
+    assert "{{ site.url }}" in composed.text
+
+
+def test_an_unfilled_template_marker_is_still_refused(tmp_path: Path) -> None:
+    """The fix narrows the check to the template, but a template marker with no substitution is
+    still a hole the prompt runs with — it must still be refused."""
+    shared = tmp_path / "shared"
+    shared.mkdir()
+    for name in ("source-content-boundary-v1", "evidence-policy-v1", "uncertainty-policy-v1"):
+        (shared / f"{name}.md").write_text("policy", encoding="utf-8")
+    (tmp_path / "extract-context-v1.md").write_text(
+        FRONT_MATTER.replace(
+            "Extract context from the documents provided.",
+            "Return {{ schema.context_extraction_proposal }}",
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(
+        UnresolvedMarkerError, match=re.escape("schema.context_extraction_proposal")
+    ):
+        PromptRegistry(tmp_path).compose("extract-context", "v1")
+
+
+def test_the_template_hash_is_shared_across_substitutions(tmp_path: Path) -> None:
+    """DEC-094: the template hash answers "which template produced this" — every composition of
+    the same prompt version shares it whatever was substituted, while the content hash stays
+    the identity of one substituted composition."""
+    shared = tmp_path / "shared"
+    shared.mkdir()
+    for name in ("source-content-boundary-v1", "evidence-policy-v1", "uncertainty-policy-v1"):
+        (shared / f"{name}.md").write_text("policy", encoding="utf-8")
+    (tmp_path / "extract-context-v1.md").write_text(
+        FRONT_MATTER.replace(
+            "Extract context from the documents provided.",
+            "Documents:\n\n{{ input.source_content }}",
+        ),
+        encoding="utf-8",
+    )
+    registry = PromptRegistry(tmp_path)
+    first = registry.compose("extract-context", "v1", {"input.source_content": "corpus one"})
+    second = registry.compose("extract-context", "v1", {"input.source_content": "corpus two"})
+
+    assert first.metadata.content_hash != second.metadata.content_hash
+    assert first.metadata.template_hash == second.metadata.template_hash
+    assert is_content_hash(first.metadata.template_hash)
+
+
+def test_a_shared_block_edit_moves_the_template_hash(tree: Path) -> None:
+    before = PromptRegistry(tree).compose("extract-context", "v1").metadata.template_hash
+    (tree / "shared" / "evidence-policy-v1.md").write_text(
+        "Every documented claim cites at least two evidence references.", encoding="utf-8"
+    )
+    after = PromptRegistry(tree).compose("extract-context", "v1").metadata.template_hash
+    assert before != after

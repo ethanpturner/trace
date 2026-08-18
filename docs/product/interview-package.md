@@ -17,9 +17,9 @@ supports a weakness. The distinction is enforced structurally — DEC-013's outc
 route from an unverified conclusion to a finding, and the `Finding` schema refuses validation
 statuses the table produces no finding from — not by prompt phrasing.
 
-The measured version: across twelve benchmark scenarios, the generic single-prompt baseline
-invents five false positives over four scenarios; Trace's pipeline produces four candidate
-rejections over twelve, and every one of its seventeen approved findings links to hashed source
+The measured version: across thirteen benchmark scenarios, the generic single-prompt baseline
+invents seven false positives over five scenarios; Trace's pipeline produces four candidate
+rejections over thirteen, and every one of its eighteen approved findings links to hashed source
 evidence where the baselines can cite nothing even in principle (`docs/eval/comparison.md`).
 
 ## 2. Why LangGraph was evaluated and rejected
@@ -41,7 +41,9 @@ rejected it once the shape existed, and the reasoning is the story:
   see what a call costs.
 
 The decision removed `langgraph`, `langchain`, and `langchain-anthropic` from the
-dependencies, leaving `anthropic` as the only provider SDK, behind the DEC-014 seam. The
+dependencies, leaving `anthropic` as the only provider SDK behind the DEC-014 seam at the
+time (`openai` joined later as DEC-095's second adapter, each SDK importable only by its own
+adapter). The
 recorded tradeoff is honest: retries, limits, and resume are now owned code, and the trigger
 to revisit is a workflow that stops being a list.
 
@@ -112,7 +114,7 @@ The evaluation harness is not a report card bolted on; it repeatedly changed wha
 - **Authoring recordings surfaced real defects.** The reserved-metrics work found that report
   metrics had no pipeline caller at all; recording authorship exposed a stale run-row counter
   (`model_call_count`, fixed in #424); demo preparation found report section 7 structurally
-  empty because its filter was never satisfiable (DEC-083).
+  empty because its filter was never satisfiable (DEC-101, renumbered from a duplicate DEC-083 heading).
 - **The live capture measured the miss.** The flagship run matched none of the three authored
   expected findings and approved four defensible ones under different requirement identifiers
   — real weaknesses, wrong requirement lens — and that number is on the public scorecard with
@@ -146,18 +148,21 @@ The MVP's constraints are decisions, not accidents, and each names its expansion
   read-only browser boundary is bounded rather than defended (DEC-078). Production means
   re-opening that threat model deliberately: authentication, tenancy, and the storage
   boundary the assessment stores already enforce per-assessment.
-- **The model seam is provider-agnostic with one adapter** (DEC-014) — and honestly noted as
-  unproven agnostic until a second adapter exists. Cost and token accounting already flow
-  through the seam; the live stability run populated them.
+- **The model seam is provider-agnostic with two adapters** (DEC-014, DEC-095) — the second
+  adapter the earlier version of this list named as what production would need. Both are held
+  to one contract by the conformance suite; no live OpenAI pipeline run has been measured yet.
+  Cost and token accounting already flow through the seam; the live stability run populated
+  them.
 - **The evaluation machinery is the production readiness gate.** Scorecard history keyed by
   git ref, prompt digest, and catalog version (DEC-081) plus the prompt- and model-comparison
   protocols (`--label`/`--diff-against`) are how a prompt or model change would be admitted:
   measured against the register, diffed per item, retained.
 - **The catalog versioning already supports growth**: assessments pin a catalog version, so
   a new catalog cannot change what an in-flight run is assessed against (DEC-010, DEC-034).
-- What would need building, stated plainly: a second provider adapter, multi-user review
-  attribution beyond DEC-023's local reviewer string, retention and deletion policies for
-  assessment data, and the interactive lineage view future-features 13.1 sketches.
+- What would need building, stated plainly: multi-user review attribution beyond DEC-023's
+  local reviewer string, retention and deletion policies for assessment data, and the
+  interactive lineage view future-features 13.1 sketches. The second provider adapter this
+  list once named is built (DEC-095); what remains for it is a measured live run.
 
 The closing line of the story is the project's own: the roadmap's exit criterion for the
 public release is that it "does not imply production readiness it has not earned."

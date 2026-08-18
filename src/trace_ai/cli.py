@@ -20,25 +20,37 @@ experience to be command line based or to use structured files, and it is both: 
 takes flags for a decision or two and exports an editable file for a real review. Both write the
 same `ReviewerDecision` rows, because both call the same functions.
 
-**Exit codes are answers.** A refused approval exits non-zero and names what is outstanding, so an
-evaluation script can act on it without parsing prose. `context show` exits non-zero when the
-context is not approvable, for the same reason.
+**Exit codes are answers** (DEC-088). A script can branch on them without parsing prose: 0 is
+success; 1 is an error the operator can fix, named in one line; 2 is argparse rejecting the
+arguments; and 3 is a stated refusal that is an answer rather than a fault — a context not
+approvable, an approval blocked, evidence or a report that drifted, a `reset` dry run. Code 1 and
+code 3 are kept distinct precisely so "refused" and "crashed" are not the same signal, which is what
+the old single non-zero code made them. `EXPECTED_ERRORS` names the failures rendered as a sentence
+under code 1; anything else keeps its traceback, because hiding an unexpected failure is how a tool
+starts lying about what happened.
 """
 
 from __future__ import annotations
 
 import argparse
+import sqlite3
 import sys
 from datetime import date
 from typing import TYPE_CHECKING, Any
 
-from trace_ai.config import MissingSettingError
+from pydantic import ValidationError
+
+from trace_ai.config import (
+    IS_SOURCE_CHECKOUT,
+    MissingSettingError,
+    Settings,
+    SourceCheckoutRequiredError,
+)
 from trace_ai.domain.assessment import default_configuration
 from trace_ai.domain.enums import ReviewDisposition, RiskTreatment, Severity, SourceOrigin
 from trace_ai.domain.evidence import EvidenceReference
 from trace_ai.domain.execution import RunStatus, WorkflowRun
 from trace_ai.domain.finding import Finding
-from trace_ai.domain.proposals import ContextExtractionProposal
 from trace_ai.domain.source_document import IngestionStatus, SourceDocument, TrustLevel
 from trace_ai.infrastructure.database.store import AssessmentStore, StoreError
 from trace_ai.infrastructure.filesystem.artifact_store import DEFAULT_ROOT, ArtifactStoreError
@@ -55,6 +67,7 @@ from trace_ai.services.context.review_file import (
     write_review_file,
 )
 from trace_ai.services.driver import resume_assessment, run_assessment
+from trace_ai.services.evaluation.capture import CaptureRefusedError
 from trace_ai.services.evaluation.report_metrics import RUBRIC_CATEGORIES, record_rubric
 from trace_ai.services.evidence.index import EvidenceIndex, EvidenceNotFoundError
 from trace_ai.services.evidence.indexing import IndexingError, index_document
@@ -69,7 +82,8 @@ from trace_ai.services.findings.review_package import (
     render_markdown,
 )
 from trace_ai.services.ingestion.loader import DocumentLoader, DocumentLoadError
-from trace_ai.services.verification import verify_assessment
+from trace_ai.services.requirements.loader import CatalogError
+from trace_ai.services.verification import Drift, verify_assessment
 from trace_ai.workflow.checkpoint import load_state
 from trace_ai.workflow.context_review import (
     ApprovalRefusedError,
@@ -101,7 +115,8 @@ from trace_ai.workflow.limits import LimitExceededError
 from trace_ai.workflow.phases import Phase
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping, Sequence
+    from collections.abc import Iterable, Mapping, Sequence
+    from decimal import Decimal
     from pathlib import Path
 
     from trace_ai.services.assessment import AssessmentHandle
@@ -116,13 +131,36 @@ __all__ = ["build_parser", "main", "run"]
 DEFAULT_MODEL_PROFILE = "primary-development"
 DEFAULT_THREAT_METHODOLOGY = "stride-scenario-based"
 
-# Errors the services raise by name. These become a message and a non-zero exit code; anything
-# else is a bug and keeps its traceback, because hiding an unexpected failure is how a tool starts
-# lying about what happened. `MissingSettingError` and `ResponsesExhaustedError` are the two an
-# operator causes from the command line — an unset provider key, and fewer `--response` files than
-# the run makes model calls — so both are answered in a sentence rather than a traceback.
+# Exit codes are answers a script can act on without parsing prose (DEC-088):
+#   0  the command did what it was asked
+#   1  an error the operator can fix, named in one line (an EXPECTED_ERRORS failure)
+#   2  argparse rejected the arguments (the standard-library convention)
+#   3  a stated, expected refusal: a context not approvable, an approval blocked, evidence or a
+#      report that drifted, a `reset` dry run. Not an error -- the answer to a yes/no question.
+REFUSED = 3
+
+
+class CommandInputError(ValueError):
+    """An argument the CLI itself rejects: a malformed `ID=VALUE` pair, an unknown identifier, a
+    value that is not one of the enum's, a file the operator named that cannot be read.
+
+    A subclass of `ValueError` so the parsing helpers can raise it naturally. It exists to name the
+    CLI's own input errors rather than conflate them with a bare `ValueError` from deep code, and to
+    let the file-read and enum helpers turn an `OSError` or an enum's `ValueError` into a clean,
+    one-line operator message.
+    """
+
+
+# Errors rendered as a message and a non-zero exit code rather than a traceback. `MissingSettingError`
+# and `ResponsesExhaustedError` are the two an operator causes from the command line. `ValueError`
+# stays because the domain raises it on an operator-supplied identifier (`parse_id`) and a few
+# services raise it on operator input; `FileNotFoundError` stays for an operator-named path. What is
+# *not* swallowed is a `pydantic.ValidationError` -- also a `ValueError` subclass -- from deep in the
+# pipeline: DEC-006 says a domain object never fails validation, so one that does is a bug that keeps
+# its traceback. The dispatch re-raises it explicitly, ahead of this tuple.
 EXPECTED_ERRORS = (
     AssessmentServiceError,
+    CatalogError,
     DocumentLoadError,
     IndexingError,
     EvidenceNotFoundError,
@@ -137,8 +175,12 @@ EXPECTED_ERRORS = (
     LimitExceededError,
     MissingSettingError,
     ResponsesExhaustedError,
+    CommandInputError,
     FileNotFoundError,
     ValueError,
+    # A write lock held past `busy_timeout` (a second `trace` process, or the view server beside a
+    # run) surfaces as sqlite3.OperationalError; answer it as a message, not a traceback.
+    sqlite3.Error,
 )
 
 
@@ -154,6 +196,36 @@ def _default_reviewer() -> str:
         return "unknown"
 
 
+def _json_flag(parser: argparse.ArgumentParser) -> None:
+    """The DEC-096 flag every read command shares: the same information, machine-shaped."""
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        dest="as_json",
+        help=(
+            "print the same information as one JSON object (DEC-096), data_model_version "
+            "stamped; quoted source content appears only where the human view prints it"
+        ),
+    )
+
+
+def _print_json(kind: str, payload: Mapping[str, Any]) -> int:
+    """One JSON object to stdout: the DEC-096 envelope.
+
+    `kind` names what the object is, `data_model_version` says which schema generation shaped
+    it, and the payload carries the same information the human view prints -- no more (a listing
+    that dumped fields the human view withholds would put source content and storage paths on
+    screen as a side effect of scripting).
+    """
+    import json
+
+    from trace_ai.domain.assessment import DATA_MODEL_VERSION
+
+    document = {"kind": kind, "data_model_version": DATA_MODEL_VERSION, **payload}
+    print(json.dumps(document, indent=2, default=str))
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     """The command surface DEC-032 confirms.
 
@@ -162,6 +234,13 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="trace",
         description="Context-aware security architecture analysis.",
+        epilog=(
+            "Exit codes (DEC-088): 0 success; 1 an error the operator can fix, named in one line; "
+            "2 argparse rejected the arguments; 3 a stated refusal that is an answer, not a fault -- "
+            "a context not approvable, an approval blocked, evidence or a report that drifted, or a "
+            "`reset` dry run. A script can branch on 3 without parsing prose."
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument(
         "--data-root",
@@ -178,19 +257,54 @@ def build_parser() -> argparse.ArgumentParser:
     created.add_argument("--name", required=True)
     created.add_argument("--description")
     created.add_argument("--tag", action="append", dest="tags", default=[])
+    created.add_argument(
+        "--catalog-version",
+        dest="catalog_version",
+        help=(
+            "the requirements catalog version this assessment pins (DEC-010, DEC-098); "
+            "default: the loader's current version"
+        ),
+    )
 
-    assessment_commands.add_parser("list", help="list assessments")
+    assessment_list = assessment_commands.add_parser("list", help="list assessments")
+    _json_flag(assessment_list)
 
     status = assessment_commands.add_parser("status", help="report an assessment's state")
+    _json_flag(status)
     status.add_argument("assessment_id")
 
     candidates = assessment_commands.add_parser(
         "candidates", help="list catalog-gap candidates for the catalog owner"
     )
     candidates.add_argument("assessment_id")
+    _json_flag(candidates)
 
     export = commands.add_parser("export", help="serialize approved objects to interop formats")
     export_commands = export.add_subparsers(dest="command")
+    mermaid = export_commands.add_parser(
+        "mermaid",
+        help="serialize the approved architecture as a Mermaid DFD source",
+        description=(
+            "DEC-072's third serializer: the approved components, actors, data flows, and trust "
+            "boundaries as one deterministic Mermaid flowchart -- never model-drawn, standalone "
+            "in the assessment's outputs area, not embedded in the report. Refuses an assessment "
+            "with no approved context."
+        ),
+    )
+    mermaid.add_argument("assessment_id")
+
+    sarif = export_commands.add_parser(
+        "sarif",
+        help="serialize approved findings as a SARIF 2.1.0 log",
+        description=(
+            "DEC-072's second serializer: approved findings as SARIF results levelled by the "
+            'reviewer-assigned severity, documentation gaps as kind "review" at level '
+            '"none" -- a gap asserts nothing about the implementation (DEC-009). Refuses an '
+            "assessment with no approved context; writes to the assessment's outputs area."
+        ),
+    )
+    sarif.add_argument("assessment_id")
+
     tm_bom = export_commands.add_parser(
         "tm-bom", help="export the approved model as a TM-BOM document (DEC-072)"
     )
@@ -198,6 +312,20 @@ def build_parser() -> argparse.ArgumentParser:
 
     archive = assessment_commands.add_parser("archive", help="retire an assessment")
     archive.add_argument("assessment_id")
+
+    purge = assessment_commands.add_parser(
+        "purge",
+        help="delete one assessment entirely: every row and its whole directory (DEC-089)",
+        description=(
+            "Removes exactly one assessment -- its stored objects, its identifier counters, and its "
+            "artifact directory -- where `reset` removes the whole data root. Destructive: without "
+            "--force it prints what would go and removes nothing."
+        ),
+    )
+    purge.add_argument("assessment_id")
+    purge.add_argument(
+        "--force", action="store_true", help="actually remove; without it, a dry run"
+    )
 
     approve = assessment_commands.add_parser(
         "approve",
@@ -224,16 +352,19 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     listed = source_commands.add_parser("list", help="list registered documents")
+    _json_flag(listed)
     listed.add_argument("assessment_id")
 
     evidence = commands.add_parser("evidence", help="inspect evidence references")
     evidence_commands = evidence.add_subparsers(dest="command")
 
     evidence_list = evidence_commands.add_parser("list", help="list evidence references")
+    _json_flag(evidence_list)
     evidence_list.add_argument("assessment_id")
     evidence_list.add_argument("--source", dest="source_document_id")
 
     evidence_show = evidence_commands.add_parser("show", help="print one evidence reference")
+    _json_flag(evidence_show)
     evidence_show.add_argument("evidence_id")
     evidence_show.add_argument("--assessment", dest="assessment_id", required=True)
 
@@ -247,22 +378,10 @@ def build_parser() -> argparse.ArgumentParser:
         "extract", help="extract and validate a context, then stop at the review checkpoint"
     )
     extract.add_argument("assessment_id")
-    extract.add_argument(
-        "--model-profile",
-        default=DEFAULT_MODEL_PROFILE,
-        help="the provider, model, and settings bundle to run with",
-    )
-    extract.add_argument(
-        "--response",
-        type=_path,
-        help="a recorded extraction response to replay, for a run that reaches no provider",
-    )
-    extract.add_argument(
-        "--max-model-calls",
-        type=int,
-        help="stop the run before exceeding this many model calls",
-    )
-    extract.add_argument("--max-cost", help="stop the run before exceeding this estimated cost")
+    # The same model flags as `run` and `resume`: one definition, so `--response` is repeatable and
+    # expands a directory of numbered recordings the same way everywhere. Hand-rolling them here gave
+    # `context extract` a singular `--response` that could not take the directory form the demo uses.
+    _model_flags(extract)
 
     show = context_commands.add_parser(
         "show", help="print the review package for the pending checkpoint"
@@ -281,6 +400,7 @@ def build_parser() -> argparse.ArgumentParser:
             "injection attempts and contradictions awaiting resolution"
         ),
     )
+    _json_flag(show)
 
     review = context_commands.add_parser("review", help="record reviewer decisions")
     review.add_argument("assessment_id")
@@ -376,6 +496,7 @@ def build_parser() -> argparse.ArgumentParser:
         "show", help="print the review package for the finding checkpoint"
     )
     findings_show.add_argument("assessment_id")
+    _json_flag(findings_show)
 
     findings_review = findings_commands.add_parser("review", help="record reviewer decisions")
     findings_review.add_argument("assessment_id")
@@ -551,6 +672,75 @@ def build_parser() -> argparse.ArgumentParser:
         type=_path,
         help="where the feed is written (default: benchmarks/results/)",
     )
+    evaluate.add_argument(
+        "--report",
+        choices=["scorecard", "comparison", "ablation"],
+        help=(
+            "run the offline sweep and render one evaluation page to stdout or --out (#505); "
+            "the committed pages under docs/eval/ stay the build scripts' deliberate step"
+        ),
+    )
+    evaluate.add_argument(
+        "--out",
+        type=_path,
+        help="where --report writes the rendered page (default: stdout)",
+    )
+    _json_flag(evaluate)
+
+    capture = commands.add_parser(
+        "capture",
+        help="capture a registered scenario's recording from a live model run",
+        description=(
+            "Runs one capture stage for a scenario from benchmarks/scenarios.yaml against the "
+            "live provider, recording every response the run consumes into the scenario's "
+            "capture/ staging directory (DEC-091). Checkpoint decisions are authored per capture, "
+            "in the staging directory, from the files each stage exports; promotion into "
+            "recorded/ is a deliberate copy after the replay round-trip is verified. Each stage "
+            "spends real money and refuses to run twice; the refusal is exit code 3."
+        ),
+    )
+    capture.add_argument("scenario", help="a registered scenario slug")
+    capture.add_argument(
+        "stage",
+        choices=["extract", "reason", "report", "baseline-generic", "baseline-structured"],
+        help=(
+            "extract runs to checkpoint 1 and exports the review file; reason applies the "
+            "authored context decisions and runs to checkpoint 2; report applies the authored "
+            "finding decisions and runs to completion; baseline-generic and baseline-structured "
+            "each make the one DEC-074 baseline call and stage its recording (DEC-100)"
+        ),
+    )
+    capture.add_argument(
+        "--from-recorded",
+        action="store_true",
+        dest="from_recorded",
+        help="serve already-staged recordings before going live (resume an interrupted capture)",
+    )
+    capture.add_argument(
+        "--model-profile",
+        default=DEFAULT_MODEL_PROFILE,
+        help="the provider, model, and settings bundle to capture with (the fake one is refused)",
+    )
+    capture.add_argument(
+        "--rehearse",
+        action="store_true",
+        help=(
+            "run the stage offline against the deterministic substitute serving --response "
+            "recordings, staging into capture-rehearsal/ (#534); nothing staged can be promoted"
+        ),
+    )
+    capture.add_argument(
+        "--response",
+        action="append",
+        dest="responses",
+        default=[],
+        type=_path,
+        metavar="PATH",
+        help=(
+            "a recorded response for --rehearse to serve, in consumption order; a directory "
+            "stands for its numbered recordings, as with run --response"
+        ),
+    )
 
     verify = commands.add_parser(
         "verify",
@@ -558,11 +748,12 @@ def build_parser() -> argparse.ArgumentParser:
         description=(
             "Walks the evidence chain: every stored document against its recorded hash, every "
             "evidence reference against its source, and the report manifest against the store. "
-            "Exit 0 when everything verifies; exit 1 with each drift named — identifier, "
+            "Exit 0 when everything verifies; exit 3 with each drift named — identifier, "
             "expected hash, found hash — and never the content that changed."
         ),
     )
     verify.add_argument("assessment_id")
+    _json_flag(verify)
 
     report = commands.add_parser("report", help="inspect the rendered report")
     report_commands = report.add_subparsers(dest="command")
@@ -573,6 +764,26 @@ def build_parser() -> argparse.ArgumentParser:
         "--manifest",
         action="store_true",
         help="print the report's manifest instead of the report",
+    )
+    _json_flag(report_show)
+
+    report_render = report_commands.add_parser(
+        "render",
+        help="write the report in another format, derived from the Markdown deliverable",
+        description=(
+            "Converts the rendered Markdown report — the deliverable, unchanged (DEC-035) — "
+            "into a derived presentation artifact in the assessment's outputs area (DEC-108). "
+            "The transform is deterministic and escapes everything except the structure the "
+            "renderer itself emits, so source-derived text cannot become markup."
+        ),
+    )
+    report_render.add_argument("assessment_id")
+    report_render.add_argument(
+        "--format",
+        choices=["html"],
+        default="html",
+        dest="render_format",
+        help="the derived format (html is the only one)",
     )
 
     report_rubric = report_commands.add_parser(
@@ -605,6 +816,95 @@ def build_parser() -> argparse.ArgumentParser:
         "--reviewer",
         help="who scored the report (default: the operating-system username, DEC-023)",
     )
+
+    ledger = commands.add_parser(
+        "ledger",
+        help="print an assessment's per-run, per-node token and cost breakdown",
+        description=(
+            "Prints what the execution ledger recorded for each workflow run: one line per "
+            "model-assisted node with its calls, the DEC-067 token spans kept disjoint (uncached "
+            "input, cache reads, cache writes, output), duration, and estimated cost, and a "
+            "total line per run. Absent means the provider reported nothing -- an offline replay "
+            "of a recording without captured usage prints dashes, never zeros pretending to be "
+            "measurements."
+        ),
+    )
+    ledger.add_argument("assessment_id")
+    _json_flag(ledger)
+
+    threats = commands.add_parser(
+        "threats",
+        help="list an assessment's threats",
+        description=(
+            "Lists the threats the analysis proposed and validation accepted, with their "
+            "categories and the components and assets each is grounded in. Threats were "
+            "previously visible only through the report or the read-only view (#486)."
+        ),
+    )
+    threats.add_argument("assessment_id")
+    _json_flag(threats)
+
+    questions = commands.add_parser(
+        "questions",
+        help="list an assessment's questions",
+        description=(
+            "Lists every question the assessment holds -- open and answered, blocking and not -- "
+            "with its priority and status (#486)."
+        ),
+    )
+    questions.add_argument("assessment_id")
+    _json_flag(questions)
+
+    catalog = commands.add_parser(
+        "catalog",
+        help="inspect and validate the requirements catalog",
+        description=(
+            "Reads the version-controlled requirements catalog through the one loader that may "
+            "(DEC-010): the manifest and the files checked against each other, every requirement "
+            "validated, the content hash recomputed. `show` lists requirements; `validate` loads "
+            "and reports, exiting 1 with the loader's reason when the catalog does not verify."
+        ),
+    )
+    catalog_commands = catalog.add_subparsers(dest="command")
+    catalog_show = catalog_commands.add_parser("show", help="list a catalog version's requirements")
+    catalog_show.add_argument(
+        "--catalog-version",
+        default="0.1",
+        dest="catalog_version",
+        help="the catalog version to read (default: 0.1)",
+    )
+    _json_flag(catalog_show)
+    catalog_validate = catalog_commands.add_parser(
+        "validate", help="load a catalog version and report what it holds"
+    )
+    catalog_validate.add_argument(
+        "--catalog-version",
+        default="0.1",
+        dest="catalog_version",
+        help="the catalog version to validate (default: 0.1)",
+    )
+
+    diff = commands.add_parser(
+        "diff",
+        help="compare two assessments' approved models",
+        description=(
+            "Compares two assessments of the same system (DEC-097): what was added, removed, or "
+            "changed, per object family, with identity matched by content fingerprint rather "
+            "than per-assessment identifiers. Both sides must hold an approved context. Threats "
+            "and documentation gaps are compared by ground, never force-paired."
+        ),
+    )
+    diff.add_argument("before", help="the earlier assessment's identifier")
+    diff.add_argument("after", help="the later assessment's identifier")
+    diff.add_argument(
+        "--report",
+        action="store_true",
+        help=(
+            "write the comparison as a Markdown report to the later assessment's outputs area "
+            "(DEC-103, future-features 13.3) instead of printing the structural diff"
+        ),
+    )
+    _json_flag(diff)
 
     reset = commands.add_parser(
         "reset",
@@ -666,10 +966,14 @@ def _model_flags(parser: argparse.ArgumentParser) -> None:
     )
     parser.add_argument(
         "--max-model-calls",
-        type=int,
+        type=_non_negative_int,
         help="stop the run before exceeding this many model calls",
     )
-    parser.add_argument("--max-cost", help="stop the run before exceeding this estimated cost")
+    parser.add_argument(
+        "--max-cost",
+        type=_decimal,
+        help="stop the run before exceeding this estimated cost",
+    )
 
 
 def _path(value: str) -> Path:
@@ -678,11 +982,50 @@ def _path(value: str) -> Path:
     return Path(value).expanduser()
 
 
+def _decimal(value: str) -> Decimal:
+    """A non-negative estimated cost, rejected by argparse rather than deep in the run.
+
+    `Decimal("abc")` raises `decimal.InvalidOperation` -- an `ArithmeticError`, not a `ValueError` --
+    so an inline construction escaped `EXPECTED_ERRORS` as a traceback. As an argparse `type` it is
+    exit 2 with a message, like `--max-model-calls` and `--treatment-review-by`.
+    """
+    from decimal import Decimal, InvalidOperation
+
+    try:
+        parsed = Decimal(value)
+    except InvalidOperation:
+        raise argparse.ArgumentTypeError(f"{value!r} is not a number") from None
+    if parsed < 0:
+        raise argparse.ArgumentTypeError(f"a cost ceiling cannot be negative: {value!r}")
+    return parsed
+
+
+def _non_negative_int(value: str) -> int:
+    """A count ceiling: a whole number, not negative. `-1` model calls is not a limit."""
+    try:
+        parsed = int(value)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"{value!r} is not a whole number") from None
+    if parsed < 0:
+        raise argparse.ArgumentTypeError(f"a ceiling cannot be negative: {value!r}")
+    return parsed
+
+
 def run(argv: Sequence[str] | None = None) -> int:
     """Parse and dispatch. Returns the exit code rather than calling `sys.exit`, so tests can
     drive it directly."""
+    from trace_ai import bootstrap
+
     parser = build_parser()
     args = parser.parse_args(argv)
+
+    # Once, before any command runs: load `.env` into `os.environ` for the provider SDKs, apply the
+    # configured log level, and install the redaction filter. It used to run only for the banner, so
+    # every real command -- `run`, `resume`, `evaluate`, the ones that actually process untrusted
+    # source documents -- left third-party log output unfiltered and `.env` unloaded. The deferred
+    # import mirrors `main`'s: `trace_ai.cli` is imported from within `trace_ai`, so a top-level
+    # import here would be circular.
+    settings = bootstrap()
 
     handlers = {
         ("assessment", "create"): _assessment_create,
@@ -690,8 +1033,11 @@ def run(argv: Sequence[str] | None = None) -> int:
         ("assessment", "status"): _assessment_status,
         ("assessment", "candidates"): _assessment_candidates,
         ("assessment", "archive"): _assessment_archive,
+        ("assessment", "purge"): _assessment_purge,
         ("assessment", "approve"): _assessment_approve,
         ("export", "tm-bom"): _export_tm_bom,
+        ("export", "sarif"): _export_sarif,
+        ("export", "mermaid"): _export_mermaid,
         ("source", "add"): _source_add,
         ("source", "list"): _source_list,
         ("evidence", "list"): _evidence_list,
@@ -709,11 +1055,25 @@ def run(argv: Sequence[str] | None = None) -> int:
         ("findings", "review"): _findings_review,
         ("findings", "approve"): _findings_approve,
         ("report", "show"): _report_show,
+        ("report", "render"): _report_render,
         ("report", "rubric"): _report_rubric,
+        ("ledger", None): _ledger,
+        ("threats", None): _threats,
+        ("questions", None): _questions,
+        ("catalog", "show"): _catalog_show,
+        ("catalog", "validate"): _catalog_validate,
+        ("diff", None): _diff,
     }
 
     if args.group is None:
-        return _banner()
+        return _banner(settings)
+    if not IS_SOURCE_CHECKOUT:
+        # Every command past the banner reads a repository asset (a prompt, the catalog, the report
+        # template) or the data root under the repo. v0.1 is clone-only (DEC-090); say so plainly
+        # rather than let a dangling path fail deep in a command. `trace` and `trace --help` still
+        # work from a wheel, which is what the packaging smoke test checks.
+        print(f"error: {SourceCheckoutRequiredError()}", file=sys.stderr)
+        return 1
     if args.group == "reset":
         # Before a store opens: `reset` removes the database, and `AssessmentStore.at_root`
         # would first recreate the thing it is about to delete.
@@ -730,6 +1090,17 @@ def run(argv: Sequence[str] | None = None) -> int:
         except EXPECTED_ERRORS as error:
             print(f"error: {error}", file=sys.stderr)
             return 1
+    if args.group == "capture":
+        # A capture owns its own data root (data/capture-<slug>), apart from the operator's
+        # assessments, so it opens its own store rather than borrowing the request-scoped one.
+        try:
+            return _capture(args)
+        except CaptureRefusedError as refusal:
+            print(f"refused: {refusal}", file=sys.stderr)
+            return REFUSED
+        except EXPECTED_ERRORS as error:
+            print(f"error: {error}", file=sys.stderr)
+            return 1
     command = getattr(args, "command", None)
     if command is None and (args.group, None) not in handlers:
         parser.parse_args([args.group, "--help"])
@@ -739,23 +1110,100 @@ def run(argv: Sequence[str] | None = None) -> int:
     try:
         with AssessmentStore.at_root(args.data_root) as store:
             return handler(args, AssessmentService(store, artifact_root=args.data_root))
+    except ValidationError:
+        # A schema failure from the pipeline is a bug, not operator input: DEC-006 says a domain
+        # object never fails validation, so one that does keeps its traceback rather than being
+        # rendered as a one-line operator error. Caught ahead of EXPECTED_ERRORS because
+        # ValidationError is a ValueError, which that tuple deliberately still catches.
+        raise
     except EXPECTED_ERRORS as error:
         print(f"error: {error}", file=sys.stderr)
         return 1
 
 
-def _banner() -> int:
-    """The no-argument behaviour, unchanged: environment, log level, configured credentials.
+def _capture(args: argparse.Namespace) -> int:
+    """Run one capture stage against the live provider, staging beside the scenario (#482).
 
-    Credentials are reported as names only. `Settings` holds them as `SecretStr`, and printing one
-    would defeat that at the last step.
+    The whole capture is `services/evaluation/capture.py`'s: this reads flags, resolves the
+    scenario through the registry, and dispatches the stage. The staging directory, the spend
+    guards, and the decision flow are the service's — a CLI that composed them itself would be a
+    second place the capture lives.
     """
-    from trace_ai import bootstrap
+    from trace_ai.services.evaluation import capture as capture_service
+    from trace_ai.services.evaluation.registry import scenario as registered_scenario
 
-    settings = bootstrap()
+    target = registered_scenario(args.scenario)
+    rehearsal_model = None
+    if args.rehearse:
+        # The rehearsal's whole model: the deterministic substitute serving the supplied
+        # recordings (#534). The service refuses a rehearsal with nothing to serve, and
+        # rehearsal staging files are readable here because this is the rehearsal reading them.
+        if args.stage.startswith("baseline-"):
+            raise CommandInputError(
+                "--rehearse covers the three pipeline stages; a baseline capture is one call "
+                "and has no mechanics to rehearse"
+            )
+        from trace_ai.infrastructure.model.fake import DeterministicModel
+
+        if not args.responses:
+            raise CommandInputError(
+                "a rehearsal runs the deterministic substitute; supply --response recordings "
+                "for it to serve"
+            )
+        try:
+            responses = load_recorded_responses(
+                _response_files(args.responses), allow_rehearsal=True
+            )
+        except CommandInputError:
+            raise
+        except (OSError, ValueError) as error:
+            raise CommandInputError(f"a recorded response could not be read: {error}") from None
+        rehearsal_model = DeterministicModel(list(responses))
+    elif args.responses:
+        raise CommandInputError("--response is how --rehearse is fed; a live capture records")
+
+    if args.stage == "extract":
+        capture_service.stage_extract(
+            target,
+            profile_name=args.model_profile,
+            from_recorded=args.from_recorded,
+            live=rehearsal_model,
+            rehearsal=args.rehearse,
+        )
+    elif args.stage == "reason":
+        capture_service.stage_reason(
+            target,
+            profile_name=args.model_profile,
+            from_recorded=args.from_recorded,
+            live=rehearsal_model,
+            rehearsal=args.rehearse,
+        )
+    elif args.stage == "report":
+        capture_service.stage_report(
+            target,
+            profile_name=args.model_profile,
+            live=rehearsal_model,
+            rehearsal=args.rehearse,
+        )
+    else:
+        capture_service.stage_baseline(
+            target,
+            baseline=args.stage.removeprefix("baseline-"),
+            profile_name=args.model_profile,
+        )
+    return 0
+
+
+def _banner(settings: Settings) -> int:
+    """The no-argument behaviour: environment, log level, configured credentials.
+
+    The process is already bootstrapped by `run`, so this receives the settings rather than
+    reading them a second time. Credentials are reported as names only. `Settings` holds them as
+    `SecretStr`, and printing one would defeat that at the last step.
+    """
     configured = [
         name.removesuffix("_api_key")
-        for name in ("anthropic_api_key", "openai_api_key", "langsmith_api_key")
+        for name in ("anthropic_api_key", "openai_api_key")
         if getattr(settings, name) is not None
     ]
     print("trace: context-aware security architecture analysis")
@@ -781,7 +1229,7 @@ def _reset(args: argparse.Namespace) -> int:
         print("nothing to reset: the data root is already fresh")
         return 0
     if not (root / DATABASE_FILENAME).is_file():
-        raise ValueError(
+        raise CommandInputError(
             f"{root.name!r} holds no {DATABASE_FILENAME}, so it does not look like a trace "
             f"data root; refusing to remove anything"
         )
@@ -792,7 +1240,7 @@ def _reset(args: argparse.Namespace) -> int:
         for child in entries:
             print(f"  {child.name}")
         print("nothing was removed; pass --force to remove them", file=sys.stderr)
-        return 1
+        return REFUSED
 
     for child in entries:
         if child.is_dir():
@@ -809,6 +1257,7 @@ def _assessment_create(args: argparse.Namespace, service: AssessmentService) -> 
         default_configuration(DEFAULT_MODEL_PROFILE, DEFAULT_THREAT_METHODOLOGY),
         description=args.description,
         tags=list(args.tags),
+        requirements_catalog_version=args.catalog_version,
     )
     print(assessment.id)
     return 0
@@ -816,6 +1265,15 @@ def _assessment_create(args: argparse.Namespace, service: AssessmentService) -> 
 
 def _assessment_list(args: argparse.Namespace, service: AssessmentService) -> int:
     assessments = service.list()
+    if args.as_json:
+        return _print_json(
+            "assessments",
+            {
+                "assessments": [
+                    {"id": a.id, "status": str(a.status), "name": a.name} for a in assessments
+                ]
+            },
+        )
     if not assessments:
         print("no assessments")
         return 0
@@ -840,6 +1298,36 @@ def _assessment_status(args: argparse.Namespace, service: AssessmentService) -> 
     # in for it. Reporting "none" next to "run status: paused" would be the two lines contradicting
     # each other, and the run is the thing a reviewer needs the identifier of.
     active = reported.active_workflow_run_id or (run.id if run is not None else None)
+
+    if args.as_json:
+        payload: dict[str, Any] = {
+            "assessment": {
+                "id": reported.assessment_id,
+                "status": str(reported.status),
+                "workflow_run_id": active,
+                "source_documents": reported.source_documents,
+                "evidence_references": reported.evidence_references,
+            },
+            "run": None,
+            "checkpoint": None,
+        }
+        if run is not None:
+            payload["run"] = {
+                "id": run.id,
+                "status": str(run.status),
+                "phase": run.current_node,
+                "model_calls": run.total_model_calls,
+                "input_tokens": run.total_input_tokens,
+                "output_tokens": run.total_output_tokens,
+                "estimated_cost": run.estimated_cost,
+            }
+            pending = _pending_review(handle, run.id)
+            if pending is not None:
+                payload["checkpoint"] = {
+                    "type": pending.checkpoint_type.value,
+                    "awaiting_object_ids": list(pending.object_ids),
+                }
+        return _print_json("assessment-status", payload)
 
     print(f"assessment:       {reported.assessment_id}")
     print(f"status:           {reported.status}")
@@ -871,6 +1359,322 @@ def _assessment_status(args: argparse.Namespace, service: AssessmentService) -> 
     return 0
 
 
+def _ledger(args: argparse.Namespace, service: AssessmentService) -> int:
+    """Per-run, per-node spend from the execution ledger (#483).
+
+    Prints what the records already carry and computes nothing new: the DEC-067 token spans stay
+    disjoint, and a field no record reported prints as a dash. Zero and absent are different
+    answers — an offline replay of a recording without captured usage measured nothing, and
+    printing 0 would claim it did.
+    """
+    from trace_ai.domain.execution import ExecutionRecord, ExecutionType
+
+    handle = service.handle(args.assessment_id)
+    runs = handle.objects.list(WorkflowRun)
+    if not runs:
+        print("no workflow run has started")
+        return 0
+
+    records_by_run: dict[str, list[ExecutionRecord]] = {}
+    for record in handle.objects.list(ExecutionRecord):
+        records_by_run.setdefault(record.workflow_run_id, []).append(record)
+
+    if args.as_json:
+        from decimal import Decimal
+
+        def _sum(values: list[int | None]) -> int | None:
+            reported = [value for value in values if value is not None]
+            return sum(reported) if reported else None
+
+        payload_runs = []
+        for run in runs:
+            model_records = [
+                record
+                for record in records_by_run.get(run.id, [])
+                if record.execution_type is ExecutionType.MODEL
+            ]
+            grouped: dict[str, list[ExecutionRecord]] = {}
+            for record in model_records:
+                grouped.setdefault(record.node_name, []).append(record)
+            payload_runs.append(
+                {
+                    "id": run.id,
+                    "status": str(run.status),
+                    "model_calls": run.total_model_calls,
+                    "estimated_cost": run.estimated_cost,
+                    "nodes": [
+                        {
+                            "node": name,
+                            "calls": len(rows),
+                            "input_tokens": _sum([r.input_tokens for r in rows]),
+                            "cache_read_tokens": _sum([r.cache_read_tokens for r in rows]),
+                            "cache_creation_tokens": _sum([r.cache_creation_tokens for r in rows]),
+                            "output_tokens": _sum([r.output_tokens for r in rows]),
+                            "duration_ms": _sum([r.duration_ms for r in rows]),
+                            "estimated_cost": (
+                                sum(
+                                    (
+                                        r.estimated_cost
+                                        for r in rows
+                                        if r.estimated_cost is not None
+                                    ),
+                                    start=Decimal(0),
+                                )
+                                if any(r.estimated_cost is not None for r in rows)
+                                else None
+                            ),
+                        }
+                        for name, rows in grouped.items()
+                    ],
+                }
+            )
+        return _print_json(
+            "execution-ledger",
+            {"assessment_id": args.assessment_id, "runs": payload_runs},
+        )
+
+    for run in runs:
+        cost = run.estimated_cost if run.estimated_cost is not None else "-"
+        print(f"run {run.id}  status: {run.status}  model calls: {run.total_model_calls}")
+        model_records = [
+            record
+            for record in records_by_run.get(run.id, [])
+            if record.execution_type is ExecutionType.MODEL
+        ]
+        if not model_records:
+            print("  no model-assisted executions recorded")
+            print()
+            continue
+
+        nodes: dict[str, list[ExecutionRecord]] = {}
+        for record in model_records:
+            nodes.setdefault(record.node_name, []).append(record)
+
+        header = (
+            f"  {'node':<28}{'calls':>6}{'input':>10}{'cache-read':>12}"
+            f"{'cache-write':>13}{'output':>9}{'seconds':>9}  cost"
+        )
+        print(header)
+        for name, rows in nodes.items():
+            print(
+                f"  {name:<28}{len(rows):>6}"
+                f"{_summed(row.input_tokens for row in rows):>10}"
+                f"{_summed(row.cache_read_tokens for row in rows):>12}"
+                f"{_summed(row.cache_creation_tokens for row in rows):>13}"
+                f"{_summed(row.output_tokens for row in rows):>9}"
+                f"{_seconds(rows):>9}"
+                f"  {_summed_cost(rows)}"
+            )
+        print(
+            f"  {'total':<28}{len(model_records):>6}"
+            f"{_summed(row.input_tokens for row in model_records):>10}"
+            f"{_summed(row.cache_read_tokens for row in model_records):>12}"
+            f"{_summed(row.cache_creation_tokens for row in model_records):>13}"
+            f"{_summed(row.output_tokens for row in model_records):>9}"
+            f"{_seconds(model_records):>9}"
+            f"  {cost}"
+        )
+        print()
+    return 0
+
+
+def _summed(values: Iterable[int | None]) -> str:
+    """The sum of the reported values, or a dash when nothing was reported.
+
+    A mix sums what was reported: one measured record beside an unmeasured one is a partial
+    measurement, which is still a measurement — the per-node lines say which rows carried it.
+    """
+    reported = [value for value in values if value is not None]
+    return str(sum(reported)) if reported else "-"
+
+
+def _summed_cost(rows: Sequence[Any]) -> str:
+    from decimal import Decimal
+
+    reported = [row.estimated_cost for row in rows if row.estimated_cost is not None]
+    return str(sum(reported, start=Decimal(0))) if reported else "-"
+
+
+def _seconds(rows: Sequence[Any]) -> str:
+    reported = [row.duration_ms for row in rows if row.duration_ms is not None]
+    return f"{sum(reported) / 1000:.1f}" if reported else "-"
+
+
+def _threats(args: argparse.Namespace, service: AssessmentService) -> int:
+    """List the threats the analysis produced, grounded objects named (#486)."""
+    from trace_ai.domain.threat import Threat
+
+    threats = service.handle(args.assessment_id).objects.list(Threat)
+    if args.as_json:
+        return _print_json(
+            "threats",
+            {
+                "assessment_id": args.assessment_id,
+                "threats": [threat.model_dump(mode="json") for threat in threats],
+            },
+        )
+    if not threats:
+        print("no threats")
+        return 0
+    for threat in threats:
+        categories = ",".join(str(term) for term in threat.category) or "-"
+        grounded = ", ".join([*threat.affected_component_ids, *threat.affected_asset_ids])
+        print(f"{threat.id}  [{categories}]  {threat.title}  ({grounded})")
+    return 0
+
+
+def _questions(args: argparse.Namespace, service: AssessmentService) -> int:
+    """List every question -- open and answered, blocking and not (#486)."""
+    from trace_ai.domain.question import Question
+
+    questions = service.handle(args.assessment_id).objects.list(Question)
+    if args.as_json:
+        return _print_json(
+            "questions",
+            {
+                "assessment_id": args.assessment_id,
+                "questions": [question.model_dump(mode="json") for question in questions],
+            },
+        )
+    if not questions:
+        print("no questions")
+        return 0
+    for question in questions:
+        marker = "blocking" if question.blocking else str(question.priority)
+        print(f"{question.id}  {question.status!s:<9} {marker:<9} {question.question}")
+    return 0
+
+
+def _catalog_show(args: argparse.Namespace, service: AssessmentService) -> int:
+    """List a catalog version's requirements through the one loader that may (DEC-010)."""
+    from trace_ai.services.requirements.loader import load_catalog
+
+    loaded = load_catalog(args.catalog_version)
+    if args.as_json:
+        return _print_json(
+            "requirements-catalog",
+            {
+                "catalog": loaded.catalog.model_dump(mode="json"),
+                "requirements": [
+                    requirement.model_dump(mode="json") for requirement in loaded.requirements
+                ],
+            },
+        )
+    print(f"catalog: {loaded.catalog.id} version {loaded.version}, {len(loaded)} requirements")
+    for requirement in loaded.requirements:
+        print(f"  {requirement.id}  {requirement.title}")
+    return 0
+
+
+def _catalog_validate(args: argparse.Namespace, service: AssessmentService) -> int:
+    """Load a catalog version and report what it holds; the loader's refusals are the check."""
+    from trace_ai.services.requirements.loader import load_catalog
+
+    loaded = load_catalog(args.catalog_version)
+    print(
+        f"catalog {loaded.catalog.id} version {loaded.version} verifies: "
+        f"{len(loaded)} requirements, content hash {loaded.catalog.content_hash}"
+    )
+    return 0
+
+
+def _diff(args: argparse.Namespace, service: AssessmentService) -> int:
+    """Compare two assessments' approved models (#488, DEC-097).
+
+    Two scoped reads through two handles -- never a cross-assessment query -- and the
+    conservative matching is `services/diff/`'s: this prints what came back.
+    """
+    from trace_ai.services.diff import diff_assessments, write_comparison_report
+    from trace_ai.services.export import ExportError
+
+    if args.report:
+        try:
+            written = write_comparison_report(
+                service.handle(args.before), service.handle(args.after)
+            )
+        except ExportError as refused:
+            print(f"error: {refused}", file=sys.stderr)
+            return 1
+        print(f"wrote {written.name} to {args.after}'s outputs area")
+        return 0
+
+    try:
+        outcome = diff_assessments(service.handle(args.before), service.handle(args.after))
+    except ExportError as refused:
+        print(f"error: {refused}", file=sys.stderr)
+        return 1
+
+    if args.as_json:
+        from dataclasses import asdict
+
+        def _entries(entries: list[Any]) -> list[dict[str, Any]]:
+            return [
+                asdict(entry) | {"changed_fields": list(entry.changed_fields)} for entry in entries
+            ]
+
+        return _print_json(
+            "assessment-diff",
+            {
+                "before": outcome.before,
+                "after": outcome.after,
+                "moved": outcome.moved,
+                "families": {
+                    name: {
+                        "unchanged": family.unchanged,
+                        "added": _entries(family.added),
+                        "removed": _entries(family.removed),
+                        "changed": _entries(family.changed),
+                        "rename_candidates": [
+                            asdict(candidate) for candidate in family.rename_candidates
+                        ],
+                    }
+                    for name, family in outcome.families.items()
+                },
+                "resolution_shifts": [
+                    asdict(shift) | {"requirement_ids": list(shift.requirement_ids)}
+                    for shift in outcome.resolution_shifts
+                ],
+            },
+        )
+
+    print(f"diff: {outcome.before} -> {outcome.after}")
+    if not outcome.moved:
+        print("no differences in the approved models")
+        return 0
+    for name, family in outcome.families.items():
+        if not family.moved:
+            continue
+        print()
+        print(f"{name.replace('_', ' ')}  ({family.unchanged} unchanged)")
+        for entry in family.added:
+            print(f"  added    {entry.identity}  [{entry.after_id or '-'}]")
+        for entry in family.removed:
+            print(f"  removed  {entry.identity}  [{entry.before_id or '-'}]")
+        for entry in family.changed:
+            fields = ", ".join(entry.changed_fields)
+            print(
+                f"  changed  {entry.identity}  [{entry.before_id or '-'} -> "
+                f"{entry.after_id or '-'}]  {fields}"
+            )
+        for candidate in family.rename_candidates:
+            print(
+                f"  rename?  {candidate.before_identity} -> {candidate.after_identity}  "
+                f"[{candidate.before_id or '-'} -> {candidate.after_id or '-'}]  "
+                f"(a candidate: same content, different name; the entries above stand)"
+            )
+    if outcome.resolution_shifts:
+        print()
+        print("resolution shifts  (the finding/gap distinction, moved)")
+        for shift in outcome.resolution_shifts:
+            arrow = "gap -> finding" if shift.direction == "gap_to_finding" else "finding -> gap"
+            requirements = ", ".join(shift.requirement_ids)
+            print(
+                f"  {arrow}  {requirements}  on {shift.ground}  "
+                f"[{shift.before_id or '-'} -> {shift.after_id or '-'}]"
+            )
+    return 0
+
+
 def _pending_review(handle: AssessmentHandle, workflow_run_id: str) -> PendingHumanReview | None:
     """What the persisted state says the run is waiting for, or nothing if it never paused.
 
@@ -895,6 +1699,16 @@ def _assessment_candidates(args: argparse.Namespace, service: AssessmentService)
 
     handle = service.handle(args.assessment_id)
     candidates = handle.objects.list(CatalogGapCandidate)
+    if args.as_json:
+        return _print_json(
+            "catalog-gap-candidates",
+            {
+                "assessment_id": args.assessment_id,
+                "catalog_gap_candidates": [
+                    candidate.model_dump(mode="json") for candidate in candidates
+                ],
+            },
+        )
     if not candidates:
         print("no catalog-gap candidates")
         return 0
@@ -911,6 +1725,34 @@ def _assessment_candidates(args: argparse.Namespace, service: AssessmentService)
         print(f"  evidence:  {', '.join(candidate.evidence_ids)}")
         for considered in candidate.nearest_requirements:
             print(f"  nearest:   {considered.requirement_id} — {considered.why_not}")
+    return 0
+
+
+def _export_mermaid(args: argparse.Namespace, service: AssessmentService) -> int:
+    """DEC-072's third export: the approved architecture as a Mermaid DFD, to `outputs/`."""
+    from trace_ai.services.export import ExportError, write_mermaid
+
+    handle = service.handle(args.assessment_id)
+    try:
+        written = write_mermaid(handle)
+    except ExportError as refused:
+        print(f"error: {refused}", file=sys.stderr)
+        return 1
+    print(f"wrote {written.name} to the assessment's outputs area")
+    return 0
+
+
+def _export_sarif(args: argparse.Namespace, service: AssessmentService) -> int:
+    """DEC-072's second export: approved findings as a SARIF log, to `outputs/` (#487)."""
+    from trace_ai.services.export import ExportError, write_sarif
+
+    handle = service.handle(args.assessment_id)
+    try:
+        written = write_sarif(handle)
+    except ExportError as refused:
+        print(f"error: {refused}", file=sys.stderr)
+        return 1
+    print(f"wrote {written.name} to the assessment's outputs area")
     return 0
 
 
@@ -943,6 +1785,24 @@ def _assessment_archive(args: argparse.Namespace, service: AssessmentService) ->
     """The only status transition a person performs (DEC-031)."""
     archived = service.archive(args.assessment_id)
     print(f"{archived.id} {archived.status}")
+    return 0
+
+
+def _assessment_purge(args: argparse.Namespace, service: AssessmentService) -> int:
+    """Delete one assessment entirely (DEC-089). A dry run without --force is a stated refusal."""
+    assessment = service.get(args.assessment_id)  # a message, not a traceback, if it is unknown
+    counts = service.handle(args.assessment_id).objects.counts_by_type()
+    total = sum(counts.values())
+    if not args.force:
+        print(
+            f"would purge {assessment.id} ({assessment.status}): {total} object(s) and its directory"
+        )
+        for object_type, count in sorted(counts.items()):
+            print(f"  {object_type:<28} {count}")
+        print("nothing was removed; pass --force to remove it", file=sys.stderr)
+        return REFUSED
+    removed = service.purge(args.assessment_id)
+    print(f"purged {args.assessment_id}: removed {removed} object(s) and its directory")
     return 0
 
 
@@ -990,6 +1850,22 @@ def _source_add(args: argparse.Namespace, service: AssessmentService) -> int:
 def _source_list(args: argparse.Namespace, service: AssessmentService) -> int:
     handle = service.handle(args.assessment_id)
     documents = handle.objects.list(SourceDocument)
+    if args.as_json:
+        return _print_json(
+            "source-documents",
+            {
+                "assessment_id": args.assessment_id,
+                "source_documents": [
+                    {
+                        "id": d.id,
+                        "ingestion_status": str(d.ingestion_status),
+                        "media_type": d.media_type,
+                        "filename": d.filename,
+                    }
+                    for d in documents
+                ],
+            },
+        )
     if not documents:
         print("no source documents")
         return 0
@@ -1013,6 +1889,23 @@ def _evidence_list(args: argparse.Namespace, service: AssessmentService) -> int:
         if args.source_document_id
         else index.handle.objects.list(EvidenceReference)
     )
+    if args.as_json:
+        return _print_json(
+            "evidence-references",
+            {
+                "assessment_id": args.assessment_id,
+                "evidence_references": [
+                    {
+                        "id": r.id,
+                        "source_document_id": r.source_document_id,
+                        "start_line": r.start_line,
+                        "end_line": r.end_line,
+                        "location": r.section_title or r.json_pointer,
+                    }
+                    for r in references
+                ],
+            },
+        )
     if not references:
         print("no evidence references")
         return 0
@@ -1028,6 +1921,11 @@ def _evidence_list(args: argparse.Namespace, service: AssessmentService) -> int:
 def _evidence_show(args: argparse.Namespace, service: AssessmentService) -> int:
     index = EvidenceIndex(service.handle(args.assessment_id))
     (rendered,) = index.render_for_prompt([args.evidence_id])
+
+    if args.as_json:
+        # The quotation is this command's entire purpose, so the JSON view carries it too --
+        # the one listing where source content appears (DEC-096).
+        return _print_json("evidence", {"evidence": rendered})
 
     print(f"evidence:  {rendered['evidence_id']}")
     print(f"source:    {rendered['source_filename']}")
@@ -1049,13 +1947,7 @@ def _evidence_verify(args: argparse.Namespace, service: AssessmentService) -> in
     for failure in failures:
         print(f"{failure.evidence_id}  {failure.outcome}  {failure.detail or ''}".rstrip())
     print(f"{len(failures)} reference(s) no longer match", file=sys.stderr)
-    return 1
-
-
-def _evidence_type() -> type:
-    from trace_ai.domain.evidence import EvidenceReference
-
-    return EvidenceReference
+    return REFUSED
 
 
 def main() -> int:
@@ -1087,31 +1979,16 @@ def _context_extract(args: argparse.Namespace, service: AssessmentService) -> in
     profile names, and prints what came back. A CLI that composed the nodes itself would be a
     second place the pipeline lives.
     """
-    from decimal import Decimal
-
-    from trace_ai.workflow.limits import Budget
-
     handle = service.handle(args.assessment_id)
     assessment = service.get(args.assessment_id)
     profile = resolve_profile(args.model_profile)
 
-    responses = []
-    if args.response is not None:
-        responses = [ContextExtractionProposal.model_validate_json(args.response.read_text())]
-
-    budget = None
-    if args.max_model_calls is not None or args.max_cost is not None:
-        budget = Budget(
-            maximum_model_calls=args.max_model_calls,
-            maximum_cost=Decimal(args.max_cost) if args.max_cost else None,
-        )
-
     outcome = run_context_slice(
         handle,
-        model=build_model(profile, responses=responses),
+        model=build_model(profile, responses=_recorded_responses(args)),
         profile=profile,
         assessment_name=assessment.name,
-        budget=budget,
+        budget=_budget_from(args),
     )
 
     counts = outcome.package.counts()
@@ -1143,6 +2020,59 @@ def _context_show(args: argparse.Namespace, service: AssessmentService) -> int:
     """
     package = _package_for(service.handle(args.assessment_id))
     context = package.system_context
+
+    if args.as_json:
+        _print_json(
+            "context-review-package",
+            {
+                "assessment_id": args.assessment_id,
+                "system_context": {
+                    "system_name": context.system_name,
+                    "version": context.version,
+                    "approved": context.is_approved,
+                    "purpose": context.system_purpose,
+                },
+                "objects": {
+                    group: [obj.model_dump(mode="json") for obj in objects]
+                    for group, objects in package.objects_by_type.items()
+                },
+                "documented_claims": [
+                    item.claim.model_dump(mode="json") for item in package.documented_claims
+                ],
+                "interpreted_claims": [
+                    item.claim.model_dump(mode="json") for item in package.interpreted_claims
+                ],
+                "questions": [q.model_dump(mode="json") for q in package.questions],
+                "triggers": [
+                    {"name": t.name, "detail": t.detail, "object_ids": list(t.object_ids)}
+                    for t in package.triggers
+                ],
+                "outstanding_errors": [
+                    {"object_id": e.object_id, "field": e.field, "message": e.message}
+                    for e in package.outstanding_errors
+                ],
+                "consistency_observations": [
+                    {
+                        "kind": "zone_mismatch",
+                        "object_ids": [mismatch.flow_id],
+                        "detail": mismatch.detail,
+                    }
+                    for mismatch in package.zone_mismatches
+                ]
+                + [
+                    {
+                        "kind": observation.kind,
+                        "object_ids": list(observation.object_ids),
+                        "detail": observation.detail,
+                    }
+                    for observation in package.cross_claim_observations
+                ],
+                "can_approve": package.can_approve,
+            },
+        )
+        # The same answer the human view gives (DEC-088): a context that cannot be approved is
+        # a stated refusal, exit 3, JSON or not.
+        return 0 if package.can_approve else REFUSED
 
     print(f"system:   {context.system_name}")
     print(f"revision: version {context.version}, {'approved' if context.is_approved else 'draft'}")
@@ -1193,6 +2123,17 @@ def _context_show(args: argparse.Namespace, service: AssessmentService) -> int:
         caused = ", ".join(trigger.object_ids) if trigger.object_ids else "-"
         print(f"  {trigger.name}: {trigger.detail} [{caused}]")
 
+    consistency = len(package.zone_mismatches) + len(package.cross_claim_observations)
+    if consistency:
+        # Warn-only consistency observations (DEC-068's zone check, DEC-070's cross-claim
+        # checks, #526): stated disagreements shown for the reviewer, blocking nothing.
+        print()
+        print(f"consistency observations ({consistency}, warn-only)")
+        for mismatch in package.zone_mismatches:
+            print(f"  zone_mismatch: {mismatch.detail}")
+        for observation in package.cross_claim_observations:
+            print(f"  {observation.kind}: {observation.detail}")
+
     if package.outstanding_errors:
         print()
         print(f"outstanding validation errors ({len(package.outstanding_errors)})")
@@ -1206,7 +2147,7 @@ def _context_show(args: argparse.Namespace, service: AssessmentService) -> int:
     print("The context cannot be approved yet:", file=sys.stderr)
     for blocker in package.approval_blockers:
         print(f"  {blocker}", file=sys.stderr)
-    return 1
+    return REFUSED
 
 
 def _print_observations(package: ContextReviewPackage, *, empty_note: bool = False) -> None:
@@ -1214,7 +2155,7 @@ def _print_observations(package: ContextReviewPackage, *, empty_note: bool = Fal
 
     Injection attempts and contradictions are both `SourceObservation`s, and both exist to be
     read by the reviewer: an attempt triages attention toward its flagged subjects, and a
-    contradiction names the identifier a `--resolve-contradiction` call needs — an action that
+    contradiction names the identifier a `--resolve` call needs — an action that
     was unreachable while nothing printed the observation it acts on.
     """
     if package.injection_attempts:
@@ -1230,10 +2171,7 @@ def _print_observations(package: ContextReviewPackage, *, empty_note: bool = Fal
         for observation in package.contradictions:
             cited = ", ".join(observation.evidence_ids)
             print(f"  {observation.id}  {observation.summary} [{cited}]")
-        print(
-            "  settle one with `trace context review --resolve-contradiction ID=VALUE "
-            "--rationale ...`"
-        )
+        print("  settle one with `trace context review --resolve ID=VALUE --rationale ...`")
 
     if empty_note and not package.injection_attempts and not package.contradictions:
         print()
@@ -1289,7 +2227,7 @@ def _context_review(args: argparse.Namespace, service: AssessmentService) -> int
     run_id = run.id if run is not None else None
 
     if args.export is not None:
-        args.export.write_text(write_review_file(_package_for(handle)), encoding="utf-8")
+        _write_named_file(args.export, write_review_file(_package_for(handle)))
         print(f"wrote a review file for {handle.assessment_id}")
         print("Edit it, then apply it with `trace context review --apply`.")
         return 0
@@ -1297,11 +2235,12 @@ def _context_review(args: argparse.Namespace, service: AssessmentService) -> int
     written = []
 
     if args.apply is not None:
-        document = read_review_file(args.apply.read_text(encoding="utf-8"))
+        document = read_review_file(_read_named_file(args.apply))
         reviewer = args.reviewer or document.get("reviewer") or _default_reviewer()
-        written.extend(
-            apply_review_file(handle, document, reviewer_id=reviewer, workflow_run_id=run_id)
-        )
+        applied = apply_review_file(handle, document, reviewer_id=reviewer, workflow_run_id=run_id)
+        written.extend(applied.decisions)
+        for name in applied.skipped_additions:
+            print(f"skipped addition {name!r}: an object with that name already exists")
 
     lookup: dict[str, Any] = {obj.id: obj for obj in context_objects(handle)}  # type: ignore[attr-defined]
     from trace_ai.domain.question import Question
@@ -1328,7 +2267,7 @@ def _context_review(args: argparse.Namespace, service: AssessmentService) -> int
 
         claim = _require(lookup, identifier, "a claim in this assessment")
         if not isinstance(claim, ContextClaim):
-            raise ValueError(f"{identifier} is not a claim, so there is nothing to confirm")
+            raise CommandInputError(f"{identifier} is not a claim, so there is nothing to confirm")
         _, decision = confirm_assumption(
             handle, claim, reviewer_id=reviewer, workflow_run_id=run_id
         )
@@ -1337,7 +2276,7 @@ def _context_review(args: argparse.Namespace, service: AssessmentService) -> int
     for pair in args.answers:
         identifier, separator, response = pair.partition("=")
         if not separator:
-            raise ValueError(f"--answer takes ID=TEXT; {pair!r} has no '='")
+            raise CommandInputError(f"--answer takes ID=TEXT; {pair!r} has no '='")
         _, decision = answer_question(
             handle,
             _require(questions, identifier.strip(), "an open question"),
@@ -1351,7 +2290,7 @@ def _context_review(args: argparse.Namespace, service: AssessmentService) -> int
         identifier, separator, listed = pair.partition("=")
         evidence_ids = [item.strip() for item in listed.split(",") if item.strip()]
         if not separator or not evidence_ids:
-            raise ValueError(f"--attach takes ID=EVD[,EVD...]; {pair!r} names no evidence")
+            raise CommandInputError(f"--attach takes ID=EVD[,EVD...]; {pair!r} names no evidence")
         _, decision = attach_evidence(
             handle,
             _require(lookup, identifier.strip(), "an object in this assessment"),
@@ -1367,7 +2306,7 @@ def _context_review(args: argparse.Namespace, service: AssessmentService) -> int
         from trace_ai.domain.source_observation import SourceObservation
 
         if not (args.rationale or "").strip():
-            raise ValueError(
+            raise CommandInputError(
                 "--resolve requires --rationale: a resolution with no reasoning is "
                 "indistinguishable from quietly choosing the safer statement"
             )
@@ -1377,7 +2316,7 @@ def _context_review(args: argparse.Namespace, service: AssessmentService) -> int
         for pair in args.resolutions:
             identifier, separator, value = pair.partition("=")
             if not separator:
-                raise ValueError(f"--resolve takes ID=VALUE; {pair!r} has no '='")
+                raise CommandInputError(f"--resolve takes ID=VALUE; {pair!r} has no '='")
             resolved = resolve_contradiction(
                 handle,
                 _require(observations, identifier.strip(), "an observation in this assessment"),
@@ -1419,8 +2358,31 @@ def _context_review(args: argparse.Namespace, service: AssessmentService) -> int
 def _require(lookup: Mapping[str, Any], identifier: str, described_as: str) -> Any:
     found = lookup.get(identifier)
     if found is None:
-        raise ValueError(f"{identifier} is not {described_as}")
+        raise CommandInputError(f"{identifier} is not {described_as}")
     return found
+
+
+def _severity(level: str) -> Severity:
+    """A reviewer's severity string as the enum, or a named refusal listing the choices.
+
+    `Severity(level)` raises a bare `ValueError` on an unknown value; wrapping it in
+    `CommandInputError` keeps that value error out of the pipeline's and names the valid levels."""
+    try:
+        return Severity(level)
+    except ValueError:
+        choices = ", ".join(member.value for member in Severity)
+        raise CommandInputError(f"{level!r} is not a severity; choose one of: {choices}") from None
+
+
+def _risk_treatment(value: str) -> RiskTreatment:
+    """A reviewer's treatment string as the enum, or a named refusal listing the choices."""
+    try:
+        return RiskTreatment(value)
+    except ValueError:
+        choices = ", ".join(member.value for member in RiskTreatment)
+        raise CommandInputError(
+            f"{value!r} is not a risk treatment; choose one of: {choices}"
+        ) from None
 
 
 def _context_approve(args: argparse.Namespace, service: AssessmentService) -> int:
@@ -1446,7 +2408,7 @@ def _context_approve(args: argparse.Namespace, service: AssessmentService) -> in
         print("the context was not approved:", file=sys.stderr)
         for blocker in refused.blockers:
             print(f"  {blocker}", file=sys.stderr)
-        return 1
+        return REFUSED
 
     print(f"approved version {approved.version} as {approved.approved_by}")
     print(f"decision:  {decision.id}")
@@ -1469,15 +2431,15 @@ def _latest_run(handle: AssessmentHandle) -> WorkflowRun | None:
 
 
 def _budget_from(args: argparse.Namespace) -> Any:
-    from decimal import Decimal
-
     from trace_ai.workflow.limits import Budget
 
+    # `--max-cost` and `--max-model-calls` are already parsed and validated by their argparse
+    # converters (`_decimal`, `_non_negative_int`), so they arrive as a Decimal/int or None.
     if args.max_model_calls is None and args.max_cost is None:
         return None
     return Budget(
         maximum_model_calls=args.max_model_calls,
-        maximum_cost=Decimal(args.max_cost) if args.max_cost else None,
+        maximum_cost=args.max_cost,
     )
 
 
@@ -1492,9 +2454,7 @@ def _run(args: argparse.Namespace, service: AssessmentService) -> int:
     outcome = run_assessment(
         service,
         args.assessment_id,
-        model=build_model(
-            profile, responses=load_recorded_responses(_response_files(args.responses))
-        ),
+        model=build_model(profile, responses=_recorded_responses(args)),
         profile=profile,
         budget=_budget_from(args),
     )
@@ -1514,11 +2474,43 @@ def _response_files(supplied: list[Path]) -> list[Path]:
         if path.is_dir():
             numbered = sorted(path.glob("[0-9]*.json"))
             if not numbered:
-                raise ValueError(f"{path} contains no numbered recordings (NN-*.json)")
+                raise CommandInputError(f"{path} contains no numbered recordings (NN-*.json)")
             files.extend(numbered)
         else:
             files.append(path)
     return files
+
+
+def _recorded_responses(args: argparse.Namespace) -> list[Any]:
+    """The `--response` recordings, with a missing or malformed file named rather than tracebacked.
+
+    Reading and parsing an operator-supplied recording can raise `OSError` (the file is absent) or
+    `ValueError` (the JSON fits no proposal schema); both are the operator's mistake to fix, so they
+    become a `CommandInputError` rather than a stack trace."""
+    try:
+        return load_recorded_responses(_response_files(args.responses))
+    except CommandInputError:
+        raise
+    except (OSError, ValueError) as error:
+        raise CommandInputError(f"a recorded response could not be read: {error}") from None
+
+
+def _read_named_file(path: Path) -> str:
+    """Read a file the operator named on the command line, naming an I/O failure rather than
+    tracebacking. A missing `--apply` file is an operator slip, not a bug in the pipeline."""
+    try:
+        return path.read_text(encoding="utf-8")
+    except OSError as error:
+        raise CommandInputError(f"cannot read {path}: {error}") from None
+
+
+def _write_named_file(path: Path, text: str) -> None:
+    """Write to a path the operator named (`--export`), naming an I/O failure rather than
+    tracebacking. A directory or an unwritable location is an operator slip, not a bug."""
+    try:
+        path.write_text(text, encoding="utf-8")
+    except OSError as error:
+        raise CommandInputError(f"cannot write {path}: {error}") from None
 
 
 def _resume(args: argparse.Namespace, service: AssessmentService) -> int:
@@ -1527,9 +2519,7 @@ def _resume(args: argparse.Namespace, service: AssessmentService) -> int:
     outcome = resume_assessment(
         service,
         args.assessment_id,
-        model=build_model(
-            profile, responses=load_recorded_responses(_response_files(args.responses))
-        ),
+        model=build_model(profile, responses=_recorded_responses(args)),
         profile=profile,
         workflow_run_id=args.workflow_run_id,
         budget=_budget_from(args),
@@ -1576,9 +2566,54 @@ def _print_run_outcome(outcome: Any) -> int:
 
 
 def _findings_show(args: argparse.Namespace, service: AssessmentService) -> int:
-    """Print the checkpoint-2 review package, findings first, evidence excerpts labelled."""
+    """Print the checkpoint-2 review package, findings first, evidence excerpts labelled.
+
+    The JSON view carries identifiers where the human view prints quotations (DEC-096): the
+    excerpts stay reachable through `evidence show`, which is the command whose purpose they
+    are, and a scripted consumer holding evidence identifiers loses nothing.
+    """
     handle = service.handle(args.assessment_id)
     package = build_finding_review_package(handle, index=EvidenceIndex(handle))
+    if args.as_json:
+        return _print_json(
+            "finding-review-package",
+            {
+                "assessment_id": package.assessment_id,
+                "summary": {
+                    "finding_count": package.summary.finding_count,
+                    "documentation_gap_count": package.summary.documentation_gap_count,
+                    "open_question_count": package.summary.open_question_count,
+                    "awaiting_severity_count": package.summary.awaiting_severity_count,
+                    "statement": package.summary.statement,
+                },
+                "findings": [
+                    {
+                        "finding": item.finding.model_dump(mode="json"),
+                        "supporting_evidence_ids": [x.evidence_id for x in item.supporting],
+                        "contradictory_evidence_ids": [x.evidence_id for x in item.contradictory],
+                        "threat_ids": [t.id for t in item.threats],
+                        "mapping_ids": [m.id for m in item.mappings],
+                        "critiques": [
+                            {
+                                "critique": c.critique.model_dump(mode="json"),
+                                "outcome": c.outcome,
+                            }
+                            for c in item.critiques
+                        ],
+                        "reasons": list(package.reasons_for(item.finding.id)),
+                    }
+                    for item in package.findings
+                ],
+                "documentation_gaps": [
+                    {
+                        "gap": item.gap.model_dump(mode="json"),
+                        "evidence_ids": [x.evidence_id for x in item.excerpts],
+                    }
+                    for item in package.documentation_gaps
+                ],
+                "questions": [q.model_dump(mode="json") for q in package.questions],
+            },
+        )
     print(render_markdown(package))
     return 0
 
@@ -1597,12 +2632,12 @@ def _findings_review(args: argparse.Namespace, service: AssessmentService) -> in
 
     if args.export:
         package = build_finding_review_package(handle, index=EvidenceIndex(handle))
-        args.export.write_text(write_finding_review_file(package), encoding="utf-8")
+        _write_named_file(args.export, write_finding_review_file(package))
         print(f"wrote {args.export}")
         print("Edit it, then apply it with `trace findings review --apply`.")
         return 0
     if args.apply:
-        document = read_finding_review_file(args.apply.read_text(encoding="utf-8"))
+        document = read_finding_review_file(_read_named_file(args.apply))
         if document.get("reviewer"):
             reviewer = str(document["reviewer"])
         applied = apply_finding_review_file(
@@ -1622,12 +2657,12 @@ def _findings_review(args: argparse.Namespace, service: AssessmentService) -> in
     for entry in args.severities:
         identifier, separator, level = entry.partition("=")
         if not separator:
-            raise ValueError(f"--severity takes ID=LEVEL, not {entry!r}")
+            raise CommandInputError(f"--severity takes ID=LEVEL, not {entry!r}")
         finding = _require(findings, identifier, "a finding in this assessment")
         updated, decision = change_severity(
             handle,
             finding,
-            Severity(level),
+            _severity(level),
             reviewer_id=reviewer,
             rationale=args.note,
             workflow_run_id=run_id,
@@ -1638,12 +2673,12 @@ def _findings_review(args: argparse.Namespace, service: AssessmentService) -> in
     for entry in args.treatments:
         identifier, separator, value = entry.partition("=")
         if not separator:
-            raise ValueError(f"--treatment takes ID=VALUE, not {entry!r}")
+            raise CommandInputError(f"--treatment takes ID=VALUE, not {entry!r}")
         finding = _require(findings, identifier, "a finding in this assessment")
         updated, decision = assign_risk_treatment(
             handle,
             finding,
-            RiskTreatment(value),
+            _risk_treatment(value),
             rationale=args.treatment_rationale,
             review_by=args.treatment_review_by,
             reviewer_id=reviewer,
@@ -1655,7 +2690,7 @@ def _findings_review(args: argparse.Namespace, service: AssessmentService) -> in
     for identifier, assignment in args.edits:
         field, separator, value = assignment.partition("=")
         if not separator or not field:
-            raise ValueError(f"--edit takes ID FIELD=VALUE, not {assignment!r}")
+            raise CommandInputError(f"--edit takes ID FIELD=VALUE, not {assignment!r}")
         finding = _require(findings, identifier, "a finding in this assessment")
         updated, decision = edit_finding(
             handle,
@@ -1735,6 +2770,29 @@ def _verify(args: argparse.Namespace, service: AssessmentService) -> int:
     """
     outcome = verify_assessment(service.handle(args.assessment_id))
 
+    if args.as_json:
+        _print_json(
+            "verification",
+            {
+                "assessment_id": args.assessment_id,
+                "ok": outcome.ok,
+                "document_count": outcome.document_count,
+                "evidence_count": outcome.evidence_count,
+                "manifest_checked": outcome.manifest_checked,
+                "document_drift": [_drift_entry(drift) for drift in outcome.document_drift],
+                "evidence_failures": [
+                    {
+                        "evidence_id": failure.evidence_id,
+                        "outcome": failure.outcome.value,
+                        "detail": failure.detail,
+                    }
+                    for failure in outcome.evidence_failures
+                ],
+                "manifest_drift": [_drift_entry(drift) for drift in outcome.manifest_drift],
+            },
+        )
+        return 0 if outcome.ok else REFUSED
+
     if outcome.ok:
         manifest = "1 manifest" if outcome.manifest_checked else "no manifest yet"
         print(
@@ -1755,7 +2813,12 @@ def _verify(args: argparse.Namespace, service: AssessmentService) -> int:
         len(outcome.document_drift) + len(outcome.evidence_failures) + len(outcome.manifest_drift)
     )
     print(f"{total} item(s) no longer verify", file=sys.stderr)
-    return 1
+    return REFUSED
+
+
+def _drift_entry(drift: Drift) -> dict[str, str]:
+    """One drift as the fields the human line prints: identifiers and hashes, never content."""
+    return {"subject": drift.subject, "expected": drift.expected, "found": drift.found}
 
 
 def _report_show(args: argparse.Namespace, service: AssessmentService) -> int:
@@ -1772,7 +2835,52 @@ def _report_show(args: argparse.Namespace, service: AssessmentService) -> int:
     if args.manifest:
         filename = filename.removesuffix(".md") + ".manifest.json"
     handle = service.handle(args.assessment_id)
-    print(handle.artifacts.read("outputs", filename).decode("utf-8"))
+    text = handle.artifacts.read("outputs", filename).decode("utf-8")
+    if args.as_json:
+        import json
+
+        if args.manifest:
+            return _print_json(
+                "report-manifest",
+                {
+                    "assessment_id": args.assessment_id,
+                    "filename": filename,
+                    "manifest": json.loads(text),
+                },
+            )
+        return _print_json(
+            "report",
+            {"assessment_id": args.assessment_id, "filename": filename, "report": text},
+        )
+    print(text)
+    return 0
+
+
+def _report_render(args: argparse.Namespace, service: AssessmentService) -> int:
+    """Write the derived HTML view of the rendered report (#527, DEC-108).
+
+    The Markdown deliverable is read back and transformed; nothing re-renders from objects, so
+    the two cannot disagree. Refused while no report exists, like `report show`.
+    """
+    from trace_ai.services.report.html import render_report_html
+
+    assessment = service.get(args.assessment_id)
+    if assessment.final_report_path is None:
+        print(
+            "error: no report has been rendered for this assessment; run the pipeline to "
+            "completion first",
+            file=sys.stderr,
+        )
+        return 1
+    filename = assessment.final_report_path.rpartition("/")[2]
+    handle = service.handle(args.assessment_id)
+    markdown = handle.artifacts.read("outputs", filename).decode("utf-8")
+    derived = filename.removesuffix(".md") + ".html"
+    page = render_report_html(
+        markdown, title=f"Security Architecture Assessment: {assessment.name}"
+    )
+    handle.artifacts.store_output(derived, page.encode("utf-8"))
+    print(f"wrote {derived} to {args.assessment_id}'s outputs area")
     return 0
 
 
@@ -1796,21 +2904,29 @@ def _report_rubric(args: argparse.Namespace, service: AssessmentService) -> int:
     for entry in args.scores:
         category, separator, value = entry.partition("=")
         if not separator or not category or not value:
-            raise ValueError(f"a score is written CATEGORY=N: {entry!r}")
+            raise CommandInputError(f"a score is written CATEGORY=N: {entry!r}")
         if category in scores:
-            raise ValueError(f"category {category!r} is scored twice")
+            raise CommandInputError(f"category {category!r} is scored twice")
         try:
             scores[category] = int(value)
         except ValueError:
-            raise ValueError(f"a rubric score is a whole number one to five: {entry!r}") from None
+            raise CommandInputError(
+                f"a rubric score is a whole number one to five: {entry!r}"
+            ) from None
 
-    results = record_rubric(
-        handle,
-        run,
-        scores,
-        reviewer_id=args.reviewer or _default_reviewer(),
-        comments=args.comments,
-    )
+    # `record_rubric` validates the operator's scores (all seven categories, each one to five) and
+    # raises a bare ValueError; wrap it as a command-input error so it stays a one-line refusal
+    # rather than a traceback now that bare ValueError is no longer swallowed wholesale.
+    try:
+        results = record_rubric(
+            handle,
+            run,
+            scores,
+            reviewer_id=args.reviewer or _default_reviewer(),
+            comments=args.comments,
+        )
+    except ValueError as error:
+        raise CommandInputError(str(error)) from None
     print(f"recorded {len(results)} rubric score(s) for run {run.id}")
     for result in results:
         print(f"  {result.metric_name:<28} {result.metric_value:.0f}")
@@ -1824,13 +2940,14 @@ def _evaluate(args: argparse.Namespace, service: AssessmentService) -> int:
     not part of the user's assessment data — and everything printed is metrics, identifiers, and
     repo-relative feed paths. Exit 0 when every attempted run completed; 1 when any did not.
     """
+    import contextlib
     import tempfile
 
     from trace_ai.config import PROJECT_ROOT
     from trace_ai.services.evaluation.harness import HarnessError, diff_feeds, run_scenario
-    from trace_ai.services.evaluation.registry import load_registry
+    from trace_ai.services.evaluation.registry import CLEAN_CONDITION, load_registry
 
-    if args.all_scenarios == bool(args.scenario):
+    if args.report is None and args.all_scenarios == bool(args.scenario):
         print("error: name one scenario or pass --all", file=sys.stderr)
         return 1
 
@@ -1852,9 +2969,27 @@ def _evaluate(args: argparse.Namespace, service: AssessmentService) -> int:
             return 1
         return _evaluate_stability(args)
 
+    if args.report is not None:
+        return _evaluate_report(args)
+
+    registry = load_registry()
+
+    # Validate the condition once, not once per scenario: an unknown `--condition` used to produce
+    # twelve identical HarnessErrors on `--all`. `clean` is always valid; any other must be declared
+    # by some scenario.
+    if args.condition != CLEAN_CONDITION:
+        declared = {condition for entry in registry for condition in entry.conditions}
+        if args.condition not in declared:
+            print(
+                f"error: no scenario declares condition {args.condition!r}; "
+                f"known conditions: {', '.join(sorted(declared)) or 'none'}",
+                file=sys.stderr,
+            )
+            return 1
+
     if args.all_scenarios:
         slugs = []
-        for entry in load_registry():
+        for entry in registry:
             if entry.has_recording:
                 slugs.append(entry.slug)
             else:
@@ -1863,68 +2998,217 @@ def _evaluate(args: argparse.Namespace, service: AssessmentService) -> int:
         slugs = [args.scenario]
 
     failures = 0
+    drifted = 0
+    runs_payload: list[dict[str, Any]] = []
     for slug in slugs:
-        work_root = args.work_root or _path(tempfile.mkdtemp(prefix=f"trace-eval-{slug}-"))
-        try:
-            outcome = run_scenario(
-                slug,
-                data_root=work_root,
-                label=args.label,
-                condition=args.condition,
-                ablations=args.ablations,
-                results_root=args.results_root,
-            )
-        except HarnessError as refused:
-            print(f"error: {refused}", file=sys.stderr)
-            failures += 1
-            continue
+        with contextlib.ExitStack() as stack:
+            # A named `--work-root` is the operator's to keep and inspect; an unnamed one is a
+            # throwaway store and artifact tree, cleaned up when the scenario finishes rather than
+            # left behind (one per scenario on `--all`, six full sweeps on the CI scorecard job).
+            # On `--all` each scenario gets its own subdirectory (#505): a shared store would
+            # mint asm-002 onward for later scenarios, and the replayed report's own bytes --
+            # which the offline pin verifies -- carry the assessment identifier.
+            if args.work_root is not None:
+                work_root = args.work_root / slug if args.all_scenarios else args.work_root
+            else:
+                work_root = _path(
+                    stack.enter_context(tempfile.TemporaryDirectory(prefix=f"trace-eval-{slug}-"))
+                )
+            try:
+                outcome = run_scenario(
+                    slug,
+                    data_root=work_root,
+                    label=args.label,
+                    condition=args.condition,
+                    ablations=args.ablations,
+                    results_root=args.results_root,
+                )
+            except HarnessError as refused:
+                print(f"error: {refused}", file=sys.stderr)
+                failures += 1
+                continue
 
-        print(f"scenario:     {outcome.scenario} ({outcome.condition}, label {outcome.label})")
-        print(f"workflow run: {outcome.workflow_run_id}  {outcome.run_status}")
-        if outcome.ablations:
-            print(f"ablations:    {', '.join(outcome.ablations)} (non-authoritative, DEC-012)")
-        for result in outcome.metrics:
-            value = f"{result.metric_value:.4g}"
-            print(f"  {result.metric_name:<32} {value}")
-        if outcome.feed_path is not None:
-            import json
+            if outcome.report_hash_verified is False:
+                drifted += 1
+            if args.as_json:
+                import json
 
-            adversarial = json.loads(outcome.feed_path.read_text(encoding="utf-8")).get(
-                "adversarial"
-            )
-            if adversarial is not None:
-                rate = adversarial["injected_instruction_compliance_rate"]
-                detected = "yes" if adversarial["attack_detected"] else "no"
-                print(f"attack detected: {detected} (DEC-075)")
-                print(f"  injected_instruction_compliance_rate  {rate:.4g} (target 0)")
-                for payload in adversarial["payloads"]:
-                    mark = "complied" if payload["complied"] else "resisted"
-                    print(f"  {payload['payload_class']:<32} {mark}")
-            feed = outcome.feed_path
-            if feed.is_relative_to(PROJECT_ROOT):
-                feed = feed.relative_to(PROJECT_ROOT)
-            print(f"feed:         {feed}")
-        if not outcome.completed:
-            print(f"run stopped: {outcome.stopped_because}", file=sys.stderr)
-            failures += 1
+                feed_relative = None
+                adversarial = None
+                if outcome.feed_path is not None:
+                    adversarial = json.loads(outcome.feed_path.read_text(encoding="utf-8")).get(
+                        "adversarial"
+                    )
+                    feed_relative = (
+                        str(outcome.feed_path.relative_to(PROJECT_ROOT))
+                        if outcome.feed_path.is_relative_to(PROJECT_ROOT)
+                        else str(outcome.feed_path)
+                    )
+                runs_payload.append(
+                    {
+                        "scenario": outcome.scenario,
+                        "condition": outcome.condition,
+                        "label": outcome.label,
+                        "workflow_run_id": outcome.workflow_run_id,
+                        "run_status": outcome.run_status,
+                        "stopped_because": outcome.stopped_because,
+                        "ablations": outcome.ablations,
+                        "metrics": {
+                            result.metric_name: result.metric_value for result in outcome.metrics
+                        },
+                        "report_hash_verified": outcome.report_hash_verified,
+                        "adversarial": adversarial,
+                        "feed": feed_relative,
+                    }
+                )
+                if not outcome.completed:
+                    failures += 1
+                continue
 
-        if args.diff_against and outcome.feed_path is not None:
-            prior = outcome.feed_path.with_name(f"{args.diff_against}.json")
-            diff = diff_feeds(outcome.feed_path, prior)
-            print(f"diff against {args.diff_against}:")
-            for label, keys in (
-                ("matched", diff.matched),
-                ("changed", diff.changed),
-                ("missed", diff.missed),
-                ("regressed", diff.regressed),
-                ("recovered", diff.recovered),
-                ("spurious", diff.spurious),
-                ("new spurious", diff.new_spurious),
-            ):
-                print(f"  {label:<13} {', '.join(keys) if keys else '-'}")
-        print()
+            print(f"scenario:     {outcome.scenario} ({outcome.condition}, label {outcome.label})")
+            print(f"workflow run: {outcome.workflow_run_id}  {outcome.run_status}")
+            if outcome.ablations:
+                print(f"ablations:    {', '.join(outcome.ablations)} (non-authoritative, DEC-012)")
+            if outcome.report_hash_verified is True:
+                print("report hash:  verified against the scenario's recorded pin")
+            elif outcome.report_hash_verified is False:
+                print("report hash:  DRIFTED from the scenario's recorded pin", file=sys.stderr)
+            for result in outcome.metrics:
+                value = f"{result.metric_value:.4g}"
+                print(f"  {result.metric_name:<32} {value}")
+            if outcome.feed_path is not None:
+                import json
 
-    return 1 if failures else 0
+                adversarial = json.loads(outcome.feed_path.read_text(encoding="utf-8")).get(
+                    "adversarial"
+                )
+                if adversarial is not None:
+                    rate = adversarial["injected_instruction_compliance_rate"]
+                    detected = "yes" if adversarial["attack_detected"] else "no"
+                    print(f"attack detected: {detected} (DEC-075)")
+                    print(f"  injected_instruction_compliance_rate  {rate:.4g} (target 0)")
+                    for payload in adversarial["payloads"]:
+                        mark = "complied" if payload["complied"] else "resisted"
+                        print(f"  {payload['payload_class']:<32} {mark}")
+                feed = outcome.feed_path
+                if feed.is_relative_to(PROJECT_ROOT):
+                    feed = feed.relative_to(PROJECT_ROOT)
+                print(f"feed:         {feed}")
+            if not outcome.completed:
+                print(f"run stopped: {outcome.stopped_because}", file=sys.stderr)
+                failures += 1
+
+            if args.diff_against and outcome.feed_path is not None:
+                prior = outcome.feed_path.with_name(f"{args.diff_against}.json")
+                # A missing prior feed is this scenario's failure, not the whole sweep's: catch it in
+                # the loop and continue, the same as a HarnessError, rather than aborting `--all`
+                # and discarding the scenarios already printed.
+                try:
+                    diff = diff_feeds(outcome.feed_path, prior)
+                except OSError as missing:
+                    print(f"diff against {args.diff_against}: skipped ({missing})", file=sys.stderr)
+                    failures += 1
+                    print()
+                    continue
+                print(f"diff against {args.diff_against}:")
+                for label, keys in (
+                    ("matched", diff.matched),
+                    ("changed", diff.changed),
+                    ("missed", diff.missed),
+                    ("regressed", diff.regressed),
+                    ("recovered", diff.recovered),
+                    ("spurious", diff.spurious),
+                    ("new spurious", diff.new_spurious),
+                ):
+                    print(f"  {label:<13} {', '.join(keys) if keys else '-'}")
+            print()
+
+    if args.as_json:
+        _print_json("evaluation-runs", {"runs": runs_payload})
+    if failures:
+        return 1
+    # A drifted report hash is the DEC-088 refusal `trace verify` gives the same fact: the
+    # replay stopped reproducing the recording's report. An answer, not a fault.
+    return REFUSED if drifted else 0
+
+
+def _evaluate_report(args: argparse.Namespace) -> int:
+    """Run the offline sweep and render one evaluation page (#505).
+
+    The committed pages under docs/eval/ remain the build scripts' deliberate step -- they carry
+    the DEC-081 history snapshotting and the CI currency check. This renders the same pages from
+    the same sweep for a person or a pipe, to stdout or --out, and stamps nothing into history.
+    """
+    import tempfile
+
+    from trace_ai.config import PROJECT_ROOT
+    from trace_ai.services.evaluation.registry import catalog_version_summary, load_registry
+    from trace_ai.services.evaluation.stamps import DETERMINISTIC_STAMP
+
+    pins = {
+        "registry": "1.0",
+        "catalog": catalog_version_summary(),
+    }
+    with tempfile.TemporaryDirectory(prefix="trace-eval-report-") as tmp:
+        root = _path(tmp)
+        if args.report == "ablation":
+            from trace_ai.services.evaluation.ablation import render_ablation
+            from trace_ai.services.evaluation.stability import run_ablation_set
+
+            comparisons = [
+                run_ablation_set(
+                    entry.slug,
+                    data_root=root / "work" / entry.slug,
+                    label="ablation",
+                    results_root=root / "feeds",
+                )
+                for entry in load_registry()
+                if entry.has_recording_for("clean")
+            ]
+            page = render_ablation(comparisons, generated_at=DETERMINISTIC_STAMP, pins=pins)
+        else:
+            from trace_ai.services.evaluation.sweep import collect_feeds
+
+            feeds = collect_feeds(root)
+            if args.report == "comparison":
+                import json as json_module
+
+                from trace_ai.services.evaluation.comparison import render_comparison
+
+                live_path = PROJECT_ROOT / "docs" / "eval" / "live-stability.json"
+                live = (
+                    json_module.loads(live_path.read_text(encoding="utf-8"))
+                    if live_path.is_file()
+                    else None
+                )
+                page = render_comparison(
+                    feeds, generated_at=DETERMINISTIC_STAMP, pins=pins, live_stability=live
+                )
+            else:
+                import json as json_module
+
+                from trace_ai.services.evaluation.history import load_history
+                from trace_ai.services.evaluation.scorecard import render_scorecard
+
+                history_path = PROJECT_ROOT / "docs" / "eval" / "history.jsonl"
+                live_path = PROJECT_ROOT / "docs" / "eval" / "live-stability.json"
+                live = (
+                    json_module.loads(live_path.read_text(encoding="utf-8"))
+                    if live_path.is_file()
+                    else None
+                )
+                page = render_scorecard(
+                    feeds,
+                    generated_at=DETERMINISTIC_STAMP,
+                    history=load_history(history_path),
+                    live_stability=live,
+                )
+    if args.out is not None:
+        args.out.write_text(page, encoding="utf-8")
+        print(f"wrote {args.out}")
+    else:
+        print(page)
+    return 0
 
 
 def _evaluate_baseline(args: argparse.Namespace) -> int:
@@ -1983,86 +3267,102 @@ def _evaluate_baseline(args: argparse.Namespace) -> int:
 
 def _evaluate_ablation_set(args: argparse.Namespace) -> int:
     """Run the ablation set for one scenario and report what each removal changed."""
+    import contextlib
     import tempfile
 
     from trace_ai.services.evaluation.harness import HarnessError
     from trace_ai.services.evaluation.stability import ABLATION_SET, run_ablation_set
 
-    work_root = args.work_root or _path(tempfile.mkdtemp(prefix=f"trace-ablate-{args.scenario}-"))
-    try:
-        comparison = run_ablation_set(
-            args.scenario,
-            data_root=work_root,
-            label=args.label,
-            results_root=args.results_root,
+    with contextlib.ExitStack() as stack:
+        work_root = args.work_root or _path(
+            stack.enter_context(
+                tempfile.TemporaryDirectory(prefix=f"trace-ablate-{args.scenario}-")
+            )
         )
-    except HarnessError as refused:
-        print(f"error: {refused}", file=sys.stderr)
-        return 1
+        try:
+            comparison = run_ablation_set(
+                args.scenario,
+                data_root=work_root,
+                label=args.label,
+                results_root=args.results_root,
+            )
+        except HarnessError as refused:
+            print(f"error: {refused}", file=sys.stderr)
+            return 1
 
-    metrics = sorted(comparison.authoritative)
-    print(f"scenario:     {comparison.scenario} (ablation set, label {comparison.label})")
-    print("authoritative (DEC-012 baseline):")
-    for metric in metrics:
-        print(f"  {metric:<32} {comparison.authoritative[metric]:.4g}")
-    for ablation in ABLATION_SET:
-        print(f"{ablation} (non-authoritative):")
+        metrics = sorted(comparison.authoritative)
+        print(f"scenario:     {comparison.scenario} (ablation set, label {comparison.label})")
+        print("authoritative (DEC-012 baseline):")
         for metric in metrics:
-            delta = comparison.delta(ablation, metric)
-            shown = "-" if delta is None else f"{delta:+.4g}"
-            value = comparison.ablations.get(ablation, {}).get(metric)
-            value_shown = "-" if value is None else f"{value:.4g}"
-            print(f"  {metric:<32} {value_shown:>8}  (delta {shown})")
-    return 0
+            print(f"  {metric:<32} {comparison.authoritative[metric]:.4g}")
+        for ablation in ABLATION_SET:
+            print(f"{ablation} (non-authoritative):")
+            for metric in metrics:
+                delta = comparison.delta(ablation, metric)
+                shown = "-" if delta is None else f"{delta:+.4g}"
+                value = comparison.ablations.get(ablation, {}).get(metric)
+                value_shown = "-" if value is None else f"{value:.4g}"
+                print(f"  {metric:<32} {value_shown:>8}  (delta {shown})")
+        return 0
 
 
 def _evaluate_stability(args: argparse.Namespace) -> int:
     """Run one scenario N times live and report variance; refuse the offline profile (DEC-077)."""
+    import contextlib
     import tempfile
+    from pathlib import Path
 
     from trace_ai.services.evaluation.stability import StabilityError, run_stability
 
-    work_root = args.work_root or _path(
-        tempfile.mkdtemp(prefix=f"trace-stability-{args.scenario}-")
-    )
-    try:
-        summary = run_stability(
-            args.scenario,
-            n=args.stability,
-            data_root=work_root,
-            label=args.label,
-            profile_name=args.model_profile,
-            results_root=args.results_root,
+    with contextlib.ExitStack() as stack:
+        work_root = args.work_root or _path(
+            stack.enter_context(
+                tempfile.TemporaryDirectory(prefix=f"trace-stability-{args.scenario}-")
+            )
         )
-    except StabilityError as refused:
-        print(f"error: {refused}", file=sys.stderr)
-        return 1
+        try:
+            summary = run_stability(
+                args.scenario,
+                n=args.stability,
+                data_root=work_root,
+                label=args.label,
+                profile_name=args.model_profile,
+                results_root=args.results_root,
+            )
+        except StabilityError as refused:
+            print(f"error: {refused}", file=sys.stderr)
+            return 1
 
-    print(f"scenario:     {summary.scenario} (stability, n={summary.n})")
-    for metric in sorted(summary.metric_mean):
+        print(f"scenario:     {summary.scenario} (stability, n={summary.n})")
+        for metric in sorted(summary.metric_mean):
+            print(
+                f"  {metric:<32} mean {summary.metric_mean[metric]:.4g}  "
+                f"stdev {summary.metric_stdev[metric]:.4g}"
+            )
+        print(f"unanimous items:  {', '.join(summary.unanimous) or '-'}")
+        print(f"flickering items: {', '.join(summary.flickering) or '-'}")
+        print(f"defaulted decisions: {summary.defaulted_decisions}")
+        if summary.failed_runs:
+            print(f"failed runs: {summary.failed_runs} of {summary.failed_runs + summary.n}")
+
+        import json as _json
+
+        # The summary is a deliverable, so it goes to a persistent location -- the named
+        # `--results-root`, or the current directory -- never the throwaway store, which is cleaned
+        # up when this returns. Writing it into `work_root` would delete the file whose path was
+        # just printed.
+        summary_root = args.results_root if args.results_root is not None else Path.cwd()
+        summary_path = summary_root / f"stability-{summary.scenario}-{args.label}.json"
+        summary_path.parent.mkdir(parents=True, exist_ok=True)
+        summary_path.write_text(
+            _json.dumps(summary.to_payload(), indent=2) + "\n", encoding="utf-8"
+        )
+        print(f"summary:      {summary_path}")
         print(
-            f"  {metric:<32} mean {summary.metric_mean[metric]:.4g}  "
-            f"stdev {summary.metric_stdev[metric]:.4g}"
+            "Commit it as docs/eval/live-stability.json to put the measurement on the scorecard "
+            "(DEC-077 reports it; nothing gates on it)."
         )
-    print(f"unanimous items:  {', '.join(summary.unanimous) or '-'}")
-    print(f"flickering items: {', '.join(summary.flickering) or '-'}")
-    print(f"defaulted decisions: {summary.defaulted_decisions}")
-    if summary.failed_runs:
-        print(f"failed runs: {summary.failed_runs} of {summary.failed_runs + summary.n}")
-
-    import json as _json
-
-    summary_path = (
-        args.results_root if args.results_root is not None else work_root
-    ) / f"stability-{summary.scenario}-{args.label}.json"
-    summary_path.parent.mkdir(parents=True, exist_ok=True)
-    summary_path.write_text(_json.dumps(summary.to_payload(), indent=2) + "\n", encoding="utf-8")
-    print(f"summary:      {summary_path}")
-    print(
-        "Commit it as docs/eval/live-stability.json to put the measurement on the scorecard "
-        "(DEC-077 reports it; nothing gates on it)."
-    )
-    return 0
+        return 0
 
 
 def _view(args: argparse.Namespace) -> int:
@@ -2071,7 +3371,21 @@ def _view(args: argparse.Namespace) -> int:
     The server is `trace_ai.interface`'s; this reads the flags and hands off. It opens its own
     store for the server's lifetime, which is why it is dispatched before the request-scoped store.
     """
+    import errno
+
     from trace_ai.interface.server import serve
 
-    serve(args.data_root, port=args.port)
+    try:
+        serve(args.data_root, port=args.port)
+    except OSError as error:
+        # Running the view twice is the likeliest slip for a demonstration command; the port is
+        # taken, which is EADDRINUSE, and a stack trace is the wrong answer to it.
+        if error.errno == errno.EADDRINUSE:
+            print(
+                f"error: port {args.port} is already in use; pass --port to choose another",
+                file=sys.stderr,
+            )
+        else:
+            print(f"error: could not serve on port {args.port}: {error}", file=sys.stderr)
+        return 1
     return 0

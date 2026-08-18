@@ -58,8 +58,14 @@ class ScorecardRow:
     question_usefulness: float | None = None
     unsupported_claim_rate: float | None = None
     token_usage: float | None = None
-    """The reserved truth-set and run metrics (#329). None where the scenario authors no
-    truth for the metric or the run reported no measurement — unmeasured, never zero."""
+    severity_concordance: float | None = None
+    duplicate_miss_rate: float | None = None
+    annotation_agreement: float | None = None
+    """The reserved truth-set and run metrics (#329, #507, #536). None where the scenario
+    authors no truth for the metric or the run reported no measurement — unmeasured, never
+    zero. `severity_concordance` (DEC-030) is None when no matched finding carries scalar
+    guidance; `duplicate_miss_rate` (DEC-110) is None when the scenario authors no duplicate
+    pairs or none was evaluable."""
 
     @property
     def precision(self) -> float | None:
@@ -126,6 +132,9 @@ def rows_from_feeds(feeds: Sequence[dict[str, Any]]) -> list[ScorecardRow]:
             question_usefulness=_metric(feed, "clarifying_question_usefulness"),
             unsupported_claim_rate=_metric(feed, "unsupported_claim_rate"),
             token_usage=_metric(feed, "token_usage"),
+            severity_concordance=_metric(feed, "severity_concordance"),
+            duplicate_miss_rate=_metric(feed, "duplicate_miss_rate"),
+            annotation_agreement=_metric(feed, "annotation_agreement"),
         )
         for feed in feeds
     ]
@@ -295,7 +304,10 @@ def _truth_section(rows: Sequence[ScorecardRow]) -> str:
             f"<td>{html.escape(row.condition)}{marker}</td>"
             f"<td>{_pct(row.context_accuracy)}</td><td>{_pct(row.threat_coverage)}</td>"
             f"<td>{_pct(row.mapping_accuracy)}</td><td>{_pct(row.question_usefulness)}</td>"
-            f"<td>{_pct(row.unsupported_claim_rate)}</td><td>{_count(row.token_usage)}</td></tr>"
+            f"<td>{_pct(row.unsupported_claim_rate)}</td>"
+            f"<td>{_pct(row.severity_concordance)}</td>"
+            f"<td>{_pct(row.duplicate_miss_rate)}</td>"
+            f"<td>{_count(row.token_usage)}</td></tr>"
         )
     return f"""
 <h2>Truth-set coverage</h2>
@@ -314,7 +326,7 @@ is recorded in each metric's notes.</p>
 <thead><tr>
 <th>Scenario</th><th>Condition</th>
 <th>Context</th><th>Threats</th><th>Mappings</th><th>Questions</th>
-<th>Unsupported</th><th>Tokens</th>
+<th>Unsupported</th><th>Severity</th><th>Dup miss</th><th>Tokens</th>
 </tr></thead>
 <tbody>
 {chr(10).join(lines)}
@@ -409,6 +421,94 @@ over the authoritative rows of each snapshot; per-row detail is retained in
 </div>"""
 
 
+def _agreement_section(rows: Sequence[ScorecardRow]) -> str:
+    """Annotator agreement (#530, DEC-112): a statement about the truth sets, kept apart from
+    the run metrics so the two are never read as one claim. Absent until a scenario carries a
+    second annotation set."""
+    carrying = [row for row in rows if row.annotation_agreement is not None and row.authoritative]
+    if not carrying:
+        return ""
+    lines = [
+        f"<tr><td>{html.escape(row.scenario)}</td><td>{_pct(row.annotation_agreement)}</td></tr>"
+        for row in carrying
+    ]
+    return f"""
+<h2>Annotator agreement</h2>
+<p class="meta">Jaccard agreement between the authoritative truth set and a second annotation
+set, pooled over the DEC-056 identity forms (DEC-112). A statement about the truth set, not
+the run: the first set stays authoritative, and the statistic gates nothing. Scenarios with no
+second set measure nothing here.</p>
+<div class="scroll">
+<table>
+<thead><tr><th>Scenario</th><th>Agreement</th></tr></thead>
+<tbody>
+{chr(10).join(lines)}
+</tbody>
+</table>
+</div>"""
+
+
+def _trend_section(history: Sequence[ScorecardSnapshot]) -> str:
+    """Per-scenario F1 across the retained snapshots (#535): the across-versions view
+    evaluation-plan section 16 asks for.
+
+    The history table pools each snapshot, and pooling is exactly what hides a single scenario
+    regressing while the pool barely moves. This matrix keeps the scenario axis: one row per
+    authoritative scenario-condition pair, one column per snapshot, oldest first so a row reads
+    left to right as the pipeline's history. A cell is a dash where that snapshot did not run
+    the pair, or where F1 is undefined for it. It takes two snapshots to make a trend; with
+    fewer, the section is absent rather than a one-column table pretending otherwise.
+    """
+    if len(history) < 2:
+        return ""
+    ordered = list(history)
+    pairs = sorted(
+        {
+            (row.scenario, row.condition)
+            for snap in ordered
+            for row in snap.rows
+            if row.authoritative
+        }
+    )
+    columns = "".join(
+        f"<th>{html.escape(snap.recorded_at)}<br><code>{html.escape(snap.git_ref)}</code></th>"
+        for snap in ordered
+    )
+    lines = []
+    for scenario, condition in pairs:
+        cells = []
+        for snap in ordered:
+            row = next(
+                (
+                    candidate
+                    for candidate in snap.rows
+                    if candidate.authoritative
+                    and candidate.scenario == scenario
+                    and candidate.condition == condition
+                ),
+                None,
+            )
+            cells.append(f"<td>{_pct(row.f1) if row is not None else '—'}</td>")
+        lines.append(
+            f"<tr><td>{html.escape(scenario)}</td><td>{html.escape(condition)}</td>"
+            f"{''.join(cells)}</tr>"
+        )
+    return f"""
+<h2>F1 across versions</h2>
+<p class="meta">One row per authoritative scenario and condition, one column per retained
+snapshot, oldest first (#535). The pooled History table hides a single scenario regressing while
+the pool barely moves; this matrix keeps the scenario axis. A dash is a pair the snapshot did
+not run, or an undefined ratio.</p>
+<div class="scroll">
+<table>
+<thead><tr><th>Scenario</th><th>Condition</th>{columns}</tr></thead>
+<tbody>
+{chr(10).join(lines)}
+</tbody>
+</table>
+</div>"""
+
+
 def render_scorecard(
     feeds: Sequence[dict[str, Any]],
     *,
@@ -476,8 +576,10 @@ wrong requirement lens (<code>demo/forgeflow/recorded/provenance.md</code>). Cos
 where the run was an offline replay that measured nothing.</p>
 {_adversarial_section(rows)}
 {_truth_section(rows)}
+{_agreement_section(rows)}
 {_live_stability_section(live_stability)}
 {_history_section(history)}
+{_trend_section(history)}
 </body>
 </html>
 """

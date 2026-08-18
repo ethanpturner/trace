@@ -1,0 +1,55 @@
+# Category: network_segmentation
+# Requirements about which networks a component can be reached from.
+#
+# Note on provenance: OWASP ASVS 5.0.0 scopes itself to the application rather
+# than to its network placement, so it carries no boundary-protection
+# requirement. ASVS 13.1.1 is cited for the documentation of communication
+# needs, which is the part of this that ASVS does address; the placement
+# expectation itself cites NIST. See requirements/README.md.
+
+requirements:
+
+  - id: req-NET-001
+    catalog_version: "0.3"
+    title: Internal components are reachable only from the workloads that use them
+    statement: >
+      A data store, queue, cache, or internal service that holds work or data
+      on behalf of the system must be reachable only from the components that
+      need to reach it, rather than from an untrusted network.
+    rationale: >
+      An internal component is usually built assuming its callers are already
+      trusted, so it often authenticates weakly or not at all. That assumption
+      is sound only while the network boundary holds. Where such a component is
+      directly reachable from an untrusted network, the weak authentication
+      becomes the only control, and queued work is both readable and
+      injectable.
+    category:
+      - network_segmentation
+      - data_protection
+    applicable_conditions:
+      - the system uses a data store, queue, or cache that is not itself a public interface
+      - the component holds data or work belonging to more than one tenant
+      - the component authenticates callers weakly or relies on network position
+    non_applicable_conditions:
+      - the component is a public interface by design and is documented as such
+      - the component is reached only through a documented private link or service mesh
+    acceptable_implementations:
+      - placement on a private network segment with no route from the public internet
+      - a managed service configured for private connectivity only
+      - a firewall or security-group policy admitting only named workloads
+      - a service mesh enforcing authorized service-to-service paths
+    evidence_expectations:
+      - documentation stating the network placement of the component
+      - a deployment or network description identifying the boundary
+      - a statement that access is restricted to named application workloads
+    common_false_positives:
+      - absent description of network placement for an internal component, which is not
+        evidence that the component is publicly reachable
+      - a component described only as managed or hosted, where the provider's default
+        placement is private and undescribed
+      - absent detail of the enforcing mechanism, where placement itself is stated
+    default_severity: high
+    source_frameworks:
+      - "OWASP ASVS: v5.0.0-13.1.1"
+      - "NIST SP 800-53 5.2.0: SC-7"
+    status: active

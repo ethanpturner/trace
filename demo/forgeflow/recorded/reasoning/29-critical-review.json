@@ -1,49 +1,52 @@
 {
-  "critiques": [
-    {
-      "subject_type": "documentation_gap",
-      "subject_id": "gap-010",
-      "critique_type": "duplicate",
-      "description": "gap-010 asks two questions, and both are already raised separately in this same group. Its first half — whether externally visible AI-generated output is reviewed before publication (evd-133) or published automatically once schema validation succeeds (evd-010, evd-082), with evd-151 recording human review as unknown and evd-054 listing AI-output approval requirements as a gap — is gap-014, on the identical five passages. Its second half — whether any content-level check is applied beyond schema, size and formatting — is gap-015, again on evd-009/evd-081/evd-133/evd-151/evd-054. The requested_evidence items are near-verbatim restatements: gap-010's 'Reconciliation of evd-133 with the automatic publication sequences in evd-010 and evd-082' against gap-014's 'Reconciliation of security-overview section 13 with operations-guide section 9', and gap-010's 'A statement of what validation is applied to comment content in addition to schema, size and formatting' against gap-015's 'A statement of what checks, if any, are applied to response content beyond schema, size and formatting'.",
-      "rationale": "Three gaps citing the same passages and the same control (ctl-004) will produce three requests to one document owner and, downstream, redundant findings over one contradiction. gap-010 introduces no passage and no question that gap-014 and gap-015 do not already state more precisely; what it uniquely carries is its thr-003 relation, which a merge can preserve. This is a consolidation point rather than a defect in the underlying reasoning, which is sound in all three.",
-      "evidence_ids": [
-        "evd-133",
-        "evd-010",
-        "evd-082",
-        "evd-151",
-        "evd-054"
-      ],
-      "recommended_action": "merge",
-      "confidence": "high"
-    },
-    {
-      "subject_type": "threat",
-      "subject_id": "thr-008",
-      "critique_type": "contradictory_analysis",
-      "description": "thr-008's third precondition states that 'queue reachability is expressed as an architectural assumption rather than a described control (evd-053, evd-029)', and the description repeats that 'Redis access control is stated as an assumption'. That is accurate for evd-053 only, whose section is 25. Architecture Assumptions and which says 'Redis is not publicly accessible'. evd-029 is not an assumption: it is body text of section 9. Managed Redis Queue and states 'The Redis service is accessible only from approved application workloads'. map-078 in this same group reads those two passages as a direct statement of placement, concludes req-NET-001 satisfied, and records the 'assumption rather than a described control' reading as a suppressed false positive; ctl-002 carries is_documented_inheritance true with cmp-005 as named provider, and eas-011 validates it as supported.",
-      "rationale": "Two objects in one group cannot both be right about what evd-029 establishes, and the difference is load-bearing here rather than cosmetic: attack-path step 1 turns on 'a compromised workload, or a misconfigured network path' holding write access to the queue, and the disputed passage is precisely what bounds that step. eas-063 already notes that evd-029 'bounds the injection precondition', yet the threat text still asserts the opposite. Revising the precondition to credit ctl-002 would leave the threat standing on its genuine residue — the receiver-defect entry point, and the absence of any described reconciliation between a job's organization and installation identifiers — instead of on a queue-injection step the documentation partly answers. The separate observation that queue connection authentication is not described is fairly stated as an absence and should survive the revision.",
-      "evidence_ids": [
-        "evd-029",
-        "evd-053",
-        "evd-050"
-      ],
-      "recommended_action": "revise",
-      "confidence": "medium"
-    },
-    {
-      "subject_type": "control_mapping",
-      "subject_id": "map-081",
-      "critique_type": "unsupported_claim",
-      "description": "map-081 concludes req-AUTHZ-002 satisfied, and its suppression rationale rests on the premise that 'the requested capabilities are enumerated and narrow ... with an overall necessity statement (evd-060, evd-096)'. evd-060 does not enumerate a permission set: it introduces the list with 'Typical capabilities include' and closes with 'Additional permissions may be introduced as product capabilities evolve', while its necessity clause ('requests only the permissions required to support configured ForgeFlow features') is a statement of intent. evd-096 is a product feature summary saying only that access is requested 'only to repository information required for the configured analysis features'. Both source documents separately record the actual permission set as not documented — evd-054 lists 'Exact GitHub App permissions' as a gap and evd-138 lists it among details intentionally omitted — and ctl-016, the sole control cited, is validated partially_supported by eas-021.",
-      "rationale": "This is not the conclusion the mapping already declined. The named suppression covers a missing per-permission justification 'where the overall scope is documented and narrow'; the challenge here is to that premise itself, since the cited passage presents its list as typical and expandable rather than closed, so no scope is documented against which narrowness could be judged. The distinction matters for this threat because map-081's own applicability_reason makes the requested privilege set the thing that bounds what a token minted under a mismatched installation identifier can read and write, and 'satisfied' presents that bound as established when only the per-installation limit (evd-065) is. A reviewer should decide whether the status holds on evd-060 as written, or whether it should follow ctl-016's validation status.",
-      "evidence_ids": [
-        "evd-060",
-        "evd-096",
-        "evd-054",
-        "evd-138"
-      ],
-      "recommended_action": "revise",
-      "confidence": "medium"
-    }
-  ]
+  "schema": "CriticalReviewProposal",
+  "response": {
+    "critiques": [
+      {
+        "subject_type": "documentation_gap",
+        "subject_id": "gap-010",
+        "critique_type": "duplicate",
+        "description": "gap-010 asks two questions, and both are already raised separately in this same group. Its first half \u2014 whether externally visible AI-generated output is reviewed before publication (evd-133) or published automatically once schema validation succeeds (evd-010, evd-082), with evd-151 recording human review as unknown and evd-054 listing AI-output approval requirements as a gap \u2014 is gap-014, on the identical five passages. Its second half \u2014 whether any content-level check is applied beyond schema, size and formatting \u2014 is gap-015, again on evd-009/evd-081/evd-133/evd-151/evd-054. The requested_evidence items are near-verbatim restatements: gap-010's 'Reconciliation of evd-133 with the automatic publication sequences in evd-010 and evd-082' against gap-014's 'Reconciliation of security-overview section 13 with operations-guide section 9', and gap-010's 'A statement of what validation is applied to comment content in addition to schema, size and formatting' against gap-015's 'A statement of what checks, if any, are applied to response content beyond schema, size and formatting'.",
+        "rationale": "Three gaps citing the same passages and the same control (ctl-004) will produce three requests to one document owner and, downstream, redundant findings over one contradiction. gap-010 introduces no passage and no question that gap-014 and gap-015 do not already state more precisely; what it uniquely carries is its thr-003 relation, which a merge can preserve. This is a consolidation point rather than a defect in the underlying reasoning, which is sound in all three.",
+        "evidence_ids": [
+          "evd-133",
+          "evd-010",
+          "evd-082",
+          "evd-151",
+          "evd-054"
+        ],
+        "recommended_action": "merge",
+        "confidence": "high"
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-008",
+        "critique_type": "contradictory_analysis",
+        "description": "thr-008's third precondition states that 'queue reachability is expressed as an architectural assumption rather than a described control (evd-053, evd-029)', and the description repeats that 'Redis access control is stated as an assumption'. That is accurate for evd-053 only, whose section is 25. Architecture Assumptions and which says 'Redis is not publicly accessible'. evd-029 is not an assumption: it is body text of section 9. Managed Redis Queue and states 'The Redis service is accessible only from approved application workloads'. map-078 in this same group reads those two passages as a direct statement of placement, concludes req-NET-001 satisfied, and records the 'assumption rather than a described control' reading as a suppressed false positive; ctl-002 carries is_documented_inheritance true with cmp-005 as named provider, and eas-011 validates it as supported.",
+        "rationale": "Two objects in one group cannot both be right about what evd-029 establishes, and the difference is load-bearing here rather than cosmetic: attack-path step 1 turns on 'a compromised workload, or a misconfigured network path' holding write access to the queue, and the disputed passage is precisely what bounds that step. eas-063 already notes that evd-029 'bounds the injection precondition', yet the threat text still asserts the opposite. Revising the precondition to credit ctl-002 would leave the threat standing on its genuine residue \u2014 the receiver-defect entry point, and the absence of any described reconciliation between a job's organization and installation identifiers \u2014 instead of on a queue-injection step the documentation partly answers. The separate observation that queue connection authentication is not described is fairly stated as an absence and should survive the revision.",
+        "evidence_ids": [
+          "evd-029",
+          "evd-053",
+          "evd-050"
+        ],
+        "recommended_action": "revise",
+        "confidence": "medium"
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-081",
+        "critique_type": "unsupported_claim",
+        "description": "map-081 concludes req-AUTHZ-002 satisfied, and its suppression rationale rests on the premise that 'the requested capabilities are enumerated and narrow ... with an overall necessity statement (evd-060, evd-096)'. evd-060 does not enumerate a permission set: it introduces the list with 'Typical capabilities include' and closes with 'Additional permissions may be introduced as product capabilities evolve', while its necessity clause ('requests only the permissions required to support configured ForgeFlow features') is a statement of intent. evd-096 is a product feature summary saying only that access is requested 'only to repository information required for the configured analysis features'. Both source documents separately record the actual permission set as not documented \u2014 evd-054 lists 'Exact GitHub App permissions' as a gap and evd-138 lists it among details intentionally omitted \u2014 and ctl-016, the sole control cited, is validated partially_supported by eas-021.",
+        "rationale": "This is not the conclusion the mapping already declined. The named suppression covers a missing per-permission justification 'where the overall scope is documented and narrow'; the challenge here is to that premise itself, since the cited passage presents its list as typical and expandable rather than closed, so no scope is documented against which narrowness could be judged. The distinction matters for this threat because map-081's own applicability_reason makes the requested privilege set the thing that bounds what a token minted under a mismatched installation identifier can read and write, and 'satisfied' presents that bound as established when only the per-installation limit (evd-065) is. A reviewer should decide whether the status holds on evd-060 as written, or whether it should follow ctl-016's validation status.",
+        "evidence_ids": [
+          "evd-060",
+          "evd-096",
+          "evd-054",
+          "evd-138"
+        ],
+        "recommended_action": "revise",
+        "confidence": "medium"
+      }
+    ]
+  }
 }

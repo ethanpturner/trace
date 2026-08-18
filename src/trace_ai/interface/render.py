@@ -34,6 +34,7 @@ from trace_ai.domain.reviewer_decision import ReviewerDecision
 from trace_ai.domain.source_document import SourceDocument
 from trace_ai.domain.threat import Threat
 from trace_ai.domain.trust_boundary import TrustBoundary
+from trace_ai.services.evidence.index import EvidenceIndex
 from trace_ai.services.findings.lineage import finding_lineage
 
 if TYPE_CHECKING:
@@ -46,13 +47,16 @@ if TYPE_CHECKING:
 __all__ = [
     "VIEWS",
     "render_context",
+    "render_diff",
     "render_evaluation",
     "render_findings",
     "render_index",
+    "render_ledger",
     "render_lineage",
     "render_overview",
     "render_page",
     "render_questions",
+    "render_threats",
     "render_workflow",
 ]
 
@@ -62,7 +66,9 @@ UNTRUSTED_LABEL = "quoted untrusted source content"
 VIEWS: tuple[tuple[str, str], ...] = (
     ("Overview", "overview"),
     ("Context", "context"),
+    ("Threats", "threats"),
     ("Workflow", "workflow"),
+    ("Ledger", "ledger"),
     ("Questions & decisions", "questions"),
     ("Findings", "findings"),
     ("Lineage", "lineage"),
@@ -124,6 +130,8 @@ th[scope], tr > th:first-child { color:var(--muted); font-weight:600; white-spac
 .lineage h3 { font-size:0.95rem; margin:1rem 0 0.3rem; }
 code { font:13px/1.4 ui-monospace, monospace; }
 a.finding { color:var(--accent); }
+.ok { color:#1a7f37; font-weight:600; }
+.drift { color:var(--flag); font-weight:600; }
 """
 
 
@@ -164,7 +172,49 @@ def render_index(assessments: Sequence[Assessment]) -> str:
             for a in assessments
         ]
         body = _table_raw(["Assessment", "Name", "Status", "Report"], rows)
+    if len(assessments) > 1:
+        body += (
+            "<h2>Compare two assessments</h2>"
+            '<p class="muted">Pick two of the assessments above to diff their approved models '
+            "at <code>/diff/&lt;before&gt;/&lt;after&gt;</code> (DEC-097).</p>"
+        )
     return render_page("Read-only view", None, "", body)
+
+
+def render_diff(before: str, after: str, diff: object) -> str:
+    """One assessment diff, rendered read-only (#508). `diff` is an `AssessmentDiff`; a family
+    with no movement is a count line, a moved family names its added, removed, and changed."""
+    families = diff.families  # type: ignore[attr-defined]
+    sections: list[str] = []
+    for name, family in families.items():
+        if not family.moved:
+            sections.append(
+                f'<p class="muted">{_e(name.replace("_", " "))}: {family.unchanged} unchanged.</p>'
+            )
+            continue
+        rows: list[list[object]] = []
+        for entry in family.added:
+            rows.append(["added", entry.identity, "", entry.after_id or "—", ""])
+        for entry in family.removed:
+            rows.append(["removed", entry.identity, entry.before_id or "—", "", ""])
+        for entry in family.changed:
+            rows.append(
+                [
+                    "changed",
+                    entry.identity,
+                    entry.before_id or "—",
+                    entry.after_id or "—",
+                    ", ".join(entry.changed_fields),
+                ]
+            )
+        sections.append(
+            f"<h2>{_e(name.replace('_', ' '))} ({family.unchanged} unchanged)</h2>"
+            + _table(["Change", "Identity", "Before", "After", "Fields"], rows)
+        )
+    heading = f"<p>Diff of <code>{_e(before)}</code> → <code>{_e(after)}</code>.</p>"
+    if not diff.moved:  # type: ignore[attr-defined]
+        heading += '<p class="muted">No differences in the approved models.</p>'
+    return render_page("Assessment diff", None, "", heading + "".join(sections))
 
 
 def render_overview(handle: AssessmentHandle, assessment: Assessment) -> str:
@@ -255,6 +305,85 @@ def render_workflow(handle: AssessmentHandle, assessment: Assessment) -> str:
     return render_page("Workflow", assessment.id, "workflow", body)
 
 
+def render_threats(handle: AssessmentHandle, assessment: Assessment) -> str:
+    """The threats the analysis proposed, with the objects each is grounded in (#508).
+
+    Previously reachable only through the report or the CLI; the read-only view now renders
+    threats as a first-class page, DEC-078's read-only GET boundary unchanged.
+    """
+    threats = handle.objects.list(Threat)
+    component_names = {c.id: c.name for c in handle.objects.list(Component)}
+    asset_names = {a.id: a.name for a in handle.objects.list(Asset)}
+    rows = [
+        [
+            threat.id,
+            ", ".join(str(term) for term in threat.category) or "—",
+            threat.status.value,
+            threat.title,
+            ", ".join(
+                [
+                    *(component_names.get(cid, cid) for cid in threat.affected_component_ids),
+                    *(asset_names.get(aid, aid) for aid in threat.affected_asset_ids),
+                ]
+            )
+            or "—",
+        ]
+        for threat in threats
+    ]
+    body = f"<h2>Threats ({len(threats)})</h2>" + _table(
+        ["Identifier", "Category", "Status", "Title", "Grounded in"], rows
+    )
+    return render_page("Threats", assessment.id, "threats", body)
+
+
+def render_ledger(handle: AssessmentHandle, assessment: Assessment) -> str:
+    """Per-run, per-node spend from the execution records (#508, the view of DEC-092's ledger).
+
+    Absent prints as a dash, never zero: an offline replay that captured no usage measured
+    nothing, exactly as `trace ledger` shows it.
+    """
+    runs = handle.objects.list(WorkflowRun)
+    records_by_run: dict[str, list[ExecutionRecord]] = {}
+    for record in handle.objects.list(ExecutionRecord):
+        if record.execution_type.value == "model":
+            records_by_run.setdefault(record.workflow_run_id, []).append(record)
+
+    def _sum(values: list[int | None]) -> object:
+        reported = [v for v in values if v is not None]
+        return sum(reported) if reported else "—"
+
+    sections: list[str] = []
+    for run in runs:
+        nodes: dict[str, list[ExecutionRecord]] = {}
+        for record in records_by_run.get(run.id, []):
+            nodes.setdefault(record.node_name, []).append(record)
+        rows = [
+            [
+                name,
+                len(rows_),
+                _sum([r.input_tokens for r in rows_]),
+                _sum([r.cache_read_tokens for r in rows_]),
+                _sum([r.output_tokens for r in rows_]),
+            ]
+            for name, rows_ in nodes.items()
+        ]
+        cost = f"{run.estimated_cost:.4f}" if run.estimated_cost is not None else "—"
+        sections.append(
+            f"<h2>{_e(run.id)} — {_e(run.status.value)} "
+            f"({run.total_model_calls} calls, est. cost {_e(cost)})</h2>"
+            + (
+                _table(
+                    ["Node", "Calls", "Input", "Cache read", "Output"],
+                    rows,
+                )
+                if rows
+                else '<p class="muted">No model-assisted executions recorded.</p>'
+            )
+        )
+    body = "".join(sections) or '<p class="muted">No workflow run has started.</p>'
+    return render_page("Ledger", assessment.id, "ledger", body)
+
+
 def render_questions(handle: AssessmentHandle, assessment: Assessment) -> str:
     """Open questions and the reviewer decisions recorded against the assessment's objects."""
     questions = handle.objects.list(Question)
@@ -314,58 +443,95 @@ def render_lineage(handle: AssessmentHandle, assessment: Assessment, finding_id:
         source_documents=handle.objects.list(SourceDocument),
     )
 
-    parts: list[str] = [
-        f"<h2>{_e(finding.id)} — {_e(finding.title)}</h2>",
-        '<p class="muted">Severity '
-        f"{_e(finding.severity.value)}, {_e(finding.status.value)}. "
-        "The chain below is what the store holds, walked from the finding to the document hash.</p>",
-        '<div class="lineage">',
-        _lineage_block(
-            "Requirements & threats",
-            [f"threat {t.id}: {t.title}" for t in lineage.threats]
-            + [f"requirement {rid}" for rid in finding.requirement_ids],
+    # The walk's hops, each a section with its own anchor so every hop is linkable and
+    # screenshot-able (#533), and a contents line so the chain is navigated, not scrolled.
+    hops: list[tuple[str, str, list[str]]] = [
+        (
+            "threats",
+            "Threats",
+            [
+                f'<a id="{_e(t.id.lower())}"></a>{_link(t.id, f"/{assessment.id}/threats")}: '
+                f"{_e(t.title)}"
+                for t in lineage.threats
+            ]
+            + [f"requirement {_e(rid)}" for rid in finding.requirement_ids],
         ),
-        _lineage_block(
+        (
+            "mappings",
             "Control mappings",
             [
-                f"{m.id}: {m.requirement_id} — {m.satisfaction_status.value}"
+                f'<a id="{_e(m.id.lower())}"></a><code>{_e(m.id)}</code>: {_e(m.requirement_id)}'
+                f" — {_e(m.satisfaction_status.value)}"
                 for m in lineage.control_mappings
             ],
         ),
-        _lineage_block(
+        (
+            "assessments",
             "Evidence assessments",
             [
-                f"{a.id}: {a.subject_type.value} {a.subject_id} — {a.validation_status.value}"
+                f'<a id="{_e(a.id.lower())}"></a><code>{_e(a.id)}</code>: '
+                f"{_e(a.subject_type.value)} {_e(a.subject_id)} — {_e(a.validation_status.value)}"
                 for a in lineage.evidence_assessments
             ],
         ),
-        _lineage_block(
+        (
+            "critiques",
             "Critiques",
-            [f"{c.id}: {c.critique_type.value} on {c.subject_id}" for c in lineage.critiques],
+            [
+                f'<a id="{_e(c.id.lower())}"></a><code>{_e(c.id)}</code>: '
+                f"{_e(c.critique_type.value)} on {_e(c.subject_id)}"
+                for c in lineage.critiques
+            ],
         ),
-        _lineage_block(
+        (
+            "claims",
             "Context claims",
             [
-                f"{c.id}: {c.predicate} = {c.value} ({c.status.value})"
+                f'<a id="{_e(c.id.lower())}"></a><code>{_e(c.id)}</code>: {_e(c.predicate)} = '
+                f"{_e(str(c.value))} ({_e(c.status.value)})"
                 for c in lineage.context_claims
             ],
         ),
     ]
-    parts.append("<h3>Evidence, quoted from the source documents</h3>")
+    contents = " · ".join(
+        [f'<a href="#{slug}">{_e(label)}</a>' for slug, label, _ in hops]
+        + ['<a href="#evidence">Evidence</a>', '<a href="#documents">Documents</a>']
+    )
+    parts: list[str] = [
+        f"<h2>{_e(finding.id)} — {_e(finding.title)}</h2>",
+        '<p class="muted">Severity '
+        f"{_e(finding.severity.value)}, {_e(finding.status.value)}. "
+        "The chain below is what the store holds, walked from the finding to the document hash; "
+        "each excerpt is re-verified against its source as this page renders.</p>",
+        f'<p class="muted">{contents}</p>',
+        '<div class="lineage">',
+    ]
+    for slug, label, items in hops:
+        parts.append(f'<a id="{slug}"></a>')
+        parts.append(_lineage_block_html(label, items))
+
+    parts.append('<a id="evidence"></a><h3>Evidence, quoted and re-verified</h3>')
+    index = EvidenceIndex(handle)
     hashes = {doc.id: doc.content_hash for doc in lineage.source_documents}
     names = {doc.id: doc.filename for doc in lineage.source_documents}
     for reference in lineage.evidence_references:
         where = _location(reference)
+        checked = index.verify(reference.id)
+        verdict = (
+            '<span class="ok">verifies</span>'
+            if checked.ok
+            else f'<span class="drift">{_e(checked.outcome.value)}</span>'
+        )
         parts.append(
-            '<div class="excerpt">'
+            f'<a id="{_e(reference.id.lower())}"></a><div class="excerpt">'
             f'<div class="label">[{UNTRUSTED_LABEL} — {_e(reference.id)}'
-            f"{f', {_e(where)}' if where else ''}]</div>"
+            f"{f', {_e(where)}' if where else ''}] · {verdict}</div>"
             f"<pre>{_e(reference.quoted_text)}</pre>"
             f'<div class="muted">{_e(names.get(reference.source_document_id, "?"))} · '
             f"<code>{_e(reference.content_hash)}</code></div></div>"
         )
     if lineage.source_documents:
-        parts.append("<h3>Source documents</h3>")
+        parts.append('<a id="documents"></a><h3>Source documents</h3>')
         parts.append(
             _table(
                 ["Document", "Content hash"],
@@ -452,6 +618,14 @@ def _lineage_block(heading: str, items: Sequence[str]) -> str:
     if not items:
         return f'<h3>{_e(heading)}</h3><p class="muted">none</p>'
     lines = "".join(f"<li>{_e(item)}</li>" for item in items)
+    return f"<h3>{_e(heading)}</h3><ul>{lines}</ul>"
+
+
+def _lineage_block_html(heading: str, items: Sequence[str]) -> str:
+    """A hop section whose items are already rendered HTML (anchors and links included)."""
+    if not items:
+        return f'<h3>{_e(heading)}</h3><p class="muted">none</p>'
+    lines = "".join(f"<li>{item}</li>" for item in items)
     return f"<h3>{_e(heading)}</h3><ul>{lines}</ul>"
 
 

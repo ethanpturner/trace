@@ -1,9 +1,9 @@
 """Tests holding the package skeleton and the one dependency direction that matters.
 
-`docs/architecture/current-architecture.md` section 15 proposes a repository organization and
+`docs/architecture/current-architecture.md` section 15 records the repository organization and
 says the important property is that domain models, workflow logic, prompts, infrastructure, and
-user-interface code stay reasonably separated. The tree itself is cheap to create and cheap to
-erode: nothing stops a later module putting a database import into a domain object, and once one
+user-interface code stay separated (`test_repository_layout_doc.py` holds the tree itself in
+agreement with the filesystem). The tree is cheap to create and cheap to erode: nothing stops a later module putting a database import into a domain object, and once one
 does, every object after it inherits the coupling.
 
 So the layering is asserted rather than described. `trace_ai.domain` holds the objects DEC-006
@@ -28,10 +28,9 @@ from trace_ai.config import PROJECT_ROOT
 PACKAGE_ROOT = PROJECT_ROOT / "src" / "trace_ai"
 DOMAIN_ROOT = PACKAGE_ROOT / "domain"
 
-# The skeleton section 15 calls for, adapted to the real package name. `api/`, `application/`,
-# `reporting/` and `evaluation/` are deliberately absent: section 15 proposes them,
-# nothing in this milestone puts a file in them, and an empty package reads as a commitment that
-# has not been made.
+# The package skeleton. `api/`, `application/`, `reporting/`, and `evaluation/` from the
+# original proposal are deliberately absent — nothing ever put a file in them, an empty package
+# reads as a commitment that has not been made, and section 15 now records the tree that exists.
 PACKAGES = (
     "trace_ai.domain",
     # What an agent returns (agent-design.md section 22): proposed objects carrying local keys and
@@ -60,6 +59,10 @@ PACKAGES = (
     # the deterministic requirement matcher the backlog put here, so there is one mapping step and
     # one package for it.
     "trace_ai.services.mapping",
+    # The org-controls catalog's one reader (#528, DEC-115): authored organizational controls,
+    # version-controlled and hash-verified like the requirements catalog, entering the pipeline
+    # only as documented claims through the parser family.
+    "trace_ai.services.org_controls",
     # What the Critical Review agent sees: one threat's lineage and nothing wider (DEC-049).
     # Its own package because the bound is the whole design -- an agent shown everything
     # re-derives everything, which is section 15's second-full-assessment prohibition.
@@ -79,12 +82,18 @@ PACKAGES = (
     # The interop exports (DEC-072, issue #347): post-approval serializers of approved objects,
     # TM-BOM first. Not report formats — no prose, no model call, `outputs/` artifacts only.
     "trace_ai.services.export",
+    # Assessment diffing (DEC-097, issue #488): two assessments' approved models compared by
+    # content fingerprint, conservatively — two scoped reads, never a cross-assessment query.
+    "trace_ai.services.diff",
     "trace_ai.infrastructure",
     "trace_ai.infrastructure.filesystem",
     "trace_ai.infrastructure.database",
     # The model seam (DEC-014). `tests/unit/test_model_boundary.py` holds the rule this package
     # exists to enforce: the adapter inside it is the only module that may import a provider SDK.
     "trace_ai.infrastructure.model",
+    # External tracing (#538, DEC-109): the execution ledger exported as spans, structurally
+    # unable to carry prompt or source content. Section 5.17's boundary, implemented.
+    "trace_ai.infrastructure.tracing",
     # The read-only demonstration interface (DEC-032, issue #276): the Stage 5 view that renders
     # persisted objects to HTML over localhost and drives nothing. Its own top-level package
     # rather than a service, because it is a presentation surface over the services, not one of
@@ -98,11 +107,11 @@ FORBIDDEN_IN_DOMAIN = ("trace_ai.services", "trace_ai.infrastructure")
 
 # Third-party packages a domain object must not reach for.
 #
-# Provider and orchestration SDKs. `anthropic` and `langsmith` are declared in pyproject.toml
-# and imported nowhere; `openai`, `langchain`, `langgraph`, and `instructor` were declared and
-# removed by DEC-014 and DEC-016. All six are listed anyway, because the guard is about where an
-# import may appear rather than about which packages happen to be installed this week -- a
-# dependency that comes back should not find `domain/` already open to it.
+# Provider and orchestration SDKs. `anthropic` is the only one declared today; `openai`,
+# `langchain`, `langgraph`, `instructor`, and `langsmith` were declared and removed (DEC-014,
+# DEC-016, DEC-090). All are listed anyway, because the guard is about where an import may appear
+# rather than about which packages happen to be installed this week -- a dependency that comes back
+# should not find `domain/` already open to it.
 #
 # The direction is the same one the layering test asserts. Domain objects are validated data:
 # they are constructed from a model response by a service and persisted by infrastructure, and a
@@ -270,3 +279,52 @@ def test_no_unlisted_package_appeared() -> None:
         f"unexpected packages {sorted(found - set(PACKAGES))}, "
         f"missing {sorted(set(PACKAGES) - found)}"
     )
+
+
+# Runtime distribution names mapped to the module they import as. Distribution name and import name
+# differ often enough (`python-dotenv` -> `dotenv`, `pyyaml` -> `yaml`) that the mapping is stated.
+_IMPORT_NAME = {
+    "anthropic": "anthropic",
+    "openai": "openai",
+    "pydantic": "pydantic",
+    "pydantic-settings": "pydantic_settings",
+    "python-dotenv": "dotenv",
+    "pyyaml": "yaml",
+}
+
+
+def _declared_runtime_dependencies() -> set[str]:
+    """The distribution names in pyproject's `[project].dependencies`, versions stripped."""
+    import re
+
+    text = (PROJECT_ROOT / "pyproject.toml").read_text(encoding="utf-8")
+    block = text.split("dependencies = [", 1)[1].split("]", 1)[0]
+    names = set()
+    for raw in block.splitlines():
+        line = raw.strip().strip(",").strip('"')
+        if not line or line.startswith("#"):
+            continue
+        names.add(re.split(r"[<>=!~ ]", line, maxsplit=1)[0])
+    return names
+
+
+def test_every_declared_runtime_dependency_is_imported() -> None:
+    """A dependency in the wheel that no code imports is dead weight shipped to every install --
+    `langsmith` was exactly that (DEC-090). Every declared runtime dependency must be imported
+    somewhere in `src/`, so a re-added-and-unwired dependency fails here rather than shipping."""
+    imported: set[str] = set()
+    for source in PACKAGE_ROOT.rglob("*.py"):
+        package = ".".join(source.relative_to(PACKAGE_ROOT.parent).with_suffix("").parts[:-1])
+        for module in imported_modules(source, package=package):
+            imported.add(module.split(".", 1)[0])
+
+    for distribution in _declared_runtime_dependencies():
+        import_name = _IMPORT_NAME.get(distribution)
+        assert import_name is not None, (
+            f"{distribution!r} is declared but this test does not know its import name; add it to "
+            f"_IMPORT_NAME"
+        )
+        assert import_name in imported, (
+            f"{distribution!r} is a declared runtime dependency imported nowhere in src/; wire it "
+            f"or drop it from pyproject"
+        )

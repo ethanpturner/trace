@@ -19,3 +19,5 @@ system. See `reviewer-notes.md` for the construction method and self-agreement c
 - `expected-questions.yaml` / `expected-rejections.yaml` — the clarifying questions and the
   claims a correct assessment does not make, each rejection naming its mechanism.
 - `reviewer-notes.md` — the judgement calls and what is deliberately not authored.
+- `expected-control-mappings.yaml` — the mapping-step truth (#537, DEC-111), added with
+  catalog 0.3's delegated-authentication pack so the pack is measured from its first commit.

@@ -1,25 +1,28 @@
 {
-  "controls": [],
-  "mappings": [
-    {
-      "threat_id": "thr-001",
-      "requirement_id": "req-TPI-001",
-      "control_keys": [],
-      "existing_control_ids": [],
-      "applicability_status": "applicable",
-      "applicability_reason": "Customer ticket content leaves the system's trust boundary to the translation provider, and it is content, not non-sensitive metadata, so the external-processor documentation requirement applies.",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "unmet",
-      "evidence_ids": [
-        "evd-002",
-        "evd-004"
-      ],
-      "assumptions": [
-        "No common false positive applies: what is sent is documented, and the shortfall is the documents' own statement that no retention or secondary-use agreement exists and the standard terms are unreviewed — not an absent copy of a provider contract whose terms are summarized, nor absent certification detail, which the catalog names as false positives."
-      ],
-      "confidence": "high"
-    }
-  ],
-  "documentation_gaps": []
+  "schema": "MappingProposal",
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-TPI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Customer ticket content leaves the system's trust boundary to the translation provider, and it is content, not non-sensitive metadata, so the external-processor documentation requirement applies.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unmet",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "assumptions": [
+          "No common false positive applies: what is sent is documented, and the shortfall is the documents' own statement that no retention or secondary-use agreement exists and the standard terms are unreviewed \u2014 not an absent copy of a provider contract whose terms are summarized, nor absent certification detail, which the catalog names as false positives."
+        ],
+        "confidence": "high"
+      }
+    ],
+    "documentation_gaps": []
+  }
 }

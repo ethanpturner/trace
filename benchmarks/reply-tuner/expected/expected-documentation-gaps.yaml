@@ -1,0 +1,22 @@
+# Reply Tuner expected documentation gaps
+#
+# One gap: artifact lineage. The document states date-named artifacts and most-recent
+# serving; it does not name a registry or state that an artifact records the base model and
+# training-data version it was built from. That is silence about a control, not a documented
+# absence, so the correct output is a gap under req-TRAIN-003 — not a finding (DEC-009).
+#
+# Nothing in this directory is supplied to Trace during an assessment.
+
+benchmark_version: "1.0"
+scenario: reply-tuner
+catalog_version: "0.3"
+
+documentation_gaps:
+  - key: GAP-RT-01
+    requirement_id: req-TRAIN-003
+    subject: tuned-artifact lineage and registration are undocumented
+    arises_from: system-overview.md section 3
+    notes: >
+      Date-named artifacts bound the question without answering it: which base model and
+      which corpus snapshot produced the serving artifact is not derivable from the
+      documents.

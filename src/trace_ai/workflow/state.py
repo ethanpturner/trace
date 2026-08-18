@@ -200,3 +200,19 @@ class AssessmentState(DomainModel):
                 "next_action": {"action": "stop", "phase": self.current_phase},
             }
         )
+
+    def restarted(self) -> Self:
+        """This state, running again after a failure, at the phase it stopped in.
+
+        Resuming a failed run re-executes the phase that failed; the phases before it completed, so
+        their objects already exist and their nodes are not re-run. `errors` is kept as history —
+        the run failed once, and a later reader should see that it did. This is the failed-run
+        counterpart to `resumed()`, which is the checkpoint case.
+        """
+        return type(self).model_validate(
+            self.model_dump()
+            | {
+                "status": RunStatus.RUNNING,
+                "next_action": {"action": "execute_node", "phase": self.current_phase},
+            }
+        )

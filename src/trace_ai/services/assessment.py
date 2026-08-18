@@ -194,6 +194,7 @@ class AssessmentService:
         description: str | None = None,
         tags: list[str] | None = None,
         created_by: str | None = None,
+        requirements_catalog_version: str | None = None,
     ) -> Assessment:
         """Allocate an identifier, write the directory and the row, or leave neither behind."""
         assessment_id = self._store.allocate_assessment_id()
@@ -213,6 +214,7 @@ class AssessmentService:
             description=description,
             tags=tags or [],
             created_by=created_by,
+            requirements_catalog_version=requirements_catalog_version,
         )
         try:
             with repository.transaction():
@@ -270,6 +272,26 @@ class AssessmentService:
         """
         return self._transition(assessment_id, ObjectStatus.ARCHIVED)
 
+    def purge(self, assessment_id: str) -> int:
+        """Delete one assessment entirely -- every row and its whole directory -- and return how
+        many objects were removed (DEC-089).
+
+        Nothing else shrinks the store: every run appends execution records, evaluation results, and
+        prompt snapshots, and an archived assessment keeps them all. `reset` removes the whole data
+        root; this removes exactly one assessment, which the store's scoping makes safe. The rows go
+        first, in one transaction, then the directory -- so a crash between the two leaves an
+        assessment with no rows and a stray directory, which `purge` run again removes, rather than
+        rows pointing at files that are gone.
+        """
+        self.get(assessment_id)  # a named error if it does not exist, before anything is removed
+        removed = self._store.repository(assessment_id).delete_all()
+        artifacts = ArtifactStore(assessment_id, root=self._artifact_root)
+        if artifacts.assessment_root.exists():
+            import shutil
+
+            shutil.rmtree(artifacts.assessment_root)
+        return removed
+
     def begin_review(self, assessment_id: str) -> Assessment:
         """A checkpoint has paused the run and is waiting for a human.
 
@@ -302,13 +324,16 @@ class AssessmentService:
                 assessment_id,
                 "no report has been rendered; run the pipeline to completion first",
             )
-        # The report filename embeds the run that rendered it (report-<run-id>.md), so the
-        # sign-off binds to that run rather than to whichever run happens to be latest.
-        run_id = (
+        # The rendering run is recorded on the assessment, so the sign-off binds to that run rather
+        # than to whichever run happens to be latest. It is read from a field rather than parsed out
+        # of the report filename: a path separator or a filename change would otherwise silently
+        # yield a run identifier no run matches. A report rendered before the field existed falls
+        # back to the filename it embeds (report-<run-id>.md).
+        run_id = current.final_report_run_id or (
             current.final_report_path.rpartition("/")[2].removeprefix("report-").removesuffix(".md")
         )
         repository = self._store.repository(assessment_id)
-        run = next((run for run in repository.list(WorkflowRun) if run.id == run_id), None)
+        run = repository.find(WorkflowRun, run_id)
         if run is None:
             raise AssessmentNotApprovableError(
                 assessment_id, f"the report names run {run_id!r}, which this assessment lacks"

@@ -1,25 +1,28 @@
 {
-  "controls": [],
-  "mappings": [
-    {
-      "threat_id": "thr-001",
-      "requirement_id": "req-AI-001",
-      "control_keys": [],
-      "existing_control_ids": [],
-      "applicability_status": "applicable",
-      "applicability_reason": "The system passes submitter-authored content to a model, so the requirement applies; neither non-applicable condition holds — model input is not authored by the operating organization.",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "unmet",
-      "evidence_ids": [
-        "evd-002",
-        "evd-005"
-      ],
-      "assumptions": [
-        "No common false positive applies: the weakness is submitted content steering a discretionary decision through the conversation, not absent input sanitization where capability is restricted, nor absent detection of specific injection phrasings — the conclusions the catalog names as false positives."
-      ],
-      "confidence": "medium"
-    }
-  ],
-  "documentation_gaps": []
+  "schema": "MappingProposal",
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The system passes submitter-authored content to a model, so the requirement applies; neither non-applicable condition holds \u2014 model input is not authored by the operating organization.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unmet",
+        "evidence_ids": [
+          "evd-002",
+          "evd-005"
+        ],
+        "assumptions": [
+          "No common false positive applies: the weakness is submitted content steering a discretionary decision through the conversation, not absent input sanitization where capability is restricted, nor absent detection of specific injection phrasings \u2014 the conclusions the catalog names as false positives."
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "documentation_gaps": []
+  }
 }

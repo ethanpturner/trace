@@ -1,25 +1,28 @@
 {
-  "controls": [],
-  "mappings": [
-    {
-      "threat_id": "thr-002",
-      "requirement_id": "req-AI-002",
-      "control_keys": [],
-      "existing_control_ids": [],
-      "applicability_status": "applicable",
-      "applicability_reason": "The approve-or-deny output is acted on as the payment decision, so validation of acted-on output applies; the output is not shown only to the requesting user and no documented human approval exists.",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "unmet",
-      "evidence_ids": [
-        "evd-003",
-        "evd-004"
-      ],
-      "assumptions": [
-        "No common false positive applies: the ceiling is documented as applied by instruction while the schema enforces no maximum — a documented absence of validation on the acted-on output, not absent human review or absent content filtering, which the catalog names as false positives."
-      ],
-      "confidence": "medium"
-    }
-  ],
-  "documentation_gaps": []
+  "schema": "MappingProposal",
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-AI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The approve-or-deny output is acted on as the payment decision, so validation of acted-on output applies; the output is not shown only to the requesting user and no documented human approval exists.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unmet",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004"
+        ],
+        "assumptions": [
+          "No common false positive applies: the ceiling is documented as applied by instruction while the schema enforces no maximum \u2014 a documented absence of validation on the acted-on output, not absent human review or absent content filtering, which the catalog names as false positives."
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "documentation_gaps": []
+  }
 }

@@ -29,14 +29,17 @@ and the diff is what makes a regression a list rather than a delta.
 from __future__ import annotations
 
 import json
+from collections import Counter
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 
 import yaml
 
 from trace_ai.config import PROJECT_ROOT
+from trace_ai.domain.actor import Actor
 from trace_ai.domain.assessment import Assessment, default_configuration
+from trace_ai.domain.asset import Asset
+from trace_ai.domain.component import Component
 from trace_ai.domain.enums import ObjectStatus, ReviewDisposition, SourceOrigin
 from trace_ai.domain.evaluation_result import EvaluationResult
 from trace_ai.domain.evidence import EvidenceReference
@@ -44,16 +47,23 @@ from trace_ai.domain.execution import RunStatus, WorkflowRun
 from trace_ai.domain.finding import Finding
 from trace_ai.domain.question import Question, QuestionStatus
 from trace_ai.domain.source_document import TrustLevel
+from trace_ai.domain.trust_boundary import TrustBoundary
 from trace_ai.infrastructure.database.store import AssessmentStore
 from trace_ai.infrastructure.model.factory import build_model
 from trace_ai.infrastructure.model.profiles import resolve_profile
 from trace_ai.infrastructure.model.recorded import load_recorded_responses
 from trace_ai.services.assessment import AssessmentService
 from trace_ai.services.context.pipeline import context_objects
-from trace_ai.services.context.review_file import apply_review_file, read_review_file
+from trace_ai.services.context.review_file import (
+    ReviewFileError,
+    apply_review_file,
+    read_review_file,
+)
 from trace_ai.services.driver import resume_assessment, run_assessment
 from trace_ai.services.evaluation.matching import (
     FindingMatchOutcome,
+    context_decision_fingerprints,
+    live_context_fingerprint,
     match_findings,
     match_gaps,
     normalized_name,
@@ -65,6 +75,7 @@ from trace_ai.services.evaluation.metrics import (
 )
 from trace_ai.services.evaluation.registry import Scenario
 from trace_ai.services.evaluation.registry import scenario as load_scenario
+from trace_ai.services.evaluation.stamps import DETERMINISTIC_STAMP
 from trace_ai.services.evidence.index import EvidenceIndex
 from trace_ai.services.ingestion.loader import DocumentLoader
 from trace_ai.workflow.context_review import (
@@ -94,8 +105,11 @@ RESULTS_ROOT = PROJECT_ROOT / "benchmarks" / "results"
 FEED_VERSION = "1"
 HARNESS_REVIEWER = "recorded-reviewer"
 
-# The recording's generation timestamp, pinned so replayed reports are byte-stable.
-GENERATED_AT = datetime(2026, 8, 11, 12, 0, 0, tzinfo=UTC)
+# The one deterministic stamp every renderer shares (`stamps.py`), so the harness renders the same
+# ForgeFlow report deterministically; the offline replay's own pin is `report-hash-offline.txt`
+# (#505), distinct from the script's capture-conditions `report-hash.txt` -- the two replay
+# paths stamp different model profiles into the report, so one pin cannot serve both.
+GENERATED_AT = DETERMINISTIC_STAMP
 
 # Which recording filenames an ablation makes unconsumable: the file answers a call the ablated
 # agent will not make. Filenames carry their agent's name by convention (see
@@ -124,6 +138,12 @@ class HarnessOutcome:
     ablations: list[str] = field(default_factory=list)
     metrics: list[EvaluationResult] = field(default_factory=list)
     feed_path: Path | None = None
+
+    report_hash_verified: bool | None = None
+    """`True`/`False` against the scenario's pinned `recorded/report-hash-offline.txt` (#505); `None`
+    when the scenario pins no hash or the run did not render a report. `False` is drift — the
+    replay stopped reproducing the recording's report — and the CLI answers it as exit 3, the
+    same answer `trace verify` gives a drifted report (DEC-088)."""
 
     @property
     def completed(self) -> bool:
@@ -174,7 +194,9 @@ def run_scenario(
     with AssessmentStore.at_root(data_root) as store:
         service = AssessmentService(store, artifact_root=data_root)
         created = service.create(
-            entry.name, default_configuration(profile_name, "stride-scenario-based")
+            entry.name,
+            default_configuration(profile_name, "stride-scenario-based"),
+            requirements_catalog_version=entry.catalog_version,
         )
         assessment_id = created.id
         handle = service.handle(assessment_id)
@@ -245,6 +267,7 @@ def run_scenario(
             stopped_because=outcome.stopped_because,
             results_root=results_root if results_root is not None else RESULTS_ROOT,
         )
+        report_hash_verified = _verify_report_hash(handle, entry, condition=condition)
 
     return HarnessOutcome(
         scenario=entry.slug,
@@ -257,6 +280,29 @@ def run_scenario(
         ablations=list(run.ablations),
         metrics=metrics,
         feed_path=feed_path,
+        report_hash_verified=report_hash_verified,
+    )
+
+
+def _verify_report_hash(
+    handle: AssessmentHandle, entry: Scenario, *, condition: str
+) -> bool | None:
+    """The replayed report's hash against the scenario's pin, where one exists (#505).
+
+    Generalizes what `scripts/replay_forgeflow.py` pinned for one scenario: any scenario may
+    commit `recorded/report-hash-offline.txt`, and its replay then verifies the rendered bytes. `None`
+    when no pin exists or the run rendered no report — absence of a pin is not a pass.
+    """
+    pin_path = entry.recorded_dir_for(condition) / "report-hash-offline.txt"
+    if not pin_path.is_file():
+        return None
+    assessment = handle.objects.get(Assessment, handle.assessment_id)
+    if assessment.final_report_path is None:
+        return None
+    filename = assessment.final_report_path.rpartition("/")[2]
+    return (
+        handle.artifacts.hash_of("outputs", filename)
+        == pin_path.read_text(encoding="utf-8").strip()
     )
 
 
@@ -311,17 +357,34 @@ def _apply_finding_decisions(
     recorded = yaml.safe_load(
         (entry.recorded_dir_for(condition) / "decisions-findings.yaml").read_text(encoding="utf-8")
     )
-    # Findings are matched by the recording's order rather than by identifier: a shared store
-    # gives this run's findings different identifiers than the recording captured, and the
-    # decisions apply to the candidate set positionally.
     candidates = sorted(
         (finding for finding in handle.objects.list(Finding) if finding.duplicate_of_id is None),
         key=lambda finding: finding.id,
     )
     recorded_findings = recorded.get("findings", [])
-    for decided, candidate in zip(recorded_findings, candidates, strict=False):
+    # A count mismatch means the truth set no longer describes the run -- a pipeline change produced
+    # a different finding set than the decisions were authored against. Silently zipping the shorter
+    # of the two (the old `strict=False`) scored a different assessment than the truth set and said
+    # nothing; a loud failure is the only honest answer.
+    if len(recorded_findings) != len(candidates):
+        raise HarnessError(
+            f"{entry.slug}/{condition}: the recording holds {len(recorded_findings)} finding "
+            f"decision(s) but the run produced {len(candidates)}. The truth set no longer matches "
+            f"the run; re-capture the decisions or investigate the pipeline change."
+        )
+    # Match on the recorded identifier when every one resolves to a produced finding -- the
+    # single-scenario case, where a fresh store re-mints the same identifiers, so a reordering of the
+    # finding set cannot land a decision on the wrong finding. A shared store (the `--all` sweep)
+    # mints different identifiers, so there the documented positional fallback stands: both the
+    # candidates and the recording are in allocation order.
+    by_id = {finding.id: finding for finding in candidates}
+    recorded_ids = [str(decided.get("id")) for decided in recorded_findings]
+    if len(set(recorded_ids)) == len(recorded_ids) and all(rid in by_id for rid in recorded_ids):
+        pairs = [(decided, by_id[str(decided["id"])]) for decided in recorded_findings]
+    else:
+        pairs = list(zip(recorded_findings, candidates, strict=True))
+    for decided, candidate in pairs:
         finding = candidate
-        _ = decided.get("id")  # recorded for provenance; matching is positional
         if "severity" in decided:
             finding, _ = change_severity(
                 handle, finding, Severity(decided["severity"]), reviewer_id=HARNESS_REVIEWER
@@ -350,27 +413,74 @@ def _normalized_question(text: str) -> str:
     return " ".join(text.lower().split())
 
 
+def _recorded_object_decisions(entry: Scenario, condition: str) -> dict[tuple[str, ...], str]:
+    """Fingerprint → disposition from the scenario's recorded run, or nothing when unavailable.
+
+    The recorded review file's decisions were authored against the recorded run's objects
+    (DEC-091), so the fingerprints come from the recorded extraction proposal — the objects
+    those identifiers were allocated for — and a scenario without a readable recording simply
+    contributes no matches, leaving every decision to the default policy, counted.
+    """
+    from trace_ai.domain.proposals import ContextExtractionProposal
+    from trace_ai.infrastructure.model.recorded import parse_recorded_response
+
+    decisions_path = entry.recorded_dir_for(condition) / "decisions-context.yaml"
+    if not decisions_path.is_file():
+        return {}
+    try:
+        document = read_review_file(decisions_path.read_text(encoding="utf-8"))
+    except ReviewFileError:
+        return {}
+    for path in sorted(entry.recorded_dir_for(condition).rglob("[0-9]*.json")):
+        try:
+            recorded = parse_recorded_response(
+                path.read_text(encoding="utf-8"), described_as=path.name
+            )
+        except ValueError:
+            continue
+        if isinstance(recorded.response, ContextExtractionProposal):
+            return context_decision_fingerprints(recorded.response, document)
+    return {}
+
+
 def _apply_context_decisions_live(
     entry: Scenario, service: AssessmentService, assessment_id: str, *, condition: str
 ) -> int:
     """Checkpoint 1 under DEC-077's named default policy, returning the defaulted count.
 
-    Every context object is approved as generated. A blocking question whose text matches a
-    recorded answer (from the clean recording's review file) is answered with it — the
-    replay-matched half of the protocol — and one with no match gets the protocol's default
-    answer. The defaulted count is every decision that had no recorded counterpart, so the
-    substitution DEC-077 warns about is visible in the summary rather than silent. Structural
-    matching of object decisions by content fingerprint is not implemented; with the recorded
-    review files approving every object, the defaulted approval and the recorded one coincide,
-    and the count says how many decisions rest on the policy rather than on a person.
+    Object decisions replay by content fingerprint (DEC-093): a live object whose fingerprint
+    uniquely matches an object the recorded reviewer decided replays that disposition, and only
+    an object with no recorded counterpart — a genuinely novel extraction — falls to the default
+    approval and counts as defaulted. A blocking question whose text matches a recorded answer
+    is answered with it, and one with no match gets the protocol's default answer. The defaulted
+    count is every decision that had no recorded counterpart, so the substitution DEC-077 warns
+    about is visible in the summary rather than silent — and now measures novelty rather than
+    the harness's own leniency.
     """
     from trace_ai.workflow.context_review import answer_question, decide_object
 
     handle = service.handle(assessment_id)
     defaulted = 0
-    for obj in context_objects(handle):
-        decide_object(handle, obj, ReviewDisposition.APPROVE, reviewer_id=STABILITY_REVIEWER)
-        defaulted += 1
+    recorded_decisions = _recorded_object_decisions(entry, condition)
+    objects = context_objects(handle)
+    names_by_id = {
+        obj.id: normalized_name(obj.name)
+        for obj in objects
+        if isinstance(obj, (Component, Actor, Asset, TrustBoundary))
+    }
+    fingerprinted = [(live_context_fingerprint(obj, names_by_id), obj) for obj in objects]
+    counts = Counter(fp for fp, _ in fingerprinted if fp is not None)
+    for fingerprint, obj in fingerprinted:
+        replayed: ReviewDisposition | None = None
+        if fingerprint is not None and counts[fingerprint] == 1:
+            decision = recorded_decisions.get(fingerprint)
+            if decision in {ReviewDisposition.APPROVE.value, ReviewDisposition.REJECT.value}:
+                replayed = ReviewDisposition(decision)
+        decide_object(
+            handle, obj, replayed or ReviewDisposition.APPROVE, reviewer_id=STABILITY_REVIEWER
+        )
+        if replayed is None:
+            defaulted += 1
 
     recorded_answers: dict[str, str] = {}
     decisions_path = entry.recorded_dir_for(condition) / "decisions-context.yaml"

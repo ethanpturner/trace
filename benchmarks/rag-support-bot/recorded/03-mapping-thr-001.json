@@ -1,0 +1,25 @@
+{
+  "schema": "MappingProposal",
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-RAG-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The corpus holds content with differing read entitlements -- every workspace's resolved tickets -- and retrievals are served to every signed-in user of every workspace, so retrieval must be filtered by the requester's authorization.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unmet",
+        "evidence_ids": ["evd-002"],
+        "assumptions": [
+          "No common false positive applies: the architecture overview affirmatively states that relevance alone selects the passages that reach the prompt from the one shared index -- a documented absence of an entitlement filter, not an unstated mechanism."
+        ],
+        "confidence": "high"
+      }
+    ],
+    "documentation_gaps": []
+  }
+}

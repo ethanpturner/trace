@@ -277,6 +277,29 @@ class ExecutionLedger:
         self.run = updated
         return updated
 
+    def reopen(self) -> WorkflowRun:
+        """Return a stopped run to `running` so it can be resumed (DEC-017).
+
+        A failed run's row carries `completed_at` and an `error_summary`; resuming clears both so the
+        reopened run's lifecycle is a running run's, not a completed one wearing a running status. The
+        earlier failure lives on in the state file's `errors` and in the execution records, which
+        this does not touch -- the audit trail keeps the failure; only the run's own status moves on.
+        """
+        repository = self.handle.objects
+        updated = WorkflowRun.model_validate(
+            self.run.model_dump()
+            | {
+                "status": RunStatus.RUNNING,
+                "completed_at": None,
+                "error_summary": None,
+                "current_node": None,
+            }
+        )
+        with repository.transaction():
+            repository.save(updated)
+        self.run = updated
+        return updated
+
     def pause(self, *, current_node: str) -> WorkflowRun:
         """Mark the run paused at `current_node` (DEC-017).
 

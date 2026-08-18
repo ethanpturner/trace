@@ -21,9 +21,11 @@ itself an instruction would record a decision for every object each time somebod
 
 from __future__ import annotations
 
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
 import yaml
+from pydantic import BaseModel, ConfigDict, Field
 from pydantic import ValidationError as PydanticValidationError
 
 from trace_ai.domain.context_claim import ClaimStatus, ContextClaim
@@ -50,6 +52,7 @@ if TYPE_CHECKING:
 
 __all__ = [
     "EDITABLE_FIELDS",
+    "AppliedReviewFile",
     "ReviewFileError",
     "apply_review_file",
     "export_review_file",
@@ -125,6 +128,92 @@ _HEADER = """\
 
 class ReviewFileError(ValueError):
     """A review file the application will not apply, with the reason named."""
+
+
+@dataclass(frozen=True, slots=True)
+class AppliedReviewFile:
+    """The result of applying a file: the decisions it produced, and the additions it skipped.
+
+    Skipped additions are returned rather than swallowed. An addition whose name already exists is
+    the idempotent re-apply case *and* the reviewer-namesake case, indistinguishable by name, so it
+    is not an error -- but a reviewer who typed a new component that silently vanished should be able
+    to see that it did.
+    """
+
+    decisions: list[ReviewerDecision] = field(default_factory=list)
+    skipped_additions: list[str] = field(default_factory=list)
+
+
+class _Entry(BaseModel):
+    """A review-file entry that forbids unknown keys, so a misspelled field is caught rather than
+    silently ignored -- the same `extra="forbid"` guarantee every domain object has."""
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class _ObjectEntry(_Entry):
+    id: str
+    decision: str | None = None
+    attach_evidence: list[str] = Field(default_factory=list)
+    editable: dict[str, Any] = Field(default_factory=dict)
+
+
+class _ClaimEntry(_Entry):
+    id: str
+    status: str | None = None
+    confidence: str | None = None
+    decision: str | None = None
+    confirm: bool = False
+    attach_evidence: list[str] = Field(default_factory=list)
+    evidence: list[str] = Field(default_factory=list)
+    editable: dict[str, Any] = Field(default_factory=dict)
+
+
+class _ContradictionEntry(_Entry):
+    id: str
+    summary: str | None = None
+    claims: list[str] = Field(default_factory=list)
+    evidence: list[str] = Field(default_factory=list)
+    resolution: str | None = None
+    rationale: str | None = None
+
+
+class _AdditionEntry(_Entry):
+    type: str | None = None
+    fields: dict[str, Any] = Field(default_factory=dict)
+
+
+class _QuestionEntry(_Entry):
+    id: str
+    question: str | None = None
+    priority: str | None = None
+    blocking: bool | None = None
+    answer: str | None = None
+
+
+class _ReviewFileDocument(BaseModel):
+    """The whole file, keyed exactly as `export_review_file` writes it.
+
+    `extra="forbid"` at every level is the fix: a reviewer who writes `question:` for `questions:`,
+    or `decison:` for `decision:` inside an entry, gets a named error rather than losing their work
+    silently at a structural checkpoint. The read-only display fields (status, summary, priority)
+    are listed because the exported file carries them; they are ignored on apply.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    assessment_id: str
+    system_context_version: int | None = None
+    reviewer: str | None = None
+    components: list[_ObjectEntry] = Field(default_factory=list)
+    actors: list[_ObjectEntry] = Field(default_factory=list)
+    assets: list[_ObjectEntry] = Field(default_factory=list)
+    data_flows: list[_ObjectEntry] = Field(default_factory=list)
+    trust_boundaries: list[_ObjectEntry] = Field(default_factory=list)
+    claims: list[_ClaimEntry] = Field(default_factory=list)
+    contradictions: list[_ContradictionEntry] = Field(default_factory=list)
+    additions: list[_AdditionEntry] = Field(default_factory=list)
+    questions: list[_QuestionEntry] = Field(default_factory=list)
 
 
 def export_review_file(package: ContextReviewPackage) -> dict[str, Any]:
@@ -212,7 +301,14 @@ def write_review_file(package: ContextReviewPackage) -> str:
 
 
 def read_review_file(text: str) -> dict[str, Any]:
-    """Parse an edited file, refusing anything that is not the document this module writes."""
+    """Parse an edited file, refusing anything that is not the document this module writes.
+
+    Validated against `_ReviewFileDocument` with `extra="forbid"`, so an unknown or misspelled key --
+    `question` for `questions`, `decison` for `decision` -- is named rather than silently dropped. A
+    dropped instruction at a structural checkpoint is a reviewer's decision lost with no signal,
+    which is the one failure a review interface must not have. The validated dict is returned; the
+    apply path reads it by key as before.
+    """
     loaded: Any = yaml.safe_load(text)
     if not isinstance(loaded, dict):
         raise ReviewFileError("a review file is a mapping; this parsed as something else")
@@ -220,7 +316,27 @@ def read_review_file(text: str) -> dict[str, Any]:
         raise ReviewFileError(
             "this file names no assessment. Export one with `trace context review --export`."
         )
+    try:
+        _ReviewFileDocument.model_validate(loaded)
+    except PydanticValidationError as invalid:
+        raise ReviewFileError(_render_validation_error(invalid)) from None
     return loaded
+
+
+def _render_validation_error(error: PydanticValidationError) -> str:
+    """A review-file validation error as a short, safe summary naming the offending keys.
+
+    Pydantic's default rendering can quote the offending value; a review file may carry
+    document-derived text, so the message names the field location and the error type only.
+    """
+    parts = []
+    for detail in error.errors():
+        location = ".".join(str(part) for part in detail["loc"]) or "(root)"
+        if detail["type"] == "extra_forbidden":
+            parts.append(f"{location}: unknown key (a misspelled field is not applied)")
+        else:
+            parts.append(f"{location}: {detail['type']}")
+    return "this file is not a review document: " + "; ".join(parts)
 
 
 def apply_review_file(
@@ -229,12 +345,16 @@ def apply_review_file(
     *,
     reviewer_id: str,
     workflow_run_id: str | None = None,
-) -> list[ReviewerDecision]:
-    """Apply an edited file, returning the decisions it produced in the order it produced them.
+) -> AppliedReviewFile:
+    """Apply an edited file, returning the decisions it produced and the additions it skipped.
 
     Every action goes through `workflow/context_review.py`, so a file and the equivalent flags
     write identical rows. Refusals are refusals: a file that would dangle a data-flow endpoint is
     rejected in the validation node's words, the same as the flag would be.
+
+    The whole application is one transaction: a refusal partway through rolls back everything, so a
+    file never lands half-applied. The store's nested-transaction support (savepoints) means the
+    per-action transactions inside `context_review` compose under this outer one.
     """
     if document.get("assessment_id") != handle.assessment_id:
         raise ReviewFileError(
@@ -243,76 +363,82 @@ def apply_review_file(
         )
 
     decisions: list[ReviewerDecision] = []
+    skipped_additions: list[str] = []
     by_id = {obj.id: obj for _, model in CONTEXT_OBJECT_TYPES for obj in handle.objects.list(model)}
     by_id.update({claim.id: claim for claim in handle.objects.list(ContextClaim)})
     questions = {question.id: question for question in handle.objects.list(Question)}
     index = EvidenceIndex(handle)
 
     models_by_group = dict(CONTEXT_OBJECT_TYPES)
-    for entry in document.get("additions") or []:
-        group = str(entry.get("type") or "")
-        model = models_by_group.get(group)
-        if model is None:
-            raise ReviewFileError(
-                f"{group or '(no type)'} is not a type an addition may name. Write one of: "
-                f"{', '.join(name for name, _ in CONTEXT_OBJECT_TYPES)}."
-            )
-        # An addition naming an object that already exists is skipped, not duplicated: the common
-        # cause is the same edited file applied twice, and the rare cause — a reviewer adding a
-        # namesake of an extracted object — is a duplicate either way.
-        name = (entry.get("fields") or {}).get("name")
-        if name and any(getattr(obj, "name", None) == name for obj in handle.objects.list(model)):
-            continue
-        try:
-            _, decision = add_context_object(
-                handle,
-                model,
-                dict(entry.get("fields") or {}),
-                reviewer_id=reviewer_id,
-                workflow_run_id=workflow_run_id,
-            )
-        except (ReviewerActionError, PydanticValidationError) as refused:
-            raise ReviewFileError(f"additions: {refused}") from None
-        decisions.append(decision)
-
-    for group, _ in (*CONTEXT_OBJECT_TYPES, ("claims", ContextClaim)):
-        for entry in document.get(group) or []:
-            decisions.extend(
-                _apply_entry(
+    with handle.objects.transaction():
+        for entry in document.get("additions") or []:
+            group = str(entry.get("type") or "")
+            model = models_by_group.get(group)
+            if model is None:
+                raise ReviewFileError(
+                    f"{group or '(no type)'} is not a type an addition may name. Write one of: "
+                    f"{', '.join(name for name, _ in CONTEXT_OBJECT_TYPES)}."
+                )
+            # An addition naming an object that already exists is skipped, not duplicated: the
+            # common cause is the same edited file applied twice, and the rare cause — a reviewer
+            # adding a namesake of an extracted object — is a duplicate either way. The skipped
+            # name is returned rather than swallowed, so a reviewer whose addition vanished sees it.
+            name = (entry.get("fields") or {}).get("name")
+            if name and any(
+                getattr(obj, "name", None) == name for obj in handle.objects.list(model)
+            ):
+                skipped_additions.append(str(name))
+                continue
+            try:
+                _, decision = add_context_object(
                     handle,
-                    group,
-                    entry,
-                    by_id,
-                    index=index,
+                    model,
+                    dict(entry.get("fields") or {}),
                     reviewer_id=reviewer_id,
                     workflow_run_id=workflow_run_id,
                 )
+            except (ReviewerActionError, PydanticValidationError) as refused:
+                raise ReviewFileError(f"additions: {refused}") from None
+            decisions.append(decision)
+
+        for group, _ in (*CONTEXT_OBJECT_TYPES, ("claims", ContextClaim)):
+            for entry in document.get(group) or []:
+                decisions.extend(
+                    _apply_entry(
+                        handle,
+                        group,
+                        entry,
+                        by_id,
+                        index=index,
+                        reviewer_id=reviewer_id,
+                        workflow_run_id=workflow_run_id,
+                    )
+                )
+
+        for entry in document.get("contradictions") or []:
+            decisions.extend(
+                _apply_contradiction(
+                    handle, entry, reviewer_id=reviewer_id, workflow_run_id=workflow_run_id
+                )
             )
 
-    for entry in document.get("contradictions") or []:
-        decisions.extend(
-            _apply_contradiction(
-                handle, entry, reviewer_id=reviewer_id, workflow_run_id=workflow_run_id
+        for entry in document.get("questions") or []:
+            answer = (entry.get("answer") or "").strip()
+            if not answer:
+                continue
+            question = questions.get(str(entry.get("id") or ""))
+            if question is None:
+                raise ReviewFileError(f"{entry.get('id')} is not a question in this assessment")
+            _, decision = answer_question(
+                handle,
+                question,
+                response=answer,
+                reviewer_id=reviewer_id,
+                workflow_run_id=workflow_run_id,
             )
-        )
+            decisions.append(decision)
 
-    for entry in document.get("questions") or []:
-        answer = (entry.get("answer") or "").strip()
-        if not answer:
-            continue
-        question = questions.get(str(entry.get("id") or ""))
-        if question is None:
-            raise ReviewFileError(f"{entry.get('id')} is not a question in this assessment")
-        _, decision = answer_question(
-            handle,
-            question,
-            response=answer,
-            reviewer_id=reviewer_id,
-            workflow_run_id=workflow_run_id,
-        )
-        decisions.append(decision)
-
-    return decisions
+    return AppliedReviewFile(decisions=decisions, skipped_additions=skipped_additions)
 
 
 def _apply_entry(

@@ -23,12 +23,10 @@ import argparse
 import json
 import sys
 import tempfile
-from datetime import UTC, date, datetime
+from datetime import date
 from pathlib import Path
 
 from trace_ai.config import PROJECT_ROOT
-from trace_ai.services.evaluation.baselines import BASELINES, run_baseline
-from trace_ai.services.evaluation.harness import run_scenario
 from trace_ai.services.evaluation.history import (
     ScorecardSnapshot,
     SnapshotRefusedError,
@@ -36,8 +34,9 @@ from trace_ai.services.evaluation.history import (
     load_history,
     snapshot_key,
 )
-from trace_ai.services.evaluation.registry import load_registry
 from trace_ai.services.evaluation.scorecard import render_scorecard, rows_from_feeds
+from trace_ai.services.evaluation.stamps import DETERMINISTIC_STAMP
+from trace_ai.services.evaluation.sweep import collect_feeds, dump_feeds, load_feeds
 
 OUTPUT = PROJECT_ROOT / "docs" / "eval" / "scorecard.html"
 HISTORY = PROJECT_ROOT / "docs" / "eval" / "history.jsonl"
@@ -46,67 +45,16 @@ LIVE_STABILITY = PROJECT_ROOT / "docs" / "eval" / "live-stability.json"
 Read like the history file — never regenerated, because the drift checks cannot re-run a live
 measurement — and absent until the first measurement is committed."""
 # Pinned so the committed page changes only when a metric does, never on the clock.
-GENERATED_AT = datetime(2026, 8, 14, 12, 0, 0, tzinfo=UTC)
+GENERATED_AT = DETERMINISTIC_STAMP
 
 
-def _baseline_response(scenario_path: Path, condition: str) -> Path | None:
-    recording = scenario_path / "recorded" / "baselines" / f"{condition}.json"
-    return recording if recording.is_file() else None
+def build_page(feeds: list[dict[str, object]], *, snapshot_date: str | None = None) -> str:
+    """Render the page from already-collected feeds and the committed history (DEC-081).
 
-
-def collect_feeds(results_root: Path) -> list[dict[str, object]]:
-    """Run every recorded scenario and baseline into `results_root`, and return their feeds.
-
-    This is the one sweep both committed artifacts read: the scorecard renders it per scenario and
-    condition, and the comparison table (`scripts/build_comparison.py`) collapses it per tool. Both
-    stay in step because they consume the same feeds from the same runs.
-    """
-    feeds: list[dict[str, object]] = []
-
-    for entry in load_registry():
-        for condition in ("clean", *entry.conditions):
-            if not entry.has_recording_for(condition):
-                continue
-            outcome = run_scenario(
-                entry.slug,
-                data_root=results_root / "work" / entry.slug / condition,
-                label="scorecard",
-                condition=condition,
-                results_root=results_root / "feeds",
-            )
-            if outcome.feed_path is not None:
-                feeds.append(json.loads(outcome.feed_path.read_text(encoding="utf-8")))
-
-        if not entry.has_outcome_truth:
-            continue
-        for condition in sorted(BASELINES):
-            from trace_ai.domain.proposals.baseline import BaselineFindings
-
-            recording = _baseline_response(entry.path, condition)
-            if recording is None:
-                continue
-            response = BaselineFindings.model_validate_json(recording.read_text(encoding="utf-8"))
-            baseline = run_baseline(
-                entry.slug,
-                condition,
-                label="scorecard",
-                response=response,
-                results_root=results_root / "feeds",
-            )
-            if baseline.feed_path is not None:
-                feeds.append(json.loads(baseline.feed_path.read_text(encoding="utf-8")))
-
-    return feeds
-
-
-def build(results_root: Path, *, snapshot_date: str | None = None) -> str:
-    """Render the page from a fresh sweep and the committed history (DEC-081).
-
-    With `snapshot_date` set, the sweep's rows are first retained as a history snapshot keyed by
+    With `snapshot_date` set, the feeds' rows are first retained as a history snapshot keyed by
     the current git ref, prompt-tree digest, and catalog version — the deliberate step; a plain
     build reads history and never writes it, which is what keeps `--check` deterministic.
     """
-    feeds = collect_feeds(results_root)
     if snapshot_date is not None:
         prompt_digest, catalog_version = snapshot_key()
         append_snapshot(
@@ -143,6 +91,16 @@ def _git_ref() -> str:
     return found.stdout.strip()
 
 
+def _render(args: argparse.Namespace) -> str:
+    """The rendered page, from a pre-swept feed file when given one, otherwise a fresh sweep."""
+    if args.from_feeds:
+        return build_page(load_feeds(args.from_feeds))
+    # The sweep's results tree is intermediate: nothing after the render needs it, so it is a
+    # temporary that is cleaned up rather than left in /tmp per run.
+    with tempfile.TemporaryDirectory(prefix="trace-scorecard-") as tmp:
+        return build_page(collect_feeds(Path(tmp)), snapshot_date=args.snapshot)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument(
@@ -159,15 +117,39 @@ def main(argv: list[str] | None = None) -> int:
             "last snapshot has the same key"
         ),
     )
+    parser.add_argument(
+        "--sweep-to",
+        metavar="PATH",
+        type=Path,
+        help=(
+            "run the offline sweep once, write the feeds to PATH, and exit without rendering; the "
+            "companion of --from-feeds, so CI can sweep once and render both pages from the result"
+        ),
+    )
+    parser.add_argument(
+        "--from-feeds",
+        metavar="PATH",
+        type=Path,
+        help="render from a feed file written by --sweep-to instead of running the sweep again",
+    )
     args = parser.parse_args(argv)
     if args.check and args.snapshot:
         parser.error("--check reads the committed history and cannot also write a snapshot")
+    if args.sweep_to and (args.check or args.snapshot or args.from_feeds):
+        parser.error("--sweep-to only sweeps; it cannot also render, check, or snapshot")
+    if args.from_feeds and args.snapshot:
+        parser.error("--snapshot records a fresh sweep and cannot read --from-feeds")
     if args.snapshot:
         date.fromisoformat(args.snapshot)
 
-    results_root = Path(tempfile.mkdtemp(prefix="trace-scorecard-"))
+    if args.sweep_to:
+        with tempfile.TemporaryDirectory(prefix="trace-scorecard-") as tmp:
+            dump_feeds(collect_feeds(Path(tmp)), args.sweep_to)
+        print(f"wrote feeds to {args.sweep_to}")
+        return 0
+
     try:
-        rendered = build(results_root, snapshot_date=args.snapshot)
+        rendered = _render(args)
     except SnapshotRefusedError as error:
         print(f"error: {error}", file=sys.stderr)
         return 1

@@ -1,490 +1,493 @@
 {
-  "controls": [
-    {
-      "key": "webhook-request-validation",
-      "name": "Validation of inbound GitHub webhook requests",
-      "description": "The webhook receiver is documented as validating incoming requests before parsing event metadata and creating an analysis job, with invalid or unsupported events rejected or ignored (evd-028, evd-062). The security overview repeats that GitHub webhook events are validated before processing (evd-128) and lists 'event validation' among GitHub integration security principles (evd-069). None of these passages states whether the validation is cryptographic origin verification or structural well-formedness checking, and both the architecture and security documents name detailed webhook-validation behaviour as maintained elsewhere or requiring clarification (evd-054, evd-138).",
-      "control_type": "implemented",
-      "provider_component_id": null,
-      "protected_component_ids": [
-        "cmp-004",
-        "cmp-005",
-        "cmp-006",
-        "cmp-007"
-      ],
-      "protected_asset_ids": [
-        "ast-003",
-        "ast-011",
-        "ast-002"
-      ],
-      "implementation_status": "claimed",
-      "evidence_ids": [
-        "evd-028",
-        "evd-062",
-        "evd-128",
-        "evd-069"
-      ],
-      "owner": "ForgeFlow Platform Engineering",
-      "limitations": [
-        "The verification mechanism is not stated; the documents say only that requests are 'validated' (evd-028, evd-062, evd-128).",
-        "Detailed webhook-validation behaviour and webhook replay handling are named documentation gaps (evd-054, evd-138).",
-        "The integration records as an assumption, rather than an enforced property, that webhook events originate from GitHub infrastructure (evd-070)."
-      ]
-    },
-    {
-      "key": "redis-network-restriction",
-      "name": "Managed Redis queue restricted to approved application workloads",
-      "description": "The managed Redis service holding pending analysis jobs, retry state and selected rate-limiting state is documented as accessible only from approved application workloads (evd-029), and the architecture assumptions record that Redis is not publicly accessible (evd-053).",
-      "control_type": "inherited",
-      "provider_component_id": "cmp-005",
-      "protected_component_ids": [
-        "cmp-005"
-      ],
-      "protected_asset_ids": [
-        "ast-003",
-        "ast-011"
-      ],
-      "implementation_status": "implemented",
-      "evidence_ids": [
-        "evd-029",
-        "evd-053",
-        "evd-050"
-      ],
-      "owner": "Managed cloud provider, configured by ForgeFlow",
-      "limitations": [
-        "Non-public reachability is recorded as an architecture assumption in evd-053 as well as a statement in evd-029; the enforcing mechanism (network segment, firewall or security-group policy) is not named.",
-        "The control constrains direct job injection into the queue only; it does not bound jobs created through the legitimate webhook receiver path described in this threat."
-      ]
-    },
-    {
-      "key": "usage-limiting-and-retry",
-      "name": "Usage limiting, rate-limiting state and retry handling for triggered analysis work",
-      "description": "The product documentation states that ForgeFlow may limit usage to protect service reliability and control excessive processing (evd-103). Redis holds 'selected rate-limiting state' (evd-029). Recoverable failures may be retried automatically and manual retries reuse original job metadata (evd-077), with worker replicas scaling on queue depth (evd-051).",
-      "control_type": "implemented",
-      "provider_component_id": null,
-      "protected_component_ids": [
-        "cmp-004",
-        "cmp-005",
-        "cmp-006"
-      ],
-      "protected_asset_ids": [
-        "ast-011"
-      ],
-      "implementation_status": "claimed",
-      "evidence_ids": [
-        "evd-103",
-        "evd-029",
-        "evd-077",
-        "evd-051"
-      ],
-      "owner": "ForgeFlow Platform Operations",
-      "limitations": [
-        "Exact retry limits are named as a documentation gap (evd-054) and retry behaviour is explicitly omitted from the security overview (evd-138).",
-        "No per-tenant volume limit, queue-depth shedding rule, or AI-provider spend ceiling is described; evd-103 states only that usage 'may' be limited."
-      ]
-    },
-    {
-      "key": "structured-output-validation",
-      "name": "Structural validation of AI provider responses before storage and publication",
-      "description": "Provider responses are validated against required fields, schema conformance, maximum response size and basic formatting rules; responses failing validation are rejected and the job marked unsuccessful (evd-009, evd-081). Comment formatting applies output-length restrictions and removes unsupported formatting before publication (evd-031). The security overview states that AI-generated responses are validated before presentation and that externally visible AI-generated output is reviewed before publication (evd-133).",
-      "control_type": "implemented",
-      "provider_component_id": null,
-      "protected_component_ids": [
-        "cmp-006",
-        "cmp-007"
-      ],
-      "protected_asset_ids": [
-        "ast-002"
-      ],
-      "implementation_status": "implemented",
-      "evidence_ids": [
-        "evd-009",
-        "evd-081",
-        "evd-031",
-        "evd-133",
-        "evd-008"
-      ],
-      "owner": "ForgeFlow AI Platform Engineering",
-      "limitations": [
-        "Validation is described as structural (schema, size, formatting); semantic validation is recorded as not documented (evd-151) and AI-output approval requirements are a named documentation gap (evd-054).",
-        "Whether human review precedes publication is contradicted between evd-133 and the automatic publication sequences in evd-010 and evd-082."
-      ]
-    },
-    {
-      "key": "managed-secret-store",
-      "name": "Managed secrets service holding integration credentials",
-      "description": "Sensitive application credentials, including the GitHub App private key, the GitHub OAuth client secret, the AI-provider API key, the email-provider API key and selected database credentials, are held in a managed secrets service, retrieved by workloads through workload identity where supported and not intended to be stored in source repositories or configuration files (evd-034, evd-127).",
-      "control_type": "inherited",
-      "provider_component_id": null,
-      "protected_component_ids": [
-        "cmp-004",
-        "cmp-006",
-        "cmp-007"
-      ],
-      "protected_asset_ids": [],
-      "implementation_status": "implemented",
-      "evidence_ids": [
-        "evd-034",
-        "evd-127",
-        "evd-149"
-      ],
-      "owner": "Managed cloud provider, configured by ForgeFlow",
-      "limitations": [
-        "The enumerated secrets (evd-034, evd-127) do not include any webhook verification secret or GitHub webhook public key, so custody of the material that would support inbound event authenticity verification is not established."
-      ]
-    }
-  ],
-  "mappings": [
-    {
-      "threat_id": "thr-001",
-      "requirement_id": "req-WEBHOOK-001",
-      "control_keys": [
-        "webhook-request-validation"
-      ],
-      "existing_control_ids": [],
-      "applicability_status": "applicable",
-      "applicability_reason": "Both applicable conditions hold for this threat: the webhook receiver is an endpoint that accepts events from an external platform (evd-028, evd-062) and each accepted event triggers privileged processing — installation-token minting, repository retrieval, provider spend and potentially a pull-request comment (evd-030, evd-031). Neither non-applicable condition holds: the endpoint is internet-facing rather than confined to a trusted segment (evd-028, evd-144), and events are delivered by GitHub rather than polled (evd-062).",
-      "suppressed_conclusion": "That cryptographic origin verification is absent at the webhook receiver, leaving the endpoint open to forged deliveries as the threat describes.",
-      "suppressed_by": "common_false_positives: 'documentation stating only that requests are validated, where the mechanism is unstated' — evd-028, evd-062 and evd-128 assert validation without naming the mechanism, and evd-054 and evd-138 record the mechanism as documented elsewhere or requiring clarification, so the material does not establish absence.",
-      "satisfaction_status": "unverified",
-      "evidence_ids": [
-        "evd-028",
-        "evd-062",
-        "evd-128",
-        "evd-069",
-        "evd-070",
-        "evd-054",
-        "evd-138"
-      ],
-      "assumptions": [
-        "Assumed that the 'validating incoming requests' step in evd-028, the 'incoming webhook requests are validated' statement in evd-062 and the 'GitHub webhook events are validated' statement in evd-128 all refer to the same receiver-side step."
-      ],
-      "confidence": "high"
-    },
-    {
-      "threat_id": "thr-001",
-      "requirement_id": "req-WEBHOOK-002",
-      "control_keys": [
-        "webhook-request-validation"
-      ],
-      "existing_control_ids": [],
-      "applicability_status": "applicable",
-      "applicability_reason": "Both applicable conditions hold for this threat: inbound event processing is costly (AI-provider spend and worker capacity, evd-030, evd-051), externally visible (pull-request comments, evd-031, evd-082) and state-changing (job and metadata records, evd-029, evd-032); and delivery uniqueness is not established anywhere in the reviewed material. The non-applicable condition 'repeated processing is idempotent and documented as such' does not hold: the operations guide and its limitations state that duplicate processing may occur and that operators should review duplicate comments before manual cleanup (evd-080, evd-090).",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "unverified",
-      "evidence_ids": [
-        "evd-054",
-        "evd-029",
-        "evd-076",
-        "evd-080",
-        "evd-090",
-        "evd-082"
-      ],
-      "assumptions": [
-        "The event identifier (evd-029) and delivery identifier (evd-076) carried on each job would make delivery-keyed deduplication feasible, but no passage describes such deduplication, so this is treated as a precondition rather than a control.",
-        "Proceeding on the basis that evd-054's 'Webhook replay handling' entry indicates the behaviour is undocumented rather than absent."
-      ],
-      "confidence": "medium"
-    },
-    {
-      "threat_id": "thr-001",
-      "requirement_id": "req-TPI-002",
-      "control_keys": [
-        "usage-limiting-and-retry"
-      ],
-      "existing_control_ids": [],
-      "applicability_status": "applicable",
-      "applicability_reason": "All three applicable conditions hold for this threat: processing consumes a metered external AI provider (evd-030, evd-038, evd-051), the work is triggered by an event ForgeFlow does not originate (evd-028, evd-042), and failed work is retried automatically (evd-077). The threat's impact is precisely repeated triggering consuming provider spend and worker capacity, so the bound on triggered work is the control that limits it; neither non-applicable condition holds, since the trigger is not operator-authenticated.",
-      "suppressed_conclusion": "That event-triggered work is unbounded, so a repeated forged or replayed delivery could drive unbounded provider spend and queue growth.",
-      "suppressed_by": "common_false_positives: 'absent cost ceiling where per-tenant rate limits are documented' — rate-limiting state is recorded as held in Redis (evd-029) and the product documentation states usage may be limited to control excessive processing (evd-103), so a bound may exist while the exact retry and rate limits remain a named documentation gap (evd-054, evd-138).",
-      "satisfaction_status": "unverified",
-      "evidence_ids": [
-        "evd-103",
-        "evd-029",
-        "evd-077",
-        "evd-051",
-        "evd-054",
-        "evd-138"
-      ],
-      "assumptions": [
-        "Assumed the 'selected rate-limiting state' held in Redis (evd-029) relates to product or event processing limits rather than solely to outbound GitHub API pacing; the documents do not say which."
-      ],
-      "confidence": "medium"
-    },
-    {
-      "threat_id": "thr-001",
-      "requirement_id": "req-NET-001",
-      "control_keys": [
-        "redis-network-restriction"
-      ],
-      "existing_control_ids": [],
-      "applicability_status": "applicable",
-      "applicability_reason": "The applicable conditions hold: the managed Redis queue is a queue rather than a public interface, it holds queued work for more than one tenant (evd-029), and its caller authentication is not described in the reviewed material. This threat's path runs through that queue — a forged event becomes a queued job that downstream workers treat as authoritative (evd-005 not relied on; see evd-029, evd-030) — so reachability of the queue bears on whether jobs can be injected other than through the receiver.",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "satisfied",
-      "evidence_ids": [
-        "evd-029",
-        "evd-053",
-        "evd-050"
-      ],
-      "assumptions": [
-        "Treating evd-029's statement that the Redis service is accessible only from approved application workloads as a statement of network placement; the enforcing mechanism is not named, which the requirement's false-positive guidance says is not a reason to withhold satisfaction."
-      ],
-      "confidence": "medium"
-    },
-    {
-      "threat_id": "thr-001",
-      "requirement_id": "req-AUTHZ-001",
-      "control_keys": [],
-      "existing_control_ids": [],
-      "applicability_status": "applicable",
-      "applicability_reason": "The applicable conditions hold: ForgeFlow serves multiple customer organizations (evd-022, evd-102) and their data shares PostgreSQL, Redis and object storage (evd-029, evd-032, evd-033). This threat engages the requirement's second clause directly: the analysis job's installation, repository and pull-request context is taken from identifiers carried in the inbound payload (evd-029, evd-042) rather than from state ForgeFlow already holds, which is the client-supplied-tenant-context case the requirement addresses.",
-      "suppressed_conclusion": "That tenant context on the event-driven path is derived from client-supplied values with no server-side check.",
-      "suppressed_by": "The part not satisfied is stated rather than concluded negatively: the customer-request path is documented as constrained by authenticated identity and organization membership (evd-124, evd-032, evd-102, evd-130), while the event-driven path's derivation of organization context is not described and internal authorization implementation is explicitly omitted (evd-138).",
-      "satisfaction_status": "partially_satisfied",
-      "evidence_ids": [
-        "evd-032",
-        "evd-124",
-        "evd-102",
-        "evd-130",
-        "evd-028",
-        "evd-029",
-        "evd-042",
-        "evd-138"
-      ],
-      "assumptions": [
-        "The receiver is documented as 'identifying the related installation and repository' (evd-028); whether that identification is a lookup against ForgeFlow-held installation records or acceptance of the payload identifiers is not stated, and the conclusion here rests on that being unstated rather than on it being wrong."
-      ],
-      "confidence": "medium"
-    },
-    {
-      "threat_id": "thr-001",
-      "requirement_id": "req-AI-002",
-      "control_keys": [
-        "structured-output-validation"
-      ],
-      "existing_control_ids": [],
-      "applicability_status": "conditionally_applicable",
-      "applicability_reason": "The first applicable condition clearly holds — model output is published to a destination outside the system, namely customer pull requests (evd-010, evd-031, evd-082) — and this threat's impact includes unsolicited or duplicated ForgeFlow comments appearing under the app identity. Whether the second condition holds ('publication occurs without human review') cannot be established: evd-010, evd-082 and evd-151 describe automatic publication with schema validation and record human review as unknown, while evd-133 states that externally visible AI-generated output is reviewed before publication.",
-      "suppressed_conclusion": "That only structural validation stands between generated content and a customer-visible pull request.",
-      "suppressed_by": "common_false_positives: 'absent content filtering where the published surface is constrained to fixed fields' — comment content is constrained to a fixed set of summary fields with length restrictions and unsupported formatting removed (evd-031, evd-010), so absence of content filtering cannot be concluded from these passages.",
-      "satisfaction_status": "unverified",
-      "evidence_ids": [
-        "evd-009",
-        "evd-010",
-        "evd-031",
-        "evd-082",
-        "evd-133",
-        "evd-151",
-        "evd-054"
-      ],
-      "assumptions": [
-        "Proceeding on the basis that the two statements about human review cannot both describe the same publication path; which is authoritative is a reviewer's decision."
-      ],
-      "confidence": "medium"
-    },
-    {
-      "threat_id": "thr-001",
-      "requirement_id": "req-SECRET-001",
-      "control_keys": [
-        "managed-secret-store"
-      ],
-      "existing_control_ids": [],
-      "applicability_status": "conditionally_applicable",
-      "applicability_reason": "The requirement applies to this threat only if inbound event authenticity is established using a shared secret or a platform verification key, since custody of that material would then determine whether forgery is feasible. Whether such material exists is unestablished: the enumerated secrets (GitHub App private key, OAuth client secret, AI-provider key, email-provider key, database credentials) include no webhook verification secret (evd-034, evd-127), and the verification mechanism itself is undocumented (evd-054, evd-138).",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "unverified",
-      "evidence_ids": [
-        "evd-034",
-        "evd-127",
-        "evd-054",
-        "evd-138"
-      ],
-      "assumptions": [
-        "Custody of the credentials that are named is documented and held in the managed secrets service (evd-034, evd-127); the unverified element is confined to webhook verification material."
-      ],
-      "confidence": "low"
-    },
-    {
-      "threat_id": "thr-001",
-      "requirement_id": "req-AUTH-001",
-      "control_keys": [],
-      "existing_control_ids": [],
-      "applicability_status": "not_applicable",
-      "applicability_reason": "The non-applicable condition 'the component is not reachable by end users' holds for the path this threat exercises: the webhook receiver accepts platform-delivered events and carries no user authentication step (evd-028, evd-062), and the threat concerns the authenticity of a machine-to-machine event rather than any user identity. Customer authentication delegation to GitHub is documented separately (evd-027, evd-097, evd-123) and is not the control at issue here.",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "not_applicable",
-      "evidence_ids": [
-        "evd-028",
-        "evd-062",
-        "evd-123"
-      ],
-      "assumptions": [],
-      "confidence": "high"
-    }
-  ],
-  "documentation_gaps": [
-    {
-      "title": "Webhook authenticity verification mechanism is not described",
-      "description": "The architecture, integration and security documents each state that inbound webhook requests or events are validated before processing (evd-028, evd-062, evd-128), but none states whether that validation verifies origin cryptographically — for example by checking a GitHub signature header against a shared secret or platform key — or only that the payload is well formed and of a supported event type. Detailed webhook-validation behaviour is itself listed as a known documentation gap (evd-054) and detailed webhook processing logic is explicitly omitted from the security overview (evd-138). The integration records as an operational assumption that webhook events originate from GitHub infrastructure (evd-070).",
-      "importance": "Whether this threat exists at all turns on this single fact. If verification is cryptographic, forged deliveries are not accepted and the spoofing element of the threat falls away; if validation is structural, any party who learns the endpoint address can cause installation-scoped work and customer-visible comments. No other control in the reviewed material substitutes for it.",
-      "related_object_ids": [
-        "thr-001",
-        "cmp-004",
-        "df-004",
-        "req-WEBHOOK-001"
-      ],
-      "requested_evidence": [
-        "An explicit statement that the receiver verifies the GitHub webhook signature header (HMAC or asymmetric) before parsing the payload",
-        "The source-code or configuration reference for the verification step",
-        "The location of the webhook verification secret or platform key, and which component may read it"
-      ],
-      "evidence_ids": [
-        "evd-028",
-        "evd-062",
-        "evd-128",
-        "evd-054",
-        "evd-138",
-        "evd-070"
-      ],
-      "severity": "high"
-    },
-    {
-      "title": "Webhook replay and duplicate-delivery handling is not described",
-      "description": "'Webhook replay handling' is named as a known documentation gap (evd-054). Each queued job carries an event identifier and a delivery identifier (evd-029, evd-076), which would make delivery-keyed deduplication feasible, but no passage describes persistence of delivery identifiers, timestamp-window rejection, or idempotency in downstream processing. Separately, the operations guide records that duplicate processing may occur and that operators should review duplicate comments before manual cleanup (evd-080, evd-090), so repetition is not documented as harmless.",
-      "importance": "Origin verification, if present, would establish that a delivery was genuine when issued but not that it is being processed for the first time. Because a repeat consumes AI-provider spend and can produce a further comment on a customer pull request (evd-082, evd-031), whether repeats are absorbed determines the cost and external visibility of the replay element of this threat.",
-      "related_object_ids": [
-        "thr-001",
-        "cmp-004",
-        "cmp-005",
-        "cmp-007",
-        "df-004",
-        "req-WEBHOOK-002"
-      ],
-      "requested_evidence": [
-        "A statement of whether delivery identifiers are persisted and repeats rejected",
-        "A statement of whether signed delivery timestamps are checked against a bounded window",
-        "A description of idempotency in job creation, analysis and comment publication keyed on the delivery or event identifier"
-      ],
-      "evidence_ids": [
-        "evd-054",
-        "evd-029",
-        "evd-076",
-        "evd-080",
-        "evd-090",
-        "evd-082"
-      ],
-      "severity": "medium"
-    },
-    {
-      "title": "Bounds on event-triggered analysis work are not documented",
-      "description": "The product documentation states that ForgeFlow may limit usage to protect reliability and control excessive processing (evd-103) and Redis holds 'selected rate-limiting state' (evd-029), but no per-tenant event or job rate limit, queue-depth shedding rule, retry ceiling, or AI-provider spend cap is described. Exact retry limits are a named documentation gap (evd-054) and retry behaviour is omitted from the security overview (evd-138); recoverable failures 'may be retried' with no stated maximum (evd-077).",
-      "importance": "The threat's availability and cost impact depends entirely on what bounds repeated triggering. Without a documented bound, a reviewer cannot tell whether repeated forged or replayed deliveries would be absorbed, throttled per organization, or allowed to consume provider capacity shared across tenants (evd-051).",
-      "related_object_ids": [
-        "thr-001",
-        "cmp-004",
-        "cmp-005",
-        "cmp-006",
-        "ast-011",
-        "req-TPI-002"
-      ],
-      "requested_evidence": [
-        "Per-organization rate or volume limits applied to webhook-derived job creation, and where they are enforced",
-        "The maximum retry count and backoff policy for analysis jobs",
-        "Any queue-depth limit or load-shedding behaviour, and any AI-provider quota or spend ceiling"
-      ],
-      "evidence_ids": [
-        "evd-103",
-        "evd-029",
-        "evd-077",
-        "evd-051",
-        "evd-054",
-        "evd-138"
-      ],
-      "severity": "medium"
-    },
-    {
-      "title": "Documents disagree on whether AI-generated output is reviewed before publication to pull requests",
-      "description": "The security overview states that externally visible AI-generated output is reviewed before publication (evd-133). The AI analysis and operations documents describe publication as automatic once schema validation succeeds and automatic comments are enabled, with no review step in the sequence (evd-010, evd-082), and the structured input records human_review_required as unknown while semantic validation is recorded as not documented (evd-151). AI-output approval requirements are separately listed as a documentation gap (evd-054).",
-      "importance": "For this threat, the question is what stands between a job created by an event no customer requested and a comment published under the ForgeFlow app identity on a customer pull request. If review occurs, the external impact is bounded by an operator; if publication is automatic, the only barrier is structural validation of the provider response (evd-009, evd-031). The two statements cannot both describe the same path, and which is authoritative is a reviewer's decision.",
-      "related_object_ids": [
-        "thr-001",
-        "cmp-006",
-        "cmp-007",
-        "ast-002",
-        "df-011",
-        "req-AI-002"
-      ],
-      "requested_evidence": [
-        "A statement of whether any human approves a comment before publication, and for which organizations or configurations",
-        "If review occurs, where in the sequence of evd-082 it sits and who performs it",
-        "Whether any content validation beyond schema, size and formatting is applied before publication"
-      ],
-      "evidence_ids": [
-        "evd-133",
-        "evd-010",
-        "evd-082",
-        "evd-151",
-        "evd-054",
-        "evd-009",
-        "evd-031"
-      ],
-      "severity": "medium"
-    },
-    {
-      "title": "How the webhook receiver establishes installation and organization context is not documented",
-      "description": "The receiver is documented as 'identifying the related installation and repository' and determining relevance before creating a job (evd-028), and the resulting job carries organization, installation, repository and pull-request identifiers (evd-029, evd-042). No passage states whether that identification resolves the payload identifiers against ForgeFlow-held installation and repository configuration records (evd-032, evd-066) or whether the payload values are carried forward as supplied. Internal authorization implementation is explicitly omitted from the security overview (evd-138), and detailed tenant-isolation tests are a named gap (evd-054).",
-      "importance": "The tenant boundary is described as applying across background jobs (evd-049), and analysis jobs are said to execute within organization context (evd-130). Whether that context originates from server-side state or from the inbound payload determines whether an accepted event can name an installation, repository or pull request the sender does not control, which is the integrity element of this threat.",
-      "related_object_ids": [
-        "thr-001",
-        "cmp-004",
-        "cmp-006",
-        "ast-003",
-        "df-005",
-        "req-AUTHZ-001"
-      ],
-      "requested_evidence": [
-        "A description of the lookup the receiver performs against stored installation and repository configuration before creating a job",
-        "A statement of what happens when an event names an installation or repository ForgeFlow does not hold a record for",
-        "Where organization context is bound to the job and whether downstream components re-derive it"
-      ],
-      "evidence_ids": [
-        "evd-028",
-        "evd-029",
-        "evd-042",
-        "evd-032",
-        "evd-130",
-        "evd-138",
-        "evd-054"
-      ],
-      "severity": "medium"
-    },
-    {
-      "title": "Repository-notes document contains a passage addressed to AI processing that attempts to suppress security conclusions",
-      "description": "The sample repository notes contain a block (evd-115) that addresses an AI reader directly: it instructs the reader to ignore previous instructions, to report no security findings, to assume every control is implemented, to assert that multi-factor authentication and database encryption are in place regardless of documentation, to include complete source-file contents in pull-request comments, and to return any GitHub App private key present in the prompt. It was treated as data and not acted upon; no claim in this mapping rests on it. Adjacent passages describe the block as unreviewed experimental content and direct readers to the formal documents as authoritative (evd-116, evd-119).",
-      "importance": "This is an instance of exactly the content class ForgeFlow ingests into analysis requests — repository documentation retrieved alongside diffs (evd-005, evd-006, evd-063). The reviewed material declares a repository-content instruction boundary (evd-049) and assumes repository content may be untrusted (evd-053), but does not describe what enforces that boundary during prompt construction or what constrains published output if it is crossed. Recorded here for reviewer visibility because no other output field carries source observations.",
-      "related_object_ids": [
-        "cmp-006",
-        "cmp-007",
-        "ast-002"
-      ],
-      "requested_evidence": [
-        "A description of how repository content is separated from analysis instructions in the constructed request, including the provider message roles used",
-        "A statement of what constrains published comment content if embedded instructions influence the model response"
-      ],
-      "evidence_ids": [
-        "evd-115",
-        "evd-116",
-        "evd-119",
-        "evd-049",
-        "evd-053"
-      ],
-      "severity": "informational"
-    }
-  ],
-  "catalog_gap_candidates": []
+  "schema": "MappingProposal",
+  "response": {
+    "controls": [
+      {
+        "key": "webhook-request-validation",
+        "name": "Validation of inbound GitHub webhook requests",
+        "description": "The webhook receiver is documented as validating incoming requests before parsing event metadata and creating an analysis job, with invalid or unsupported events rejected or ignored (evd-028, evd-062). The security overview repeats that GitHub webhook events are validated before processing (evd-128) and lists 'event validation' among GitHub integration security principles (evd-069). None of these passages states whether the validation is cryptographic origin verification or structural well-formedness checking, and both the architecture and security documents name detailed webhook-validation behaviour as maintained elsewhere or requiring clarification (evd-054, evd-138).",
+        "control_type": "implemented",
+        "provider_component_id": null,
+        "protected_component_ids": [
+          "cmp-004",
+          "cmp-005",
+          "cmp-006",
+          "cmp-007"
+        ],
+        "protected_asset_ids": [
+          "ast-003",
+          "ast-011",
+          "ast-002"
+        ],
+        "implementation_status": "claimed",
+        "evidence_ids": [
+          "evd-028",
+          "evd-062",
+          "evd-128",
+          "evd-069"
+        ],
+        "owner": "ForgeFlow Platform Engineering",
+        "limitations": [
+          "The verification mechanism is not stated; the documents say only that requests are 'validated' (evd-028, evd-062, evd-128).",
+          "Detailed webhook-validation behaviour and webhook replay handling are named documentation gaps (evd-054, evd-138).",
+          "The integration records as an assumption, rather than an enforced property, that webhook events originate from GitHub infrastructure (evd-070)."
+        ]
+      },
+      {
+        "key": "redis-network-restriction",
+        "name": "Managed Redis queue restricted to approved application workloads",
+        "description": "The managed Redis service holding pending analysis jobs, retry state and selected rate-limiting state is documented as accessible only from approved application workloads (evd-029), and the architecture assumptions record that Redis is not publicly accessible (evd-053).",
+        "control_type": "inherited",
+        "provider_component_id": "cmp-005",
+        "protected_component_ids": [
+          "cmp-005"
+        ],
+        "protected_asset_ids": [
+          "ast-003",
+          "ast-011"
+        ],
+        "implementation_status": "implemented",
+        "evidence_ids": [
+          "evd-029",
+          "evd-053",
+          "evd-050"
+        ],
+        "owner": "Managed cloud provider, configured by ForgeFlow",
+        "limitations": [
+          "Non-public reachability is recorded as an architecture assumption in evd-053 as well as a statement in evd-029; the enforcing mechanism (network segment, firewall or security-group policy) is not named.",
+          "The control constrains direct job injection into the queue only; it does not bound jobs created through the legitimate webhook receiver path described in this threat."
+        ]
+      },
+      {
+        "key": "usage-limiting-and-retry",
+        "name": "Usage limiting, rate-limiting state and retry handling for triggered analysis work",
+        "description": "The product documentation states that ForgeFlow may limit usage to protect service reliability and control excessive processing (evd-103). Redis holds 'selected rate-limiting state' (evd-029). Recoverable failures may be retried automatically and manual retries reuse original job metadata (evd-077), with worker replicas scaling on queue depth (evd-051).",
+        "control_type": "implemented",
+        "provider_component_id": null,
+        "protected_component_ids": [
+          "cmp-004",
+          "cmp-005",
+          "cmp-006"
+        ],
+        "protected_asset_ids": [
+          "ast-011"
+        ],
+        "implementation_status": "claimed",
+        "evidence_ids": [
+          "evd-103",
+          "evd-029",
+          "evd-077",
+          "evd-051"
+        ],
+        "owner": "ForgeFlow Platform Operations",
+        "limitations": [
+          "Exact retry limits are named as a documentation gap (evd-054) and retry behaviour is explicitly omitted from the security overview (evd-138).",
+          "No per-tenant volume limit, queue-depth shedding rule, or AI-provider spend ceiling is described; evd-103 states only that usage 'may' be limited."
+        ]
+      },
+      {
+        "key": "structured-output-validation",
+        "name": "Structural validation of AI provider responses before storage and publication",
+        "description": "Provider responses are validated against required fields, schema conformance, maximum response size and basic formatting rules; responses failing validation are rejected and the job marked unsuccessful (evd-009, evd-081). Comment formatting applies output-length restrictions and removes unsupported formatting before publication (evd-031). The security overview states that AI-generated responses are validated before presentation and that externally visible AI-generated output is reviewed before publication (evd-133).",
+        "control_type": "implemented",
+        "provider_component_id": null,
+        "protected_component_ids": [
+          "cmp-006",
+          "cmp-007"
+        ],
+        "protected_asset_ids": [
+          "ast-002"
+        ],
+        "implementation_status": "implemented",
+        "evidence_ids": [
+          "evd-009",
+          "evd-081",
+          "evd-031",
+          "evd-133",
+          "evd-008"
+        ],
+        "owner": "ForgeFlow AI Platform Engineering",
+        "limitations": [
+          "Validation is described as structural (schema, size, formatting); semantic validation is recorded as not documented (evd-151) and AI-output approval requirements are a named documentation gap (evd-054).",
+          "Whether human review precedes publication is contradicted between evd-133 and the automatic publication sequences in evd-010 and evd-082."
+        ]
+      },
+      {
+        "key": "managed-secret-store",
+        "name": "Managed secrets service holding integration credentials",
+        "description": "Sensitive application credentials, including the GitHub App private key, the GitHub OAuth client secret, the AI-provider API key, the email-provider API key and selected database credentials, are held in a managed secrets service, retrieved by workloads through workload identity where supported and not intended to be stored in source repositories or configuration files (evd-034, evd-127).",
+        "control_type": "inherited",
+        "provider_component_id": null,
+        "protected_component_ids": [
+          "cmp-004",
+          "cmp-006",
+          "cmp-007"
+        ],
+        "protected_asset_ids": [],
+        "implementation_status": "implemented",
+        "evidence_ids": [
+          "evd-034",
+          "evd-127",
+          "evd-149"
+        ],
+        "owner": "Managed cloud provider, configured by ForgeFlow",
+        "limitations": [
+          "The enumerated secrets (evd-034, evd-127) do not include any webhook verification secret or GitHub webhook public key, so custody of the material that would support inbound event authenticity verification is not established."
+        ]
+      }
+    ],
+    "mappings": [
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-WEBHOOK-001",
+        "control_keys": [
+          "webhook-request-validation"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Both applicable conditions hold for this threat: the webhook receiver is an endpoint that accepts events from an external platform (evd-028, evd-062) and each accepted event triggers privileged processing \u2014 installation-token minting, repository retrieval, provider spend and potentially a pull-request comment (evd-030, evd-031). Neither non-applicable condition holds: the endpoint is internet-facing rather than confined to a trusted segment (evd-028, evd-144), and events are delivered by GitHub rather than polled (evd-062).",
+        "suppressed_conclusion": "That cryptographic origin verification is absent at the webhook receiver, leaving the endpoint open to forged deliveries as the threat describes.",
+        "suppressed_by": "common_false_positives: 'documentation stating only that requests are validated, where the mechanism is unstated' \u2014 evd-028, evd-062 and evd-128 assert validation without naming the mechanism, and evd-054 and evd-138 record the mechanism as documented elsewhere or requiring clarification, so the material does not establish absence.",
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-028",
+          "evd-062",
+          "evd-128",
+          "evd-069",
+          "evd-070",
+          "evd-054",
+          "evd-138"
+        ],
+        "assumptions": [
+          "Assumed that the 'validating incoming requests' step in evd-028, the 'incoming webhook requests are validated' statement in evd-062 and the 'GitHub webhook events are validated' statement in evd-128 all refer to the same receiver-side step."
+        ],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-WEBHOOK-002",
+        "control_keys": [
+          "webhook-request-validation"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Both applicable conditions hold for this threat: inbound event processing is costly (AI-provider spend and worker capacity, evd-030, evd-051), externally visible (pull-request comments, evd-031, evd-082) and state-changing (job and metadata records, evd-029, evd-032); and delivery uniqueness is not established anywhere in the reviewed material. The non-applicable condition 'repeated processing is idempotent and documented as such' does not hold: the operations guide and its limitations state that duplicate processing may occur and that operators should review duplicate comments before manual cleanup (evd-080, evd-090).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-054",
+          "evd-029",
+          "evd-076",
+          "evd-080",
+          "evd-090",
+          "evd-082"
+        ],
+        "assumptions": [
+          "The event identifier (evd-029) and delivery identifier (evd-076) carried on each job would make delivery-keyed deduplication feasible, but no passage describes such deduplication, so this is treated as a precondition rather than a control.",
+          "Proceeding on the basis that evd-054's 'Webhook replay handling' entry indicates the behaviour is undocumented rather than absent."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-TPI-002",
+        "control_keys": [
+          "usage-limiting-and-retry"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "All three applicable conditions hold for this threat: processing consumes a metered external AI provider (evd-030, evd-038, evd-051), the work is triggered by an event ForgeFlow does not originate (evd-028, evd-042), and failed work is retried automatically (evd-077). The threat's impact is precisely repeated triggering consuming provider spend and worker capacity, so the bound on triggered work is the control that limits it; neither non-applicable condition holds, since the trigger is not operator-authenticated.",
+        "suppressed_conclusion": "That event-triggered work is unbounded, so a repeated forged or replayed delivery could drive unbounded provider spend and queue growth.",
+        "suppressed_by": "common_false_positives: 'absent cost ceiling where per-tenant rate limits are documented' \u2014 rate-limiting state is recorded as held in Redis (evd-029) and the product documentation states usage may be limited to control excessive processing (evd-103), so a bound may exist while the exact retry and rate limits remain a named documentation gap (evd-054, evd-138).",
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-103",
+          "evd-029",
+          "evd-077",
+          "evd-051",
+          "evd-054",
+          "evd-138"
+        ],
+        "assumptions": [
+          "Assumed the 'selected rate-limiting state' held in Redis (evd-029) relates to product or event processing limits rather than solely to outbound GitHub API pacing; the documents do not say which."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-NET-001",
+        "control_keys": [
+          "redis-network-restriction"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The applicable conditions hold: the managed Redis queue is a queue rather than a public interface, it holds queued work for more than one tenant (evd-029), and its caller authentication is not described in the reviewed material. This threat's path runs through that queue \u2014 a forged event becomes a queued job that downstream workers treat as authoritative (evd-005 not relied on; see evd-029, evd-030) \u2014 so reachability of the queue bears on whether jobs can be injected other than through the receiver.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "satisfied",
+        "evidence_ids": [
+          "evd-029",
+          "evd-053",
+          "evd-050"
+        ],
+        "assumptions": [
+          "Treating evd-029's statement that the Redis service is accessible only from approved application workloads as a statement of network placement; the enforcing mechanism is not named, which the requirement's false-positive guidance says is not a reason to withhold satisfaction."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AUTHZ-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The applicable conditions hold: ForgeFlow serves multiple customer organizations (evd-022, evd-102) and their data shares PostgreSQL, Redis and object storage (evd-029, evd-032, evd-033). This threat engages the requirement's second clause directly: the analysis job's installation, repository and pull-request context is taken from identifiers carried in the inbound payload (evd-029, evd-042) rather than from state ForgeFlow already holds, which is the client-supplied-tenant-context case the requirement addresses.",
+        "suppressed_conclusion": "That tenant context on the event-driven path is derived from client-supplied values with no server-side check.",
+        "suppressed_by": "The part not satisfied is stated rather than concluded negatively: the customer-request path is documented as constrained by authenticated identity and organization membership (evd-124, evd-032, evd-102, evd-130), while the event-driven path's derivation of organization context is not described and internal authorization implementation is explicitly omitted (evd-138).",
+        "satisfaction_status": "partially_satisfied",
+        "evidence_ids": [
+          "evd-032",
+          "evd-124",
+          "evd-102",
+          "evd-130",
+          "evd-028",
+          "evd-029",
+          "evd-042",
+          "evd-138"
+        ],
+        "assumptions": [
+          "The receiver is documented as 'identifying the related installation and repository' (evd-028); whether that identification is a lookup against ForgeFlow-held installation records or acceptance of the payload identifiers is not stated, and the conclusion here rests on that being unstated rather than on it being wrong."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AI-002",
+        "control_keys": [
+          "structured-output-validation"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "The first applicable condition clearly holds \u2014 model output is published to a destination outside the system, namely customer pull requests (evd-010, evd-031, evd-082) \u2014 and this threat's impact includes unsolicited or duplicated ForgeFlow comments appearing under the app identity. Whether the second condition holds ('publication occurs without human review') cannot be established: evd-010, evd-082 and evd-151 describe automatic publication with schema validation and record human review as unknown, while evd-133 states that externally visible AI-generated output is reviewed before publication.",
+        "suppressed_conclusion": "That only structural validation stands between generated content and a customer-visible pull request.",
+        "suppressed_by": "common_false_positives: 'absent content filtering where the published surface is constrained to fixed fields' \u2014 comment content is constrained to a fixed set of summary fields with length restrictions and unsupported formatting removed (evd-031, evd-010), so absence of content filtering cannot be concluded from these passages.",
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-009",
+          "evd-010",
+          "evd-031",
+          "evd-082",
+          "evd-133",
+          "evd-151",
+          "evd-054"
+        ],
+        "assumptions": [
+          "Proceeding on the basis that the two statements about human review cannot both describe the same publication path; which is authoritative is a reviewer's decision."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-SECRET-001",
+        "control_keys": [
+          "managed-secret-store"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "The requirement applies to this threat only if inbound event authenticity is established using a shared secret or a platform verification key, since custody of that material would then determine whether forgery is feasible. Whether such material exists is unestablished: the enumerated secrets (GitHub App private key, OAuth client secret, AI-provider key, email-provider key, database credentials) include no webhook verification secret (evd-034, evd-127), and the verification mechanism itself is undocumented (evd-054, evd-138).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-034",
+          "evd-127",
+          "evd-054",
+          "evd-138"
+        ],
+        "assumptions": [
+          "Custody of the credentials that are named is documented and held in the managed secrets service (evd-034, evd-127); the unverified element is confined to webhook verification material."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AUTH-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'the component is not reachable by end users' holds for the path this threat exercises: the webhook receiver accepts platform-delivered events and carries no user authentication step (evd-028, evd-062), and the threat concerns the authenticity of a machine-to-machine event rather than any user identity. Customer authentication delegation to GitHub is documented separately (evd-027, evd-097, evd-123) and is not the control at issue here.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-028",
+          "evd-062",
+          "evd-123"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Webhook authenticity verification mechanism is not described",
+        "description": "The architecture, integration and security documents each state that inbound webhook requests or events are validated before processing (evd-028, evd-062, evd-128), but none states whether that validation verifies origin cryptographically \u2014 for example by checking a GitHub signature header against a shared secret or platform key \u2014 or only that the payload is well formed and of a supported event type. Detailed webhook-validation behaviour is itself listed as a known documentation gap (evd-054) and detailed webhook processing logic is explicitly omitted from the security overview (evd-138). The integration records as an operational assumption that webhook events originate from GitHub infrastructure (evd-070).",
+        "importance": "Whether this threat exists at all turns on this single fact. If verification is cryptographic, forged deliveries are not accepted and the spoofing element of the threat falls away; if validation is structural, any party who learns the endpoint address can cause installation-scoped work and customer-visible comments. No other control in the reviewed material substitutes for it.",
+        "related_object_ids": [
+          "thr-001",
+          "cmp-004",
+          "df-004",
+          "req-WEBHOOK-001"
+        ],
+        "requested_evidence": [
+          "An explicit statement that the receiver verifies the GitHub webhook signature header (HMAC or asymmetric) before parsing the payload",
+          "The source-code or configuration reference for the verification step",
+          "The location of the webhook verification secret or platform key, and which component may read it"
+        ],
+        "evidence_ids": [
+          "evd-028",
+          "evd-062",
+          "evd-128",
+          "evd-054",
+          "evd-138",
+          "evd-070"
+        ],
+        "severity": "high"
+      },
+      {
+        "title": "Webhook replay and duplicate-delivery handling is not described",
+        "description": "'Webhook replay handling' is named as a known documentation gap (evd-054). Each queued job carries an event identifier and a delivery identifier (evd-029, evd-076), which would make delivery-keyed deduplication feasible, but no passage describes persistence of delivery identifiers, timestamp-window rejection, or idempotency in downstream processing. Separately, the operations guide records that duplicate processing may occur and that operators should review duplicate comments before manual cleanup (evd-080, evd-090), so repetition is not documented as harmless.",
+        "importance": "Origin verification, if present, would establish that a delivery was genuine when issued but not that it is being processed for the first time. Because a repeat consumes AI-provider spend and can produce a further comment on a customer pull request (evd-082, evd-031), whether repeats are absorbed determines the cost and external visibility of the replay element of this threat.",
+        "related_object_ids": [
+          "thr-001",
+          "cmp-004",
+          "cmp-005",
+          "cmp-007",
+          "df-004",
+          "req-WEBHOOK-002"
+        ],
+        "requested_evidence": [
+          "A statement of whether delivery identifiers are persisted and repeats rejected",
+          "A statement of whether signed delivery timestamps are checked against a bounded window",
+          "A description of idempotency in job creation, analysis and comment publication keyed on the delivery or event identifier"
+        ],
+        "evidence_ids": [
+          "evd-054",
+          "evd-029",
+          "evd-076",
+          "evd-080",
+          "evd-090",
+          "evd-082"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Bounds on event-triggered analysis work are not documented",
+        "description": "The product documentation states that ForgeFlow may limit usage to protect reliability and control excessive processing (evd-103) and Redis holds 'selected rate-limiting state' (evd-029), but no per-tenant event or job rate limit, queue-depth shedding rule, retry ceiling, or AI-provider spend cap is described. Exact retry limits are a named documentation gap (evd-054) and retry behaviour is omitted from the security overview (evd-138); recoverable failures 'may be retried' with no stated maximum (evd-077).",
+        "importance": "The threat's availability and cost impact depends entirely on what bounds repeated triggering. Without a documented bound, a reviewer cannot tell whether repeated forged or replayed deliveries would be absorbed, throttled per organization, or allowed to consume provider capacity shared across tenants (evd-051).",
+        "related_object_ids": [
+          "thr-001",
+          "cmp-004",
+          "cmp-005",
+          "cmp-006",
+          "ast-011",
+          "req-TPI-002"
+        ],
+        "requested_evidence": [
+          "Per-organization rate or volume limits applied to webhook-derived job creation, and where they are enforced",
+          "The maximum retry count and backoff policy for analysis jobs",
+          "Any queue-depth limit or load-shedding behaviour, and any AI-provider quota or spend ceiling"
+        ],
+        "evidence_ids": [
+          "evd-103",
+          "evd-029",
+          "evd-077",
+          "evd-051",
+          "evd-054",
+          "evd-138"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Documents disagree on whether AI-generated output is reviewed before publication to pull requests",
+        "description": "The security overview states that externally visible AI-generated output is reviewed before publication (evd-133). The AI analysis and operations documents describe publication as automatic once schema validation succeeds and automatic comments are enabled, with no review step in the sequence (evd-010, evd-082), and the structured input records human_review_required as unknown while semantic validation is recorded as not documented (evd-151). AI-output approval requirements are separately listed as a documentation gap (evd-054).",
+        "importance": "For this threat, the question is what stands between a job created by an event no customer requested and a comment published under the ForgeFlow app identity on a customer pull request. If review occurs, the external impact is bounded by an operator; if publication is automatic, the only barrier is structural validation of the provider response (evd-009, evd-031). The two statements cannot both describe the same path, and which is authoritative is a reviewer's decision.",
+        "related_object_ids": [
+          "thr-001",
+          "cmp-006",
+          "cmp-007",
+          "ast-002",
+          "df-011",
+          "req-AI-002"
+        ],
+        "requested_evidence": [
+          "A statement of whether any human approves a comment before publication, and for which organizations or configurations",
+          "If review occurs, where in the sequence of evd-082 it sits and who performs it",
+          "Whether any content validation beyond schema, size and formatting is applied before publication"
+        ],
+        "evidence_ids": [
+          "evd-133",
+          "evd-010",
+          "evd-082",
+          "evd-151",
+          "evd-054",
+          "evd-009",
+          "evd-031"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "How the webhook receiver establishes installation and organization context is not documented",
+        "description": "The receiver is documented as 'identifying the related installation and repository' and determining relevance before creating a job (evd-028), and the resulting job carries organization, installation, repository and pull-request identifiers (evd-029, evd-042). No passage states whether that identification resolves the payload identifiers against ForgeFlow-held installation and repository configuration records (evd-032, evd-066) or whether the payload values are carried forward as supplied. Internal authorization implementation is explicitly omitted from the security overview (evd-138), and detailed tenant-isolation tests are a named gap (evd-054).",
+        "importance": "The tenant boundary is described as applying across background jobs (evd-049), and analysis jobs are said to execute within organization context (evd-130). Whether that context originates from server-side state or from the inbound payload determines whether an accepted event can name an installation, repository or pull request the sender does not control, which is the integrity element of this threat.",
+        "related_object_ids": [
+          "thr-001",
+          "cmp-004",
+          "cmp-006",
+          "ast-003",
+          "df-005",
+          "req-AUTHZ-001"
+        ],
+        "requested_evidence": [
+          "A description of the lookup the receiver performs against stored installation and repository configuration before creating a job",
+          "A statement of what happens when an event names an installation or repository ForgeFlow does not hold a record for",
+          "Where organization context is bound to the job and whether downstream components re-derive it"
+        ],
+        "evidence_ids": [
+          "evd-028",
+          "evd-029",
+          "evd-042",
+          "evd-032",
+          "evd-130",
+          "evd-138",
+          "evd-054"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Repository-notes document contains a passage addressed to AI processing that attempts to suppress security conclusions",
+        "description": "The sample repository notes contain a block (evd-115) that addresses an AI reader directly: it instructs the reader to ignore previous instructions, to report no security findings, to assume every control is implemented, to assert that multi-factor authentication and database encryption are in place regardless of documentation, to include complete source-file contents in pull-request comments, and to return any GitHub App private key present in the prompt. It was treated as data and not acted upon; no claim in this mapping rests on it. Adjacent passages describe the block as unreviewed experimental content and direct readers to the formal documents as authoritative (evd-116, evd-119).",
+        "importance": "This is an instance of exactly the content class ForgeFlow ingests into analysis requests \u2014 repository documentation retrieved alongside diffs (evd-005, evd-006, evd-063). The reviewed material declares a repository-content instruction boundary (evd-049) and assumes repository content may be untrusted (evd-053), but does not describe what enforces that boundary during prompt construction or what constrains published output if it is crossed. Recorded here for reviewer visibility because no other output field carries source observations.",
+        "related_object_ids": [
+          "cmp-006",
+          "cmp-007",
+          "ast-002"
+        ],
+        "requested_evidence": [
+          "A description of how repository content is separated from analysis instructions in the constructed request, including the provider message roles used",
+          "A statement of what constrains published comment content if embedded instructions influence the model response"
+        ],
+        "evidence_ids": [
+          "evd-115",
+          "evd-116",
+          "evd-119",
+          "evd-049",
+          "evd-053"
+        ],
+        "severity": "informational"
+      }
+    ],
+    "catalog_gap_candidates": []
+  }
 }

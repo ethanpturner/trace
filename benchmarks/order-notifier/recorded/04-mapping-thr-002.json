@@ -1,23 +1,26 @@
 {
-  "controls": [],
-  "mappings": [
-    {
-      "threat_id": "thr-002",
-      "requirement_id": "req-WEBHOOK-002",
-      "control_keys": [],
-      "existing_control_ids": [],
-      "applicability_status": "applicable",
-      "applicability_reason": "Callbacks drive processing and posting, so replay handling applies; nothing documents the work as idempotent, and the endpoint accepts state-changing events.",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "unverified",
-      "evidence_ids": [
-        "evd-005",
-        "evd-006"
-      ],
-      "assumptions": [],
-      "confidence": "low"
-    }
-  ],
-  "documentation_gaps": []
+  "schema": "MappingProposal",
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-WEBHOOK-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Callbacks drive processing and posting, so replay handling applies; nothing documents the work as idempotent, and the endpoint accepts state-changing events.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-005",
+          "evd-006"
+        ],
+        "assumptions": [],
+        "confidence": "low"
+      }
+    ],
+    "documentation_gaps": []
+  }
 }

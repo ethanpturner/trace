@@ -42,6 +42,33 @@ def test_the_anthropic_profiles_build_the_adapter() -> None:
         assert isinstance(model, AnthropicModel)
 
 
+def test_build_model_keeps_an_ad_hoc_profile_rather_than_re_resolving_its_name() -> None:
+    """`build_model` used to pass `profile.name` on the plain Anthropic path, re-resolving it from
+    the registry — so an ad-hoc profile (one whose name is not registered) raised, and a modified
+    one silently reverted to the registry's version. The object must be carried through."""
+    from dataclasses import replace
+
+    from trace_ai.infrastructure.model.anthropic_adapter import AnthropicModel
+
+    ad_hoc = replace(resolve_profile("primary-development"), name="ad-hoc-not-in-the-registry")
+    model = build_model(ad_hoc)
+    assert isinstance(model, AnthropicModel)
+    assert model.profile.name == "ad-hoc-not-in-the-registry", "the profile was re-resolved by name"
+
+
+def test_build_model_preserves_a_modified_creativity() -> None:
+    """A `with_creativity(...)` profile keeps the same name; re-resolving it by name would revert the
+    creativity to whatever the registry holds under that name, silently."""
+    from trace_ai.infrastructure.model.anthropic_adapter import AnthropicModel
+    from trace_ai.infrastructure.model.seam import Creativity
+
+    base = resolve_profile("primary-development")
+    other = Creativity.MODERATE if base.settings.creativity is Creativity.LOW else Creativity.LOW
+    model = build_model(base.with_creativity(other))
+    assert isinstance(model, AnthropicModel)
+    assert model.profile.settings.creativity is other
+
+
 def test_every_declared_profile_builds() -> None:
     """A profile naming a provider nothing implements would fail at the first model call, in a run
     that has already spent time on ingestion."""

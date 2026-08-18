@@ -25,12 +25,14 @@ would not surface until an evidence hash failed to verify against a document nob
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Final
 
 from trace_ai.config import PROJECT_ROOT
 from trace_ai.domain.hashing import content_hash
 from trace_ai.domain.identifiers import parse_id
+from trace_ai.infrastructure.filesystem.permissions import mkdir_owner_only
 
 __all__ = ["AREAS", "DEFAULT_ROOT", "ArtifactStore", "ArtifactStoreError", "UnsafeFilenameError"]
 
@@ -42,10 +44,6 @@ AREAS: Final = ("sources", "normalized", "outputs", "traces", "evaluation")
 # needs to relocate it, tests pass a root directly, and an environment variable whose empty value
 # would silently resolve to the current working directory is a worse default than a fixed path.
 DEFAULT_ROOT: Final = PROJECT_ROOT / "data"
-
-# Owner-only. The store holds copies of material under review, which may be confidential to the
-# organization that supplied it, on a machine DEC-004 assumes is shared with nothing.
-_DIRECTORY_MODE: Final = 0o700
 
 
 class ArtifactStoreError(RuntimeError):
@@ -92,13 +90,19 @@ class ArtifactStore:
         return self.root / "assessments" / self.assessment_id
 
     def area(self, name: str) -> Path:
-        """The path of one subdirectory, created if it does not exist."""
+        """The path of one subdirectory, created if it does not exist.
+
+        Every ancestor is created owner-only, not just the leaf. `mkdir(parents=True, mode=...)`
+        applies the mode to the leaf and leaves `data/`, `data/assessments/`, and the assessment
+        root at the umask default -- world-readable directories above the confidential material the
+        area holds.
+        """
         if name not in AREAS:
             raise ArtifactStoreError(
                 f"{name!r} is not one of the areas section 5.16 lists: {AREAS}"
             )
         path = self.assessment_root / name
-        path.mkdir(parents=True, exist_ok=True, mode=_DIRECTORY_MODE)
+        mkdir_owner_only(path)
         return path
 
     def contains(self, path: Path) -> bool:
@@ -142,18 +146,37 @@ class ArtifactStore:
         Re-storing identical bytes is idempotent, which is what a re-run does. Storing *different*
         bytes under a name already used would silently replace material under review while every
         `EvidenceReference` into the old content kept its now-unverifiable hash, so it raises.
+
+        The write is atomic and the claim is exclusive: the bytes go to a sibling temporary and are
+        then hard-linked into place, which fails if the name already exists. A crash mid-write
+        leaves only the temporary (the target never half-appears, so it never fails its own hash),
+        and the link -- rather than a rename -- closes the gap between "does it exist?" and "write
+        it" in which two callers could each decide the name was free.
         """
         target = self._safe_path(area, filename)
         if target.exists():
-            existing = target.read_bytes()
-            if content_hash(existing) != content_hash(content):
-                raise ArtifactStoreError(
-                    f"{filename!r} is already stored in {area} for {self.assessment_id} with "
-                    f"different content. Storing over it would leave every evidence reference "
-                    f"into the original pointing at bytes that no longer exist."
-                )
-            return target
-        target.write_bytes(content)
+            return self._reconcile_existing(target, area, filename, content)
+        tmp = target.with_name(f".{target.name}.{os.getpid()}.tmp")
+        try:
+            tmp.write_bytes(content)
+            try:
+                os.link(tmp, target)
+            except FileExistsError:
+                # Another writer claimed the name between the exists() check and here.
+                return self._reconcile_existing(target, area, filename, content)
+        finally:
+            tmp.unlink(missing_ok=True)
+        return target
+
+    def _reconcile_existing(self, target: Path, area: str, filename: str, content: bytes) -> Path:
+        """The already-stored branch: identical bytes are idempotent, different bytes are refused."""
+        existing = target.read_bytes()
+        if content_hash(existing) != content_hash(content):
+            raise ArtifactStoreError(
+                f"{filename!r} is already stored in {area} for {self.assessment_id} with "
+                f"different content. Storing over it would leave every evidence reference "
+                f"into the original pointing at bytes that no longer exist."
+            )
         return target
 
     def store_source(self, filename: str, content: bytes) -> Path:

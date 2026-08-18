@@ -24,11 +24,14 @@ from dataclasses import asdict, dataclass
 from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel
+from pydantic import ValidationError as PydanticValidationError
 
 from trace_ai.domain.hashing import content_hash
 from trace_ai.infrastructure.model.seam import (
+    FailureReason,
     GenerationSettings,
     ModelCapability,
+    ModelFailure,
     ModelOutcome,
     ModelSuccess,
     ModelUsage,
@@ -59,6 +62,15 @@ class CacheKey:
     max_output_tokens: int
     requirements_catalog_version: str | None = None
     workflow_version: str | None = None
+    system_hash: str | None = None
+    """The system prompt, hashed. For every agent this is where the trusted region lives -- the
+    architecture, the evidence manifest, the reviewer's feedback -- so two calls with an identical
+    user prompt but different systems are different calls, and a key that omitted it would serve one
+    architecture's answer for another. Optional so a call with no system prompt keys cleanly."""
+
+    provider: str = ""
+    """The provider behind the model. The same model name can be served by two providers (the fake
+    and a live adapter), and a recording made against one is not an answer for the other."""
 
     def digest(self) -> str:
         """The key as one `sha256:` string: stable, sortable, and safe as a file name."""
@@ -73,13 +85,15 @@ def cache_key(
     schema: type[BaseModel],
     profile: ModelProfile,
     settings: GenerationSettings | None = None,
+    system: str | None = None,
     requirements_catalog_version: str | None = None,
     workflow_version: str | None = None,
 ) -> CacheKey:
     """Build a key from the things a call is made of.
 
     `settings` defaults to the profile's own, which is the normal case: a node that did not override
-    the run's generation settings gets the run's key.
+    the run's generation settings gets the run's key. `system` is the trusted region; it is hashed
+    into the key because it changes the answer as much as the user prompt does.
     """
     resolved = settings if settings is not None else profile.settings
     return CacheKey(
@@ -91,6 +105,8 @@ def cache_key(
         max_output_tokens=resolved.max_output_tokens,
         requirements_catalog_version=requirements_catalog_version,
         workflow_version=workflow_version,
+        system_hash=None if system is None else content_hash(system.encode("utf-8")),
+        provider=profile.provider,
     )
 
 
@@ -175,7 +191,12 @@ class CachingModel:
         schema: type[T],
         settings: GenerationSettings | None = None,
         system: str | None = None,
+        cache_prefix: str | None = None,
+        system_cache_prefix: str | None = None,
     ) -> ModelOutcome[T]:
+        # The cache hints are provider-side and do not change the prompt or system text, so they
+        # are not part of the cache key; both are forwarded to the inner adapter for a live call
+        # (WS10, DEC-105).
         resolved = settings if settings is not None else self._profile.settings
         key = cache_key(
             prompt=prompt,
@@ -183,18 +204,39 @@ class CachingModel:
             schema=schema,
             profile=self._profile,
             settings=resolved,
+            system=system,
             requirements_catalog_version=self._requirements_catalog_version,
             workflow_version=self._workflow_version,
         )
         recorded = self._cache.get(key)
         if recorded is not None:
+            try:
+                value = schema.model_validate(recorded)
+            except PydanticValidationError as drift:
+                # A recording that no longer fits the schema is drift, not an answer. Returning a
+                # ModelFailure keeps the seam's no-exceptions contract (seam.py) -- a validation
+                # error raised here would escape the orchestrator's attempt loop, which catches only
+                # AttemptFailedError, leaving a node started and never finished. It is classified
+                # exactly as a live schema failure, so recorded-response drift and provider drift
+                # look the same to the caller.
+                return ModelFailure(
+                    reason=FailureReason.SCHEMA_VALIDATION_FAILURE,
+                    message=f"the recorded response no longer fits {schema.__name__}: {drift}",
+                    usage=ModelUsage(model=self._profile.model),
+                    raw_output=json.dumps(recorded),
+                )
             return ModelSuccess(
-                value=schema.model_validate(recorded),
+                value=value,
                 usage=ModelUsage(model=self._profile.model),
                 metadata={"cache": "hit"},
             )
         outcome = self._inner.generate(
-            prompt=prompt, schema=schema, settings=resolved, system=system
+            prompt=prompt,
+            schema=schema,
+            settings=resolved,
+            system=system,
+            cache_prefix=cache_prefix,
+            system_cache_prefix=system_cache_prefix,
         )
         if isinstance(outcome, ModelSuccess):
             self._cache.put(key, outcome.value.model_dump(mode="json"))

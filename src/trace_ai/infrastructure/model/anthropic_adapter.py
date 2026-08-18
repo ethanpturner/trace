@@ -36,7 +36,6 @@ would break a bare `uv run pytest` on a machine with no `.env`.
 
 from __future__ import annotations
 
-import re
 import time
 from typing import TYPE_CHECKING, Any, Final
 
@@ -44,6 +43,11 @@ import anthropic
 import pydantic
 
 from trace_ai.config import Settings, get_settings
+from trace_ai.infrastructure.model.adapter_support import (
+    classify_http_error,
+    error_locations,
+    json_candidate,
+)
 from trace_ai.infrastructure.model.profiles import ModelProfile, resolve_profile
 from trace_ai.infrastructure.model.seam import (
     Creativity,
@@ -140,6 +144,8 @@ class AnthropicModel:
         schema: type[T],
         settings: GenerationSettings | None = None,
         system: str | None = None,
+        cache_prefix: str | None = None,
+        system_cache_prefix: str | None = None,
     ) -> ModelOutcome[T]:
         """One attempt at a validated instance of `schema`.
 
@@ -171,7 +177,7 @@ class AnthropicModel:
         request: dict[str, Any] = {
             "model": self._profile.model,
             "max_tokens": resolved.max_output_tokens,
-            "messages": [{"role": "user", "content": prompt}],
+            "messages": [{"role": "user", "content": _user_content(prompt, cache_prefix)}],
             "output_config": {
                 "effort": effort,
                 "format": {"type": "json_schema", "schema": wire_schema},
@@ -179,7 +185,7 @@ class AnthropicModel:
             "thinking": {"type": "adaptive"},
         }
         if system is not None:
-            request["system"] = system
+            request["system"] = _system_content(system, system_cache_prefix)
         schema_grammar = "enforced"
 
         try:
@@ -225,7 +231,7 @@ class AnthropicModel:
             )
 
         try:
-            parsed = schema.model_validate_json(_json_candidate(raw))
+            parsed = schema.model_validate_json(json_candidate(raw))
         except pydantic.ValidationError as invalid:
             # The validation error's full text embeds fragments of the model output, which is
             # untrusted; what the message carries instead is field locations and error types,
@@ -238,22 +244,27 @@ class AnthropicModel:
                 message=(
                     f"the response did not validate as {schema.__name__}; "
                     f"the raw output is preserved (data-model.md section 33). "
-                    f"Invalid at: {_error_locations(invalid)}"
+                    f"Invalid at: {error_locations(invalid)}"
                 ),
                 usage=usage,
                 raw_output=raw,
             )
 
+        capabilities_used = {
+            ModelCapability.EFFORT,
+            ModelCapability.ADAPTIVE_THINKING,
+            ModelCapability.STRUCTURED_OUTPUT,
+        }
+        # Reported only when the provider actually served or wrote a cache span (DEC-067): the
+        # capability the adapter declares becomes one the result records as *used*, so DEC-067's cost
+        # fields describe a caching that happened rather than one that was merely available.
+        if usage.cache_read_tokens or usage.cache_creation_tokens:
+            capabilities_used.add(ModelCapability.PROMPT_CACHING)
+
         return ModelSuccess(
             value=parsed,
             usage=usage,
-            capabilities_used=frozenset(
-                {
-                    ModelCapability.EFFORT,
-                    ModelCapability.ADAPTIVE_THINKING,
-                    ModelCapability.STRUCTURED_OUTPUT,
-                }
-            ),
+            capabilities_used=frozenset(capabilities_used),
             metadata={
                 "effort": effort,
                 "creativity": resolved.creativity.value,
@@ -277,12 +288,7 @@ class AnthropicModel:
         if isinstance(error, anthropic.RateLimitError):
             return self._failed(FailureReason.TRANSIENT_PROVIDER_FAILURE, str(error), started)
         if isinstance(error, anthropic.APIStatusError):
-            reason = (
-                FailureReason.TRANSIENT_PROVIDER_FAILURE
-                if error.status_code >= 500
-                else FailureReason.INVALID_REQUEST
-            )
-            return self._failed(reason, str(error), started)
+            return self._failed(classify_http_error(error.status_code), str(error), started)
         return self._failed(FailureReason.CONNECTION_FAILURE, str(error), started)
 
     def _failed(self, reason: FailureReason, message: str, started: float) -> ModelFailure:
@@ -323,48 +329,43 @@ class AnthropicModel:
         )
 
 
-_LOC_PART = re.compile(r"^[A-Za-z0-9_]{1,64}$")
+def _user_content(prompt: str, cache_prefix: str | None) -> str | list[dict[str, Any]]:
+    """The user message, split at `cache_prefix` so the stable span is marked cacheable (WS10).
 
-
-def _error_locations(invalid: pydantic.ValidationError, *, limit: int = 20) -> str:
-    """The failing field paths with their error types, and nothing the model wrote.
-
-    `loc` is normally a path through the application's own schema and `type` is pydantic's
-    classification — safe in a message (section 27). The exception is `extra_forbidden`, whose
-    final path element is the *invented* key, which is model-authored text: any part that does
-    not look like a schema identifier is masked rather than quoted. Capped so a wholesale-invalid
-    response cannot flood the record.
+    A prefix that is not actually a prefix of `prompt` — or absent — sends the prompt as one plain
+    block, uncached, so a stale hint degrades to no caching rather than a wrong split. The stable
+    prefix carries `cache_control`; the per-call remainder (source content, retry feedback) does not,
+    so the cache is reused across the calls and retries that share the prefix.
     """
-
-    def part_of(part: object) -> str:
-        if isinstance(part, int):
-            return str(part)
-        return part if isinstance(part, str) and _LOC_PART.match(part) else "<unnamable-key>"
-
-    errors = invalid.errors()
-    listed = "; ".join(
-        ".".join(part_of(part) for part in error["loc"]) + f" ({error['type']})"
-        for error in errors[:limit]
-    )
-    more = f" and {len(errors) - limit} more" if len(errors) > limit else ""
-    return f"{listed}{more}"
+    if not cache_prefix or not prompt.startswith(cache_prefix):
+        return prompt
+    ephemeral = {"type": "ephemeral"}
+    if cache_prefix == prompt:
+        return [{"type": "text", "text": prompt, "cache_control": ephemeral}]
+    return [
+        {"type": "text", "text": cache_prefix, "cache_control": ephemeral},
+        {"type": "text", "text": prompt[len(cache_prefix) :]},
+    ]
 
 
-def _json_candidate(raw: str) -> str:
-    """The text with a Markdown code fence stripped, when the whole response is one fence.
+def _system_content(system: str, system_cache_prefix: str | None) -> str | list[dict[str, Any]]:
+    """The system region, split at `system_cache_prefix` so its stable span is marked (DEC-105).
 
-    With the server-side grammar omitted, nothing stops a model from wrapping its JSON in
-    ```json fences. The unwrap is deliberately narrow — a single fence enclosing the entire
-    trimmed response — so it cannot mistake fenced content inside a legitimate answer for
-    packaging. The raw output preserved on a failure stays the original text.
+    The same degradation rules as `_user_content`: no hint, or a hint that is not a prefix, sends
+    the plain string. The split earns its keep exactly where the user-message marker cannot — a
+    system region that varies per call (mapping's per-threat content) sits before the user message
+    in the cacheable sequence, so marking only the user prefix never hits across calls; marking
+    the system region's own stable span (the catalog) does.
     """
-    text = raw.strip()
-    if not text.startswith("```"):
-        return raw
-    first_break = text.find("\n")
-    if first_break == -1 or not text.endswith("```"):
-        return raw
-    return text[first_break + 1 : -3].strip()
+    if not system_cache_prefix or not system.startswith(system_cache_prefix):
+        return system
+    ephemeral = {"type": "ephemeral"}
+    if system_cache_prefix == system:
+        return [{"type": "text", "text": system, "cache_control": ephemeral}]
+    return [
+        {"type": "text", "text": system_cache_prefix, "cache_control": ephemeral},
+        {"type": "text", "text": system[len(system_cache_prefix) :]},
+    ]
 
 
 def _text_of(response: Any) -> str | None:

@@ -1,24 +1,27 @@
 {
-  "controls": [],
-  "mappings": [
-    {
-      "threat_id": "thr-001",
-      "requirement_id": "req-WEBHOOK-001",
-      "control_keys": [],
-      "existing_control_ids": [],
-      "applicability_status": "applicable",
-      "applicability_reason": "The threat's subject falls squarely within this requirement's applicable conditions.",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "unmet",
-      "evidence_ids": [
-        "evd-001"
-      ],
-      "assumptions": [
-        "The requirement carries no common false positive that applies: the document affirmatively states no signature is checked while a signing mechanism exists, so this is a documented absence rather than an unstated mechanism."
-      ],
-      "confidence": "medium"
-    }
-  ],
-  "documentation_gaps": []
+  "schema": "MappingProposal",
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-WEBHOOK-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The threat's subject falls squarely within this requirement's applicable conditions.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unmet",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [
+          "The requirement carries no common false positive that applies: the document affirmatively states no signature is checked while a signing mechanism exists, so this is a documented absence rather than an unstated mechanism."
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "documentation_gaps": []
+  }
 }

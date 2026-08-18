@@ -1,129 +1,132 @@
 {
-  "system": {
-    "system_name": "Deploy Notifier",
-    "system_purpose": "post CI deploy events to chat",
-    "business_criticality": null,
-    "environment": [],
-    "deployment_model": null,
-    "data_classifications": []
-  },
-  "claims": [
-    {
-      "key": "unsigned",
-      "subject_type": "component",
-      "subject_key": "receiver",
-      "predicate": "event_authenticity",
-      "value": "processes any well-formed delivery, no signature checked",
-      "status": "documented",
-      "confidence": "high",
-      "rationale": null,
-      "evidence_ids": [
-        "evd-001"
-      ]
-    }
-  ],
-  "components": [
-    {
-      "key": "receiver",
-      "name": "Event Receiver",
-      "component_type": "service",
-      "description": null,
-      "technology": [],
-      "ownership": null,
-      "deployment_zone": null,
-      "internet_accessible": true,
-      "externally_managed": null,
-      "data_classifications": [],
-      "authentication_mechanisms": [],
-      "authorization_mechanisms": [],
-      "evidence_ids": [
-        "evd-001"
-      ]
+  "schema": "ContextExtractionProposal",
+  "response": {
+    "system": {
+      "system_name": "Deploy Notifier",
+      "system_purpose": "post CI deploy events to chat",
+      "business_criticality": null,
+      "environment": [],
+      "deployment_model": null,
+      "data_classifications": []
     },
-    {
-      "key": "notifier",
-      "name": "Chat Notifier",
-      "component_type": "service",
-      "description": null,
-      "technology": [],
-      "ownership": null,
-      "deployment_zone": null,
-      "internet_accessible": null,
-      "externally_managed": null,
-      "data_classifications": [],
-      "authentication_mechanisms": [],
-      "authorization_mechanisms": [],
-      "evidence_ids": [
-        "evd-001"
-      ]
-    }
-  ],
-  "actors": [
-    {
-      "key": "ci",
-      "name": "CI platform",
-      "actor_type": "external_service",
-      "trust_level": null,
-      "capabilities": [],
-      "authentication_method": null,
-      "evidence_ids": [
-        "evd-001"
-      ]
-    }
-  ],
-  "assets": [
-    {
-      "key": "events",
-      "name": "Deployment events",
-      "asset_type": "operational_data",
-      "description": null,
-      "confidentiality_impact": null,
-      "integrity_impact": null,
-      "availability_impact": null,
-      "data_classification": null,
-      "owner": null,
-      "component_keys": [
-        "receiver"
-      ],
-      "evidence_ids": [
-        "evd-001"
-      ]
-    }
-  ],
-  "data_flows": [
-    {
-      "key": "deliver",
-      "name": "Deploy event delivery",
-      "source_component_key": "receiver",
-      "destination_component_key": "notifier",
-      "direction": "one_way",
-      "protocol": null,
-      "data_types": [],
-      "authentication": "unknown",
-      "encryption_in_transit": "unknown",
-      "crosses_trust_boundary_keys": [],
-      "internet_exposed": null,
-      "evidence_ids": [
-        "evd-001"
-      ]
-    }
-  ],
-  "trust_boundaries": [
-    {
-      "key": "internet",
-      "name": "Public internet boundary",
-      "boundary_type": "internet_to_application",
-      "description": null,
-      "inside_component_keys": [
-        "receiver"
-      ],
-      "outside_component_keys": [],
-      "controls": [],
-      "evidence_ids": [
-        "evd-001"
-      ]
-    }
-  ],
-  "questions": [],
-  "observations": []
+    "claims": [
+      {
+        "key": "unsigned",
+        "subject_type": "component",
+        "subject_key": "receiver",
+        "predicate": "event_authenticity",
+        "value": "processes any well-formed delivery, no signature checked",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-001"
+        ]
+      }
+    ],
+    "components": [
+      {
+        "key": "receiver",
+        "name": "Event Receiver",
+        "component_type": "service",
+        "description": null,
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": null,
+        "internet_accessible": true,
+        "externally_managed": null,
+        "data_classifications": [],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-001"
+        ]
+      },
+      {
+        "key": "notifier",
+        "name": "Chat Notifier",
+        "component_type": "service",
+        "description": null,
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": null,
+        "internet_accessible": null,
+        "externally_managed": null,
+        "data_classifications": [],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-001"
+        ]
+      }
+    ],
+    "actors": [
+      {
+        "key": "ci",
+        "name": "CI platform",
+        "actor_type": "external_service",
+        "trust_level": null,
+        "capabilities": [],
+        "authentication_method": null,
+        "evidence_ids": [
+          "evd-001"
+        ]
+      }
+    ],
+    "assets": [
+      {
+        "key": "events",
+        "name": "Deployment events",
+        "asset_type": "operational_data",
+        "description": null,
+        "confidentiality_impact": null,
+        "integrity_impact": null,
+        "availability_impact": null,
+        "data_classification": null,
+        "owner": null,
+        "component_keys": [
+          "receiver"
+        ],
+        "evidence_ids": [
+          "evd-001"
+        ]
+      }
+    ],
+    "data_flows": [
+      {
+        "key": "deliver",
+        "name": "Deploy event delivery",
+        "source_component_key": "receiver",
+        "destination_component_key": "notifier",
+        "direction": "one_way",
+        "protocol": null,
+        "data_types": [],
+        "authentication": "unknown",
+        "encryption_in_transit": "unknown",
+        "crosses_trust_boundary_keys": [],
+        "internet_exposed": null,
+        "evidence_ids": [
+          "evd-001"
+        ]
+      }
+    ],
+    "trust_boundaries": [
+      {
+        "key": "internet",
+        "name": "Public internet boundary",
+        "boundary_type": "internet_to_application",
+        "description": null,
+        "inside_component_keys": [
+          "receiver"
+        ],
+        "outside_component_keys": [],
+        "controls": [],
+        "evidence_ids": [
+          "evd-001"
+        ]
+      }
+    ],
+    "questions": [],
+    "observations": []
+  }
 }

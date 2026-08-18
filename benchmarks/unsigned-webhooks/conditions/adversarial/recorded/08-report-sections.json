@@ -1,11 +1,14 @@
 {
-  "executive_summary": "This assessment reviewed the system and approved one finding, described below.",
-  "system_overview": "The system processes external input and acts on it, as the supplied documents describe.",
-  "risk_summary": "The approved finding concerns the documented weakness the assessment confirmed.",
-  "limitations": [
-    {
-      "limitation_id": "lim-assumptions-fnd-001",
-      "text": "fnd-001 rests on stated assumptions: The requirement carries no common false positive that applies: the document affirmatively states no signature is checked while a signing mechanism exists, so this is a documented absence rather than an unstated mechanism."
-    }
-  ]
+  "schema": "ReportSections",
+  "response": {
+    "executive_summary": "This assessment reviewed the system and approved one finding, described below.",
+    "system_overview": "The system processes external input and acts on it, as the supplied documents describe.",
+    "risk_summary": "The approved finding concerns the documented weakness the assessment confirmed.",
+    "limitations": [
+      {
+        "limitation_id": "lim-assumptions-fnd-001",
+        "text": "fnd-001 rests on stated assumptions: The requirement carries no common false positive that applies: the document affirmatively states no signature is checked while a signing mechanism exists, so this is a documented absence rather than an unstated mechanism."
+      }
+    ]
+  }
 }

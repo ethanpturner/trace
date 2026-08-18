@@ -25,6 +25,7 @@ import json
 from pathlib import Path
 
 import pytest
+from pydantic import ValidationError
 
 from trace_ai.cli import build_parser, run
 from trace_ai.config import PROJECT_ROOT
@@ -112,7 +113,7 @@ def test_the_person_performs_archive_and_the_sign_off_and_nothing_else(
     assert "archived" in capsys.readouterr().out
 
     offered = _subcommands("assessment")
-    assert offered == {"create", "list", "status", "candidates", "archive", "approve"}
+    assert offered == {"create", "list", "status", "candidates", "archive", "purge", "approve"}
 
 
 # ------------------------------------------------------------------------------------------
@@ -123,10 +124,13 @@ def test_the_person_performs_archive_and_the_sign_off_and_nothing_else(
 def test_reset_without_force_lists_and_removes_nothing(
     data_root: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    """`reset` is the one destructive command, so its default is a preview and a refusal."""
+    """`reset` is the one destructive command, so its default is a preview and a refusal.
+
+    A dry run is a stated refusal, not an error: it exits 3 (DEC-088) so a script can tell it apart
+    from a genuine failure."""
     identifier = created(data_root, capsys)
 
-    assert invoke(data_root, "reset") == 1
+    assert invoke(data_root, "reset") == 3
     captured = capsys.readouterr()
     assert "would remove" in captured.out
     assert "pass --force" in captured.err
@@ -327,7 +331,8 @@ def test_evidence_verify_exits_non_zero_when_a_document_changed(
     stored = data_root / "assessments" / identifier / "sources" / "product-overview.md"
     stored.write_bytes(b"# Replaced\n")
 
-    assert invoke(data_root, "evidence", "verify", identifier) == 1
+    # Drift is a stated finding, not an error: exit 3 (DEC-088).
+    assert invoke(data_root, "evidence", "verify", identifier) == 3
     captured = capsys.readouterr()
     assert "content_changed" in captured.out
     assert "no longer match" in captured.err
@@ -472,10 +477,17 @@ def test_the_command_surface_is_the_one_dec_032_confirms() -> None:
         "report",
         "verify",
         "evaluate",
+        "capture",
         "export",
+        "ledger",
+        "threats",
+        "questions",
+        "catalog",
+        "diff",
         "reset",
         "view",
     }
+    assert _subcommands("catalog") == {"show", "validate"}
     assert _subcommands("source") == {"add", "list"}
     assert _subcommands("evidence") == {"list", "show", "verify"}
     assert _subcommands("assessment") == {
@@ -484,10 +496,11 @@ def test_the_command_surface_is_the_one_dec_032_confirms() -> None:
         "status",
         "candidates",
         "archive",
+        "purge",
         "approve",
     }
     assert _subcommands("findings") == {"show", "review", "approve"}
-    assert _subcommands("report") == {"show", "rubric"}
+    assert _subcommands("report") == {"show", "render", "rubric"}
 
 
 def test_a_group_with_no_subcommand_prints_help() -> None:
@@ -880,10 +893,11 @@ def _injection_evidence_id(data_root: Path, assessment_id: str) -> str:
 def test_show_exits_non_zero_while_the_context_cannot_be_approved(
     data_root: Path, capsys: pytest.CaptureFixture[str], tmp_path: Path
 ) -> None:
-    """Usable from a script without parsing prose."""
+    """Usable from a script without parsing prose: a not-approvable context is a stated refusal,
+    exit 3 (DEC-088), distinct from an error."""
     identifier = extracted(data_root, capsys, tmp_path)
 
-    assert invoke(data_root, "context", "show", identifier) == 1
+    assert invoke(data_root, "context", "show", identifier) == 3
     assert "blocking" in capsys.readouterr().err
 
 
@@ -892,7 +906,8 @@ def test_approve_is_refused_and_names_the_blocking_question(
 ) -> None:
     identifier = extracted(data_root, capsys, tmp_path)
 
-    assert invoke(data_root, "context", "approve", identifier, "--reviewer", "eturner") == 1
+    # A blocked approval is a stated refusal, exit 3 (DEC-088), not an error.
+    assert invoke(data_root, "context", "approve", identifier, "--reviewer", "eturner") == 3
     captured = capsys.readouterr()
 
     assert "was not approved" in captured.err
@@ -1446,6 +1461,35 @@ def test_the_pipeline_runs_end_to_end_from_the_command_line(
     verified = capsys.readouterr().out
     assert "1 manifest" in verified
 
+    # The same three answers, machine-shaped (#523): report, manifest, verification.
+    assert invoke(data_root, "report", "show", identifier, "--json") == 0
+    shown = _parsed_json(capsys.readouterr().out)
+    assert shown["kind"] == "report"
+    assert "fnd-001" in str(shown["report"])
+
+    assert invoke(data_root, "report", "show", identifier, "--manifest", "--json") == 0
+    manifest_document = _parsed_json(capsys.readouterr().out)
+    assert manifest_document["kind"] == "report-manifest"
+    manifest_payload = manifest_document["manifest"]
+    assert isinstance(manifest_payload, dict) and "manifest_version" in manifest_payload
+
+    assert invoke(data_root, "verify", identifier, "--json") == 0
+    verification = _parsed_json(capsys.readouterr().out)
+    assert verification["kind"] == "verification"
+    assert verification["manifest_checked"] is True
+
+    # The derived HTML view (#527, DEC-108): every section the render holds, escaped structure.
+    assert invoke(data_root, "report", "render", identifier) == 0
+    assert ".html" in capsys.readouterr().out
+    assert invoke(data_root, "report", "show", identifier, "--json") == 0
+    shown_again = _parsed_json(capsys.readouterr().out)
+    html_name = str(shown_again["filename"]).removesuffix(".md") + ".html"
+    page = (data_root / "assessments" / identifier / "outputs" / html_name).read_text(
+        encoding="utf-8"
+    )
+    assert page.count("<h2>") == 16, "all sixteen sections survive the transform"
+    assert "fnd-001" in page
+
 
 def test_report_show_is_refused_while_no_report_exists(
     data_root: Path, capsys: pytest.CaptureFixture[str]
@@ -1771,7 +1815,7 @@ def test_show_prints_contradictions_beside_injection_attempts(
     assert "injection attempts detected (1)" in output
     assert "contradictions awaiting resolution (1)" in output
     assert "described inconsistently" in output
-    assert "--resolve-contradiction" in output
+    assert "--resolve ID=VALUE --rationale" in output
 
 
 def test_show_observations_prints_only_the_observation_blocks(
@@ -1817,3 +1861,445 @@ def test_a_closed_pipe_is_not_a_traceback(monkeypatch: pytest.MonkeyPatch) -> No
     monkeypatch.setattr(cli_module, "run", lambda: 0)
     monkeypatch.setattr(_sys, "stdout", _ClosedPipe())
     assert trace_ai.main() == 0
+
+
+# ------------------------------------------------------------------------------------------
+# The error contract (#447): argparse rejections, refusals, and unswallowed bugs
+# ------------------------------------------------------------------------------------------
+
+
+def test_max_cost_rejects_a_non_number(data_root: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    """`Decimal("abc")` raises an ArithmeticError, not a ValueError, so an inline construction
+    escaped as a traceback. As an argparse type it is exit 2 with a message."""
+    identifier = created(data_root, capsys)
+    with pytest.raises(SystemExit) as caught:
+        invoke(data_root, "run", identifier, "--max-cost", "abc")
+    assert caught.value.code == 2
+    assert "not a number" in capsys.readouterr().err
+
+
+def test_max_cost_rejects_a_negative(data_root: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    identifier = created(data_root, capsys)
+    with pytest.raises(SystemExit) as caught:
+        invoke(data_root, "run", identifier, "--max-cost", "-5")
+    assert caught.value.code == 2
+    assert "cannot be negative" in capsys.readouterr().err
+
+
+def test_max_model_calls_rejects_a_negative(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    identifier = created(data_root, capsys)
+    with pytest.raises(SystemExit) as caught:
+        invoke(data_root, "run", identifier, "--max-model-calls", "-1")
+    assert caught.value.code == 2
+    assert "cannot be negative" in capsys.readouterr().err
+
+
+def test_a_pipeline_validation_error_keeps_its_traceback(
+    data_root: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """DEC-006 says a domain object never fails validation, so a ValidationError from the pipeline
+    is a bug that must keep its traceback rather than being rendered as a one-line operator error --
+    even though ValidationError is a ValueError, which EXPECTED_ERRORS still catches for operator
+    input like a malformed identifier."""
+    from pydantic import BaseModel
+
+    class _Model(BaseModel):
+        x: int
+
+    def _raise(*_args: object, **_kwargs: object) -> int:
+        _Model(x="not an int")  # type: ignore[arg-type]
+        return 0
+
+    monkeypatch.setattr("trace_ai.cli._assessment_list", _raise)
+    with pytest.raises(ValidationError):
+        run(["--data-root", str(data_root), "assessment", "list"])
+
+
+def test_view_on_a_busy_port_is_a_message_not_a_traceback(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Running the view twice is the likeliest demonstration slip; a taken port is EADDRINUSE, and
+    the answer is a sentence naming --port, not a stack trace."""
+    import socket
+
+    occupied = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    occupied.bind(("127.0.0.1", 0))
+    occupied.listen(1)
+    port = occupied.getsockname()[1]
+    try:
+        assert invoke(data_root, "view", "--port", str(port)) == 1
+    finally:
+        occupied.close()
+    captured = capsys.readouterr()
+    assert f"port {port} is already in use" in captured.err
+    assert "Traceback" not in captured.err
+
+
+def test_context_extract_accepts_a_directory_of_responses(
+    data_root: Path, capsys: pytest.CaptureFixture[str], tmp_path: Path
+) -> None:
+    """The demo tape passes `--response <dir>`; `context extract` used to take a singular
+    `--response` and read the directory as a file (IsADirectoryError). It now expands a directory of
+    numbered recordings like `run` and `resume` do."""
+    identifier = created(data_root, capsys)
+    invoke(data_root, "source", "add", identifier, str(FORGEFLOW_INPUT))
+    capsys.readouterr()
+
+    recordings = tmp_path / "recordings"
+    recordings.mkdir()
+    recorded_response(recordings / "01-context-extraction.json")
+
+    assert (
+        invoke(
+            data_root,
+            "context",
+            "extract",
+            identifier,
+            "--model-profile",
+            "offline-fake",
+            "--response",
+            str(recordings),
+        )
+        == 0
+    )
+
+
+def test_evaluate_cleans_up_its_temporary_work_root(
+    data_root: Path, capsys: pytest.CaptureFixture[str], tmp_path: Path
+) -> None:
+    """Without --work-root the harness store is a throwaway, cleaned up when the run finishes rather
+    than left in the system temp directory (one per scenario on --all)."""
+    import tempfile
+    from pathlib import Path as _Path
+
+    temp_root = _Path(tempfile.gettempdir())
+    before = set(temp_root.glob("trace-eval-*"))
+    assert (
+        invoke(
+            data_root,
+            "evaluate",
+            "forgeflow",
+            "--label",
+            "cleanup-test",
+            "--results-root",
+            str(tmp_path / "results"),
+        )
+        == 0
+    )
+    after = set(temp_root.glob("trace-eval-*"))
+    assert after == before, "the evaluate run left a temporary work root behind"
+
+
+def test_evaluate_diff_against_a_missing_prior_is_a_message_not_a_traceback(
+    data_root: Path, capsys: pytest.CaptureFixture[str], tmp_path: Path
+) -> None:
+    """A missing prior feed is this scenario's failure, not a traceback that aborts the sweep."""
+    exit_code = invoke(
+        data_root,
+        "evaluate",
+        "forgeflow",
+        "--label",
+        "diff-test",
+        "--results-root",
+        str(tmp_path / "results"),
+        "--diff-against",
+        "no-such-prior",
+    )
+    captured = capsys.readouterr()
+    assert exit_code == 1
+    assert "diff against no-such-prior: skipped" in captured.err
+    assert "Traceback" not in captured.err
+    # The scenario's own metrics still printed before the diff was attempted.
+    assert "false_negative_rate" in captured.out
+
+
+def test_assessment_purge_dry_run_refuses_and_removes_nothing(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Purge is destructive, so without --force it previews and refuses -- a stated refusal, exit 3
+    (DEC-088), not an error."""
+    identifier = created(data_root, capsys)
+    assert invoke(data_root, "assessment", "purge", identifier) == 3
+    captured = capsys.readouterr()
+    assert "would purge" in captured.out
+    assert "pass --force" in captured.err
+    # It removed nothing: the assessment still lists.
+    assert invoke(data_root, "assessment", "status", identifier) == 0
+
+
+def test_assessment_purge_with_force_removes_the_assessment(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    identifier = created(data_root, capsys)
+    invoke(data_root, "source", "add", identifier, str(FORGEFLOW_INPUT))
+    capsys.readouterr()
+
+    assert invoke(data_root, "assessment", "purge", identifier, "--force") == 0
+    assert "purged" in capsys.readouterr().out
+    assert not (data_root / "assessments" / identifier).exists()
+    # It is gone: status now reports it missing.
+    assert invoke(data_root, "assessment", "status", identifier) == 1
+
+
+def test_a_command_outside_a_source_checkout_is_refused(
+    data_root: Path, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """v0.1 is clone-only (DEC-090): a real command run from an installed wheel gets a clear message
+    naming the source-checkout requirement, not a dangling FileNotFoundError deep in a command."""
+    identifier = created(data_root, capsys)
+    capsys.readouterr()
+    monkeypatch.setattr("trace_ai.cli.IS_SOURCE_CHECKOUT", False)
+
+    assert invoke(data_root, "assessment", "status", identifier) == 1
+    captured = capsys.readouterr()
+    assert "source checkout" in captured.err
+    assert "Traceback" not in captured.err
+
+
+def test_the_banner_works_outside_a_source_checkout(
+    data_root: Path, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """`trace` and `trace --help` must work from a wheel -- the packaging smoke test relies on it --
+    so the clone-only guard is only past the banner."""
+    monkeypatch.setattr("trace_ai.cli.IS_SOURCE_CHECKOUT", False)
+    assert run([]) == 0
+    assert "context-aware security architecture analysis" in capsys.readouterr().out
+
+
+# ------------------------------------------------------------------------------------------
+# The ledger (#483, DEC-092)
+# ------------------------------------------------------------------------------------------
+
+
+def test_ledger_reports_nothing_before_a_run_exists(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    identifier = created(data_root, capsys)
+    assert invoke(data_root, "ledger", identifier) == 0
+    assert "no workflow run has started" in capsys.readouterr().out
+
+
+def _ledger_node_line(output: str) -> list[str]:
+    line = next(entry for entry in output.splitlines() if "context-extraction" in entry)
+    return line.split()
+
+
+def test_ledger_prints_dashes_where_no_usage_was_captured(
+    data_root: Path, capsys: pytest.CaptureFixture[str], tmp_path: Path
+) -> None:
+    """Absent and zero are different answers (DEC-092): a replay of a recording that captured no
+    usage measured nothing, and printing 0 would claim it did."""
+    identifier = extracted(data_root, capsys, tmp_path)
+
+    assert invoke(data_root, "ledger", identifier) == 0
+    output = capsys.readouterr().out
+
+    fields = _ledger_node_line(output)
+    assert fields[0] == "context-extraction"
+    assert fields[1] == "1"
+    assert fields[2:6] == ["-", "-", "-", "-"], "unreported token spans print as dashes"
+    assert fields[7] == "-", "unreported cost prints as a dash"
+
+
+def test_ledger_sums_the_usage_a_recorded_envelope_carries(
+    data_root: Path, capsys: pytest.CaptureFixture[str], tmp_path: Path
+) -> None:
+    """A recording that captured usage (#461) replays it, and the ledger prints the DEC-067
+    spans disjoint -- the numbers a live capture wrote, not zeros and not estimates."""
+    import json as json_module
+
+    identifier = created(data_root, capsys)
+    invoke(data_root, "source", "add", identifier, str(FORGEFLOW_INPUT))
+    bare = recorded_response(tmp_path / "bare.json")
+    envelope = {
+        "schema": "ContextExtractionProposal",
+        "usage": {
+            "model": "claude-opus-5",
+            "input_tokens": 41000,
+            "output_tokens": 9200,
+            "cache_read_tokens": 12000,
+            "cache_creation_tokens": 30000,
+            "estimated_cost": "1.4375",
+            "duration_seconds": 181.2,
+        },
+        "response": json_module.loads(bare.read_text(encoding="utf-8")),
+    }
+    response = tmp_path / "with-usage.json"
+    response.write_text(json_module.dumps(envelope), encoding="utf-8")
+    assert (
+        invoke(
+            data_root,
+            "context",
+            "extract",
+            identifier,
+            "--model-profile",
+            "offline-fake",
+            "--response",
+            str(response),
+        )
+        == 0
+    )
+    capsys.readouterr()
+
+    assert invoke(data_root, "ledger", identifier) == 0
+    output = capsys.readouterr().out
+
+    fields = _ledger_node_line(output)
+    assert fields[1:6] == ["1", "41000", "12000", "30000", "9200"]
+    assert fields[7] == "1.4375"
+    total = next(entry for entry in output.splitlines() if entry.strip().startswith("total"))
+    assert "41000" in total and "1.4375" in total
+
+
+# ------------------------------------------------------------------------------------------
+# The JSON contract (#486, DEC-096)
+# ------------------------------------------------------------------------------------------
+
+
+def _parsed_json(captured: str) -> dict[str, object]:
+    import json as json_module
+
+    document = json_module.loads(captured)
+    assert isinstance(document, dict)
+    assert document["data_model_version"] == "0.1"
+    assert isinstance(document["kind"], str)
+    return document
+
+
+def test_json_listings_carry_the_envelope(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    identifier = created(data_root, capsys)
+    capsys.readouterr()
+
+    assert invoke(data_root, "assessment", "list", "--json") == 0
+    document = _parsed_json(capsys.readouterr().out)
+    assert document["kind"] == "assessments"
+    assessments = document["assessments"]
+    assert isinstance(assessments, list)
+    assert assessments[0] == {"id": identifier, "status": "draft", "name": "ForgeFlow"}
+
+
+def test_evidence_list_json_never_carries_quotations(
+    data_root: Path, capsys: pytest.CaptureFixture[str], tmp_path: Path
+) -> None:
+    """DEC-096 keeps the human view's rule: source content appears only where it was asked for.
+    The listing carries locations and identifiers; the quotation stays in `evidence show`."""
+    identifier = extracted(data_root, capsys, tmp_path)
+
+    assert invoke(data_root, "evidence", "list", identifier, "--json") == 0
+    listing = capsys.readouterr().out
+    document = _parsed_json(listing)
+    references = document["evidence_references"]
+    assert isinstance(references, list) and references
+    assert "quoted_text" not in listing
+    first = references[0]
+    assert isinstance(first, dict)
+    evidence_id = str(first["id"])
+
+    assert (
+        invoke(data_root, "evidence", "show", evidence_id, "--assessment", identifier, "--json")
+        == 0
+    )
+    shown = _parsed_json(capsys.readouterr().out)
+    evidence = shown["evidence"]
+    assert isinstance(evidence, dict)
+    assert evidence["quoted_text"], "the quotation is this command's entire purpose"
+
+
+def test_context_show_json_keeps_the_refusal_exit_code(
+    data_root: Path, capsys: pytest.CaptureFixture[str], tmp_path: Path
+) -> None:
+    """DEC-088 holds JSON or not: a context that cannot be approved is exit 3, and the payload
+    says why a script should not approve it."""
+    identifier = extracted(data_root, capsys, tmp_path)
+
+    assert invoke(data_root, "context", "show", identifier, "--json") == 3
+    document = _parsed_json(capsys.readouterr().out)
+    assert document["can_approve"] is False
+    questions = document["questions"]
+    assert isinstance(questions, list) and questions
+
+
+def test_verify_json_names_drift_and_keeps_the_refusal_exit_code(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """DEC-096's last residual (#523): `verify --json` speaks the envelope, and DEC-088 holds
+    either way — drift is exit 3, each drifted item named by identifier and hash, never by the
+    content that changed."""
+    identifier = created(data_root, capsys)
+    invoke(data_root, "source", "add", identifier, str(FORGEFLOW_INPUT))
+    capsys.readouterr()
+
+    assert invoke(data_root, "verify", identifier, "--json") == 0
+    document = _parsed_json(capsys.readouterr().out)
+    assert document["kind"] == "verification"
+    assert document["ok"] is True
+    assert document["manifest_checked"] is False
+
+    stored = data_root / "assessments" / identifier / "sources" / "product-overview.md"
+    stored.write_bytes(b"# Replaced\n")
+
+    assert invoke(data_root, "verify", identifier, "--json") == 3
+    output = capsys.readouterr().out
+    document = _parsed_json(output)
+    assert document["ok"] is False
+    drift = document["document_drift"]
+    assert isinstance(drift, list) and drift
+    assert "Replaced" not in output, "changed content must never be printed"
+
+
+def test_questions_and_catalog_read_commands_answer(
+    data_root: Path, capsys: pytest.CaptureFixture[str], tmp_path: Path
+) -> None:
+    identifier = extracted(data_root, capsys, tmp_path)
+
+    assert invoke(data_root, "questions", identifier, "--json") == 0
+    questions = _parsed_json(capsys.readouterr().out)["questions"]
+    assert isinstance(questions, list) and questions
+
+    assert invoke(data_root, "threats", identifier) == 0
+    assert "no threats" in capsys.readouterr().out
+
+    assert invoke(data_root, "catalog", "show", "--json") == 0
+    catalog = _parsed_json(capsys.readouterr().out)
+    requirements = catalog["requirements"]
+    assert isinstance(requirements, list) and len(requirements) > 20
+
+    assert invoke(data_root, "catalog", "validate") == 0
+    assert "verifies" in capsys.readouterr().out
+
+    assert invoke(data_root, "catalog", "validate", "--catalog-version", "9.9") == 1
+
+
+def test_diff_refuses_unapproved_sides_with_a_named_error(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """The DEC-097 refusal mirrors the exports': a diff over candidates would report changes no
+    reviewer saw."""
+    first = created(data_root, capsys)
+    second = created(data_root, capsys)
+    capsys.readouterr()
+
+    assert invoke(data_root, "diff", first, second) == 1
+    assert "context" in capsys.readouterr().err
+
+
+def test_evaluate_json_carries_the_envelope_and_the_pin_state(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """DEC-096 reaches the one metrics-emitting command (#505): one envelope, the per-run
+    metrics as a mapping, and the offline replay pin's verdict."""
+    assert invoke(data_root, "evaluate", "forgeflow", "--json") == 0
+    document = _parsed_json(capsys.readouterr().out)
+    assert document["kind"] == "evaluation-runs"
+    runs = document["runs"]
+    assert isinstance(runs, list) and len(runs) == 1
+    run_payload = runs[0]
+    assert isinstance(run_payload, dict)
+    assert run_payload["run_status"] == "completed"
+    assert run_payload["report_hash_verified"] is True
+    metrics = run_payload["metrics"]
+    assert isinstance(metrics, dict) and "false_negative_rate" in metrics

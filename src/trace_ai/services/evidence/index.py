@@ -103,10 +103,46 @@ class EvidenceNotFoundError(LookupError):
 
 
 class EvidenceIndex:
-    """Retrieval and verification for one assessment's evidence."""
+    """Retrieval and verification for one assessment's evidence.
+
+    One index serves one operation -- a node's run, a `trace verify` -- and caches within that
+    lifetime: the source documents it resolves, the source files it reads, and the full reference
+    list. Evidence and its documents are immutable after ingestion (DEC-015), so the caches cannot
+    go stale under the index; a later operation builds a fresh index and sees fresh data.
+    """
 
     def __init__(self, handle: AssessmentHandle) -> None:
         self.handle = handle
+        self._document_cache: dict[str, SourceDocument | None] = {}
+        self._source_text_cache: dict[str, str | None] = {}
+        self._references: list[EvidenceReference] | None = None
+
+    def _document(self, source_document_id: str) -> SourceDocument | None:
+        """The source document, resolved once. `_rendered` and `verify` both need it per reference,
+        and reading it from the store each time is a query per reference for a filename."""
+        if source_document_id not in self._document_cache:
+            self._document_cache[source_document_id] = self.handle.objects.find(
+                SourceDocument, source_document_id
+            )
+        return self._document_cache[source_document_id]
+
+    def _source_text(self, document: SourceDocument) -> str | None:
+        """The stored source file, read once per document. `verify_all` over K references into one
+        document read that file K times; memoizing makes it one read. `None` when the artifact is
+        gone or unreadable, which the caller reports as `ARTIFACT_MISSING`."""
+        if document.id not in self._source_text_cache:
+            try:
+                raw = self.handle.artifacts.read("sources", document.filename)
+                text: str | None = raw.decode("utf-8")
+            except ArtifactStoreError, OSError, UnicodeDecodeError:
+                text = None
+            self._source_text_cache[document.id] = text
+        return self._source_text_cache[document.id]
+
+    def _all_references(self) -> list[EvidenceReference]:
+        if self._references is None:
+            self._references = self.handle.objects.list(EvidenceReference)
+        return self._references
 
     def get(self, evidence_id: str) -> EvidenceReference:
         """One reference, or a named error. The read-path enforcement of the section 12 boundary."""
@@ -119,27 +155,30 @@ class EvidenceIndex:
         """Every reference into one document, in chunk order."""
         references = [
             reference
-            for reference in self.handle.objects.list(EvidenceReference)
+            for reference in self._all_references()
             if reference.source_document_id == source_document_id
         ]
         return sorted(references, key=lambda reference: reference.chunk_index or 0)
 
     def verify(self, evidence_id: str) -> VerificationResult:
         """Re-read the artifact and compare what is there against what was recorded."""
-        reference = self.get(evidence_id)
-        document = self.handle.objects.find(SourceDocument, reference.source_document_id)
+        return self._verify(self.get(evidence_id))
+
+    def _verify(self, reference: EvidenceReference) -> VerificationResult:
+        document = self._document(reference.source_document_id)
         if document is None:
             return VerificationResult(
-                evidence_id,
+                reference.id,
                 VerificationOutcome.ARTIFACT_MISSING,
                 detail=f"source document {reference.source_document_id} is not stored",
             )
 
-        try:
-            original = self.handle.artifacts.read("sources", document.filename).decode("utf-8")
-        except (ArtifactStoreError, OSError, UnicodeDecodeError) as error:
+        original = self._source_text(document)
+        if original is None:
             return VerificationResult(
-                evidence_id, VerificationOutcome.ARTIFACT_MISSING, detail=str(error)
+                reference.id,
+                VerificationOutcome.ARTIFACT_MISSING,
+                detail=f"the stored source {document.filename!r} could not be read",
             )
 
         if reference.start_line is not None and reference.end_line is not None:
@@ -147,7 +186,7 @@ class EvidenceIndex:
             found = "\n".join(lines[reference.start_line - 1 : reference.end_line])
             matches = content_hash(found.encode("utf-8")) == reference.content_hash
             return VerificationResult(
-                evidence_id,
+                reference.id,
                 VerificationOutcome.MATCHES if matches else VerificationOutcome.CONTENT_CHANGED,
                 checked_by=CheckedBy.LINE_RANGE,
                 detail=None if matches else "the recorded lines no longer hash to the same value",
@@ -155,17 +194,19 @@ class EvidenceIndex:
 
         matches = reference.quoted_text in original
         return VerificationResult(
-            evidence_id,
+            reference.id,
             VerificationOutcome.MATCHES if matches else VerificationOutcome.CONTENT_CHANGED,
             checked_by=CheckedBy.TEXT_SEARCH,
             detail=None if matches else "the quoted text is not present in the document",
         )
 
     def verify_all(self) -> list[VerificationResult]:
-        """Every reference that no longer matches. An empty list is the healthy answer."""
-        results = [
-            self.verify(reference.id) for reference in self.handle.objects.list(EvidenceReference)
-        ]
+        """Every reference that no longer matches. An empty list is the healthy answer.
+
+        Verifies the references it already listed rather than re-fetching each by id, and reads each
+        source file once (memoized), so K references into one document cost one read, not K.
+        """
+        results = [self._verify(reference) for reference in self._all_references()]
         return [result for result in results if not result.ok]
 
     def render_for_prompt(self, evidence_ids: Sequence[str]) -> list[dict[str, Any]]:
@@ -182,7 +223,7 @@ class EvidenceIndex:
         return [self._rendered(reference) for reference in self.for_document(source_document_id)]
 
     def _rendered(self, reference: EvidenceReference) -> dict[str, Any]:
-        document = self.handle.objects.find(SourceDocument, reference.source_document_id)
+        document = self._document(reference.source_document_id)
         location: dict[str, Any] = {
             "section_title": reference.section_title,
             "chunk_index": reference.chunk_index,

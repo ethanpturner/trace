@@ -11,7 +11,7 @@ authors = [
 requires-python = ">=3.14"
 dependencies = [
     "anthropic>=0.120.2",
-    "langsmith>=0.10.16",
+    "openai>=3.1.0",
     "pydantic>=2.13.4",
     "pydantic-settings>=2.15.0",
     "python-dotenv>=1.2.2",
@@ -21,6 +21,11 @@ dependencies = [
     "pyyaml>=6.0.3",
 ]
 
+# v0.1 is clone-only (DEC-090): the prompts, requirements catalog, report template, and benchmark
+# scenarios are version-controlled files in the repository, not package data in the wheel. The
+# console script is declared so `trace` and `trace --help` work from an install, but a command that
+# reads those assets from outside a source checkout stops with a clear message. Installability is a
+# later decision; until then, run from a clone (`uv run trace ...`).
 [project.scripts]
 trace = "trace_ai:main"
 
@@ -46,6 +51,10 @@ dev = [
     # the runtime dependencies when the document loader began parsing YAML input.
     "types-jsonschema>=4.26.0.20260518",
     "types-pyyaml>=6.0.12",
+]
+# Builds the documentation site from docs/ (DEC-104); nothing in src/ or tests/ imports it.
+docs = [
+    "mkdocs-material>=9.5",
 ]
 
 [tool.ruff]
@@ -111,11 +120,15 @@ asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 
 [tool.coverage.run]
-source = ["src"]
+source = ["src", "scripts"]
 branch = true
 
 [tool.coverage.report]
 show_missing = true
+# A floor, not a target: it fails the run when coverage drops below what the suite holds today,
+# so a change that deletes tests or ships a large untested path cannot land green. Raise it when
+# real coverage rises; never lower it to make a red run pass.
+fail_under = 80
 exclude_lines = [
     "pragma: no cover",
     "if TYPE_CHECKING:",

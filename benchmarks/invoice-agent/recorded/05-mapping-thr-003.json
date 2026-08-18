@@ -1,25 +1,28 @@
 {
-  "controls": [],
-  "mappings": [
-    {
-      "threat_id": "thr-003",
-      "requirement_id": "req-LOG-001",
-      "control_keys": [],
-      "existing_control_ids": [],
-      "applicability_status": "applicable",
-      "applicability_reason": "Traces are application logging that carries submitted financial data, so the requirement applies; the system handles non-public data and produces logs.",
-      "suppressed_conclusion": null,
-      "suppressed_by": null,
-      "satisfaction_status": "unmet",
-      "evidence_ids": [
-        "evd-005",
-        "evd-006"
-      ],
-      "assumptions": [
-        "No common false positive applies: full request and response bodies are documented as captured, which is not an absent field-level redaction list where identifier-only logging is documented, nor an absent log retention period — the false positives the catalog names."
-      ],
-      "confidence": "medium"
-    }
-  ],
-  "documentation_gaps": []
+  "schema": "MappingProposal",
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-LOG-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Traces are application logging that carries submitted financial data, so the requirement applies; the system handles non-public data and produces logs.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unmet",
+        "evidence_ids": [
+          "evd-005",
+          "evd-006"
+        ],
+        "assumptions": [
+          "No common false positive applies: full request and response bodies are documented as captured, which is not an absent field-level redaction list where identifier-only logging is documented, nor an absent log retention period \u2014 the false positives the catalog names."
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "documentation_gaps": []
+  }
 }

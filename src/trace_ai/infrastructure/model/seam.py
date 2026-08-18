@@ -257,8 +257,29 @@ class StructuredModel(Protocol):
         *,
         prompt: str,
         schema: type[T],
-        settings: GenerationSettings,
+        settings: GenerationSettings | None = None,
         system: str | None = None,
+        cache_prefix: str | None = None,
+        system_cache_prefix: str | None = None,
     ) -> ModelOutcome[T]:
-        """One attempt at a validated instance of `schema`."""
+        """One attempt at a validated instance of `schema`.
+
+        `settings` is optional so the Protocol matches its implementations (WS11): the adapters fall
+        back to the profile's own settings when a caller passes none, and a `@runtime_checkable`
+        Protocol checks attribute presence, not signatures, so a Protocol that disagreed with the
+        implementations would hide the disagreement rather than catch it.
+
+        `cache_prefix` is the stable leading span of `prompt` — the shared blocks, the body template,
+        and the schema, before the per-call source content — that an adapter supporting prompt
+        caching may mark for reuse across the calls that share it (WS10). An adapter that does not,
+        or a `cache_prefix` that is not a prefix of `prompt`, ignores it; a provider-neutral hint,
+        never a provider knob (DEC-014).
+
+        `system_cache_prefix` is the same hint for `system` (DEC-105): the leading span of the
+        trusted region that is byte-identical across a node's calls — for mapping, the
+        requirements catalog, which DEC-024 names as the pipeline's largest stable prefix. It
+        matters when `system` itself varies per call: a marker inside `prompt` alone never hits
+        then, because the varying system region precedes it in the cacheable sequence. The same
+        ignore rules apply.
+        """
         ...

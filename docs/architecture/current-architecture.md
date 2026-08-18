@@ -1223,95 +1223,73 @@ These are proposed choices, not all final decisions.
 
 ## 15. Repository Structure
 
-Proposed initial repository organization:
+The repository is organized as follows. The import package is `trace_ai`, not `trace`: `trace`
+shadows a standard-library module, and importing it silently resolves to the standard library.
+The distribution and the CLI are still named `trace`.
 
-trace/
-
-README.md
-
-pyproject.toml
-
+```text
 src/
-
-trace/
-
-api/
-
-application/
-
-workflow/
-
-nodes/
-
-routing/
-
-state/
-
-domain/
-
-models/
-
-services/
-
-ingestion/
-
-evidence/
-
-reporting/
-
-evaluation/
-
-infrastructure/
-
-database/
-
-models/
-
-tracing/
-
-filesystem/
-
-prompts/
-
-templates/
-
-requirements/
-
-demo/
-
-input/
-
-expected/
-
+  trace_ai/
+    domain/
+      proposals/
+    infrastructure/
+      database/
+      filesystem/
+      model/
+      tracing/
+    interface/
+    services/
+      context/
+      critique/
+      diff/
+      evaluation/
+      evidence/
+      export/
+      findings/
+      ingestion/
+      mapping/
+      org_controls/
+      prompts/
+      report/
+      requirements/
+      threats/
+    workflow/
 tests/
-
-unit/
-
-integration/
-
-evaluation/
-
+  unit/
+  integration/
+  evaluation/
 docs/
+  architecture/
+  assets/
+  eval/
+  guide/
+  presentation/
+  product/
+prompts/
+templates/
+requirements/
+org-controls/
+demo/
+benchmarks/
+schemas/
+scripts/
+journal/
+triage/
+```
 
-architecture/
+Beside the packages, `trace_ai` holds `cli.py` (the command surface), `config.py`, and
+`observability.py` (structured logging; named so because `logging.py` shadows the standard
+library from inside the package). The runtime data root `data/` — holding `assessments/` — is
+gitignored and absent from a fresh clone, as are the derived `benchmarks/results/` and `site/`,
+the rendered documentation site `mkdocs build` writes and CI deploys without committing
+(DEC-104).
 
-project-scope.md
-
-current-architecture.md
-
-data-model.md
-
-agent-design.md
-
-threat-model.md
-
-decision-log.md
-
-data/
-
-assessments/
-
-The exact repository structure may change during implementation. The important boundary is that domain models, workflow logic, prompts, infrastructure, and user-interface code remain reasonably separated.
+The important boundary is that domain models, workflow logic, prompts, infrastructure, and
+user-interface code stay separated; `tests/unit/test_package_layout.py` asserts the dependency
+direction. This section and the repository are held in agreement by
+`tests/unit/test_repository_layout_doc.py`, which parses the tree above against the filesystem
+in both directions: an entry naming no directory fails, and so does a top-level directory, a
+package under `src/trace_ai`, or a subdirectory of `tests/` or `docs/` that this section omits.
 
 ## 16. MVP Demo Architecture
 
@@ -1411,7 +1389,7 @@ The following questions require decisions or implementation experiments:
 7. ~~What minimum evidence threshold should be required for a finding?~~ Resolved by DEC-013.
 8. Which parts of the workflow require separate agents versus deterministic functions?
 9. How should semantic duplicate detection work?
-10. Should LangSmith be used in the public demonstration?
+10. ~~Should LangSmith be used in the public demonstration?~~ Resolved by DEC-090: the unused `langsmith` dependency and its settings were removed; tracing integration is its own decision if it ever happens.
 11. How much reasoning information should be exposed to users?
 12. ~~How should prompt injection in source documentation be tested?~~ Resolved by DEC-075: as
     scenario conditions — an authored payload corpus run as input variants, reported on two

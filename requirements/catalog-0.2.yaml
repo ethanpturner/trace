@@ -9,8 +9,9 @@ catalog:
     forward under its identifier; the agentic-orchestration category arrives
     from AISVS and AI Exchange ground (DEC-058), the cloud-operations category
     from Cumulus ground (DEC-059), and the LLM Top 10 citations move to the
-    2026 identifiers. The fate of every 0.1 requirement is recorded in
-    mappings/0.1-to-0.2.yaml.
+    2026 identifiers. The retrieval-augmentation and model-generated-code
+    categories arrive with the AI system threat-modeling pack (#489, DEC-098).
+    The fate of every 0.1 requirement is recorded in mappings/0.1-to-0.2.yaml.
   created_at: 2026-08-12
   status: draft
 
@@ -18,7 +19,7 @@ catalog:
   # (DEC-019), computed and verified by src/trace_ai/services/requirements/loader.py
   # every time the catalog is read. Do not edit by hand; run
   #   uv run python scripts/catalog_hash.py --version 0.2 --write
-  content_hash: sha256:2d3b9a79e4703af5635520fa188f115727a587fb30c44ac162b8f91d78581e5d
+  content_hash: sha256:f345ad6a92efb0a2757d58544f347e4777fe1fd3e67f58665e58b92273e28826
 
   requirement_ids:
 
@@ -42,6 +43,9 @@ catalog:
 
     - req-CICD-001
 
+    - req-CODEGEN-001
+    - req-CODEGEN-002
+
     - req-DATA-001
     - req-DATA-002
     - req-DATA-003
@@ -57,6 +61,10 @@ catalog:
     - req-OPS-003
     - req-OPS-004
     - req-OPS-005
+
+    - req-RAG-001
+    - req-RAG-002
+    - req-RAG-003
 
     - req-SECRET-001
     - req-SECRET-002

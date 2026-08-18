@@ -1,0 +1,77 @@
+{
+  "schema": "ThreatAnalysisProposal",
+  "response": {
+    "threats": [
+      {
+        "title": "Customer content memorized by the tuned model surfaces in suggested replies",
+        "description": "The model is fine-tuned on full transcripts including customer names, email addresses, and message bodies, with no redaction or filtering before training. A tuned model can memorize such content and emit it in a suggested reply for an unrelated ticket, disclosing one customer's content in another customer's context.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "information_disclosure"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-003"
+        ],
+        "affected_asset_ids": [
+          "ast-001"
+        ],
+        "related_data_flow_ids": [
+          "df-002"
+        ],
+        "preconditions": [
+          "sensitive content enters the training corpus unminimized"
+        ],
+        "attack_path": [
+          "customer content trains the weekly model",
+          "the tuned model emits memorized content in an unrelated suggested reply"
+        ],
+        "impact": "Disclosure of one customer's identity or message content to another customer's thread",
+        "likelihood": null,
+        "confidence": "medium",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Poisoned transcripts steer the tuned model's suggested replies",
+        "description": "Whatever reaches the training store trains the next weekly model. A customer who writes crafted content into tickets, or anything else that can influence transcripts, is writing into the model's future behavior; the documented write-path restriction bounds who can write the store directly, but the transcripts themselves originate with customers.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "tampering"
+        ],
+        "threat_actor_ids": [
+          "act-002"
+        ],
+        "affected_component_ids": [
+          "cmp-002"
+        ],
+        "affected_asset_ids": [
+          "ast-002"
+        ],
+        "related_data_flow_ids": [
+          "df-001"
+        ],
+        "preconditions": [
+          "crafted content survives export into the training store"
+        ],
+        "attack_path": [
+          "write crafted ticket messages",
+          "the nightly export carries them into the training store",
+          "the weekly tuning run learns them"
+        ],
+        "impact": "Suggested replies steered by attacker-authored training content",
+        "likelihood": null,
+        "confidence": "medium",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      }
+    ]
+  }
+}

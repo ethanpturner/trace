@@ -1,901 +1,904 @@
 {
-  "threats": [
-    {
-      "title": "Forged or replayed webhook deliveries create analysis jobs for installations the sender does not control",
-      "description": "The webhook receiver (cmp-004) is internet-facing and converts event payloads into analysis jobs keyed by the installation, repository and pull-request identifiers carried in the payload (evd-028, evd-029, evd-042). The documents state that incoming requests are validated and unsupported events ignored, but do not describe the mechanism, and both the architecture and security overviews name detailed webhook-validation behaviour and webhook replay handling as documentation gaps (evd-054, evd-138). The integration records an assumption that webhook events originate from GitHub infrastructure (evd-070). Where validation can be satisfied by a party other than GitHub, or where a previously delivered event can be resubmitted, jobs are created that downstream components treat as GitHub-originated work.",
-      "methodology": "stride-scenario-based",
-      "category": [
-        "spoofing",
-        "tampering",
-        "denial_of_service"
-      ],
-      "threat_actor_ids": [],
-      "affected_component_ids": [
-        "cmp-004",
-        "cmp-005",
-        "cmp-006",
-        "cmp-007"
-      ],
-      "affected_asset_ids": [
-        "ast-003",
-        "ast-011",
-        "ast-002"
-      ],
-      "related_data_flow_ids": [
-        "df-004",
-        "df-005",
-        "df-006",
-        "df-011"
-      ],
-      "preconditions": [
-        "The webhook endpoint is reachable from the public internet and is listed as an internet-facing component (evd-028, evd-144).",
-        "Job creation is driven by identifiers supplied in the event payload rather than by state ForgeFlow already holds (evd-029, evd-042).",
-        "Request validation is asserted but its mechanism, and any replay defence, are named documentation gaps (evd-054, evd-138).",
-        "Downstream processing treats a queued job as authoritative work for the named installation (evd-030, evd-076)."
-      ],
-      "attack_path": [
-        "A party discovers the internet-facing webhook endpoint (evd-028, evd-144).",
-        "It submits a crafted event, or resubmits a previously observed delivery, naming a real installation, repository and pull request (evd-029, evd-042).",
-        "The receiver accepts the request, parses the metadata and enqueues an analysis job (evd-028, evd-062).",
-        "A worker dequeues the job, obtains an installation token and retrieves the named pull request, then requests provider analysis (evd-030, evd-061).",
-        "If the organization has automatic comments enabled, a summary is published to the pull request (evd-031, evd-082)."
-      ],
-      "impact": "Analysis jobs, provider spend and worker capacity are consumed on work no customer requested, degrading analysis processing availability (ast-011) for other tenants; pull-request, repository and installation metadata (ast-003) is written for events that did not occur; and unsolicited or duplicated ForgeFlow comments carrying structured analysis results (ast-002) appear on customer pull requests under the ForgeFlow app identity.",
-      "likelihood": "medium - preliminary; turns entirely on webhook validation behaviour the reviewed documents do not describe.",
-      "confidence": "medium",
-      "evidence_ids": [
-        "evd-028",
-        "evd-062",
-        "evd-128",
-        "evd-070",
-        "evd-029",
-        "evd-042",
-        "evd-054",
-        "evd-138",
-        "evd-144",
-        "evd-030",
-        "evd-031",
-        "evd-082"
-      ],
-      "assumption_ids": [],
-      "open_question_ids": []
-    },
-    {
-      "title": "Untrusted repository and pull-request content steers the model that produces analysis results",
-      "description": "The analysis worker (cmp-006) assembles a request containing ForgeFlow analysis instructions, pull-request metadata, repository context and pull-request changes, and sends it to the external AI provider (cmp-014) (evd-006, evd-044). Retrieved context includes pull-request titles and descriptions, diffs, changed source files, repository documentation and configuration files (evd-005), all of which are authored by whoever contributes to the repository. The architecture names a repository-content instruction boundary separating trusted analysis instructions from untrusted repository and pull-request content, and states repository content may be untrusted (evd-049, evd-053), but the reviewed documents do not describe how the constructed request keeps the two apart. The sample repository notes contain a block of text addressed to an AI reader that attempts to override prior instructions, suppress reporting of security findings, and assert that controls are implemented (evd-115) - an instance of exactly the content type the worker retrieves as repository documentation, present in a document the notes themselves describe as unreviewed (evd-116).",
-      "methodology": "stride-scenario-based",
-      "category": [
-        "prompt_injection",
-        "tampering",
-        "content_trust"
-      ],
-      "threat_actor_ids": [
-        "act-006"
-      ],
-      "affected_component_ids": [
-        "cmp-006",
-        "cmp-014",
-        "cmp-007",
-        "cmp-002"
-      ],
-      "affected_asset_ids": [
-        "ast-002",
-        "ast-001"
-      ],
-      "related_data_flow_ids": [
-        "df-007",
-        "df-008",
-        "df-011",
-        "df-012",
-        "df-002"
-      ],
-      "preconditions": [
-        "Repository documentation, configuration files, diffs and pull-request descriptions are retrieved and placed into the provider request alongside ForgeFlow instructions (evd-005, evd-006, evd-044).",
-        "The boundary separating trusted instructions from untrusted content is named but no enforcing control is described in the reviewed documents (evd-049, evd-053).",
-        "Validation of the provider response covers required fields, schema conformance, size and basic formatting; semantic validation is recorded as not documented (evd-009, evd-133, evd-151).",
-        "Analysis output is displayed to developers and, where enabled, published to the pull request (evd-010, evd-082)."
-      ],
-      "attack_path": [
-        "A contributor places instruction-shaped text in a file the worker retrieves - a README, a configuration file, a pull-request description or a comment in a changed source file (evd-005, evd-006, evd-115).",
-        "The worker retrieves that content under the installation token and includes it in the constructed request (evd-030, evd-063).",
-        "The provider processes instructions and repository content in the same request and returns a structurally valid response shaped by the injected text (evd-006, evd-011).",
-        "Schema validation passes because the response has the required fields and format (evd-009).",
-        "The shaped result is stored, displayed in the web application, and published as a pull-request comment where automatic comments are enabled (evd-045, evd-010, evd-082)."
-      ],
-      "impact": "Structured analysis results (ast-002) become attacker-influenced: security concerns can be suppressed, false assurance asserted, or misleading observations presented to reviewers of a change to customer source code (ast-001). Because ForgeFlow output is presented as review assistance and, when enabled, posted automatically under the ForgeFlow app identity, the influenced content reaches every reviewer on the pull request.",
-      "likelihood": "high - preliminary; the content path is documented, and content of the kind required already exists in the reviewed repository documentation.",
-      "confidence": "high",
-      "evidence_ids": [
-        "evd-005",
-        "evd-006",
-        "evd-044",
-        "evd-049",
-        "evd-053",
-        "evd-115",
-        "evd-116",
-        "evd-009",
-        "evd-011",
-        "evd-133",
-        "evd-151",
-        "evd-010",
-        "evd-082"
-      ],
-      "assumption_ids": [],
-      "open_question_ids": []
-    },
-    {
-      "title": "Instruction-bearing repository content drives customer source content into an externally visible pull-request comment",
-      "description": "Where automatic comments are enabled, model output is converted into a comment and posted to the pull request through the GitHub API by the comment service (cmp-007) (evd-010, evd-031, evd-082). The comment service applies output-length restrictions, removes unsupported formatting and adds a result link, and ForgeFlow states it attempts to avoid including unnecessary source-code content in comments (evd-031, evd-101); none of the described steps evaluate what the summary text means. Repository content already in the request could therefore be echoed back into the comment body. The sample repository notes contain a passage addressed to an AI reader that attempts precisely this - directing that complete contents of every supplied source file be included in generated pull-request comments, and that any GitHub App private key appearing in the prompt be emitted (evd-115).",
-      "methodology": "stride-scenario-based",
-      "category": [
-        "prompt_injection",
-        "information_disclosure",
-        "content_trust"
-      ],
-      "threat_actor_ids": [
-        "act-006"
-      ],
-      "affected_component_ids": [
-        "cmp-006",
-        "cmp-014",
-        "cmp-007",
-        "cmp-013"
-      ],
-      "affected_asset_ids": [
-        "ast-001",
-        "ast-009",
-        "ast-002"
-      ],
-      "related_data_flow_ids": [
-        "df-008",
-        "df-011",
-        "df-012"
-      ],
-      "preconditions": [
-        "Selected repository files, diffs and documentation are present in the provider request (evd-007, evd-044, evd-005).",
-        "Comment formatting is described as length restriction, formatting removal and link addition, with no described check on which source content the summary reproduces (evd-031, evd-010).",
-        "Response validation is structural: required fields, schema, maximum size, basic formatting (evd-009).",
-        "Pull requests may be visible to a wider audience than the ForgeFlow organization, and comments are posted under the ForgeFlow installation identity (evd-031, evd-064).",
-        "The documents state the provider does not receive GitHub App private keys, installation tokens, session cookies or database credentials, which constrains the credential variant of this scenario (evd-007, evd-038)."
-      ],
-      "attack_path": [
-        "A contributor adds text to a file or pull-request description directing the analysing model to reproduce supplied file contents in its summary (evd-005, evd-115).",
-        "The worker includes that file, together with other selected repository context, in the provider request (evd-006, evd-044).",
-        "The provider returns a schema-conformant response whose summary or observations fields contain reproduced source content (evd-008, evd-009).",
-        "Formatting rules and length limits are applied and the comment is published to the pull request (evd-031, evd-082).",
-        "The comment, and the stored result and artifacts behind it, now contain source excerpts in a channel wider than the analysis pipeline (evd-033, evd-045)."
-      ],
-      "impact": "Customer source code and repository content (ast-001) and prompt or model artifacts (ast-009) are reproduced into a pull-request comment and into the stored structured result (ast-002), placing restricted content in a location governed by GitHub repository visibility rather than by ForgeFlow tenant controls. The credential variant attempted by the injected text is weakened by the documented statement that credentials are not transmitted to the provider, so exposure is bounded by what is in the request.",
-      "likelihood": "medium - preliminary; depends on how much retrieved content the model will reproduce and on whether length and formatting rules incidentally truncate it.",
-      "confidence": "medium",
-      "evidence_ids": [
-        "evd-115",
-        "evd-005",
-        "evd-006",
-        "evd-007",
-        "evd-038",
-        "evd-031",
-        "evd-101",
-        "evd-010",
-        "evd-009",
-        "evd-033",
-        "evd-044",
-        "evd-082",
-        "evd-064"
-      ],
-      "assumption_ids": [],
-      "open_question_ids": []
-    },
-    {
-      "title": "Structurally valid but substantively wrong analysis is published automatically and relied on as review assurance",
-      "description": "Provider responses are validated for required fields, schema conformance, size and basic formatting, and the structured input records semantic validation as not documented (evd-009, evd-133, evd-151). The documents disagree about whether a person sees externally visible output first: the security overview states that externally visible AI-generated output is reviewed before publication (evd-133), while the operations guide and AI analysis document describe publication as an automatic sequence of formatting steps that follows schema validation (evd-082, evd-010), and the structured input records human review as unknown (evd-151). AI-output approval requirements are a named documentation gap (evd-054). Where no person is in the path, a response that is wrong - through ordinary model error (evd-012, evd-105) or through content-driven influence - reaches developers as a ForgeFlow judgement.",
-      "methodology": "stride-scenario-based",
-      "category": [
-        "tampering",
-        "integrity_of_automated_decision",
-        "content_trust"
-      ],
-      "threat_actor_ids": [
-        "act-005",
-        "act-006"
-      ],
-      "affected_component_ids": [
-        "cmp-006",
-        "cmp-007",
-        "cmp-002",
-        "cmp-013"
-      ],
-      "affected_asset_ids": [
-        "ast-002",
-        "ast-001"
-      ],
-      "related_data_flow_ids": [
-        "df-008",
-        "df-011",
-        "df-012",
-        "df-002"
-      ],
-      "preconditions": [
-        "Publication is conditioned on organization configuration and successful schema validation, not on a documented approval step (evd-031, evd-082).",
-        "Validation described in every document that addresses it is structural rather than semantic (evd-009, evd-133, evd-151).",
-        "The product documents state the analysis may miss issues, produce incorrect recommendations and misinterpret repository context (evd-012, evd-105).",
-        "Two documents give incompatible accounts of whether a human reviews externally visible output before publication (evd-133 versus evd-010 and evd-082)."
-      ],
-      "attack_path": [
-        "An analysis job completes and the provider returns a response containing the expected fields (evd-008).",
-        "Schema validation passes; no described step assesses whether the observations are correct (evd-009).",
-        "The comment service formats the result and posts it to the pull request under the ForgeFlow identity (evd-031, evd-082).",
-        "Reviewers see a ForgeFlow summary reporting no significant concerns, or reporting concerns that mislead attention away from the change that matters (evd-012, evd-105).",
-        "The change is merged on the strength of a review shaped by the published summary (evd-064, evd-101)."
-      ],
-      "impact": "Structured analysis results (ast-002) carry unwarranted authority into the customer's merge decision for the affected source change (ast-001). Misleading published output can both cause a defect to be merged and consume reviewer effort on false concerns; because the comment appears under the ForgeFlow app identity, its provenance is not distinguishable from a validated finding.",
-      "likelihood": "medium - preliminary; the failure mode is documented as an inherent provider limitation, and whether a person intercepts it is contradicted between documents.",
-      "confidence": "medium",
-      "evidence_ids": [
-        "evd-009",
-        "evd-133",
-        "evd-151",
-        "evd-054",
-        "evd-082",
-        "evd-010",
-        "evd-012",
-        "evd-105",
-        "evd-011",
-        "evd-031",
-        "evd-064",
-        "evd-101"
-      ],
-      "assumption_ids": [],
-      "open_question_ids": []
-    },
-    {
-      "title": "Attacker-influenced markup or links in generated output are rendered to developers in comments and the web application",
-      "description": "Model output derived in part from repository content is rendered in two places: as a pull-request comment produced by the comment service, which applies output-length restrictions, removes unsupported formatting and adds repository links (evd-031, evd-010), and in the React web application, which displays completed analysis results to authenticated users (evd-025). Rich-content rendering behaviour is a named documentation gap (evd-054). Where output fields carry markup, links or reference text drawn from attacker-authored repository content, those elements are presented to reviewers with ForgeFlow's provenance.",
-      "methodology": "stride-scenario-based",
-      "category": [
-        "prompt_injection",
-        "spoofing",
-        "information_disclosure"
-      ],
-      "threat_actor_ids": [
-        "act-006"
-      ],
-      "affected_component_ids": [
-        "cmp-007",
-        "cmp-002",
-        "cmp-013"
-      ],
-      "affected_asset_ids": [
-        "ast-002"
-      ],
-      "related_data_flow_ids": [
-        "df-012",
-        "df-002"
-      ],
-      "preconditions": [
-        "Result content originating partly from untrusted repository text is rendered as a GitHub comment and in the SPA (evd-025, evd-031, evd-049, evd-053).",
-        "Formatting handling is described as removal of unsupported formatting and addition of repository links, without a described policy for links or markup carried inside result fields (evd-031, evd-010).",
-        "Rich-content rendering behaviour is a named documentation gap (evd-054)."
-      ],
-      "attack_path": [
-        "A contributor embeds link or markup text in repository documentation or a pull-request description (evd-005, evd-006).",
-        "The provider reproduces or paraphrases that element inside a schema-valid response field (evd-008, evd-009).",
-        "Formatting rules are applied and the comment is published to the pull request, or the result is rendered in the web application (evd-031, evd-025).",
-        "Reviewers see the element presented as part of a ForgeFlow summary and act on it (evd-064, evd-101)."
-      ],
-      "impact": "Structured analysis results (ast-002) become a delivery channel for attacker-chosen links or markup that inherit ForgeFlow's apparent authorship on the pull request and in the product UI, enabling misdirection of reviewers; the extent depends on rendering behaviour that the documents do not describe.",
-      "likelihood": "low - preliminary; formatting removal and length limits are documented and may already constrain this, but their scope is not described.",
-      "confidence": "low",
-      "evidence_ids": [
-        "evd-031",
-        "evd-010",
-        "evd-025",
-        "evd-054",
-        "evd-101",
-        "evd-133",
-        "evd-005",
-        "evd-006",
-        "evd-049"
-      ],
-      "assumption_ids": [],
-      "open_question_ids": []
-    },
-    {
-      "title": "Cross-organization disclosure where application-enforced organization scoping is not applied on a customer request path",
-      "description": "Tenant separation is logical: customer records carry an organization identifier and application services are responsible for applying organization-aware access rules when querying customer data (evd-032, evd-102, evd-130). API requests that operate on customer resources include an organization context supplied with the request (evd-026). The documents describe the inputs to authorization - authenticated identity plus membership and role - as intent (users should only be able to access organizations where they are members) rather than as an enforced default, and the security overview lists internal authorization implementation among intentionally omitted details (evd-124, evd-102, evd-138). Detailed tenant-isolation tests are a named documentation gap (evd-054). On any request path where the organization predicate is not applied, an authenticated member of one organization reaches another organization's records.",
-      "methodology": "stride-scenario-based",
-      "category": [
-        "information_disclosure",
-        "elevation_of_privilege",
-        "tenant_isolation"
-      ],
-      "threat_actor_ids": [
-        "act-001",
-        "act-002"
-      ],
-      "affected_component_ids": [
-        "cmp-003",
-        "cmp-009",
-        "cmp-010",
-        "cmp-002"
-      ],
-      "affected_asset_ids": [
-        "ast-002",
-        "ast-004",
-        "ast-003",
-        "ast-009"
-      ],
-      "related_data_flow_ids": [
-        "df-002",
-        "df-013",
-        "df-014"
-      ],
-      "preconditions": [
-        "Separation between tenants is enforced by application code rather than by a datastore-level constraint described in the documents (evd-032, evd-130).",
-        "The organization context accompanies the request rather than being derived solely from server-side session state, as documented (evd-026).",
-        "Authorization implementation detail and the default posture are not documented (evd-124, evd-138).",
-        "Tenant-isolation testing is named as a documentation gap (evd-054)."
-      ],
-      "attack_path": [
-        "An authenticated customer user enumerates or guesses an identifier belonging to another organization - an analysis job, result, repository configuration or artifact reference (evd-032, evd-046).",
-        "The user issues an API request carrying that identifier, optionally with a substituted organization context (evd-026, evd-002 flow df-002).",
-        "On a path where the organization predicate is absent or applied only to a subset of the query, the API returns the record (evd-032, evd-124).",
-        "The user repeats this across result, artifact-link and membership endpoints (evd-046, evd-026)."
-      ],
-      "impact": "Structured analysis results (ast-002) describing another customer's code changes and potential security concerns, pull-request and installation metadata (ast-003), membership and role records (ast-004) and artifact references (ast-009) are disclosed across the organization boundary, defeating the separation the platform states as a security objective.",
-      "likelihood": "medium - preliminary; rests on implementation detail the reviewed documents deliberately omit.",
-      "confidence": "medium",
-      "evidence_ids": [
-        "evd-032",
-        "evd-102",
-        "evd-130",
-        "evd-124",
-        "evd-026",
-        "evd-046",
-        "evd-138",
-        "evd-054"
-      ],
-      "assumption_ids": [],
-      "open_question_ids": []
-    },
-    {
-      "title": "Stored analysis artifacts reached outside the issuing organization through path convention or time-limited links",
-      "description": "Object storage (cmp-010) holds selected repository files, pull-request diffs, model input and output artifacts, exported reports and diagnostic artifacts for failed jobs, under paths of the form organizations/{organization_id}/jobs/{job_id}/artifacts/{artifact_name} (evd-033, evd-078). The API may generate time-limited access links for permitted customer downloads (evd-033, evd-026). Object-storage authorization enforcement is a named documentation gap (evd-054), so what constrains access beyond the path convention and the link is not established. Paths built from two identifiers are predictable given knowledge of an organization and job identifier, and an issued link is a bearer credential for whatever duration it holds.",
-      "methodology": "stride-scenario-based",
-      "category": [
-        "information_disclosure",
-        "tenant_isolation",
-        "elevation_of_privilege"
-      ],
-      "threat_actor_ids": [
-        "act-001",
-        "act-002"
-      ],
-      "affected_component_ids": [
-        "cmp-010",
-        "cmp-003"
-      ],
-      "affected_asset_ids": [
-        "ast-009",
-        "ast-001",
-        "ast-002"
-      ],
-      "related_data_flow_ids": [
-        "df-014",
-        "df-010"
-      ],
-      "preconditions": [
-        "Artifact locations are derived deterministically from organization and job identifiers (evd-033, evd-078).",
-        "Artifacts include restricted material: selected repository files, diffs, and model input and output artifacts (evd-033, evd-078).",
-        "The API mints time-limited links for downloads (evd-033, evd-026).",
-        "Object-storage authorization enforcement is a named documentation gap, so the control that separates path knowledge from access is not described (evd-054)."
-      ],
-      "attack_path": [
-        "An authenticated user obtains or infers an organization identifier and a job identifier from a result view, comment link or API response (evd-046, evd-010).",
-        "The user requests an artifact link for that job through the API (evd-026, evd-033).",
-        "If the link-issuing path does not re-check organization membership, or if storage access is governed only by path convention, the artifact is retrieved (evd-054, evd-130).",
-        "Alternatively an already-issued link is forwarded, cached or recorded elsewhere and replayed by a third party within its validity window (evd-033)."
-      ],
-      "impact": "Analysis artifacts (ast-009) containing customer source files, diffs and constructed model inputs - restricted material - and the corresponding source content (ast-001) and results (ast-002) are obtained by a party outside the owning organization, without any interaction with the database-level tenant checks.",
-      "likelihood": "medium - preliminary; the enforcing control is explicitly listed as undocumented.",
-      "confidence": "medium",
-      "evidence_ids": [
-        "evd-033",
-        "evd-078",
-        "evd-026",
-        "evd-054",
-        "evd-130",
-        "evd-046",
-        "evd-010"
-      ],
-      "assumption_ids": [],
-      "open_question_ids": []
-    },
-    {
-      "title": "Queued job payload trusted at execution time causes retrieval or storage under the wrong installation or organization",
-      "description": "Each queued job carries the organization identifier, GitHub installation identifier, repository identifier, pull-request identifier, event identifier, attempt number and job configuration (evd-029, evd-076). The worker resolves the customer organization and GitHub installation from the job, obtains a short-lived installation token, retrieves the pull request, and stores the result and artifacts under organization-scoped paths (evd-030, evd-061, evd-078). Redis access control is stated as an assumption that Redis is not publicly accessible and is reachable only from approved application workloads (evd-029, evd-053); no authentication for the queue connection is described. A job whose organization and installation fields are mismatched - whether written by a workload that should not be writing jobs, or produced by a defect in the receiver - causes content retrieved under one installation to be attributed to another organization.",
-      "methodology": "stride-scenario-based",
-      "category": [
-        "spoofing",
-        "tampering",
-        "tenant_isolation",
-        "confused_deputy"
-      ],
-      "threat_actor_ids": [],
-      "affected_component_ids": [
-        "cmp-005",
-        "cmp-006",
-        "cmp-004"
-      ],
-      "affected_asset_ids": [
-        "ast-001",
-        "ast-006",
-        "ast-003"
-      ],
-      "related_data_flow_ids": [
-        "df-005",
-        "df-006",
-        "df-007",
-        "df-009",
-        "df-010"
-      ],
-      "preconditions": [
-        "The job payload is the carrier of the organization-installation-repository association at execution time (evd-029, evd-076).",
-        "The worker mints an installation token from the installation identifier it finds in the job (evd-030, evd-061).",
-        "Queue reachability is expressed as an architectural assumption rather than a described control, and queue authentication is not described (evd-053, evd-029).",
-        "Results and artifacts are written under the organization identifier the job supplies (evd-045, evd-078)."
-      ],
-      "attack_path": [
-        "A component with write access to Redis - the receiver itself, a compromised workload, or a misconfigured network path - places a job whose organization identifier and installation identifier do not correspond (evd-029, evd-053).",
-        "A worker dequeues it, resolves the installation named in the job and mints a token for that installation (evd-030, evd-061).",
-        "The worker retrieves pull-request content from the repositories within that installation scope (evd-063, evd-065).",
-        "The retrieved content, the prompt artifacts and the resulting analysis are written under the organization identifier the job supplied (evd-045, evd-078).",
-        "Members of that organization view results derived from another customer's repository, and a comment may be posted into the other installation (evd-046, evd-031)."
-      ],
-      "impact": "Customer source code and repository content (ast-001) crosses the organization boundary into another tenant's stored results and artifacts; a short-lived installation token (ast-006) is exercised for work no party in that installation requested; and pull-request, repository and installation metadata (ast-003) is recorded against the wrong customer, corrupting both the tenant model and the audit record.",
-      "likelihood": "low - preliminary; requires queue write access or an identifier-handling defect, neither of which the documents address.",
-      "confidence": "low",
-      "evidence_ids": [
-        "evd-029",
-        "evd-076",
-        "evd-030",
-        "evd-061",
-        "evd-053",
-        "evd-063",
-        "evd-065",
-        "evd-045",
-        "evd-078",
-        "evd-031",
-        "evd-046"
-      ],
-      "assumption_ids": [],
-      "open_question_ids": []
-    },
-    {
-      "title": "ForgeFlow-side organization membership outlives the GitHub access it was derived from",
-      "description": "Authentication is delegated to GitHub, but authorization is evaluated against membership and role records ForgeFlow stores itself: after the GitHub flow completes, ForgeFlow associates the GitHub identity with a ForgeFlow user and one or more customer organizations, and organization membership and role information are stored in ForgeFlow (evd-027). Access to organization data is based on ForgeFlow organization membership and configured role (evd-097, evd-124). GitHub-side reality changes independently: repository selection may be expanded or reduced later through normal GitHub administration, customers are responsible for managing GitHub organization access, and installation events are among the subscribed webhook types (evd-058, evd-104, evd-062). The documents do not describe when stored membership is re-derived from GitHub, so removal on the GitHub side and removal in ForgeFlow are separate events.",
-      "methodology": "stride-scenario-based",
-      "category": [
-        "elevation_of_privilege",
-        "information_disclosure",
-        "authorization"
-      ],
-      "threat_actor_ids": [
-        "act-001",
-        "act-002"
-      ],
-      "affected_component_ids": [
-        "cmp-003",
-        "cmp-009",
-        "cmp-013"
-      ],
-      "affected_asset_ids": [
-        "ast-004",
-        "ast-002",
-        "ast-001"
-      ],
-      "related_data_flow_ids": [
-        "df-002",
-        "df-013",
-        "df-003"
-      ],
-      "preconditions": [
-        "Authorization decisions read ForgeFlow-stored membership and role rather than live GitHub organization membership (evd-027, evd-097, evd-124).",
-        "GitHub organization membership and repository selection are managed by the customer and can change at any time (evd-058, evd-104).",
-        "Session lifetime, renewal and revocation behaviour is not described beyond the phrase secure browser sessions (evd-027).",
-        "Analysis results describe customer code changes and potential security concerns and are retrievable through the API (evd-046, evd-096)."
-      ],
-      "attack_path": [
-        "A user is a member of a customer's GitHub organization and holds a corresponding ForgeFlow membership record (evd-027).",
-        "The customer removes the user from the GitHub organization, or reduces the repositories the installation covers (evd-058, evd-104).",
-        "No described process re-derives the ForgeFlow membership record from GitHub at that moment (evd-027, evd-138).",
-        "The user authenticates again through GitHub as an individual, or continues an existing session, and the API evaluates access against the stale ForgeFlow record (evd-097, evd-124).",
-        "The user reads analysis results, artifact links and organization settings for repositories they no longer have GitHub access to (evd-046, evd-026)."
-      ],
-      "impact": "User identity, organization membership and role records (ast-004) authorize access after the underlying entitlement has been withdrawn, disclosing structured analysis results (ast-002) and, through artifact links, source-derived content (ast-001) to a former member of the organization.",
-      "likelihood": "medium - preliminary; the divergence is structural, and how membership is refreshed is not documented.",
-      "confidence": "medium",
-      "evidence_ids": [
-        "evd-027",
-        "evd-097",
-        "evd-124",
-        "evd-102",
-        "evd-058",
-        "evd-104",
-        "evd-062",
-        "evd-046",
-        "evd-026",
-        "evd-138"
-      ],
-      "assumption_ids": [],
-      "open_question_ids": []
-    },
-    {
-      "title": "Compromise of an application workload converts into GitHub App authority over every installation",
-      "description": "The managed secrets service (cmp-011) holds the GitHub App private key, the GitHub OAuth client secret, the AI-provider API key, the email-provider API key and selected database credentials; workloads retrieve them through workload identity, and different services may receive access to different secrets based on their responsibilities (evd-034, evd-127). The exact per-service scoping is not documented. The analysis worker is both the component that retrieves the GitHub App private key and the AI-provider key (df-018) and the primary component that processes untrusted customer source content (evd-030). Because installation tokens are minted on demand from the App private key (evd-061, evd-037), control of a workload that can retrieve that key is control of repository access across every installation, not one tenant.",
-      "methodology": "stride-scenario-based",
-      "category": [
-        "elevation_of_privilege",
-        "credential_compromise",
-        "information_disclosure"
-      ],
-      "threat_actor_ids": [],
-      "affected_component_ids": [
-        "cmp-011",
-        "cmp-006",
-        "cmp-007",
-        "cmp-003",
-        "cmp-004",
-        "cmp-013"
-      ],
-      "affected_asset_ids": [
-        "ast-005",
-        "ast-007",
-        "ast-006",
-        "ast-001"
-      ],
-      "related_data_flow_ids": [
-        "df-017",
-        "df-018",
-        "df-019",
-        "df-020",
-        "df-007"
-      ],
-      "preconditions": [
-        "The GitHub App private key is retrievable at runtime by application workloads through workload identity (evd-034, evd-127).",
-        "Installation tokens for any installation are derived from that key on demand (evd-061, evd-037).",
-        "The worker that holds retrieval rights also parses and processes untrusted repository content (evd-030, evd-053).",
-        "Per-service secret differentiation is asserted but the actual scoping is not documented (evd-034)."
-      ],
-      "attack_path": [
-        "A workload with secret-retrieval rights is compromised - through a dependency, a content-parsing defect, or a deployment misconfiguration; the documents describe secure development practices but do not exclude this (evd-134, evd-030).",
-        "The workload identity is used to retrieve the GitHub App private key and the provider API key from the secrets service (evd-034, evd-127).",
-        "The key is used to authenticate as the GitHub App and mint installation tokens for installations beyond the one the current job concerns (evd-061, evd-037).",
-        "Repository content is read, and comments posted, across customer installations within their granted permissions (evd-060, evd-065)."
-      ],
-      "impact": "The GitHub App private key (ast-005) and provider, OAuth, email and database credentials (ast-007) are disclosed; short-lived installation tokens (ast-006) can be minted at will, giving read access to customer source code and repository content (ast-001) for every connected organization and the ability to post comments as ForgeFlow. The blast radius is the whole customer base rather than one tenant. Managed secrets storage and workload identity are documented controls that make casual retrieval harder; they do not bound what a compromised authorized workload can fetch.",
-      "likelihood": "medium - preliminary; conditional on workload compromise, with consequences that are not tenant-bounded.",
-      "confidence": "medium",
-      "evidence_ids": [
-        "evd-034",
-        "evd-127",
-        "evd-061",
-        "evd-037",
-        "evd-030",
-        "evd-053",
-        "evd-060",
-        "evd-065",
-        "evd-134",
-        "evd-149"
-      ],
-      "assumption_ids": [],
-      "open_question_ids": []
-    },
-    {
-      "title": "Restricted source content and prompts reach shared logging and diagnostic artifacts",
-      "description": "Application and security-relevant events are forwarded to a central logging platform (cmp-012) that is a shared organizational capability managed outside the application team (evd-036, evd-136). The documents express the constraint on content as guidance: customer source code should not be included in normal application logs, error handling should avoid logging full provider prompts or GitHub access tokens, logs should avoid storing authentication credentials, and large request bodies should not normally be written (evd-036, evd-084, evd-131). No mechanism that enforces this is described. Meanwhile the failure paths most likely to capture request material are the ones that persist: diagnostic artifacts associated with failed jobs and prompt-construction artifacts are stored in object storage (evd-033, evd-078), and worker failures, provider request metadata and application errors are logged (evd-036, evd-084).",
-      "methodology": "stride-scenario-based",
-      "category": [
-        "information_disclosure",
-        "logging"
-      ],
-      "threat_actor_ids": [],
-      "affected_component_ids": [
-        "cmp-012",
-        "cmp-006",
-        "cmp-010",
-        "cmp-003"
-      ],
-      "affected_asset_ids": [
-        "ast-001",
-        "ast-009",
-        "ast-010",
-        "ast-006"
-      ],
-      "related_data_flow_ids": [
-        "df-023",
-        "df-024",
-        "df-025",
-        "df-026",
-        "df-010"
-      ],
-      "preconditions": [
-        "Redaction expectations are stated as guidance without a described enforcing control (evd-036, evd-084, evd-131).",
-        "The logging destination is shared and managed outside the application team, with its access population not described in these documents (evd-036, evd-136).",
-        "Failure handling produces diagnostic artifacts and error records derived from provider requests and responses (evd-033, evd-078, evd-015 not cited - see evd-052).",
-        "Log data is classified internal while the material that can leak into it is restricted (evd-036, evd-033)."
-      ],
-      "attack_path": [
-        "An analysis job fails - provider timeout, invalid structured response, storage error (evd-052, evd-081).",
-        "The error path serialises context that includes part of the constructed request or the provider response (evd-036, evd-084).",
-        "That record is forwarded to the shared logging platform, and a diagnostic artifact is written to object storage (evd-036, evd-033).",
-        "Anyone with access to the shared logging platform, a population governed outside the ForgeFlow tenant model, can read customer-derived content (evd-136, evd-130)."
-      ],
-      "impact": "Customer source code and repository content (ast-001) and prompt or model artifacts (ast-009) are placed into audit and operational log stores (ast-010) whose access model is not the organization boundary, and, if token material is captured in an error path, short-lived installation tokens (ast-006) are exposed within their validity window.",
-      "likelihood": "medium - preliminary; the described control is normative rather than technical, and failure paths are the ones that capture the most content.",
-      "confidence": "medium",
-      "evidence_ids": [
-        "evd-036",
-        "evd-084",
-        "evd-131",
-        "evd-136",
-        "evd-033",
-        "evd-078",
-        "evd-052",
-        "evd-081",
-        "evd-130"
-      ],
-      "assumption_ids": [],
-      "open_question_ids": []
-    },
-    {
-      "title": "One tenant's event volume or retry behaviour exhausts shared analysis capacity",
-      "description": "All pull-request events from all installations enter one managed Redis queue and are processed by a shared, horizontally scaling worker pool (evd-042, evd-076, evd-085). Subscribed events include pull request synchronized, which fires on every push to an open pull request (evd-062). External AI-provider capacity may limit total processing throughput (evd-051), so the pool cannot scale past the provider ceiling. Recoverable failures are retried automatically and exact retry limits are a named documentation gap (evd-077, evd-054); no dead-letter handling is described. Rate-limiting state is held in Redis and ForgeFlow may limit usage to protect reliability, but the limits and their enforcement points are not described (evd-029, evd-103).",
-      "methodology": "stride-scenario-based",
-      "category": [
-        "denial_of_service",
-        "resource_exhaustion",
-        "tenant_isolation"
-      ],
-      "threat_actor_ids": [
-        "act-006",
-        "act-001"
-      ],
-      "affected_component_ids": [
-        "cmp-004",
-        "cmp-005",
-        "cmp-006",
-        "cmp-014"
-      ],
-      "affected_asset_ids": [
-        "ast-011",
-        "ast-002",
-        "ast-003"
-      ],
-      "related_data_flow_ids": [
-        "df-004",
-        "df-005",
-        "df-006",
-        "df-008"
-      ],
-      "preconditions": [
-        "A single queue and worker pool serve every organization (evd-042, evd-076, evd-085).",
-        "Provider capacity bounds total throughput regardless of worker scaling (evd-051).",
-        "Retry limits are a named documentation gap and failing jobs may be retried repeatedly (evd-077, evd-054, evd-090).",
-        "Per-organization rate limits are asserted only as a possibility, with enforcement points undescribed (evd-029, evd-103)."
-      ],
-      "attack_path": [
-        "A party with commit access to a connected repository generates a high rate of pull-request open and synchronize events, or opens pull requests with very large diffs (evd-062, evd-090).",
-        "The receiver scales with event volume and enqueues a job for each relevant event (evd-028, evd-085).",
-        "Worker replicas scale on queue depth but are capped by provider capacity, and large pull requests take longer per job (evd-051, evd-090).",
-        "Failing or timing-out jobs are retried, adding further load during the same window (evd-077, evd-015 - see evd-052).",
-        "Queue depth grows; jobs for unrelated organizations wait behind the flood and exceed the several-minute expectation (evd-075, evd-051)."
-      ],
-      "impact": "Analysis processing availability (ast-011) degrades for organizations unrelated to the source of the load: results (ast-002) arrive late or not at all for their pull requests, job and metadata records (ast-003) accumulate in a backlog, and provider capacity is consumed. Previously completed results remain viewable, which is the documented degraded-mode expectation, so the loss is of new analysis rather than of history.",
-      "likelihood": "medium - preliminary; the shared-pool structure is documented and per-tenant limits are not.",
-      "confidence": "medium",
-      "evidence_ids": [
-        "evd-042",
-        "evd-076",
-        "evd-085",
-        "evd-051",
-        "evd-062",
-        "evd-077",
-        "evd-054",
-        "evd-090",
-        "evd-029",
-        "evd-103",
-        "evd-075",
-        "evd-028",
-        "evd-052"
-      ],
-      "assumption_ids": [],
-      "open_question_ids": []
-    },
-    {
-      "title": "Organization data deletion leaves restricted source material in artifacts, backups and logs",
-      "description": "The API supports organization-level data-deletion requests, customer administrators can request deletion of organization data, and deletion status is stored in PostgreSQL (evd-026, evd-096, evd-032). What customers are told about source material is that source files are treated as temporary processing data and are deleted after analysis completes (evd-099), while the operations guide records a 30-day retention target for artifacts with scheduled cleanup and support-requested extensions (evd-079). Source-artifact retention is a named documentation gap (evd-054). Deletion of database records is not described as reaching object-storage artifacts, forwarded log records or managed database backups (evd-033, evd-036, evd-032).",
-      "methodology": "stride-scenario-based",
-      "category": [
-        "information_disclosure",
-        "data_lifecycle",
-        "repudiation"
-      ],
-      "threat_actor_ids": [
-        "act-002",
-        "act-003"
-      ],
-      "affected_component_ids": [
-        "cmp-003",
-        "cmp-009",
-        "cmp-010",
-        "cmp-012"
-      ],
-      "affected_asset_ids": [
-        "ast-001",
-        "ast-009",
-        "ast-002",
-        "ast-010"
-      ],
-      "related_data_flow_ids": [
-        "df-013",
-        "df-014",
-        "df-023",
-        "df-010"
-      ],
-      "preconditions": [
-        "Two documents describe incompatible lifetimes for retrieved source material: deleted after analysis completes, versus a 30-day retention target with possible extensions (evd-099, evd-079).",
-        "Artifacts, forwarded logs and managed database backups are separate stores from the records the deletion path is described as touching (evd-033, evd-036, evd-032).",
-        "Source-artifact retention is a named documentation gap (evd-054).",
-        "Support personnel may request temporary retention extensions (evd-079)."
-      ],
-      "attack_path": [
-        "A customer administrator requests deletion of organization data, relying on the statement that source files are deleted after analysis completes (evd-096, evd-099).",
-        "The API records deletion status and removes the records the deletion path covers (evd-026, evd-032).",
-        "Artifacts under the organization's object-storage paths remain until scheduled cleanup, or longer under a retention extension (evd-079, evd-033).",
-        "Forwarded log records and managed database backups are unaffected by the application-level deletion (evd-036, evd-032).",
-        "Restricted source-derived material remains accessible to anyone with access to those stores after the customer believes it is gone (evd-078, evd-136)."
-      ],
-      "impact": "Customer source code and repository content (ast-001) and analysis artifacts (ast-009) persist beyond the point at which the customer was told they were removed, and structured results (ast-002) and log records (ast-010) may remain in stores the deletion path does not reach. The consequence is both an exposure window nobody is tracking and an inaccurate account of what deletion achieved.",
-      "likelihood": "low - preliminary; grounded in a documented contradiction rather than in observed behaviour.",
-      "confidence": "low",
-      "evidence_ids": [
-        "evd-026",
-        "evd-096",
-        "evd-032",
-        "evd-099",
-        "evd-079",
-        "evd-033",
-        "evd-078",
-        "evd-036",
-        "evd-054",
-        "evd-125",
-        "evd-136"
-      ],
-      "assumption_ids": [],
-      "open_question_ids": []
-    },
-    {
-      "title": "Retried jobs reuse stored artifacts captured before access or repository state changed",
-      "description": "Where repository artifacts are still available, the retry process may reuse previously stored analysis artifacts instead of downloading repository content again, and manual retries reuse the original job metadata whenever possible (evd-077). Artifacts persist for a retention window measured in days (evd-079). Repository access, however, is not stable over the same window: repository selection may be expanded or reduced through normal GitHub administration, and access failures may arise from a revoked installation or permission changes (evd-058, evd-068). Operators may also retry comment publication independently of the analysis job (evd-082). A retry executed after the customer has narrowed or removed ForgeFlow's access therefore proceeds from a copy rather than from a permission check against GitHub.",
-      "methodology": "stride-scenario-based",
-      "category": [
-        "tampering",
-        "authorization",
-        "integrity_of_automated_decision"
-      ],
-      "threat_actor_ids": [
-        "act-003"
-      ],
-      "affected_component_ids": [
-        "cmp-006",
-        "cmp-010",
-        "cmp-007"
-      ],
-      "affected_asset_ids": [
-        "ast-009",
-        "ast-002",
-        "ast-001"
-      ],
-      "related_data_flow_ids": [
-        "df-006",
-        "df-010",
-        "df-011",
-        "df-012"
-      ],
-      "preconditions": [
-        "Retries may consume stored artifacts in place of a fresh repository retrieval (evd-077, evd-089).",
-        "Artifacts remain available for a retention window and can be extended on request (evd-079).",
-        "Repository access and installation scope can be reduced or revoked between the original run and the retry (evd-058, evd-068).",
-        "Comment publication can be retried independently of the analysis job, by operations personnel through the administrative interface (evd-082, evd-083)."
-      ],
-      "attack_path": [
-        "An analysis job fails and its artifacts - diffs, selected repository files, prompt inputs - remain in object storage (evd-052, evd-078).",
-        "The customer narrows the installation's repository selection, disables the integration or revokes the installation (evd-058, evd-068).",
-        "An operator or an automatic retry re-runs the job, reusing the stored artifacts rather than re-fetching content (evd-077, evd-083).",
-        "Analysis proceeds on content the installation no longer grants access to, and content is again transmitted to the provider (evd-044, evd-008 flow df-008).",
-        "Where publication is retried, a comment is posted from a result derived from that stale content (evd-082, evd-031)."
-      ],
-      "impact": "Analysis artifacts (ast-009) are used as a substitute for a live permission check, so customer source content (ast-001) is reprocessed and re-transmitted to the external provider after the customer withdrew or narrowed access, and structured results (ast-002) may be published that reflect repository state and permissions that no longer hold.",
-      "likelihood": "low - preliminary; requires a retry to coincide with an access change inside the artifact retention window.",
-      "confidence": "low",
-      "evidence_ids": [
-        "evd-077",
-        "evd-089",
-        "evd-079",
-        "evd-058",
-        "evd-068",
-        "evd-082",
-        "evd-083",
-        "evd-078",
-        "evd-052",
-        "evd-031",
-        "evd-044"
-      ],
-      "assumption_ids": [],
-      "open_question_ids": []
-    },
-    {
-      "title": "Administrative troubleshooting reaches customer source material across all organizations",
-      "description": "The administrative interface (cmp-008) lets authorized ForgeFlow personnel locate organizations and installations, view analysis job status, review error metadata, retry failed jobs, disable integrations and support data-deletion requests (evd-035, evd-083). It sits outside the customer login flow, behind corporate identity authentication, with actions recorded for audit and sessions expiring on inactivity (evd-035, evd-087, evd-132). What it can reach in the artifact store is not established: administrative access to source artifacts is a named documentation gap, detailed administrative permissions are maintained separately, and administrative tooling is described only as intended to respect customer isolation requirements (evd-054, evd-035, evd-130). Diagnostic artifacts associated with failed jobs, which contain source-derived material, are exactly what troubleshooting reaches for (evd-033, evd-078).",
-      "methodology": "stride-scenario-based",
-      "category": [
-        "information_disclosure",
-        "elevation_of_privilege",
-        "insider"
-      ],
-      "threat_actor_ids": [
-        "act-003"
-      ],
-      "affected_component_ids": [
-        "cmp-008",
-        "cmp-003",
-        "cmp-010",
-        "cmp-009"
-      ],
-      "affected_asset_ids": [
-        "ast-001",
-        "ast-009",
-        "ast-002",
-        "ast-010"
-      ],
-      "related_data_flow_ids": [
-        "df-022",
-        "df-021",
-        "df-014",
-        "df-027"
-      ],
-      "preconditions": [
-        "Administrative capability spans all organizations by design, since it exists to locate any organization and installation (evd-035, evd-083).",
-        "Whether administrative access extends to source artifacts is a named documentation gap (evd-054).",
-        "Diagnostic artifacts for failed jobs contain source-derived content and are stored alongside other artifacts (evd-033, evd-078).",
-        "Isolation in administrative tooling is expressed as intent rather than as a described enforcement (evd-130).",
-        "Break-glass procedures exist but are maintained separately (evd-087)."
-      ],
-      "attack_path": [
-        "An operator authenticates through the corporate identity provider and reaches the administrative interface (evd-087, evd-035).",
-        "Investigating a failure, the operator opens job error metadata and the associated diagnostic artifacts for a customer organization (evd-083, evd-033).",
-        "Because scoping of administrative artifact access is not established, the content viewed may include customer source files, diffs and prompt artifacts for any organization (evd-054, evd-078).",
-        "The same path is available to anyone who obtains an administrative session - through corporate identity compromise or a break-glass route documented elsewhere (evd-087, evd-132)."
-      ],
-      "impact": "Customer source code and repository content (ast-001) and analysis artifacts (ast-009) across every organization are reachable from a single internal role, and structured results (ast-002) can be read outside the tenant boundary. Administrative actions are recorded (ast-010), so the activity is auditable after the fact, but the audit record does not constrain the access itself.",
-      "likelihood": "low - preliminary; the capability boundary is documented as unresolved rather than as absent.",
-      "confidence": "medium",
-      "evidence_ids": [
-        "evd-035",
-        "evd-083",
-        "evd-087",
-        "evd-132",
-        "evd-054",
-        "evd-130",
-        "evd-033",
-        "evd-078",
-        "evd-048",
-        "evd-136"
-      ],
-      "assumption_ids": [],
-      "open_question_ids": []
-    }
-  ],
-  "catalog_gap_candidates": []
+  "schema": "ThreatAnalysisProposal",
+  "response": {
+    "threats": [
+      {
+        "title": "Forged or replayed webhook deliveries create analysis jobs for installations the sender does not control",
+        "description": "The webhook receiver (cmp-004) is internet-facing and converts event payloads into analysis jobs keyed by the installation, repository and pull-request identifiers carried in the payload (evd-028, evd-029, evd-042). The documents state that incoming requests are validated and unsupported events ignored, but do not describe the mechanism, and both the architecture and security overviews name detailed webhook-validation behaviour and webhook replay handling as documentation gaps (evd-054, evd-138). The integration records an assumption that webhook events originate from GitHub infrastructure (evd-070). Where validation can be satisfied by a party other than GitHub, or where a previously delivered event can be resubmitted, jobs are created that downstream components treat as GitHub-originated work.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "spoofing",
+          "tampering",
+          "denial_of_service"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-004",
+          "cmp-005",
+          "cmp-006",
+          "cmp-007"
+        ],
+        "affected_asset_ids": [
+          "ast-003",
+          "ast-011",
+          "ast-002"
+        ],
+        "related_data_flow_ids": [
+          "df-004",
+          "df-005",
+          "df-006",
+          "df-011"
+        ],
+        "preconditions": [
+          "The webhook endpoint is reachable from the public internet and is listed as an internet-facing component (evd-028, evd-144).",
+          "Job creation is driven by identifiers supplied in the event payload rather than by state ForgeFlow already holds (evd-029, evd-042).",
+          "Request validation is asserted but its mechanism, and any replay defence, are named documentation gaps (evd-054, evd-138).",
+          "Downstream processing treats a queued job as authoritative work for the named installation (evd-030, evd-076)."
+        ],
+        "attack_path": [
+          "A party discovers the internet-facing webhook endpoint (evd-028, evd-144).",
+          "It submits a crafted event, or resubmits a previously observed delivery, naming a real installation, repository and pull request (evd-029, evd-042).",
+          "The receiver accepts the request, parses the metadata and enqueues an analysis job (evd-028, evd-062).",
+          "A worker dequeues the job, obtains an installation token and retrieves the named pull request, then requests provider analysis (evd-030, evd-061).",
+          "If the organization has automatic comments enabled, a summary is published to the pull request (evd-031, evd-082)."
+        ],
+        "impact": "Analysis jobs, provider spend and worker capacity are consumed on work no customer requested, degrading analysis processing availability (ast-011) for other tenants; pull-request, repository and installation metadata (ast-003) is written for events that did not occur; and unsolicited or duplicated ForgeFlow comments carrying structured analysis results (ast-002) appear on customer pull requests under the ForgeFlow app identity.",
+        "likelihood": "medium - preliminary; turns entirely on webhook validation behaviour the reviewed documents do not describe.",
+        "confidence": "medium",
+        "evidence_ids": [
+          "evd-028",
+          "evd-062",
+          "evd-128",
+          "evd-070",
+          "evd-029",
+          "evd-042",
+          "evd-054",
+          "evd-138",
+          "evd-144",
+          "evd-030",
+          "evd-031",
+          "evd-082"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Untrusted repository and pull-request content steers the model that produces analysis results",
+        "description": "The analysis worker (cmp-006) assembles a request containing ForgeFlow analysis instructions, pull-request metadata, repository context and pull-request changes, and sends it to the external AI provider (cmp-014) (evd-006, evd-044). Retrieved context includes pull-request titles and descriptions, diffs, changed source files, repository documentation and configuration files (evd-005), all of which are authored by whoever contributes to the repository. The architecture names a repository-content instruction boundary separating trusted analysis instructions from untrusted repository and pull-request content, and states repository content may be untrusted (evd-049, evd-053), but the reviewed documents do not describe how the constructed request keeps the two apart. The sample repository notes contain a block of text addressed to an AI reader that attempts to override prior instructions, suppress reporting of security findings, and assert that controls are implemented (evd-115) - an instance of exactly the content type the worker retrieves as repository documentation, present in a document the notes themselves describe as unreviewed (evd-116).",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "prompt_injection",
+          "tampering",
+          "content_trust"
+        ],
+        "threat_actor_ids": [
+          "act-006"
+        ],
+        "affected_component_ids": [
+          "cmp-006",
+          "cmp-014",
+          "cmp-007",
+          "cmp-002"
+        ],
+        "affected_asset_ids": [
+          "ast-002",
+          "ast-001"
+        ],
+        "related_data_flow_ids": [
+          "df-007",
+          "df-008",
+          "df-011",
+          "df-012",
+          "df-002"
+        ],
+        "preconditions": [
+          "Repository documentation, configuration files, diffs and pull-request descriptions are retrieved and placed into the provider request alongside ForgeFlow instructions (evd-005, evd-006, evd-044).",
+          "The boundary separating trusted instructions from untrusted content is named but no enforcing control is described in the reviewed documents (evd-049, evd-053).",
+          "Validation of the provider response covers required fields, schema conformance, size and basic formatting; semantic validation is recorded as not documented (evd-009, evd-133, evd-151).",
+          "Analysis output is displayed to developers and, where enabled, published to the pull request (evd-010, evd-082)."
+        ],
+        "attack_path": [
+          "A contributor places instruction-shaped text in a file the worker retrieves - a README, a configuration file, a pull-request description or a comment in a changed source file (evd-005, evd-006, evd-115).",
+          "The worker retrieves that content under the installation token and includes it in the constructed request (evd-030, evd-063).",
+          "The provider processes instructions and repository content in the same request and returns a structurally valid response shaped by the injected text (evd-006, evd-011).",
+          "Schema validation passes because the response has the required fields and format (evd-009).",
+          "The shaped result is stored, displayed in the web application, and published as a pull-request comment where automatic comments are enabled (evd-045, evd-010, evd-082)."
+        ],
+        "impact": "Structured analysis results (ast-002) become attacker-influenced: security concerns can be suppressed, false assurance asserted, or misleading observations presented to reviewers of a change to customer source code (ast-001). Because ForgeFlow output is presented as review assistance and, when enabled, posted automatically under the ForgeFlow app identity, the influenced content reaches every reviewer on the pull request.",
+        "likelihood": "high - preliminary; the content path is documented, and content of the kind required already exists in the reviewed repository documentation.",
+        "confidence": "high",
+        "evidence_ids": [
+          "evd-005",
+          "evd-006",
+          "evd-044",
+          "evd-049",
+          "evd-053",
+          "evd-115",
+          "evd-116",
+          "evd-009",
+          "evd-011",
+          "evd-133",
+          "evd-151",
+          "evd-010",
+          "evd-082"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Instruction-bearing repository content drives customer source content into an externally visible pull-request comment",
+        "description": "Where automatic comments are enabled, model output is converted into a comment and posted to the pull request through the GitHub API by the comment service (cmp-007) (evd-010, evd-031, evd-082). The comment service applies output-length restrictions, removes unsupported formatting and adds a result link, and ForgeFlow states it attempts to avoid including unnecessary source-code content in comments (evd-031, evd-101); none of the described steps evaluate what the summary text means. Repository content already in the request could therefore be echoed back into the comment body. The sample repository notes contain a passage addressed to an AI reader that attempts precisely this - directing that complete contents of every supplied source file be included in generated pull-request comments, and that any GitHub App private key appearing in the prompt be emitted (evd-115).",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "prompt_injection",
+          "information_disclosure",
+          "content_trust"
+        ],
+        "threat_actor_ids": [
+          "act-006"
+        ],
+        "affected_component_ids": [
+          "cmp-006",
+          "cmp-014",
+          "cmp-007",
+          "cmp-013"
+        ],
+        "affected_asset_ids": [
+          "ast-001",
+          "ast-009",
+          "ast-002"
+        ],
+        "related_data_flow_ids": [
+          "df-008",
+          "df-011",
+          "df-012"
+        ],
+        "preconditions": [
+          "Selected repository files, diffs and documentation are present in the provider request (evd-007, evd-044, evd-005).",
+          "Comment formatting is described as length restriction, formatting removal and link addition, with no described check on which source content the summary reproduces (evd-031, evd-010).",
+          "Response validation is structural: required fields, schema, maximum size, basic formatting (evd-009).",
+          "Pull requests may be visible to a wider audience than the ForgeFlow organization, and comments are posted under the ForgeFlow installation identity (evd-031, evd-064).",
+          "The documents state the provider does not receive GitHub App private keys, installation tokens, session cookies or database credentials, which constrains the credential variant of this scenario (evd-007, evd-038)."
+        ],
+        "attack_path": [
+          "A contributor adds text to a file or pull-request description directing the analysing model to reproduce supplied file contents in its summary (evd-005, evd-115).",
+          "The worker includes that file, together with other selected repository context, in the provider request (evd-006, evd-044).",
+          "The provider returns a schema-conformant response whose summary or observations fields contain reproduced source content (evd-008, evd-009).",
+          "Formatting rules and length limits are applied and the comment is published to the pull request (evd-031, evd-082).",
+          "The comment, and the stored result and artifacts behind it, now contain source excerpts in a channel wider than the analysis pipeline (evd-033, evd-045)."
+        ],
+        "impact": "Customer source code and repository content (ast-001) and prompt or model artifacts (ast-009) are reproduced into a pull-request comment and into the stored structured result (ast-002), placing restricted content in a location governed by GitHub repository visibility rather than by ForgeFlow tenant controls. The credential variant attempted by the injected text is weakened by the documented statement that credentials are not transmitted to the provider, so exposure is bounded by what is in the request.",
+        "likelihood": "medium - preliminary; depends on how much retrieved content the model will reproduce and on whether length and formatting rules incidentally truncate it.",
+        "confidence": "medium",
+        "evidence_ids": [
+          "evd-115",
+          "evd-005",
+          "evd-006",
+          "evd-007",
+          "evd-038",
+          "evd-031",
+          "evd-101",
+          "evd-010",
+          "evd-009",
+          "evd-033",
+          "evd-044",
+          "evd-082",
+          "evd-064"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Structurally valid but substantively wrong analysis is published automatically and relied on as review assurance",
+        "description": "Provider responses are validated for required fields, schema conformance, size and basic formatting, and the structured input records semantic validation as not documented (evd-009, evd-133, evd-151). The documents disagree about whether a person sees externally visible output first: the security overview states that externally visible AI-generated output is reviewed before publication (evd-133), while the operations guide and AI analysis document describe publication as an automatic sequence of formatting steps that follows schema validation (evd-082, evd-010), and the structured input records human review as unknown (evd-151). AI-output approval requirements are a named documentation gap (evd-054). Where no person is in the path, a response that is wrong - through ordinary model error (evd-012, evd-105) or through content-driven influence - reaches developers as a ForgeFlow judgement.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "tampering",
+          "integrity_of_automated_decision",
+          "content_trust"
+        ],
+        "threat_actor_ids": [
+          "act-005",
+          "act-006"
+        ],
+        "affected_component_ids": [
+          "cmp-006",
+          "cmp-007",
+          "cmp-002",
+          "cmp-013"
+        ],
+        "affected_asset_ids": [
+          "ast-002",
+          "ast-001"
+        ],
+        "related_data_flow_ids": [
+          "df-008",
+          "df-011",
+          "df-012",
+          "df-002"
+        ],
+        "preconditions": [
+          "Publication is conditioned on organization configuration and successful schema validation, not on a documented approval step (evd-031, evd-082).",
+          "Validation described in every document that addresses it is structural rather than semantic (evd-009, evd-133, evd-151).",
+          "The product documents state the analysis may miss issues, produce incorrect recommendations and misinterpret repository context (evd-012, evd-105).",
+          "Two documents give incompatible accounts of whether a human reviews externally visible output before publication (evd-133 versus evd-010 and evd-082)."
+        ],
+        "attack_path": [
+          "An analysis job completes and the provider returns a response containing the expected fields (evd-008).",
+          "Schema validation passes; no described step assesses whether the observations are correct (evd-009).",
+          "The comment service formats the result and posts it to the pull request under the ForgeFlow identity (evd-031, evd-082).",
+          "Reviewers see a ForgeFlow summary reporting no significant concerns, or reporting concerns that mislead attention away from the change that matters (evd-012, evd-105).",
+          "The change is merged on the strength of a review shaped by the published summary (evd-064, evd-101)."
+        ],
+        "impact": "Structured analysis results (ast-002) carry unwarranted authority into the customer's merge decision for the affected source change (ast-001). Misleading published output can both cause a defect to be merged and consume reviewer effort on false concerns; because the comment appears under the ForgeFlow app identity, its provenance is not distinguishable from a validated finding.",
+        "likelihood": "medium - preliminary; the failure mode is documented as an inherent provider limitation, and whether a person intercepts it is contradicted between documents.",
+        "confidence": "medium",
+        "evidence_ids": [
+          "evd-009",
+          "evd-133",
+          "evd-151",
+          "evd-054",
+          "evd-082",
+          "evd-010",
+          "evd-012",
+          "evd-105",
+          "evd-011",
+          "evd-031",
+          "evd-064",
+          "evd-101"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Attacker-influenced markup or links in generated output are rendered to developers in comments and the web application",
+        "description": "Model output derived in part from repository content is rendered in two places: as a pull-request comment produced by the comment service, which applies output-length restrictions, removes unsupported formatting and adds repository links (evd-031, evd-010), and in the React web application, which displays completed analysis results to authenticated users (evd-025). Rich-content rendering behaviour is a named documentation gap (evd-054). Where output fields carry markup, links or reference text drawn from attacker-authored repository content, those elements are presented to reviewers with ForgeFlow's provenance.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "prompt_injection",
+          "spoofing",
+          "information_disclosure"
+        ],
+        "threat_actor_ids": [
+          "act-006"
+        ],
+        "affected_component_ids": [
+          "cmp-007",
+          "cmp-002",
+          "cmp-013"
+        ],
+        "affected_asset_ids": [
+          "ast-002"
+        ],
+        "related_data_flow_ids": [
+          "df-012",
+          "df-002"
+        ],
+        "preconditions": [
+          "Result content originating partly from untrusted repository text is rendered as a GitHub comment and in the SPA (evd-025, evd-031, evd-049, evd-053).",
+          "Formatting handling is described as removal of unsupported formatting and addition of repository links, without a described policy for links or markup carried inside result fields (evd-031, evd-010).",
+          "Rich-content rendering behaviour is a named documentation gap (evd-054)."
+        ],
+        "attack_path": [
+          "A contributor embeds link or markup text in repository documentation or a pull-request description (evd-005, evd-006).",
+          "The provider reproduces or paraphrases that element inside a schema-valid response field (evd-008, evd-009).",
+          "Formatting rules are applied and the comment is published to the pull request, or the result is rendered in the web application (evd-031, evd-025).",
+          "Reviewers see the element presented as part of a ForgeFlow summary and act on it (evd-064, evd-101)."
+        ],
+        "impact": "Structured analysis results (ast-002) become a delivery channel for attacker-chosen links or markup that inherit ForgeFlow's apparent authorship on the pull request and in the product UI, enabling misdirection of reviewers; the extent depends on rendering behaviour that the documents do not describe.",
+        "likelihood": "low - preliminary; formatting removal and length limits are documented and may already constrain this, but their scope is not described.",
+        "confidence": "low",
+        "evidence_ids": [
+          "evd-031",
+          "evd-010",
+          "evd-025",
+          "evd-054",
+          "evd-101",
+          "evd-133",
+          "evd-005",
+          "evd-006",
+          "evd-049"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Cross-organization disclosure where application-enforced organization scoping is not applied on a customer request path",
+        "description": "Tenant separation is logical: customer records carry an organization identifier and application services are responsible for applying organization-aware access rules when querying customer data (evd-032, evd-102, evd-130). API requests that operate on customer resources include an organization context supplied with the request (evd-026). The documents describe the inputs to authorization - authenticated identity plus membership and role - as intent (users should only be able to access organizations where they are members) rather than as an enforced default, and the security overview lists internal authorization implementation among intentionally omitted details (evd-124, evd-102, evd-138). Detailed tenant-isolation tests are a named documentation gap (evd-054). On any request path where the organization predicate is not applied, an authenticated member of one organization reaches another organization's records.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "information_disclosure",
+          "elevation_of_privilege",
+          "tenant_isolation"
+        ],
+        "threat_actor_ids": [
+          "act-001",
+          "act-002"
+        ],
+        "affected_component_ids": [
+          "cmp-003",
+          "cmp-009",
+          "cmp-010",
+          "cmp-002"
+        ],
+        "affected_asset_ids": [
+          "ast-002",
+          "ast-004",
+          "ast-003",
+          "ast-009"
+        ],
+        "related_data_flow_ids": [
+          "df-002",
+          "df-013",
+          "df-014"
+        ],
+        "preconditions": [
+          "Separation between tenants is enforced by application code rather than by a datastore-level constraint described in the documents (evd-032, evd-130).",
+          "The organization context accompanies the request rather than being derived solely from server-side session state, as documented (evd-026).",
+          "Authorization implementation detail and the default posture are not documented (evd-124, evd-138).",
+          "Tenant-isolation testing is named as a documentation gap (evd-054)."
+        ],
+        "attack_path": [
+          "An authenticated customer user enumerates or guesses an identifier belonging to another organization - an analysis job, result, repository configuration or artifact reference (evd-032, evd-046).",
+          "The user issues an API request carrying that identifier, optionally with a substituted organization context (evd-026, evd-002 flow df-002).",
+          "On a path where the organization predicate is absent or applied only to a subset of the query, the API returns the record (evd-032, evd-124).",
+          "The user repeats this across result, artifact-link and membership endpoints (evd-046, evd-026)."
+        ],
+        "impact": "Structured analysis results (ast-002) describing another customer's code changes and potential security concerns, pull-request and installation metadata (ast-003), membership and role records (ast-004) and artifact references (ast-009) are disclosed across the organization boundary, defeating the separation the platform states as a security objective.",
+        "likelihood": "medium - preliminary; rests on implementation detail the reviewed documents deliberately omit.",
+        "confidence": "medium",
+        "evidence_ids": [
+          "evd-032",
+          "evd-102",
+          "evd-130",
+          "evd-124",
+          "evd-026",
+          "evd-046",
+          "evd-138",
+          "evd-054"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Stored analysis artifacts reached outside the issuing organization through path convention or time-limited links",
+        "description": "Object storage (cmp-010) holds selected repository files, pull-request diffs, model input and output artifacts, exported reports and diagnostic artifacts for failed jobs, under paths of the form organizations/{organization_id}/jobs/{job_id}/artifacts/{artifact_name} (evd-033, evd-078). The API may generate time-limited access links for permitted customer downloads (evd-033, evd-026). Object-storage authorization enforcement is a named documentation gap (evd-054), so what constrains access beyond the path convention and the link is not established. Paths built from two identifiers are predictable given knowledge of an organization and job identifier, and an issued link is a bearer credential for whatever duration it holds.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "information_disclosure",
+          "tenant_isolation",
+          "elevation_of_privilege"
+        ],
+        "threat_actor_ids": [
+          "act-001",
+          "act-002"
+        ],
+        "affected_component_ids": [
+          "cmp-010",
+          "cmp-003"
+        ],
+        "affected_asset_ids": [
+          "ast-009",
+          "ast-001",
+          "ast-002"
+        ],
+        "related_data_flow_ids": [
+          "df-014",
+          "df-010"
+        ],
+        "preconditions": [
+          "Artifact locations are derived deterministically from organization and job identifiers (evd-033, evd-078).",
+          "Artifacts include restricted material: selected repository files, diffs, and model input and output artifacts (evd-033, evd-078).",
+          "The API mints time-limited links for downloads (evd-033, evd-026).",
+          "Object-storage authorization enforcement is a named documentation gap, so the control that separates path knowledge from access is not described (evd-054)."
+        ],
+        "attack_path": [
+          "An authenticated user obtains or infers an organization identifier and a job identifier from a result view, comment link or API response (evd-046, evd-010).",
+          "The user requests an artifact link for that job through the API (evd-026, evd-033).",
+          "If the link-issuing path does not re-check organization membership, or if storage access is governed only by path convention, the artifact is retrieved (evd-054, evd-130).",
+          "Alternatively an already-issued link is forwarded, cached or recorded elsewhere and replayed by a third party within its validity window (evd-033)."
+        ],
+        "impact": "Analysis artifacts (ast-009) containing customer source files, diffs and constructed model inputs - restricted material - and the corresponding source content (ast-001) and results (ast-002) are obtained by a party outside the owning organization, without any interaction with the database-level tenant checks.",
+        "likelihood": "medium - preliminary; the enforcing control is explicitly listed as undocumented.",
+        "confidence": "medium",
+        "evidence_ids": [
+          "evd-033",
+          "evd-078",
+          "evd-026",
+          "evd-054",
+          "evd-130",
+          "evd-046",
+          "evd-010"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Queued job payload trusted at execution time causes retrieval or storage under the wrong installation or organization",
+        "description": "Each queued job carries the organization identifier, GitHub installation identifier, repository identifier, pull-request identifier, event identifier, attempt number and job configuration (evd-029, evd-076). The worker resolves the customer organization and GitHub installation from the job, obtains a short-lived installation token, retrieves the pull request, and stores the result and artifacts under organization-scoped paths (evd-030, evd-061, evd-078). Redis access control is stated as an assumption that Redis is not publicly accessible and is reachable only from approved application workloads (evd-029, evd-053); no authentication for the queue connection is described. A job whose organization and installation fields are mismatched - whether written by a workload that should not be writing jobs, or produced by a defect in the receiver - causes content retrieved under one installation to be attributed to another organization.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "spoofing",
+          "tampering",
+          "tenant_isolation",
+          "confused_deputy"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-005",
+          "cmp-006",
+          "cmp-004"
+        ],
+        "affected_asset_ids": [
+          "ast-001",
+          "ast-006",
+          "ast-003"
+        ],
+        "related_data_flow_ids": [
+          "df-005",
+          "df-006",
+          "df-007",
+          "df-009",
+          "df-010"
+        ],
+        "preconditions": [
+          "The job payload is the carrier of the organization-installation-repository association at execution time (evd-029, evd-076).",
+          "The worker mints an installation token from the installation identifier it finds in the job (evd-030, evd-061).",
+          "Queue reachability is expressed as an architectural assumption rather than a described control, and queue authentication is not described (evd-053, evd-029).",
+          "Results and artifacts are written under the organization identifier the job supplies (evd-045, evd-078)."
+        ],
+        "attack_path": [
+          "A component with write access to Redis - the receiver itself, a compromised workload, or a misconfigured network path - places a job whose organization identifier and installation identifier do not correspond (evd-029, evd-053).",
+          "A worker dequeues it, resolves the installation named in the job and mints a token for that installation (evd-030, evd-061).",
+          "The worker retrieves pull-request content from the repositories within that installation scope (evd-063, evd-065).",
+          "The retrieved content, the prompt artifacts and the resulting analysis are written under the organization identifier the job supplied (evd-045, evd-078).",
+          "Members of that organization view results derived from another customer's repository, and a comment may be posted into the other installation (evd-046, evd-031)."
+        ],
+        "impact": "Customer source code and repository content (ast-001) crosses the organization boundary into another tenant's stored results and artifacts; a short-lived installation token (ast-006) is exercised for work no party in that installation requested; and pull-request, repository and installation metadata (ast-003) is recorded against the wrong customer, corrupting both the tenant model and the audit record.",
+        "likelihood": "low - preliminary; requires queue write access or an identifier-handling defect, neither of which the documents address.",
+        "confidence": "low",
+        "evidence_ids": [
+          "evd-029",
+          "evd-076",
+          "evd-030",
+          "evd-061",
+          "evd-053",
+          "evd-063",
+          "evd-065",
+          "evd-045",
+          "evd-078",
+          "evd-031",
+          "evd-046"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "ForgeFlow-side organization membership outlives the GitHub access it was derived from",
+        "description": "Authentication is delegated to GitHub, but authorization is evaluated against membership and role records ForgeFlow stores itself: after the GitHub flow completes, ForgeFlow associates the GitHub identity with a ForgeFlow user and one or more customer organizations, and organization membership and role information are stored in ForgeFlow (evd-027). Access to organization data is based on ForgeFlow organization membership and configured role (evd-097, evd-124). GitHub-side reality changes independently: repository selection may be expanded or reduced later through normal GitHub administration, customers are responsible for managing GitHub organization access, and installation events are among the subscribed webhook types (evd-058, evd-104, evd-062). The documents do not describe when stored membership is re-derived from GitHub, so removal on the GitHub side and removal in ForgeFlow are separate events.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "elevation_of_privilege",
+          "information_disclosure",
+          "authorization"
+        ],
+        "threat_actor_ids": [
+          "act-001",
+          "act-002"
+        ],
+        "affected_component_ids": [
+          "cmp-003",
+          "cmp-009",
+          "cmp-013"
+        ],
+        "affected_asset_ids": [
+          "ast-004",
+          "ast-002",
+          "ast-001"
+        ],
+        "related_data_flow_ids": [
+          "df-002",
+          "df-013",
+          "df-003"
+        ],
+        "preconditions": [
+          "Authorization decisions read ForgeFlow-stored membership and role rather than live GitHub organization membership (evd-027, evd-097, evd-124).",
+          "GitHub organization membership and repository selection are managed by the customer and can change at any time (evd-058, evd-104).",
+          "Session lifetime, renewal and revocation behaviour is not described beyond the phrase secure browser sessions (evd-027).",
+          "Analysis results describe customer code changes and potential security concerns and are retrievable through the API (evd-046, evd-096)."
+        ],
+        "attack_path": [
+          "A user is a member of a customer's GitHub organization and holds a corresponding ForgeFlow membership record (evd-027).",
+          "The customer removes the user from the GitHub organization, or reduces the repositories the installation covers (evd-058, evd-104).",
+          "No described process re-derives the ForgeFlow membership record from GitHub at that moment (evd-027, evd-138).",
+          "The user authenticates again through GitHub as an individual, or continues an existing session, and the API evaluates access against the stale ForgeFlow record (evd-097, evd-124).",
+          "The user reads analysis results, artifact links and organization settings for repositories they no longer have GitHub access to (evd-046, evd-026)."
+        ],
+        "impact": "User identity, organization membership and role records (ast-004) authorize access after the underlying entitlement has been withdrawn, disclosing structured analysis results (ast-002) and, through artifact links, source-derived content (ast-001) to a former member of the organization.",
+        "likelihood": "medium - preliminary; the divergence is structural, and how membership is refreshed is not documented.",
+        "confidence": "medium",
+        "evidence_ids": [
+          "evd-027",
+          "evd-097",
+          "evd-124",
+          "evd-102",
+          "evd-058",
+          "evd-104",
+          "evd-062",
+          "evd-046",
+          "evd-026",
+          "evd-138"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Compromise of an application workload converts into GitHub App authority over every installation",
+        "description": "The managed secrets service (cmp-011) holds the GitHub App private key, the GitHub OAuth client secret, the AI-provider API key, the email-provider API key and selected database credentials; workloads retrieve them through workload identity, and different services may receive access to different secrets based on their responsibilities (evd-034, evd-127). The exact per-service scoping is not documented. The analysis worker is both the component that retrieves the GitHub App private key and the AI-provider key (df-018) and the primary component that processes untrusted customer source content (evd-030). Because installation tokens are minted on demand from the App private key (evd-061, evd-037), control of a workload that can retrieve that key is control of repository access across every installation, not one tenant.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "elevation_of_privilege",
+          "credential_compromise",
+          "information_disclosure"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-011",
+          "cmp-006",
+          "cmp-007",
+          "cmp-003",
+          "cmp-004",
+          "cmp-013"
+        ],
+        "affected_asset_ids": [
+          "ast-005",
+          "ast-007",
+          "ast-006",
+          "ast-001"
+        ],
+        "related_data_flow_ids": [
+          "df-017",
+          "df-018",
+          "df-019",
+          "df-020",
+          "df-007"
+        ],
+        "preconditions": [
+          "The GitHub App private key is retrievable at runtime by application workloads through workload identity (evd-034, evd-127).",
+          "Installation tokens for any installation are derived from that key on demand (evd-061, evd-037).",
+          "The worker that holds retrieval rights also parses and processes untrusted repository content (evd-030, evd-053).",
+          "Per-service secret differentiation is asserted but the actual scoping is not documented (evd-034)."
+        ],
+        "attack_path": [
+          "A workload with secret-retrieval rights is compromised - through a dependency, a content-parsing defect, or a deployment misconfiguration; the documents describe secure development practices but do not exclude this (evd-134, evd-030).",
+          "The workload identity is used to retrieve the GitHub App private key and the provider API key from the secrets service (evd-034, evd-127).",
+          "The key is used to authenticate as the GitHub App and mint installation tokens for installations beyond the one the current job concerns (evd-061, evd-037).",
+          "Repository content is read, and comments posted, across customer installations within their granted permissions (evd-060, evd-065)."
+        ],
+        "impact": "The GitHub App private key (ast-005) and provider, OAuth, email and database credentials (ast-007) are disclosed; short-lived installation tokens (ast-006) can be minted at will, giving read access to customer source code and repository content (ast-001) for every connected organization and the ability to post comments as ForgeFlow. The blast radius is the whole customer base rather than one tenant. Managed secrets storage and workload identity are documented controls that make casual retrieval harder; they do not bound what a compromised authorized workload can fetch.",
+        "likelihood": "medium - preliminary; conditional on workload compromise, with consequences that are not tenant-bounded.",
+        "confidence": "medium",
+        "evidence_ids": [
+          "evd-034",
+          "evd-127",
+          "evd-061",
+          "evd-037",
+          "evd-030",
+          "evd-053",
+          "evd-060",
+          "evd-065",
+          "evd-134",
+          "evd-149"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Restricted source content and prompts reach shared logging and diagnostic artifacts",
+        "description": "Application and security-relevant events are forwarded to a central logging platform (cmp-012) that is a shared organizational capability managed outside the application team (evd-036, evd-136). The documents express the constraint on content as guidance: customer source code should not be included in normal application logs, error handling should avoid logging full provider prompts or GitHub access tokens, logs should avoid storing authentication credentials, and large request bodies should not normally be written (evd-036, evd-084, evd-131). No mechanism that enforces this is described. Meanwhile the failure paths most likely to capture request material are the ones that persist: diagnostic artifacts associated with failed jobs and prompt-construction artifacts are stored in object storage (evd-033, evd-078), and worker failures, provider request metadata and application errors are logged (evd-036, evd-084).",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "information_disclosure",
+          "logging"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-012",
+          "cmp-006",
+          "cmp-010",
+          "cmp-003"
+        ],
+        "affected_asset_ids": [
+          "ast-001",
+          "ast-009",
+          "ast-010",
+          "ast-006"
+        ],
+        "related_data_flow_ids": [
+          "df-023",
+          "df-024",
+          "df-025",
+          "df-026",
+          "df-010"
+        ],
+        "preconditions": [
+          "Redaction expectations are stated as guidance without a described enforcing control (evd-036, evd-084, evd-131).",
+          "The logging destination is shared and managed outside the application team, with its access population not described in these documents (evd-036, evd-136).",
+          "Failure handling produces diagnostic artifacts and error records derived from provider requests and responses (evd-033, evd-078, evd-015 not cited - see evd-052).",
+          "Log data is classified internal while the material that can leak into it is restricted (evd-036, evd-033)."
+        ],
+        "attack_path": [
+          "An analysis job fails - provider timeout, invalid structured response, storage error (evd-052, evd-081).",
+          "The error path serialises context that includes part of the constructed request or the provider response (evd-036, evd-084).",
+          "That record is forwarded to the shared logging platform, and a diagnostic artifact is written to object storage (evd-036, evd-033).",
+          "Anyone with access to the shared logging platform, a population governed outside the ForgeFlow tenant model, can read customer-derived content (evd-136, evd-130)."
+        ],
+        "impact": "Customer source code and repository content (ast-001) and prompt or model artifacts (ast-009) are placed into audit and operational log stores (ast-010) whose access model is not the organization boundary, and, if token material is captured in an error path, short-lived installation tokens (ast-006) are exposed within their validity window.",
+        "likelihood": "medium - preliminary; the described control is normative rather than technical, and failure paths are the ones that capture the most content.",
+        "confidence": "medium",
+        "evidence_ids": [
+          "evd-036",
+          "evd-084",
+          "evd-131",
+          "evd-136",
+          "evd-033",
+          "evd-078",
+          "evd-052",
+          "evd-081",
+          "evd-130"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "One tenant's event volume or retry behaviour exhausts shared analysis capacity",
+        "description": "All pull-request events from all installations enter one managed Redis queue and are processed by a shared, horizontally scaling worker pool (evd-042, evd-076, evd-085). Subscribed events include pull request synchronized, which fires on every push to an open pull request (evd-062). External AI-provider capacity may limit total processing throughput (evd-051), so the pool cannot scale past the provider ceiling. Recoverable failures are retried automatically and exact retry limits are a named documentation gap (evd-077, evd-054); no dead-letter handling is described. Rate-limiting state is held in Redis and ForgeFlow may limit usage to protect reliability, but the limits and their enforcement points are not described (evd-029, evd-103).",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "denial_of_service",
+          "resource_exhaustion",
+          "tenant_isolation"
+        ],
+        "threat_actor_ids": [
+          "act-006",
+          "act-001"
+        ],
+        "affected_component_ids": [
+          "cmp-004",
+          "cmp-005",
+          "cmp-006",
+          "cmp-014"
+        ],
+        "affected_asset_ids": [
+          "ast-011",
+          "ast-002",
+          "ast-003"
+        ],
+        "related_data_flow_ids": [
+          "df-004",
+          "df-005",
+          "df-006",
+          "df-008"
+        ],
+        "preconditions": [
+          "A single queue and worker pool serve every organization (evd-042, evd-076, evd-085).",
+          "Provider capacity bounds total throughput regardless of worker scaling (evd-051).",
+          "Retry limits are a named documentation gap and failing jobs may be retried repeatedly (evd-077, evd-054, evd-090).",
+          "Per-organization rate limits are asserted only as a possibility, with enforcement points undescribed (evd-029, evd-103)."
+        ],
+        "attack_path": [
+          "A party with commit access to a connected repository generates a high rate of pull-request open and synchronize events, or opens pull requests with very large diffs (evd-062, evd-090).",
+          "The receiver scales with event volume and enqueues a job for each relevant event (evd-028, evd-085).",
+          "Worker replicas scale on queue depth but are capped by provider capacity, and large pull requests take longer per job (evd-051, evd-090).",
+          "Failing or timing-out jobs are retried, adding further load during the same window (evd-077, evd-015 - see evd-052).",
+          "Queue depth grows; jobs for unrelated organizations wait behind the flood and exceed the several-minute expectation (evd-075, evd-051)."
+        ],
+        "impact": "Analysis processing availability (ast-011) degrades for organizations unrelated to the source of the load: results (ast-002) arrive late or not at all for their pull requests, job and metadata records (ast-003) accumulate in a backlog, and provider capacity is consumed. Previously completed results remain viewable, which is the documented degraded-mode expectation, so the loss is of new analysis rather than of history.",
+        "likelihood": "medium - preliminary; the shared-pool structure is documented and per-tenant limits are not.",
+        "confidence": "medium",
+        "evidence_ids": [
+          "evd-042",
+          "evd-076",
+          "evd-085",
+          "evd-051",
+          "evd-062",
+          "evd-077",
+          "evd-054",
+          "evd-090",
+          "evd-029",
+          "evd-103",
+          "evd-075",
+          "evd-028",
+          "evd-052"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Organization data deletion leaves restricted source material in artifacts, backups and logs",
+        "description": "The API supports organization-level data-deletion requests, customer administrators can request deletion of organization data, and deletion status is stored in PostgreSQL (evd-026, evd-096, evd-032). What customers are told about source material is that source files are treated as temporary processing data and are deleted after analysis completes (evd-099), while the operations guide records a 30-day retention target for artifacts with scheduled cleanup and support-requested extensions (evd-079). Source-artifact retention is a named documentation gap (evd-054). Deletion of database records is not described as reaching object-storage artifacts, forwarded log records or managed database backups (evd-033, evd-036, evd-032).",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "information_disclosure",
+          "data_lifecycle",
+          "repudiation"
+        ],
+        "threat_actor_ids": [
+          "act-002",
+          "act-003"
+        ],
+        "affected_component_ids": [
+          "cmp-003",
+          "cmp-009",
+          "cmp-010",
+          "cmp-012"
+        ],
+        "affected_asset_ids": [
+          "ast-001",
+          "ast-009",
+          "ast-002",
+          "ast-010"
+        ],
+        "related_data_flow_ids": [
+          "df-013",
+          "df-014",
+          "df-023",
+          "df-010"
+        ],
+        "preconditions": [
+          "Two documents describe incompatible lifetimes for retrieved source material: deleted after analysis completes, versus a 30-day retention target with possible extensions (evd-099, evd-079).",
+          "Artifacts, forwarded logs and managed database backups are separate stores from the records the deletion path is described as touching (evd-033, evd-036, evd-032).",
+          "Source-artifact retention is a named documentation gap (evd-054).",
+          "Support personnel may request temporary retention extensions (evd-079)."
+        ],
+        "attack_path": [
+          "A customer administrator requests deletion of organization data, relying on the statement that source files are deleted after analysis completes (evd-096, evd-099).",
+          "The API records deletion status and removes the records the deletion path covers (evd-026, evd-032).",
+          "Artifacts under the organization's object-storage paths remain until scheduled cleanup, or longer under a retention extension (evd-079, evd-033).",
+          "Forwarded log records and managed database backups are unaffected by the application-level deletion (evd-036, evd-032).",
+          "Restricted source-derived material remains accessible to anyone with access to those stores after the customer believes it is gone (evd-078, evd-136)."
+        ],
+        "impact": "Customer source code and repository content (ast-001) and analysis artifacts (ast-009) persist beyond the point at which the customer was told they were removed, and structured results (ast-002) and log records (ast-010) may remain in stores the deletion path does not reach. The consequence is both an exposure window nobody is tracking and an inaccurate account of what deletion achieved.",
+        "likelihood": "low - preliminary; grounded in a documented contradiction rather than in observed behaviour.",
+        "confidence": "low",
+        "evidence_ids": [
+          "evd-026",
+          "evd-096",
+          "evd-032",
+          "evd-099",
+          "evd-079",
+          "evd-033",
+          "evd-078",
+          "evd-036",
+          "evd-054",
+          "evd-125",
+          "evd-136"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Retried jobs reuse stored artifacts captured before access or repository state changed",
+        "description": "Where repository artifacts are still available, the retry process may reuse previously stored analysis artifacts instead of downloading repository content again, and manual retries reuse the original job metadata whenever possible (evd-077). Artifacts persist for a retention window measured in days (evd-079). Repository access, however, is not stable over the same window: repository selection may be expanded or reduced through normal GitHub administration, and access failures may arise from a revoked installation or permission changes (evd-058, evd-068). Operators may also retry comment publication independently of the analysis job (evd-082). A retry executed after the customer has narrowed or removed ForgeFlow's access therefore proceeds from a copy rather than from a permission check against GitHub.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "tampering",
+          "authorization",
+          "integrity_of_automated_decision"
+        ],
+        "threat_actor_ids": [
+          "act-003"
+        ],
+        "affected_component_ids": [
+          "cmp-006",
+          "cmp-010",
+          "cmp-007"
+        ],
+        "affected_asset_ids": [
+          "ast-009",
+          "ast-002",
+          "ast-001"
+        ],
+        "related_data_flow_ids": [
+          "df-006",
+          "df-010",
+          "df-011",
+          "df-012"
+        ],
+        "preconditions": [
+          "Retries may consume stored artifacts in place of a fresh repository retrieval (evd-077, evd-089).",
+          "Artifacts remain available for a retention window and can be extended on request (evd-079).",
+          "Repository access and installation scope can be reduced or revoked between the original run and the retry (evd-058, evd-068).",
+          "Comment publication can be retried independently of the analysis job, by operations personnel through the administrative interface (evd-082, evd-083)."
+        ],
+        "attack_path": [
+          "An analysis job fails and its artifacts - diffs, selected repository files, prompt inputs - remain in object storage (evd-052, evd-078).",
+          "The customer narrows the installation's repository selection, disables the integration or revokes the installation (evd-058, evd-068).",
+          "An operator or an automatic retry re-runs the job, reusing the stored artifacts rather than re-fetching content (evd-077, evd-083).",
+          "Analysis proceeds on content the installation no longer grants access to, and content is again transmitted to the provider (evd-044, evd-008 flow df-008).",
+          "Where publication is retried, a comment is posted from a result derived from that stale content (evd-082, evd-031)."
+        ],
+        "impact": "Analysis artifacts (ast-009) are used as a substitute for a live permission check, so customer source content (ast-001) is reprocessed and re-transmitted to the external provider after the customer withdrew or narrowed access, and structured results (ast-002) may be published that reflect repository state and permissions that no longer hold.",
+        "likelihood": "low - preliminary; requires a retry to coincide with an access change inside the artifact retention window.",
+        "confidence": "low",
+        "evidence_ids": [
+          "evd-077",
+          "evd-089",
+          "evd-079",
+          "evd-058",
+          "evd-068",
+          "evd-082",
+          "evd-083",
+          "evd-078",
+          "evd-052",
+          "evd-031",
+          "evd-044"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Administrative troubleshooting reaches customer source material across all organizations",
+        "description": "The administrative interface (cmp-008) lets authorized ForgeFlow personnel locate organizations and installations, view analysis job status, review error metadata, retry failed jobs, disable integrations and support data-deletion requests (evd-035, evd-083). It sits outside the customer login flow, behind corporate identity authentication, with actions recorded for audit and sessions expiring on inactivity (evd-035, evd-087, evd-132). What it can reach in the artifact store is not established: administrative access to source artifacts is a named documentation gap, detailed administrative permissions are maintained separately, and administrative tooling is described only as intended to respect customer isolation requirements (evd-054, evd-035, evd-130). Diagnostic artifacts associated with failed jobs, which contain source-derived material, are exactly what troubleshooting reaches for (evd-033, evd-078).",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "information_disclosure",
+          "elevation_of_privilege",
+          "insider"
+        ],
+        "threat_actor_ids": [
+          "act-003"
+        ],
+        "affected_component_ids": [
+          "cmp-008",
+          "cmp-003",
+          "cmp-010",
+          "cmp-009"
+        ],
+        "affected_asset_ids": [
+          "ast-001",
+          "ast-009",
+          "ast-002",
+          "ast-010"
+        ],
+        "related_data_flow_ids": [
+          "df-022",
+          "df-021",
+          "df-014",
+          "df-027"
+        ],
+        "preconditions": [
+          "Administrative capability spans all organizations by design, since it exists to locate any organization and installation (evd-035, evd-083).",
+          "Whether administrative access extends to source artifacts is a named documentation gap (evd-054).",
+          "Diagnostic artifacts for failed jobs contain source-derived content and are stored alongside other artifacts (evd-033, evd-078).",
+          "Isolation in administrative tooling is expressed as intent rather than as a described enforcement (evd-130).",
+          "Break-glass procedures exist but are maintained separately (evd-087)."
+        ],
+        "attack_path": [
+          "An operator authenticates through the corporate identity provider and reaches the administrative interface (evd-087, evd-035).",
+          "Investigating a failure, the operator opens job error metadata and the associated diagnostic artifacts for a customer organization (evd-083, evd-033).",
+          "Because scoping of administrative artifact access is not established, the content viewed may include customer source files, diffs and prompt artifacts for any organization (evd-054, evd-078).",
+          "The same path is available to anyone who obtains an administrative session - through corporate identity compromise or a break-glass route documented elsewhere (evd-087, evd-132)."
+        ],
+        "impact": "Customer source code and repository content (ast-001) and analysis artifacts (ast-009) across every organization are reachable from a single internal role, and structured results (ast-002) can be read outside the tenant boundary. Administrative actions are recorded (ast-010), so the activity is auditable after the fact, but the audit record does not constrain the access itself.",
+        "likelihood": "low - preliminary; the capability boundary is documented as unresolved rather than as absent.",
+        "confidence": "medium",
+        "evidence_ids": [
+          "evd-035",
+          "evd-083",
+          "evd-087",
+          "evd-132",
+          "evd-054",
+          "evd-130",
+          "evd-033",
+          "evd-078",
+          "evd-048",
+          "evd-136"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      }
+    ],
+    "catalog_gap_candidates": []
+  }
 }

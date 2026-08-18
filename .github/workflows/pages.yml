@@ -1,0 +1,96 @@
+name: Docs site
+
+# Builds the MkDocs site from docs/ (DEC-104). Pull requests get a strict build as a link
+# check; a push to main additionally deploys the site to GitHub Pages through the artifact
+# flow -- branch protection blocks CI pushes, so no gh-pages branch ever exists.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - "mkdocs.yml"
+      - "pyproject.toml"
+      - "uv.lock"
+      - ".github/workflows/pages.yml"
+  pull_request:
+    paths:
+      - "docs/**"
+      - "mkdocs.yml"
+      - "pyproject.toml"
+      - "uv.lock"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Every uv invocation asserts the lockfile is current instead of silently
+# updating it. Note UV_FROZEN is a different setting and conflicts with --locked.
+env:
+  UV_LOCKED: "1"
+
+jobs:
+  build:
+    name: build the docs site
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    # A new push to a branch supersedes any build still in flight for it.
+    concurrency:
+      group: pages-build-${{ github.ref }}
+      cancel-in-progress: true
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # No step here pushes; the deploy consumes an artifact, not the token. Dropping
+          # the stored token keeps a compromised step from using it to write to the repository.
+          persist-credentials: false
+
+      # Pinned to an exact patch: setup-uv publishes no floating major tag.
+      - name: Install uv
+        uses: astral-sh/setup-uv@v9.0.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      # Only the docs group: mkdocs needs neither the project nor the dev stack.
+      - name: Install dependencies
+        run: uv sync --locked --only-group docs
+
+      # --strict turns a broken intra-site link or a nav entry with no file into a failure,
+      # which is the entire value of running this on pull requests.
+      - name: Build the site
+        run: uv run --no-sync mkdocs build --strict
+
+      - name: Upload the site
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    name: deploy to GitHub Pages
+    needs: build
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    permissions:
+      pages: write
+      id-token: write
+
+    # Deploys queue rather than cancel: interrupting one mid-flight can leave the
+    # environment pointing at a partially promoted artifact.
+    concurrency:
+      group: github-pages
+      cancel-in-progress: false
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4

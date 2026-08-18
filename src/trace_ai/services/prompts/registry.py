@@ -151,6 +151,14 @@ class PromptMetadata:
     expected_output_schema: str
     status: str
     content_hash: str
+    """DEC-019 over the composed, substituted text: what this composition actually sent."""
+
+    template_hash: str
+    """DEC-019 over the pre-substitution composition — shared blocks merged, markers unfilled
+    (DEC-094). This is the hash that answers "which template produced this": every composition
+    of the same prompt version shares it whatever the source corpus, and a shared-block edit
+    still moves it in every prompt that includes the block."""
+
     model_constraints: list[str] = field(default_factory=list)
 
     @property
@@ -248,8 +256,19 @@ class PromptRegistry:
 
     def _load(self) -> None:
         shared_root = self.root / SHARED_DIRECTORY
+        shared_paths: dict[str, Path] = {}
         for path in sorted(self.root.rglob("*.md")):
             if shared_root in path.parents:
+                # Symmetric with the duplicate-`(id, version)` refusal below (WS11): a shared block
+                # is addressed by its stem, so two files with the same stem in different subtrees
+                # would silently overwrite each other last-write-wins, changing the composed text of
+                # every prompt that includes it. The worst failure available here, so it raises.
+                if path.stem in shared_paths:
+                    raise PromptSyntaxError(
+                        f"{path} and {shared_paths[path.stem]} are both shared block "
+                        f"{path.stem!r}; a shared block's stem is its name and must be unique"
+                    )
+                shared_paths[path.stem] = path
                 self._shared[path.stem] = path.read_text(encoding="utf-8").strip()
                 continue
 
@@ -325,21 +344,27 @@ class PromptRegistry:
             parts.append(block)
             composed_from.append(f"{SHARED_DIRECTORY}/{name}")
 
-        body = found.body
-        for name, value in (substitutions or {}).items():
-            body = _MARKER.sub(
-                lambda match, name=name, value=value: (  # type: ignore[misc]
-                    value if match.group(1) == name else match.group(0)
-                ),
-                body,
-            )
+        # The unresolved-marker check runs over the *template body*, before any value is inserted.
+        # A source document -- an untrusted value substituted into `input.source_content` -- may
+        # legitimately contain `{{ x.y }}` (Helm values, a Jinja sample, `{{ site.url }}` in a doc),
+        # and scanning the merged body would read that as an unfilled application marker and fail the
+        # run before any model call. Only a marker the template itself carries and no substitution
+        # supplies is unresolved.
+        supplied = substitutions or {}
+        unfilled = sorted({name for name in _MARKER.findall(found.body) if name not in supplied})
+        if unfilled:
+            raise UnresolvedMarkerError(f"{prompt_id}-{version}", unfilled)
 
-        remaining = sorted(set(_MARKER.findall(body)))
-        if remaining:
-            raise UnresolvedMarkerError(f"{prompt_id}-{version}", remaining)
+        # One pass over the template: each marker is replaced by its value. `re.sub` does not
+        # re-scan replacement text, so a `{{ x.y }}` inside a substituted value is inserted verbatim
+        # rather than treated as a marker, and substitution is not order-dependent.
+        body = _MARKER.sub(lambda match: supplied.get(match.group(1), match.group(0)), found.body)
 
-        parts.append(body)
         composed_from.append(str(found.path.relative_to(self.root)))
+        # The template composition: shared blocks merged, body unsubstituted. Its hash is the
+        # cross-corpus identity (DEC-094); the substituted text's hash is this composition's.
+        template = _JOIN.join([*parts, found.body])
+        parts.append(body)
         text = _JOIN.join(parts)
 
         constraints = found.front_matter.get("model_constraints") or []
@@ -353,6 +378,7 @@ class PromptRegistry:
             expected_output_schema=str(found.front_matter["expected_output_schema"]),
             status=str(found.front_matter["status"]),
             content_hash=content_hash(text.encode("utf-8")),
+            template_hash=content_hash(template.encode("utf-8")),
             model_constraints=[str(value) for value in constraints],
         )
         return ComposedPrompt(metadata=metadata, text=text, composed_from=tuple(composed_from))

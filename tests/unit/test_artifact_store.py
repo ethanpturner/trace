@@ -144,6 +144,35 @@ def test_storing_different_content_under_a_used_name_is_refused(store: ArtifactS
     assert store.read("sources", "overview.md") == DOCUMENT, "the original must survive"
 
 
+def test_an_interrupted_write_leaves_no_partial_artifact(
+    store: ArtifactStore, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A crash mid-write must not leave a truncated file whose bytes no longer match the recorded
+    content hash -- which would then be refused as `different content` and wedge the assessment.
+    The write goes to a sibling temporary and is linked into place; a failure before the link
+    leaves the target absent and cleans up the temporary."""
+    import os
+
+    def failing_link(src: object, dst: object) -> None:
+        raise OSError("simulated crash before the link")
+
+    # The store does `import os; os.link(...)`; the module object is shared, so patching it here
+    # patches the store's call too.
+    monkeypatch.setattr(os, "link", failing_link)
+
+    with pytest.raises(OSError, match="simulated crash"):
+        store.store_source("overview.md", DOCUMENT)
+
+    sources = store.area("sources")
+    assert not (sources / "overview.md").exists(), "a partial artifact was left behind"
+    assert list(sources.iterdir()) == [], "the temporary was not cleaned up"
+
+    # Recovery: with the fault gone, the same store call succeeds and reads back whole.
+    monkeypatch.undo()
+    store.store_source("overview.md", DOCUMENT)
+    assert store.read("sources", "overview.md") == DOCUMENT
+
+
 def test_two_assessments_do_not_collide_on_a_filename(tmp_path: Path) -> None:
     first = ArtifactStore("asm-001", root=tmp_path)
     second = ArtifactStore("asm-002", root=tmp_path)
@@ -264,12 +293,20 @@ def test_the_same_content_hashes_the_same_in_two_assessments(tmp_path: Path) -> 
     assert first.hash_of("sources", "overview.md") == second.hash_of("sources", "overview.md")
 
 
-def test_assessment_directories_are_owner_only(store: ArtifactStore) -> None:
-    """The store holds copies of material under review, on a machine DEC-004 assumes is local."""
+def test_assessment_directories_are_owner_only(store: ArtifactStore, tmp_path: Path) -> None:
+    """The store holds copies of material under review, on a machine DEC-004 assumes is local.
+
+    Every directory the store creates under the data root must be owner-only, not just the leaf.
+    `mkdir(parents=True, mode=0o700)` tightens only the leaf and leaves the ancestors at the umask
+    default, so the assessment root and `assessments/` above it are checked too -- they are what
+    #443 measured at 0o755.
+    """
     if sys.platform == "win32":  # pragma: no cover -- POSIX mode bits do not apply
         pytest.skip("POSIX permissions")
-    mode = store.area("sources").stat().st_mode & 0o777
-    assert mode == 0o700, f"expected owner-only, found {mode:o}"
+    created = store.area("sources")
+    for directory in (created, store.assessment_root, tmp_path / "assessments"):
+        mode = directory.stat().st_mode & 0o777
+        assert mode == 0o700, f"expected owner-only for {directory}, found {mode:o}"
 
 
 def test_repr_names_the_assessment_and_the_root(store: ArtifactStore) -> None:

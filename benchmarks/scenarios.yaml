@@ -94,9 +94,12 @@ scenarios:
     name: Support Portal
     path: benchmarks/oidc-portal
     # Delegated OpenID Connect authentication: the local-password-policy false-positive class.
-    # Expects zero findings; the recording (#326) replays the zero-finding path.
+    # Expects zero findings; the recording (#326) replays the zero-finding path. Pins catalog
+    # 0.3 (DEC-111): the delegated-authentication pack is measured here from its first commit,
+    # with the recorded mapping re-authored to engage the req-OIDC requirements.
     status: authored
     category: delegated-authentication
+    catalog_version: "0.3"
 
   - slug: managed-db-service
     name: Metrics Store
@@ -118,6 +121,32 @@ scenarios:
     # gaps and their paired questions, never to a finding (DEC-009).
     status: authored
     category: missing-documentation
+
+  - slug: rag-support-bot
+    name: Relay Answers
+    path: benchmarks/rag-support-bot
+    # The AI system threat-modeling pack's scenario (#489, DEC-098): a RAG support assistant
+    # whose shared retrieval index is documented as selecting passages by relevance alone.
+    # Exercises the 0.2 catalog's retrieval-augmentation requirements: one finding from the
+    # documented absence of an entitlement filter (req-RAG-002), one gap where deletion
+    # propagation to the index is unstated (req-RAG-003), and two rejections where documented
+    # handling (req-AI-001, req-RAG-001) makes a finding a false positive.
+    status: authored
+    category: ai-system-retrieval
+    catalog_version: "0.2"
+    conditions:
+      - adversarial
+
+  - slug: reply-tuner
+    name: Reply Tuner
+    path: benchmarks/reply-tuner
+    # Fine-tuning on collected customer content: the fine-tuning pack's scenario (#531,
+    # DEC-114). One finding (unminimized transcripts train the model, documented), one gap
+    # (artifact lineage, silence), one satisfied mapping (the governed write path) whose
+    # suppressed conclusion is the pack's own false-positive class. Pins catalog 0.3.
+    status: authored
+    category: fine-tuning
+    catalog_version: "0.3"
 
   - slug: order-notifier
     name: Order Notifier

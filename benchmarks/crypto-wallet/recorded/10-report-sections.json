@@ -1,11 +1,14 @@
 {
-  "executive_summary": "This assessment reviewed the wallet and exchange platform from its supplied overview and approved no findings. That is not a statement that the system is secure: the document's two hedged statements — wallet-file encryption and the unverified TLS termination — are surfaced as an open question and a documentation gap rather than concluded in either direction.",
-  "system_overview": "The system is a desktop Electrum wallet whose local daemon reaches third-party ElectrumX servers for blockchain state, alongside an exchange with a web front-end, a backend over MySQL and MongoDB stores, a programmatic API used by user-run trading bots over API keys, and a blockchain integration module, as the supplied document describes.",
-  "risk_summary": "No candidate weakness reached the assessment's bar. The open items are whether wallet-file encryption is enabled for deployed wallets — the document states it is an option — and whether the exchange stores encrypt at rest and TLS termination still holds, which the document leaves unverified. Both are recorded as a question and a documentation gap rather than as findings.",
-  "limitations": [
-    {
-      "limitation_id": "lim-empty-findings",
-      "text": "No candidate weakness reached the assessment's bar. This is not a statement that the system is secure; what could not be determined is recorded as documentation gaps and open questions."
-    }
-  ]
+  "schema": "ReportSections",
+  "response": {
+    "executive_summary": "This assessment reviewed the wallet and exchange platform from its supplied overview and approved no findings. That is not a statement that the system is secure: the document's two hedged statements \u2014 wallet-file encryption and the unverified TLS termination \u2014 are surfaced as an open question and a documentation gap rather than concluded in either direction.",
+    "system_overview": "The system is a desktop Electrum wallet whose local daemon reaches third-party ElectrumX servers for blockchain state, alongside an exchange with a web front-end, a backend over MySQL and MongoDB stores, a programmatic API used by user-run trading bots over API keys, and a blockchain integration module, as the supplied document describes.",
+    "risk_summary": "No candidate weakness reached the assessment's bar. The open items are whether wallet-file encryption is enabled for deployed wallets \u2014 the document states it is an option \u2014 and whether the exchange stores encrypt at rest and TLS termination still holds, which the document leaves unverified. Both are recorded as a question and a documentation gap rather than as findings.",
+    "limitations": [
+      {
+        "limitation_id": "lim-empty-findings",
+        "text": "No candidate weakness reached the assessment's bar. This is not a statement that the system is secure; what could not be determined is recorded as documentation gaps and open questions."
+      }
+    ]
+  }
 }

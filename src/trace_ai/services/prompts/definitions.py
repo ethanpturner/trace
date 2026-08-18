@@ -63,6 +63,7 @@ def persist_definition(handle: AssessmentHandle, composed: ComposedPrompt) -> Pr
             "model_constraints": list(metadata.model_constraints),
             "status": metadata.status,
             "content_hash": metadata.content_hash,
+            "template_hash": metadata.template_hash,
         }
     )
     digest = definition.content_hash.removeprefix("sha256:")[:12]
@@ -85,20 +86,26 @@ def resolve_definition(
     *,
     reference: str | None = None,
     content_hash: str | None = None,
+    template_hash: str | None = None,
 ) -> PromptDefinition | None:
     """The definition behind an execution record's prompt identity, or `None`.
 
-    Resolvable by either handle the record keeps: the `prompt_version` reference
-    (`extract-context-v1`) or the DEC-019 composed hash. When both are given, both must match —
+    Resolvable by any handle the record keeps: the `prompt_version` reference
+    (`extract-context-v1`), the DEC-019 composed hash, or the DEC-094 template hash — the one
+    that answers "which template produced this" across corpora. Every given handle must match —
     a reference whose hash moved mid-assessment is two definitions, and the caller asking with
-    both is asking about one of them.
+    more than one is asking about one of them.
     """
-    if reference is None and content_hash is None:
-        raise ValueError("resolve_definition needs a reference, a content_hash, or both")
+    if reference is None and content_hash is None and template_hash is None:
+        raise ValueError(
+            "resolve_definition needs a reference, a content_hash, a template_hash, or several"
+        )
     for definition in list_definitions(handle):
         if reference is not None and definition.reference != reference:
             continue
         if content_hash is not None and definition.content_hash != content_hash:
+            continue
+        if template_hash is not None and definition.template_hash != template_hash:
             continue
         return definition
     return None

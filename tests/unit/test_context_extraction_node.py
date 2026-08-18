@@ -237,6 +237,21 @@ def test_the_prompt_reaches_the_model_with_the_schema_and_the_fence(prepared: An
     assert "<source-content" not in call.system
 
 
+def test_the_extraction_declares_its_creativity(prepared: Any) -> None:
+    """Section 29 assigns Context Extraction `Creativity.LOW`. It is declared explicitly like the
+    other five agents rather than left to the profile default, so a default change cannot silently
+    mis-latitude exactly this one agent."""
+    from trace_ai.infrastructure.model.seam import Creativity
+
+    handle, ledger = prepared
+    model = Usable([proposal(handle)])
+    node(handle, ledger).run(context_for(handle, ledger, model))
+
+    (call,) = model.calls
+    assert call.settings is not None
+    assert call.settings.creativity is Creativity.LOW
+
+
 # ------------------------------------------------------------------------------------------
 # The retry rule
 # ------------------------------------------------------------------------------------------

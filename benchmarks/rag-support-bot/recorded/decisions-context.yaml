@@ -1,0 +1,332 @@
+assessment_id: asm-001
+system_context_version: 1
+reviewer: recorded-reviewer
+components:
+- id: cmp-001
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Relay Answers API
+    description: 'Declared in openapi.yaml: 2 operation(s).'
+    component_type: api_service
+    technology: []
+    ownership: null
+    deployment_zone: null
+    internet_accessible: null
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms:
+    - 'workspaceToken: http bearer'
+    authorization_mechanisms: []
+- id: cmp-002
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Help panel
+    description: the in-product chat surface, available to every signed-in user of any workspace on any
+      plan
+    component_type: user_interface
+    technology: []
+    ownership: null
+    deployment_zone: null
+    internet_accessible: null
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+- id: cmp-003
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Answer service
+    description: receives the question, runs retrieval, assembles the prompt, calls the model provider,
+      and returns the cited answer; single deployment beside the main Relay API
+    component_type: service
+    technology: []
+    ownership: null
+    deployment_zone: null
+    internet_accessible: null
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+- id: cmp-004
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Retrieval index
+    description: a managed vector database holding embeddings of help-center articles and resolved support
+      tickets, reachable only from the answer service's network segment
+    component_type: data_store
+    technology: []
+    ownership: null
+    deployment_zone: null
+    internet_accessible: false
+    externally_managed: true
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+- id: cmp-005
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Ingestion pipeline
+    description: the only writer to the retrieval index; runs nightly over the help-center repository
+      and the resolved-tickets export, chunking and embedding both
+    component_type: service
+    technology: []
+    ownership: null
+    deployment_zone: null
+    internet_accessible: null
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+- id: cmp-006
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Model provider
+    description: a hosted large-language-model API receiving the question and the retrieved passages
+    component_type: external_service
+    technology: []
+    ownership: null
+    deployment_zone: null
+    internet_accessible: null
+    externally_managed: true
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+actors:
+- id: act-001
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Workspace user
+    actor_type: end_user
+    trust_level: null
+    capabilities: []
+    authentication_method: null
+- id: act-002
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Support customer
+    actor_type: end_user
+    trust_level: null
+    capabilities:
+    - authors the ticket text that the nightly export indexes, including pasted configuration snippets
+    authentication_method: null
+assets:
+- id: ast-001
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Resolved support tickets
+    asset_type: customer_data
+    description: resolved ticket text from all workspaces, including configuration snippets customers
+      pasted; email addresses masked before export
+    confidentiality_impact: null
+    integrity_impact: null
+    availability_impact: null
+    data_classification: null
+    owner: null
+- id: ast-002
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Help-center articles
+    asset_type: documentation
+    description: public documentation published through the documentation team's review process
+    confidentiality_impact: null
+    integrity_impact: null
+    availability_impact: null
+    data_classification: null
+    owner: null
+data_flows:
+- id: df-001
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Question and answer
+    direction: bidirectional
+    protocol: null
+    data_types: []
+    authentication: unknown
+    encryption_in_transit: unknown
+    internet_exposed: null
+    source_component_id: cmp-002
+    destination_component_id: cmp-003
+- id: df-002
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Retrieval query
+    direction: bidirectional
+    protocol: null
+    data_types: []
+    authentication: unknown
+    encryption_in_transit: unknown
+    internet_exposed: null
+    source_component_id: cmp-003
+    destination_component_id: cmp-004
+- id: df-003
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Model request
+    direction: bidirectional
+    protocol: null
+    data_types: []
+    authentication: unknown
+    encryption_in_transit: tls
+    internet_exposed: null
+    source_component_id: cmp-003
+    destination_component_id: cmp-006
+- id: df-004
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Nightly ingestion
+    direction: one_way
+    protocol: null
+    data_types: []
+    authentication: unknown
+    encryption_in_transit: unknown
+    internet_exposed: null
+    source_component_id: cmp-005
+    destination_component_id: cmp-004
+trust_boundaries:
+- id: tb-001
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Workspace isolation boundary
+    boundary_type: tenant_isolation
+    description: every workspace's questions are answered from one shared index holding every workspace's
+      ticket embeddings
+    controls: []
+claims:
+- id: ctx-001
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-016
+  editable:
+    predicate: declared_security_schemes
+    value: 'workspaceToken: http bearer'
+    rationale: null
+- id: ctx-002
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-015
+  editable:
+    predicate: operation_authentication
+    value: 'GET /v1/health declares `security: []` — the specification''s own affirmative statement that
+      the operation requires no authentication'
+    rationale: null
+- id: ctx-003
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-002
+  editable:
+    predicate: retrieval_authorization
+    value: all workspaces are served from one shared index; a query returns the top eight passages ranked
+      by embedding similarity, and relevance alone selects the passages that reach the prompt
+    rationale: null
+- id: ctx-004
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-002
+  editable:
+    predicate: corpus_write_path
+    value: the ingestion pipeline is the only writer to the index; it reads two named sources nightly,
+      records source and timestamp per indexed item, and help-center content passes the documentation
+      team's review before the pipeline sees it
+    rationale: null
+- id: ctx-005
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-003
+  editable:
+    predicate: untrusted_content_handling
+    value: retrieved passages are placed in a delimited context block described to the model as reference
+      material rather than instructions, and the help panel renders answers as plain text without executing
+      model output
+    rationale: null
+- id: ctx-006
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-002
+  - evd-004
+  editable:
+    predicate: provider_data_handling
+    value: workspace and user identifiers are stripped before requests; the provider's terms for this
+      traffic exclude training on submitted content; requests are sent over TLS
+    rationale: null
+- id: ctx-007
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-004
+  - evd-012
+  editable:
+    predicate: source_retention
+    value: resolved tickets are retained on the support platform for two years and then deleted under
+      a schedule agreed with customers; the index is the only copy of the embeddings and the nightly run
+      replaces changed chunks by source reference
+    rationale: null
+- id: ctx-008
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-013
+  editable:
+    predicate: content_sensitivity
+    value: ticket text sometimes quotes configuration snippets customers pasted into support conversations,
+      and the export's masking step covers email addresses only
+    rationale: null
+contradictions: []
+additions: []
+questions:
+- id: qst-001
+  question: No actor in the context is anonymous or external. If the system is reachable from outside,
+    who reaches it? If it is not, what establishes that?
+  priority: medium
+  blocking: false
+  answer: null
+- id: qst-002
+  question: No actor in the context is administrative or privileged. Who operates and configures the system,
+    and through what?
+  priority: medium
+  blocking: false
+  answer: null

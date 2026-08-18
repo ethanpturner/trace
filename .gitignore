@@ -17,6 +17,11 @@ wheels/
 coverage.xml
 htmlcov/
 
+# macOS Finder metadata. Written into any directory the platform browses, including
+# tracked fixture trees under demo/ and benchmarks/; unanchored so it is caught wherever
+# it appears rather than at the root alone.
+.DS_Store
+
 # Secrets
 .env
 .env.*
@@ -40,3 +45,8 @@ scripts/.staged/
 # it lives in-repo for the scorecard and CI to read, and out of history because a derived
 # artifact that regenerates on demand earns no place there.
 /benchmarks/results/
+
+# The rendered documentation site (DEC-104): mkdocs builds docs/ into site/, locally and in CI.
+# The Pages deploy consumes it as a workflow artifact, so the rendering never enters history;
+# the Markdown sources under docs/ are the authoritative copies.
+/site/
