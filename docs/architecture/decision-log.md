@@ -7429,6 +7429,66 @@ Tradeoffs:
   reports); the claim cites the assertion document. A future version can carry references, and
   the gap is stated here rather than papered over.
 
+## DEC-119: The second-annotation protocol, and the adjudication rule behind the agreement number
+
+Date: 2026-08-18
+
+Status: Accepted
+
+Decision:
+
+**`docs/eval/annotation-protocol.md` is the procedure that fills the DEC-112 instrument, and
+adjudication never rewrites the measurement.** The protocol names five scenarios — forgeflow,
+unsigned-webhooks, missing-docs, contradictory-docs, oidc-portal — chosen so the pass covers
+the judgment classes the truth sets exercise: the flagship's full surface, the finding/gap
+boundary, silence, contradiction, and inherited-control restraint. The annotator reads a
+scenario's `input/` and the catalog version the registry names, and nothing else; the
+withholding rule that keeps `expected/` from Trace keeps it from the annotator. The pass
+produces `annotations/second/` files mirroring the truth-set shapes, scored on identity fields
+only.
+
+**The adjudication rule:** the second set is immutable once submitted — it is the measurement,
+and the agreement statistic is always reported against it as submitted. The first set stays
+authoritative whatever the number (DEC-112). The truth-set owner reviews every disagreement and
+records each outcome in `annotations/second/adjudication.md` as agree, hold, or out of scope;
+an *agree* changes `expected/` through an ordinary, separately-committed truth-set edit that
+moves the benchmark going forward, never the recorded agreement.
+
+**One glue defect is fixed with the protocol:** the instrument read a question's text from a
+`question` field no committed truth set carries — every `expected-questions.yaml` uses `asks`
+— so a real second set containing questions would have crashed the metric. No test exercised
+the questions artifact. The reader now uses `asks`, a corpus-conformance test runs the
+identity readers over every committed truth set, and a doc-conformance test pins the protocol
+document to the file names and fields the instrument reads.
+
+Why:
+
+- DEC-112 deliberately shipped the machinery empty and left the labor to a person; the missing
+  piece was a procedure that person can follow without the author in the room, and a decided
+  rule for what happens to disagreements — without one, the first disagreement becomes an
+  improvised edit to either the truth set or the measurement.
+- The `asks` defect is the argument for the conformance tests in miniature: an instrument
+  tested only against fixtures it authored agrees with itself, which is the exact failure
+  DEC-112 exists to dissolve, one level up.
+
+Alternatives Considered:
+
+- Adjudication by merging the second set into `expected/` wholesale (rejected: it destroys the
+  measurement and promotes unreviewed judgments to authority in one motion).
+- Scoring adjudicated agreement — recomputing after the owner accepts items (rejected as the
+  headline: post-adjudication numbers measure the owner's persuadability, not independent
+  agreement; the counts per artifact already keep the direction of disagreement visible).
+- All fourteen scenarios in the pass (rejected: the marginal scenarios repeat judgment classes
+  the five already cover, and a six-hour ask that becomes a thirty-hour ask stops happening).
+
+Tradeoffs:
+
+- Five scenarios measure agreement on a sample, and the headline must say so; the protocol
+  records time spent so a fuller pass can be costed honestly.
+- An immutable second set means a typo the annotator wants to fix after submission stands as
+  disagreement; adjudication records it as such. Accepted: an editable measurement is not a
+  measurement.
+
 ## DEC-120: TM-BOM round-trips as input — the family's fifth parser, context only, booleans never negatives
 
 Date: 2026-08-18
