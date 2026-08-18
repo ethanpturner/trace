@@ -63,7 +63,12 @@ def _gap_identities(entries: list[dict[str, Any]]) -> set[str]:
 
 
 def _question_identities(entries: list[dict[str, Any]]) -> set[str]:
-    return {_normalized(entry["question"]) for entry in entries}
+    # The corpus field for a question's text is `asks` — every committed
+    # `expected-questions.yaml` uses it. The instrument shipped reading `question`, a field no
+    # truth set carries, and no test noticed because none exercised the questions artifact; a
+    # real second set would have crashed the metric (#565). The conformance test over the
+    # committed truth sets now pins the field names this module reads.
+    return {_normalized(entry["asks"]) for entry in entries}
 
 
 @dataclass(frozen=True, slots=True)
