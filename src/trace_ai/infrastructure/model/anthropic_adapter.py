@@ -201,7 +201,16 @@ class AnthropicModel:
             # redundancy, and losing it costs nothing the validation below does not still do.
             # `messages.parse` fails identically here, so this is the only path a large schema
             # has. Recorded on the outcome's metadata like the effort mapping, and for the same
-            # reason: a silent degradation is invisible exactly when it matters.
+            # reason: a silent degradation is invisible exactly when it matters. Said out loud
+            # here too, because httpx logs the rejected request as a bare 400 and an operator
+            # watching a live run reads a 400-per-call pattern as a failure storm (#564).
+            import logging
+
+            logging.getLogger(__name__).info(
+                "the provider rejected the output grammar as too large; resending without "
+                "server-side schema enforcement — the 400 preceded the model and cost nothing",
+                extra={"schema": schema.__name__, "schema_grammar": "too_large_omitted"},
+            )
             request["output_config"] = {"effort": effort}
             schema_grammar = "too_large_omitted"
             try:
