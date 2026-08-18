@@ -337,6 +337,18 @@ Prints the rendered Markdown report, or with `--manifest` the report's manifest 
 while no report exists. `--json` wraps the same body — the report text, or the parsed manifest —
 in the DEC-096 envelope.
 
+### report render
+
+```
+trace report render [--format {html}] <assessment_id>
+```
+
+Writes a derived presentation view of the rendered report to the assessment's outputs area
+(DEC-108). The Markdown report stays the deliverable (DEC-035); the derived page is a
+deterministic transform of it — same sections, same anchors, same text — with everything
+escaped except the structure the renderer itself emits, so source-derived text cannot become
+markup. `--format` takes `html`, the only derived format. Exits 1 while no report exists.
+
 ### report rubric
 
 ```
