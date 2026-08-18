@@ -666,6 +666,7 @@ class EvidenceAssessmentValidationAdapter:
             metadata={
                 "assessment_count": len(written),
                 "control_transition_count": len(updated),
+                "unassessed_subject_count": len(result.unassessed_subject_ids),
             },
         )
 

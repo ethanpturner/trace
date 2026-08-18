@@ -6011,6 +6011,8 @@ rehearsal's own resume. A zero-usage artifact still cannot land where a recordin
 what changed is that the mechanics-validation pass no longer costs a dollar. Baseline stages are
 excluded: one call has no mechanics to rehearse.
 
+## DEC-092: The measured cost supersedes the estimate, and `trace ledger` is how spend is read
+
 Date: 2026-08-17
 
 Status: Accepted
@@ -7428,6 +7430,70 @@ Tradeoffs:
 - v0 has no per-control evidence linking to organizational documentation (policy pages, audit
   reports); the claim cites the assertion document. A future version can carry references, and
   the gap is stated here rather than papered over.
+
+## DEC-116: Evidence-assessment omission is reported, never blocking; full coverage is a batching follow-up
+
+Date: 2026-08-18
+
+Status: Accepted
+
+Decision:
+
+**The flagship 0-of-3 is diagnosed, and the diagnosis is a funnel, not a lens.** The recorded
+explanation for the live ForgeFlow capture — four defensible findings "under different
+requirement identifiers than the truth set names" — was wrong. The run produced control
+mappings under all three expected requirements; they never became findings because the single
+evidence-validation call assessed 25 of the run's 185 mappings (an unassessed mapping resolves
+to no output under DEC-013, silently), and the assessed ones on the expected requirements were
+downgraded to questions on recorded contradictions, exactly as the prompt requires. The full
+account, including the unsigned-webhooks half — three failed attempts on one mechanical
+section-14 slip, since fixed; three zero-finding completions whose traces are lost — is
+`docs/eval/live-diagnosis.md`.
+
+**Omission is named wherever it can be.** `validate_assessments` returns
+`unassessed_subject_ids`, the evidence-assessment node records the count in its execution
+metadata, and a deterministic `evidence_assessment_coverage` metric — assessed subjects over
+assessable subjects, computed from persisted objects — lands in every evaluation feed, so the
+existing recorded corpus shows the funnel retroactively and the stability protocol aggregates
+it on every live run. A stated `not_evaluated` and a silent omission both resolve to no output;
+only the first is a decision anyone made, and the difference is now visible.
+
+**Reporting is the whole of this decision; enforcement is deferred to a batching redesign.**
+The named follow-up is splitting the evidence-validation call per subject group, the shape
+DEC-024 gave mapping (one call per threat), so full coverage stops being a single-response
+output-length problem. That is a cost-bearing design change, promoted only with the #484
+sweep's measurement beside it.
+
+Why:
+
+- The project's flagship live evidence contradicted its thesis and carried a wrong explanation
+  on the public scorecard. A diagnosis that corrects the record is worth more than a fix that
+  papers over it; the correction is applied at the prose's source (`scorecard.py`), the README
+  failure taxonomy, the release record, and the interview package.
+- The corpus's own rule decided the reporting shape: where absence would read as a negative
+  answer, say `unknown` explicitly (DEC-036's discipline). An omitted subject was absence
+  reading as "no finding".
+
+Alternatives Considered:
+
+- A blocking coverage error with retry (rejected: a retry consumes recorded responses replays
+  do not have, so every committed recording captured under the silent behaviour would fail; and
+  live, it demands of one response the output length whose limit caused the truncation).
+- A prompt edit demanding full coverage (rejected: the prompt already asks for every conclusion
+  and offers `not_evaluated` as the honest decline; the truncation is capacity behaviour, and a
+  #331 prompt-version pair should carry the real change — the batching follow-up — not a nudge).
+- Editing the truth set where it disagrees with itself (GW-13.2/13.3 expect questions where
+  expected-findings expects findings) (deferred: reconciling authored truth is its own decision
+  with its own review, recorded in the diagnosis note rather than slipped into this one).
+
+Tradeoffs:
+
+- Reported-not-blocking means a live run can still silently under-assess; until the batching
+  follow-up lands, the coverage number is a thermometer, not a thermostat. Deliberate: the
+  instrument precedes the intervention (DEC-110 and DEC-112 are the precedents).
+- The coverage metric's denominator is every assessable subject, so scenarios differ in scale;
+  the metric is comparable within a scenario across runs, which is what the stability protocol
+  needs, and cross-scenario comparison reads the note it carries.
 
 ## DEC-117: Checkpoint review time is measured from a recorded session start, and gates nothing
 

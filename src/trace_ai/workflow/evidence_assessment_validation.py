@@ -160,12 +160,21 @@ class StatusTransition:
 
 @dataclass(frozen=True, slots=True)
 class EvidenceAssessmentValidationOutcome:
-    """What validated, what did not, what statuses move, and why a person should look."""
+    """What validated, what did not, what statuses move, and why a person should look.
+
+    `unassessed_subject_ids` names every supplied subject the proposal did not assess at all.
+    An omitted subject and a stated `not_evaluated` both resolve to no output downstream
+    (DEC-013), but only the second is a decision anyone made; the first is a truncation, and
+    the flagship live capture's three expected requirement lenses died in one (#564). The list
+    is reported, never blocking: the recorded corpus was captured under the silent behaviour,
+    and a replay that suddenly refused it would fail runs nobody can re-capture offline.
+    """
 
     errors: tuple[AssessmentValidationError, ...] = ()
     triggers: tuple[ReviewTrigger, ...] = ()
     transitions: tuple[StatusTransition, ...] = ()
     ignored_contradiction_ids: tuple[str, ...] = ()
+    unassessed_subject_ids: tuple[str, ...] = ()
 
     @property
     def valid(self) -> bool:
@@ -479,12 +488,15 @@ def validate_assessments(
         for contradiction in assessed.contradictions
     }
     ignored = tuple(sorted(set(supplied_contradiction_ids) - named))
+    proposed_ids = {proposed.subject_id for proposed in proposal.assessments}
+    unassessed = tuple(sorted(set(by_id) - proposed_ids))
 
     return EvidenceAssessmentValidationOutcome(
         errors=tuple(errors),
         triggers=tuple(_triggers(proposal, subjects=by_id)),
         transitions=tuple(transitions),
         ignored_contradiction_ids=ignored,
+        unassessed_subject_ids=unassessed,
     )
 
 

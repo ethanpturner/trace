@@ -671,3 +671,20 @@ def test_an_empty_assessment_set_passes_cleanly(prepared: Any) -> None:
 
     assert outcome.clean
     assert outcome.transitions == ()
+
+
+def test_a_supplied_subject_the_proposal_never_assessed_is_named(prepared: Any) -> None:
+    """Omission and a stated `not_evaluated` both resolve to no output (DEC-013), but only the
+    second is a decision anyone made. The omitted subject is named, and named non-blocking,
+    because the recorded corpus was captured under the silent behaviour (#564)."""
+    _, control, _ = prepared
+    outcome = validate(prepared, EvidenceValidationProposal.model_validate({}))
+
+    assert outcome.unassessed_subject_ids == (control.id,)
+    assert outcome.valid
+
+
+def test_full_assessment_coverage_reports_no_unassessed_subjects(prepared: Any) -> None:
+    outcome = validate(prepared, proposal(prepared))
+
+    assert outcome.unassessed_subject_ids == ()

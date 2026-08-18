@@ -762,11 +762,12 @@ baseline runs, regenerated offline. Two failure categories appear. The live view
 
 | Failure mode | Frequency | Observed in |
 |---|---|---|
-| **Live run answers beside the truth set** — the captured `claude-opus-5` run produces four approved, defensible findings that match none of the three expected, for 0 of 3 matched with 4 spurious by the structural matcher: the model mapped real weaknesses to different requirements than the truth set names. This is the live-model failure mode the offline recordings could not show. | 1 of 14 authoritative Trace runs | forgeflow (clean, live capture) |
+| **Live run answers beside the truth set** — the captured `claude-opus-5` run produces four approved, defensible findings that match none of the three expected, for 0 of 3 matched with 4 spurious by the structural matcher. The diagnosis (#564, DEC-116, `docs/eval/live-diagnosis.md`): the run *did* produce mappings under all three expected requirements, but its single evidence-validation call assessed only 25 of 185 mappings — an unassessed mapping resolves to no output (DEC-013) — and the assessed ones were downgraded to questions on recorded contradictions the truth set resolves. This is the live-model failure mode the offline recordings could not show. | 1 of 14 authoritative Trace runs | forgeflow (clean, live capture) |
 | **Silence read as a weakness** — a baseline invents a finding where the documentation is simply quiet: missing MFA and password policy an inherited identity provider covers, an encryption detail a managed database supplies, absent replay protection, unencrypted exports, index retention concluded to violate a schedule nothing states it violates. This is the DEC-009 failure the pipeline exists to prevent, and on the retrieval scenario even the structured baseline commits it — structure alone does not stop silence being read as absence. | 8 spurious findings across 6 runs | baseline-generic on oidc-portal (2), managed-db-service (1), contradictory-docs (1), unsigned-webhooks (1), rag-support-bot (2); baseline-structured on rag-support-bot (1) |
 
 The thirteen offline Trace runs produced no spurious finding; the live capture's four are the
-first row's mismatches, real findings on requirements the truth set does not name. The second
+first row's mismatches, real findings scored spurious because the expected lenses never survived
+the evidence-validation funnel. The second
 row stays a baseline failure — inventing weaknesses from silence — which no Trace run, live or
 offline, has produced: the comparison exists to measure
 that difference, not to assert it.
