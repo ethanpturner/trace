@@ -559,6 +559,7 @@ Stores settings that affect an assessment run.
 | retain_debug_artifacts | boolean | Yes | Preserve debugging output |
 | enable_external_tracing | boolean | Yes | Allow configured external tracing |
 | evidence_threshold | string | Yes | Minimum evidence policy for findings. `direct-or-confirmed` or `permissive` (DEC-013) |
+| evidence_age_threshold_days | integer | No | Days after which a cited evidence capture is flagged stale in the report and the view; flags only, nothing suppressed (DEC-118) |
 
 ## Example
 

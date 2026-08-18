@@ -342,7 +342,7 @@ def test_the_first_four_tables_have_the_row_counts_the_document_shows() -> None:
     """
     tables = documented_fields()
     assert len(tables["5"]) == 16, "Assessment"
-    assert len(tables["6"]) == 8, "AssessmentConfiguration"
+    assert len(tables["6"]) == 9, "AssessmentConfiguration"
     assert len(tables["7"]) == 14, "SourceDocument"
     assert len(tables["8"]) == 14, "EvidenceReference"
 
