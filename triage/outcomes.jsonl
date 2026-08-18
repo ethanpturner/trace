@@ -23,3 +23,4 @@
 {"issue": 565, "tier": 3, "model": "claude-fable-5", "classified_by": "claude-haiku-4-5", "outcome": "clean", "escalated_to": null, "date": "2026-08-18", "note": "enablement only: protocol doc, DEC-119 adjudication rule, asks-field fix; the human pass stays open"}
 {"issue": 572, "tier": 3, "model": "claude-fable-5", "classified_by": "claude-haiku-4-5", "outcome": "clean", "escalated_to": null, "date": "2026-08-18", "note": "interactive lineage: cross-hop anchors and the source-span view"}
 {"issue": 569, "tier": 3, "model": "claude-fable-5", "classified_by": "claude-haiku-4-5", "outcome": "clean", "escalated_to": null, "date": "2026-08-18", "note": "DEC-121 HCL subset scanner, attribute coverage rule"}
+{"issue": 570, "tier": 3, "model": "claude-fable-5", "classified_by": "claude-haiku-4-5", "outcome": "clean", "escalated_to": null, "date": "2026-08-18", "note": "PDF ingestion, text layer only, DEC-123"}

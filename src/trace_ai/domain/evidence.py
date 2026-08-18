@@ -27,7 +27,7 @@ The location fields vary by format, and DEC-015 fixes which is used where:
 |---|---|---|
 | Markdown, plain text | `chunk_index`, segmented at the shallowest heading level appearing at least twice | the chunk's own heading, flattened |
 | JSON, YAML | a JSON Pointer in `metadata["json_pointer"]` | the readable dotted path |
-| PDF | `page_number`, unpopulated until PDF ingestion arrives | — |
+| PDF | `page_number`, one addressable unit per textual page (DEC-123) | `Page N` |
 
 Line numbers are populated for structured formats too, so a reviewer can find the passage, but a
 line range is not an address there: two sequence elements can be textually identical.

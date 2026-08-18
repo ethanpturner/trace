@@ -128,6 +128,9 @@ FORBIDDEN_SDKS_IN_DOMAIN = (
     # a serialization format is ingestion, which is a service. A domain module importing `yaml`
     # would be a domain object that knows how documents are stored on disk.
     "yaml",
+    # Same reason as `yaml` (DEC-123): PDF extraction is ingestion. A domain module importing
+    # `pypdf` would be a domain object that knows how a binary source is decoded.
+    "pypdf",
 )
 
 
@@ -289,6 +292,7 @@ _IMPORT_NAME = {
     "pydantic": "pydantic",
     "pydantic-settings": "pydantic_settings",
     "python-dotenv": "dotenv",
+    "pypdf": "pypdf",
     "pyyaml": "yaml",
 }
 

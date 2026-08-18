@@ -7565,3 +7565,78 @@ Tradeoffs:
   and a wide excerpt is verbose, not wrong.
 - `.tf` mapping to plain text means a non-Terraform file named `.tf` ingests as ordinary text
   and seeds nothing; the loader's allowlist gains a suffix whose media type it already served.
+
+## DEC-123: PDF ingestion is text-layer extraction, addressed by page, refused when no text exists
+
+Date: 2026-08-18
+
+Status: Accepted
+
+Decision:
+
+**PDF joins the input formats, text layer only.** `.pdf` maps to `application/pdf` in the loader's
+extension allowlist — the one binary format — and section 5.4's deferral now names Office,
+repository, and web-page ingestion only. Extraction is `pypdf` (pure Python, ships `py.typed`,
+actively maintained; parsing untrusted input behind the loader's existing 10 MB cap), and the
+version is pinned by the lockfile because the extraction's output is part of every citation's
+address.
+
+**The addressable text is the deterministic extraction of the stored bytes, computed wherever the
+document is read and stored nowhere.** The original stays byte-identical as the only stored source
+artifact. One function (`services/ingestion/pdf.py:addressable_text`) supplies the text to
+indexing, evidence verification, and the source view, so all three share a single definition of
+line *n*. A second stored artifact was rejected: it would be a copy that could drift from the
+bytes it claims to represent, and `EvidenceReference.content_hash` already detects the drift that
+matters — a `pypdf` upgrade that changes extraction output moves quoted-text hashes and
+`trace verify` reports it rather than absorbing it.
+
+**One addressable unit per textual page.** Extracted PDF text carries no reliable ATX headings, so
+prose segmentation would collapse a forty-page document into one chunk. A page is the address the
+extraction and the original agree on: each page with text becomes one segment titled `Page N`, and
+`EvidenceReference.page_number` — the field section 8 reserved as "unpopulated until PDF ingestion
+arrives" — is now populated. Nothing synthetic enters the text: page provenance travels as data,
+never as marker lines a citation could quote.
+
+**A PDF with no extractable text anywhere is refused at registration, by name.** DEC-009's
+principle applied to ingestion: an image-only PDF ingested as an empty document would be silence
+presented as content. The refusal names the page count and states that OCR and diagram
+interpretation are out of scope (future-features 7.3 stays Research). The simplest honest
+threshold: no text on any page refuses; pages without text in an otherwise textual document are
+tolerated and named in the document's metadata (`pages_without_text`), never papered over. An
+encrypted PDF is refused with its own reason — Trace does not take passwords for source documents.
+
+Why:
+
+- Architecture documents live in PDFs; a reviewer's directory with one in it previously produced a
+  refusal naming the deferral. The gap between Trace and a real assessment workflow closes here or
+  nowhere.
+- Every consumer of a source document addresses text by line, and a binary original breaks that
+  contract. Deriving the text deterministically at every read point preserves the single-artifact
+  invariant and keeps verification honest.
+
+Alternatives Considered:
+
+- `pdfminer.six` for extraction (rejected: heavier API surface for text-layer-only needs, weaker
+  typing story; `pypdf` covers the bounded use).
+- Storing the extraction as a second source artifact (rejected: a stored copy can drift from the
+  bytes; a pure function of the bytes cannot).
+- Prose segmentation over the joined extraction (rejected: no reliable headings; one chunk per
+  document is the failure segmentation exists to prevent).
+- Ingesting an image-only PDF as an empty document with a warning (rejected: DEC-009 — silence
+  must never be presented as assessable content).
+- OCR for image-only PDFs (out of scope: a model-adjacent dependency with its own error surface,
+  and future-features 7.3 keeps diagram interpretation at Research).
+
+Tradeoffs:
+
+- Re-extracting at each read point costs CPU per verification pass; the corpus documents are small
+  and the evidence index memoizes per document, so the cost is one extraction per document per
+  process, which is the price of having no second artifact to keep honest.
+- A `pypdf` upgrade that changes extraction output breaks existing citations loudly
+  (`CONTENT_CHANGED` on verify). Deliberate: the alternative is citations that silently stop
+  meaning what they meant. No committed scenario ingests a PDF yet, so today the blast radius is
+  zero; when one does, the upgrade procedure is re-indexing, which is already the re-ingestion
+  path.
+- Extraction quality is `pypdf`'s: a PDF with an unusual text encoding may extract imperfectly.
+  The extraction is what the reviewer sees and approves at checkpoint 1, so imperfection is
+  visible there rather than hidden behind the original.
