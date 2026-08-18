@@ -1,0 +1,28 @@
+# Reply Tuner expected rejections
+#
+# The claims a correct assessment declines to make, each with the mechanism that suppresses
+# it. The scenario's negatives are the fine-tuning pack's own false-positive classes.
+#
+# Nothing in this directory is supplied to Trace during an assessment.
+
+benchmark_version: "1.0"
+scenario: reply-tuner
+catalog_version: "0.3"
+
+rejections:
+  - key: REJ-RT-01
+    conclusion: that the training store's write path is ungoverned
+    suppressed_by: >
+      documentation stating the exporter's job identity is the only principal with write
+      access, granted through the platform's access policy — req-TRAIN-001 is satisfied,
+      and the mapping records the suppressed conclusion explicitly.
+  - key: REJ-RT-02
+    conclusion: that the base reply model's provenance or supply chain is compromised
+    suppressed_by: >
+      silence: the documents say nothing about the vendor's base model beyond its existence,
+      and silence resolves to unverified, never to a finding (DEC-009).
+  - key: REJ-RT-03
+    conclusion: that the training store is unencrypted
+    suppressed_by: >
+      silence: no passage states the bucket's encryption posture either way, which is
+      unverified territory, not a documented absence.

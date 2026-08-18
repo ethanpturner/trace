@@ -7190,3 +7190,111 @@ Tradeoffs:
   per-artifact counts keep the direction visible.
 
 ## DEC-113: The IaC parser completes DEC-070's family, scoped to Terraform JSON syntax
+
+Date: 2026-08-17
+
+Status: Accepted
+
+Decision:
+
+**`services/context/iac.py` is DEC-070's third and last parser: one component per declared
+resource, one documented claim per security-relevant attribute the declaration states, through
+the proposal path like the other two (#525).** Scope is Terraform's JSON syntax (`*.tf.json`),
+deliberately: the JSON form is a first-class documented equivalent of HCL and parses with the
+standard library — no HCL dependency to vet under the supply-chain posture, determinism held
+trivially, and the ingestion loader's accepted formats already admit it. HCL stays future work
+with that stated reason, the same way the OpenAPI parser scoped to YAML. Resource types map to
+open-vocabulary component families (DEC-036; an unmatched type stays a generic
+`infrastructure_resource`), and the two attributes read are `storage_encrypted` and
+`publicly_accessible` — read only when *stated*, in either direction: a stated `false` is a
+documented negative with a line number, while a silent declaration yields nothing, which is
+DEC-009's line held by a parser. Excerpts quote the resource's own line span with a hash;
+output converts with `structured_input` provenance and candidate status for checkpoint 1.
+
+**The corpus exercises it from the first commit: `managed-db-service` gains a Terraform
+declaration of its managed database.** The declared `storage_encrypted: true` becomes
+machine-documented evidence beside the prose — the scenario's inherited-encryption point,
+restated by a declaration. Seeding before extraction shifts the component and claim
+allocation; the recorded references and the checkpoint decisions moved with it, the decisions
+file gained approvals for the parser's objects, provenance records exactly what changed, and
+the replay completes with the same expected outcomes.
+
+Why:
+
+- DEC-070's own argument lands hardest here: infrastructure code declares the largest surface
+  of verifiable ground, and every mechanically-derived claim shrinks the DocumentationGap
+  surface at zero model cost.
+- With three parsers emitting claims beside the agent's, the DEC-070 cross-claim observations
+  (#526) have the material they were built for: a declaration and a prose document disagreeing
+  about the same fact is now a detectable, stated conflict.
+
+Alternatives Considered:
+
+- An HCL parser dependency (deferred, stated: the vetted candidates are heavyweight for two
+  attributes and a resource list, and the JSON syntax covers the deterministic ground without
+  one. Revisit if a real corpus arrives HCL-only).
+- Deriving exposure from security-group and network declarations (rejected for v1: reachability
+  is a graph judgment across resources, not a stated attribute, and a parser that inferred it
+  would be doing analysis the agents own).
+
+Tradeoffs:
+
+- Terraform-JSON-only means most real repositories' `.tf` files pass through unparsed until
+  the HCL decision is taken; the parser's silence there is ordinary silence, not a wrong claim.
+- Two stated attributes is a narrow read of a rich surface. Narrow is the family's pattern —
+  the OpenAPI parser reads three declaration kinds — and each addition is a visible diff to a
+  small table rather than a schema excursion.
+
+## DEC-114: The fine-tuning pack completes future-features 8.1, measured by the reply-tuner scenario
+
+Date: 2026-08-17
+
+Status: Accepted
+
+Decision:
+
+**Catalog 0.3 gains the `fine_tuning` category — `req-TRAIN-001` through `req-TRAIN-003` — and
+the fourteenth scenario, `reply-tuner`, measures the pack from its first commit (#531).** The
+three requirements cover the surface fine-tuning creates: the training corpus as a write path
+into the model's weights, minimization of sensitive content before it becomes memorizable, and
+lineage on the tuned artifacts that serve. Statements are in the documentation register with
+their own `common_false_positives`; citations ground in the GenAI Security Project LLM Top 10
+(2026) and OWASP AISVS chapter C1. This is the remaining slice future-features 8.1 named when
+DEC-098 built the pack's first half, and it rides catalog 0.3 while 0.3 is still draft — no
+fourth version needed, and the DEC-111 release sequencing is unchanged.
+
+**The scenario exercises all three of the pack's shapes at once, which is the DEC-098 pattern's
+point.** A documented negative that is a finding: transcripts exported in full, customer names
+and message bodies included, "no redaction or filtering step" — req-TRAIN-002 unmet, one
+approved finding, severity high, matched with severity concordance 1.0. A silence that is a
+gap: date-named artifacts with no registry and no lineage — req-TRAIN-003 unverified, the
+evidence assessment recommends a gap, documentation-gap precision 1.0. And a documented control
+a generic review asserts is missing anyway: the exporter's job identity as the store's only
+writer — req-TRAIN-001 satisfied with the suppressed conclusion recorded, the pack's own
+false-positive class held as a rejection. The recording is authored offline, replays to
+completion, and its provenance says which; baselines await the keyed capture step (DEC-100).
+
+Why:
+
+- Fine-tuning pipelines are where the catalog's AI axis was thinnest against 2026 systems, and
+  the deferral was explicit: "pending its own scenario." The scenario now exists, so the pack
+  does.
+- One scenario carrying a finding, a gap, and a suppression exercises the project's central
+  distinction three ways in one replay — the corpus's best return per authored line.
+
+Alternatives Considered:
+
+- Growing the pack inside `ai-input-handling` (rejected: fine-tuning's surface is the corpus
+  and the artifact, not the prompt; a category boundary that follows the surface keeps
+  `applicable_conditions` honest).
+- Waiting for a live capture to found the scenario (rejected: authored recordings are the
+  corpus's convention, provenance states it, and the keyed track remains where live evidence
+  lands).
+
+Tradeoffs:
+
+- Catalog 0.3 now carries 44 requirements on every 0.3-pinned mapping call. The cost posture
+  is DEC-105's cached span and DEC-107's closed fan-out path, which is what this growth was
+  sequenced behind.
+- The scenario's system is small enough to author precisely, which also means it cannot
+  exercise scale effects; the large-architecture coverage category remains parcel-platform's.

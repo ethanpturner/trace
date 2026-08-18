@@ -48,10 +48,11 @@ def test_both_versions_load_and_agree_with_their_manifests() -> None:
 
 
 def test_the_third_version_loads_and_carries_everything_forward() -> None:
-    """Catalog 0.3 (#537, DEC-111): 0.2 plus the delegated-authentication pack, fates complete
+    """Catalog 0.3 (#537, #531; DEC-111, DEC-114): 0.2 plus the delegated-authentication and
+    fine-tuning packs, fates complete
     in both directions, and the new requirements phrased in the documentation register."""
     third = load_catalog("0.3")
-    assert len(third) == 41
+    assert len(third) == 44
     assert third.catalog.version == "0.3"
 
     fate_map = yaml.safe_load(
@@ -66,7 +67,7 @@ def test_the_third_version_loads_and_carries_everything_forward() -> None:
 
     register = re.compile(r"documentation must (describe|state|identify)")
     new_ids = set(third.by_id()) - set(load_catalog("0.2").by_id())
-    assert {identifier.split("-")[1] for identifier in new_ids} == {"OIDC"}
+    assert {identifier.split("-")[1] for identifier in new_ids} == {"OIDC", "TRAIN"}
     for requirement in third.requirements:
         if requirement.id not in new_ids:
             continue

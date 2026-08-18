@@ -1,0 +1,35 @@
+# Reply Tuner expected findings
+#
+# One finding: the model is fine-tuned on unminimized customer transcripts, and the document
+# says so affirmatively — "transcripts are exported in full, including customer names, email
+# addresses, and complete message bodies" and "there is no redaction or filtering step." This
+# is a finding, not a gap, because the absence of minimization is documented rather than
+# merely unaddressed (DEC-009 the other way: a documented negative is evidence).
+#
+# Nothing in this directory is supplied to Trace during an assessment.
+
+benchmark_version: "1.0"
+scenario: reply-tuner
+catalog_version: "0.3"
+source: system-overview.md
+
+findings:
+  - key: FND-RT-01
+    subject: the model is fine-tuned on unminimized customer transcripts
+    severity_guidance: high
+    requirement_id: req-TRAIN-002
+    affected_component: Tuning Job
+    arises_from: system-overview.md sections 1 and 2
+    evidence_establishes:
+      - Transcripts are exported in full, including customer names, email addresses, and
+        complete message bodies.
+      - There is no redaction or filtering step between the helpdesk and the training store.
+      - The weekly tuning run trains on the training store's current contents, and the tuned
+        model's replies are shown in other customers' threads.
+    supported_by:
+      - system-overview.md
+    notes: >
+      The document states the exposure directly, with no stated basis for training on the
+      full content, so req-TRAIN-002's escape hatch — a stated, justified decision — is not
+      met. The severity guidance is high because memorized customer content can surface in
+      an unrelated customer's thread, detached from the helpdesk's access controls.

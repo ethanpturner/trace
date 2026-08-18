@@ -1,0 +1,27 @@
+{
+  "schema": "MappingProposal",
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-TRAIN-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Training data derives from customer content, which is this requirement's applicable condition; the documents state the corpus's contents directly.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unmet",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "assumptions": [
+          "The requirement's common false positives do not apply: this is not an absence of differential-privacy prose over a documented minimization step, and no stated, justified decision to train on named fields exists — the document states there is no redaction or filtering step and states no basis for training on the full content."
+        ],
+        "confidence": "high"
+      }
+    ],
+    "documentation_gaps": []
+  }
+}
