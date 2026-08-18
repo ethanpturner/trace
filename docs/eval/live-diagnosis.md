@@ -103,6 +103,24 @@ it on every future run.
 
 ## 5. Confirmatory runs
 
-Recorded in `docs/eval/live-stability.json` only when a full protocol replaces the committed
-record; the #564 confirmatory runs (n=2, label `confirm-564`, with the coverage metric live)
-are appended here when they complete.
+Two live runs (label `confirm-564`, 2026-08-18, `claude-opus-5` on `primary-development`), run
+with the coverage instrumentation live. They confirm rather than replace: the committed
+`docs/eval/live-stability.json` stays the DEC-077 record — a two-run confirmation is not a
+five-run protocol — and the next full protocol rides the #484 sweep.
+
+- **Zero failed runs.** The mechanical section-14 slip that killed three of the first protocol's
+  five attempts did not recur under the current harness.
+- **FND-UW-01 unanimous, two of two**, severity concordance 1.0, zero spurious findings, zero
+  unsupported claims. The finding that reproduced in two of five completed runs reproduced in
+  both — encouraging, and n=2 is stated rather than rounded into a claim.
+- **`evidence_assessment_coverage` 1.0 in both runs** — the metric's first live readings. At
+  this scenario's scale the single evidence-validation call covers every assessable subject,
+  and with full coverage the expected finding materialised both times. Consistent with the
+  funnel being a scale behaviour (forgeflow supplied 185 mappings; this scenario supplies far
+  fewer), and the lost traces of the first protocol's zero-finding runs stay undiagnosable.
+- **Defaulted decisions 33 per run** against the old protocol's ~36 per run: DEC-093's
+  fingerprint replay ran live for the first time and matched only a few recorded decisions —
+  the count now measures novelty honestly, and the reduction is modest.
+- **Cost $9.29 ± 0.01 per run, ~54 minutes per run, 16 model calls** — above the recorded
+  $6.92 ± $3.28 mean and inside nothing: two runs bound no distribution, and the sweep's
+  per-scenario figures supersede both.
