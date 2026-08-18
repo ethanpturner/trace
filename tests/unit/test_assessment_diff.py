@@ -176,6 +176,8 @@ def test_identity_is_the_fingerprint_never_the_identifier(tmp_path: Path) -> Non
 
 
 def test_a_rename_is_removed_and_added_never_force_paired(tmp_path: Path) -> None:
+    """The entries stand — and beside them, the rename candidate is declared (#529): one
+    removed and one added object agreeing on every content field but the name."""
     with AssessmentStore.at_root(tmp_path) as store:
         service = AssessmentService(store, artifact_root=tmp_path)
         before = _build(service, components=BASE)
@@ -188,6 +190,39 @@ def test_a_rename_is_removed_and_added_never_force_paired(tmp_path: Path) -> Non
     assert [entry.identity for entry in components.removed] == ["analysis worker"]
     assert [entry.identity for entry in components.added] == ["analysis engine"]
     assert components.unchanged == 1
+    (candidate,) = components.rename_candidates
+    assert candidate.before_identity == "Analysis Worker"
+    assert candidate.after_identity == "Analysis Engine"
+
+
+def test_a_rename_with_a_content_edit_declares_no_candidate(tmp_path: Path) -> None:
+    """Name and description both moved: any pairing would be a guess, so nothing is claimed."""
+    with AssessmentStore.at_root(tmp_path) as store:
+        service = AssessmentService(store, artifact_root=tmp_path)
+        before = _build(service, components=BASE)
+        rewritten = [BASE[0], ("cmp-002", "Analysis Engine", "Renders reports too.")]
+        after = _build(service, components=rewritten)
+
+        diff = diff_assessments(before, after)
+
+    assert diff.families["components"].rename_candidates == []
+
+
+def test_two_plausible_rename_partners_declare_nothing(tmp_path: Path) -> None:
+    with AssessmentStore.at_root(tmp_path) as store:
+        service = AssessmentService(store, artifact_root=tmp_path)
+        twins = [
+            *BASE,
+            ("cmp-003", "Queue A", "A queue."),
+            ("cmp-004", "Queue B", "A queue."),
+        ]
+        before = _build(service, components=twins)
+        merged = [*BASE, ("cmp-003", "Queue C", "A queue.")]
+        after = _build(service, components=merged)
+
+        diff = diff_assessments(before, after)
+
+    assert diff.families["components"].rename_candidates == []
 
 
 def test_a_content_change_names_its_fields(tmp_path: Path) -> None:
@@ -253,6 +288,111 @@ def test_a_new_question_and_a_changed_finding_classify(tmp_path: Path) -> None:
     assert [entry.identity for entry in questions.removed] == ["is webhook authenticity verified?"]
     findings = diff.families["findings"]
     assert len(findings.removed) == 1 and len(findings.added) == 1
+
+
+# ------------------------------------------------------------------------------------------
+# Resolution shifts (#529): the finding/gap distinction, diffed
+# ------------------------------------------------------------------------------------------
+
+
+def _add_gap(handle: AssessmentHandle) -> None:
+    """A gap over req-WEBHOOK-001 on the Webhook Receiver, resolved through its mapping."""
+    from trace_ai.domain.control_mapping import (
+        ApplicabilityStatus,
+        ControlMapping,
+        SatisfactionStatus,
+    )
+    from trace_ai.domain.documentation_gap import DocumentationGap
+    from trace_ai.domain.threat import Threat
+
+    stamped = now()
+    _save(
+        handle,
+        Threat.model_validate(
+            {
+                "id": "thr-001",
+                "assessment_id": handle.assessment_id,
+                "title": "Forged webhooks trigger unauthorized analysis jobs",
+                "description": "An attacker submits unsigned webhook requests.",
+                "methodology": "stride-scenario-based",
+                "category": ["spoofing"],
+                "affected_component_ids": ["cmp-001"],
+                "affected_asset_ids": ["ast-001"],
+                "impact": "Unauthorized job execution.",
+                "confidence": ConfidenceLevel.MEDIUM,
+                "evidence_ids": ["evd-001"],
+                "status": ObjectStatus.APPROVED,
+                "generated_by": "threat-analysis-v1",
+                "created_at": stamped,
+            }
+        ),
+    )
+    _save(
+        handle,
+        ControlMapping.model_validate(
+            {
+                "id": "map-001",
+                "assessment_id": handle.assessment_id,
+                "threat_id": "thr-001",
+                "requirement_id": "req-WEBHOOK-001",
+                "applicability_status": ApplicabilityStatus.APPLICABLE,
+                "applicability_reason": "The receiver accepts external events.",
+                "satisfaction_status": SatisfactionStatus.UNVERIFIED,
+                "confidence": ConfidenceLevel.MEDIUM,
+                "generated_by": "requirement-control-mapping-v1",
+                "reviewer_status": ObjectStatus.APPROVED,
+            }
+        ),
+    )
+    _save(
+        handle,
+        DocumentationGap.model_validate(
+            {
+                "id": "gap-001",
+                "assessment_id": handle.assessment_id,
+                "title": "Webhook authenticity verification is undocumented",
+                "description": "No document states whether signatures are verified.",
+                "importance": "The receiver is internet-accessible.",
+                "related_object_ids": ["map-001"],
+                "severity": Severity.MEDIUM,
+                "status": ObjectStatus.APPROVED,
+                "generated_by": "requirement-control-mapping-v1",
+            }
+        ),
+    )
+
+
+def test_a_gap_resolving_into_a_finding_reports_the_shift(tmp_path: Path) -> None:
+    """The signature distinction, diffed: before could not determine the control; after supports
+    a weakness over the same requirement and ground. Reported with its direction."""
+    with AssessmentStore.at_root(tmp_path) as store:
+        service = AssessmentService(store, artifact_root=tmp_path)
+        before = _build(service, components=BASE, finding_fingerprint=None)
+        _add_gap(before)
+        after = _build(service, components=BASE)
+
+        diff = diff_assessments(before, after)
+
+    (shift,) = diff.resolution_shifts
+    assert shift.direction == "gap_to_finding"
+    assert shift.requirement_ids == ("req-WEBHOOK-001",)
+    assert shift.ground == "webhook receiver"
+    assert shift.before_id == "gap-001"
+    assert shift.after_id == "fnd-001"
+
+
+def test_a_gap_persisting_beside_a_finding_is_not_a_shift(tmp_path: Path) -> None:
+    """Two statements coexisting on the after side is not one resolving into the other."""
+    with AssessmentStore.at_root(tmp_path) as store:
+        service = AssessmentService(store, artifact_root=tmp_path)
+        before = _build(service, components=BASE, finding_fingerprint=None)
+        _add_gap(before)
+        after = _build(service, components=BASE)
+        _add_gap(after)
+
+        diff = diff_assessments(before, after)
+
+    assert diff.resolution_shifts == []
 
 
 # ------------------------------------------------------------------------------------------

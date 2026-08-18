@@ -527,6 +527,13 @@ ground (their affected components and assets) and never force-paired: a guessed 
 report an edit nobody made. Both sides must hold an approved context; a side without one is
 refused (exit 1). Exits 0 whether or not differences exist — the diff is a report, not a gate.
 
+Two declared-never-applied readings ride along (#529). A `rename?` line names a removed/added
+pair agreeing on every content field but the name — a candidate beside the entries, which
+stand. A `resolution shifts` section reports a documentation gap on one side answered by a
+finding over the same requirements and ground on the other (or the reverse), with its
+direction; a gap persisting beside a new finding is two statements, not a shift, and is not
+reported.
+
 `--report` writes the comparison as a Markdown artifact to the later assessment's outputs area
 (DEC-103) — findings and questions first, context after — instead of printing the structural
 diff.
