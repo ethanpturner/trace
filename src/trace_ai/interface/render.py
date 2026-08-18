@@ -34,6 +34,7 @@ from trace_ai.domain.reviewer_decision import ReviewerDecision
 from trace_ai.domain.source_document import SourceDocument
 from trace_ai.domain.threat import Threat
 from trace_ai.domain.trust_boundary import TrustBoundary
+from trace_ai.services.evidence.index import EvidenceIndex
 from trace_ai.services.findings.lineage import finding_lineage
 
 if TYPE_CHECKING:
@@ -129,6 +130,8 @@ th[scope], tr > th:first-child { color:var(--muted); font-weight:600; white-spac
 .lineage h3 { font-size:0.95rem; margin:1rem 0 0.3rem; }
 code { font:13px/1.4 ui-monospace, monospace; }
 a.finding { color:var(--accent); }
+.ok { color:#1a7f37; font-weight:600; }
+.drift { color:var(--flag); font-weight:600; }
 """
 
 
@@ -440,58 +443,95 @@ def render_lineage(handle: AssessmentHandle, assessment: Assessment, finding_id:
         source_documents=handle.objects.list(SourceDocument),
     )
 
-    parts: list[str] = [
-        f"<h2>{_e(finding.id)} — {_e(finding.title)}</h2>",
-        '<p class="muted">Severity '
-        f"{_e(finding.severity.value)}, {_e(finding.status.value)}. "
-        "The chain below is what the store holds, walked from the finding to the document hash.</p>",
-        '<div class="lineage">',
-        _lineage_block(
-            "Requirements & threats",
-            [f"threat {t.id}: {t.title}" for t in lineage.threats]
-            + [f"requirement {rid}" for rid in finding.requirement_ids],
+    # The walk's hops, each a section with its own anchor so every hop is linkable and
+    # screenshot-able (#533), and a contents line so the chain is navigated, not scrolled.
+    hops: list[tuple[str, str, list[str]]] = [
+        (
+            "threats",
+            "Threats",
+            [
+                f'<a id="{_e(t.id.lower())}"></a>{_link(t.id, f"/{assessment.id}/threats")}: '
+                f"{_e(t.title)}"
+                for t in lineage.threats
+            ]
+            + [f"requirement {_e(rid)}" for rid in finding.requirement_ids],
         ),
-        _lineage_block(
+        (
+            "mappings",
             "Control mappings",
             [
-                f"{m.id}: {m.requirement_id} — {m.satisfaction_status.value}"
+                f'<a id="{_e(m.id.lower())}"></a><code>{_e(m.id)}</code>: {_e(m.requirement_id)}'
+                f" — {_e(m.satisfaction_status.value)}"
                 for m in lineage.control_mappings
             ],
         ),
-        _lineage_block(
+        (
+            "assessments",
             "Evidence assessments",
             [
-                f"{a.id}: {a.subject_type.value} {a.subject_id} — {a.validation_status.value}"
+                f'<a id="{_e(a.id.lower())}"></a><code>{_e(a.id)}</code>: '
+                f"{_e(a.subject_type.value)} {_e(a.subject_id)} — {_e(a.validation_status.value)}"
                 for a in lineage.evidence_assessments
             ],
         ),
-        _lineage_block(
+        (
+            "critiques",
             "Critiques",
-            [f"{c.id}: {c.critique_type.value} on {c.subject_id}" for c in lineage.critiques],
+            [
+                f'<a id="{_e(c.id.lower())}"></a><code>{_e(c.id)}</code>: '
+                f"{_e(c.critique_type.value)} on {_e(c.subject_id)}"
+                for c in lineage.critiques
+            ],
         ),
-        _lineage_block(
+        (
+            "claims",
             "Context claims",
             [
-                f"{c.id}: {c.predicate} = {c.value} ({c.status.value})"
+                f'<a id="{_e(c.id.lower())}"></a><code>{_e(c.id)}</code>: {_e(c.predicate)} = '
+                f"{_e(str(c.value))} ({_e(c.status.value)})"
                 for c in lineage.context_claims
             ],
         ),
     ]
-    parts.append("<h3>Evidence, quoted from the source documents</h3>")
+    contents = " · ".join(
+        [f'<a href="#{slug}">{_e(label)}</a>' for slug, label, _ in hops]
+        + ['<a href="#evidence">Evidence</a>', '<a href="#documents">Documents</a>']
+    )
+    parts: list[str] = [
+        f"<h2>{_e(finding.id)} — {_e(finding.title)}</h2>",
+        '<p class="muted">Severity '
+        f"{_e(finding.severity.value)}, {_e(finding.status.value)}. "
+        "The chain below is what the store holds, walked from the finding to the document hash; "
+        "each excerpt is re-verified against its source as this page renders.</p>",
+        f'<p class="muted">{contents}</p>',
+        '<div class="lineage">',
+    ]
+    for slug, label, items in hops:
+        parts.append(f'<a id="{slug}"></a>')
+        parts.append(_lineage_block_html(label, items))
+
+    parts.append('<a id="evidence"></a><h3>Evidence, quoted and re-verified</h3>')
+    index = EvidenceIndex(handle)
     hashes = {doc.id: doc.content_hash for doc in lineage.source_documents}
     names = {doc.id: doc.filename for doc in lineage.source_documents}
     for reference in lineage.evidence_references:
         where = _location(reference)
+        checked = index.verify(reference.id)
+        verdict = (
+            '<span class="ok">verifies</span>'
+            if checked.ok
+            else f'<span class="drift">{_e(checked.outcome.value)}</span>'
+        )
         parts.append(
-            '<div class="excerpt">'
+            f'<a id="{_e(reference.id.lower())}"></a><div class="excerpt">'
             f'<div class="label">[{UNTRUSTED_LABEL} — {_e(reference.id)}'
-            f"{f', {_e(where)}' if where else ''}]</div>"
+            f"{f', {_e(where)}' if where else ''}] · {verdict}</div>"
             f"<pre>{_e(reference.quoted_text)}</pre>"
             f'<div class="muted">{_e(names.get(reference.source_document_id, "?"))} · '
             f"<code>{_e(reference.content_hash)}</code></div></div>"
         )
     if lineage.source_documents:
-        parts.append("<h3>Source documents</h3>")
+        parts.append('<a id="documents"></a><h3>Source documents</h3>')
         parts.append(
             _table(
                 ["Document", "Content hash"],
@@ -578,6 +618,14 @@ def _lineage_block(heading: str, items: Sequence[str]) -> str:
     if not items:
         return f'<h3>{_e(heading)}</h3><p class="muted">none</p>'
     lines = "".join(f"<li>{_e(item)}</li>" for item in items)
+    return f"<h3>{_e(heading)}</h3><ul>{lines}</ul>"
+
+
+def _lineage_block_html(heading: str, items: Sequence[str]) -> str:
+    """A hop section whose items are already rendered HTML (anchors and links included)."""
+    if not items:
+        return f'<h3>{_e(heading)}</h3><p class="muted">none</p>'
+    lines = "".join(f"<li>{item}</li>" for item in items)
     return f"<h3>{_e(heading)}</h3><ul>{lines}</ul>"
 
 

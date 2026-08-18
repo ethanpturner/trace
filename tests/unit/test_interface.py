@@ -72,6 +72,39 @@ def test_the_lineage_view_walks_an_approved_finding_to_its_hashed_evidence(repla
         assert "sha256:" in body, "the source document's content hash closes the chain"
 
 
+def test_the_lineage_walk_is_navigable_and_re_verified(replayed: Path) -> None:
+    """#533: every hop carries an anchor, the page opens with a contents line, and each excerpt
+    is re-verified against its source as the page renders — the verdict at the leaf."""
+    for service in _service(replayed):
+        body = route("/asm-001/lineage/fnd-001", service).body
+        # Contents line: fragment links to the hops.
+        assert 'href="#threats"' in body
+        assert 'href="#evidence"' in body
+        # Anchors: the hop sections and the objects inside them.
+        assert '<a id="mappings"></a>' in body
+        assert '<a id="thr-001"></a>' in body
+        assert '<a id="evd-' in body
+        # The leaf verdict: a fresh replay verifies everything it quotes.
+        assert '<span class="ok">verifies</span>' in body
+        assert "re-verified" in body
+
+
+def test_a_drifted_excerpt_shows_its_verdict_at_the_leaf(replayed: Path, tmp_path: Path) -> None:
+    """Tamper with a stored source, and the walk says so instead of quoting it as verified."""
+    import shutil
+
+    root = tmp_path / "drifted"
+    shutil.copytree(replayed, root)
+    sources = root / "assessments" / "asm-001" / "sources"
+    for victim in sources.iterdir():
+        if victim.is_file():
+            victim.write_text("# Replaced\n", encoding="utf-8")
+    for service in _service(root):
+        body = route("/asm-001/lineage/fnd-001", service).body
+        assert 'class="drift"' in body
+        assert '<span class="ok">verifies</span>' not in body
+
+
 def test_source_derived_text_is_html_escaped(replayed: Path) -> None:
     """A browser is not the inert terminal; an excerpt of an untrusted document must not inject
     markup. The lineage excerpts come from documents, so any angle bracket in them is escaped."""
