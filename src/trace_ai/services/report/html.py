@@ -45,6 +45,11 @@ th { background: var(--head); }
 pre { background: var(--head); border: 1px solid var(--line); border-radius: 6px;
       padding: .8rem; overflow-x: auto; font-size: .9em; }
 em { color: var(--muted); }
+details.lineage { border: 1px solid var(--line); border-radius: 6px; margin: .6rem 0;
+                  padding: .4rem .8rem; }
+details.lineage summary { cursor: pointer; font-weight: 600; }
+details.lineage h4 { margin: .8rem 0 .2rem; font-size: .95em; }
+details.lineage ul { margin: .2rem 0 .6rem; }
 """
 
 
@@ -66,8 +71,15 @@ def _table_row(line: str, *, header: bool) -> str:
     return f"<tr>{rendered}</tr>"
 
 
-def render_report_html(markdown: str, *, title: str) -> str:
-    """The report page, converted line by line from the rendered Markdown."""
+def render_report_html(markdown: str, *, title: str, appendix: str | None = None) -> str:
+    """The report page, converted line by line from the rendered Markdown.
+
+    `appendix` is an already-rendered HTML fragment appended after the converted body — the
+    lineage appendix (`lineage_html.py`, #600) is the one caller. It is trusted markup by
+    construction: its builder owns the escaping of every text node it embeds, exactly as this
+    transform owns the escaping of the Markdown's. Passing source-derived text here raw would
+    bypass the fence; nothing in the tree does, and the appendix builder's tests hold that.
+    """
     body: list[str] = []
     paragraph: list[str] = []
     fence: list[str] | None = None
@@ -148,6 +160,8 @@ def render_report_html(markdown: str, *, title: str) -> str:
         body.append(f"<pre><code>{html.escape(chr(10).join(fence))}</code></pre>")
 
     content = "\n".join(body)
+    if appendix:
+        content += "\n" + appendix
     return (
         '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n'
         '<meta name="viewport" content="width=device-width, initial-scale=1">\n'

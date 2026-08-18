@@ -960,11 +960,14 @@ The feature would need to avoid generating excessive or low-value requests.
 
 ## 13.1 Interactive Finding Lineage
 
-**Status:** Candidate
+**Status:** Built (DEC-078, DEC-108 amendment; issues #276, #572, #600)
 
-The read-only demonstration form of this view is built: milestone M9's localhost interface
-(issue #276, DEC-078) renders finding lineage from persisted objects over stdlib `http.server`,
-GET-only and read-only. The interactive product form described below remains a candidate.
+Delivered in three forms. The localhost view (issue #276, DEC-078) renders finding lineage from
+persisted objects over stdlib `http.server`, GET-only and read-only; #572 made the walk
+clickable hop by hop down to the highlighted source span, with live re-verification at the
+evidence leaf; and #600 made it portable — the nine-hop walk travels in the DEC-108 HTML report
+as an expandable appendix per approved finding, so the chain survives the server stopping. The
+walk ends at the same hash verification the CLI offers in every form.
 
 Provide a visual “Why was this generated?” view.
 

@@ -1509,8 +1509,11 @@ def test_the_pipeline_runs_end_to_end_from_the_command_line(
     page = (data_root / "assessments" / identifier / "outputs" / html_name).read_text(
         encoding="utf-8"
     )
-    assert page.count("<h2>") == 16, "all sixteen sections survive the transform"
+    # Sixteen report sections plus the lineage appendix heading (#600): the appendix is a view
+    # affordance the Markdown deliverable does not carry, so it is not a seventeenth section.
+    assert page.count("<h2>") == 17, "all sixteen sections and the appendix survive"
     assert "fnd-001" in page
+    assert "lineage-appendix" in page, "the derived view carries the walk (#600)"
 
 
 def test_report_show_is_refused_while_no_report_exists(
