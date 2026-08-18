@@ -239,7 +239,19 @@ def test_an_unsupported_format_is_refused_by_name(
 
 
 def test_the_extension_allowlist_is_the_documented_set() -> None:
-    assert set(SUFFIXES) == {".md", ".markdown", ".txt", ".json", ".yaml", ".yml"}
+    assert set(SUFFIXES) == {".md", ".markdown", ".txt", ".tf", ".json", ".yaml", ".yml"}
+
+
+def test_a_terraform_hcl_file_ingests_as_plain_text(loader: DocumentLoader, tmp_path: Path) -> None:
+    """`.tf` arrives through the plain-text suffix (DEC-121), the way `.tf.json` arrives
+    through `.json`: the media-type set stays section 5.4's four, and recognizing the
+    declaration is the IaC parser's, downstream."""
+    declaration = tmp_path / "main.tf"
+    declaration.write_text('resource "aws_db_instance" "db" {\n}\n', encoding="utf-8")
+    document = loader.load_document(
+        declaration, origin=SourceOrigin.UPLOADED_DOCUMENT, trust_level=TrustLevel.UNTRUSTED
+    )
+    assert document.media_type is MediaType.PLAIN_TEXT
 
 
 def test_format_is_decided_by_extension_and_not_by_content(

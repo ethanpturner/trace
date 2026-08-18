@@ -5,20 +5,27 @@ code declares the largest surface of verifiable ground — the resources that ex
 security-relevant attributes their declarations state — and every claim derived from it shrinks
 the DocumentationGap surface at zero model cost.
 
-**Scope is Terraform's JSON syntax (`*.tf.json`), deliberately.** Terraform's JSON form is a
-first-class, documented equivalent of HCL, and it parses with the standard library: no HCL
-dependency to vet under the supply-chain posture, no grammar to maintain, and DEC-070's
-determinism held trivially. HCL (`*.tf`) stays future work with this stated reason — the same
-way the OpenAPI parser scoped to YAML — and the ingestion loader's accepted formats already
-admit `.tf.json` through its `.json` suffix.
+**Both Terraform syntaxes are in scope: JSON (`*.tf.json`) and HCL (`*.tf`), each read by the
+narrowest honest reader.** The JSON form parses with the standard library, as DEC-113 scoped.
+HCL (DEC-121) is read by a subset scanner in this module rather than an HCL dependency: what
+the family reads — `resource "type" "name"` blocks and literal boolean attributes at the
+block's top level — is a deterministic, line-oriented subset, and DEC-113's own reason for
+deferring the dependency (heavyweight for a resource list and a handful of attributes) is the
+reason not to add one now. Anything the subset cannot read literally — an expression, a
+variable reference, an interpolation — is *not stated* and yields nothing, which is the correct
+answer rather than a shortcut: `storage_encrypted = var.encrypt` states no boolean. The
+ingestion loader admits `.tf` through its plain-text suffix, the way `.tf.json` arrives
+through `.json`.
 
 **What the parser reads is what the declaration states, and nothing more.** One component per
 declared resource, its type mapped to an open-vocabulary family (DEC-036) from the resource
 type's own naming; and one documented claim per security-relevant attribute the declaration
-*states* — `storage_encrypted` and `publicly_accessible`, both directions. A stated `false` is
-a documented negative, exactly the distinction DEC-009 turns on: a resource block silent about
-encryption has said nothing and yields no claim, while `"storage_encrypted": false` has said
-no, in writing, with a line number.
+*states*, both directions. The attribute table is governed by DEC-121's coverage rule: an
+attribute is read when it is a literal boolean in the declaration, its meaning stands alone
+without cross-resource reasoning, and both stated directions are meaningful documented claims.
+A stated `false` is a documented negative, exactly the distinction DEC-009 turns on: a
+resource block silent about encryption has said nothing and yields no claim, while
+`"storage_encrypted": false` has said no, in writing, with a line number.
 
 **Parser output enters the pipeline as proposals, not as authority** — the family rule,
 unchanged: converted through `convert_proposal`, validated by Context Validation, decided at
@@ -30,6 +37,7 @@ evidence.
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Final
 
@@ -45,7 +53,13 @@ if TYPE_CHECKING:
     from trace_ai.domain.source_document import SourceDocument
     from trace_ai.services.assessment import AssessmentHandle
 
-__all__ = ["IAC_PARSER", "looks_like_terraform", "parse_terraform", "seed_terraform_context"]
+__all__ = [
+    "IAC_PARSER",
+    "looks_like_terraform",
+    "parse_terraform",
+    "parse_terraform_hcl",
+    "seed_terraform_context",
+]
 
 IAC_PARSER: Final = "iac-parser-v1"
 
@@ -67,8 +81,17 @@ _TYPE_FAMILIES: Final[tuple[tuple[str, str], ...]] = (
 
 # The security-relevant attributes a declaration can state, each read only when present: the
 # claim carries the stated boolean, true or false alike (a stated false is a documented
-# negative, never an inferred one).
-_STATED_ATTRIBUTES: Final[tuple[str, ...]] = ("storage_encrypted", "publicly_accessible")
+# negative, never an inferred one). Growth is by DEC-121's rule — literal boolean, meaning
+# self-contained without cross-resource reasoning, both directions meaningful — so this table
+# is a visible small diff, never an ad-hoc accretion. `encrypted` is `storage_encrypted`'s
+# spelling on volume and disk resources; `deletion_protection` states whether the platform
+# refuses destructive deletion.
+_STATED_ATTRIBUTES: Final[tuple[str, ...]] = (
+    "storage_encrypted",
+    "publicly_accessible",
+    "encrypted",
+    "deletion_protection",
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -85,10 +108,23 @@ class ParsedTerraform:
 
 
 def looks_like_terraform(document: SourceDocument) -> bool:
-    """Whether this registered document is Terraform JSON syntax, by name and type."""
-    if document.media_type is not MediaType.JSON:
-        return False
-    return document.filename.rpartition("/")[2].casefold().endswith(".tf.json")
+    """Whether this registered document is a Terraform declaration, by name and type.
+
+    Two shapes, each recognized by its own pairing: JSON syntax arrives as `*.tf.json` under the
+    JSON media type (DEC-113), and HCL arrives as `*.tf` under plain text (DEC-121) — the loader
+    admits the suffix, this parser recognizes it, and content is never sniffed by either.
+    """
+    basename = document.filename.rpartition("/")[2].casefold()
+    if document.media_type is MediaType.JSON:
+        return basename.endswith(".tf.json")
+    if document.media_type is MediaType.PLAIN_TEXT:
+        return basename.endswith(".tf")
+    return False
+
+
+def _is_hcl_name(filename: str) -> bool:
+    basename = filename.rpartition("/")[2].casefold()
+    return basename.endswith(".tf") and not basename.endswith(".tf.json")
 
 
 def _family_of(resource_type: str) -> str:
@@ -120,6 +156,84 @@ def parse_terraform(text: str) -> ParsedTerraform:
                 ParsedResource(resource_type=str(resource_type), name=str(name), stated=stated)
             )
     return ParsedTerraform(resources=tuple(resources))
+
+
+# The HCL subset this module reads (DEC-121): a `resource "type" "name" {` opener at column
+# depth zero, and `attribute = true|false` at the block's own top level, an optional trailing
+# line comment tolerated. Nothing else is interpreted: an expression, a variable reference, or
+# an interpolation is not a stated boolean and yields nothing.
+_HCL_RESOURCE: Final = re.compile(r'^resource\s+"([^"]+)"\s+"([^"]+)"\s*\{')
+_HCL_ATTRIBUTE: Final = re.compile(
+    r"^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(true|false)\s*(?:(?:#|//).*)?$"
+)
+
+
+def _hcl_scan(text: str) -> tuple[ParsedTerraform, dict[str, tuple[int, int]]]:
+    """One line-oriented pass over an HCL declaration: resources, stated booleans, spans.
+
+    Deterministic and deliberately narrow. Full-line comments (`#`, `//`, and `/* */` blocks)
+    are skipped so a commented-out attribute is never read; brace depth is tracked so a nested
+    block's attributes never count as the resource's own; and a `.tf` file with no resource
+    block — a variables or outputs file, ordinary in a real Terraform corpus — parses to an
+    empty declaration rather than refusing, because the `.tf` suffix already named the format.
+    """
+    lines = text.splitlines()
+    resources: list[ParsedResource] = []
+    spans: dict[str, tuple[int, int]] = {}
+
+    in_block_comment = False
+    current: tuple[str, str, int] | None = None  # (type, name, start line)
+    stated: list[tuple[str, bool]] = []
+    depth = 0
+
+    for number, raw in enumerate(lines, start=1):
+        stripped = raw.strip()
+        if in_block_comment:
+            if "*/" in stripped:
+                in_block_comment = False
+            continue
+        if stripped.startswith("/*"):
+            in_block_comment = "*/" not in stripped
+            continue
+        if stripped.startswith("#") or stripped.startswith("//"):
+            continue
+
+        if current is None:
+            opener = _HCL_RESOURCE.match(stripped)
+            if opener is not None:
+                current = (opener.group(1), opener.group(2), number)
+                stated = []
+                depth = stripped.count("{") - stripped.count("}")
+                if depth <= 0:  # a one-line, empty resource block
+                    resource_type, name, start = current
+                    resources.append(
+                        ParsedResource(resource_type=resource_type, name=name, stated=())
+                    )
+                    spans[name] = (start, number)
+                    current = None
+            continue
+
+        if depth == 1:
+            attribute = _HCL_ATTRIBUTE.match(stripped)
+            if attribute is not None and attribute.group(1) in _STATED_ATTRIBUTES:
+                stated.append((attribute.group(1), attribute.group(2) == "true"))
+
+        depth += stripped.count("{") - stripped.count("}")
+        if depth <= 0:
+            resource_type, name, start = current
+            resources.append(
+                ParsedResource(resource_type=resource_type, name=name, stated=tuple(stated))
+            )
+            spans[name] = (start, number)
+            current = None
+
+    return ParsedTerraform(resources=tuple(resources)), spans
+
+
+def parse_terraform_hcl(text: str) -> ParsedTerraform:
+    """The declaration's resources, from HCL syntax, by the subset scanner (DEC-121)."""
+    parsed, _ = _hcl_scan(text)
+    return parsed
 
 
 def _resource_spans(text: str) -> dict[str, tuple[int, int]]:
@@ -156,8 +270,18 @@ def seed_terraform_context(handle: AssessmentHandle, document: SourceDocument) -
     checkpoint 1 to decide.
     """
     text = handle.artifacts.read("sources", document.filename).decode("utf-8")
-    parsed = parse_terraform(text)
-    spans = _resource_spans(text)
+    if _is_hcl_name(document.filename):
+        parsed, spans = _hcl_scan(text)
+        if not parsed.resources:
+            # A `.tf` file with no resource block — variables, outputs — contributes nothing,
+            # and nothing is not a refusal: the suffix named the format, the file states no
+            # resources, and silence yields silence (DEC-121).
+            from trace_ai.domain.proposals.conversion import ConvertedContext
+
+            return ConvertedContext(components=(), data_flows=(), claims=())
+    else:
+        parsed = parse_terraform(text)
+        spans = _resource_spans(text)
     lines = text.splitlines()
     stamped = now()
 
