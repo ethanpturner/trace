@@ -1,0 +1,182 @@
+# Category: agentic_orchestration
+# Requirements for systems where a model's output triggers actions -- tool
+# calls, delegated agents, external protocol servers -- rather than only text.
+# Grounded in OWASP AISVS chapters C9 and C10 and the OWASP AI Exchange
+# (DEC-058). AISVS phrases for runtime verification ("Verify that X is
+# enforced"); every statement here adopts the substance rewritten into the
+# documentation register, so that silence resolves to `unverified` (DEC-009).
+
+requirements:
+
+  - id: req-AGENT-001
+    catalog_version: "0.3"
+    title: Agent execution is bounded and can be stopped
+    statement: >
+      Where a model's output drives an automated sequence of actions, the
+      documentation must describe the limits that bound one execution --
+      such as budgets on iterations, spend, or time -- and the mechanism by
+      which a person can halt the sequence.
+    rationale: >
+      An agent loop differs from a single model call in that its cost and its
+      blast radius grow with each step, and nothing inside the loop is
+      positioned to notice. The bound and the stop mechanism are architectural
+      facts a design document can state; a system whose documentation names
+      neither leaves both to whatever the implementation happened to do.
+    category:
+      - agentic_orchestration
+      - availability
+    applicable_conditions:
+      - model output triggers actions without a person initiating each one
+      - the system runs multi-step or recursive model-driven sequences
+    non_applicable_conditions:
+      - every model output is rendered to a person and acts on nothing
+      - the system makes single model calls with no action loop
+    acceptable_implementations:
+      - per-execution budgets on steps, tokens, or spend enforced outside the model
+      - a timeout that terminates an execution regardless of its internal state
+      - an operator stop control that halts queued and in-flight actions
+      - circuit breakers that suspend the loop on repeated failures
+    evidence_expectations:
+      - documentation describing execution limits and their values
+      - description of the stop or kill mechanism and who can invoke it
+      - orchestration configuration
+    common_false_positives:
+      - absent per-step resource quotas where an overall execution budget is documented
+      - absent automated anomaly-triggered shutdown, which exceeds this expectation
+    default_severity: high
+    source_frameworks:
+      - "OWASP AISVS: v1.0-C9.1.1"
+      - "OWASP AISVS: v1.0-C9.1.2"
+      - "OWASP AISVS: v1.0-C9.6.1"
+      - "OWASP AI Exchange: /go/limitunwanted/, accessed 2026-08-12"
+    status: active
+
+  - id: req-AGENT-002
+    catalog_version: "0.3"
+    title: High-impact agent actions pass a human approval gate
+    statement: >
+      Where an agent can take actions that are privileged, irreversible, or
+      outward-facing, the documentation must identify which actions those are
+      and describe the approval step that stands between the agent's proposal
+      and the action's execution.
+    rationale: >
+      The set of actions an agent may take autonomously is a design decision,
+      and the most consequential one an agentic system makes. A document that
+      never classifies its actions has not made the decision; it has delegated
+      it to the model. The gate is assessable from design documentation --
+      which actions are gated, who approves, and what the approver sees --
+      without observing the running system.
+    category:
+      - agentic_orchestration
+      - authorization
+    applicable_conditions:
+      - an agent can execute actions with effects outside the system
+      - an agent can execute actions that are not reversible
+    non_applicable_conditions:
+      - every agent action is confined to reading data the caller already holds
+      - all outputs are drafts a person publishes manually
+    acceptable_implementations:
+      - a deterministic policy gate naming the action classes that require approval
+      - a review queue where proposed actions wait for a named approver
+      - a reversibility classification with autonomous execution limited to reversible actions
+    evidence_expectations:
+      - documentation classifying agent actions by impact
+      - description of the approval workflow and its participants
+      - a statement of what information an approver is shown
+    common_false_positives:
+      - absent cryptographic binding of approvals, which exceeds this expectation
+      - absent AI-assisted review of actions, which supplements and never replaces the gate
+    default_severity: high
+    source_frameworks:
+      - "OWASP AISVS: v1.0-C9.2.1"
+      - "OWASP AISVS: v1.0-C9.2.3"
+      - "OWASP AI Exchange: /go/oversight/, accessed 2026-08-12"
+    status: active
+
+  - id: req-AGENT-003
+    catalog_version: "0.3"
+    title: Tool access is least-privilege and enforced outside the model
+    statement: >
+      Where a model can invoke tools, the documentation must describe what each
+      tool is permitted to do, and must locate the enforcement of those
+      permissions in application logic or infrastructure rather than in the
+      model's instructions.
+    rationale: >
+      A permission that lives only in a prompt is a request, not a control: the
+      model that received it can be induced to ignore it. What separates a
+      bounded agent from an unbounded one is where enforcement sits, and that
+      is an architectural fact -- a sandbox, a scoped credential, an
+      authorization check on each invocation -- that design documentation can
+      state and a reviewer can evaluate.
+    category:
+      - agentic_orchestration
+      - authorization
+      - secrets_management
+    applicable_conditions:
+      - a model can invoke tools or call other services
+      - tool invocations carry parameters the model chooses
+    non_applicable_conditions:
+      - the model produces text only and invokes nothing
+    acceptable_implementations:
+      - per-tool scoped credentials held by the application, never in model context
+      - an authorization check on each invocation covering the tool and its arguments
+      - tools executed in least-privilege sandboxes isolated from each other
+      - an allow-list of tools resolved by the application before invocation
+    evidence_expectations:
+      - documentation of the tool inventory and each tool's permissions
+      - a statement of where authorization is enforced
+      - description of how credentials reach tools without entering model context
+    common_false_positives:
+      - absent per-argument validation where invocation-level authorization is documented
+      - prompt-level instructions about tool use, which are not the enforcement this expects
+    default_severity: high
+    source_frameworks:
+      - "OWASP AISVS: v1.0-C9.3.1"
+      - "OWASP AISVS: v1.0-C9.5.3"
+      - "OWASP AISVS: v1.0-C9.5.4"
+      - "OWASP AI Exchange: /go/leastmodelprivilege/, accessed 2026-08-12"
+    status: active
+
+  - id: req-AGENT-004
+    catalog_version: "0.3"
+    title: External tool servers are adopted deliberately and authenticated per request
+    statement: >
+      Where the system connects a model to external tool servers -- such as
+      Model Context Protocol servers -- the documentation must describe how
+      those servers are selected and verified before adoption, and how each
+      request to them is authenticated.
+    rationale: >
+      A tool server extends the agent's reach with code the organization did
+      not write, over a protocol designed for exactly that. Adopting one is a
+      supply-chain decision and talking to one is an authentication decision,
+      and both are stated -- or not stated -- in the architecture rather than
+      observable in a prompt. Transport security alone does not authenticate a
+      request, and a server list nobody curates is an open door with a schema.
+    category:
+      - agentic_orchestration
+      - third_party_integration
+      - supply_chain
+    applicable_conditions:
+      - the system connects a model to tool servers it did not author
+      - tool servers are resolved or installed at deployment or runtime
+    non_applicable_conditions:
+      - all tools are in-process functions of the system itself
+      - the system uses no external tool protocol
+    acceptable_implementations:
+      - an allow-list of approved tool servers with verified provenance
+      - per-request token validation at the tool server, scoped per OAuth 2.1
+      - locally launched tool servers run in least-privilege sandboxes
+      - schema validation of tool responses before they enter model context
+    evidence_expectations:
+      - documentation naming the external tool servers and their provenance
+      - description of request authentication between agent and tool server
+      - deployment configuration for tool server isolation
+    common_false_positives:
+      - absent sender-constrained tokens, which exceed this expectation
+      - reliance on transport encryption being documented, which is necessary but is not request authentication
+    default_severity: medium
+    source_frameworks:
+      - "OWASP AISVS: v1.0-C10.1.1"
+      - "OWASP AISVS: v1.0-C10.1.2"
+      - "OWASP AISVS: v1.0-C10.2.1"
+    status: active

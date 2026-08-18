@@ -5,7 +5,7 @@ Each scenario's recording replayed with one component removed at a time, against
 run. Regenerated offline from the recorded runs by `scripts/build_ablation.py`; a parenthesised
 number is the change from the authoritative run in points, and a blank means the metric did not
 move. Rows marked `*` are non-authoritative (DEC-012). Metrics and identifiers only — no assessment
-content (DEC-076). Generated 2026-08-14 over 13 scenarios (registry 1.0, catalog 0.1 (12), 0.2 (1)).
+content (DEC-076). Generated 2026-08-14 over 13 scenarios (registry 1.0, catalog 0.1 (11), 0.2 (1), 0.3 (1)).
 
 | Scenario | Run | False-negative rate | Evidence coverage | False-positive rate | Duplicate rate |
 | --- | --- | --- | --- | --- | --- |

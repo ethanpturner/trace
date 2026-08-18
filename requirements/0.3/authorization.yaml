@@ -1,0 +1,84 @@
+# Category: authorization
+# Requirements about what an authenticated principal is permitted to do, and
+# about the privileges a system holds against the systems it integrates with.
+
+requirements:
+
+  - id: req-AUTHZ-001
+    catalog_version: "0.3"
+    title: Tenant-aware authorization is enforced and documented
+    statement: >
+      A system serving multiple customers or organizations must document how
+      every request is constrained to the tenant it belongs to, and must derive
+      the tenant context from server-side state rather than from a
+      client-supplied value.
+    rationale: >
+      Tenant separation is the control whose failure is least recoverable in a
+      multi-tenant system, and it is frequently described only as a storage
+      layout convention rather than as an enforced authorization rule. Naming
+      where the rule is enforced distinguishes a real boundary from a naming
+      convention.
+    category:
+      - authorization
+      - tenancy
+    applicable_conditions:
+      - the system serves more than one customer or organization
+      - data belonging to distinct organizations is held in shared storage
+    non_applicable_conditions:
+      - the system serves a single tenant
+      - the component holds no tenant-scoped data
+    acceptable_implementations:
+      - authorization enforced in a shared server-side data access layer
+      - tenant identifier derived from the authenticated session on every request
+      - row-level security enforced by the database
+      - per-tenant storage prefixes combined with a server-side authorization check
+    evidence_expectations:
+      - architecture documentation describing the authorization model
+      - documentation of the tenant boundary
+      - data access layer or middleware description
+    common_false_positives:
+      - absent description of an authorization library or framework
+      - absent per-endpoint permission matrix
+    default_severity: high
+    source_frameworks:
+      - "OWASP ASVS: v5.0.0-8.1.1"
+      - "NIST SP 800-53 5.2.0: AC-3"
+      - "NIST SP 800-53 5.2.0: SC-4"
+    status: active
+
+  - id: req-AUTHZ-002
+    catalog_version: "0.3"
+    title: Integration privileges are limited to those required
+    statement: >
+      Where a system holds delegated access to an external platform, the
+      documentation must state which privileges are requested and why each is
+      needed.
+    rationale: >
+      Delegated integration privileges are granted once at installation and
+      rarely revisited, so an over-broad grant persists silently and widens the
+      impact of any compromise of the integrating system. Recording the
+      requested scope makes the grant reviewable.
+    category:
+      - authorization
+      - third_party_integration
+    applicable_conditions:
+      - the system holds delegated access to an external platform
+      - the system acts on a customer resource on the customer's behalf
+    non_applicable_conditions:
+      - the system holds no external delegated access
+      - access is read-only, public, and unauthenticated
+    acceptable_implementations:
+      - a platform application declaring a fixed, documented permission set
+      - narrowly scoped OAuth scopes recorded in documentation
+      - per-resource installation grants rather than organization-wide grants
+    evidence_expectations:
+      - integration documentation listing requested permissions
+      - platform application configuration
+    common_false_positives:
+      - absent per-permission justification where the overall scope is documented and narrow
+      - absent description of the external platform's own permission model
+    default_severity: medium
+    source_frameworks:
+      - "OWASP ASVS: v5.0.0-8.1.1"
+      - "NIST SP 800-53 5.2.0: AC-6"
+    status: active

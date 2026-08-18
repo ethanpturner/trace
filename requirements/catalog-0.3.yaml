@@ -1,0 +1,79 @@
+catalog:
+  # A name, not an identifier: authored configuration is outside the identifier scheme, and a
+  # catalog is identified by (id, version). See DEC-034 and data-model.md section 2.1.
+  id: core
+  name: "Core Architecture Requirements"
+  version: "0.3"
+  description: >
+    The third catalog minor version (DEC-057, DEC-111). Everything in 0.2
+    carries forward under its identifier; the delegated-authentication
+    category arrives with the OAuth/OIDC requirement pack (#537), measured
+    against the oidc-portal scenario from its first commit. The fate of every
+    0.2 requirement is recorded in mappings/0.2-to-0.3.yaml.
+  created_at: 2026-08-17
+  status: draft
+
+  # Generated. SHA-256 over a canonical re-serialization of the parsed catalog
+  # (DEC-019), computed and verified by src/trace_ai/services/requirements/loader.py
+  # every time the catalog is read. Do not edit by hand; run
+  #   uv run python scripts/catalog_hash.py --version 0.3 --write
+  content_hash: sha256:97725a99effb221e1054bcae3adf0e051b349636bb848a0ef4ed10e1e260a75b
+
+  requirement_ids:
+
+    - req-ADMIN-001
+
+    - req-AGENT-001
+    - req-AGENT-002
+    - req-AGENT-003
+    - req-AGENT-004
+
+    - req-AI-001
+    - req-AI-002
+    - req-AI-003
+    - req-AI-004
+
+    - req-AUTH-001
+    - req-AUTH-002
+
+    - req-AUTHZ-001
+    - req-AUTHZ-002
+
+    - req-CICD-001
+
+    - req-CODEGEN-001
+    - req-CODEGEN-002
+
+    - req-DATA-001
+    - req-DATA-002
+    - req-DATA-003
+    - req-DATA-004
+
+    - req-LOG-001
+    - req-LOG-002
+
+    - req-NET-001
+
+    - req-OIDC-001
+    - req-OIDC-002
+    - req-OIDC-003
+    - req-OIDC-004
+
+    - req-OPS-001
+    - req-OPS-002
+    - req-OPS-003
+    - req-OPS-004
+    - req-OPS-005
+
+    - req-RAG-001
+    - req-RAG-002
+    - req-RAG-003
+
+    - req-SECRET-001
+    - req-SECRET-002
+
+    - req-TPI-001
+    - req-TPI-002
+
+    - req-WEBHOOK-001
+    - req-WEBHOOK-002

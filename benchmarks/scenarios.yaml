@@ -94,9 +94,12 @@ scenarios:
     name: Support Portal
     path: benchmarks/oidc-portal
     # Delegated OpenID Connect authentication: the local-password-policy false-positive class.
-    # Expects zero findings; the recording (#326) replays the zero-finding path.
+    # Expects zero findings; the recording (#326) replays the zero-finding path. Pins catalog
+    # 0.3 (DEC-111): the delegated-authentication pack is measured here from its first commit,
+    # with the recorded mapping re-authored to engage the req-OIDC requirements.
     status: authored
     category: delegated-authentication
+    catalog_version: "0.3"
 
   - slug: managed-db-service
     name: Metrics Store

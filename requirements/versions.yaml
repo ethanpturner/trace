@@ -25,3 +25,12 @@ versions:
     # manifest still names 0.1, and switching the default is its own decision (DEC-099).
     released: 2026-08-17
     last_reviewed: 2026-08-17
+
+  "0.3":
+    status: draft
+    maintainer: Ethan Turner
+    # The delegated-authentication (OAuth/OIDC) pack (#537, DEC-111): everything in 0.2
+    # carries forward unchanged, plus req-OIDC-001..004. Draft in the change that authors it,
+    # because the freeze guard forbids touching a released version's directory in the same
+    # change that releases it; DEC-099's release condition has already fired (the oidc-portal
+    # recording pins 0.3), and the registry-only flip to active rides the next release cut.

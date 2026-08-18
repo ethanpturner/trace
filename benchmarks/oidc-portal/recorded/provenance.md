@@ -20,3 +20,16 @@ one expected documentation gap (req-NET-001) comes from an unverified mapping wh
 assessment recommends a gap: the reachability restriction is stated, its enforcement is not.
 The finding review concludes over an empty candidate set, and the report carries the
 `lim-empty-findings` limitation the assembler requires of a zero-finding run.
+
+## Re-authored for the delegated-authentication pack (#537, DEC-111)
+
+The scenario pins catalog 0.3 from this change, and the recorded mapping response for
+thr-001 was re-authored to engage the new `req-OIDC-*` requirements: four mappings appended,
+each `applicable` on the documented delegation and `unverified` where the overview states
+the flow without the mechanism detail. The req-OIDC-002 mapping records the pack's own
+suppression — the overview says the portal validates the ID token, mechanism unstated, and
+the suppressed conclusion is that validation is absent. Appending after the existing
+mappings keeps map-001 and map-002 stable; the thr-002 mapping's allocated identifier moved
+from map-003 to map-007, and the evidence-validation recording's subject reference moved
+with it. Zero findings remains the recorded outcome; the expected mappings live in
+`../expected/expected-control-mappings.yaml`.
