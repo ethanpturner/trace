@@ -7561,3 +7561,80 @@ Tradeoffs:
 - The import reads standard fields only, so Trace-specific context riding a Trace export's
   extensions block (assets, verbatim flows) does not round-trip; assets never had a TM-BOM
   shape to come back through, and the entry says so rather than inventing one.
+
+## DEC-121: HCL joins the IaC parser through a subset scanner, and attribute coverage grows by rule
+
+Date: 2026-08-18
+
+Status: Accepted
+
+Decision:
+
+**Terraform's HCL syntax (`*.tf`) is read by a deterministic subset scanner inside
+`services/context/iac.py`, not by an HCL dependency (#569).** DEC-113 deferred HCL because the
+vetted parser candidates are heavyweight for a resource list and a handful of attributes; that
+reasoning is engaged rather than overridden, and it decides the *how*: what the family reads —
+`resource "type" "name"` block openers and literal boolean attributes at the block's own top
+level — is a line-oriented subset a page of code scans deterministically, with no grammar
+dependency to vet under the supply-chain posture and no stubs to carry under strict mypy.
+Anything the subset cannot read literally — an expression, a variable reference, an
+interpolation — is *not stated* and yields nothing: `storage_encrypted = var.encrypt` states no
+boolean, and reading one out of it would be the parser doing analysis the agents own. Full-line
+comments and `/* */` blocks are skipped so a commented-out attribute is never read; a nested
+block's attributes never count as the resource's own.
+
+**The loader admits `.tf` through its plain-text suffix.** The media-type set stays section
+5.4's four; the pairing (`.tf` + plain text) is recognized by `looks_like_terraform` the same
+way `.tf.json` + JSON is, and content is never sniffed by either side. One asymmetry is
+deliberate: a `.tf.json` without a `resource` block still refuses (in JSON syntax the block is
+what marks the document as Terraform at all), while a resource-free `.tf` — `variables.tf`,
+`outputs.tf`, ordinary in a real corpus — parses to an empty declaration and seeds nothing,
+because the suffix already named the format and silence yields silence.
+
+**Attribute coverage is governed by a rule, and the rule admits two more attributes.** An
+attribute is read when it is a literal boolean in the declaration, its meaning stands alone
+without cross-resource reasoning, and both stated directions are meaningful documented claims.
+Under that rule `encrypted` (the `storage_encrypted` spelling on volume and disk resources) and
+`deletion_protection` join the table; `_STATED_ATTRIBUTES` is the visible small diff DEC-113's
+tradeoff asked for. String-valued and cross-resource candidates (`minimum_tls_version`,
+security-group reachability) stay out under the same rule that kept them out of DEC-113.
+
+**The corpus exercise is fixture-level parity, not a scenario re-record.** The unit suite
+carries an HCL twin of the managed-db-service declaration and pins that both syntaxes parse to
+the same resources and stated attributes, plus the subset's refusal cases. The scenario's
+committed recording is untouched: adding an input file shifts evidence and identifier
+allocation, DEC-113 already paid the re-authoring cost once to put Terraform in the corpus, and
+paying it again for a second spelling of the same declaration would buy no new measurement —
+the parity test is the measurement that the second syntax reads identically.
+
+Why:
+
+- Future-features 3.1 defers repository ingestion until local ingestion is reliable, and real
+  Terraform corpora are HCL: a parser that reads only the JSON syntax passes over most real
+  `.tf` files in silence. Extending the family is the reliability work the deferral names,
+  without starting the integration it gates.
+- DEC-113's "revisit if a real corpus arrives HCL-only" set the revisit condition; the feature
+  plan's ingestion-reliability tier (#569) is that revisit, taken deliberately.
+
+Alternatives Considered:
+
+- python-hcl2 as a dependency (rejected: MIT-licensed and maintained, but it pulls a Lark
+  grammar stack and ships no type stubs — a supply-chain and strict-mypy cost out of proportion
+  to reading block openers and boolean literals; DEC-113 declined it for the same shape of
+  reason).
+- A full in-repo HCL parser (rejected: heredocs, splat expressions, and templates are exactly
+  the grammar surface the subset never needs; maintaining them would be cost without a claim).
+- Re-recording managed-db-service with an HCL input beside the JSON one (rejected: allocation
+  shifts force a decisions re-author for no new measurement; the parity test pins the
+  equivalence the re-record would demonstrate).
+
+Tradeoffs:
+
+- A subset scanner under-reads by construction: a stated boolean spelled across a line
+  continuation, or inside syntax the subset skips, yields nothing. The direction of the error
+  is silence, which DEC-009 prices as acceptable and a fuller parse can later reclaim.
+- Brace counting is line-based and tolerant, like the JSON span logic: a `{` inside a quoted
+  string can widen a span. The span exists to quote the document's own lines for an excerpt,
+  and a wide excerpt is verbose, not wrong.
+- `.tf` mapping to plain text means a non-Terraform file named `.tf` ingests as ordinary text
+  and seeds nothing; the loader's allowlist gains a suffix whose media type it already served.

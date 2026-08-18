@@ -75,11 +75,15 @@ NODE_NAME: Final = "document_ingestion"
 NODE_VERSION: Final = "0.1"
 
 # Extension to format. Section 5.4's four MVP inputs, spelled the ways they are spelled on disk.
-# Extension only: content sniffing would let a document choose how it is parsed.
+# Extension only: content sniffing would let a document choose how it is parsed. `.tf` ingests as
+# plain text (DEC-121): HCL is a text format, the media-type set stays section 5.4's four, and the
+# IaC parser recognizes the suffix downstream — the same shape as `.tf.json` arriving through
+# `.json`.
 SUFFIXES: Final[dict[str, MediaType]] = {
     ".md": MediaType.MARKDOWN,
     ".markdown": MediaType.MARKDOWN,
     ".txt": MediaType.PLAIN_TEXT,
+    ".tf": MediaType.PLAIN_TEXT,
     ".json": MediaType.JSON,
     ".yaml": MediaType.YAML,
     ".yml": MediaType.YAML,
