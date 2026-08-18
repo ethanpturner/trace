@@ -1,9 +1,9 @@
 """Tests holding the package skeleton and the one dependency direction that matters.
 
-`docs/architecture/current-architecture.md` section 15 proposes a repository organization and
+`docs/architecture/current-architecture.md` section 15 records the repository organization and
 says the important property is that domain models, workflow logic, prompts, infrastructure, and
-user-interface code stay reasonably separated. The tree itself is cheap to create and cheap to
-erode: nothing stops a later module putting a database import into a domain object, and once one
+user-interface code stay separated (`test_repository_layout_doc.py` holds the tree itself in
+agreement with the filesystem). The tree is cheap to create and cheap to erode: nothing stops a later module putting a database import into a domain object, and once one
 does, every object after it inherits the coupling.
 
 So the layering is asserted rather than described. `trace_ai.domain` holds the objects DEC-006
@@ -28,10 +28,9 @@ from trace_ai.config import PROJECT_ROOT
 PACKAGE_ROOT = PROJECT_ROOT / "src" / "trace_ai"
 DOMAIN_ROOT = PACKAGE_ROOT / "domain"
 
-# The skeleton section 15 calls for, adapted to the real package name. `api/`, `application/`,
-# `reporting/` and `evaluation/` are deliberately absent: section 15 proposes them,
-# nothing in this milestone puts a file in them, and an empty package reads as a commitment that
-# has not been made.
+# The package skeleton. `api/`, `application/`, `reporting/`, and `evaluation/` from the
+# original proposal are deliberately absent — nothing ever put a file in them, an empty package
+# reads as a commitment that has not been made, and section 15 now records the tree that exists.
 PACKAGES = (
     "trace_ai.domain",
     # What an agent returns (agent-design.md section 22): proposed objects carrying local keys and
