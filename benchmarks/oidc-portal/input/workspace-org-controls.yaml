@@ -1,0 +1,9 @@
+# The assessment's organizational-controls assertion (#528, DEC-115): the controls from the
+# central org-controls catalog asserted to bear on this system. The parser verifies each name
+# against the named catalog version and seeds one documented claim per control; whether the
+# system actually inherits a control remains the assessment's ordinary work.
+
+org_controls_catalog:
+  version: "0.1"
+  asserted:
+    - enterprise-idp-mfa

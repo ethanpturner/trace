@@ -59,6 +59,10 @@ PACKAGES = (
     # the deterministic requirement matcher the backlog put here, so there is one mapping step and
     # one package for it.
     "trace_ai.services.mapping",
+    # The org-controls catalog's one reader (#528, DEC-115): authored organizational controls,
+    # version-controlled and hash-verified like the requirements catalog, entering the pipeline
+    # only as documented claims through the parser family.
+    "trace_ai.services.org_controls",
     # What the Critical Review agent sees: one threat's lineage and nothing wider (DEC-049).
     # Its own package because the bound is the whole design -- an agent shown everything
     # re-derives everything, which is section 15's second-full-assessment prohibition.

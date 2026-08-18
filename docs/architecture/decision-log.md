@@ -7190,3 +7190,73 @@ Tradeoffs:
   per-artifact counts keep the direction visible.
 
 ## DEC-113: The IaC parser completes DEC-070's family, scoped to Terraform JSON syntax
+
+## DEC-115: The organizational control catalog exists, read-only, and asserts existence only
+
+Date: 2026-08-18
+
+Status: Accepted
+
+Decision:
+
+**`org-controls/` holds a versioned, hash-verified catalog of controls the organization
+provides, `services/org_controls/loader.py` is its only reader, and an assessment consumes it
+only as documented claims through the parser family (#528).** The catalog follows the
+requirements pattern scaled to its size: one file per version, names not identifiers
+(`enterprise-idp-mfa`, DEC-034), a DEC-019 content hash over the parsed document recomputed on
+every load, and a caller that names the version it wants. `OrganizationalControl` is a domain
+object (data-model.md section 30a) with the registry flipped in the same change. Deliberately
+v0: a flat catalog, no inheritance graph — future-features 5.2 stays Research.
+
+**The pipeline entry is an assertion the parser verifies, never an import it trusts.** An
+assessment opts in by registering an `org-controls.yaml` document naming a catalog version and
+the control names asserted to bear on this system. The parser — the DEC-070 family's fourth
+member — verifies every asserted name against the loaded central version and seeds one
+documented claim per control, its value carrying the catalog's own statement with
+`(name, catalog version)` provenance and its evidence quoting the registered assertion. A
+failed verification seeds nothing and stops with the reason: an unknown name is an
+unverifiable claim about the organization, and partial seeding would let a typo drop a control
+silently.
+
+**An org control asserts that a mechanism exists organizationally, and nothing else.** Whether
+*this system* inherits it is the pipeline's ordinary work: the claim is decided at checkpoint 1
+like every parser product, and evidence validation still judges what any mapping concludes from
+it. This is DEC-009 run in the other direction — a documented organizational mechanism is
+evidence a conclusion may rest on, never a conclusion — and it is what keeps the catalog from
+becoming a bypass around the evidence chain.
+
+**The corpus exercises it from the first commit.** `oidc-portal` asserts `enterprise-idp-mfa`:
+the scenario's standing negative — multi-factor authentication is not to be reported absent —
+now rests on the organization's documented factor policy with catalog provenance, beside the
+overview's own sentence. The replay completes with every expected metric unchanged.
+
+Why:
+
+- The false-positive class this project exists to eliminate is exactly the org-control shape:
+  central logging exists, secrets come from the enterprise vault, and no system document
+  repeats it — so every assessment re-derives the same DocumentationGap noise. Future-features
+  5.1 was the highest-status unclaimed candidate, and the interview package promises the
+  inherited-controls story.
+- Entering through the parser family reuses every boundary already built: untrusted-document
+  handling, `structured_input` provenance, checkpoint-1 decision, the fence.
+
+Alternatives Considered:
+
+- Seeding `Control` objects directly (rejected: a Control asserts something about *this
+  system's* protection surface, which is precisely the judgment the org catalog must not make;
+  claims carry the fact and leave the judgment to the pipeline).
+- An `AssessmentConfiguration` field naming the catalog version (rejected: the assertion is
+  per-assessment *content* — which controls bear on this system — not a setting, and a
+  configuration field could not carry the asserted subset).
+- Trusting the registered document's own statements without the central catalog (rejected: a
+  source document is attacker-authorable, and "the organization provides X" from an untrusted
+  file is the exact laundering the hash-verified central catalog exists to refuse).
+
+Tradeoffs:
+
+- The asserted-name indirection means an assessment cannot carry an org control the central
+  catalog lacks; adding one is a catalog edit with a hash rewrite. Deliberate: the catalog is
+  the reviewable place organizational facts live.
+- v0 has no per-control evidence linking to organizational documentation (policy pages, audit
+  reports); the claim cites the assertion document. A future version can carry references, and
+  the gap is stated here rather than papered over.

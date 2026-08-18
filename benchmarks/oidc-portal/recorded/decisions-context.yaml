@@ -113,12 +113,23 @@ claims:
   decision: approve
   confirm: false
   evidence:
+  - evd-007
+  editable:
+    predicate: organizational_control
+    value: "enterprise-idp-mfa (org-controls catalog 0.1): Enterprise identity provider enforces multi-factor authentication. Workforce authentication is delegated to the enterprise identity provider, and multi-factor enrolment and factor policy are set and enforced at the identity provider organization level for all workforce identities. Mechanism: enterprise identity provider factor policy."
+    rationale: null
+- id: ctx-002
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  evidence:
   - evd-003
   editable:
     predicate: authentication_delegation
     value: all access is authenticated through the enterprise identity provider using OpenID Connect; the portal maintains no password store of its own and issues no credentials
     rationale: null
-- id: ctx-002
+- id: ctx-003
   status: documented
   confidence: high
   decision: approve
@@ -129,7 +140,7 @@ claims:
     predicate: mfa_responsibility
     value: multi-factor enrolment and factor policy are set at the identity provider organization level
     rationale: null
-- id: ctx-003
+- id: ctx-004
   status: documented
   confidence: high
   decision: approve
@@ -140,7 +151,7 @@ claims:
     predicate: network_reachability
     value: the ticket service is reachable only from the portal web application inside the application subnet
     rationale: null
-- id: ctx-004
+- id: ctx-005
   status: documented
   confidence: high
   decision: approve

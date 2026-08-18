@@ -2177,6 +2177,37 @@ to a catalog refers to the version — `Assessment.requirements_catalog_version`
 own `catalog_version`, and the `catalog_version` a benchmark scenario pins under DEC-027. Nothing
 joins on `id`.
 
+# 30a. OrganizationalControl
+
+## Purpose
+
+Represents one control the organization provides — a mechanism that exists organizationally,
+which individual system documents routinely do not repeat. Added by DEC-115 after the sections
+were numbered, the way 10a, 21a, and 23a were. An organizational control asserts existence
+only: whether a given system inherits it is the assessment's ordinary work, decided at
+checkpoint 1 and judged by evidence validation like any other claim (DEC-009 in the other
+direction — a documented organizational mechanism is evidence a conclusion can rest on, not a
+conclusion).
+
+## Fields
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| name | string | Yes | Control name: a lowercase slug, outside the identifier scheme (DEC-034) |
+| title | string | Yes | Short title |
+| statement | string | Yes | What the organization provides |
+| mechanism | string | Yes | The mechanism class that provides it |
+| applies_when | list[string] | No | Conditions under which the control bears on a system |
+| catalog_version | string | Yes | The org-controls catalog version that defines it |
+
+## Note on identity
+
+An organizational control is identified by `(name, catalog_version)`, exactly as a
+requirements catalog is identified by `(id, version)`: authored configuration carries a name,
+never a DEC-018 identifier. The catalog under `org-controls/` is version-controlled with a
+DEC-019 content hash over the parsed document, and `services/org_controls/loader.py` is its
+only reader.
+
 # 31. Assessment State
 
 ## Purpose
@@ -2594,6 +2625,7 @@ Implement these first:
 27. EvaluationResult
 28. CatalogGapCandidate
 29. PromptDefinition
+30. OrganizationalControl
 
 `SourceObservation` (section 10a) was added by DEC-021 after this list was written, and the list
 was not updated with it. It is not optional: DEC-021 makes contradictions and detected

@@ -1248,6 +1248,7 @@ src/
       findings/
       ingestion/
       mapping/
+      org_controls/
       prompts/
       report/
       requirements/
@@ -1267,6 +1268,7 @@ docs/
 prompts/
 templates/
 requirements/
+org-controls/
 demo/
 benchmarks/
 schemas/
