@@ -860,19 +860,10 @@ Tradeoffs:
 
 Open Questions:
 
-- ~~Should the transition table be data or code, and if data, is it checked against `current-architecture.md` section 5.3 by a test?~~ Answered by the 2026-08-18 amendment: code, checked by `tests/unit/test_phase_doc_conformance.py`.
+- Should the transition table be data or code, and if data, is it checked against `current-architecture.md` section 5.3 by a test?
 - Does the orchestrator need a dry-run mode that walks the table without executing nodes, for evaluation and for verifying the graph matches the documented phases?
 - At what point does a workflow stop being a list, and is that trigger observable before the orchestrator has already grown?
 - Where do the five execution ceilings live — checked centrally before each step, or by each node?
-
-Amendment (2026-08-18, #602): **The transition table is checked against section 5.3 by a test.**
-The tradeoff above and the first open question are discharged together:
-`tests/unit/test_phase_doc_conformance.py` parses the document's fourteen-phase list and holds it
-equal, in order, to the `Phase` enum, and holds the transition table to the documented linear
-chain — every phase's permitted successors are exactly the next phase, and the last phase's are
-none. A phase renamed in either place, or a transition added nobody documented, now fails a test
-rather than surfacing as a run stopped on a refusal nobody meant. The table stays code; the test
-is what makes it answerable to the document, which is what the open question actually wanted.
 
 ## DEC-017: Pause by persisting the run and exiting; resume from recorded decisions
 
@@ -936,20 +927,7 @@ Open Questions:
 - Does a partially-decided checkpoint need to be visible as such, or is "paused with *n* of *m* decided" derivable from the decision rows alone?
 - Should resume verify that the objects pending decision still exist and are unchanged since the pause, and what happens when they are not?
 - ~~Where does the reviewer identity on a `ReviewerDecision` come from under DEC-004, where there is no authentication?~~ Answered by DEC-023: a configured local string defaulting to the OS username, recorded for evaluation attribution and explicitly not authentication.
-- ~~Does an abandoned paused run need an expiry, or is accumulation acceptable for a local single-user application?~~ Answered by the 2026-08-18 amendment: no automatic expiry; `trace runs prune` removes abandoned runs when a person asks.
-
-Amendment (2026-08-18, #602): **`trace runs prune` removes abandoned paused runs; nothing else
-is expired.** The tradeoff above and the last open question are answered: accumulation was
-acceptable until the first live captures made paused-and-superseded runs a routine byproduct,
-and the cleanup is deliberately narrow. A run is abandoned when it is `paused` and a later run
-exists on the same assessment, or — only when the caller states an age with `--older-than` —
-when it started at least that many days ago; an expiry nobody set is not a policy. Pruning
-removes the run row, its execution records, and its `traces/` state file, through the scoped
-repository and the artifact area; the assessment, its objects, its decisions, and every
-completed or failed run stay. Dry-run by default with a stated refusal (DEC-088's exit 3,
-DEC-089's shape), and the pruned runs' rolled-up spend is printed with the deletion — cost
-history may be removed here, never silently. Identifier counters are untouched, so a pruned
-run's identifier is never re-minted (DEC-018).
+- Does an abandoned paused run need an expiry, or is accumulation acceptable for a local single-user application?
 
 ## DEC-018: Assign prefixed sequential identifiers at persistence, scoped per assessment
 
@@ -8002,7 +7980,193 @@ Tradeoffs:
   The extraction is what the reviewer sees and approves at checkpoint 1, so imperfection is
   visible there rather than hidden behind the original.
 
-## DEC-126: The migration posture is refusal — the store's version stamp gates open, and re-running from sources is the upgrade path
+## DEC-124: CloudFormation joins the IaC family — JSON plus tag-free YAML, at the loader's own boundary
+
+Date: 2026-08-18
+
+Status: Accepted
+
+Decision:
+
+**A CloudFormation parser joins the DEC-070 family** (`services/context/cloudformation.py`,
+`cloudformation-parser-v1`), under the shape DEC-113 and DEC-121 settled: one component per
+declared resource, one documented claim per admitted property the template states as a literal
+boolean, both directions, and silence for everything else. An intrinsic — long-form `Ref`,
+`Fn::GetAtt`, `Fn::Sub` — parses as a mapping, is not a literal boolean, and yields nothing:
+an expression is *not stated*, the DEC-113 posture unchanged.
+
+**The syntax scope is what already parses at the ingestion boundary.** JSON templates
+(`*.cfn.json`) and tag-free YAML templates (`*.cfn.yaml`, `*.cfn.yml`) are in scope.
+CloudFormation's short-form tags (`!Ref`, `!Sub`) fail `yaml.safe_load`, and the loader already
+refuses a YAML document that does not safe-parse — so a short-form template is refused at
+ingestion by the existing untrusted-input rule, and the parser adds no tag handling to admit
+it. No YAML tag library joins the tree; the python-hcl2 rejection reasoning (DEC-121) applies
+to those libraries unchanged. The suffix names the format; content is never sniffed.
+
+**Admitted properties are DEC-121's table in CloudFormation's spelling.** `StorageEncrypted`,
+`PubliclyAccessible`, `Encrypted`, and `DeletionProtection` map to the family predicates their
+Terraform twins use, so the same stated fact makes the same documented claim whichever dialect
+declared it. The admission rule is DEC-121's and is not widened here; widening is its own
+decision (#595).
+
+Why:
+
+- Future-features 7.2 has named CloudFormation since the sketch, and the family's contract —
+  parsers read literal declarations into documented claims at zero model cost, nothing becomes
+  authority — was settled twice over. The remaining question was only the syntax boundary, and
+  the loader had already answered it: what safe-parses is in scope, what does not is refused
+  before any parser sees it.
+
+Alternatives Considered:
+
+- A YAML tag library (or a custom multi-constructor) to admit short-form templates (rejected:
+  tag handling is interpretation machinery for a subset that long-form spelling expresses
+  anyway, and the loader's safe-parse rule is the untrusted-input boundary — loosening it for
+  one suffix would trade a security invariant for a convenience).
+- Recognizing bare `template.json` / `template.yaml` names (rejected: a generic name states no
+  format, and the family rule is that the suffix names it — content is never sniffed).
+
+Tradeoffs:
+
+- Real-world templates written with short-form tags must be converted to long form (or JSON)
+  before ingestion; the refusal at load says why. Deliberate: the boundary stays where it is.
+- The measurement is fixture-level (corpus-measured claims over committed fixtures, JSON/YAML
+  parity, pinned intrinsic refusals), not a scenario re-record — the #569 precedent: extending
+  a live scenario's inputs would invalidate its recorded decisions for no new measurement.
+
+## DEC-125: The webhook pack completes its category as catalog 0.4, cut mid-sweep as draft with no pin moved
+
+Date: 2026-08-18
+
+Status: Accepted
+
+Decision:
+
+**Catalog 0.4 adds req-WEBHOOK-003 and req-WEBHOOK-004, completing the webhook-validation
+category** (future-features 5.4's promotion shape, #596). Origin verification and replay were
+0.1's `req-WEBHOOK-001` and `req-WEBHOOK-002`; the pack adds the two subjects the category
+lacked: source restriction — where the platform publishes stable source addresses or a
+restricted delivery channel, the documentation states whether the endpoint applies it, severity
+`low` because reachability is defence in depth behind the signature — and delivery-secret
+lifecycle — where authenticity rests on a shared secret, the documentation describes where it is
+held and how it rotates without dropping deliveries. Both are original requirements citing NIST
+only, for the reason the category file has recorded since 0.1: ASVS 5.0 carries no general
+inbound-event surface. Everything in 0.3 carries forward unchanged
+(`mappings/0.3-to-0.4.yaml`); 0.3 froze under DEC-111 and its hash is untouched.
+
+**0.4 registers `draft`, and no scenario pin moved with the cut.** DEC-099's release condition
+stands: the version flips `active` when the first committed recorded scenario pins it. The cut
+was authored while the #484 live sweep was capturing recordings, and a catalog pin is part of
+what an in-flight capture is assessed against — so the issue's named measurement, the
+unsigned-webhooks truth set engaging the pack through `expected-control-mappings.yaml`, is
+deferred to land with that scenario's post-sweep pin move rather than under it. Until then the
+measurement the pack carries is the loader's: 0.4 loads under both-direction manifest
+validation, the fate map is referentially complete, and the register test holds the new
+statements to the documentation register (silence resolves to `unverified`, never `unmet`).
+
+Why:
+
+- The promotion bar for a technology pack is a pre-existing measuring scenario, and webhooks
+  have two: unsigned-webhooks is the flagship's other half, and the forgeflow signature surface
+  is the original demo finding. A pack cut against scenarios already committed is the DEC-111
+  move at zero new-scenario cost.
+- The two new requirements exist to prevent conclusions, in the DEC-011 sense: an open endpoint
+  behind a documented signature is not a finding, and a documented managed secret store with an
+  unstated rotation cadence is not a static secret. Both `common_false_positives` fields say so.
+
+Alternatives Considered:
+
+- Landing the unsigned-webhooks truth-set engagement and the 0.4 pin in this change (rejected:
+  the live sweep was mid-capture on that scenario; a pin or truth-set move under an in-flight
+  keyed run alters what the spend is assessed against — the same reasoning `load_catalog`
+  takes a version for).
+- Citing ASVS chapter 13 for the source-restriction requirement (rejected: the resolver holds
+  citations to the vendored 5.0.0 export, and ASVS scopes itself to the application rather than
+  its network placement — the same reason req-NET-001 cites `SC-7` for the placement half).
+
+Tradeoffs:
+
+- A draft version is editable in place, so nothing yet pins 0.4's content; the freeze arrives
+  with the first recorded scenario that does. Deliberate, and the same posture 0.2 and 0.3 held
+  between cut and release.
+- `req-WEBHOOK-003`'s severity `low` understates the cases where source restriction is the only
+  control present; the mapping step's severity judgment, and ultimately the reviewer's
+  (DEC-030), owns that distinction — a default is a starting point, not a verdict.
+
+## DEC-126: The single-pass baseline prices the agent-set structure, with one combined schema
+
+Date: 2026-08-18
+
+Status: Accepted
+
+Decision:
+
+**A third prompt baseline, `baseline-single-pass`, prices the pipeline's decomposition itself:
+the whole assessment in one model call.** The two DEC-074 baselines emit findings only and price
+the pipeline's discipline; this one is asked for the full conclusion set — components, threats,
+findings, documentation gaps, and questions — under the same rules, through the same seam, with
+the same catalog and documents, its prompt versioned and hashed like the others. It runs as a
+harness condition marked non-authoritative (DEC-031); it is not a pipeline mode a user can
+select, and the six-agent cap is untouched — nothing is added, the condition removes the agents.
+
+**DEC-074's open question is decided: one combined output schema, not per-stage schemas in
+sequence.** `BaselineAssessment` is the combined shape. The combined call is the purer
+"no pipeline" claim — DEC-074's own words for it — and it is the claim evaluation-plan
+section 14's single-agent-versus-multi-agent row names. The engineering fact points the same
+way: the seam is a stateless prompt-to-schema contract making exactly one attempt, and a
+per-stage sequence sharing conversation state would need a conversation capability built onto
+the seam for the benefit of a baseline. The per-stage variant — isolating decomposition from
+iteration — remains available as future work and would carry its own entry.
+
+**The combined shape is what makes the discipline measurable.** A finding-only baseline told
+"missing documentation is never a finding" can only express restraint as an empty list. The
+combined schema gives it the pipeline's own outlets — a gap or a question — and the harness
+scores them with parallel requirement-identifier matchers mirroring the pipeline's metrics
+(`documentation_gap_precision`, `question_usefulness`, with the paired-question denominator rule
+applied so the columns mean the same thing). Threats and components are counted, never matched:
+the finding, gap, and question layers are where the truth sets bind, and a parallel threat
+matcher would be a second `match_threats` waiting to drift.
+
+**The keyed half is deferred and named.** No `baseline-single-pass` recording is committed with
+this entry: recording authorship or live capture rides the keyed capture step (DEC-100's
+precedent), staged through `trace capture <scenario> baseline-single-pass`, and the offline
+sweep skips a baseline with no recording, so the committed evaluation pages do not move here.
+The issue's live pair — baseline and pipeline on the same scenario, so the cost delta is
+measured rather than modelled — is keyed spend sequenced with the #484 sweep. The issue also
+sequences the headline comparison after evidence-assessment coverage enforcement (#588) and the
+truth-set reconciliation (#589); scores recorded before those land carry that caveat where they
+are reported.
+
+Why:
+
+- Future-features 9.2 left exactly one thing as future work: ablations that restructure the
+  agent set rather than removing a stage. The stage-removal family is built (#270); the
+  structural question — does the decomposition itself earn its cost? — had no measuring
+  instrument. This is that instrument, built to DEC-074's conformance rules so the comparison
+  stays re-runnable from the repository.
+
+Alternatives Considered:
+
+- Per-stage schemas requested in sequence within a single conversation (rejected for this entry:
+  a two-variable condition needing seam conversation state; named as the follow-up that isolates
+  decomposition from iteration).
+- Scoring the single-pass threats against `expected-threats` through a parallel matcher
+  (rejected: `match_threats`' subset semantics duplicated outside `matching.py` is drift waiting
+  to happen, and the finding, gap, and question layers already carry the decision gate).
+- Extending `BaselineFindings` with optional gap and question lists rather than a new schema
+  (rejected: the two DEC-074 baselines' recordings replay against the finding-only shape, and
+  widening it re-opens their schema-validity history).
+
+Tradeoffs:
+
+- One combined call confounds decomposition with iteration — a single pass loses both the stage
+  boundaries and the validation loops, and this condition cannot say which absence costs what.
+  Stated, and the per-stage variant is the instrument that would separate them.
+- The gap and question parallel scorers match on requirement identifiers only, which is more
+  generous than the pipeline's gap matcher (which walks the produced gap's mapping); the
+  direction of error favours the baseline, which is DEC-074's chosen direction.
+
+## DEC-127: The migration posture is refusal — the store's version stamp gates open, and re-running from sources is the upgrade path
 
 Date: 2026-08-18
 

@@ -37,3 +37,14 @@ versions:
     # registry-only flip rode the v0.1 release cut as DEC-111 sequenced. Frozen from this date.
     released: 2026-08-18
     last_reviewed: 2026-08-18
+
+  "0.4":
+    status: draft
+    maintainer: Ethan Turner
+    # The webhook pack (#596): everything in 0.3 carries forward unchanged, plus
+    # req-WEBHOOK-003 and req-WEBHOOK-004 completing the webhook-validation category. Draft
+    # under DEC-099's release condition: 0.4 flips active when the first committed recorded
+    # scenario pins it, and no scenario pin moved with the cut — the live sweep was in flight
+    # when 0.4 was authored, and a pin change mid-capture would alter what an in-flight run
+    # is assessed against. Editable in place until released.
+    last_reviewed: 2026-08-18

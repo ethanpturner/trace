@@ -1,0 +1,158 @@
+# Category: delegated_authentication
+# Requirements for systems that delegate user authentication to an external identity
+# provider over OpenID Connect or OAuth 2.x. The recurring shape is that delegation moves
+# the credential surface out of the system and leaves behind a protocol surface -- the
+# redirect, the code exchange, the token validation, the session the relying party mints --
+# and a design document can state how each is handled. The category exists so that a
+# delegated system is assessed on the surface it actually has, not on the password policies
+# it deliberately does not (#537, the oidc-portal false-positive class). Every statement is
+# written in the documentation register so that silence resolves to `unverified` (DEC-009).
+
+requirements:
+
+  - id: req-OIDC-001
+    catalog_version: "0.4"
+    title: Delegated sign-in redirects only to registered destinations
+    statement: >
+      Where authentication is delegated to an external identity provider, the
+      documentation must state that the destinations a sign-in flow can return
+      to are registered with the provider, and how that registration is
+      managed -- who may change it and where it is recorded.
+    rationale: >
+      The redirect is where a delegated flow hands its proof back, and a flow
+      that can return anywhere can hand the proof to anyone. Registration is
+      an architectural fact the relying party's design can state: the provider
+      enforces it, but which destinations are registered and who governs the
+      list is the system's own configuration surface.
+    category:
+      - delegated_authentication
+      - authentication
+    applicable_conditions:
+      - user authentication is delegated to an external provider through a browser redirect flow
+    non_applicable_conditions:
+      - the system performs no redirect-based sign-in (service-to-service credentials only)
+      - authentication is local and no external provider participates
+    acceptable_implementations:
+      - an exact-match redirect URI allowlist registered at the identity provider
+      - provider-side client configuration managed through reviewed infrastructure code
+      - a named owner for the client registration and its redirect list
+    evidence_expectations:
+      - documentation of the client registration and its redirect destinations
+      - description of who may change the registration and through what process
+    common_false_positives:
+      - absent wildcard-prohibition prose where the registered destinations are already exact
+      - absent re-statement of provider-side enforcement the provider performs by construction
+    default_severity: high
+    source_frameworks:
+      - "OWASP ASVS: v5.0.0-10.4.1"
+    status: active
+
+  - id: req-OIDC-002
+    catalog_version: "0.4"
+    title: Tokens from the identity provider are validated before use
+    statement: >
+      Where the system accepts tokens issued by an identity provider, the
+      documentation must state that a received token is validated -- signature
+      against the provider's published keys, issuer, audience, and expiry --
+      before any identity it asserts is relied on.
+    rationale: >
+      A relying party that decodes without validating has outsourced the login
+      page and kept the vulnerability: any bearer of a plausible token is
+      whoever the token says. Validation is the single point where delegation's
+      trust actually attaches, and a design document can say it happens and
+      with what library or mechanism.
+    category:
+      - delegated_authentication
+      - authentication
+    applicable_conditions:
+      - the system consumes ID tokens, access tokens, or assertions issued by an external provider
+    non_applicable_conditions:
+      - no externally issued token reaches the system's trust decision
+    acceptable_implementations:
+      - a maintained OIDC client library performing signature, issuer, audience, and expiry checks
+      - JWKS-based key retrieval with rotation handled by the library or platform
+      - platform middleware that validates before the request reaches application code
+    evidence_expectations:
+      - documentation naming where and how token validation occurs
+      - the validation library or middleware in the component's description or configuration
+    common_false_positives:
+      - absent enumeration of every validated claim where a standard library performs the standard set
+      - absent custom validation code where a platform middleware already validates
+    default_severity: critical
+    source_frameworks:
+      - "OWASP ASVS: v5.0.0-10.5.4"
+      - "OWASP ASVS: v5.0.0-10.1.2"
+    status: active
+
+  - id: req-OIDC-003
+    catalog_version: "0.4"
+    title: The session the relying party mints is bounded
+    statement: >
+      Where a delegated sign-in establishes a local session, the documentation
+      must state how long that session lives and how it ends -- expiry,
+      logout, or revocation -- because the provider's authentication event
+      does not bound the relying party's own session.
+    rationale: >
+      Delegation answers who the user is at one moment; the session is the
+      system's own promise that the answer stays good. A session that outlives
+      the provider's factor policy quietly weakens it -- the provider can
+      demand a second factor daily while the relying party's cookie lasts a
+      month. Session lifetime is the relying party's design decision and a
+      document can state it.
+    category:
+      - delegated_authentication
+      - authentication
+    applicable_conditions:
+      - a successful delegated sign-in establishes a session, cookie, or local token the system issues
+    non_applicable_conditions:
+      - every request is authenticated directly against the provider and no local session exists
+    acceptable_implementations:
+      - a stated session expiry aligned with the provider's re-authentication policy
+      - logout that clears the local session and, where supported, signals the provider
+      - short-lived local tokens refreshed against the provider
+    evidence_expectations:
+      - documentation of session lifetime and termination behavior
+      - session middleware or configuration in the component's description
+    common_false_positives:
+      - absent single-logout integration where local logout and expiry are documented
+      - treating a stated, bounded lifetime as unverified because its exact value is elsewhere
+    default_severity: medium
+    source_frameworks:
+      - "OWASP ASVS: v5.0.0-7.1.1"
+      - "OWASP ASVS: v5.0.0-7.6.1"
+    status: active
+
+  - id: req-OIDC-004
+    catalog_version: "0.4"
+    title: The authorization code exchange is bound to its initiator
+    statement: >
+      Where the delegated flow exchanges an authorization code for tokens, the
+      documentation must state how the exchange is bound to the client that
+      began it -- PKCE, a client credential on a confidential client, or both.
+    rationale: >
+      The code crosses the browser, and an unbound code is a bearer credential
+      in the one leg of the flow the provider cannot see end to end. Binding
+      is a protocol-level choice the relying party's design makes -- public
+      clients carry PKCE, confidential clients authenticate the exchange --
+      and which one applies is statable from the architecture alone.
+    category:
+      - delegated_authentication
+      - authentication
+    applicable_conditions:
+      - the sign-in flow uses an authorization code exchanged for tokens
+    non_applicable_conditions:
+      - the flow delivers tokens without a code exchange (no authorization-code grant in use)
+    acceptable_implementations:
+      - PKCE on public and confidential clients alike
+      - a confidential client authenticating the exchange with a managed credential
+      - a maintained OIDC library whose default flow applies the binding
+    evidence_expectations:
+      - documentation of the grant type and the binding applied to the exchange
+      - client configuration showing PKCE or the confidential client credential
+    common_false_positives:
+      - absent PKCE prose where a confidential client authenticates its exchange and says so
+      - absent restatement of a maintained library's default binding behavior
+    default_severity: high
+    source_frameworks:
+      - "OWASP ASVS: v5.0.0-10.4.6"
+    status: active
