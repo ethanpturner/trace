@@ -1363,6 +1363,15 @@ Open Questions:
 - Partitioning trades money for discrimination at an unmeasured exchange rate. How much less does a call over a fifth of the catalog think, and is the total increase closer to 2x or 5x?
 - Does the coverage gap from threat-gating need a system-level applicability pass, and would that be a seventh agent?
 
+Amendment (2026-08-17, #532): **The exchange rate is measured, and the partition path is closed**
+(DEC-107, `docs/eval/mapping-variants.md`). Offline, over all thirteen scenarios: partitioning
+by primary category multiplies cache-adjusted estimated input roughly ninefold, and even the
+coarsest two-way split costs ~1.8x — the per-call remainder duplicates into every partition, and
+DEC-105 already made the catalog the cheap span. The second open question above is answered
+(closer to 9x than 2x, in the wrong direction); the first is moot while no partition path
+exists; the third stays what it was — a seventh-agent question requiring DEC-030's evidence,
+untouched here.
+
 ## DEC-025: Record suppressed conclusions on the mapping that suppressed them
 
 Date: 2026-08-09
@@ -6891,3 +6900,56 @@ Tradeoffs:
 - Ratification risks blessing an accident as a decision. Mitigated by stating each answer's
   reason here rather than pointing at the code alone — if the reason stops holding, the entry
   is what a successor argues against.
+
+## DEC-107: The catalog is not partitioned; DEC-024's escalation path closes on measured shape
+
+Date: 2026-08-17
+
+Status: Accepted
+
+Decision:
+
+**The mapping step keeps sending the whole catalog on every call, and the partition-and-fan-out
+escalation DEC-024 named is closed rather than deferred.** The evidence is the committed
+`docs/eval/mapping-variants.md` (#532): every registered scenario replayed offline, every
+mapping call rebuilt exactly as the pipeline built it, re-composed under partition schemes, and
+sized. Pooled over the thirteen scenarios, partitioning by primary category multiplies
+cache-adjusted estimated input roughly ninefold (~14,230k tokens against ~1,519k), and even the
+coarsest two-way split costs ~1.8x — because everything that is *not* the catalog (the threat,
+the narrowed architecture, the evidence manifest, the composed prompt and schema) is duplicated
+into every partition's call, and with DEC-105 the catalog is the one span that is already
+cheap. Partitioning duplicates the expensive part to shrink the cheap part.
+
+**Machine-readable applicability stays free text**, completing the answer DEC-106 re-deferred
+to this measurement: a pre-filter's representation question is moot while there is no
+partitioning for it to feed, and DEC-024's structural reasons (a filter is a silent scope
+decision no reviewer sees) stand unweakened.
+
+The table regenerates in CI beside the scorecard checks, so the evidence tracks the corpus.
+
+Why:
+
+- DEC-024 said the escalation is taken "on cost evidence"; the cost evidence now exists and
+  points the other way. Closing the question on the record beats leaving an open path that
+  every catalog-growth discussion re-litigates.
+- The figures are estimates (3.8 chars/token, DEC-092 discipline, labeled in the artifact),
+  but the *ratio* is structural: fan-out duplicates the per-call remainder, and no token
+  heuristic changes which side of 1x that lands on.
+
+Alternatives Considered:
+
+- Leaving the question open pending live token counts from #484 (rejected: the live sweep will
+  refine the absolute numbers, not the ratio; a ninefold structural multiplier does not invert
+  under a different chars-per-token constant).
+- Partitioning only for very large future catalogs (not adopted as a standing trigger: if a
+  future catalog's stable span ever dwarfs the per-call remainder *and* live evidence shows
+  quality loss from long catalogs, that is a new decision with new evidence, not this one
+  reopening).
+
+Tradeoffs:
+
+- The measurement models cache economics with Anthropic's multipliers; a provider with no
+  cache discount would narrow the gap but not invert it — the duplicated remainder dominates
+  at any discount.
+- The mapping-variants check adds a second replay to the scorecard workflow's wall clock,
+  accepted for evidence that regenerates rather than rots.
