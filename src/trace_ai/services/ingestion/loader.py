@@ -346,14 +346,21 @@ class DocumentLoader:
 
         text = content.decode("utf-8")
         try:
-            # `yaml.safe_load` rather than `yaml.load`: the default loader constructs arbitrary
-            # Python objects from document content, which is code execution chosen by an untrusted
-            # input file. JSON has no equivalent hazard and needs no equivalent care.
-            parsed = json.loads(text) if media_type is MediaType.JSON else yaml.safe_load(text)
+            # `yaml.safe_load_all` rather than `yaml.load`: the safe loader constructs no
+            # arbitrary Python objects from document content, which the default loader would —
+            # code execution chosen by an untrusted input file. The `_all` form admits a
+            # multi-document stream (DEC-125): a Kubernetes manifest is conventionally several
+            # documents separated by `---`, that is valid YAML with the same safety properties,
+            # and each document is held to the same addressability bar a single one is. JSON has
+            # no equivalent hazard and needs no equivalent care.
+            if media_type is MediaType.JSON:
+                documents: list[object] = [json.loads(text)]
+            else:
+                documents = [parsed for parsed in yaml.safe_load_all(text) if parsed is not None]
         except (json.JSONDecodeError, yaml.YAMLError) as error:
             raise MalformedDocumentError(path, media_type, str(error).split("\n")[0]) from error
 
-        if not isinstance(parsed, dict | list):
+        if not documents or not all(isinstance(parsed, dict | list) for parsed in documents):
             raise UnaddressableDocumentError(path)
 
 
