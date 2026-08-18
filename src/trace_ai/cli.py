@@ -767,6 +767,25 @@ def build_parser() -> argparse.ArgumentParser:
     )
     _json_flag(report_show)
 
+    report_render = report_commands.add_parser(
+        "render",
+        help="write the report in another format, derived from the Markdown deliverable",
+        description=(
+            "Converts the rendered Markdown report — the deliverable, unchanged (DEC-035) — "
+            "into a derived presentation artifact in the assessment's outputs area (DEC-108). "
+            "The transform is deterministic and escapes everything except the structure the "
+            "renderer itself emits, so source-derived text cannot become markup."
+        ),
+    )
+    report_render.add_argument("assessment_id")
+    report_render.add_argument(
+        "--format",
+        choices=["html"],
+        default="html",
+        dest="render_format",
+        help="the derived format (html is the only one)",
+    )
+
     report_rubric = report_commands.add_parser(
         "rubric",
         help="record the reviewer rubric for the assessment's report",
@@ -1036,6 +1055,7 @@ def run(argv: Sequence[str] | None = None) -> int:
         ("findings", "review"): _findings_review,
         ("findings", "approve"): _findings_approve,
         ("report", "show"): _report_show,
+        ("report", "render"): _report_render,
         ("report", "rubric"): _report_rubric,
         ("ledger", None): _ledger,
         ("threats", None): _threats,
@@ -2783,6 +2803,34 @@ def _report_show(args: argparse.Namespace, service: AssessmentService) -> int:
             {"assessment_id": args.assessment_id, "filename": filename, "report": text},
         )
     print(text)
+    return 0
+
+
+def _report_render(args: argparse.Namespace, service: AssessmentService) -> int:
+    """Write the derived HTML view of the rendered report (#527, DEC-108).
+
+    The Markdown deliverable is read back and transformed; nothing re-renders from objects, so
+    the two cannot disagree. Refused while no report exists, like `report show`.
+    """
+    from trace_ai.services.report.html import render_report_html
+
+    assessment = service.get(args.assessment_id)
+    if assessment.final_report_path is None:
+        print(
+            "error: no report has been rendered for this assessment; run the pipeline to "
+            "completion first",
+            file=sys.stderr,
+        )
+        return 1
+    filename = assessment.final_report_path.rpartition("/")[2]
+    handle = service.handle(args.assessment_id)
+    markdown = handle.artifacts.read("outputs", filename).decode("utf-8")
+    derived = filename.removesuffix(".md") + ".html"
+    page = render_report_html(
+        markdown, title=f"Security Architecture Assessment: {assessment.name}"
+    )
+    handle.artifacts.store_output(derived, page.encode("utf-8"))
+    print(f"wrote {derived} to {args.assessment_id}'s outputs area")
     return 0
 
 

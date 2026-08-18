@@ -500,7 +500,7 @@ def test_the_command_surface_is_the_one_dec_032_confirms() -> None:
         "approve",
     }
     assert _subcommands("findings") == {"show", "review", "approve"}
-    assert _subcommands("report") == {"show", "rubric"}
+    assert _subcommands("report") == {"show", "render", "rubric"}
 
 
 def test_a_group_with_no_subcommand_prints_help() -> None:
@@ -1477,6 +1477,18 @@ def test_the_pipeline_runs_end_to_end_from_the_command_line(
     verification = _parsed_json(capsys.readouterr().out)
     assert verification["kind"] == "verification"
     assert verification["manifest_checked"] is True
+
+    # The derived HTML view (#527, DEC-108): every section the render holds, escaped structure.
+    assert invoke(data_root, "report", "render", identifier) == 0
+    assert ".html" in capsys.readouterr().out
+    assert invoke(data_root, "report", "show", identifier, "--json") == 0
+    shown_again = _parsed_json(capsys.readouterr().out)
+    html_name = str(shown_again["filename"]).removesuffix(".md") + ".html"
+    page = (data_root / "assessments" / identifier / "outputs" / html_name).read_text(
+        encoding="utf-8"
+    )
+    assert page.count("<h2>") == 16, "all sixteen sections survive the transform"
+    assert "fnd-001" in page
 
 
 def test_report_show_is_refused_while_no_report_exists(
