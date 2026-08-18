@@ -7188,3 +7188,5 @@ Tradeoffs:
   extra finding lowers the number even though the truth set should grow. Accepted and
   intended — that disagreement is exactly what the truth set's owner should review, and the
   per-artifact counts keep the direction visible.
+
+## DEC-113: The IaC parser completes DEC-070's family, scoped to Terraform JSON syntax

@@ -7,9 +7,9 @@
         "name": "Platform-managed encryption",
         "description": "The cloud platform encrypts the managed database at rest by default with keys held by its key management service, and the API-to-database connection uses the platform's transport encryption terminated at the managed endpoint.",
         "control_type": "inherited",
-        "provider_component_id": "cmp-002",
+        "provider_component_id": "cmp-003",
         "protected_component_ids": [
-          "cmp-002"
+          "cmp-003"
         ],
         "protected_asset_ids": [
           "ast-001"
