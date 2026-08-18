@@ -66,6 +66,11 @@ jobs:
       - name: The committed ablation table matches the recorded runs
         run: uv run python scripts/build_ablation.py --check
 
+      # The DEC-024 cost evidence (#532): its own replay, because it rebuilds mapping packages
+      # from the persisted assessments rather than reading the metric feeds.
+      - name: The committed mapping-variants table matches the recorded runs
+        run: uv run python scripts/measure_mapping_variants.py --check
+
       # When the checks pass the committed pages are current by definition, so they are the fresh
       # copies — no second sweep to re-render them. On a stale page the check above is already red
       # with the regeneration command, and this step is skipped rather than uploading a stale copy.
