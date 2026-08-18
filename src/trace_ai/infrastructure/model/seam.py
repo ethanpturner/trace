@@ -260,6 +260,7 @@ class StructuredModel(Protocol):
         settings: GenerationSettings | None = None,
         system: str | None = None,
         cache_prefix: str | None = None,
+        system_cache_prefix: str | None = None,
     ) -> ModelOutcome[T]:
         """One attempt at a validated instance of `schema`.
 
@@ -273,5 +274,12 @@ class StructuredModel(Protocol):
         caching may mark for reuse across the calls that share it (WS10). An adapter that does not,
         or a `cache_prefix` that is not a prefix of `prompt`, ignores it; a provider-neutral hint,
         never a provider knob (DEC-014).
+
+        `system_cache_prefix` is the same hint for `system` (DEC-104): the leading span of the
+        trusted region that is byte-identical across a node's calls — for mapping, the
+        requirements catalog, which DEC-024 names as the pipeline's largest stable prefix. It
+        matters when `system` itself varies per call: a marker inside `prompt` alone never hits
+        then, because the varying system region precedes it in the cacheable sequence. The same
+        ignore rules apply.
         """
         ...

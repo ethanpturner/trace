@@ -137,6 +137,11 @@ class MappingInput:
     trusted: str
     untrusted: str
 
+    trusted_cache_prefix: str
+    """The leading span of `trusted` that is byte-identical across the assessment's mapping calls
+    — the assessment header and the whole catalog (DEC-104). The seam's `system_cache_prefix`
+    hint; empty never occurs by construction, but a consumer treats a non-prefix as no hint."""
+
     assessment_id: str
     threat_id: str
     catalog_version: str
@@ -324,6 +329,30 @@ def _flow_entry(flow: DataFlow) -> dict[str, Any]:
     }
 
 
+def _stable_span(
+    *, assessment_id: str, catalog_version: str, requirements: list[dict[str, Any]]
+) -> str:
+    """The leading span of the trusted region that is byte-identical across every mapping call
+    an assessment makes: the assessment header and the whole requirements catalog (DEC-104).
+
+    DEC-024 sends the full catalog on every call and names it the pipeline's largest stable
+    prefix; putting it first — before anything the threat varies — is what lets an adapter cache
+    it across the run's calls rather than only across one threat's retries.
+    """
+    return "\n".join(
+        [
+            "## Assessment",
+            "",
+            f"assessment_id: {assessment_id}",
+            f"requirements_catalog_version: {catalog_version}",
+            "",
+            "## Requirements catalog",
+            "",
+            json.dumps(requirements, indent=2, sort_keys=True),
+        ]
+    )
+
+
 def _trusted_region(
     *,
     assessment_id: str,
@@ -339,20 +368,20 @@ def _trusted_region(
     Application objects only: identifiers the application allocated, on objects a reviewer approved
     at checkpoint 1. No path, no credential, no environment value, no configuration object. Quoted
     source text appears once, inside the fence, and never here.
+
+    The region opens with `_stable_span` — the assessment header and the catalog — and everything
+    the threat varies follows it, so the whole leading span is cacheable across calls (DEC-104).
     """
     sections = [
-        "## Assessment",
-        "",
-        f"assessment_id: {assessment_id}",
-        f"requirements_catalog_version: {catalog_version}",
+        _stable_span(
+            assessment_id=assessment_id,
+            catalog_version=catalog_version,
+            requirements=requirements,
+        ),
         "",
         "## Threat under evaluation",
         "",
         json.dumps(threat, indent=2, sort_keys=True),
-        "",
-        "## Requirements catalog",
-        "",
-        json.dumps(requirements, indent=2, sort_keys=True),
         "",
         "## Existing controls",
         "",
@@ -482,10 +511,16 @@ def assemble_mapping_input(
     included = set(outcome.included_ids)
     present = [excerpt for excerpt in excerpts if excerpt["evidence_id"] in included]
     trusted = build_trusted(present)
+    stable = _stable_span(
+        assessment_id=handle.assessment_id,
+        catalog_version=catalog.version,
+        requirements=requirement_entries,
+    )
 
     return MappingInput(
         trusted=trusted,
         untrusted=outcome.untrusted,
+        trusted_cache_prefix=stable,
         assessment_id=handle.assessment_id,
         threat_id=threat.id,
         catalog_version=catalog.version,

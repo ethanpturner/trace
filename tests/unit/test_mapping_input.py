@@ -265,6 +265,42 @@ def test_the_package_carries_no_handle_index_or_profile(
     assert not held & {"handle", "index", "profile", "store", "session", "repository"}
 
 
+# The cacheable stable span (DEC-104)
+
+
+def test_the_trusted_region_opens_with_its_stable_span(
+    prepared: tuple[AssessmentHandle, SystemContext, Threat], catalog: LoadedCatalog
+) -> None:
+    """The catalog leads and everything the threat varies follows, so the declared prefix is a
+    real prefix and carries the whole catalog — DEC-024's largest-stable-prefix intent, made
+    literal."""
+    assembled = package(prepared, catalog)
+
+    assert assembled.trusted.startswith(assembled.trusted_cache_prefix)
+    assert "## Requirements catalog" in assembled.trusted_cache_prefix
+    assert "## Threat under evaluation" not in assembled.trusted_cache_prefix
+    tail = assembled.trusted[len(assembled.trusted_cache_prefix) :]
+    assert "## Threat under evaluation" in tail
+    assert "## Evidence available" in tail
+
+
+def test_two_threats_share_one_stable_prefix(
+    prepared: tuple[AssessmentHandle, SystemContext, Threat], catalog: LoadedCatalog
+) -> None:
+    """The property the cache split exists for: across an assessment's mapping calls the prefix
+    is byte-identical while the regions after it differ per threat."""
+    _, _, threat = prepared
+    second = Threat.model_validate(
+        {**threat.model_dump(), "id": "thr-099", "title": "A second, different threat"}
+    )
+
+    first_package = package(prepared, catalog)
+    second_package = package(prepared, catalog, threat=second)
+
+    assert first_package.trusted_cache_prefix == second_package.trusted_cache_prefix
+    assert first_package.trusted != second_package.trusted
+
+
 # The keys section 30 and section 27 need
 
 

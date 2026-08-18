@@ -140,6 +140,7 @@ class OpenAIModel:
         settings: GenerationSettings | None = None,
         system: str | None = None,
         cache_prefix: str | None = None,
+        system_cache_prefix: str | None = None,
     ) -> ModelOutcome[T]:
         """One attempt at a validated instance of `schema`.
 
@@ -147,7 +148,8 @@ class OpenAIModel:
         sake: the caller records a cost and duration for the attempt either way, and an escaping
         exception would leave a node that started and never finished.
         """
-        del cache_prefix  # The provider caches prefixes automatically; there is no marker.
+        # The provider caches prefixes automatically; there is no marker for either hint.
+        del cache_prefix, system_cache_prefix
         resolved = settings if settings is not None else self._profile.settings
         effort = REASONING_EFFORT_BY_CREATIVITY[resolved.creativity]
 
