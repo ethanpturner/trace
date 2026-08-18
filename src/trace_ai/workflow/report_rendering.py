@@ -30,6 +30,7 @@ from typing import TYPE_CHECKING, Final
 from trace_ai.config import PROJECT_ROOT
 from trace_ai.domain.base import now
 from trace_ai.domain.enums import Severity
+from trace_ai.services.evidence.staleness import stale_evidence_ids
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -206,6 +207,9 @@ def _findings_block(
     findings: tuple[Finding, ...],
     references: dict[str, EvidenceReference],
     documents: dict[str, str],
+    *,
+    stale_threshold_days: int | None = None,
+    as_of: datetime | None = None,
 ) -> str:
     rendered: list[str] = []
     for finding in findings:
@@ -229,6 +233,16 @@ def _findings_block(
             lines.append(f"- Assumptions: {'; '.join(finding.assumptions)}")
         if finding.limitations:
             lines.append(f"- Limitations: {'; '.join(finding.limitations)}")
+        if stale_threshold_days is not None and as_of is not None:
+            stale = stale_evidence_ids(
+                finding, references, threshold_days=stale_threshold_days, as_of=as_of
+            )
+            if stale:
+                lines.append(
+                    f"- Stale evidence: {', '.join(stale)} captured more than "
+                    f"{stale_threshold_days} days before this report was generated; re-verify "
+                    f"before relying on this finding. The flag changes nothing else (DEC-118)."
+                )
         lines.append("")
         lines.append("Evidence:")
         lines.append("")
@@ -338,7 +352,13 @@ def render_report(
             f"{threat.description}\n\nImpact: {threat.impact}"
             for threat in assembled.threats
         ),
-        "findings": _findings_block(assembled.approved_findings, references, documents),
+        "findings": _findings_block(
+            assembled.approved_findings,
+            references,
+            documents,
+            stale_threshold_days=assessment.configuration.evidence_age_threshold_days,
+            as_of=stamp,
+        ),
         "documentation_gaps": "\n\n".join(
             f"{_anchor(gap.id)}\n### {gap.id}: {gap.title}\n\n"
             f"It could not be determined from the documentation provided: {gap.description}\n\n"

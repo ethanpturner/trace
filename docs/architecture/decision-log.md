@@ -7428,3 +7428,59 @@ Tradeoffs:
 - v0 has no per-control evidence linking to organizational documentation (policy pages, audit
   reports); the claim cites the assertion document. A future version can carry references, and
   the gap is stated here rather than papered over.
+
+## DEC-118: Evidence age is capture age, the threshold is per-assessment configuration, and staleness is a flag that changes nothing
+
+Date: 2026-08-18
+
+Status: Accepted
+
+Decision:
+
+**The age anchor is `EvidenceReference.created_at` — when the passage was captured — not an
+observed-at field.** Capture time is the only timestamp the system actually holds: the MVP reads
+supplied documents, and a document rarely states when its facts were last true. An `observed_at`
+nobody supplies would be a fabricated measurement wearing a schema field's authority; if a future
+ingestion source carries real observation dates, adding the field then is a small change with an
+honest population story. Future-features 6.6's expiration-policy machinery stays Research.
+
+**`evidence_age_threshold_days` lives on `AssessmentConfiguration`, optional, no default.**
+Unset means no staleness flags anywhere: absence of a policy is not a policy, and a default
+number would be an opinion about every assessment nobody stated (DEC-036's discipline applied to
+time). The field governs flagging only — no checkpoint consults it, so DEC-012 is untouched, and
+the guard test's forbidden-name check does not match it.
+
+**Staleness is a flag, and a flag changes nothing.** A finding citing evidence captured more
+than the threshold before the report's `generated_at` stamp gains one line in its report entry
+naming the stale citations; the read-only view adds a stale-evidence column computed against the
+request's time, because a view is a point-in-time look. Nothing is suppressed, expired,
+downgraded, or re-severitied — severity stays the reviewer's (DEC-030). The report's anchor is
+the render stamp, not a wall clock read mid-render, so two renders of identical approved state
+at the same stamp remain identical and the recorded replays — whose configurations set no
+threshold — render byte-for-byte unchanged.
+
+Why:
+
+- A finding supported by stale evidence is quietly unsupported, and nothing said so: every
+  citation rendered alike whether captured yesterday or a year ago.
+- The lineage walk already re-verifies evidence *content* against its hash; age was the axis
+  with no surface at all.
+
+Alternatives Considered:
+
+- A distinct `observed_at` field on `EvidenceReference` (rejected for now: no ingestion path
+  supplies it, so it would either duplicate `created_at` or be authored by hand — both
+  fabrications of a measurement).
+- Automatic expiration or downgrade past the threshold (rejected: DEC-030 makes severity the
+  reviewer's, and an expired citation silently weakening a finding is a decision nobody made).
+- A global threshold in settings (rejected: staleness tolerance is per-assessment judgment — a
+  point-in-time review of a frozen architecture legitimately tolerates any age).
+
+Tradeoffs:
+
+- Capture age understates staleness for documents that were already old when supplied; the flag
+  reads "captured N days ago", which is true, not "the fact is N days old", which is unknown.
+  Stated here rather than papered over.
+- The view's request-time anchor means the same assessment can flag differently on different
+  days. Deliberate: that is what aging means, and the report — the deliverable — is anchored to
+  its own stamp.
