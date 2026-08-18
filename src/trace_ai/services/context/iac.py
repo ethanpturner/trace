@@ -81,11 +81,11 @@ _TYPE_FAMILIES: Final[tuple[tuple[str, str], ...]] = (
 
 # The security-relevant attributes a declaration can state, each read only when present: the
 # claim carries the stated boolean, true or false alike (a stated false is a documented
-# negative, never an inferred one). Growth is by DEC-121's rule — literal boolean, meaning
-# self-contained without cross-resource reasoning, both directions meaningful — so this table
-# is a visible small diff, never an ad-hoc accretion. `encrypted` is `storage_encrypted`'s
-# spelling on volume and disk resources; `deletion_protection` states whether the platform
-# refuses destructive deletion.
+# negative, never an inferred one). Growth is by the admission rule — a literal value with
+# self-contained meaning, every stated value meaningful — so this table is a visible small
+# diff, never an ad-hoc accretion. `encrypted` is `storage_encrypted`'s spelling on volume and
+# disk resources; `deletion_protection` states whether the platform refuses destructive
+# deletion.
 _STATED_ATTRIBUTES: Final[tuple[str, ...]] = (
     "storage_encrypted",
     "publicly_accessible",
@@ -93,13 +93,19 @@ _STATED_ATTRIBUTES: Final[tuple[str, ...]] = (
     "deletion_protection",
 )
 
+# Closed-vocabulary string attributes, admitted by the widened rule (DEC-121 as amended): the
+# platform defines a finite enumerated value set, a stated member is as literal as a stated
+# boolean, and every member is worth reporting. The claim carries the stated string verbatim.
+# An expression or interpolation is still not a stated value and yields nothing.
+_STATED_STRING_ATTRIBUTES: Final[tuple[str, ...]] = ("minimum_tls_version",)
+
 
 @dataclass(frozen=True, slots=True)
 class ParsedResource:
     resource_type: str
     name: str
-    stated: tuple[tuple[str, bool], ...]
-    """The `_STATED_ATTRIBUTES` this declaration states, with their stated values."""
+    stated: tuple[tuple[str, bool | str], ...]
+    """The admitted attributes this declaration states, with their stated values."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -147,10 +153,17 @@ def parse_terraform(text: str) -> ParsedTerraform:
             continue
         for name, body in declared.items():
             attributes: dict[str, Any] = body if isinstance(body, dict) else {}
-            stated = tuple(
-                (attribute, bool(attributes[attribute]))
-                for attribute in _STATED_ATTRIBUTES
-                if isinstance(attributes.get(attribute), bool)
+            stated: tuple[tuple[str, bool | str], ...] = tuple(
+                [
+                    (attribute, bool(attributes[attribute]))
+                    for attribute in _STATED_ATTRIBUTES
+                    if isinstance(attributes.get(attribute), bool)
+                ]
+                + [
+                    (attribute, str(attributes[attribute]))
+                    for attribute in _STATED_STRING_ATTRIBUTES
+                    if isinstance(attributes.get(attribute), str)
+                ]
             )
             resources.append(
                 ParsedResource(resource_type=str(resource_type), name=str(name), stated=stated)
@@ -159,12 +172,13 @@ def parse_terraform(text: str) -> ParsedTerraform:
 
 
 # The HCL subset this module reads (DEC-121): a `resource "type" "name" {` opener at column
-# depth zero, and `attribute = true|false` at the block's own top level, an optional trailing
-# line comment tolerated. Nothing else is interpreted: an expression, a variable reference, or
-# an interpolation is not a stated boolean and yields nothing.
+# depth zero, and `attribute = true|false` or `attribute = "literal"` at the block's own top
+# level, an optional trailing line comment tolerated. Nothing else is interpreted: an
+# expression, a variable reference, or an interpolation is not a stated value and yields
+# nothing. A quoted literal containing an interpolation marker (`${`) is an expression too.
 _HCL_RESOURCE: Final = re.compile(r'^resource\s+"([^"]+)"\s+"([^"]+)"\s*\{')
 _HCL_ATTRIBUTE: Final = re.compile(
-    r"^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(true|false)\s*(?:(?:#|//).*)?$"
+    r'^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(true|false|"[^"]*")\s*(?:(?:#|//).*)?$'
 )
 
 
@@ -183,7 +197,7 @@ def _hcl_scan(text: str) -> tuple[ParsedTerraform, dict[str, tuple[int, int]]]:
 
     in_block_comment = False
     current: tuple[str, str, int] | None = None  # (type, name, start line)
-    stated: list[tuple[str, bool]] = []
+    stated: list[tuple[str, bool | str]] = []
     depth = 0
 
     for number, raw in enumerate(lines, start=1):
@@ -215,8 +229,16 @@ def _hcl_scan(text: str) -> tuple[ParsedTerraform, dict[str, tuple[int, int]]]:
 
         if depth == 1:
             attribute = _HCL_ATTRIBUTE.match(stripped)
-            if attribute is not None and attribute.group(1) in _STATED_ATTRIBUTES:
-                stated.append((attribute.group(1), attribute.group(2) == "true"))
+            if attribute is not None:
+                name_part, value_part = attribute.group(1), attribute.group(2)
+                if name_part in _STATED_ATTRIBUTES and value_part in ("true", "false"):
+                    stated.append((name_part, value_part == "true"))
+                elif (
+                    name_part in _STATED_STRING_ATTRIBUTES
+                    and value_part.startswith('"')
+                    and "${" not in value_part
+                ):
+                    stated.append((name_part, value_part.strip('"')))
 
         depth += stripped.count("{") - stripped.count("}")
         if depth <= 0:

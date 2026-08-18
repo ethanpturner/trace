@@ -7031,6 +7031,22 @@ Tradeoffs:
   cell text and the template controls line starts today; the risk is accepted and the
   escape-first rule bounds it to formatting, never to markup injection.
 
+Amendment (2026-08-18, #600): **The derived HTML view carries a lineage appendix, and the
+amendment bounds what the view may embed.** The nine-hop walk — source document, evidence,
+context claim, threat, requirement, control, evidence assessment, critique, reviewer decision,
+finding — travels in the HTML page as one expandable section per approved finding
+(`services/report/lineage_html.py`), because the localhost walk (DEC-078, #533, #572) dies when
+`http.server` stops and the artifact a reviewer hands to someone is the report. The boundary
+this entry set holds: Markdown remains the deliverable and the appendix is not report content —
+it renders no section, rewrites no approved text, and is absent from the deliverable without
+that absence being drift. What the derived view may embed is exactly this: resolved persisted
+approved objects and the evidence leaf's re-verification verdict, computed as the page renders —
+state, not time, so the page still carries no clock and two renders over the same store are
+byte-identical. A static page cannot re-verify after it is written and says so, deferring the
+live property to `trace view`. Every embedded text node is escaped by the appendix builder under
+this entry's fence discipline; the injection fixture is the hostile test. Future-features 13.1's
+Candidate closes: the register's last Candidate flips to Built.
+
 ## DEC-109: The tracing integration exists, and a span structurally cannot carry content
 
 Date: 2026-08-17
@@ -7979,3 +7995,496 @@ Tradeoffs:
 - Extraction quality is `pypdf`'s: a PDF with an unusual text encoding may extract imperfectly.
   The extraction is what the reviewer sees and approves at checkpoint 1, so imperfection is
   visible there rather than hidden behind the original.
+
+## DEC-124: CloudFormation joins the IaC family — JSON plus tag-free YAML, at the loader's own boundary
+
+Date: 2026-08-18
+
+Status: Accepted
+
+Decision:
+
+**A CloudFormation parser joins the DEC-070 family** (`services/context/cloudformation.py`,
+`cloudformation-parser-v1`), under the shape DEC-113 and DEC-121 settled: one component per
+declared resource, one documented claim per admitted property the template states as a literal
+boolean, both directions, and silence for everything else. An intrinsic — long-form `Ref`,
+`Fn::GetAtt`, `Fn::Sub` — parses as a mapping, is not a literal boolean, and yields nothing:
+an expression is *not stated*, the DEC-113 posture unchanged.
+
+**The syntax scope is what already parses at the ingestion boundary.** JSON templates
+(`*.cfn.json`) and tag-free YAML templates (`*.cfn.yaml`, `*.cfn.yml`) are in scope.
+CloudFormation's short-form tags (`!Ref`, `!Sub`) fail `yaml.safe_load`, and the loader already
+refuses a YAML document that does not safe-parse — so a short-form template is refused at
+ingestion by the existing untrusted-input rule, and the parser adds no tag handling to admit
+it. No YAML tag library joins the tree; the python-hcl2 rejection reasoning (DEC-121) applies
+to those libraries unchanged. The suffix names the format; content is never sniffed.
+
+**Admitted properties are DEC-121's table in CloudFormation's spelling.** `StorageEncrypted`,
+`PubliclyAccessible`, `Encrypted`, and `DeletionProtection` map to the family predicates their
+Terraform twins use, so the same stated fact makes the same documented claim whichever dialect
+declared it. The admission rule is DEC-121's and is not widened here; widening is its own
+decision (#595).
+
+Why:
+
+- Future-features 7.2 has named CloudFormation since the sketch, and the family's contract —
+  parsers read literal declarations into documented claims at zero model cost, nothing becomes
+  authority — was settled twice over. The remaining question was only the syntax boundary, and
+  the loader had already answered it: what safe-parses is in scope, what does not is refused
+  before any parser sees it.
+
+Alternatives Considered:
+
+- A YAML tag library (or a custom multi-constructor) to admit short-form templates (rejected:
+  tag handling is interpretation machinery for a subset that long-form spelling expresses
+  anyway, and the loader's safe-parse rule is the untrusted-input boundary — loosening it for
+  one suffix would trade a security invariant for a convenience).
+- Recognizing bare `template.json` / `template.yaml` names (rejected: a generic name states no
+  format, and the family rule is that the suffix names it — content is never sniffed).
+
+Tradeoffs:
+
+- Real-world templates written with short-form tags must be converted to long form (or JSON)
+  before ingestion; the refusal at load says why. Deliberate: the boundary stays where it is.
+- The measurement is fixture-level (corpus-measured claims over committed fixtures, JSON/YAML
+  parity, pinned intrinsic refusals), not a scenario re-record — the #569 precedent: extending
+  a live scenario's inputs would invalidate its recorded decisions for no new measurement.
+
+## DEC-125: The webhook pack completes its category as catalog 0.4, cut mid-sweep as draft with no pin moved
+
+Date: 2026-08-18
+
+Status: Accepted
+
+Decision:
+
+**Catalog 0.4 adds req-WEBHOOK-003 and req-WEBHOOK-004, completing the webhook-validation
+category** (future-features 5.4's promotion shape, #596). Origin verification and replay were
+0.1's `req-WEBHOOK-001` and `req-WEBHOOK-002`; the pack adds the two subjects the category
+lacked: source restriction — where the platform publishes stable source addresses or a
+restricted delivery channel, the documentation states whether the endpoint applies it, severity
+`low` because reachability is defence in depth behind the signature — and delivery-secret
+lifecycle — where authenticity rests on a shared secret, the documentation describes where it is
+held and how it rotates without dropping deliveries. Both are original requirements citing NIST
+only, for the reason the category file has recorded since 0.1: ASVS 5.0 carries no general
+inbound-event surface. Everything in 0.3 carries forward unchanged
+(`mappings/0.3-to-0.4.yaml`); 0.3 froze under DEC-111 and its hash is untouched.
+
+**0.4 registers `draft`, and no scenario pin moved with the cut.** DEC-099's release condition
+stands: the version flips `active` when the first committed recorded scenario pins it. The cut
+was authored while the #484 live sweep was capturing recordings, and a catalog pin is part of
+what an in-flight capture is assessed against — so the issue's named measurement, the
+unsigned-webhooks truth set engaging the pack through `expected-control-mappings.yaml`, is
+deferred to land with that scenario's post-sweep pin move rather than under it. Until then the
+measurement the pack carries is the loader's: 0.4 loads under both-direction manifest
+validation, the fate map is referentially complete, and the register test holds the new
+statements to the documentation register (silence resolves to `unverified`, never `unmet`).
+
+Why:
+
+- The promotion bar for a technology pack is a pre-existing measuring scenario, and webhooks
+  have two: unsigned-webhooks is the flagship's other half, and the forgeflow signature surface
+  is the original demo finding. A pack cut against scenarios already committed is the DEC-111
+  move at zero new-scenario cost.
+- The two new requirements exist to prevent conclusions, in the DEC-011 sense: an open endpoint
+  behind a documented signature is not a finding, and a documented managed secret store with an
+  unstated rotation cadence is not a static secret. Both `common_false_positives` fields say so.
+
+Alternatives Considered:
+
+- Landing the unsigned-webhooks truth-set engagement and the 0.4 pin in this change (rejected:
+  the live sweep was mid-capture on that scenario; a pin or truth-set move under an in-flight
+  keyed run alters what the spend is assessed against — the same reasoning `load_catalog`
+  takes a version for).
+- Citing ASVS chapter 13 for the source-restriction requirement (rejected: the resolver holds
+  citations to the vendored 5.0.0 export, and ASVS scopes itself to the application rather than
+  its network placement — the same reason req-NET-001 cites `SC-7` for the placement half).
+
+Tradeoffs:
+
+- A draft version is editable in place, so nothing yet pins 0.4's content; the freeze arrives
+  with the first recorded scenario that does. Deliberate, and the same posture 0.2 and 0.3 held
+  between cut and release.
+- `req-WEBHOOK-003`'s severity `low` understates the cases where source restriction is the only
+  control present; the mapping step's severity judgment, and ultimately the reviewer's
+  (DEC-030), owns that distinction — a default is a starting point, not a verdict.
+
+## DEC-126: The single-pass baseline prices the agent-set structure, with one combined schema
+
+Date: 2026-08-18
+
+Status: Accepted
+
+Decision:
+
+**A third prompt baseline, `baseline-single-pass`, prices the pipeline's decomposition itself:
+the whole assessment in one model call.** The two DEC-074 baselines emit findings only and price
+the pipeline's discipline; this one is asked for the full conclusion set — components, threats,
+findings, documentation gaps, and questions — under the same rules, through the same seam, with
+the same catalog and documents, its prompt versioned and hashed like the others. It runs as a
+harness condition marked non-authoritative (DEC-031); it is not a pipeline mode a user can
+select, and the six-agent cap is untouched — nothing is added, the condition removes the agents.
+
+**DEC-074's open question is decided: one combined output schema, not per-stage schemas in
+sequence.** `BaselineAssessment` is the combined shape. The combined call is the purer
+"no pipeline" claim — DEC-074's own words for it — and it is the claim evaluation-plan
+section 14's single-agent-versus-multi-agent row names. The engineering fact points the same
+way: the seam is a stateless prompt-to-schema contract making exactly one attempt, and a
+per-stage sequence sharing conversation state would need a conversation capability built onto
+the seam for the benefit of a baseline. The per-stage variant — isolating decomposition from
+iteration — remains available as future work and would carry its own entry.
+
+**The combined shape is what makes the discipline measurable.** A finding-only baseline told
+"missing documentation is never a finding" can only express restraint as an empty list. The
+combined schema gives it the pipeline's own outlets — a gap or a question — and the harness
+scores them with parallel requirement-identifier matchers mirroring the pipeline's metrics
+(`documentation_gap_precision`, `question_usefulness`, with the paired-question denominator rule
+applied so the columns mean the same thing). Threats and components are counted, never matched:
+the finding, gap, and question layers are where the truth sets bind, and a parallel threat
+matcher would be a second `match_threats` waiting to drift.
+
+**The keyed half is deferred and named.** No `baseline-single-pass` recording is committed with
+this entry: recording authorship or live capture rides the keyed capture step (DEC-100's
+precedent), staged through `trace capture <scenario> baseline-single-pass`, and the offline
+sweep skips a baseline with no recording, so the committed evaluation pages do not move here.
+The issue's live pair — baseline and pipeline on the same scenario, so the cost delta is
+measured rather than modelled — is keyed spend sequenced with the #484 sweep. The issue also
+sequences the headline comparison after evidence-assessment coverage enforcement (#588) and the
+truth-set reconciliation (#589); scores recorded before those land carry that caveat where they
+are reported.
+
+Why:
+
+- Future-features 9.2 left exactly one thing as future work: ablations that restructure the
+  agent set rather than removing a stage. The stage-removal family is built (#270); the
+  structural question — does the decomposition itself earn its cost? — had no measuring
+  instrument. This is that instrument, built to DEC-074's conformance rules so the comparison
+  stays re-runnable from the repository.
+
+Alternatives Considered:
+
+- Per-stage schemas requested in sequence within a single conversation (rejected for this entry:
+  a two-variable condition needing seam conversation state; named as the follow-up that isolates
+  decomposition from iteration).
+- Scoring the single-pass threats against `expected-threats` through a parallel matcher
+  (rejected: `match_threats`' subset semantics duplicated outside `matching.py` is drift waiting
+  to happen, and the finding, gap, and question layers already carry the decision gate).
+- Extending `BaselineFindings` with optional gap and question lists rather than a new schema
+  (rejected: the two DEC-074 baselines' recordings replay against the finding-only shape, and
+  widening it re-opens their schema-validity history).
+
+Tradeoffs:
+
+- One combined call confounds decomposition with iteration — a single pass loses both the stage
+  boundaries and the validation loops, and this condition cannot say which absence costs what.
+  Stated, and the per-stage variant is the instrument that would separate them.
+- The gap and question parallel scorers match on requirement identifiers only, which is more
+  generous than the pipeline's gap matcher (which walks the produced gap's mapping); the
+  direction of error favours the baseline, which is DEC-074's chosen direction.
+
+## DEC-127: The migration posture is refusal — the store's version stamp gates open, and re-running from sources is the upgrade path
+
+Date: 2026-08-18
+
+Status: Accepted
+
+Decision:
+
+**There is no migration framework, and none is planned.** The mechanism DEC-020 and DEC-089
+built is the whole posture, and this entry decides it rather than leaving it implied: the store
+records its schema version at creation, checks it before anything else on open, and refuses an
+incompatible database with a message naming the recovery — create a new database and re-run the
+assessment from its sources. `SCHEMA_VERSION` moves only for table-layout changes; a
+domain-object change is invisible to SQLite by design, which is why the JSON-payload store needs
+no migrations for the changes that actually happen. A layout change that would strand data
+someone cannot regenerate is the trigger to revisit this entry, not a reason to soften the
+refusal.
+
+Why:
+
+- The v0.1 release made DEC-020's open question — at what point does an assessment become worth
+  keeping — real. The answer the corpus already implies: the data root is gitignored and
+  regenerable, the sources and decisions are what carry value, and both survive a re-run. A
+  migration framework would preserve exactly the part that is cheapest to rebuild.
+- A refusal with a named recovery is honest at the moment it matters — the operator with an old
+  database learns what happened and what to do, rather than a best-effort migration silently
+  producing rows nobody validated (the DEC-020 objection, applied to upgrades).
+
+Alternatives Considered:
+
+- Adopting a migration tool (rejected: two table-layout changes in the project's whole history,
+  both absorbed by regeneration; a framework is standing complexity for a case that has not
+  occurred).
+- Auto-deleting an incompatible database and starting fresh (rejected: deletion is a person's
+  decision; `trace reset --force` and `trace assessment purge --force` exist and are explicit).
+- Versioning each object payload for in-place upgrade (rejected: DEC-006 makes domain objects
+  authoritative through Pydantic validation; a payload the current schema cannot read is a
+  defect to fix at the schema, not a datum to transform in the dark).
+
+Tradeoffs:
+
+- An operator with a long-lived local store loses accumulated runs on a layout change and must
+  re-run assessments to rebuild them. Accepted under DEC-004: local, single-user, regenerable —
+  and the refusal message says so at the moment it applies.
+- The posture leans on discipline about what a "table-layout change" is; the store's own comment
+  and this entry are the record, and `tests/unit/test_store.py` pins the refusal and its
+  recovery wording.
+
+## DEC-128: Kubernetes manifests close the parser family's sketch — a kind allowlist, multi-document streams, and the uniform-or-nothing container rule
+
+Date: 2026-08-18
+
+Status: Accepted
+
+Decision:
+
+**A Kubernetes parser joins the DEC-070 family** (`services/context/kubernetes.py`,
+`kubernetes-parser-v1`), the last member future-features 7.2 names. The kind allowlist is
+deliberate and small — Deployment, Service, Ingress, NetworkPolicy — and a kind outside it
+yields nothing: a CRD's semantics are its own, and reading one would be interpretation.
+Recognition is by suffix (`*.k8s.yaml`, `*.k8s.yml`, `*.k8s.json`); content is never sniffed.
+
+**Multi-document streams are in scope, and the ingestion loader admits them for YAML
+generally.** A manifest is conventionally several documents separated by `---`; that is valid
+YAML with the same safety properties, so the loader's format validation moves from
+`yaml.safe_load` to `yaml.safe_load_all` — the same safe constructors — holding every document
+in the stream to the same addressability bar a single one met. Anything templated (a Helm
+expression is not YAML) still fails the safe-parse rule and is refused at ingestion.
+
+**Admitted attributes are DEC-121's rule at Kubernetes' two levels.** Pod-level `hostNetwork`
+and `automountServiceAccountToken` read directly. Container-level `allowPrivilegeEscalation`
+and `readOnlyRootFilesystem` read **uniformly or not at all**: when every container that states
+the attribute states the same value, the manifest has stated one self-contained fact about the
+workload and the claim carries it; when containers disagree, no single fact was stated and the
+split yields nothing — DEC-121's self-contained-meaning bar applied to aggregation, silence
+over a chosen side.
+
+Why:
+
+- Closing 7.2's sketch was the family's remaining named work, and Kubernetes manifests carry
+  exactly the attribute class the rule admits — literal booleans with self-contained meaning
+  where both values are worth reporting.
+- The multi-document question had one honest answer at the boundary that already owns syntax:
+  the loader validates what YAML's safe loader parses, and a `---` stream is that.
+
+Alternatives Considered:
+
+- Admitting multi-document YAML only for `*.k8s.*` suffixes (rejected: the loader validates by
+  media type and never sniffs content or branches on downstream consumers; a suffix-conditional
+  parse rule would make ingestion behaviour depend on who might read the file later).
+- Reading per-container claims as separate subjects (rejected: the component is the workload,
+  and a per-container subject would mint components no reviewer asked for; the
+  uniform-or-nothing rule reports what the manifest states about the workload and stays silent
+  where it states two things).
+- A wider kind allowlist (rejected for v1: the four cover the workload and its network surface;
+  growth is a visible allowlist diff under this entry's reasoning, never accretion).
+
+Tradeoffs:
+
+- The suffix convention (`*.k8s.yaml`) asks operators to name manifests for ingestion; a bare
+  `deployment.yaml` is not recognized. Deliberate: a generic name states no format, the family
+  rule since DEC-113.
+- A split container statement disappears rather than surfacing as a contradiction object.
+  Stated here: the parser proposes context, and manufacturing a `SourceObservation` from
+  intra-document disagreement is a step the family has not taken for any member — if a real
+  corpus shows split statements mattering, that is a revisit with the evidence in hand.
+- The measurement is fixture-level (allowlist coverage, the split-statement negative, the
+  DEC-122 suppression shape, the loader-boundary stream tests), not a scenario re-record — the
+  #569 precedent.
+
+## DEC-129: The Mermaid export dialect round-trips as input, scoped to what the exporter emits
+
+Date: 2026-08-18
+
+Status: Accepted
+
+Decision:
+
+**A `.mmd` file parses as the DEC-070 family's sixth member, and only the export dialect
+parses.** `trace export mermaid` emits a deterministic flowchart subset — quoted node labels,
+stadium-shaped actor nodes, three arrow forms, subgraph boundaries — and
+`services/context/mermaid.py` reads exactly that subset back: components, component-to-component
+flows with their stated directions, and one documented claim per subgraph recording the
+boundary's membership. Everything enters through the proposal path with `structured_input`
+provenance, candidate status, and line-span excerpt hashes, decided at checkpoint 1 (DEC-115's
+rule). `.mmd` ingests as plain text, the DEC-121 `.tf` shape; content is never sniffed. This is
+future-features 7.3's first slice, taken on the parsing-over-model-analysis instinct: a diagram
+whose grammar is known needs no vision model, and 7.3's own constraints hold by construction —
+a disagreement with prose surfaces as a cross-claim observation (DEC-070's consistency
+machinery), and a parser that only proposes cannot override anything.
+
+**What does not import, and why.** The dialect carries names, direction, and grouping — no
+protocols, no authentication, no encryption, no classifications — so everything unstated stays
+absent or `unknown`, never a stated negative: the DEC-120 boolean rule applied to a format with
+no booleans at all. The dotted, undirected arrow imports as direction `unknown`, the claim the
+diagram actually makes. Actor nodes are recognized and deliberately not seeded — the family's
+seeding contract carries components, flows, and claims, and widening it is its own change (the
+DEC-120 precedent) — and any line outside the subset yields nothing, so a hand-drawn diagram
+degrades to whatever subset lines it contains rather than being misread. Node names shaped like
+allocated identifiers (a Trace export's own `cmp-001`) become prefixed local keys (`mmd_cmp_001`),
+because the proposal schema refuses identifier-shaped keys (DEC-018).
+
+Why:
+
+- The exporter's dialect is the one diagram grammar the repository already owns end to end;
+  reading it back costs no new dependency, no new trust, and no vision model, and the round
+  trip is the measurement (a genuine export-then-reingest test pins names, direction, and
+  membership — everything the dialect carries).
+- Boundary membership travels as a claim rather than a seeded `TrustBoundary` because the
+  seeding contract does not carry boundaries; a claim states what the diagram states and
+  leaves the object for the extraction agent and the reviewer.
+
+Alternatives Considered:
+
+- Parsing general Mermaid, or other diagram formats (rejected: outside the export dialect the
+  grammar is open-ended, the misread risk is real, and 7.3 stays Research for exactly that).
+- Seeding actor nodes as actors (rejected: widening the seeding contract is its own change,
+  recorded the same way in DEC-120).
+- A distinct media type for `.mmd` (rejected: Mermaid source is plain text and DEC-121 already
+  decided this shape for `.tf`; the parser recognizes the suffix downstream).
+
+Tradeoffs:
+
+- The membership claim's predicate embeds the boundary name, so two sources disagreeing about
+  the same-named boundary conflict visibly, while a renamed boundary produces two claims that
+  never meet. Deliberate: a name-level disagreement is a reviewer question, not something a
+  parser should resolve by matching heuristics.
+- An unlabelled edge — legal Mermaid, never emitted by the exporter — yields nothing rather
+  than a nameless flow. The subset rule wins over completeness, and the line is stated here.
+
+## DEC-130: The IaC admission rule widens to closed-vocabulary strings, and cross-resource closes permanently
+
+Date: 2026-08-18
+
+Status: Accepted
+
+Decision:
+
+**The admission rule is the decision, and it widens once, deliberately** (amending DEC-121;
+the attributes below are corollaries). An attribute is admitted when it is a **literal value
+with self-contained meaning where every stated value is worth reporting** — and "literal value"
+now names two classes: the stated boolean DEC-121 admitted, and a **closed-vocabulary string**,
+where the platform defines a finite enumerated value set and a stated member is as literal as a
+stated boolean. The vocabulary test: the value set is the platform's own enumeration, not free
+text; any member is self-contained without cross-resource reasoning; and no member is
+uninteresting. The claim carries the stated string verbatim. An expression, a variable
+reference, or an interpolated string — quoted or not — is still not a stated value and yields
+nothing, in every dialect.
+
+**The corollary admissions**: Terraform (both syntaxes) reads `minimum_tls_version`;
+CloudFormation reads `SslPolicy` at `Properties`' top level, mapped to `ssl_policy`. Kubernetes
+admits nothing new — the allowlisted kinds state their admitted facts as booleans, and a
+vocabulary nested below the read surface (CloudFront's `MinimumProtocolVersion` under
+`ViewerCertificate`) is not admitted by this rule existing: reading nested paths is its own
+decision, unmade.
+
+**Cross-resource closes permanently.** DEC-121 held security-group reachability out as the
+test of whether cross-resource reading ever passes the self-contained-meaning bar. It cannot,
+by construction: the bar's own definition — meaning without cross-resource reasoning — excludes
+any reading that joins resources, and the candidate adds CIDR semantics, port ranges, and rule
+precedence on top, exactly the graph judgment DEC-113 rejected when it declined to derive
+exposure. Rather than leaving the candidate armed for a future session to re-litigate, this
+entry closes it: **no IaC parser derives a claim from more than one resource declaration.** A
+future revisit must reopen the rule itself, with evidence that some join is honest — not admit
+an attribute under it. The must-not-conclude negative is pinned in the corpus: a world-open
+(`0.0.0.0/0`) security-group rule seeds a component and no claim of any kind.
+
+Why:
+
+- DEC-121 named both candidates and deferred both; leaving them undecided invites one-at-a-time
+  accretion, which is what the rule exists to prevent. The string class passes the bar for the
+  same reasons booleans did; the cross-resource class fails it by definition.
+- A closed vocabulary is evidence in the DEC-009 sense: `minimum_tls_version = "TLS1_2"` is the
+  document saying, in writing with a line number, which floor is configured — silence about it
+  still yields nothing.
+
+Alternatives Considered:
+
+- Admitting free-text strings with a length bound (rejected: free text has no both-directions
+  property — an arbitrary string states nothing checkable, and the claim would be a quotation
+  wearing a fact's shape).
+- Admitting the security-group reading behind a "stated reachability" hedge (rejected: the
+  hedge concedes the point — a claim needing a hedge about its own derivation is not
+  self-contained, and DEC-113's exposure rejection already decided this).
+- Leaving cross-resource open for a later revisit (rejected: an armed, undecided candidate is
+  the accretion pressure this rule exists to remove; closure with a stated reopening path is
+  the honest resting state).
+
+Tradeoffs:
+
+- Closing cross-resource forgoes real signal — a world-open security group is a finding-shaped
+  fact — and the entry says so plainly: that signal belongs to an analysis step that owns graph
+  judgment, not to a parser whose contract is stated facts. The model-assisted pipeline sees
+  the component and its quoted declaration; the judgment stays where judgment lives.
+- The measurement is fixture-level (verbatim string reads in three spellings, expression and
+  interpolation refusals, the pinned must-not-conclude negative), not a scenario re-record —
+  the #569 precedent, third time.
+
+## DEC-131: Evaluation plan 0.2 — the review rubric is struck, and the file rule admits the instrument classes
+
+Date: 2026-08-18
+
+Status: Accepted
+
+Decision:
+
+**The section 9 human-review rubric is struck.** The 0.1 plan proposed seven reviewer-scored
+1-to-5 categories on every evaluation; nothing implemented it and no decision had deferred it —
+the one state the corpus does not tolerate. Five of the seven are measured deterministically
+against authored truth sets today, and a Likert re-score of a computed number is a weaker
+duplicate of it. The two genuinely subjective categories would be scored by the truth sets' own
+author, and DEC-112 already declined that shape: self-agreement is not a statistic. When an
+independent scorer exists, the judgment arrives item-anchored through DEC-119's annotation pass
+and adjudication record rather than as a seven-row average.
+
+**Section 5's derived-file rule widens by decision into three classes**: graded object classes
+(one `expected-*.yaml` per graded domain object type, plus the rejections negative set, present
+per what a scenario grades), instrument annotations (`expected-duplicates.yaml` per DEC-110;
+`annotations/second/` and its adjudication record per DEC-112 and DEC-119), and scenario
+apparatus (the contract, the reviewer notes, the README). DEC-110 flagged that its file fell
+outside the 0.1 rule rather than silently widening it; this is that widening, decided, and
+`tests/unit/test_evaluation_plan_conformance.py` holds the committed truth-set directories to
+the classes so the next widening cannot happen silently. A spent `.gitkeep` in the flagship's
+truth-set directory was the guard's first catch and is removed.
+
+**The document moves to 0.2, Accepted**, with tense reconciled to what runs (sections 6, 8, 16
+in the present indicative; the question-usefulness metric described as computed, not
+reviewer-rated) and section 19's answered questions struck with pointers: expected-finding
+establishment and independent scoring to DEC-112 and DEC-119, disagreement handling to
+DEC-119's adjudication rule, malicious documentation to DEC-075, commercial-tool benchmarking
+to DEC-074's in-repo baselines with the external comparable in the portfolio write-up, and
+release gating to the repeatedly-decided answer that evaluation reports and gates nothing
+(DEC-063, DEC-077, DEC-112, DEC-117). Scenario sufficiency, business context, trust-predicting
+metrics, and benchmark evolution stand open.
+
+Why:
+
+- The plan carried the corpus's largest plan-versus-reality gap while the system it describes
+  shipped, measured itself, and released under it; a Proposed 0.1 describing a running,
+  CI-checked harness fails the documentation-and-reality stop condition the roadmap names.
+- The rubric decision follows the instrument precedents rather than fighting them: DEC-110,
+  DEC-112, and DEC-117 each built a deterministic recorder with an honest population story,
+  and the rubric has none until a second human exists — at which point DEC-119 already carries
+  the judgment in a better shape.
+
+Alternatives Considered:
+
+- Implementing the rubric on DEC-117's `ReviewSession` rows, scores persisted beside the timing
+  record and gating nothing (rejected: the numbers would be the sole author's self-assessment
+  wearing an instrument's authority — the exact shape DEC-112 refused — and the independent
+  scorer who could redeem them is already served by DEC-119's item-anchored record).
+- Leaving the rubric standing as aspiration (rejected: unimplemented-and-undeferred is the state
+  this revision exists to eliminate).
+- Enumerating section 5's file list as a closed specification (rejected: DEC-027 made the list
+  derived, and a closed enumeration would re-create the drift DEC-110 flagged, one file at a
+  time).
+
+Tradeoffs:
+
+- Striking the rubric forfeits a cheap-looking qualitative signal; the entry bets that the
+  DEC-119 adjudication record carries the same judgment with provenance instead of arithmetic.
+  If a future evaluation genuinely needs scalar reviewer scores from an independent panel, the
+  decision is revisited with that panel named, not resurrected by default.
+- The conformance test admits `annotations/second/` as a directory rather than per file, so a
+  stray file inside it would pass; the adjudication reader, not the layout guard, is what
+  validates that content.

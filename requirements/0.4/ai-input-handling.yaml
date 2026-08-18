@@ -1,0 +1,167 @@
+# Category: ai_input_handling
+# Requirements for systems that pass content they did not author into a model
+# and then act on what the model returns. The recurring shape is that
+# attacker-influenced content and trusted instructions meet in one channel.
+
+requirements:
+
+  - id: req-AI-001
+    catalog_version: "0.4"
+    title: Content under analysis is treated as untrusted model input
+    statement: >
+      Where a system passes content it did not author into a model, the
+      documentation must state that the content is treated as data, and must
+      describe what prevents instructions embedded in it from altering the
+      model's task.
+    rationale: >
+      Content submitted for analysis is authored by whoever controls the source,
+      which in an open contribution model is anyone. Because a prompt carries
+      instructions and content in the same channel, embedded text can attempt to
+      redirect the task. Delimiting content in a marked section makes the
+      boundary visible but does not by itself make it enforceable, so the
+      question is what holds when the marker is ignored.
+    category:
+      - ai_input_handling
+      - input_validation
+    applicable_conditions:
+      - content the system did not author is passed to a model
+      - the content source is open to untrusted contributors
+    non_applicable_conditions:
+      - all model input is authored by the operating organization
+      - the system passes no content to a model
+    acceptable_implementations:
+      - instruction and content separated using the provider's structured message roles
+      - a validation step on model output that does not trust the input's framing
+      - restricting the model's available actions so a redirected task cannot do harm
+      - a secondary check that detects instruction-like content before submission
+    evidence_expectations:
+      - documentation describing prompt construction
+      - a statement of how untrusted content is isolated
+      - description of controls applied to model output
+    common_false_positives:
+      - absent input sanitization where model capability is restricted and output is validated
+      - absent detection of specific injection phrasings, which is not a durable control
+    default_severity: high
+    source_frameworks:
+      - "OWASP ASVS: v5.0.0-2.1.1"
+      - "NIST SP 800-53 5.2.0: SI-10"
+      - "GenAI Security Project LLM Top 10: LLM01:2026"
+    status: active
+
+  - id: req-AI-002
+    catalog_version: "0.4"
+    title: Model output is validated before it is published externally
+    statement: >
+      Where model output is published to a destination outside the system, the
+      documentation must state what validation is applied and whether that
+      validation covers content as well as structure.
+    rationale: >
+      Schema validation establishes that output is well formed, not that it is
+      correct or safe to publish. Where output is published automatically to a
+      customer-visible destination, structural validation is the only barrier
+      between a manipulated model response and an external audience, and
+      documentation frequently describes the structural check as though it
+      settled the question.
+    category:
+      - ai_input_handling
+      - integrity
+    applicable_conditions:
+      - model output is published to a destination outside the system
+      - publication occurs without human review
+    non_applicable_conditions:
+      - model output is shown only to the user who requested it
+      - a human approves each publication and this is documented
+    acceptable_implementations:
+      - human approval before external publication
+      - content validation in addition to schema validation
+      - restricting published output to a constrained set of fields
+      - publishing to a location where the audience knows the content is model-generated and unreviewed
+    evidence_expectations:
+      - documentation describing the publication path
+      - a statement of what validation is applied
+      - a statement of whether human review occurs
+    common_false_positives:
+      - absent human review where output is visible only to the requesting user
+      - absent content filtering where the published surface is constrained to fixed fields
+    default_severity: high
+    source_frameworks:
+      - "NIST SP 800-53 5.2.0: SI-10"
+      - "GenAI Security Project LLM Top 10: LLM01:2026"
+    status: active
+
+  - id: req-AI-003
+    catalog_version: "0.4"
+    title: Data sent to an external model provider is minimized
+    statement: >
+      A system sending customer content to an external model provider must
+      document what is sent and why that scope is necessary for the analysis
+      performed.
+    rationale: >
+      The volume and sensitivity of what crosses the provider boundary
+      determines the impact of any failure on the provider's side, and that
+      scope tends to grow quietly as features are added. Recording it makes the
+      boundary reviewable rather than incidental.
+    category:
+      - ai_input_handling
+      - third_party_integration
+      - data_protection
+    applicable_conditions:
+      - customer content is sent to an external model provider
+      - the content sent includes restricted data
+    non_applicable_conditions:
+      - the model runs within the system's own trust boundary
+      - only non-sensitive metadata is sent
+    acceptable_implementations:
+      - sending only the subset of content relevant to the requested analysis
+      - excluding files or paths matching a documented exclusion list
+      - redacting recognized secrets before submission
+    evidence_expectations:
+      - documentation describing what is sent to the provider
+      - a description of any exclusion or redaction applied
+      - a data flow description crossing the provider boundary
+    common_false_positives:
+      - absent redaction where the content sent is the content under analysis by design
+      - absent minimization detail where the full scope is documented and justified
+    default_severity: medium
+    source_frameworks:
+      - "OWASP ASVS: v5.0.0-13.1.1"
+      - "NIST SP 800-53 5.2.0: SA-9"
+    status: active
+
+  - id: req-AI-004
+    catalog_version: "0.4"
+    title: Model output is encoded for the context it is rendered into
+    statement: >
+      Model output rendered into a user interface or another system's markup
+      must be encoded for that destination, and the documentation must state
+      where that encoding occurs.
+    rationale: >
+      Model output is attacker-influenceable whenever untrusted content reaches
+      the model, so it must be treated as untrusted data at the point of
+      rendering rather than as text the system produced. This is the ordinary
+      output-encoding expectation, applied to a source that is easy to mistake
+      for the system's own.
+    category:
+      - ai_input_handling
+      - input_validation
+    applicable_conditions:
+      - model output is rendered into a user interface
+      - model output is submitted as markup to an external platform
+    non_applicable_conditions:
+      - model output is stored and never rendered
+      - output is consumed only by machine processing that does not interpret markup
+    acceptable_implementations:
+      - contextual output encoding applied at render time
+      - a rendering framework that encodes by default
+      - restricting output to a markup subset that carries no active content
+    evidence_expectations:
+      - documentation describing the rendering path
+      - a description of the interface framework and its encoding behavior
+    common_false_positives:
+      - absent explicit encoding step where the rendering framework encodes by default
+      - absent content security policy, which is a defense in depth measure rather than this control
+    default_severity: medium
+    source_frameworks:
+      - "OWASP ASVS: v5.0.0-2.1.1"
+      - "NIST SP 800-53 5.2.0: SI-10"
+    status: active

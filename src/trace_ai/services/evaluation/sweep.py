@@ -49,12 +49,14 @@ def collect_feeds(results_root: Path) -> list[dict[str, object]]:
         if not entry.has_outcome_truth:
             continue
         for condition in sorted(BASELINES):
-            from trace_ai.domain.proposals.baseline import BaselineFindings
+            from trace_ai.services.evaluation.baselines import BASELINE_SCHEMAS
 
             recording = _baseline_response(entry.path, condition)
             if recording is None:
                 continue
-            response = BaselineFindings.model_validate_json(recording.read_text(encoding="utf-8"))
+            response = BASELINE_SCHEMAS[condition].model_validate_json(
+                recording.read_text(encoding="utf-8")
+            )
             baseline = run_baseline(
                 entry.slug,
                 condition,

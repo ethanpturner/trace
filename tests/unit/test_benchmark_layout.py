@@ -136,6 +136,27 @@ def test_registered_scenario_declares_a_contract(slug: str) -> None:
     )
 
 
+@pytest.mark.parametrize("slug", scenario_ids())
+def test_every_truth_file_pins_the_contract_catalog_version(slug: str) -> None:
+    """A truth file's `catalog_version` agrees with the scenario's contract (#602).
+
+    oidc-portal shipped three files still pinning "0.1" while its contract and the registry said
+    0.3 — a reference to a catalog the scenario was never authored against, and nothing noticed
+    until a docs-truth pass read it. The contract is the one place the version is decided; every
+    expected file that states one restates it."""
+    entry = next(s for s in scenarios() if s["slug"] == slug)
+    expected_dir = PROJECT_ROOT / str(entry["path"]) / "expected"
+    contract: Any = yaml.safe_load((expected_dir / "evaluation-contract.yaml").read_text())
+    pinned = contract["catalog_version"]
+    for path in sorted(expected_dir.glob("*.yaml")):
+        loaded: Any = yaml.safe_load(path.read_text())
+        if isinstance(loaded, dict) and "catalog_version" in loaded:
+            assert loaded["catalog_version"] == pinned, (
+                f"{slug}/{path.name} pins catalog {loaded['catalog_version']!r}; the contract "
+                f"pins {pinned!r}"
+            )
+
+
 def test_every_benchmark_directory_is_registered() -> None:
     """A scenario directory the registry does not name would simply never run.
 

@@ -609,6 +609,22 @@ class AssessmentRepository:
         ).fetchone()
         return int(row["total"])
 
+    def delete(self, model: type[DomainModel], object_id: str) -> bool:
+        """Delete one object this assessment owns, returning whether a row was removed.
+
+        Scoped like every read: the `WHERE assessment_id = ?` clause cannot reach another
+        assessment's rows. The identifier counter is deliberately untouched -- an identifier once
+        allocated is never re-minted (DEC-018), so deleting `run-002` must not let a later run
+        become a second `run-002`. Built for `trace runs prune` (DEC-017 amendment); nothing else
+        deletes single rows.
+        """
+        with self.transaction():
+            removed = self._connection.execute(
+                "DELETE FROM objects WHERE assessment_id = ? AND object_type = ? AND id = ?",
+                (self.assessment_id, model.stored_type, object_id),
+            ).rowcount
+        return removed > 0
+
     def delete_all(self) -> int:
         """Delete every row this assessment owns -- its objects and its identifier counters -- in
         one transaction, and return how many objects were removed.

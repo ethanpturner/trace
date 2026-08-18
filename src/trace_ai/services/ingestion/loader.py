@@ -78,13 +78,15 @@ NODE_VERSION: Final = "0.1"
 # Extension to format. Section 5.4's five inputs, spelled the ways they are spelled on disk.
 # Extension only: content sniffing would let a document choose how it is parsed. `.tf` ingests as
 # plain text (DEC-121): HCL is a text format and the IaC parser recognizes the suffix downstream —
-# the same shape as `.tf.json` arriving through `.json`. `.pdf` is the one binary format
+# the same shape as `.tf.json` arriving through `.json`, and `.mmd` follows it (#599): Mermaid
+# source is plain text and the DFD parser recognizes the suffix. `.pdf` is the one binary format
 # (DEC-123): its addressable text is the deterministic extraction of the stored bytes.
 SUFFIXES: Final[dict[str, MediaType]] = {
     ".md": MediaType.MARKDOWN,
     ".markdown": MediaType.MARKDOWN,
     ".txt": MediaType.PLAIN_TEXT,
     ".tf": MediaType.PLAIN_TEXT,
+    ".mmd": MediaType.PLAIN_TEXT,
     ".json": MediaType.JSON,
     ".yaml": MediaType.YAML,
     ".yml": MediaType.YAML,
@@ -346,14 +348,21 @@ class DocumentLoader:
 
         text = content.decode("utf-8")
         try:
-            # `yaml.safe_load` rather than `yaml.load`: the default loader constructs arbitrary
-            # Python objects from document content, which is code execution chosen by an untrusted
-            # input file. JSON has no equivalent hazard and needs no equivalent care.
-            parsed = json.loads(text) if media_type is MediaType.JSON else yaml.safe_load(text)
+            # `yaml.safe_load_all` rather than `yaml.load`: the safe loader constructs no
+            # arbitrary Python objects from document content, which the default loader would —
+            # code execution chosen by an untrusted input file. The `_all` form admits a
+            # multi-document stream (DEC-128): a Kubernetes manifest is conventionally several
+            # documents separated by `---`, that is valid YAML with the same safety properties,
+            # and each document is held to the same addressability bar a single one is. JSON has
+            # no equivalent hazard and needs no equivalent care.
+            if media_type is MediaType.JSON:
+                documents: list[object] = [json.loads(text)]
+            else:
+                documents = [parsed for parsed in yaml.safe_load_all(text) if parsed is not None]
         except (json.JSONDecodeError, yaml.YAMLError) as error:
             raise MalformedDocumentError(path, media_type, str(error).split("\n")[0]) from error
 
-        if not isinstance(parsed, dict | list):
+        if not documents or not all(isinstance(parsed, dict | list) for parsed in documents):
             raise UnaddressableDocumentError(path)
 
 

@@ -239,7 +239,17 @@ def test_an_unsupported_format_is_refused_by_name(
 
 
 def test_the_extension_allowlist_is_the_documented_set() -> None:
-    assert set(SUFFIXES) == {".md", ".markdown", ".txt", ".tf", ".json", ".yaml", ".yml", ".pdf"}
+    assert set(SUFFIXES) == {
+        ".md",
+        ".markdown",
+        ".txt",
+        ".tf",
+        ".mmd",
+        ".json",
+        ".yaml",
+        ".yml",
+        ".pdf",
+    }
 
 
 def test_a_terraform_hcl_file_ingests_as_plain_text(loader: DocumentLoader, tmp_path: Path) -> None:

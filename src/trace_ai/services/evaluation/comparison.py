@@ -37,6 +37,7 @@ __all__ = ["ToolSummary", "render_comparison", "summaries_from_feeds"]
 _BASELINE_LABELS = {
     "baseline-generic": "Generic prompt (baseline)",
     "baseline-structured": "Structured single-pass (baseline)",
+    "baseline-single-pass": "Whole assessment, one call (baseline)",
 }
 _TRACE_LABEL = "Trace"
 
