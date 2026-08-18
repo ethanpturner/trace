@@ -1,0 +1,604 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "claude-opus-5",
+    "input_tokens": 2524,
+    "output_tokens": 21967,
+    "cache_read_tokens": 14267,
+    "cache_creation_tokens": 18726,
+    "estimated_cost": "0.685966",
+    "duration_seconds": 246.8410493329866
+  },
+  "response": {
+    "controls": [
+      {
+        "key": "ctl-new-notebook-vpc-isolation",
+        "name": "Jupyter Notebook environment authenticated and confined to the experimental VPC",
+        "description": "The documentation states that the Jupyter Notebook environment enforces access control and authorization, that engineers authenticate before reaching any notebook, and that the environment is not exposed outside the experimental VPC (evd-003, evd-010). This bears on this threat because the notebook environment is one of the two footholds in the attack path from which the API Key storage could be read. The statement is an assertion in a document that describes itself as recording controls in place today (evd-001); no configuration artifact is cited, and the authorization model and its holders are not described.",
+        "control_type": "implemented",
+        "provider_component_id": null,
+        "protected_component_ids": [
+          "cmp-005"
+        ],
+        "protected_asset_ids": [
+          "ast-003"
+        ],
+        "implementation_status": "claimed",
+        "evidence_ids": [
+          "evd-003",
+          "evd-010",
+          "evd-001"
+        ],
+        "owner": "platform team",
+        "limitations": [
+          "Stated for the notebook environment only; nothing equivalent is stated for the network placement or access policy of the API Key storage account (evd-011).",
+          "The authentication that precedes notebook access is the password-authenticated public-to-experimental boundary (evd-007, evd-009); no factor policy is stated.",
+          "No configuration artifact is cited; the statement is a documentation claim."
+        ]
+      }
+    ],
+    "mappings": [
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-SECRET-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-008",
+          "ctl-010"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The asset at risk in this threat (ast-003) is exactly the class the requirement names: credentials that authenticate the system to an external platform, held by the Gather Images application to call Azure Cognitive Services and the third-party image tools (evd-010, evd-011). The applicable condition 'the system holds a credential that authenticates it to an external platform' holds directly.",
+        "suppressed_conclusion": "That access control over the API key store is absent, on the grounds that the storage access-control section (evd-002) enumerates the training images, model, and source/configuration accounts and does not mention the API Key storage.",
+        "suppressed_by": "req-SECRET-001 common_false_positives: 'absent description of access-control policy where the managed store is named' \u2014 the store is named in evd-011 and its access policy being undescribed is silence, not evidence of absence.",
+        "satisfaction_status": "partially_satisfied",
+        "evidence_ids": [
+          "evd-010",
+          "evd-011",
+          "evd-002"
+        ],
+        "assumptions": [
+          "The 'API Key storage' row in evd-011 and the 'API key store' referenced in evd-010 denote the same store (cmp-008)."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-SECRET-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'the system accesses no customer resources on external platforms' holds: the external platforms on this path (cmp-014, cmp-015) supply training images to the organisation's own image-gathering application (evd-010, evd-012, evd-013), and no customer-owned resource is reached on the customer's behalf.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-010",
+          "evd-012",
+          "evd-013"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-009"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The applicable condition 'the system stores or transmits confidential or restricted data' holds for this threat: API keys (ast-003) are stored in cmp-008 and transmitted to the Gather Images application over df-003, and the outbound calls that use them cross to the public internet (df-001, df-002).",
+        "suppressed_conclusion": "That the API keys are unprotected at rest, on the grounds that no encryption is described for the API Key storage account, and that df-003 is unencrypted.",
+        "suppressed_by": "req-DATA-001 common_false_positives: 'absent encryption detail for a managed service that encrypts by default' and 'absent application-implemented cryptography where managed services provide it' \u2014 the store is described as an Azure storage account in the experimental environment (evd-011), and silence about its encryption is not evidence of absence.",
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-006",
+          "evd-012",
+          "evd-011"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-NET-001",
+        "control_keys": [
+          "ctl-new-notebook-vpc-isolation"
+        ],
+        "existing_control_ids": [
+          "ctl-010"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The applicable condition 'the system uses a data store, queue, or cache that is not itself a public interface' holds: cmp-008 is a data store holding credentials, read by the Gather Images application over df-003 (evd-010, evd-011). Whether it is reachable only from the workloads that use it is central to this threat's step in which a foothold in the experimental environment reaches the key store.",
+        "suppressed_conclusion": "That the API Key storage account is reachable from an untrusted network, on the grounds that the documentation states only that it sits in the experimental environment and never states its network placement.",
+        "suppressed_by": "req-NET-001 common_false_positives: 'absent description of network placement for an internal component, which is not evidence that the component is publicly reachable', and 'a component described only as managed or hosted, where the provider's default placement is private and undescribed'.",
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-009",
+          "evd-011",
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-AUTH-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-004"
+        ],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "This threat's entry step is the password-authenticated public-to-experimental boundary (evd-007, evd-009). Whether the applicable condition 'user authentication is delegated to an external identity provider' holds cannot be established: the documentation names no identity provider for that boundary, and equally does not state that a local credential store is maintained, so the non-applicable condition cannot be confirmed either. The requirement applies if that password authentication is delegated.",
+        "suppressed_conclusion": "That password complexity, rotation, lockout, or credential-hashing controls are missing at the public-to-experimental boundary, on the grounds that evd-007 names only 'password authentication'.",
+        "suppressed_by": "req-AUTH-001 common_false_positives: 'absent local password complexity policy', 'absent password rotation policy', 'absent account lockout threshold', and 'absent credential storage or hashing description'.",
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-007",
+          "evd-009"
+        ],
+        "assumptions": [],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-AUTH-002",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-004"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The applicable condition 'privileged access crosses an untrusted network' holds: access into the experimental environment \u2014 which holds the API key store and the notebooks that read it \u2014 is reached across the public-to-experimental boundary and is password-authenticated (evd-007, evd-009). The threat's first step is precisely the crossing of that boundary, so which party enforces any second factor, and under what policy, is the fact in question.",
+        "suppressed_conclusion": "That multi-factor authentication is absent at the public-to-experimental boundary, on the grounds that the authentication summary lists 'password authentication' with no second factor.",
+        "suppressed_by": "req-AUTH-002 common_false_positives: 'absent application-side factor configuration setting' \u2014 the summary states the application-visible mechanism, and an identity provider or organization policy enforcing an additional factor would not necessarily appear there.",
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-007",
+          "evd-009"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-ADMIN-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'operator actions are limited to infrastructure and cannot reach customer data' holds for the path this threat takes: the interfaces reached are the experimental development environment and the API key store (evd-010, evd-011), whose contents are organisational credentials and training images rather than customer data; end-user submitted images are held in the production Redis cache (evd-004, evd-011), and the production administrative interface (the Bastion) is not on this attack path.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-004",
+          "evd-010",
+          "evd-011"
+        ],
+        "assumptions": [
+          "Access to the experimental environment does not reach end-user submitted images, which the documentation places in the production Redis cache (evd-004, evd-011)."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-LOG-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The applicable condition 'operators can act on customer data or security configuration' holds: engineers working in the experimental environment can read the store holding the credentials that authorise external calls (evd-010, evd-011), which is security configuration. Because this threat leaves an actor with credentials usable from outside the organisation, a record of who accessed the key store is the fact that would allow the access to be attributed after the fact.",
+        "suppressed_conclusion": "That no record is kept of access to the API key store, on the grounds that the only logging described (evd-005) covers SSH access through the production Bastion and says nothing about the experimental environment.",
+        "suppressed_by": "req-LOG-002 common_false_positives: 'absent audit trail for read-only operations' \u2014 the action in this threat is a read of the key store, and its absence from the documentation is not evidence that platform-level access logging is absent.",
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-005",
+          "evd-010",
+          "evd-011"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-LOG-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "The applicable condition 'the system handles restricted or confidential data' holds for the API keys (ast-003), but whether this threat engages the logging path depends on an unestablished fact: whether the Gather Images application or the notebooks emit the key values or other restricted content into logs. No logging behaviour is described for any experimental component (evd-005 covers the production Bastion only).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-005",
+          "evd-010"
+        ],
+        "assumptions": [],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-AUTHZ-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'the component holds no tenant-scoped data' holds: cmp-008 holds the organisation's own API keys for external image services (evd-011), and the components on this attack path hold training images and credentials rather than data belonging to distinct customer organisations. Nothing in the documentation describes the system as serving multiple customer organisations (evd-008, evd-013).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-008",
+          "evd-011",
+          "evd-013"
+        ],
+        "assumptions": [
+          "End users of the public classification API are not modelled as separate tenant organisations; the documentation describes them only as end users submitting images (evd-013)."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-AUTHZ-002",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-008"
+        ],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "The applicable condition 'the system holds delegated access to an external platform' turns on an unestablished fact: the documentation names the keys and the services they reach (evd-010, evd-011) but not what the keys authorise, and the third-party tools are unnamed (evd-013). If those keys carry privileges beyond retrieving images \u2014 the scope this threat's impact depends on \u2014 the requirement to record which privileges are held and why applies.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-010",
+          "evd-011",
+          "evd-013"
+        ],
+        "assumptions": [],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-TPI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'no customer data leaves the system's trust boundary' holds on this path: df-001 and df-002 carry images inbound from the external services to the Gather Images application (evd-010, evd-012), and no customer data is sent outward to those providers.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-010",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-TPI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The applicable condition 'processing consumes a metered external service' holds: image collection calls Azure Cognitive Services and third-party tools authenticated by the stolen keys (evd-010, evd-012), and this threat's stated impact is exactly quota and cost consumption. A ceiling enforced at the provider \u2014 one of the requirement's own acceptable implementation classes \u2014 would bound that impact whether the calls originate inside or outside the environment.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-010",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-CICD-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'the component has no build or deployment step' holds for the components this threat reaches: the API key store (cmp-008), the external image services (cmp-014, cmp-015), and the notebook environment are not the build or deployment path. The deployment service and the Bastion, which carry the pipeline's production access (evd-010, evd-012), are not affected components here, and ast-003 is an external-service credential rather than a deployment credential.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-010",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-DATA-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable conditions on retained customer data hold: the data at risk in this threat is a stored credential (ast-003), not a working copy of customer data produced as a by-product of processing. The one customer-supplied data type in the system, uploaded images, is held in memory in the production Redis cache and not written to disk (evd-004), and is not on this attack path.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-004",
+          "evd-011"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-DATA-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'no customer artifacts are stored' holds for the stores on this path: the experimental accounts hold training images collected from external services, API keys, and source/configuration (evd-011), none of which are artifacts belonging to distinct customers sharing a storage system.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-011"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-DATA-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'no customer data is retained' holds on this path: the asset this threat discloses is a set of organisational API keys (evd-011), and no customer-owned data is stored in the components it reaches, so a customer deletion path is not the control in question.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-004",
+          "evd-011"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-AI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The requirement's applicable conditions concern content the system did not author being passed into a model whose task embedded instructions could redirect. The components in this threat are a credential store, an image-collection application, and two external image services (evd-010, evd-011); the model in this system is a convolutional image classifier (evd-008), and no prompt is constructed from untrusted content on this path.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-008",
+          "evd-010"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-AI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'model output is shown only to the user who requested it' holds: the classification is returned to the end user who submitted the image through the API (evd-012), and no model output is published to an external destination on this or any documented path. This threat concerns credential disclosure, not output publication.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-AI-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'only non-sensitive metadata is sent' holds for the external provider calls in this threat: the Gather Images application calls Azure Cognitive Services and the third-party tools to retrieve training images (evd-010, evd-012); no customer content is sent to an external model provider.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-010",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-AI-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'output is consumed only by machine processing that does not interpret markup' is the closest fit: the documented output is a classification returned by the web server through the API Gateway (evd-012), and no rendering surface or markup destination appears in the components this threat reaches (cmp-004, cmp-005, cmp-008, cmp-014, cmp-015).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-WEBHOOK-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'inbound events are polled by the system rather than delivered to it' holds: the Gather Images application collects images from the external services (evd-010, evd-012), and no endpoint on this attack path accepts events delivered by an external platform.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-010",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-WEBHOOK-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Replay handling presupposes an inbound event delivery path, and the non-applicable condition 'the endpoint accepts no state-changing events' holds for the components in this threat: image collection is initiated by the system pulling from external services (evd-010, evd-012).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-010",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Nature and access control of the API Key storage account are not established",
+        "description": "The API Key storage is named as an experimental-environment store holding API keys for the external image services (evd-011) and is read by the Gather Images application (evd-010), but the documentation does not state whether it is a managed secret service or an ordinary storage account, what access policy governs reads, which identities hold that access, or how the application retrieves the keys at runtime. The storage access-control section enumerates the training images, model, and source/configuration accounts (evd-002) and does not mention this one; that silence establishes nothing either way.",
+        "importance": "This is the fact on which the satisfaction of req-SECRET-001 and req-NET-001 turns for this threat. Without it, it cannot be determined whether an actor with any foothold in the experimental environment can read credentials that authorise calls to external services on the organisation's behalf.",
+        "related_object_ids": [
+          "cmp-008",
+          "cmp-004",
+          "ast-003",
+          "df-003"
+        ],
+        "requested_evidence": [
+          "Whether cmp-008 is a managed secret service or an ordinary Azure storage account",
+          "The access policy or RBAC assignment governing read access to cmp-008, and which identities and roles hold it",
+          "How the Gather Images application authenticates to and retrieves the keys over df-003"
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-010",
+          "evd-011"
+        ],
+        "severity": "high"
+      },
+      {
+        "title": "Rotation and revocation of the external image service API keys are not described",
+        "description": "The documentation names the keys and where they are held (evd-010, evd-011) but describes no rotation schedule, no revocation procedure, and no mechanism by which access granted by a key would be withdrawn after suspected exposure.",
+        "importance": "This threat's impact statement rests on continued external access surviving removal of the original foothold. Whether that holds depends entirely on rotation and revocation behaviour, which no passage addresses.",
+        "related_object_ids": [
+          "ast-003",
+          "cmp-008"
+        ],
+        "requested_evidence": [
+          "Any rotation schedule or procedure for the external image service API keys",
+          "The revocation path used on suspected compromise, and which party executes it",
+          "Whether the external providers support key rotation without service interruption"
+        ],
+        "evidence_ids": [
+          "evd-010",
+          "evd-011"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Identity provider and factor policy for the public-to-experimental boundary are not established",
+        "description": "The authentication summary records the public-to-experimental boundary as password-authenticated with RBAC and ACLs applied (evd-007, evd-009), but names no identity provider and states no factor policy for that boundary, so it cannot be determined which party enforces authentication strength or whether an additional factor is required.",
+        "importance": "This boundary is the first step of the attack path. Whether an actor with a guessed or reused engineer password can reach the experimental environment depends on facts the documentation does not settle, and the answer would change the assessment of both req-AUTH-001 and req-AUTH-002.",
+        "related_object_ids": [
+          "cmp-005",
+          "act-002"
+        ],
+        "requested_evidence": [
+          "The identity provider behind the public-to-experimental password authentication",
+          "The factor policy applied to that boundary and which party owns it",
+          "The RBAC roles applied at that boundary, their holders, and the resources they cover"
+        ],
+        "evidence_ids": [
+          "evd-007",
+          "evd-009"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Network reachability of the experimental storage accounts is not stated",
+        "description": "The documentation places the API Key storage and the other experimental stores in the experimental environment (evd-009, evd-011) but does not state their network placement, whether they are reachable only over a private endpoint, or which workloads are permitted to reach them. The comparable statement made for the notebook environment \u2014 that it is not exposed outside the experimental VPC (evd-003) \u2014 has no counterpart for the storage accounts.",
+        "importance": "req-NET-001 for this threat cannot be resolved without it, and the difference between a storage account reachable only from named workloads and one reachable from a public endpoint changes the set of actors who could read ast-003.",
+        "related_object_ids": [
+          "cmp-008",
+          "cmp-004"
+        ],
+        "requested_evidence": [
+          "Network configuration for cmp-008: public network access setting, private endpoint, or firewall rules",
+          "Which workloads are permitted to reach the experimental storage accounts"
+        ],
+        "evidence_ids": [
+          "evd-003",
+          "evd-009",
+          "evd-011"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Scope of privileges carried by the external image service API keys is not documented",
+        "description": "The keys are described only as authenticating the Gather Images application to Azure Cognitive Services and to unnamed third-party tools (evd-010, evd-011, evd-013). What operations those keys authorise, and whether they are scoped to image retrieval or carry broader account privileges, is not stated.",
+        "importance": "The impact of disclosure of ast-003 cannot be bounded without knowing what the keys authorise, and the applicability of req-AUTHZ-002 to this threat turns on the same fact.",
+        "related_object_ids": [
+          "ast-003",
+          "cmp-014",
+          "cmp-015"
+        ],
+        "requested_evidence": [
+          "The identity of the third-party image tools (cmp-015)",
+          "The scope or permission set attached to each external service API key"
+        ],
+        "evidence_ids": [
+          "evd-010",
+          "evd-011",
+          "evd-013"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "No bound is documented on consumption of the metered external image services",
+        "description": "Image collection calls Azure Cognitive Services and third-party tools (evd-010, evd-012), but no retry limit, rate limit, quota, or spending ceiling is described for that consumption, at the application or at the provider.",
+        "importance": "This threat's stated impact includes quota and cost consumption using stolen keys. A provider-side quota or spending ceiling would bound that impact regardless of where the calls originate, so whether one exists changes the assessment of req-TPI-002 for this threat.",
+        "related_object_ids": [
+          "cmp-004",
+          "cmp-014",
+          "cmp-015"
+        ],
+        "requested_evidence": [
+          "Any quota, spending ceiling, or rate limit configured at Azure Cognitive Services or the third-party tools",
+          "Retry and backoff behaviour in the Gather Images application"
+        ],
+        "evidence_ids": [
+          "evd-010",
+          "evd-012"
+        ],
+        "severity": "low"
+      }
+    ],
+    "catalog_gap_candidates": [
+      {
+        "concern": "The catalog addresses where a long-lived external-platform credential is held (custody) and prefers short-lived credentials where the platform offers them, but no requirement asks that a credential which is necessarily long-lived \u2014 such as a provider API key that cannot be derived per use \u2014 have a documented rotation schedule and a revocation path usable on suspected exposure. This threat's persistence claim rests entirely on that missing lifecycle expectation: the actor's access survives removal of the foothold until the keys are changed, and nothing in the catalog would surface the absence of a change procedure.",
+        "suggested_category": "secrets_management",
+        "nearest_requirements": [
+          {
+            "requirement_id": "req-SECRET-001",
+            "why_not": "Asks only that the credential be held in a managed secret store and that the documentation say where; it is silent on the credential's lifecycle after it is stored."
+          },
+          {
+            "requirement_id": "req-SECRET-002",
+            "why_not": "Asks for short-lived credentials, but is scoped to access to customer resources on external platforms, and its non-applicable condition covers platforms offering only long-lived credentials \u2014 which is precisely the case that then has no lifecycle expectation at all."
+          },
+          {
+            "requirement_id": "req-LOG-002",
+            "why_not": "Covers recording privileged actions on customer data or security configuration; it does not reach the rotation or revocation of a credential, nor detection of its misuse at the external provider."
+          }
+        ],
+        "evidence_ids": [
+          "evd-010",
+          "evd-011"
+        ]
+      }
+    ]
+  }
+}

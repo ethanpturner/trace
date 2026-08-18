@@ -1,0 +1,609 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "claude-opus-5",
+    "input_tokens": 2637,
+    "output_tokens": 17717,
+    "cache_read_tokens": 34052,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.473136",
+    "duration_seconds": 194.44641895894893
+  },
+  "response": {
+    "controls": [
+      {
+        "key": "src-storage-access-control",
+        "name": "Per-environment access control and authorization on the Source Code and Configuration storage",
+        "description": "The security notes state that access control and authorization are configured on the Azure Blob storage accounts, including the source and configuration storage, and that access is granted per environment. This bears on the threat because write access to that store is the entry point of the attack path.",
+        "control_type": "implemented",
+        "provider_component_id": "cmp-009",
+        "protected_component_ids": [
+          "cmp-009"
+        ],
+        "protected_asset_ids": [
+          "ast-004"
+        ],
+        "implementation_status": "claimed",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-011"
+        ],
+        "owner": "platform team",
+        "limitations": [
+          "The enforcing mechanism (role assignments, account keys, SAS, or network restriction) is not named, so the effective set of principals able to write source and configuration is not established.",
+          "The statement grants access per environment; it does not distinguish read from write, nor restrict which experimental principals may modify content that will be packaged into production.",
+          "No review, approval, or provenance check on the content held in this store is described."
+        ]
+      }
+    ],
+    "mappings": [
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-CICD-001",
+        "control_keys": [
+          "src-storage-access-control"
+        ],
+        "existing_control_ids": [
+          "ctl-001",
+          "ctl-004"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The applicable condition 'the system is deployed by an automated pipeline' holds: the deployment service packages source, configuration, and the trained model and delivers the release into production through the Bastion (evd-010, evd-012), which is the crossing this threat exploits.",
+        "suppressed_conclusion": "That controls over third-party components entering the build are absent; the documentation says nothing about dependency management rather than describing its absence.",
+        "suppressed_by": "req-CICD-001 common_false_positives entry: 'absent dependency scanning schedule, which is an operational process rather than an architectural control'.",
+        "satisfaction_status": "partially_satisfied",
+        "evidence_ids": [
+          "evd-002",
+          "evd-007",
+          "evd-009",
+          "evd-010",
+          "evd-012"
+        ],
+        "assumptions": [
+          "The public-key authentication described for movement between production and experimental (evd-007, evd-009) is taken to be the mechanism by which the deployment service authenticates to the Bastion, since evd-012 describes the delivery over that same path."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-SECRET-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-004"
+        ],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "Applies if the deployment service holds a stored private key to authenticate across the production boundary; evd-007 and evd-012 establish that public-key authentication is used on that path, but not whether a long-lived key is held by the service or where it is kept.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-007",
+          "evd-009",
+          "evd-011",
+          "evd-012"
+        ],
+        "assumptions": [
+          "The API Key storage listed in evd-011 holds keys for the external image services and is not treated here as custody for the deployment credential."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-ADMIN-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-001"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The applicable condition 'the system exposes an administrative or operator interface' holds: the Bastion is documented as the only administrative path into production (evd-005) and is the same channel the deployment service uses to deliver releases in this threat's path (evd-012).",
+        "suppressed_conclusion": "That privileged access is inadequately restricted because no per-operator permission model within the Bastion is described.",
+        "suppressed_by": "req-ADMIN-001 common_false_positives entry: 'absent role-based permission matrix within the administrative interface'.",
+        "satisfaction_status": "satisfied",
+        "evidence_ids": [
+          "evd-005",
+          "evd-007",
+          "evd-011",
+          "evd-012"
+        ],
+        "assumptions": [
+          "The onward reach is stated in component terms \u2014 API Gateway, web server, and model blob (evd-012) \u2014 rather than in terms of data classes; this is read as satisfying the reach statement for a system whose end-user data is held only transiently (evd-004)."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-LOG-002",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-002"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The applicable condition 'the system exposes an administrative or operator interface' holds, and this threat's delivery step traverses that interface (evd-012), so the record of what crossed it is the after-the-fact control on injected code reaching production.",
+        "suppressed_conclusion": "That the audit record is inadequate because no tamper-evidence property is described for the Bastion Logs storage.",
+        "suppressed_by": "req-LOG-002 common_false_positives entry: 'absent tamper-evidence detail where records are sent to a separately managed platform'.",
+        "satisfaction_status": "partially_satisfied",
+        "evidence_ids": [
+          "evd-005",
+          "evd-011",
+          "evd-012"
+        ],
+        "assumptions": [
+          "The 'SSH access and activity logs' described for the Bastion Logs storage (evd-011) are read as session-level records, since evd-005 describes access attempts rather than actions taken on artifacts."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-NET-001",
+        "control_keys": [
+          "src-storage-access-control"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The applicable condition 'the system uses a data store, queue, or cache that is not itself a public interface' holds for the Source Code and Configuration storage (evd-011), the store whose contents this threat modifies before they are packaged.",
+        "suppressed_conclusion": "That the source and configuration storage is reachable from an untrusted network because its network placement is not described.",
+        "suppressed_by": "req-NET-001 common_false_positives entry: 'absent description of network placement for an internal component, which is not evidence that the component is publicly reachable'.",
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-002",
+          "evd-009",
+          "evd-011"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-AUTH-002",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-004",
+          "ctl-005"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The applicable condition 'privileged access crosses an untrusted network' holds for the password-authenticated public-to-experimental boundary (evd-007, evd-009), which is the boundary this threat's actor crosses to obtain write access to the source storage.",
+        "suppressed_conclusion": "That multi-factor authentication is absent on the experimental boundary because the documentation describes no factor configuration.",
+        "suppressed_by": "req-AUTH-002 common_false_positives entry: 'absent application-side factor configuration setting'.",
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-007",
+          "evd-009"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-AUTH-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-004",
+          "ctl-005"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The applicable condition 'user authentication is delegated to an external identity provider' is engaged by the SSO and password boundaries summarised in evd-007 and evd-009; the experimental boundary is the one an actor in this threat authenticates across to reach the source storage.",
+        "suppressed_conclusion": "That credential-handling controls (password complexity, rotation, lockout, or credential hashing) are missing for the password-authenticated boundary.",
+        "suppressed_by": "req-AUTH-001 common_false_positives entries: 'absent local password complexity policy', 'absent local password rotation policy', 'absent account lockout threshold', 'absent credential storage or hashing description'.",
+        "satisfaction_status": "partially_satisfied",
+        "evidence_ids": [
+          "evd-007",
+          "evd-009",
+          "evd-003"
+        ],
+        "assumptions": [
+          "The 'SSO' and 'password authentication' entries in evd-007 are read as summaries of a delegation, not as a statement that the system operates its own credential store; which of the two holds is not established."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-006"
+        ],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "Applies if the source and configuration packaged for production are classified confidential or restricted, which the documentation does not state; the transport for df-008 within the experimental environment is likewise undescribed, while the delivery leg df-009 runs over SSH (evd-012).",
+        "suppressed_conclusion": "That the internal flows in this threat's path and the Azure Blob stores behind them are unencrypted because the documentation extends its transport statement only to the public API and the image collection path.",
+        "suppressed_by": "req-DATA-001 common_false_positives entry: 'absent encryption detail for a managed service that encrypts by default'.",
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-006",
+          "evd-007",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-SECRET-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'the system accesses no customer resources on external platforms' holds: the path in this threat runs between the system's own experimental and production environments (evd-009, evd-012), and no customer-owned external resource is reached.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-009",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-AUTHZ-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'the system serves a single tenant' holds: the system is described as a public classification service for end users submitting images, with no customer or organization separation in the architecture (evd-008, evd-012).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-008",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-DATA-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'the system serves a single tenant' holds, and the stores in this threat's path hold the operator's own source, configuration, and model artifacts rather than per-customer artifacts (evd-008, evd-011).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-008",
+          "evd-011"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-DATA-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'customer data is processed only in memory and never persisted' holds for uploaded images (evd-004), and the assets in this threat's path are the operator's own source, configuration, and model rather than retained customer data.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-004",
+          "evd-011"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-DATA-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'no customer data is retained' is supported by evd-004, which states uploaded images are held in memory and not written to disk; this threat concerns the integrity of packaged code and configuration rather than deletion of stored customer data.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-LOG-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Neither applicable condition is engaged by this threat: the path from source storage through packaging to production (df-008, df-009) writes no restricted data to logs, and the only log destination described is the Bastion Logs store inside production rather than a platform managed by another party (evd-005, evd-011).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-005",
+          "evd-011"
+        ],
+        "assumptions": [],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-AUTHZ-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition regarding delegated access is met for this threat: neither of the applicable conditions holds on the path in question, since the deployment service acts on the operator's own environments (evd-010, evd-012) and not on a customer resource held on an external platform.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-010",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-TPI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'no customer data leaves the system's trust boundary' holds on this threat's path: source and configuration move from experimental storage into production (df-008, df-009) and no data is sent to an external processor (evd-012).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-TPI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'work is initiated only by an authenticated operator' holds for the deployment path in this threat: packaging and delivery are performed by the deployment service within the experimental environment (evd-010, evd-012), not triggered by an external event or a metered per-request service.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-010",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-WEBHOOK-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Neither applicable condition holds: no endpoint accepting events from an external platform appears on this threat's path, which runs from experimental storage through the deployment service to the Bastion (evd-010, evd-012).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-010",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-WEBHOOK-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'the endpoint accepts no state-changing events' holds because no inbound event endpoint exists on this threat's path; releases are pushed by the deployment service over SSH rather than delivered as platform events (evd-012).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-AI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'the system passes no content to a model' in the prompt sense holds: the model is a convolutional image classifier evaluating uploaded images (evd-008, evd-010), and this threat concerns tampering with packaged source and configuration rather than model input handling.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-008",
+          "evd-010"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-AI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'model output is shown only to the user who requested it' holds: the classification is returned to the submitting user over the API (evd-012), and no publication of model output to an external destination appears on this threat's path.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-AI-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'the model runs within the system's own trust boundary' holds: the trained model is loaded and evaluated by the production web server (evd-010, evd-012), and no customer content is sent to an external model provider on this threat's path.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-010",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-AI-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'output is consumed only by machine processing that does not interpret markup' is supported by the serving description: the classification result is returned through the API Gateway (evd-012), and no rendering of model output into markup is described on this threat's path.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "low"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "No description of review, approval, or verification of what the deployment service packages",
+        "description": "The documentation describes the deployment service packaging source and configuration from the experimental storage together with the trained model and delivering the release into production through the Bastion (evd-010, evd-012), and describes per-environment access control on the source storage (evd-002). It does not describe whether changes to source or configuration are reviewed or approved before packaging, nor whether anything in production verifies the release on arrival. Trace cannot determine from the material whether such a control exists.",
+        "importance": "This is the step that determines whether write access in the lower-trust experimental environment translates into code running in the production serving path; the answer changes the satisfaction status of req-CICD-001 and the assessment of the deployment path as a whole.",
+        "related_object_ids": [
+          "thr-006",
+          "cmp-006",
+          "cmp-009",
+          "ast-004",
+          "df-008",
+          "df-009"
+        ],
+        "requested_evidence": [
+          "Pipeline configuration for the deployment service showing what it packages and any gating steps",
+          "Documentation of any change review or approval requirement on the source and configuration storage",
+          "A statement of whether the release is verified after delivery through the Bastion"
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-010",
+          "evd-012"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Custody of the credential the deployment service uses to reach production is not stated",
+        "description": "The documentation states that movement between production and experimental uses public-key authentication (evd-007, evd-009) and that the deployment service delivers releases through the Bastion (evd-012), but does not say where the corresponding private key is held or how its use is restricted. The API Key storage listed in evd-011 is described as holding keys for the external image services.",
+        "importance": "The requirement req-SECRET-001 turns on where this credential is held; without it, whether an experimental principal can obtain and reuse the deployment identity cannot be determined.",
+        "related_object_ids": [
+          "thr-006",
+          "cmp-006",
+          "cmp-003",
+          "df-009"
+        ],
+        "requested_evidence": [
+          "Architecture documentation naming the store holding the deployment service's private key",
+          "A list of the secrets the experimental environment holds and which workloads can read them",
+          "Deployment or configuration documentation for the SSH identity presented to the Bastion"
+        ],
+        "evidence_ids": [
+          "evd-007",
+          "evd-009",
+          "evd-011",
+          "evd-012"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Handling of third-party components entering the release is not described",
+        "description": "The deployment service is described as packaging source and configuration with the trained model (evd-010), but the material does not state how third-party components or dependencies used by the Python web server or the packaged release are identified, pinned, or controlled. Trace cannot determine whether such a control exists.",
+        "importance": "req-CICD-001 requires this half of the build trust question to be established; components entering the build reach production with the same privilege as the code the pipeline packages.",
+        "related_object_ids": [
+          "thr-006",
+          "cmp-006",
+          "cmp-002",
+          "ast-004"
+        ],
+        "requested_evidence": [
+          "A dependency manifest or component inventory for the packaged release",
+          "Description of how dependency versions are pinned or recorded at build time"
+        ],
+        "evidence_ids": [
+          "evd-010",
+          "evd-012"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Network placement of the Source Code and Configuration storage is not stated",
+        "description": "The source and configuration storage is listed as an experimental Azure Blob store with access control granted per environment (evd-002, evd-011), but its network reachability \u2014 whether it is restricted to the experimental VPC or to named workloads \u2014 is not described. This is recorded as unverifiable, not as an absent control.",
+        "importance": "The store is the entry point of this threat's attack path; whether the network boundary constrains who can reach it determines how far the documented access control has to carry.",
+        "related_object_ids": [
+          "thr-006",
+          "cmp-009",
+          "ast-004"
+        ],
+        "requested_evidence": [
+          "Storage account network configuration for the source and configuration store",
+          "A deployment or network description stating which workloads may reach the experimental storage accounts"
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-009",
+          "evd-011"
+        ],
+        "severity": "low"
+      },
+      {
+        "title": "Whether release deliveries are attributed to an identity in the Bastion records is not stated",
+        "description": "Bastion SSH access attempts are logged to the Bastion Logs storage (evd-005, evd-011), and the deployment service delivers releases through the same path (evd-012). The material does not state whether a release delivery is recorded with the acting identity, nor whether the Bastion Logs store is managed separately from the production hosts reachable through the Bastion.",
+        "importance": "Where no verification precedes deployment, the record of what was delivered and by whom is the compensating control; req-LOG-002 turns on whether that record exists at action level.",
+        "related_object_ids": [
+          "thr-006",
+          "cmp-003",
+          "cmp-006"
+        ],
+        "requested_evidence": [
+          "A sample or description of the records written to the Bastion Logs storage",
+          "A statement of who can modify the Bastion Logs storage and under what identity"
+        ],
+        "evidence_ids": [
+          "evd-005",
+          "evd-011",
+          "evd-012"
+        ],
+        "severity": "low"
+      }
+    ],
+    "catalog_gap_candidates": [
+      {
+        "concern": "No requirement covers the integrity of source and configuration changes before an automated pipeline packages them, or verification of the resulting release at the point it enters a higher-trust environment. The catalog addresses how the pipeline authenticates and how build dependencies are identified, but not whether a change to packaged content is reviewed or approved, and it explicitly places artifact signing beyond the expectation. In this system, an authenticated principal in the lower-trust experimental environment can write content that the deployment service will package and deliver into production (evd-002, evd-010, evd-012), with no described gate between the two.",
+        "suggested_category": "change_control",
+        "nearest_requirements": [
+          {
+            "requirement_id": "req-CICD-001",
+            "why_not": "It asks how the pipeline authenticates to its environments and how third-party components are identified; it does not ask whether first-party changes are reviewed or the release verified, and its common_false_positives entry places artifact signing and provenance beyond its scope."
+          },
+          {
+            "requirement_id": "req-ADMIN-001",
+            "why_not": "It governs access to an administrative interface and the reach of that access, not the trustworthiness of content passing through an automated deployment path."
+          },
+          {
+            "requirement_id": "req-AUTHZ-001",
+            "why_not": "It concerns constraining requests to a tenant boundary in a multi-customer system, which is a different boundary from the environment boundary this concern crosses."
+          },
+          {
+            "requirement_id": "req-SECRET-001",
+            "why_not": "It governs custody of the credential used to cross the boundary, not whether the content carried across it has been reviewed or verified."
+          }
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-010",
+          "evd-012"
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,574 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "claude-opus-5",
+    "input_tokens": 2524,
+    "output_tokens": 18195,
+    "cache_read_tokens": 14267,
+    "cache_creation_tokens": 19296,
+    "estimated_cost": "0.5952285",
+    "duration_seconds": 209.9379845840158
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-011",
+        "requirement_id": "req-ADMIN-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-001",
+          "ctl-004"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The requirement's applicable conditions hold for this threat: the Bastion is documented as the administrative interface into production (evd-005, evd-012), and its onward access reaches the Python web server, which holds user-submitted images in the Redis cache (evd-012, evd-004) \u2014 so operators can reach a position from which customer data is readable.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "partially_satisfied",
+        "evidence_ids": [
+          "evd-005",
+          "evd-010",
+          "evd-011",
+          "evd-012"
+        ],
+        "assumptions": [
+          "Assumed that SSH public-key authentication through a single named Bastion constitutes a distinct and stronger access path than the SSO path used by end users at the public-to-production boundary (evd-005, evd-007); the documentation states both but does not compare them."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-011",
+        "requirement_id": "req-AI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition that all model input is authored by the operating organization does not hold, but the requirement's concern \u2014 instructions embedded in submitted content redirecting a model's task \u2014 is not engaged by this threat, which is the disclosure of image bytes held in the production cache (df-016). The model here is a convolutional classifier evaluating images (evd-008, evd-010), with no instruction channel described.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-008",
+          "evd-010"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-011",
+        "requirement_id": "req-AI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition \"model output is shown only to the user who requested it\" holds: the serving path returns the classification to the submitting user through the API Gateway (evd-012), and no publication of model output to an external destination is documented.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-011",
+        "requirement_id": "req-AI-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition \"the model runs within the system's own trust boundary\" holds: the classifier is trained in the experimental environment and served from the production model blob by the Python web server (evd-010, evd-012). No user-submitted image is documented as being sent to an external model provider.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-010",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-011",
+        "requirement_id": "req-AI-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition that output is consumed only by machine processing that does not interpret markup is the documented case: the serving path returns a classification result over the API (evd-012), and no user-interface rendering or markup submission is described. This threat concerns disclosure of cached input images, not rendering of model output.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-011",
+        "requirement_id": "req-AUTH-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-014"
+        ],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "End-user authentication delegation is documented as SSO at the public-to-production boundary (evd-007, evd-009), but this threat begins from a position already inside production \u2014 administrative access via the Bastion, a compromised web server process, or network reach to the cache \u2014 so delegated end-user identity is not a control on the cache-read path (df-016, df-013).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-007",
+          "evd-009"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-011",
+        "requirement_id": "req-AUTH-002",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-001",
+          "ctl-004"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The applicable condition \"the system exposes administrative access\" holds: platform engineers reach production over SSH through the Bastion (evd-005, evd-012), and this threat's first attack step is that administrative path. No non-applicable condition holds, because the documentation does not state that an external provider owns the factor policy for this path.",
+        "suppressed_conclusion": "That multi-factor authentication for administrative access is absent because the documentation describes only SSH public-key authentication and names no factor policy.",
+        "suppressed_by": "common_false_positives entry \"absent application-side factor configuration setting\" \u2014 the factor policy for the identity presenting the SSH key may be owned by an identity provider or organization policy that the architecture documents do not describe.",
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-005",
+          "evd-007",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-011",
+        "requirement_id": "req-AUTHZ-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-013",
+          "ctl-014"
+        ],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "The requirement applies if the images of distinct end users held together in the shared Redis cache (evd-004, evd-011) constitute tenant-scoped data belonging to more than one customer or organization. The documentation describes end users submitting images (evd-013) but records no tenancy model, so whether the first applicable condition holds cannot be established from the material.",
+        "suppressed_conclusion": "That per-request scoping of cached images to their submitting principal is absent, on the basis that the storage access-control section covers only the blob accounts (evd-002).",
+        "suppressed_by": "common_false_positives entry \"absent description of an authorization library or framework\" \u2014 silence about the enforcement mechanism is not evidence that requests are unscoped.",
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-004",
+          "evd-011",
+          "evd-013"
+        ],
+        "assumptions": [],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-011",
+        "requirement_id": "req-AUTHZ-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition \"the system holds no external delegated access\" holds for this threat's path: the only external platform relationship documented is the experimental Gather Images application calling Azure Cognitive Services with its own API keys (evd-010), which is not delegated access to a customer resource and is not on the production cache-read path.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-010"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-011",
+        "requirement_id": "req-CICD-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The deployment service delivers releases into production through the Bastion (evd-010, evd-012), so a pipeline exists, but this threat's attack path is the reading of cached images by an actor already positioned in production; pipeline authentication and third-party component provenance do not bear on that disclosure path (df-016, df-013).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-010",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-011",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-006",
+          "ctl-007"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The applicable condition that the system transmits data warranting confidentiality holds by the documentation's own account: images are held in memory specifically so that they are difficult to access after a request completes (evd-004), and they traverse the web-server-to-cache flow (df-016) that this threat targets. No non-applicable condition holds, since the images are not documented as public.",
+        "suppressed_conclusion": "That transport protection on the web-server-to-cache flow (df-016) is absent, and that cached images are unprotected, because the transport security section covers only the public API and the Cognitive Services path (evd-006).",
+        "suppressed_by": "common_false_positives entries \"absent encryption detail for a managed service that encrypts by default\" and \"absent application-implemented cryptography where managed services provide it\" \u2014 Azure Cache for Redis is a managed service (evd-011) whose transport protection may be platform-provided and simply undescribed.",
+        "satisfaction_status": "partially_satisfied",
+        "evidence_ids": [
+          "evd-004",
+          "evd-006",
+          "evd-012"
+        ],
+        "assumptions": [
+          "Assumed that the images warrant confidentiality protection, inferred from the stated intent that they be difficult to access after the request completes (evd-004); their classification is not recorded in the documentation."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-011",
+        "requirement_id": "req-DATA-002",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-007"
+        ],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "The non-applicable condition \"customer data is processed only in memory and never persisted\" is partly supported \u2014 images are documented as held in memory and not written to disk (evd-004) \u2014 but the requirement still applies if images remain resident in the cache after the request completes, which is exactly the residence time this threat turns on and which the documentation does not state.",
+        "suppressed_conclusion": "That retention of cached images is undefined and therefore inadequate.",
+        "suppressed_by": "common_false_positives entry \"absent retention period for data that is genuinely not persisted\" \u2014 the documentation states images are not written to disk (evd-004), so silence about a retention period is not evidence of unbounded retention.",
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-004",
+          "evd-011"
+        ],
+        "assumptions": [],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-011",
+        "requirement_id": "req-DATA-003",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-007"
+        ],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "The applicable condition \"artifacts from multiple customers share a storage system\" holds in substance \u2014 one Redis cache in production holds uploaded images awaiting classification for all submitting users (evd-004, evd-011) \u2014 but whether those users are distinct customers or tenants for the purposes of this requirement is not established by the documentation.",
+        "suppressed_conclusion": "That no separation exists between one user's cached image and another's, because the storage access-control section addresses only the Azure Blob storage accounts and not the cache (evd-002).",
+        "suppressed_by": "common_false_positives entry \"absent description of a physical separation mechanism where logical separation is enforced and documented\" \u2014 the material describes neither, and its silence about the cache is not evidence that keys or entries are shared without separation.",
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-004",
+          "evd-011",
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-011",
+        "requirement_id": "req-DATA-004",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-007"
+        ],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition \"no customer data is retained\" is the documented position for the asset in this threat: uploaded images are held in memory rather than written to disk, and no store is documented as holding them at rest (evd-004, evd-011). A deletion-on-request path is therefore not the control this threat engages; residence time in the cache is handled under req-DATA-002.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-004",
+          "evd-011"
+        ],
+        "assumptions": [],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-011",
+        "requirement_id": "req-LOG-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-002"
+        ],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This threat's disclosure path is a read of image bytes from the production cache or observation of the web-server-to-cache flow (df-016, df-013); no log record is documented as carrying image content, and the only logging described on this path is SSH access and session records at the Bastion (evd-005, evd-011). The requirement's concern \u2014 restricted content reaching application logs \u2014 is not engaged by this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-005",
+          "evd-011"
+        ],
+        "assumptions": [],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-011",
+        "requirement_id": "req-LOG-002",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-002"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "Both applicable conditions hold: the Bastion is an operator interface (evd-005), and its onward access to the web server puts operators in a position to reach user-submitted images (evd-012, evd-004), which is the first step of this threat's attack path.",
+        "suppressed_conclusion": "That administrative access to cached images goes unrecorded, because the documented records are SSH access and session records (evd-005) rather than per-action records against customer data.",
+        "suppressed_by": "common_false_positives entry \"absent audit trail for read-only operations\" \u2014 this threat describes a read of cached images, and the absence of a read-level audit trail is not by itself a shortfall of this requirement. The part that is met is the recording of every SSH access attempt, successful or not, with the operator identity authenticated against the Authorized Keys storage (evd-005, evd-012).",
+        "satisfaction_status": "partially_satisfied",
+        "evidence_ids": [
+          "evd-005",
+          "evd-011",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-011",
+        "requirement_id": "req-NET-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-007"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The cache is a production in-memory store holding uploaded images for classification rather than a public interface (evd-004, evd-011), and this threat's third attack step is direct network reach to the cache endpoint. Neither non-applicable condition holds: the cache is not documented as a public interface by design, and no private link or service mesh is described for the web-server-to-cache flow (df-016).",
+        "suppressed_conclusion": "That the Redis cache is reachable beyond the workloads that need it, or from an untrusted network, because the storage access-control section covers only the blob storage accounts (evd-002) and no network placement is stated for the cache.",
+        "suppressed_by": "common_false_positives entries \"absent description of network placement for an internal component, which is not evidence that the component is publicly reachable\" and \"a component described only as managed or hosted, where the provider's default placement is private and undescribed\" \u2014 the cache is named only as a managed Azure Cache for Redis (evd-011).",
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004",
+          "evd-009",
+          "evd-011"
+        ],
+        "assumptions": [
+          "Assumed, with low confidence, that the cache sits inside the internal production Azure VPC because it is listed as a production data store (evd-011) and production is described as an internal VPC (evd-009); the environment section enumerates the API Gateway, web server, Bastion and storage accounts without naming the cache, so its placement is not stated outright."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-011",
+        "requirement_id": "req-SECRET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The credential custody this requirement addresses \u2014 provider API keys and signing keys (evd-011 records an API key store in the experimental environment) \u2014 is not on this threat's path, which concerns disclosure of image bytes from the production cache to an actor already holding production access (df-016, df-013).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-011"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-011",
+        "requirement_id": "req-SECRET-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition \"the system accesses no customer resources on external platforms\" holds: the documented external calls are outbound image collection from Azure Cognitive Services on the training path (evd-010, evd-012), not access to a customer-owned resource, and neither bears on the cached-image disclosure this threat describes.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-010",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-011",
+        "requirement_id": "req-TPI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition \"no customer data leaves the system's trust boundary\" holds for the asset in this threat: user-uploaded images are held in the production cache and evaluated against a locally loaded model (evd-004, evd-012); the only external provider relationship documented is inbound training-image collection (evd-010).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-004",
+          "evd-010",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-011",
+        "requirement_id": "req-TPI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This requirement bounds consumption of metered services and retried work; the threat under evaluation is disclosure of images already held in the cache to an actor with a production position, and no metered external service is consumed on the serving path (evd-012). The concern does not bear on this threat's impact.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-011",
+        "requirement_id": "req-WEBHOOK-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No endpoint accepting events delivered from an external platform is documented; the production entry point is the API Gateway receiving user image submissions over HTTPS (evd-010, evd-012), so the applicable conditions do not hold.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-010",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-011",
+        "requirement_id": "req-WEBHOOK-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Replay of inbound platform events presupposes an inbound event receiver, and none is documented (evd-010, evd-012). The requirement's applicable conditions therefore do not hold for this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-010",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Network placement and caller authentication for the Azure Cache for Redis are not established",
+        "description": "The cache is listed as a production in-memory store for uploaded images awaiting classification (evd-011, evd-004), but the material does not state where it sits on the network, which workloads may reach it, or whether it authenticates callers. The storage access-control section addresses the Azure Blob storage accounts only (evd-002), and the environment description enumerates production components without naming the cache (evd-009). Whether the reachability control required by req-NET-001 exists cannot be determined from the material.",
+        "importance": "Network placement and caller restriction are the controls that decide whether the third step of this threat's attack path \u2014 direct connection to the cache endpoint \u2014 is available at all. Without them the in-memory storage choice (evd-004) bounds persistence but not access.",
+        "related_object_ids": [
+          "cmp-013",
+          "cmp-002",
+          "df-016",
+          "ast-007"
+        ],
+        "requested_evidence": [
+          "A deployment or network description stating the subnet or private endpoint placement of the Azure Cache for Redis instance",
+          "A statement that access to the cache is restricted to the Python web server workload, and the mechanism enforcing it (firewall rule, security group, private link)",
+          "Confirmation of whether the cache requires authentication from callers, and where that credential is held"
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-004",
+          "evd-009",
+          "evd-011"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Retention and eviction behaviour for cached uploaded images is not stated",
+        "description": "The documentation states that uploaded images are held in memory rather than written to disk, and attributes this choice to making them difficult to access after the request completes (evd-004). It does not state a time-to-live, eviction policy, or explicit removal on completion of classification (evd-011), so how long an image remains readable in the cache is undetermined.",
+        "importance": "The residence time of an image in the cache determines how much data an actor with a position inside production could read at any moment, and whether the stated intent behind in-memory storage is actually achieved.",
+        "related_object_ids": [
+          "cmp-013",
+          "ast-007"
+        ],
+        "requested_evidence": [
+          "Cache configuration showing a key expiry or eviction policy for uploaded images",
+          "A statement of whether the web server deletes the cached image on completion of classification",
+          "Operations documentation stating the retention period for uploaded images"
+        ],
+        "evidence_ids": [
+          "evd-004",
+          "evd-011"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Transport protection for the web-server-to-cache flow is not established",
+        "description": "Transport security is documented for the public API and for image collection from Azure Cognitive Services (evd-006), and the serving path describes the web server holding the uploaded image in the Redis cache without stating how that traffic is protected (evd-012). Whether df-016 is encrypted, and whether that protection is inherited from the managed cache service, cannot be determined from the material.",
+        "importance": "Observation of the web-server-to-cache flow is one of the two disclosure routes in this threat's attack path, and it is the one that does not require access to the cache endpoint itself.",
+        "related_object_ids": [
+          "df-016",
+          "cmp-002",
+          "cmp-013",
+          "ast-007"
+        ],
+        "requested_evidence": [
+          "A statement of whether the Redis connection uses TLS, and whether that is enforced by the managed service configuration",
+          "Managed cache configuration showing the required transport setting",
+          "An architecture statement identifying which party provides transport protection on internal production flows"
+        ],
+        "evidence_ids": [
+          "evd-006",
+          "evd-012",
+          "evd-011"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "The sensitivity classification of user-submitted images is not recorded",
+        "description": "The documentation records the intent that user-submitted images be difficult to access after a request completes (evd-004) but never states what classification those images carry or what a user might reasonably upload (evd-011, evd-013). The applicability of the encryption and retention expectations, and the consequence of disclosure, both turn on this.",
+        "importance": "Without a classification, the impact of a cache disclosure cannot be bounded, and the applicability of req-DATA-001 to the cache flow rests on an inference from the stated design intent rather than on a documented fact.",
+        "related_object_ids": [
+          "ast-007"
+        ],
+        "requested_evidence": [
+          "A data classification statement for user-submitted images",
+          "Customer-facing documentation describing what users are told about handling of submitted images"
+        ],
+        "evidence_ids": [
+          "evd-004",
+          "evd-011",
+          "evd-013"
+        ],
+        "severity": "low"
+      },
+      {
+        "title": "Factor policy for the identities holding administrative SSH access is not established",
+        "description": "Administrative access to production is documented as SSH public-key authentication through the Bastion against the Authorized Keys storage (evd-005, evd-012), and the authentication summary lists boundary mechanisms without naming an identity provider or a factor policy (evd-007). Which party enforces multi-factor authentication for the operator identities on this path, if any, cannot be determined from the material.",
+        "importance": "The Bastion path is the first step of this threat's attack path and grants onward access to the web server holding cached images; whether a second factor stands in front of it changes how readily that position is reached.",
+        "related_object_ids": [
+          "cmp-003",
+          "act-003",
+          "df-013"
+        ],
+        "requested_evidence": [
+          "Identity provider or organization policy documentation covering the operator identities that hold Bastion SSH keys",
+          "Administrative access documentation stating which party enforces multi-factor authentication and under what policy"
+        ],
+        "evidence_ids": [
+          "evd-005",
+          "evd-007",
+          "evd-012"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Administrative reach to user-submitted images, and recording of operator actions on that data, are not stated",
+        "description": "The onward reach of the Bastion is documented at component level \u2014 the API Gateway, the web server, and the model blob (evd-012) \u2014 but the documentation does not state what customer data an operator on that path can reach, and the images held in the cache during a request (evd-004) are not addressed. Logging is described as SSH access and session records written to the Bastion Logs storage (evd-005, evd-011), with no statement about whether actions taken on the web server or the cache are recorded with the acting operator.",
+        "importance": "Where operator reach is broad, the record of what was done is the compensating control; neither the reach into customer data nor the action-level record is established, so it cannot be determined whether a read of cached images by an operator would be visible afterwards.",
+        "related_object_ids": [
+          "cmp-003",
+          "cmp-002",
+          "cmp-013",
+          "df-013",
+          "ast-007"
+        ],
+        "requested_evidence": [
+          "A statement in the architecture documentation of what customer data the Bastion path can reach, including data held transiently in the cache",
+          "A description of whether actions taken on production hosts through the Bastion are recorded with the acting operator identity, and where those records are kept",
+          "Confirmation of whether the Bastion Logs storage is managed separately from the production hosts it records"
+        ],
+        "evidence_ids": [
+          "evd-004",
+          "evd-005",
+          "evd-011",
+          "evd-012"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": []
+  }
+}

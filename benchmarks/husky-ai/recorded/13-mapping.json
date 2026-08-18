@@ -1,0 +1,330 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "claude-opus-5",
+    "input_tokens": 2643,
+    "output_tokens": 13038,
+    "cache_read_tokens": 32360,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.355345",
+    "duration_seconds": 154.647099083988
+  },
+  "response": {
+    "controls": [
+      {
+        "key": "sso-public-boundary",
+        "name": "SSO authentication at the public-to-production boundary",
+        "description": "The documentation states that access across the public-to-production boundary is authenticated with SSO, with RBAC and ACLs applied at each boundary (evd-007, evd-009). The API Gateway is the documented entry point for that boundary (evd-010). The identity provider is not named, and the documentation does not state whether the image-submission endpoint specifically requires an authenticated session, so the control is recorded as claimed rather than established.",
+        "control_type": "implemented",
+        "provider_component_id": "cmp-001",
+        "protected_component_ids": [
+          "cmp-001",
+          "cmp-002",
+          "cmp-013"
+        ],
+        "protected_asset_ids": [
+          "ast-008",
+          "ast-007"
+        ],
+        "implementation_status": "claimed",
+        "evidence_ids": [
+          "evd-007",
+          "evd-009",
+          "evd-010"
+        ],
+        "owner": "platform team",
+        "limitations": [
+          "The identity provider relied upon for SSO is not named (evd-007, evd-009).",
+          "The documentation does not state whether every image submission on the serving path (df-015) carries an authenticated principal, so the population able to trigger classification work is not established.",
+          "No per-principal rate or volume limit is described alongside the authentication statement."
+        ]
+      }
+    ],
+    "mappings": [
+      {
+        "threat_id": "thr-010",
+        "requirement_id": "req-TPI-002",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-013"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The requirement's condition that work is triggered by an event the system does not originate holds: each classification is triggered by an externally submitted image (evd-012), and each unit of work performs CNN inference in the production web server and consumes memory in the Redis cache (evd-010, evd-004, evd-011), which is the significant-compute case the statement covers. This threat is precisely repeated or oversized triggers driving that consumption.",
+        "suppressed_conclusion": "That no bound exists on request rate, upload size, or concurrent classification work, and that the requirement is therefore unmet.",
+        "suppressed_by": "evd-010 states that the API Gateway enforces request validation and ensures access control to internal services (recorded as ctl-013); the scope of that validation is unstated, so the material neither establishes a bound nor describes one as absent.",
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-004",
+          "evd-010",
+          "evd-011",
+          "evd-012"
+        ],
+        "assumptions": [
+          "Assumed that classification inference is the dominant per-request cost on the serving path, on the basis that the web server is documented as loading the model and evaluating each uploaded image (evd-010, evd-012); the compute or memory cost per request is not quantified anywhere in the material."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-010",
+        "requirement_id": "req-NET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The condition that the system uses a data store or cache which is not itself a public interface holds for the Azure Cache for Redis (cmp-013), documented as the in-memory production store for uploaded images awaiting classification (evd-011, evd-004). This threat turns on that store's memory ceiling, so whether it is reachable only from the web server bears directly on who can consume it.",
+        "suppressed_conclusion": "That the Redis cache is reachable from an untrusted network and that the requirement is therefore unmet or only partially satisfied.",
+        "suppressed_by": "common_false_positives entry: 'absent description of network placement for an internal component, which is not evidence that the component is publicly reachable', reinforced by 'absent detail of the enforcing mechanism, where placement itself is stated'.",
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-009",
+          "evd-011",
+          "evd-012"
+        ],
+        "assumptions": [
+          "Assumed the cache sits inside the internal production VPC, inferred from evd-009 describing production as an internal Azure VPC and evd-011 recording the cache's environment as Production; no passage states the cache's network placement or which callers may reach it."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-010",
+        "requirement_id": "req-DATA-002",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-007"
+        ],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "The non-applicable condition 'customer data is processed only in memory and never persisted' is close to being met, since evd-004 states uploaded images are held in memory in the Redis cache and not written to disk. It does not settle the question, because no retention or eviction behaviour for the cache is stated: if entries outlive the request that created them, the system retains a working copy of customer data and the requirement applies. This bears on the threat because unbounded residency is what allows memory to fill.",
+        "suppressed_conclusion": "That retention of uploaded images in the cache is undefined and the requirement is therefore unmet.",
+        "suppressed_by": "common_false_positives entry: 'absent retention period for data that is genuinely not persisted', which is live here because evd-004 states images are held in memory rather than written to disk.",
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-004",
+          "evd-011"
+        ],
+        "assumptions": [],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-010",
+        "requirement_id": "req-AUTH-001",
+        "control_keys": [
+          "sso-public-boundary"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The condition that user authentication is delegated to an external identity provider holds: evd-007 and evd-009 state that access across the public-to-production boundary is authenticated with SSO. It matters to this threat because whether an unauthenticated actor can submit classification requests determines the population able to drive the consumption described in the attack path (df-015).",
+        "suppressed_conclusion": "That the submission path lacks credential-handling controls such as lockout, password policy, or credential storage protection.",
+        "suppressed_by": "common_false_positives entries for this requirement: absent local password complexity policy, absent rotation policy, absent account lockout threshold, and absent credential storage or hashing description. The partial rating rests instead on the delegation being stated without the provider being named or its responsibility boundary described, which no false-positive entry covers.",
+        "satisfaction_status": "partially_satisfied",
+        "evidence_ids": [
+          "evd-007",
+          "evd-009",
+          "evd-012",
+          "evd-013"
+        ],
+        "assumptions": [
+          "Assumed the SSO statement in evd-007 and evd-009 is intended to cover end-user image submission over the public API, since evd-012 and evd-013 describe that as the traffic crossing the public-to-production boundary; the material does not say so directly."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-010",
+        "requirement_id": "req-DATA-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "unknown",
+        "applicability_reason": "The condition 'artifacts from multiple customers share a storage system' cannot be settled: the Redis cache holds images from many end users concurrently (evd-011, evd-004), but nothing in the material establishes whether those users belong to distinct customers or organizations, and the non-applicable condition 'the system serves a single tenant' is equally unestablished (evd-008, evd-013). The question bears on this threat because the impact claim is that pressure from one submitter disrupts another's in-flight images.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-004",
+          "evd-008",
+          "evd-011",
+          "evd-013"
+        ],
+        "assumptions": [],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-010",
+        "requirement_id": "req-AI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'model output is shown only to the user who requested it' holds: evd-012 describes the web server evaluating the image and returning the classification to the submitting user, with no publication of model output to any external destination on this threat's path (df-015, df-016).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-010",
+        "requirement_id": "req-AI-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'the model runs within the system's own trust boundary' holds: the trained CNN is loaded from the production model blob and evaluated inside the Python web server (evd-010, evd-012), so no customer content is sent to an external model provider on the path this threat exercises.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-010",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-010",
+        "requirement_id": "req-TPI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'no customer data leaves the system's trust boundary' holds for this threat's path: uploaded images travel only from the API Gateway to the web server and the Redis cache within production (evd-012, evd-011). The only documented external provider relationship, Azure Cognitive Services, sits on the training path and carries no user-submitted image (evd-010, evd-012).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-010",
+          "evd-011",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-010",
+        "requirement_id": "req-WEBHOOK-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Neither applicable condition holds: the system is not documented as exposing an endpoint that accepts events from an external platform. The work in this threat is triggered by a direct end-user submission to the public API (evd-012, evd-013), so origin verification of platform-delivered events is not the control at stake.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-012",
+          "evd-013"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-010",
+        "requirement_id": "req-WEBHOOK-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The requirement's applicable conditions concern inbound events from an external platform whose delivery uniqueness is unestablished; no such event path is documented (evd-012). The related concern in this threat, that repeated submissions drive repeated costly work, is mapped under req-TPI-002 rather than here.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "No stated upload size limit, request rate limit, or concurrency bound on the public classification path",
+        "description": "The API Gateway is documented as enforcing request validation and access control to internal services (evd-010), but the scope of that validation is not stated: no maximum upload size, no request rate or volume limit per principal, and no bound on concurrent inference work appears anywhere in the material. Whether a bound exists on the work each external submission can trigger cannot be determined from the documentation.",
+        "importance": "Each classification consumes web server compute and Redis memory (evd-004, evd-010, evd-011, evd-012). Whether that consumption is bounded is the fact that decides how much of thr-010's attack path is already closed, and the documentation neither establishes a bound nor describes one as absent.",
+        "related_object_ids": [
+          "thr-010",
+          "cmp-001",
+          "cmp-002",
+          "cmp-013",
+          "ctl-013",
+          "req-TPI-002"
+        ],
+        "requested_evidence": [
+          "API Gateway policy or configuration showing maximum request body size and any rate limiting applied to the classification endpoint",
+          "Web server or worker configuration showing concurrency limits or request timeouts for inference",
+          "Operations documentation describing what happens to requests when capacity is reached"
+        ],
+        "evidence_ids": [
+          "evd-004",
+          "evd-010",
+          "evd-011",
+          "evd-012"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Retention and eviction behaviour of the Azure Cache for Redis is not documented",
+        "description": "The documentation states uploaded images are held in memory in the Redis cache while awaiting classification and are not written to disk (evd-004, evd-011), but says nothing about how long entries live, whether they are removed once a request completes, what the memory ceiling is, or what eviction policy applies under pressure.",
+        "importance": "If entries outlive the request that created them, memory consumption accumulates across submissions; if eviction occurs under pressure, other users' in-flight classifications may fail. Both are load-bearing for thr-010's impact claim, and the same fact determines whether req-DATA-002 applies at all.",
+        "related_object_ids": [
+          "thr-010",
+          "cmp-013",
+          "ast-007",
+          "ast-008",
+          "ctl-007",
+          "req-DATA-002"
+        ],
+        "requested_evidence": [
+          "Cache configuration showing maxmemory, eviction policy, and key expiry for uploaded-image entries",
+          "A statement of when an image entry is removed relative to the completion of its classification request"
+        ],
+        "evidence_ids": [
+          "evd-004",
+          "evd-011"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Network placement and permitted callers of the Redis cache are not stated",
+        "description": "The cache is recorded as a production store (evd-011) and production is described as an internal Azure VPC (evd-009), but no passage states the cache's network placement directly or which workloads may connect to it. Reachability of the cache is therefore inferred rather than documented.",
+        "importance": "The requirement that internal components be reachable only from the workloads that use them cannot be assessed without this. If the cache were reachable from outside the production VPC, an actor could consume its memory without passing the API Gateway at all, bypassing whatever validation ctl-013 provides.",
+        "related_object_ids": [
+          "thr-010",
+          "cmp-013",
+          "cmp-002",
+          "df-016",
+          "req-NET-001"
+        ],
+        "requested_evidence": [
+          "Network or deployment documentation stating the cache's placement and whether it has a private endpoint only",
+          "Firewall or access-policy configuration naming the workloads permitted to connect to the cache"
+        ],
+        "evidence_ids": [
+          "evd-009",
+          "evd-011",
+          "evd-012"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Identity provider behind the public-to-production SSO is not named, and its coverage of image submission is not stated",
+        "description": "The material states that the public-to-production boundary is authenticated with SSO, with RBAC and ACLs at each boundary (evd-007, evd-009), but does not name the identity provider, state what it is responsible for, or confirm that every image submission over df-015 carries an authenticated principal (evd-012, evd-013).",
+        "importance": "Whether classification requests are anonymous determines who can drive the consumption in thr-010 and whether any per-principal limit could be applied at all. It is also what stands between a partially satisfied and a satisfied rating on req-AUTH-001.",
+        "related_object_ids": [
+          "thr-010",
+          "cmp-001",
+          "act-001",
+          "df-015",
+          "req-AUTH-001"
+        ],
+        "requested_evidence": [
+          "Architecture documentation naming the identity provider relied upon at the public-to-production boundary",
+          "A statement of whether the image-submission endpoint requires an authenticated session or is open to anonymous callers",
+          "Identity provider configuration showing which endpoints it fronts"
+        ],
+        "evidence_ids": [
+          "evd-007",
+          "evd-009",
+          "evd-012",
+          "evd-013"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": []
+  }
+}

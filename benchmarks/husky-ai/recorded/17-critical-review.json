@@ -1,0 +1,102 @@
+{
+  "schema": "CriticalReviewProposal",
+  "usage": {
+    "model": "claude-opus-5",
+    "input_tokens": 2306,
+    "output_tokens": 16609,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 29285,
+    "estimated_cost": "0.60978625",
+    "duration_seconds": 204.77340008306783
+  },
+  "response": {
+    "critiques": [
+      {
+        "subject_type": "documentation_gap",
+        "subject_id": "gap-002",
+        "critique_type": "duplicate",
+        "description": "gap-002 and gap-007 record one and the same open question: evd-002 restricts writes to the production model blob to the experimental deployment path and the Bastion, while evd-010 and evd-012 describe the Jupyter environment writing the serialized model to the model storage blob. Their requested evidence is substantially identical (effective identities and role assignments holding write permission on the production model blob; whether the notebook writes the production blob or an experimental one), and evd-011 lists a single Machine Learning Model blob, so there is one store and one contradiction. They differ only in the threat they are attached to (thr-001 versus thr-002), in one extra requested item each (network placement in gap-002, enforcing mechanism in gap-007), and in assigned severity (medium versus high).",
+        "rationale": "Carried forward separately these produce two evidence requests and two findings over a single contradiction between the same two passages, and the divergent severities for the same fact would have to be reconciled at the human checkpoint anyway. Merging keeps both extra requested items in one record without asking the reviewer the same question twice.",
+        "evidence_ids": [
+          "evd-002",
+          "evd-010",
+          "evd-011",
+          "evd-012"
+        ],
+        "recommended_action": "merge",
+        "confidence": "high"
+      },
+      {
+        "subject_type": "documentation_gap",
+        "subject_id": "gap-012",
+        "critique_type": "duplicate",
+        "description": "gap-005, gap-012 and gap-040 record the same unanswered question. Each states that evd-005 establishes SSH access attempts being logged to the Bastion Logs storage and evd-012 describes the session being logged, and that nothing states whether an individual write or overwrite of the serialized model in the production blob is recorded with the acting operator identity. Each asks for the same two artifacts: whether storage-level diagnostic or audit logging is enabled on the Machine Learning Model blob (evd-011), and whether the acting identity is carried on a recorded write. gap-012's only additional reach is deployment-path writes, which gap-005 and gap-040 already touch through cmp-010.",
+        "rationale": "Three near-identical records over evd-005, evd-011 and evd-012 generate three requests to the same reviewer for the same configuration, and any answer resolves all three at once. This is a consolidation point, not a disagreement with the analysis: the gaps are correctly framed as unresolved rather than as an asserted absence of logging.",
+        "evidence_ids": [
+          "evd-005",
+          "evd-011",
+          "evd-012"
+        ],
+        "recommended_action": "merge",
+        "confidence": "high"
+      },
+      {
+        "subject_type": "documentation_gap",
+        "subject_id": "gap-041",
+        "critique_type": "duplicate",
+        "description": "gap-041 (factor policy for the identities holding administrative SSH access) is contained within gap-010 (identity provider and factor policy behind administrative and cross-boundary authentication) and gap-003 (ownership and policy for multi-factor authentication on the administrative and experimental access paths). All three cite the same material \u2014 the per-boundary authentication summary in evd-007 and evd-009, and Bastion authentication against the Authorized Keys storage in evd-005, evd-010 and evd-012 \u2014 and all three ask which party enforces a factor policy over those identities. The three carry severities medium, medium and low for the same unanswered fact. gap-041's only distinct sub-question is the procedure by which keys are added to and removed from the Authorized Keys storage (evd-011).",
+        "rationale": "One question over one set of passages should reach the reviewer once, with the key add/remove procedure carried into the merged record as an additional requested item. Leaving three separate records also leaves three different severities attached to the same unknown, which a reviewer would have to reconcile before any of them could be acted on.",
+        "evidence_ids": [
+          "evd-005",
+          "evd-007",
+          "evd-009",
+          "evd-010",
+          "evd-011"
+        ],
+        "recommended_action": "merge",
+        "confidence": "medium"
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-001",
+        "critique_type": "missing_precondition",
+        "description": "Step 3 of the attack path states that the Python web server 'loads the artifact on start or reload'. The cited passages do not carry that detail: evd-010 says only that the web server 'loads the trained model from the model storage blob and evaluates uploaded images against it', and evd-012's serving path says the server 'evaluates it against the loaded model'. Neither says when the artifact is read \u2014 at process start, on a reload signal, or per request. The step between the write and the effect is therefore missing from the preconditions, which list four items and none covering it: for a completed write to become the decision function, the loaded model must be refreshed, which may require the actor to cause or await a restart or deployment.",
+        "rationale": "Whether a substituted artifact takes effect immediately or only at the next restart changes both the exploitability of the path and what a defender would monitor, and the deployment path through the Bastion (evd-012) is a plausible refresh trigger that the actor may not control. The threat is otherwise carefully hedged about what the documentation does and does not establish; this one clause states a load lifecycle as fact where the evidence is silent, so it belongs in the preconditions as an unknown or in the load-behaviour gap already raised as gap-001.",
+        "evidence_ids": [
+          "evd-010",
+          "evd-012"
+        ],
+        "recommended_action": "revise",
+        "confidence": "medium"
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-015",
+        "critique_type": "unsupported_claim",
+        "description": "map-015's applicability_reason concludes that req-DATA-001 is not applicable on the ground that 'no confidential data is disclosed and no data crosses an uncontrolled network in the attack path (evd-002, evd-017 not applicable; see evd-012 for the internal write and load flows)'. evd-017 is not among map-015's own evidence_ids, which are evd-002 and evd-012, and it is not among the passages supplied for this threat, so the citation cannot be resolved or checked by a reader of this chain; the clause naming it is also malformed, reading as an editing artifact rather than a statement about the system.",
+        "rationale": "An identifier a reader cannot resolve reads exactly like one that checks out, and this one sits inside the reason supporting a not_applicable status that closes the requirement for this threat. The not_applicable reading may well be correct on evd-012 alone, since the write and load flows it describes are internal to the environments; the defect is in the citation, and it is fixable by dropping or replacing the unresolvable reference.",
+        "evidence_ids": [
+          "evd-002",
+          "evd-012"
+        ],
+        "recommended_action": "revise",
+        "confidence": "medium"
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-006",
+        "critique_type": "contradictory_analysis",
+        "description": "map-006 suppresses the tamper-evidence conclusion for req-LOG-002 under the false-positive entry 'absent tamper-evidence detail where records are sent to a separately managed platform'. The condition that entry depends on is not established for this system, and the group's own objects say so: evd-011 lists the Bastion Logs storage as a production data store, evd-010 has the Bastion writing its access logs to that store, and ctl-002 \u2014 the control map-006 cites \u2014 states in its limitations that the log store 'is a production store reached through the same administrative path; whether it is separately managed is not stated'. gap-039 records the same point as unresolved.",
+        "rationale": "The suppression is applied outside the circumstance that makes the pattern a false positive, so the mapping's satisfaction status rests on a premise its own cited control denies. The remedy is not to conclude that the records are alterable \u2014 that would be reasoning from silence, and gap-039 already holds the question open correctly \u2014 but to re-check whether this false-positive entry can apply to a log store sitting inside the environment whose operators it records, and to record the suppression basis accordingly.",
+        "evidence_ids": [
+          "evd-005",
+          "evd-010",
+          "evd-011",
+          "evd-012"
+        ],
+        "recommended_action": "investigate",
+        "confidence": "medium"
+      }
+    ]
+  }
+}

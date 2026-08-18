@@ -1,0 +1,57 @@
+{
+  "schema": "CriticalReviewProposal",
+  "usage": {
+    "model": "claude-opus-5",
+    "input_tokens": 2044,
+    "output_tokens": 13440,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 18070,
+    "estimated_cost": "0.4591575",
+    "duration_seconds": 168.88055583299138
+  },
+  "response": {
+    "critiques": [
+      {
+        "subject_type": "control",
+        "subject_id": "ctl-010",
+        "critique_type": "contradictory_analysis",
+        "description": "ctl-010 lists cmp-008 (API Key storage) among its protected components and ast-003 among its protected assets, but the only direct evidence cited for access-control configuration (evd-002) names just the training images, model storage, and source/configuration storage accounts. The control's own first limitation, and eas-047, both state that the control does not extend to cmp-008 \u2014 so the protected-scope fields assert coverage that the same object elsewhere denies. The scope fields, not the limitation prose, are what a downstream reader of coverage will use.",
+        "rationale": "evd-002 reads 'Access control and authorization are configured on the Azure Blob storage accounts \u2014 the training images, the model storage, and the source and configuration storage.' The API Key storage appears only in evd-011's inventory of stores, which records its environment and contents and says nothing about access configuration. Since ast-003 (the API keys) resides only in cmp-008, the ast-003 entry inherits the same defect. map-075 cites ctl-010 as the control bearing on both stores, so leaving cmp-008/ast-003 in the protected scope credits protection for the credential store that no cited passage carries.",
+        "evidence_ids": [
+          "evd-002",
+          "evd-011"
+        ],
+        "recommended_action": "revise",
+        "confidence": "medium"
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-066",
+        "critique_type": "unsupported_claim",
+        "description": "map-066 suppresses its negative conclusion by invoking req-DATA-001's false-positive entry for 'absent encryption detail for a managed service that encrypts by default', characterising the third-party image tools as 'externally managed internet services (evd-009, evd-013)'. Neither cited passage establishes that: evd-009 says only that the public internet holds 'the third-party tools the experimental environment pulls from', and evd-013 lists them as 'external services supplying training images'. The tools are unnamed (recorded as a limitation of ctl-008), so nothing establishes them as managed platforms with default transport encryption. The objection is to the stated basis, not to the refusal itself \u2014 declining the negative conclusion is correct.",
+        "rationale": "Suppression on this basis is itself a positive claim about the third-party providers' platform behaviour, and the cited evidence does not support it; map-067 in the same group declines its negative conclusion on plain evidence discipline without needing a catalog entry, which is the form this suppression should take. The distinction is consequential: framing the path as presumptively encrypted, rather than as unestablished, decides whether the open question survives. eas-074 records 'Transport protection for the third-party image collection path' as missing evidence and no documentation gap accompanies this group, so as it stands nothing carries that question to a reviewer.",
+        "evidence_ids": [
+          "evd-009",
+          "evd-013",
+          "evd-006",
+          "evd-012"
+        ],
+        "recommended_action": "revise",
+        "confidence": "medium"
+      },
+      {
+        "subject_type": "control",
+        "subject_id": "ctl-008",
+        "critique_type": "unsupported_claim",
+        "description": "ctl-008 is a key-custody control \u2014 API keys held in a dedicated API Key storage account (evd-010, evd-011) \u2014 yet its protected_asset_ids names only ast-002 (the training image set) and omits ast-003 (the API keys), and its protected_component_ids names cmp-004 rather than cmp-008, the store that holds them. Nothing in the cited passages connects key custody to the integrity of collected training images, while the asset the mechanism does bear on is the credential whose disclosure this threat asserts.",
+        "rationale": "evd-010 states the Gather Images application collects images 'using API keys held in the API key store', and evd-011 records the store's contents as 'API keys for the external image services'. Both passages are about the keys; neither supports a claim that holding keys in a dedicated store protects the images written to the training blob. Because map-067 (req-SECRET-001) and map-076 (req-AUTHZ-002) both rest on ctl-008, an asset scope that omits ast-003 leaves the only control bearing on key custody unattached to the asset it protects, and asserts a protection of ast-002 the evidence does not carry.",
+        "evidence_ids": [
+          "evd-010",
+          "evd-011"
+        ],
+        "recommended_action": "revise",
+        "confidence": "medium"
+      }
+    ]
+  }
+}

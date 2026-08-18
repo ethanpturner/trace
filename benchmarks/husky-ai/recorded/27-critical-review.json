@@ -1,0 +1,72 @@
+{
+  "schema": "CriticalReviewProposal",
+  "usage": {
+    "model": "claude-opus-5",
+    "input_tokens": 2379,
+    "output_tokens": 12353,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 27690,
+    "estimated_cost": "0.4937825",
+    "duration_seconds": 153.96878641599324
+  },
+  "response": {
+    "critiques": [
+      {
+        "subject_type": "documentation_gap",
+        "subject_id": "gap-040",
+        "critique_type": "duplicate",
+        "description": "gap-040 and gap-012 record the same gap: whether an administrative action on the production model blob \u2014 a write or overwrite of the serialized artifact \u2014 is recorded and attributed to the acting operator identity. Both cite exactly the same three passages (evd-005, evd-011, evd-012), both assign medium severity, both name ctl-002, cmp-010 and ast-001 among related objects, and both request diagnostic or access logging on the model blob storage account plus confirmation that the acting identity is carried on each recorded action. gap-040 adds only one distinct request (a description or sample of the Bastion record format showing whether commands or object-level operations are captured).",
+        "rationale": "The two gaps rest on one passage set and one absence, so they cannot be resolved independently: evd-005 states that all SSH access attempts through the Bastion are logged, successful or not; evd-012 states that the session is logged and that the Bastion's onward access reaches the model blob; evd-011 records the store's contents as SSH access and activity logs. Neither gap cites or reasons from anything the other does not. Carried forward separately they would generate two requests for the same evidence and two findings against the same recorded limitation of ctl-002. Merging into gap-012 (the broader of the two) while preserving gap-040's request for the Bastion record format keeps the whole ask in one place.",
+        "evidence_ids": [
+          "evd-005",
+          "evd-011",
+          "evd-012"
+        ],
+        "recommended_action": "merge",
+        "confidence": "high"
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-203",
+        "critique_type": "contradictory_analysis",
+        "description": "map-203 holds req-DATA-004 not_applicable on the ground that the non-applicable condition \"no customer data is retained\" is \"the documented position for the asset in this threat\", citing evd-004 and evd-011. Two other objects in this same group treat that exact fact as unresolved: map-201 holds req-DATA-002 conditionally_applicable precisely because the documentation does not state whether images remain resident after the request completes, and thr-011's preconditions record retention and eviction as unstated so that residence time is undetermined.",
+        "rationale": "evd-004 says uploaded images are \"held in memory in the Redis cache while awaiting classification, not written to disk\" \u2014 that establishes the absence of disk persistence, not the absence of retention. evd-011 lists Azure Cache for Redis as a production store whose contents are uploaded images awaiting classification, i.e. it does hold customer data while entries are resident. Neither passage carries the claim that no customer data is retained, and the same mapping set says so about the same unknown. The mapping does redirect residence time to req-DATA-002, so what needs correcting is the applicability claim rather than the scope: either the not_applicable should rest on a stated assumption that residence is bounded to the life of a request, or the status should follow map-201's treatment of the identical unknown.",
+        "evidence_ids": [
+          "evd-004",
+          "evd-011"
+        ],
+        "recommended_action": "revise",
+        "confidence": "medium"
+      },
+      {
+        "subject_type": "evidence_assessment",
+        "subject_id": "eas-081",
+        "critique_type": "missing_evidence",
+        "description": "eas-081 names two items of missing evidence for thr-011 \u2014 \"Redis authentication and network access policy\" and \"Retention or eviction behaviour for cached images\" \u2014 and recommends continue. The second is carried into the group as a documentation gap (gap-048). The first appears in no gap in this group, even though four mappings turn on it: map-197, map-200, map-202 and map-206 are each unverified or partially satisfied with cache authentication, transport to the cache, or the cache's network placement named as the fact that could not be established.",
+        "rationale": "The passages confirm that this fact is genuinely absent rather than merely unlocated: evd-002 confines its access-control statement to the Azure Blob storage accounts (training images, model storage, source and configuration storage) and says nothing about the cache; evd-011 lists Azure Cache for Redis as a production data store without stating authentication or network placement; evd-012 describes the web server holding the uploaded image in the cache without describing how it authenticates to it. This is the single unknown that bounds the threat's confidence and blocks four mappings, and unless it is recorded as a documentation gap it reaches a reviewer only as a line inside an assessment's missing-evidence list, with no requested-evidence text and no severity. Recommend investigating whether cache authentication and network access policy should be raised as its own gap alongside gap-048.",
+        "evidence_ids": [
+          "evd-002",
+          "evd-011",
+          "evd-012"
+        ],
+        "recommended_action": "investigate",
+        "confidence": "medium"
+      },
+      {
+        "subject_type": "documentation_gap",
+        "subject_id": "gap-041",
+        "critique_type": "duplicate",
+        "description": "gap-041 (\"Factor policy for the identities holding administrative SSH access is not established\", severity low) asks for evidence gap-010 already asks for. gap-010's requested evidence includes \"The factor policy applied to the identity presenting the SSH key at the Bastion, and which party enforces it\" and the identity provider behind the SSO and password boundaries; both gaps name ctl-001 and ctl-004 among related objects, and both are answered by one document \u2014 the identity provider or organization policy covering the accounts holding Bastion access. The only element gap-041 adds is a request for the procedure by which keys are added to and removed from the Authorized Keys storage.",
+        "rationale": "Both gaps reason from the same statements: evd-007's authentication summary lists SSO, password and public-key authentication per boundary with RBAC and ACLs but names no provider and no factor policy; evd-012 states that engineers SSH to the Bastion, which authenticates them against the Authorized Keys storage; evd-010 states that the Bastion reads authorized keys from that store. No passage supports gap-041 that gap-010 does not already cite. Keeping both produces two requests with a single answer, recorded at two different severities (medium and low), which a reviewer would have to reconcile before either could be closed. Merging into gap-010 and preserving gap-041's key add/remove request is the consolidation; note also that map-196 already declines the corresponding negative conclusion under its suppression, so the open item here is evidence collection, not a second gap.",
+        "evidence_ids": [
+          "evd-005",
+          "evd-007",
+          "evd-010",
+          "evd-012"
+        ],
+        "recommended_action": "merge",
+        "confidence": "medium"
+      }
+    ]
+  }
+}

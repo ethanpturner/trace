@@ -1,0 +1,2560 @@
+{
+  "schema": "EvidenceValidationProposal",
+  "usage": {
+    "model": "claude-opus-5",
+    "input_tokens": 2676,
+    "output_tokens": 23161,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 87763,
+    "estimated_cost": "1.14092375",
+    "duration_seconds": 218.24588524992578
+  },
+  "response": {
+    "assessments": [
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-001",
+        "evidence_ids": [
+          "evd-008"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-008",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-008 states the purpose in the same terms as the claim: a CNN trained on collected images, packaged, and served behind a public API. Explicit architecture documentation.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-002",
+        "evidence_ids": [
+          "evd-009"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-009",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-009 enumerates production, experimental, and public internet as the environments.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-003",
+        "evidence_ids": [
+          "evd-006",
+          "evd-010"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-006",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-010",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-006 states the public API is HTTPS-only; evd-010 states the gateway is exposed over HTTPS. Two distinct passages in two documents.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-004",
+        "evidence_ids": [
+          "evd-010"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-010",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-010 states the gateway enforces request validation and ensures access control to internal services. The claim asserts no more than the passage does.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-005",
+        "evidence_ids": [
+          "evd-010"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-010",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-010 mentions request validation but says nothing about image content, media type, or size checks. The documents do not settle the question; this is silence, not an absent control.",
+        "missing_evidence": [
+          "Gateway or web server configuration stating what upload validation is performed (content type, size, image format)"
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-006",
+        "evidence_ids": [
+          "evd-007",
+          "evd-009"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-007",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-009",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "Both passages state SSO at the public-to-production boundary. Note they are two summaries of the same fact rather than independent corroboration of a mechanism.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-007",
+        "evidence_ids": [
+          "evd-007",
+          "evd-009"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-007",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-009",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "Both passages state password authentication at the public-to-experimental boundary.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-008",
+        "evidence_ids": [
+          "evd-007",
+          "evd-009"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-007",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-009",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "Both passages state public-key authentication for movement between production and experimental.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-009",
+        "evidence_ids": [
+          "evd-007",
+          "evd-009"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-007",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-009",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "Both passages state RBAC and ACLs are applied at each boundary. The statement is a summary; roles and holders are not described, but the claim asserts only the summary.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-010",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-002 names the three blob accounts and states access is granted per environment, which is what the claim asserts.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-011",
+        "evidence_ids": [
+          "evd-002",
+          "evd-007"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-007",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-002 establishes that access control is configured on the blob accounts but names no mechanism; evd-007 names RBAC and ACLs at boundaries, which is not a statement about the storage accounts. The claim is correctly marked inferred, and the inference is weak.",
+        "missing_evidence": [
+          "Storage account role assignment or ACL configuration for the blob accounts"
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-012",
+        "evidence_ids": [
+          "evd-002",
+          "evd-011"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-011",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-011 lists the API Key, Authorized Keys, and Bastion Logs stores; evd-002 covers only the three blob accounts. Nothing states how access to the other three is controlled. Silence, not absence.",
+        "missing_evidence": [
+          "Access policy or role configuration for the API Key, Authorized Keys, and Bastion Logs stores"
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-013",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-002 states the restriction in the same terms. Whether it holds against evd-010 is a separate matter, recorded under obs-001 and assessed at ctx-015.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-014",
+        "evidence_ids": [
+          "evd-010",
+          "evd-012"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-010",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-012",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-010 states notebooks train the CNN and write the serialized model to the model storage blob; evd-012 describes the trained model being written and then packaged by the deployment service.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-015",
+        "evidence_ids": [
+          "evd-002",
+          "evd-010",
+          "evd-011",
+          "evd-012"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contradictory"
+          },
+          {
+            "evidence_id": "evd-010",
+            "strength": "contradictory"
+          },
+          {
+            "evidence_id": "evd-011",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-012",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "contradicted",
+        "rationale": "evd-002 restricts writes to the production model blob to the experimental deployment path and the Bastion, while evd-010 has the Jupyter environment writing the serialized model to the model storage blob and evd-011 lists a single model blob in production. The claim correctly records the effective writer set as unresolved; which passage is authoritative is a reviewer decision.",
+        "missing_evidence": [],
+        "contradictions": [
+          "obs-001"
+        ],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-016",
+        "evidence_ids": [
+          "evd-009",
+          "evd-010",
+          "evd-011"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-009",
+            "strength": "indirect"
+          },
+          {
+            "evidence_id": "evd-010",
+            "strength": "indirect"
+          },
+          {
+            "evidence_id": "evd-011",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The inference that the notebook write crosses the production/experimental boundary follows only if the single Machine Learning Model blob listed in production (evd-011) is the blob the notebook writes (evd-010). That is the same unresolved question as obs-001, so the boundary crossing cannot be affirmed here.",
+        "missing_evidence": [],
+        "contradictions": [
+          "obs-001"
+        ],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-017",
+        "evidence_ids": [
+          "evd-010",
+          "evd-012"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-010",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-012",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "Both passages describe writing, packaging, delivery, and loading without addressing signing, checksums, or verification. The documents do not establish either presence or absence.",
+        "missing_evidence": [
+          "Deployment or web server documentation stating whether the model artifact is signed, checksummed, or otherwise verified before loading"
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-018",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-003 states the notebook environment enforces access control and authorization and that engineers authenticate before reaching any notebook.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-019",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-003 states the environment is not exposed outside the experimental VPC.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-020",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-004 states images are held in memory in the Redis cache, not written to disk, and gives the stated reason the claim repeats.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-021",
+        "evidence_ids": [
+          "evd-004",
+          "evd-011"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-011",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "Neither passage states a retention period, expiry, or eviction behaviour for the cache; both describe only that images are held there in memory.",
+        "missing_evidence": [
+          "Cache configuration or documentation stating TTL, eviction policy, or when entries are removed"
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-022",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004",
+          "evd-011"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-011",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The storage access-control section addresses the blob accounts only; no passage describes authentication or authorization for the Redis cache.",
+        "missing_evidence": [
+          "Redis cache access configuration: authentication mode and which principals or networks may connect"
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-023",
+        "evidence_ids": [
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-005 states all SSH access attempts through the Bastion are logged to the Bastion Logs storage, successful or not.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-024",
+        "evidence_ids": [
+          "evd-005",
+          "evd-010",
+          "evd-012"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-010",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-012",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-005 states the Bastion is the only administrative path; evd-010 and evd-012 describe SSH access authenticated against the Authorized Keys storage with onward access to the gateway, web server, and model blob.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-025",
+        "evidence_ids": [
+          "evd-005",
+          "evd-012"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-012",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "Both passages describe use of the Bastion but neither states from which networks it is reachable or whether the SSH endpoint is publicly exposed.",
+        "missing_evidence": [
+          "Network security group or firewall configuration for the Bastion's SSH endpoint"
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-026",
+        "evidence_ids": [
+          "evd-007",
+          "evd-010"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-007",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-010",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "Public-key authentication is documented, but no passage states whether an additional factor is required for administrative access.",
+        "missing_evidence": [
+          "A statement of the factor policy for Bastion SSH access or for the identity presenting the key"
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-027",
+        "evidence_ids": [
+          "evd-006",
+          "evd-012"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-006",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-012",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-006 states TLS with certificate validation for Azure Cognitive Services collection; evd-012 states server certificates are validated during transmission. Two passages in two documents agree.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-028",
+        "evidence_ids": [
+          "evd-006",
+          "evd-010",
+          "evd-012"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-006",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-010",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-012",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The transport statements name Azure Cognitive Services only, while evd-010 records a second collection source. Nothing addresses transport for the third-party path; that is silence rather than evidence it is unprotected.",
+        "missing_evidence": [
+          "A statement of the transport used by the Gather Images application when calling third-party image tools"
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-029",
+        "evidence_ids": [
+          "evd-006",
+          "evd-012"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-006",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-012",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "Transport protection is stated for the public API and the Cognitive Services path only; no passage addresses gateway-to-web-server, web-server-to-cache, or model blob read traffic.",
+        "missing_evidence": [
+          "Documentation of transport protection for internal production flows"
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-030",
+        "evidence_ids": [
+          "evd-002",
+          "evd-011"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-011",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The stores are enumerated and access control described, but no passage addresses encryption at rest for any store.",
+        "missing_evidence": [
+          "Storage account encryption settings or a statement of at-rest protection for each store"
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-031",
+        "evidence_ids": [
+          "evd-002",
+          "evd-007"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-007",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The passages state that RBAC and ACLs are used and that access is granted per environment, but neither states a default posture such as deny-by-default.",
+        "missing_evidence": [
+          "A statement of the default authorization posture and how it is enforced"
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-032",
+        "evidence_ids": [
+          "evd-007",
+          "evd-009",
+          "evd-010",
+          "evd-012"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-007",
+            "strength": "indirect"
+          },
+          {
+            "evidence_id": "evd-009",
+            "strength": "indirect"
+          },
+          {
+            "evidence_id": "evd-010",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-012",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The boundary-level SSO statements are genuine evidence, but evd-012 describes an end user submitting an image to the gateway without stating that an authenticated principal is carried. The claim is correctly marked inferred with low confidence; it should not be relied on as a documented fact.",
+        "missing_evidence": [
+          "A statement of whether the image submission endpoint requires an authenticated session"
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-033",
+        "evidence_ids": [
+          "evd-010",
+          "evd-012"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-010",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-012",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "Both passages state the deployment service packages the model with source and configuration and deploys through the Bastion.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-034",
+        "evidence_ids": [
+          "evd-010",
+          "evd-011"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-010",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-011",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-010 states the application collects images using API keys held in the API key store; evd-011 lists the API Key storage holding keys for the external image services.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-035",
+        "evidence_ids": [
+          "evd-005",
+          "evd-011"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-011",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "Only Bastion SSH logging is described; no passage addresses application, gateway, or storage logging, alerting, or retention.",
+        "missing_evidence": [
+          "Logging and monitoring documentation for the gateway, web server, and storage accounts"
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-036",
+        "evidence_ids": [
+          "evd-004",
+          "evd-012"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-012",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "No passage assigns a sensitivity classification to user-submitted images or states whether they may contain personal data.",
+        "missing_evidence": [
+          "A data classification statement for user-submitted images"
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-037",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 states the document records what is implemented and does not list planned work. Note this is the document's claim about itself, not verification of the controls it records.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control",
+        "subject_id": "ctl-001",
+        "evidence_ids": [
+          "evd-005",
+          "evd-007",
+          "evd-010",
+          "evd-011",
+          "evd-012"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-007",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-010",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-011",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-012",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "That the Bastion is the sole administrative path, reached over SSH and authenticated against the Authorized Keys storage, is stated directly (evd-005, evd-010, evd-012). The 'public-key authentication' element rests on evd-007, which describes production-to-experimental movement rather than administrative SSH; the key-store reference makes it plausible but not stated. Status 'implemented' rests on architecture documentation only, with no configuration evidence.",
+        "missing_evidence": [
+          "Bastion SSH configuration confirming public-key-only authentication"
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control",
+        "subject_id": "ctl-002",
+        "evidence_ids": [
+          "evd-005",
+          "evd-011",
+          "evd-012"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-011",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-012",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-005 states all SSH access attempts are logged successful or not; evd-011 records the store's contents as SSH access and activity logs; evd-012 describes the session being logged. The stated limitation about per-object actions is consistent with what the passages do not say.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control",
+        "subject_id": "ctl-003",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-011"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contradictory"
+          },
+          {
+            "evidence_id": "evd-011",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "contradicted",
+        "rationale": "The restriction is stated in evd-002, but evd-010 and evd-012 describe the notebook environment writing the serialized model to the model storage blob, and evd-011 lists one production model blob. The control's own limitations acknowledge this. Which account is authoritative determines whether the control exists as described.",
+        "missing_evidence": [],
+        "contradictions": [
+          "obs-001"
+        ],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control",
+        "subject_id": "ctl-004",
+        "evidence_ids": [
+          "evd-007",
+          "evd-009",
+          "evd-012"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-007",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-009",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-012",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The per-boundary authentication mechanisms and the RBAC/ACL summary are stated in two passages. The identity provider, factor policy, roles, and covered resources are not, so the control is established only at the level of a summary claim. 'Claimed' is the right status.",
+        "missing_evidence": [
+          "Identity provider configuration and role definitions behind the SSO, password, and public-key boundaries"
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control",
+        "subject_id": "ctl-005",
+        "evidence_ids": [
+          "evd-001",
+          "evd-003",
+          "evd-012"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-012",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-003 states each element of the assertion: access control and authorization on the notebook environment, engineer authentication, and no exposure outside the experimental VPC. It remains a documentation claim, which the 'claimed' status records.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control",
+        "subject_id": "ctl-006",
+        "evidence_ids": [
+          "evd-006",
+          "evd-012"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-006",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-012",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "Both passages state HTTPS on the public API and TLS with certificate validation on the Cognitive Services path, and the control asserts no coverage beyond that scope.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control",
+        "subject_id": "ctl-007",
+        "evidence_ids": [
+          "evd-004",
+          "evd-011"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-011",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-004 states in-memory handling and the reason for it; evd-011 records the cache as the in-memory store for uploaded images awaiting classification. The stated limitations correctly note that persistence rather than access is what is bounded.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control",
+        "subject_id": "ctl-008",
+        "evidence_ids": [
+          "evd-010",
+          "evd-011"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-010",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-011",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "That keys are held in a dedicated store and used by the Gather Images application is stated. Whether that store is a managed secret service, and any access policy, rotation, or retrieval mechanism, is not addressed by either passage.",
+        "missing_evidence": [
+          "The type of the API Key storage account and its access and rotation policy"
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control",
+        "subject_id": "ctl-009",
+        "evidence_ids": [
+          "evd-006",
+          "evd-012",
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-006",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-012",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "Two passages in two documents state TLS with server certificate validation on the Cognitive Services collection path, and the control's scope statement matches. evd-001 is contextual only: a document asserting it records implemented controls is not verification.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control",
+        "subject_id": "ctl-010",
+        "evidence_ids": [
+          "evd-002",
+          "evd-009",
+          "evd-011"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-009",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-011",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-002 supports access control on the training images blob and per-environment granting. It does not name the API Key storage, so the control does not extend to cmp-008, as its own limitations record. evd-009's boundary RBAC statement is not a statement about storage accounts.",
+        "missing_evidence": [
+          "Access configuration for the API Key storage account"
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control",
+        "subject_id": "ctl-011",
+        "evidence_ids": [
+          "evd-003",
+          "evd-010",
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-010",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-003 states each element directly. evd-010 places the notebook environment in the experimental environment but does not itself state the VPC exposure limit; it is contextual here. The 'claimed' status and the noted absence of configuration artifacts are appropriate.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control",
+        "subject_id": "ctl-012",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-011"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-011",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-002 names the source and configuration storage among the accounts with access control configured and access granted per environment, which is what the control asserts; the limitations correctly record that the mechanism and read/write distinction are not stated.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control",
+        "subject_id": "ctl-013",
+        "evidence_ids": [
+          "evd-010",
+          "evd-012",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-010",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-012",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-010 establishes that the gateway enforces request validation and access control to internal services. Nothing establishes the scope of that validation, whether it precedes forwarding, or any rate or size bound. 'Claimed' is the right status.",
+        "missing_evidence": [
+          "Gateway validation rules covering upload content type, size, and format"
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control",
+        "subject_id": "ctl-014",
+        "evidence_ids": [
+          "evd-007",
+          "evd-009",
+          "evd-010"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-007",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-009",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-010",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "SSO at the public-to-production boundary and the gateway as entry point are stated. Whether the image submission endpoint itself carries an authenticated principal is not, so the control's coverage of the serving path is unestablished, as its limitations record.",
+        "missing_evidence": [
+          "Confirmation that the classification endpoint requires an authenticated session"
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-001",
+        "evidence_ids": [
+          "evd-002",
+          "evd-005",
+          "evd-007",
+          "evd-011",
+          "evd-012"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-007",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-011",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-012",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "Applicability rests on stated facts: an administrative interface exists (evd-005) whose documented onward reach includes the production model blob (evd-012, evd-002). 'Partially satisfied' matches evidence that the path exists and is distinct while its factor policy and per-operator authorization are not stated.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-002",
+        "evidence_ids": [
+          "evd-005",
+          "evd-007",
+          "evd-009"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-007",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-009",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "Administrative access is documented (evd-005) and only public-key authentication is stated (evd-007), with no factor policy anywhere; 'unverified' is the classification the evidence supports.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-003",
+        "evidence_ids": [
+          "evd-007",
+          "evd-009",
+          "evd-011"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-007",
+            "strength": "indirect"
+          },
+          {
+            "evidence_id": "evd-009",
+            "strength": "indirect"
+          },
+          {
+            "evidence_id": "evd-011",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The passages name SSO and password authentication without naming a provider, and evd-011 records a local key store for administrative access. Conditional applicability with a stated assumption is the honest reading of that split.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-004",
+        "evidence_ids": [
+          "evd-007",
+          "evd-009",
+          "evd-010",
+          "evd-012"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-007",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-009",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-010",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-012",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "An automated packaging and delivery path is stated in both documents (evd-010, evd-012), so applicability holds; the second half of the requirement, third-party component control, is nowhere addressed, which is what 'partially satisfied' records.",
+        "missing_evidence": [
+          "Dependency inventory or pinning for components entering the release package"
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-005",
+        "evidence_ids": [
+          "evd-002",
+          "evd-007",
+          "evd-010",
+          "evd-011",
+          "evd-012"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-007",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-010",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-011",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-012",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "That the model blob is an internal store is established (evd-011), so the requirement applies. 'Partially satisfied' overstates what is shown: evd-002 describes access control, not network reachability, and no passage addresses the blob's network placement. The status rests on an authorization statement standing in for a network one.",
+        "missing_evidence": [
+          "Network restriction configuration for the production model blob"
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-006",
+        "evidence_ids": [
+          "evd-005",
+          "evd-011",
+          "evd-012"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-011",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-012",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "Operator interface and reach to the model blob are both stated, and the logging that exists is session-level, which supports 'partially satisfied' rather than satisfied.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-007",
+        "evidence_ids": [
+          "evd-002",
+          "evd-007",
+          "evd-010",
+          "evd-011"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-007",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-010",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-011",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "No passage states how the deployment service or notebook authenticates to the storage account, so conditional applicability with status unverified is exactly what the material supports.",
+        "missing_evidence": [
+          "How the deployment service and notebook environment authenticate to the model storage account"
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-024",
+        "evidence_ids": [
+          "evd-007",
+          "evd-009",
+          "evd-010",
+          "evd-012"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-007",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-009",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-010",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-012",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The pipeline's existence and route through the Bastion are documented. The stated assumption that the production-to-experimental public-key statement is the pipeline's authentication mechanism is an assumption, not an inference from either passage, and the mapping's 'partially satisfied' leans on it.",
+        "missing_evidence": [
+          "How the deployment service authenticates when delivering releases through the Bastion"
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-025",
+        "evidence_ids": [
+          "evd-005",
+          "evd-010",
+          "evd-011",
+          "evd-012"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-010",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-011",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-012",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "Applicability is well supported, but 'satisfied' is stronger than the passages carry: the requirement's comparison of access-path strength rests on the mapping's own stated assumption, and no factor policy or per-operator authorization is documented. The evidence supports partially satisfied at most.",
+        "missing_evidence": [
+          "Factor policy and authorization model for Bastion operators"
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-102",
+        "evidence_ids": [
+          "evd-002",
+          "evd-007",
+          "evd-009",
+          "evd-010",
+          "evd-012"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-007",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-009",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-010",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-012",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The automated pipeline and its route into production are directly documented, so applicability holds. The satisfaction judgment again rests on the assumption that boundary public-key authentication is the pipeline's mechanism, which neither passage states.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-104",
+        "evidence_ids": [
+          "evd-005",
+          "evd-007",
+          "evd-011",
+          "evd-012"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-007",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-011",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-012",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The Bastion as sole administrative path with a separate key store is documented, but 'satisfied' requires reading the onward-reach statement as a reach limit, which the mapping itself flags as an interpretation. The passages support a distinct administrative path, not a demonstrated bound on operator reach.",
+        "missing_evidence": [
+          "A statement of what operator access is authorized to reach beyond the named components"
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-148",
+        "evidence_ids": [
+          "evd-005",
+          "evd-011",
+          "evd-012"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-011",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-012",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "Applicability and the 'partially satisfied' status both follow from stated facts: logging exists at session level (evd-005, evd-011) while no per-action record is described.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-151",
+        "evidence_ids": [
+          "evd-002",
+          "evd-011"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-011",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-011 establishes the log store as an internal production store, and evd-002 does not cover it, so 'unverified' is the classification the evidence supports.",
+        "missing_evidence": [
+          "Access and immutability configuration for the Bastion Logs storage"
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-162",
+        "evidence_ids": [
+          "evd-007",
+          "evd-009"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-007",
+            "strength": "indirect"
+          },
+          {
+            "evidence_id": "evd-009",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The boundary SSO statements are documented, but the mapping's own assumption concedes the documents do not say whether SSO is delegated, and neither passage addresses the submission endpoint. Applicability is asserted more firmly than the passages carry.",
+        "missing_evidence": [
+          "Whether public-to-production SSO is delegated to a named external identity provider"
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "revise",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-166",
+        "evidence_ids": [
+          "evd-010",
+          "evd-012"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-010",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-012",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "That an automated packaging and deployment path exists is documented; that the web server's decoding uses third-party libraries is the mapping's own stated assumption, and no passage names any component. Applicability therefore rests on an assumption rather than on the cited passages.",
+        "missing_evidence": [
+          "A dependency list or manifest for the Python web server"
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-180",
+        "evidence_ids": [
+          "evd-004",
+          "evd-010",
+          "evd-011",
+          "evd-012"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-010",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-011",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-012",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "Externally triggered per-request inference and in-memory caching are stated in the passages, and no bound of any kind is described, which is what 'unverified' records.",
+        "missing_evidence": [
+          "Rate, size, or concurrency limits on the classification endpoint"
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-184",
+        "evidence_ids": [
+          "evd-004",
+          "evd-008",
+          "evd-011",
+          "evd-013"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-008",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-011",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-013",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The passages establish a shared cache holding many users' images but say nothing about tenancy; recording applicability itself as unknown is the honest handling of that silence, and is more defensible than the single-tenancy assumption used in several sibling mappings.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-216",
+        "evidence_ids": [
+          "evd-002",
+          "evd-009",
+          "evd-010"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-009",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-010",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "Applicability is reasonable, but 'satisfied' is not established by any cited passage: none states the network reachability of the web server or the model blob, and evd-010's statement that the gateway ensures access control to internal services is not a statement that those components are unreachable otherwise. Silence about reachability cannot yield a satisfied status.",
+        "missing_evidence": [
+          "Network placement and reachability restrictions for the web server and the production model blob"
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-050",
+        "evidence_ids": [
+          "evd-008",
+          "evd-011",
+          "evd-013"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-008",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-011",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-013",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "No passage states that the system is single-tenant; the mapping infers it from the absence of any tenancy description and says so in its assumption. Absence of a passage is not evidence of single tenancy, so the not_applicable determination rests on an assumption a reviewer should confirm. The same reasoning recurs in the other single-tenancy mappings.",
+        "missing_evidence": [
+          "A statement of whether the service serves multiple customer organizations"
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-001",
+        "evidence_ids": [
+          "evd-002",
+          "evd-010",
+          "evd-011",
+          "evd-012"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contradictory"
+          },
+          {
+            "evidence_id": "evd-010",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-011",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-012",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The mechanism's components are documented: the blob is written from outside production and the web server loads the artifact at runtime (evd-010, evd-012, evd-011). Two premises are not established \u2014 the effective writer set is contradicted (obs-001), and the absence of integrity verification is silence rather than a documented fact. The threat is legitimately raised but should not read as resting on established facts throughout.",
+        "missing_evidence": [
+          "Resolution of which components may write the production model blob",
+          "Whether the artifact is verified before loading"
+        ],
+        "contradictions": [
+          "obs-001"
+        ],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-002",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004",
+          "evd-006",
+          "evd-010",
+          "evd-011",
+          "evd-012"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-010",
+            "strength": "indirect"
+          },
+          {
+            "evidence_id": "evd-011",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-012",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-011 establishes that models are stored in serialized form and evd-010 that a Python service loads them. The decisive premise \u2014 that the format or loader executes code on deserialization \u2014 is general knowledge about Python serialization, not a documented property of this system, and the threat states this. The escalation is conditional and should be presented as such.",
+        "missing_evidence": [
+          "The serialization format and loading mechanism used for the model artifact"
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "revise",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-003",
+        "evidence_ids": [
+          "evd-002",
+          "evd-009",
+          "evd-010",
+          "evd-011",
+          "evd-012"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-009",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-010",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-011",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-012",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The collection-to-training-to-deployment path and its external image sources are documented in both documents. The premise that no validation or provenance check occurs is silence in the material rather than a documented absence, and the threat's own preconditions phrase it that way.",
+        "missing_evidence": [
+          "Whether collected images are validated, reviewed, or provenance-checked before training"
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-004",
+        "evidence_ids": [
+          "evd-006",
+          "evd-009",
+          "evd-010",
+          "evd-011",
+          "evd-012"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-006",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-009",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-010",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-011",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-012",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "That a second collection path to third-party tools exists over the public internet, authenticated with API keys, is documented (evd-009, evd-010, evd-011). That its transport is unprotected is not documented either way; the threat correctly states this as a required condition rather than a fact.",
+        "missing_evidence": [
+          "Transport protection for the third-party image collection path"
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-005",
+        "evidence_ids": [
+          "evd-002",
+          "evd-007",
+          "evd-009",
+          "evd-010",
+          "evd-011"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-007",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-009",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-010",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-011",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The key store, its contents, its reader, and the password-authenticated boundary are all documented. The absence of access control on the store is silence \u2014 evd-002 simply does not name it \u2014 and must not be read as an established weakness.",
+        "missing_evidence": [
+          "Access policy and rotation behaviour for the API Key storage"
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-006",
+        "evidence_ids": [
+          "evd-002",
+          "evd-007",
+          "evd-009",
+          "evd-010",
+          "evd-011",
+          "evd-012"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-007",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-009",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-010",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-011",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-012",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The packaging of experimental source and configuration into production releases is directly documented. The absence of review, signing, or verification of the package is silence in the material, which the threat states as a precondition rather than asserting.",
+        "missing_evidence": [
+          "Whether releases are reviewed, signed, or verified before or after delivery"
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-007",
+        "evidence_ids": [
+          "evd-002",
+          "evd-005",
+          "evd-007",
+          "evd-010",
+          "evd-011",
+          "evd-012"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-007",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-010",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-011",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-012",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The authentication authority, the single administrative path, and its onward reach are documented. Two preconditions rest on silence \u2014 the key store's access control and the absence of a second factor \u2014 and the threat labels both as unestablished, which is the correct handling.",
+        "missing_evidence": [
+          "Access control for the Authorized Keys storage",
+          "Factor policy for Bastion SSH access"
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-008",
+        "evidence_ids": [
+          "evd-002",
+          "evd-005",
+          "evd-011",
+          "evd-012"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-011",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-012",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "That a single production log store holds the record of administrative access, and that the recorded principals hold access within the same environment, is documented. Immutability, retention, and off-environment copies are simply not discussed, so the tampering premise rests on silence.",
+        "missing_evidence": [
+          "Immutability, retention, and access configuration for the Bastion Logs storage"
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-009",
+        "evidence_ids": [
+          "evd-004",
+          "evd-006",
+          "evd-010",
+          "evd-011",
+          "evd-012"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-010",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-011",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-012",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The upload path and the web server's role in decoding and inference are documented. Whether a decoder defect exists, and what the gateway's validation covers, are both unestablished; the threat presents the exploitation step conditionally, which is appropriate.",
+        "missing_evidence": [
+          "Scope of gateway upload validation",
+          "Image decoding libraries used by the web server and their patch status"
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-010",
+        "evidence_ids": [
+          "evd-004",
+          "evd-007",
+          "evd-009",
+          "evd-010",
+          "evd-011",
+          "evd-012"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-007",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-009",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-010",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-011",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-012",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "In-memory caching of every upload and per-request inference are documented. The absence of size or rate limits, and the eviction behaviour, are unstated; the threat's impact on other users' in-flight requests is therefore conditional on facts the documents do not settle.",
+        "missing_evidence": [
+          "Upload size and request rate limits",
+          "Cache eviction behaviour under memory pressure"
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-011",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004",
+          "evd-006",
+          "evd-011",
+          "evd-012"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-011",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-012",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "That user images are held in a production cache and that the Bastion provides onward access to the web server are documented. Cache authentication, transport to the cache, retention, and image sensitivity are all unestablished, so the extent of the exposure cannot be bounded from the material \u2014 as the threat states.",
+        "missing_evidence": [
+          "Redis authentication and network access policy",
+          "Retention or eviction behaviour for cached images"
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-012",
+        "evidence_ids": [
+          "evd-006",
+          "evd-007",
+          "evd-008",
+          "evd-009",
+          "evd-010",
+          "evd-012"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-006",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-007",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-008",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-009",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-010",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-012",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The public query interface returning a classification for arbitrary submitted images is documented (evd-008, evd-010, evd-012), which is the mechanism this threat needs. The absence of rate limiting, quotas, and query monitoring is silence in the documents, and whether the endpoint authenticates callers is inferred at low confidence (ctx-032).",
+        "missing_evidence": [
+          "Rate limits, per-caller quotas, or monitoring on the classification endpoint",
+          "Whether the endpoint authenticates submitting users"
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      }
+    ]
+  }
+}

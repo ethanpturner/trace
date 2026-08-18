@@ -1,0 +1,291 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "claude-opus-5",
+    "input_tokens": 2637,
+    "output_tokens": 10452,
+    "cache_read_tokens": 32808,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.290889",
+    "duration_seconds": 128.4842599160038
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-LOG-002",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-002",
+          "ctl-001"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "Both applicable conditions hold for this threat: the system exposes an operator interface (the Bastion, documented as the only administrative path into production, evd-005) and operators reach production assets through it, including the model blob (evd-012). The threat is precisely about the integrity and completeness of the record this requirement asks for.",
+        "suppressed_conclusion": "That administrative actions are unrecorded because no tamper-evidence or immutability property is described for the log store.",
+        "suppressed_by": "req-LOG-002 common_false_positives: 'absent tamper-evidence detail where records are sent to a separately managed platform' \u2014 the entry does not fully apply here (the store is in the same production environment, evd-011), but it establishes that absent tamper-evidence detail alone does not support a conclusion that the recording control is absent.",
+        "satisfaction_status": "partially_satisfied",
+        "evidence_ids": [
+          "evd-005",
+          "evd-011",
+          "evd-012"
+        ],
+        "assumptions": [
+          "Assumed that the 'activity logs' named in the store inventory (evd-011) are SSH session records rather than per-object records of writes to the model blob; the documentation does not state which."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-ADMIN-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-001",
+          "ctl-004"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The threat depends on an actor holding administrative access through the Bastion, which is documented as an operator interface (evd-005) whose onward reach includes the API Gateway, the web server, and the production model blob (evd-012); neither non-applicable condition holds, since operator actions are not limited to infrastructure.",
+        "suppressed_conclusion": "That privileged access is inadequately restricted because no per-operator permission model within the Bastion is described.",
+        "suppressed_by": "req-ADMIN-001 common_false_positives: 'absent role-based permission matrix within the administrative interface'.",
+        "satisfaction_status": "partially_satisfied",
+        "evidence_ids": [
+          "evd-005",
+          "evd-007",
+          "evd-011",
+          "evd-012"
+        ],
+        "assumptions": [
+          "Assumed the Authorized Keys storage (evd-011) is what defines the set of operators permitted on the administrative path; the documentation states the Bastion authenticates against it but does not describe how the key set is governed."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-AUTH-002",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-001",
+          "ctl-004"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The threat's actor reaches production through an administrative interface (evd-005), which is the requirement's first applicable condition; the non-applicable condition does not hold because no external provider is documented as owning the factor policy for SSH key holders on the Bastion.",
+        "suppressed_conclusion": "That multi-factor authentication is absent for administrative access because the documentation names only SSH public-key authentication and states no factor policy.",
+        "suppressed_by": "req-AUTH-002 common_false_positives: 'absent application-side factor configuration setting' and 'absent application-managed enrolment or factor-registration flow' \u2014 factor policy is commonly owned by an identity provider or organization policy outside the application.",
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-007",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-NET-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-003"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The Bastion Logs storage (cmp-012) is an internal data store holding records on behalf of the system (evd-011) rather than a public interface, which is the requirement's first applicable condition; the threat turns on who can reach and modify that store.",
+        "suppressed_conclusion": "That the Bastion Logs storage is inadequately restricted because the storage access-control section (evd-002) enumerates the training images, model storage, and source and configuration storage without naming the log store.",
+        "suppressed_by": "req-NET-001 common_false_positives: 'absent description of network placement for an internal component, which is not evidence that the component is publicly reachable' and 'a component described only as managed or hosted, where the provider's default placement is private and undescribed'.",
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-002",
+          "evd-011"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-LOG-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-002"
+        ],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "This requirement applies only if the Bastion SSH access and activity records (evd-011) capture restricted or confidential content, or if those records leave the system's trust boundary; the documentation establishes neither, stating only that the store sits in production and holds access and activity logs. It bears on this threat because the same store is the one the threat targets.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-005",
+          "evd-011"
+        ],
+        "assumptions": [],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-DATA-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'customer data is processed only in memory and never persisted' is documented for the data this system handles on behalf of users: uploaded images are held in the Redis cache in memory and not written to disk (evd-004). The Bastion access records at issue in this threat are operational log data (ast-006), not customer data retained as a by-product of processing.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-004",
+          "evd-011"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-AUTHZ-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'the system serves a single tenant' holds as documented: the system is described as a public classification service where end users submit images for classification (evd-008, evd-013), with no customer or organization boundary in the architecture, and the threat concerns operator action within one production environment rather than a crossing between tenants.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-008",
+          "evd-013"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-AI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'model output is shown only to the user who requested it' holds: the web server returns the classification to the submitting user over the serving path and no publication to an external destination is described (evd-012). The threat concerns tampering with administrative records, not a publication path.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-WEBHOOK-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No applicable condition holds: the documented flows are a user-initiated HTTPS request to the API Gateway, an outbound fetch of images from Azure Cognitive Services, and an SSH administrative path (evd-012); no endpoint accepting delivered events from an external platform is described, and this threat's entry point is authenticated SSH rather than an inbound event.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Access control, retention, and immutability of the Bastion Logs storage are not established",
+        "description": "The storage access-control section names the training images, model storage, and source and configuration storage, and states that the production model blob is writable only from the experimental deployment path and the Bastion (evd-002); it does not mention the Bastion Logs storage. The store is listed as a production data store holding SSH access and activity logs (evd-011), and the administrative path writes to it (evd-012). No write-once behaviour, retention period, or off-environment copy is described. It cannot be determined from the material whether a principal holding administrative access in production can modify or delete these records.",
+        "importance": "These records are documented as the record of administrative access to production (evd-005), and the assessment relies on them when reasoning about attribution of administrative action on the model artifact. Whether they can be altered by the principals they record changes what the logging control is worth.",
+        "related_object_ids": [
+          "cmp-012",
+          "cmp-003",
+          "ast-006",
+          "df-011",
+          "ctl-002",
+          "ctl-003"
+        ],
+        "requested_evidence": [
+          "The access policy or role assignments on the Bastion Logs storage account, and which principals hold write or delete permission",
+          "Any retention or lifecycle configuration applied to the log store",
+          "Whether log records are forwarded to, or copied into, a store outside the production environment or managed by a different team",
+          "Whether immutability or write-once retention is configured on the store"
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-005",
+          "evd-011",
+          "evd-012"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Attribution of administrative actions on the production model blob is not established",
+        "description": "The documentation states that all SSH access attempts through the Bastion are logged, successful or not (evd-005), and that the store holds SSH access and activity logs (evd-011); the administrative flow says the session is logged (evd-012). It is not stated whether an individual action taken through the Bastion \u2014 for example a write or overwrite of the serialized model in the production model blob \u2014 is recorded and attributed to the acting operator identity.",
+        "importance": "req-LOG-002 asks that actions affecting customer data or security configuration be recorded with the acting operator. Session-level records establish who connected; whether they establish what was done to the model artifact determines whether the tampering described in this threat could be reconstructed after the fact.",
+        "related_object_ids": [
+          "cmp-003",
+          "cmp-012",
+          "cmp-010",
+          "ast-001",
+          "ast-006",
+          "ctl-002"
+        ],
+        "requested_evidence": [
+          "A description or sample of the record format written by the Bastion, showing whether commands or object-level operations are captured",
+          "Any diagnostic or access logging configured on the Machine Learning Model blob storage account",
+          "A statement of which operator identity is carried on each recorded action"
+        ],
+        "evidence_ids": [
+          "evd-005",
+          "evd-011",
+          "evd-012"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Factor policy for the identities holding administrative SSH access is not established",
+        "description": "The authentication summary records SSO from public to production, password authentication from public to experimental, and public-key authentication between production and experimental, with RBAC and ACLs at each boundary (evd-007); the administrative flow states that engineers authenticate to the Bastion against the Authorized Keys storage (evd-012). No party is named as enforcing a multi-factor policy for these identities, and no policy is described.",
+        "importance": "The threat's precondition is an actor operating with administrative access, either legitimately or with obtained keys. Whether a second factor stands between a stolen key and a production session determines how reachable that precondition is, and the answer is likely to be held by an identity provider or organization policy rather than by the application.",
+        "related_object_ids": [
+          "cmp-003",
+          "act-003",
+          "ctl-001",
+          "ctl-004"
+        ],
+        "requested_evidence": [
+          "Identity provider or organization policy documentation covering the accounts that hold Bastion SSH access",
+          "A statement of which party enforces multi-factor authentication for administrative access and under what policy",
+          "The procedure by which keys are added to and removed from the Authorized Keys storage"
+        ],
+        "evidence_ids": [
+          "evd-007",
+          "evd-012"
+        ],
+        "severity": "low"
+      }
+    ],
+    "catalog_gap_candidates": [
+      {
+        "concern": "The catalog asks that privileged actions be recorded and that the documentation state where the records are kept, but no requirement asks that the record store be protected from the principals it records. Here the documented record of administrative access sits in the production environment (evd-011) that the same administrative path grants onward access to (evd-005, evd-012), and the storage access-control statement does not cover it (evd-002). A requirement covering audit-record integrity \u2014 immutability, an independent copy, or a custodian distinct from the recorded operators \u2014 would capture this concern directly rather than by inference from a false-positive note.",
+        "suggested_category": "logging",
+        "nearest_requirements": [
+          {
+            "requirement_id": "req-LOG-002",
+            "why_not": "It requires that privileged actions be recorded with the acting operator and that the record destination be stated, both of which are addressed here; it makes no demand about who can modify the records once written, mentioning tamper-evidence only in a false-positive note about separately managed platforms."
+          },
+          {
+            "requirement_id": "req-NET-001",
+            "why_not": "It bounds which workloads can reach an internal component over the network, but the threat is modification by a principal legitimately positioned inside that boundary, which network placement does not address."
+          },
+          {
+            "requirement_id": "req-DATA-004",
+            "why_not": "It concerns the ability to delete customer data on request, treating deletion as a capability to be provided rather than an action to be prevented, and log records are not customer data."
+          },
+          {
+            "requirement_id": "req-DATA-003",
+            "why_not": "It addresses separation of stored artifacts between tenants; the separation at issue here is between an audit store and the operators it records, within a single environment."
+          }
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-005",
+          "evd-011",
+          "evd-012"
+        ]
+      }
+    ]
+  }
+}

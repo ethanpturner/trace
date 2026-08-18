@@ -1,335 +1,652 @@
 {
   "schema": "ThreatAnalysisProposal",
+  "usage": {
+    "model": "claude-opus-5",
+    "input_tokens": 2524,
+    "output_tokens": 22755,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 29249,
+    "estimated_cost": "0.76430125",
+    "duration_seconds": 275.38722158398014
+  },
   "response": {
     "threats": [
       {
-        "title": "Crafted image triggers a flaw in image processing",
-        "description": "An end user submits a crafted image that exploits a memory-safety flaw in the serving path's image processing, leading to remote code execution or denial of service on the web server.",
+        "title": "Substituted or altered model artifact written into the production model blob and served without verification",
+        "description": "The production Machine Learning Model blob (cmp-010) is written from outside production: the Jupyter environment writes the serialized model to the model storage blob (evd-010, evd-012), and the security notes state the production model blob is writable from the experimental deployment path and from the Bastion (evd-002). The Python web server loads that artifact and evaluates every uploaded image against it (evd-010, evd-012). An actor who obtains write access to the blob \u2014 through a data engineer's credentials on the password-authenticated public-to-experimental boundary (evd-007, evd-009), through the deployment service, or through administrative access via the Bastion \u2014 can replace or alter the serialized model. Nothing in the documentation describes signing, checksumming, or any other verification of the artifact between the write and the load (recorded as unknown in ctx-017), and the effective set of writers is itself unresolved (evd-002 restricts writes to the deployment path and the Bastion while evd-010 has the notebook environment writing to the model storage blob, ctx-015). If no verification stands between write and load, the web server serves whatever artifact is present, so a model with attacker-chosen behaviour \u2014 for example a backdoor that classifies chosen inputs as huskies \u2014 becomes the system's decision function for all end users.",
         "methodology": "stride-scenario-based",
         "category": [
           "tampering",
-          "denial_of_service"
+          "supply_chain",
+          "model_integrity"
         ],
         "threat_actor_ids": [
-          "act-001"
+          "act-002",
+          "act-003"
         ],
         "affected_component_ids": [
-          "cmp-002"
+          "cmp-010",
+          "cmp-002",
+          "cmp-005",
+          "cmp-006",
+          "cmp-003"
         ],
         "affected_asset_ids": [
-          "ast-003"
+          "ast-001",
+          "ast-008"
         ],
         "related_data_flow_ids": [
-          "df-001"
+          "df-006",
+          "df-007",
+          "df-009",
+          "df-014",
+          "df-017"
         ],
         "preconditions": [
-          "image parsing occurs on the serving path without sandboxing or input hardening the documents describe"
+          "The production model blob is writable from across the production/experimental boundary and from the Bastion (evd-002, evd-010).",
+          "The Python web server loads the serialized model directly from that blob at runtime (evd-010, evd-012).",
+          "Integrity verification of the artifact between writing and loading is not established in the documentation (ctx-017 unknown); the scenario requires that it is absent or bypassable.",
+          "The effective set of principals able to write the blob is unresolved between evd-002 and evd-010 (ctx-015 unknown)."
         ],
         "attack_path": [
-          "craft a malformed image",
-          "submit it through the public API"
+          "Actor obtains a principal with write access to the model storage blob: experimental notebook or deployment credentials across the password- or key-authenticated boundary (evd-007, evd-009), or administrative access through the Bastion (evd-012).",
+          "Actor writes or overwrites the serialized model artifact in cmp-010 (df-006, df-014).",
+          "The Python web server loads the artifact on start or reload (df-017).",
+          "Every subsequent classification returned through the API Gateway reflects the substituted model (df-015)."
         ],
-        "impact": "Service availability and production host integrity are compromised.",
-        "likelihood": null,
+        "impact": "The integrity of the trained model (ast-001) is destroyed and the classification behaviour of the public service (ast-008) is controlled by the actor: chosen inputs receive chosen labels, and any downstream reliance on husky/non-husky decisions is invalidated, with no documented artifact verification to reveal the substitution.",
+        "likelihood": "preliminary: medium \u2014 the write paths into the production blob are documented; whether an alteration would be detected depends on undocumented verification",
         "confidence": "medium",
         "evidence_ids": [
+          "evd-002",
           "evd-010",
+          "evd-011",
           "evd-012"
         ],
         "assumption_ids": [],
         "open_question_ids": []
       },
       {
-        "title": "Compromised third-party library reaches training or serving",
-        "description": "A poisoned third-party library or tool is pulled into the image-gathering or model pipeline and compromises training data, the trained model, or the hosts that run the pipeline.",
+        "title": "Loading a tampered serialized model executes attacker code inside the production web server",
+        "description": "The model blob holds trained models 'in serialized form' (evd-011) and the Simple Python Web Server loads that artifact to evaluate uploaded images (evd-010, evd-012). The documentation states neither the serialization format nor the loading mechanism. Common Python model serialization formats execute embedded code during deserialization, so an actor who can alter the artifact \u2014 using one of the documented write paths into cmp-010 (evd-002, evd-010) or by modifying the release while it is packaged and delivered through the Bastion (evd-010, evd-012), with transport protection for internal flows not described (evd-006 covers only the public API and the Cognitive Services path) \u2014 may achieve more than wrong classifications: loading the artifact runs their code in the production web server. From there the actor is inside production, where the Redis cache holding other users' uploaded images (evd-004, evd-011) and the onward network reachable from production hosts are available.",
         "methodology": "stride-scenario-based",
         "category": [
-          "tampering"
+          "tampering",
+          "insecure_deserialization",
+          "elevation_of_privilege",
+          "supply_chain"
+        ],
+        "threat_actor_ids": [
+          "act-002",
+          "act-003"
+        ],
+        "affected_component_ids": [
+          "cmp-002",
+          "cmp-010",
+          "cmp-006",
+          "cmp-013"
+        ],
+        "affected_asset_ids": [
+          "ast-001",
+          "ast-007",
+          "ast-008"
+        ],
+        "related_data_flow_ids": [
+          "df-006",
+          "df-007",
+          "df-009",
+          "df-017"
+        ],
+        "preconditions": [
+          "The model is stored and loaded in serialized form by a Python service (evd-010, evd-011).",
+          "The serialization format or loader permits code execution during deserialization \u2014 the documentation does not state which format or loader is used.",
+          "An actor can write or modify the artifact along one of the documented paths into cmp-010 (evd-002, evd-010, evd-012).",
+          "Artifact verification before loading is not established (ctx-017 unknown)."
+        ],
+        "attack_path": [
+          "Actor gains write access to the model artifact in cmp-010, or to the release package in transit through the deployment path (df-006, df-009).",
+          "Actor replaces the artifact with one crafted so that deserialization executes code.",
+          "The web server loads the artifact (df-017) and the embedded code runs in the production service process.",
+          "Actor uses that execution context to read the Redis cache (df-016) or to persist in production."
+        ],
+        "impact": "Code execution inside the production classification service, giving the actor the web server's access to the model artifact (ast-001), to user-uploaded images held in the cache (ast-007), and the ability to stop or corrupt the serving path (ast-008).",
+        "likelihood": "preliminary: low \u2014 plausible for common Python model formats, but the format and loader are undocumented",
+        "confidence": "low",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004",
+          "evd-006",
+          "evd-010",
+          "evd-011",
+          "evd-012"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Training-set poisoning through images collected from external sources without documented validation",
+        "description": "The Gather Images application collects husky and non-husky images from Azure Cognitive Services and from third-party internet tools (evd-010, evd-012) and writes them into the training and validation images blob (evd-010, evd-011, evd-012). The Jupyter environment then reads that blob and trains the convolutional neural network on its contents (evd-010, evd-012), and the resulting model is packaged and deployed into production (evd-012). The documentation describes access control on the training blob (evd-002) but no validation, review, or provenance check of the collected images themselves. An external source that is compromised, or that an actor can seed with chosen content so that the collection queries retrieve it, places adversarial or mislabelled images into the training set. Because the collection-to-training-to-deployment path is automated end to end in the documented architecture, the shifted model behaviour reaches every end user of the public API.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "tampering",
+          "data_poisoning",
+          "supply_chain"
+        ],
+        "threat_actor_ids": [
+          "act-004"
+        ],
+        "affected_component_ids": [
+          "cmp-014",
+          "cmp-015",
+          "cmp-004",
+          "cmp-007",
+          "cmp-005",
+          "cmp-006",
+          "cmp-010",
+          "cmp-002"
+        ],
+        "affected_asset_ids": [
+          "ast-002",
+          "ast-001",
+          "ast-008"
+        ],
+        "related_data_flow_ids": [
+          "df-001",
+          "df-002",
+          "df-004",
+          "df-005",
+          "df-006",
+          "df-009",
+          "df-017"
+        ],
+        "preconditions": [
+          "Training images originate from external services on the public internet, outside the organisation's control (evd-009, evd-010, evd-012).",
+          "Collected images are written into the training blob and consumed for training without any documented content or label validation (evd-010, evd-012).",
+          "The trained model reaches production through the documented deployment path without a documented behavioural acceptance check (evd-012)."
+        ],
+        "attack_path": [
+          "Actor publishes or injects adversarial or mislabelled images into a source the Gather Images application queries (cmp-014, cmp-015).",
+          "The Gather Images application retrieves the images using its API keys and writes them to cmp-007 (df-001, df-002, df-004).",
+          "The Jupyter environment trains the CNN on the poisoned set (df-005).",
+          "The resulting model is written to the model blob, packaged, and deployed into production (df-006, df-009).",
+          "The production web server serves the poisoned model to end users (df-017, df-015)."
+        ],
+        "impact": "The integrity of the training and validation images (ast-002) and, through them, of the deployed model (ast-001) is compromised: classification accuracy degrades or specific attacker-chosen inputs are misclassified by the public service (ast-008), with no documented step at which the poisoning would be detected.",
+        "likelihood": "preliminary: medium \u2014 the external collection path and the automated training-to-deployment path are both documented",
+        "confidence": "medium",
+        "evidence_ids": [
+          "evd-002",
+          "evd-009",
+          "evd-010",
+          "evd-011",
+          "evd-012"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Interception of the third-party image collection flow discloses API keys and substitutes collected images",
+        "description": "Transport security is documented for one collection path only: image collection from Azure Cognitive Services uses TLS with certificate validation (evd-006, evd-012). The overview shows images also pulled from third-party tools on the public internet, using API keys held in the API key store (evd-010, evd-011), and the documentation says nothing about the transport used on that path (ctx-028 unknown). If that flow is unencrypted, or if server certificates are not validated on it, an actor positioned on the network path between the experimental VPC and the third-party service can read the API key presented in the request and can alter or wholly substitute the image bytes returned, which the Gather Images application then writes into the training blob without any documented validation (evd-010, evd-012).",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "information_disclosure",
+          "tampering",
+          "spoofing"
         ],
         "threat_actor_ids": [
           "act-004"
         ],
         "affected_component_ids": [
           "cmp-004",
-          "cmp-005"
+          "cmp-015",
+          "cmp-008",
+          "cmp-007"
         ],
         "affected_asset_ids": [
-          "ast-001",
+          "ast-003",
           "ast-002"
         ],
         "related_data_flow_ids": [
-          "df-002"
+          "df-002",
+          "df-003",
+          "df-004"
         ],
         "preconditions": [
-          "third-party tools and libraries are consumed without a verification step the documents describe"
+          "The Gather Images application reaches third-party tools across the public internet (evd-009, evd-010).",
+          "Transport protection for that specific flow is not established in the documentation (evd-006 names only Azure Cognitive Services; ctx-028 unknown) \u2014 the scenario requires that TLS or certificate validation is absent or bypassable there.",
+          "Collected images are written into the training blob without documented content validation (evd-010, evd-012).",
+          "The request carries an API key from the API key store as its credential (evd-010, evd-011)."
         ],
         "attack_path": [
-          "poison a third-party tool or library the experimental environment pulls",
-          "let the gathering or training path consume it"
+          "Actor obtains a position on the network path between the experimental VPC and a third-party image tool, or impersonates the tool's endpoint.",
+          "Actor observes the request and captures the API key presented for authentication (df-002, df-003).",
+          "Actor returns substituted image content in the response.",
+          "The Gather Images application writes the substituted images into cmp-007 (df-004), where they are consumed for training."
         ],
-        "impact": "Training data integrity, model integrity, and host integrity are compromised.",
-        "likelihood": null,
-        "confidence": "medium",
+        "impact": "Disclosure of API keys for external image services (ast-003), permitting use of those services in the organisation's name, and loss of integrity of the training image set (ast-002) through content the actor chose.",
+        "likelihood": "preliminary: low \u2014 depends entirely on the undocumented transport of the third-party collection path",
+        "confidence": "low",
         "evidence_ids": [
+          "evd-006",
           "evd-009",
-          "evd-010"
+          "evd-010",
+          "evd-011",
+          "evd-012"
         ],
         "assumption_ids": [],
         "open_question_ids": []
       },
       {
-        "title": "Stored training images tampered with or deleted",
-        "description": "An attacker with write access to the training images blob alters or deletes stored images to skew training results or deny service to the training pipeline.",
-        "methodology": "stride-scenario-based",
-        "category": [
-          "tampering"
-        ],
-        "threat_actor_ids": [],
-        "affected_component_ids": [
-          "cmp-005"
-        ],
-        "affected_asset_ids": [
-          "ast-001"
-        ],
-        "related_data_flow_ids": [
-          "df-002"
-        ],
-        "preconditions": [
-          "blob access control fails or is misconfigured",
-          "image integrity is not validated before training"
-        ],
-        "attack_path": [
-          "obtain write access to the training images blob",
-          "alter or delete stored images"
-        ],
-        "impact": "Model accuracy and training availability are degraded.",
-        "likelihood": null,
-        "confidence": "medium",
-        "evidence_ids": [
-          "evd-002",
-          "evd-011"
-        ],
-        "assumption_ids": [],
-        "open_question_ids": []
-      },
-      {
-        "title": "Notebook modified to carry a backdoor",
-        "description": "An attacker who reaches the experimental environment modifies a notebook file so that training runs execute attacker code \u2014 a keylogger, a data stealer, or a model backdoor.",
-        "methodology": "stride-scenario-based",
-        "category": [
-          "tampering",
-          "elevation_of_privilege"
-        ],
-        "threat_actor_ids": [],
-        "affected_component_ids": [
-          "cmp-005"
-        ],
-        "affected_asset_ids": [
-          "ast-006",
-          "ast-002"
-        ],
-        "related_data_flow_ids": [],
-        "preconditions": [
-          "notebook content is not integrity-checked before execution",
-          "the password-authenticated experimental boundary is crossed"
-        ],
-        "attack_path": [
-          "cross the public-to-experimental boundary",
-          "modify a notebook",
-          "wait for a training run to execute it"
-        ],
-        "impact": "Model integrity, engineer credentials, and the experimental environment are compromised.",
-        "likelihood": null,
-        "confidence": "medium",
-        "evidence_ids": [
-          "evd-007",
-          "evd-010"
-        ],
-        "assumption_ids": [],
-        "open_question_ids": []
-      },
-      {
-        "title": "Persisted model files read or modified",
-        "description": "An attacker or insider reads the serialized model from the model blob to steal intellectual property, or modifies it to degrade prediction accuracy in production.",
+        "title": "API keys for external image services read from a store whose access control is not established",
+        "description": "API keys for the external image services are held in the API Key storage in the experimental environment and are used by the Gather Images application to call Azure Cognitive Services and the third-party tools (evd-010, evd-011). The storage access-control section names only the training images blob, the model storage, and the source and configuration storage (evd-002); how access to the API key store is governed is not stated (ctx-012 unknown), and no rotation behaviour is described. An actor with any foothold in the experimental environment \u2014 an engineer's password on the password-authenticated public-to-experimental boundary (evd-007, evd-009), or code execution in the Gather Images application or in a notebook that reads the key store (evd-010) \u2014 can read the keys and use them directly against the external services from anywhere. Because the keys are the credential the external services accept, the actor retains that access until the keys are changed.",
         "methodology": "stride-scenario-based",
         "category": [
           "information_disclosure",
-          "tampering"
+          "credential_theft",
+          "spoofing"
         ],
-        "threat_actor_ids": [],
+        "threat_actor_ids": [
+          "act-002"
+        ],
         "affected_component_ids": [
-          "cmp-002",
-          "cmp-006"
+          "cmp-008",
+          "cmp-004",
+          "cmp-005",
+          "cmp-014",
+          "cmp-015"
         ],
         "affected_asset_ids": [
-          "ast-002"
+          "ast-003"
         ],
         "related_data_flow_ids": [
-          "df-003"
+          "df-003",
+          "df-001",
+          "df-002"
         ],
         "preconditions": [
-          "access to the model blob is obtained despite the documented access control, or through a path it does not cover"
+          "API keys for external services are stored in a dedicated experimental store read by the Gather Images application (evd-010, evd-011).",
+          "Access control for that store is not established in the documentation (evd-002 covers the three blob accounts only; ctx-012 unknown).",
+          "The boundary into the experimental environment is documented as password-authenticated, with no second factor stated (evd-007, evd-009).",
+          "Key rotation or revocation behaviour is not described."
         ],
         "attack_path": [
-          "reach the model storage blob",
-          "read or replace the serialized model"
+          "Actor obtains access to the experimental environment, for example by guessing or reusing an engineer's password across the public-to-experimental boundary (evd-007, evd-009).",
+          "Actor reads the API keys from cmp-008, on the same path the Gather Images application uses (df-003).",
+          "Actor calls Azure Cognitive Services and the third-party tools directly with the stolen keys (df-001, df-002 endpoints), outside the organisation's environment."
         ],
-        "impact": "Model confidentiality and classification integrity are compromised.",
-        "likelihood": null,
-        "confidence": "medium",
+        "impact": "Disclosure and misuse of credentials that authorise calls to external image services on the organisation's behalf (ast-003): quota and cost consumed, activity attributed to the organisation, and continued external access that survives removal of the original foothold.",
+        "likelihood": "preliminary: low \u2014 rests on the undocumented access control of the key store and on obtaining an experimental foothold",
+        "confidence": "low",
         "evidence_ids": [
           "evd-002",
+          "evd-007",
+          "evd-009",
+          "evd-010",
           "evd-011"
         ],
         "assumption_ids": [],
         "open_question_ids": []
       },
       {
-        "title": "Systematic perturbation drives misclassification",
-        "description": "An attacker probes the public classification API with systematically perturbed images until inputs reliably produce wrong classifications.",
+        "title": "Injected code or configuration in the source storage is packaged and delivered into production",
+        "description": "The deployment service reads source code and configuration from the experimental Source Code and Configuration storage, packages them together with the trained model, and delivers the release into production through the Bastion (evd-010, evd-011, evd-012). Access control and per-environment grants are documented for that storage account (evd-002), but nothing in the documentation describes review, signing, provenance, or verification of what the deployment service packages, nor any check on the release once it arrives in production. An actor with write access to the source storage \u2014 an authenticated engineer in the experimental environment, or an attacker who obtained experimental credentials across the password-authenticated boundary (evd-007, evd-009) \u2014 can alter code or configuration that will subsequently run in production alongside the model, using the documented automated delivery path to cross the production/experimental boundary.",
         "methodology": "stride-scenario-based",
         "category": [
+          "tampering",
+          "supply_chain",
+          "elevation_of_privilege"
+        ],
+        "threat_actor_ids": [
+          "act-002"
+        ],
+        "affected_component_ids": [
+          "cmp-009",
+          "cmp-006",
+          "cmp-003",
+          "cmp-002",
+          "cmp-001"
+        ],
+        "affected_asset_ids": [
+          "ast-004",
+          "ast-001",
+          "ast-008"
+        ],
+        "related_data_flow_ids": [
+          "df-008",
+          "df-009"
+        ],
+        "preconditions": [
+          "Source and configuration held in the experimental environment are packaged into production releases by an automated deployment service (evd-010, evd-012).",
+          "Releases cross the production/experimental boundary through the Bastion using public-key authentication held by the deployment service (evd-007, evd-009, evd-012).",
+          "Review, signing, or verification of the packaged release is not described in the documentation.",
+          "Write access to the source storage is available to experimental principals (evd-002)."
+        ],
+        "attack_path": [
+          "Actor obtains write access to cmp-009, as an engineer working in experimental or with stolen experimental credentials (evd-007, evd-009).",
+          "Actor modifies source or configuration that the deployment service will package (df-008).",
+          "The deployment service builds the release with the modified content and delivers it through the Bastion into production (df-009).",
+          "The altered code or configuration runs in the production serving path (cmp-001, cmp-002)."
+        ],
+        "impact": "Loss of integrity of the source and configuration packaged into production (ast-004), and through it of the production serving path: the actor can change how uploaded images are handled, how the model is loaded (ast-001), or whether the service functions at all (ast-008), from a foothold in the lower-trust experimental environment.",
+        "likelihood": "preliminary: medium \u2014 the automated packaging and delivery path across the boundary is documented; the presence of release verification is not",
+        "confidence": "medium",
+        "evidence_ids": [
+          "evd-002",
+          "evd-007",
+          "evd-009",
+          "evd-010",
+          "evd-011",
+          "evd-012"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Administrative access to production obtained via the Bastion's authorized-keys store or a stolen engineer key",
+        "description": "The Bastion is documented as the only administrative path into production; it authenticates administrators against the Authorized Keys storage, and it provides onward access to the API Gateway, the Python web server, and the production model blob (evd-005, evd-010, evd-012). Two conditions make the authentication decision worth attacking. First, the storage access-control section covers the training, model, and source blobs but not the Authorized Keys storage (evd-002, evd-011), so how that store is protected is not established (ctx-012 unknown). Second, the authentication summary states public-key authentication without stating whether any further factor is required (evd-007), and the networks from which the Bastion is reachable are not stated (ctx-025 unknown). An actor who steals a platform engineer's private key, or who can add a public key to the Authorized Keys storage, becomes an authenticated administrator and inherits the Bastion's onward access \u2014 including write access to the model blob that the web server loads (evd-002, evd-012).",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "spoofing",
+          "elevation_of_privilege",
+          "credential_theft"
+        ],
+        "threat_actor_ids": [
+          "act-003"
+        ],
+        "affected_component_ids": [
+          "cmp-011",
+          "cmp-003",
+          "cmp-001",
+          "cmp-002",
+          "cmp-010"
+        ],
+        "affected_asset_ids": [
+          "ast-005",
+          "ast-001",
+          "ast-007",
+          "ast-008"
+        ],
+        "related_data_flow_ids": [
+          "df-010",
+          "df-012",
+          "df-013",
+          "df-014"
+        ],
+        "preconditions": [
+          "A single store of SSH public keys is the authentication authority for the only documented administrative path into production (evd-005, evd-010, evd-012).",
+          "Access control for that store is not established in the documentation (evd-002, evd-011; ctx-012 unknown).",
+          "Only public-key authentication is documented for this path, with no second factor stated (evd-007; ctx-026 unknown).",
+          "The Bastion's network reachability is not stated (ctx-025 unknown), so the exposure of the SSH endpoint is undetermined.",
+          "Bastion access carries onward reach to the API Gateway, the web server, and the model blob (evd-012)."
+        ],
+        "attack_path": [
+          "Actor obtains an engineer's private key from an endpoint or backup, or obtains write access to the Authorized Keys storage and appends a key of their own (df-010).",
+          "Actor connects to the Bastion over SSH and is authenticated against cmp-011 (evd-012).",
+          "Actor uses onward access to reach the API Gateway and the Python web server (df-012, df-013) and the production model blob (df-014).",
+          "Actor writes a chosen model artifact or alters the running production services."
+        ],
+        "impact": "Full administrative control of the production environment: the SSH authorized keys asset (ast-005) is subverted, the model artifact (ast-001) can be replaced, user-uploaded images in the cache (ast-007) become reachable, and the availability of the classification service (ast-008) is at the actor's discretion.",
+        "likelihood": "preliminary: low \u2014 the path is documented, but the exposure of the Bastion, the protection of the key store, and any second factor are all undocumented",
+        "confidence": "low",
+        "evidence_ids": [
+          "evd-002",
+          "evd-005",
+          "evd-007",
+          "evd-010",
+          "evd-011",
+          "evd-012"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Bastion access logs altered or deleted by an actor holding the production access those logs record",
+        "description": "All SSH access attempts through the Bastion, successful or not, are logged to the Bastion Logs storage, and the documentation presents this as the record of administrative access to production (evd-005, evd-011, evd-012). That log store sits in the production environment (evd-011), the same environment the Bastion grants onward access to (evd-012), and the storage access-control section does not cover it (evd-002; ctx-012 unknown). No write-once behaviour, retention period, or independent copy is described. An actor operating with administrative access through the Bastion \u2014 a legitimate engineer acting outside policy, or an attacker using stolen or added keys \u2014 could delete or rewrite the entries covering their own session, including entries recording a write to the production model blob.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "repudiation",
           "tampering"
+        ],
+        "threat_actor_ids": [
+          "act-003"
+        ],
+        "affected_component_ids": [
+          "cmp-012",
+          "cmp-003",
+          "cmp-010"
+        ],
+        "affected_asset_ids": [
+          "ast-006",
+          "ast-001"
+        ],
+        "related_data_flow_ids": [
+          "df-011",
+          "df-014"
+        ],
+        "preconditions": [
+          "A single production log store holds the documented record of all administrative SSH access (evd-005, evd-011).",
+          "Access control for that store is not established in the documentation (evd-002; ctx-012 unknown), and no immutability, retention, or off-environment copy is described.",
+          "The principals recorded by the logs hold administrative access within the same environment as the log store (evd-012)."
+        ],
+        "attack_path": [
+          "Actor authenticates through the Bastion, legitimately or with obtained keys (evd-012).",
+          "Actor performs an action in production, for example writing to the model blob (df-014).",
+          "Actor removes or modifies the corresponding entries in cmp-012, which the Bastion writes to over the documented path (df-011).",
+          "Subsequent review of administrative access finds no record of the session or the action."
+        ],
+        "impact": "Loss of integrity of the Bastion SSH access and activity logs (ast-006), and with it the ability to attribute or reconstruct administrative actions in production \u2014 including tampering with the model artifact (ast-001), which would otherwise be visible only through this record.",
+        "likelihood": "preliminary: low \u2014 rests on the undocumented protection and retention of the log store",
+        "confidence": "low",
+        "evidence_ids": [
+          "evd-002",
+          "evd-005",
+          "evd-011",
+          "evd-012"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Crafted image file exploits the image decoding and preprocessing path in the Python web server",
+        "description": "End users submit images to the API Gateway over HTTPS; the gateway performs request validation and forwards the request to the Python web server, which holds the image in the Redis cache and evaluates it against the loaded model (evd-006, evd-010, evd-012). The documentation states that the gateway enforces request validation but describes no check on the content, type, or size of the uploaded image (ctx-005 unknown). A file that is a well-formed HTTP request but a malformed image therefore reaches the decoding and preprocessing code inside the web server, which is attacker-controlled input processed by library code in a production service. If that path contains a parser or memory-safety defect, the actor gains code execution in the production web server or crashes the process; the web server is the component that loads the model artifact and holds other users' uploaded images in the cache.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "input_validation",
+          "tampering",
+          "elevation_of_privilege",
+          "denial_of_service"
         ],
         "threat_actor_ids": [
           "act-001"
         ],
         "affected_component_ids": [
           "cmp-001",
-          "cmp-002"
+          "cmp-002",
+          "cmp-013"
         ],
         "affected_asset_ids": [
-          "ast-002",
-          "ast-008"
+          "ast-007",
+          "ast-008",
+          "ast-001"
         ],
         "related_data_flow_ids": [
-          "df-001"
+          "df-015",
+          "df-016",
+          "df-017"
         ],
         "preconditions": [
-          "the public API permits enough classification attempts for iterative probing"
+          "The public API accepts arbitrary user-supplied image uploads and forwards them to an internal service for decoding and inference (evd-010, evd-012).",
+          "The scope of the gateway's documented request validation is not established, and no image content, type, or size check is described (evd-010; ctx-005 unknown).",
+          "The web server that decodes the image also loads the model artifact and writes to the cache (evd-010, evd-012), so execution there reaches both."
         ],
         "attack_path": [
-          "submit perturbed variants of an image",
-          "observe classifications and refine until misclassification is reliable"
+          "Actor submits a file crafted to be valid as an HTTP upload but malformed as an image to the API Gateway (df-015).",
+          "The gateway's request validation admits the request and forwards it to the web server.",
+          "The web server stores the bytes in the Redis cache and passes them to image decoding and preprocessing (df-016).",
+          "The malformed input triggers a defect in that path, producing a crash or execution of actor-supplied instructions inside the production service."
         ],
-        "impact": "Classification integrity and trust in system output are degraded.",
-        "likelihood": null,
+        "impact": "At minimum, repeated crashes of the classification service, denying availability to end users (ast-008); at worst, code execution inside the production web server with access to other users' uploaded images (ast-007) and to the loaded model artifact (ast-001).",
+        "likelihood": "preliminary: medium \u2014 the untrusted upload path into image processing is documented; exploitability depends on the specific libraries, which are not documented",
         "confidence": "medium",
         "evidence_ids": [
+          "evd-004",
+          "evd-006",
           "evd-010",
+          "evd-011",
           "evd-012"
         ],
         "assumption_ids": [],
         "open_question_ids": []
       },
       {
-        "title": "Uploaded images exposed from the cache",
-        "description": "An attacker or malicious insider reads user-submitted images from the in-memory Redis cache before they expire.",
+        "title": "Upload volume or size exhausts the in-memory cache and the inference path",
+        "description": "Every uploaded image is held in the Azure Cache for Redis, an in-memory production store, while awaiting classification (evd-004, evd-011), and each request also runs a CNN inference in the Python web server (evd-010, evd-012). The documentation does not state an upload size limit, a request rate limit, or any retention or eviction behaviour for the cache (ctx-021 unknown), and whether submission is authenticated is inferred rather than documented (evd-007, evd-009; ctx-032). An actor submitting very large images, or a high volume of concurrent requests, consumes cache memory and web server CPU. Because the store is in memory rather than on disk, the memory ceiling is the constraint, and if entries persist beyond a request or are evicted under pressure, other users' in-flight classifications fail.",
         "methodology": "stride-scenario-based",
         "category": [
-          "information_disclosure"
+          "denial_of_service",
+          "resource_exhaustion"
         ],
-        "threat_actor_ids": [],
+        "threat_actor_ids": [
+          "act-001"
+        ],
         "affected_component_ids": [
-          "cmp-002"
+          "cmp-013",
+          "cmp-002",
+          "cmp-001"
         ],
         "affected_asset_ids": [
-          "ast-003"
+          "ast-008",
+          "ast-007"
         ],
         "related_data_flow_ids": [
-          "df-001"
+          "df-015",
+          "df-016"
         ],
         "preconditions": [
-          "access to the Redis cache or to process memory on the serving host"
+          "Uploaded images are held in an in-memory production store during classification (evd-004, evd-011).",
+          "Each classification request performs CNN inference in a single documented web server component (evd-010, evd-012).",
+          "Upload size limits, request rate limits, and cache retention or eviction behaviour are not described (evd-004; ctx-021 unknown).",
+          "Whether image submission itself requires authentication is inferred, not documented (evd-007, evd-009; ctx-032 low confidence)."
         ],
         "attack_path": [
-          "reach the cache or serving host memory",
-          "read cached user images"
+          "Actor submits either very large image payloads or a sustained high volume of classification requests to the public API (df-015).",
+          "The web server places each image into the Redis cache and performs inference (df-016).",
+          "Cache memory and web server capacity are consumed faster than requests complete.",
+          "Legitimate classification requests slow, fail, or are evicted, and the service becomes unavailable."
         ],
-        "impact": "User data confidentiality is compromised.",
-        "likelihood": null,
+        "impact": "Loss of availability of the public classification service (ast-008) for legitimate users, and disruption of in-flight user-uploaded images (ast-007) if cache pressure causes eviction or request failure.",
+        "likelihood": "preliminary: medium \u2014 the in-memory serving path is documented; the effectiveness depends on undocumented size and rate limits",
         "confidence": "medium",
         "evidence_ids": [
           "evd-004",
-          "evd-011"
+          "evd-007",
+          "evd-009",
+          "evd-010",
+          "evd-011",
+          "evd-012"
         ],
         "assumption_ids": [],
         "open_question_ids": []
       },
       {
-        "title": "SSH key theft from a developer machine",
-        "description": "An attacker compromises an engineer's machine, steals SSH private keys, and uses them to reach the Bastion as an authorized user.",
+        "title": "User-uploaded images read from the production cache by an actor with production access",
+        "description": "Uploaded images are held in memory in the Redis cache and not written to disk, a choice the documentation attributes explicitly to making user-submitted images difficult to access after the request completes (evd-004). Two conditions limit how far that choice carries. The storage access-control section covers the blob storage accounts only, so authentication and authorization for the cache itself are not established (evd-002; ctx-022 unknown); and transport security is documented for the public API and the Cognitive Services collection path, not for the web-server-to-cache flow (evd-006; ctx-029 unknown). Retention and eviction behaviour is likewise unstated (ctx-021 unknown), so how long an image remains readable is undetermined. An actor with a position inside production \u2014 through the Bastion's onward access to the web server (evd-012), a compromised web server process, or a cache endpoint reachable more widely than intended \u2014 could read the images other users have submitted.",
         "methodology": "stride-scenario-based",
         "category": [
-          "spoofing",
-          "elevation_of_privilege"
+          "information_disclosure"
         ],
         "threat_actor_ids": [
           "act-003"
         ],
         "affected_component_ids": [
+          "cmp-013",
+          "cmp-002",
           "cmp-003"
         ],
         "affected_asset_ids": [
-          "ast-004"
+          "ast-007"
         ],
         "related_data_flow_ids": [
-          "df-004"
+          "df-016",
+          "df-013"
         ],
         "preconditions": [
-          "a developer machine holding production SSH keys is compromised"
+          "User-uploaded images are held in a production cache component during classification (evd-004, evd-011).",
+          "Authentication and access control for the cache are not established in the documentation (evd-002; ctx-022 unknown).",
+          "Transport protection for the web-server-to-cache flow is not established (evd-006; ctx-029 unknown).",
+          "Retention or eviction of cached images is not stated, so residence time is undetermined (ctx-021 unknown).",
+          "The Bastion provides administrative onward access to the production web server (evd-012).",
+          "The sensitivity of user-submitted images is not classified in the documentation (ctx-036 unknown), so the consequence of disclosure cannot be bounded from the material."
         ],
         "attack_path": [
-          "compromise an engineer's machine",
-          "steal the SSH private key",
-          "authenticate to the Bastion as that engineer"
+          "Actor obtains a position inside production: administrative access via the Bastion (df-013), compromise of the web server process, or network reach to the cache endpoint.",
+          "Actor connects to the cache or observes the web-server-to-cache traffic (df-016).",
+          "Actor reads images submitted by other users that are currently held, or retained beyond their request."
         ],
-        "impact": "Production administrative access, model integrity, and storage integrity are exposed.",
-        "likelihood": null,
-        "confidence": "medium",
+        "impact": "Disclosure of images submitted by end users (ast-007), defeating the stated intent that they be difficult to access after a request completes; the extent depends on retention behaviour and on the sensitivity of what users upload, neither of which the documentation establishes.",
+        "likelihood": "preliminary: low \u2014 rests on undocumented cache authentication, internal transport, and retention",
+        "confidence": "low",
         "evidence_ids": [
-          "evd-010",
+          "evd-002",
+          "evd-004",
+          "evd-006",
+          "evd-011",
           "evd-012"
         ],
         "assumption_ids": [],
         "open_question_ids": []
       },
       {
-        "title": "Bastion compromised through its exposed SSH surface",
-        "description": "An attacker exploits a vulnerability in the Bastion's reachable SSH service to escalate privileges or impersonate authorized users.",
+        "title": "Repeated public API queries used to replicate model behaviour or to craft inputs that evade it",
+        "description": "The system's purpose is to return a husky/non-husky classification for any image submitted to a public API (evd-008), served by the API Gateway and the Python web server against the model loaded from the model blob (evd-010, evd-012). The documentation describes HTTPS-only transport and gateway request validation (evd-006, evd-010) but no query rate limiting, per-caller quota, or monitoring of classification traffic, and whether submission itself requires SSO is inferred rather than documented (evd-007, evd-009; ctx-032 low confidence). An actor with access to the endpoint can therefore use it as an oracle: issuing large numbers of systematically varied images and recording the returned labels to train a substitute model that approximates the deployed CNN, and to search for inputs the deployed model misclassifies. The second use is the more direct: once evading inputs are found, the classification the service exists to provide can be steered at will for anything relying on it.",
         "methodology": "stride-scenario-based",
         "category": [
-          "elevation_of_privilege"
+          "information_disclosure",
+          "model_extraction",
+          "adversarial_evasion"
         ],
-        "threat_actor_ids": [],
+        "threat_actor_ids": [
+          "act-001"
+        ],
         "affected_component_ids": [
-          "cmp-003"
+          "cmp-001",
+          "cmp-002",
+          "cmp-010"
         ],
         "affected_asset_ids": [
-          "ast-004",
-          "ast-005"
+          "ast-001",
+          "ast-008"
         ],
         "related_data_flow_ids": [
-          "df-004"
+          "df-015",
+          "df-017"
         ],
         "preconditions": [
-          "the Bastion SSH surface is reachable by the attacker and carries an exploitable weakness"
+          "A trained model's decisions are exposed through a public API that returns a classification for arbitrary submitted images (evd-008, evd-010, evd-012).",
+          "Query rate limits, per-caller quotas, and monitoring of classification traffic are not described in the documentation.",
+          "Whether the classification endpoint authenticates the submitting user is inferred from a boundary-level statement rather than documented for the endpoint (evd-007, evd-009; ctx-032)."
         ],
         "attack_path": [
-          "reach the Bastion's SSH service",
-          "exploit a service vulnerability",
-          "escalate or impersonate an authorized user"
+          "Actor obtains access to the public classification endpoint (df-015).",
+          "Actor submits a large, systematically varied set of images and records the returned labels.",
+          "Actor trains a substitute model on the collected input/label pairs, or uses the label responses to search for inputs the deployed model misclassifies.",
+          "Actor applies the substitute model offline, or submits the discovered evading inputs to obtain a chosen classification from the production service (df-017)."
         ],
-        "impact": "Production administrative access and audit log integrity are compromised.",
-        "likelihood": null,
+        "impact": "Disclosure of the behaviour embodied in the trained model (ast-001) \u2014 the outcome of the collection and training investment \u2014 and erosion of the trustworthiness of the classifications the public service returns (ast-008), since inputs can be constructed to receive an attacker-chosen label.",
+        "likelihood": "preliminary: medium \u2014 inherent to a publicly queryable classifier; the practical cost depends on undocumented rate limiting",
         "confidence": "medium",
         "evidence_ids": [
-          "evd-005",
-          "evd-010"
+          "evd-006",
+          "evd-007",
+          "evd-008",
+          "evd-009",
+          "evd-010",
+          "evd-012"
         ],
         "assumption_ids": [],
         "open_question_ids": []
       }
-    ]
+    ],
+    "catalog_gap_candidates": []
   }
 }

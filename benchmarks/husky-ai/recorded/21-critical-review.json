@@ -1,0 +1,60 @@
+{
+  "schema": "CriticalReviewProposal",
+  "usage": {
+    "model": "claude-opus-5",
+    "input_tokens": 2524,
+    "output_tokens": 12339,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 24006,
+    "estimated_cost": "0.4711325",
+    "duration_seconds": 157.47619837499224
+  },
+  "response": {
+    "critiques": [
+      {
+        "subject_type": "control",
+        "subject_id": "ctl-010",
+        "critique_type": "unsupported_claim",
+        "description": "ctl-010 asserts protection over cmp-008 (API Key storage) and ast-003 in its structured scope (protected_component_ids, protected_asset_ids), but its only direct evidence, evd-002, enumerates three accounts \u2014 the training images, the model storage, and the source and configuration storage \u2014 and never names the API Key storage. evd-009 states RBAC and ACLs 'at each boundary', which is a statement about environment boundaries rather than about access policy on a storage account, and evd-011 does no more than list the store's environment and contents. Two mappings in this group then credit ctl-010 for the key store: map-079 (req-SECRET-001, partially_satisfied) and map-082 (req-NET-001).",
+        "rationale": "The control's own limitations field and eas-047 both state that evd-002 does not name cmp-008 and that the control therefore does not extend to it, yet the structured protected scope claims it does. A caveat in prose does not undo an over-broad structured field, and downstream consolidation reads the structured fields. The coverage claim should be narrowed to the accounts evd-002 actually names, with the API Key storage recorded as coverage-not-established rather than protected \u2014 which is a different statement from 'access control on the key store is absent', a conclusion the evidence equally does not support.",
+        "evidence_ids": [
+          "evd-002",
+          "evd-009",
+          "evd-011"
+        ],
+        "recommended_action": "revise",
+        "confidence": "medium"
+      },
+      {
+        "subject_type": "documentation_gap",
+        "subject_id": "gap-041",
+        "critique_type": "duplicate",
+        "description": "gap-041 requests the factor policy for identities holding administrative SSH access and the party enforcing it, citing evd-007 and evd-012. gap-010, also in this group, already requests 'the factor policy applied to the identity presenting the SSH key at the Bastion, and which party enforces it', together with the identity provider behind the SSO and password boundaries, citing evd-005, evd-007, evd-009 and evd-010. Both gaps rest on the same authentication summary passage (evd-007), both name ctl-004 and act-003 among their related objects, and the only request unique to gap-041 is the procedure by which keys are added to and removed from the Authorized Keys storage (evd-011, evd-012).",
+        "rationale": "One unknown documented twice will be answered by one document and will otherwise yield two findings from a single missing fact, at two different severities (medium and low) for substantially the same question. Merging gap-041 into gap-010 keeps the request whole provided the Authorized Keys add/remove procedure \u2014 the one item gap-010 does not ask for \u2014 is carried across.",
+        "evidence_ids": [
+          "evd-005",
+          "evd-007",
+          "evd-010",
+          "evd-011",
+          "evd-012"
+        ],
+        "recommended_action": "merge",
+        "confidence": "medium"
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-079",
+        "critique_type": "missing_evidence",
+        "description": "map-079 concludes partially_satisfied for req-SECRET-001 and rightly suppresses the negative reading of evd-002's silence, but the single fact that would resolve the mapping either way \u2014 the access policy governing cmp-008 and whether the keys it holds are rotated \u2014 is requested nowhere in this group. evd-011 lists only the store's environment and contents; evd-010 names the Gather Images application as its reader and says nothing about how the keys are obtained or protected; evd-002 enumerates three other accounts. eas-045, eas-047 and eas-075 each name that same missing evidence and each recommend 'continue', while the two documentation gaps attached here (gap-010, gap-041) concern only identity provider and factor policy at authentication boundaries.",
+        "rationale": "Declining a conclusion for want of evidence and requesting that evidence are complementary steps, not alternatives. As the chain stands, the threat's central unknown is acknowledged in three assessment rationales but is not surfaced as anything a reviewer can send back to the platform team, so map-079's status cannot move at review in either direction. Investigating \u2014 by raising a gap or question naming cmp-008's access configuration, whether it is a managed secret service, and its rotation or revocation behaviour \u2014 is what would settle it, and would also bear on map-082 and map-089.",
+        "evidence_ids": [
+          "evd-002",
+          "evd-010",
+          "evd-011"
+        ],
+        "recommended_action": "investigate",
+        "confidence": "medium"
+      }
+    ]
+  }
+}

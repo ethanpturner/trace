@@ -1,0 +1,73 @@
+{
+  "schema": "CriticalReviewProposal",
+  "usage": {
+    "model": "claude-opus-5",
+    "input_tokens": 2306,
+    "output_tokens": 14108,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 20581,
+    "estimated_cost": "0.49286125",
+    "duration_seconds": 175.87082808301784
+  },
+  "response": {
+    "critiques": [
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-008",
+        "critique_type": "missing_precondition",
+        "description": "The attack path's third step ('Actor removes or modifies the corresponding entries in cmp-012, which the Bastion writes to over the documented path') requires that the acting principal hold modify or delete permission on the Bastion Logs storage, and that capability appears in neither the preconditions nor the cited passages. evd-012 enumerates the Bastion's onward reach as the API Gateway, the web server, and the model blob; the log store is not in that list. What evd-012 and evd-010 establish is that the Bastion itself writes session and access records to a dedicated log store (evd-011) as part of authentication. The listed preconditions give co-location of principals and store (evd-011, evd-012) and undetermined access control on the store (evd-002 does not cover it), neither of which yields operator-level modify or delete.",
+        "rationale": "Appending session records with the Bastion's own write credential is a different capability from deleting or rewriting them, and the documentation is silent on which the store permits \u2014 gap-039 already requests exactly that (access policy and role assignments, immutability, retention). Presenting the deletion step as following 'over the documented path' converts that silence into a documented mechanism. The threat's low confidence does not substitute for naming the assumed capability, because downstream consolidation reads the attack path as the mechanism. Revising the preconditions to state the assumption explicitly (the principal recorded by the log store is assumed to hold write/delete on it) leaves the threat intact and makes the dependency on gap-039 legible.",
+        "evidence_ids": [
+          "evd-002",
+          "evd-005",
+          "evd-010",
+          "evd-011",
+          "evd-012"
+        ],
+        "recommended_action": "revise",
+        "confidence": "medium"
+      },
+      {
+        "subject_type": "documentation_gap",
+        "subject_id": "gap-040",
+        "critique_type": "duplicate",
+        "description": "gap-040 and gap-012 put the same question to the same passages: whether an individual write or overwrite of the serialized model in the production model blob is recorded and attributed to the acting operator identity. Both cite evd-005, evd-011 and evd-012, both are severity medium, both name ctl-002 among related objects, and their requested-evidence lists overlap directly \u2014 gap-012 asks 'whether storage-level diagnostic or audit logging is enabled on the production model blob' and 'whether the acting identity is carried on each recorded write', which are gap-040's items 2 and 3.",
+        "rationale": "The cited passages support one unknown, not two: evd-005 and evd-012 record session-level logging, evd-011 records the store's contents as 'SSH access and activity logs', and neither states that per-object operations on the model blob are captured with an identity. Two gaps over that one silence generate two evidence requests to the same owner and two candidate findings. The residual differences are narrow and worth carrying into a merged gap \u2014 gap-040 additionally asks for the Bastion record format, gap-012 additionally asks whether the record destination is managed separately from production \u2014 but they do not make these separate questions.",
+        "evidence_ids": [
+          "evd-005",
+          "evd-011",
+          "evd-012"
+        ],
+        "recommended_action": "merge",
+        "confidence": "medium"
+      },
+      {
+        "subject_type": "documentation_gap",
+        "subject_id": "gap-041",
+        "critique_type": "duplicate",
+        "description": "gap-041 asks which party enforces a factor policy for the identities holding Bastion SSH access and under what policy. gap-010's requested evidence already contains that item verbatim in substance \u2014 'The factor policy applied to the identity presenting the SSH key at the Bastion, and which party enforces it' \u2014 over the same passages (evd-007's authentication summary together with the Bastion path in evd-005/evd-012) and against the same controls (ctl-001, ctl-004). The only request in gap-041 not already in gap-010 is the procedure for adding and removing keys from the Authorized Keys storage.",
+        "rationale": "Both gaps rest on the same silence: evd-007 names SSO, password and public-key authentication with RBAC and ACLs at the boundaries and states no factor policy, and evd-012 states only that the Bastion authenticates against the Authorized Keys storage. The two gaps also carry different severities (gap-010 medium, gap-041 low) for the same unanswered question, which will read as inconsistent to whoever prioritises the evidence requests. Merging, with the key add/remove procedure carried across, resolves both. This is raised with medium rather than high confidence because gap-041's narrower scope to the administrative path could be an intentional split.",
+        "evidence_ids": [
+          "evd-005",
+          "evd-007",
+          "evd-012"
+        ],
+        "recommended_action": "merge",
+        "confidence": "medium"
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-151",
+        "critique_type": "unsupported_claim",
+        "description": "map-151 maps req-NET-001 over the Bastion Logs storage (cmp-012) and lists ctl-003 as the control bearing on it. ctl-003 rests on evd-002, which enumerates the blob accounts it covers \u2014 the training images, the model storage, and the source and configuration storage \u2014 and does not include the log store recorded at evd-011; ctl-003's description and protected_component_ids are confined to the production model blob (cmp-010), and eas-040 classifies it contradicted with a recommendation to downgrade it to a question.",
+        "rationale": "The mapping's own suppressed_conclusion states that evd-002 'enumerates the training images, model storage, and source and configuration storage without naming the log store', so the control_ids list asserts coverage the mapping has itself read the evidence as not providing. Downstream steps read control_ids as the controls that bear on the requirement for this component, and a contradicted control scoped to a different store suggests that something is established about access restriction on cmp-012 when no cited passage says so. The unverified satisfaction status is the correct outcome; the citation is what needs correcting, either by dropping ctl-003 or by recording explicitly that no documented control is established for cmp-012. Confidence is low because evd-002's opening clause ('Access control and authorization are configured on the Azure Blob storage accounts') could be read as a general statement, which would make the citation contextual rather than wrong.",
+        "evidence_ids": [
+          "evd-002",
+          "evd-011"
+        ],
+        "recommended_action": "revise",
+        "confidence": "low"
+      }
+    ]
+  }
+}

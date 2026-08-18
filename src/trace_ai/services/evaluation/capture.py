@@ -488,19 +488,26 @@ def stage_reason(
     with AssessmentStore.at_root(data_root) as store:
         service = AssessmentService(store, artifact_root=data_root)
         handle = service.handle(assessment_id)
-        document = read_review_file(decisions.read_text(encoding="utf-8"))
-        apply_review_file(handle, document, reviewer_id=REVIEWER)
+        # A resume (`--from-recorded`) arrives at a data root where a prior attempt may already
+        # have applied these decisions and approved the context; re-applying refuses on the
+        # first already-answered question ("qst-001 is answered, not open") and re-approving
+        # refuses on the lifecycle. The decisions are applied exactly once: an approved current
+        # context means checkpoint 1 is behind us and the stage goes straight to the resume.
         context = current_system_context(handle)
-        validation = validate_context(
-            context,
-            context_objects(handle),
-            available_evidence={ref.id for ref in handle.objects.list(EvidenceReference)},
-            previous=previous_approved_context(handle, context),
-        )
-        package = build_context_review_package(
-            handle, index=EvidenceIndex(handle), validation=validation
-        )
-        approve_context(handle, package, reviewer_id=REVIEWER)
+        if context is None or context.approved_at is None:
+            document = read_review_file(decisions.read_text(encoding="utf-8"))
+            apply_review_file(handle, document, reviewer_id=REVIEWER)
+            context = current_system_context(handle)
+            validation = validate_context(
+                context,
+                context_objects(handle),
+                available_evidence={ref.id for ref in handle.objects.list(EvidenceReference)},
+                previous=previous_approved_context(handle, context),
+            )
+            package = build_context_review_package(
+                handle, index=EvidenceIndex(handle), validation=validation
+            )
+            approve_context(handle, package, reviewer_id=REVIEWER)
 
         outcome = resume_assessment(
             service,

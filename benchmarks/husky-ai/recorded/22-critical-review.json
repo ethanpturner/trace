@@ -1,0 +1,76 @@
+{
+  "schema": "CriticalReviewProposal",
+  "usage": {
+    "model": "claude-opus-5",
+    "input_tokens": 2348,
+    "output_tokens": 19203,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 27754,
+    "estimated_cost": "0.6652775",
+    "duration_seconds": 237.29629912495147
+  },
+  "response": {
+    "critiques": [
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-006",
+        "critique_type": "unsupported_claim",
+        "description": "The threat's fourth precondition (\"Write access to the source storage is available to experimental principals (evd-002)\") and the first step of its attack path present the entry condition as documented. evd-002 says only that access control and authorization are configured on the Azure Blob accounts including the source and configuration storage, and that access is granted per environment; it names no principals and does not distinguish read from write. ctl-012, derived from the same passage, records exactly that limitation (\"grants access per environment; it does not distinguish read from write, nor restrict which experimental principals may modify content that will be packaged into production\"). evd-007 and evd-009 establish only that the public-to-experimental boundary is password-authenticated; neither says that crossing it confers write access to that storage account.",
+        "rationale": "The whole chain from thr-006 rests on this first step, and the citation attached to it does not carry it. The underlying inference is plausible \\and probably correct \\u2014 evd-010 and evd-012 show that engineers work in experimental and that the deployment service packages source and configuration from that store, so some experimental principal must be able to write it \\u2014 but that is an inference, and evd-002 is if anything evidence that access to the store is constrained rather than open. gap-031 separately records that the store's network reachability is unstated, which is the second half of the same unestablished entry condition. Restating the precondition as inferred or assumed, with the read/write limitation ctl-012 already names, leaves the threat standing while preventing a downstream finding from resting on a passage that does not say it.",
+        "evidence_ids": [
+          "evd-002",
+          "evd-007",
+          "evd-009",
+          "evd-010",
+          "evd-012"
+        ],
+        "recommended_action": "revise",
+        "confidence": "medium"
+      },
+      {
+        "subject_type": "documentation_gap",
+        "subject_id": "gap-040",
+        "critique_type": "duplicate",
+        "description": "gap-040 (\"Attribution of administrative actions on the production model blob is not established\") and gap-012 (\"Whether writes to the model blob are recorded with the acting identity is not established\") ask the same question over the same three passages (evd-005, evd-011, evd-012), at the same medium severity, against the same control (ctl-002) and the same asset (ast-001). Both describe Bastion SSH access and session logging as documented and note that the recording of an individual write or overwrite of the serialized model with the acting operator is not stated. Their requested evidence coincides: gap-012 asks whether storage-level diagnostic or audit logging is enabled on the production model blob and whether the acting identity is carried on each recorded write; gap-040 asks for any diagnostic or access logging configured on the Machine Learning Model blob storage account and which operator identity is carried on each recorded action. gap-032 puts the same record-format question to the deployment leg through the same Bastion.",
+        "rationale": "Two gaps requesting substantially the same evidence from the same document owner will produce two near-identical questions and, if they survive, two overlapping findings against ctl-002. The residue is small and mergeable: gap-040 uniquely asks for a sample of the Bastion record format, and gap-012 uniquely asks where the records are sent and whether that destination is managed separately (which itself overlaps gap-039). Consolidating them into one gap covering attribution of model-blob writes, with gap-032's delivery-path variant considered at the same time, preserves every request while giving the reviewer one question to answer.",
+        "evidence_ids": [
+          "evd-005",
+          "evd-011",
+          "evd-012"
+        ],
+        "recommended_action": "merge",
+        "confidence": "high"
+      },
+      {
+        "subject_type": "documentation_gap",
+        "subject_id": "gap-041",
+        "critique_type": "duplicate",
+        "description": "gap-041 (\"Factor policy for the identities holding administrative SSH access is not established\", severity low, evd-007 and evd-012) restates a request gap-010 already makes at medium severity over a superset of the evidence (evd-005, evd-007, evd-009, evd-010). gap-010's requested evidence includes \"The factor policy applied to the identity presenting the SSH key at the Bastion, and which party enforces it\" and \"The identity provider behind the SSO and password boundaries\"; gap-041 asks for identity provider or organization policy documentation covering the accounts holding Bastion SSH access and a statement of which party enforces multi-factor authentication for administrative access. Both cite ctl-001 and ctl-004 as affected, and both rest on evd-007's authentication summary.",
+        "rationale": "The overlap is not partial: the factor-policy-and-enforcing-party question is the same question in both objects, and the two carry different severities (medium and low) for it, which will read to a reviewer as a disagreement inside the assessment. gap-041's only distinct request is the procedure by which keys are added to and removed from the Authorized Keys storage, which is a key-lifecycle question rather than a factor-policy one and can be carried into the merged gap or raised on its own.",
+        "evidence_ids": [
+          "evd-005",
+          "evd-007",
+          "evd-009",
+          "evd-010",
+          "evd-012"
+        ],
+        "recommended_action": "merge",
+        "confidence": "medium"
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-108",
+        "critique_type": "unsupported_claim",
+        "description": "map-108 records req-AUTH-001 as `applicable` on the ground that the condition \"user authentication is delegated to an external identity provider\" is engaged by the SSO and password boundaries, and identifies the password-authenticated experimental boundary as the one this threat's actor crosses. evd-007 states only \"Public to experimental: password authentication\" with \"RBAC and ACLs at each boundary\", and evd-009 repeats that summary; neither names a provider nor says authentication is delegated to one. The mapping's own assumption concedes the point (\"read as summaries of a delegation, not as a statement that the system operates its own credential store; which of the two holds is not established\") and its confidence is low. map-103 in this same group treats a comparably unestablished condition \\u2014 whether the deployment service holds a stored private key \\u2014 as `conditionally_applicable` rather than applicable.",
+        "rationale": "Applicability is the gate that decides whether a satisfaction status travels onward: `applicable` with `partially_satisfied` can become a finding, whereas `conditionally_applicable` with an unresolved condition becomes a question. Here the gate is opened by a reading the mapping itself says is not established, and for the boundary (password authentication) where delegation is least supported by the cited text \\u2014 the SSO entry, which would carry it more naturally, belongs to the public-to-production boundary rather than the path in this threat. Nothing is lost by recording the mapping as conditionally applicable on the delegation question, since gap-010 already requests the identity provider behind these boundaries.",
+        "evidence_ids": [
+          "evd-007",
+          "evd-009",
+          "evd-003"
+        ],
+        "recommended_action": "revise",
+        "confidence": "low"
+      }
+    ]
+  }
+}

@@ -1,0 +1,101 @@
+{
+  "schema": "CriticalReviewProposal",
+  "usage": {
+    "model": "claude-opus-5",
+    "input_tokens": 2227,
+    "output_tokens": 18418,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 28973,
+    "estimated_cost": "0.65266625",
+    "duration_seconds": 229.7050655420171
+  },
+  "response": {
+    "critiques": [
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-007",
+        "critique_type": "unsupported_claim",
+        "description": "The impact statement asserts that \"user-uploaded images in the cache (ast-007) become reachable\", but the only passage that enumerates the Bastion's onward access (evd-012, administrative path) names the API Gateway, the web server, and the model blob \u2014 not the Redis cache. The attack path contains no step that reaches the cache (step 3 lists the API Gateway, the web server and the model blob; step 4 writes an artifact or alters running services), and the cache component is absent from affected_component_ids even though ast-007 appears in affected_asset_ids.",
+        "rationale": "An impact on a customer-data asset is stated here as though documented, while the cited passage does not carry it. The chain is available by inference \u2014 evd-012 says the web server holds the uploaded image in the Redis cache, and ctl-007's own limitation notes that in-memory images remain readable to any process with access to the cache \u2014 but that inference is not made explicit, and the threat's own attack path stops short of it. Either add the step and the cache component and label the reach as inferred, or drop ast-007 from the impact so the impact matches the path.",
+        "evidence_ids": [
+          "evd-012",
+          "evd-004",
+          "evd-011"
+        ],
+        "recommended_action": "revise",
+        "confidence": "medium"
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-127",
+        "critique_type": "unsupported_claim",
+        "description": "map-127's applicability reasoning is entirely about the Authorized Keys storage, yet the control it credits is ctl-003, whose supporting passage (evd-002) enumerates the accounts it covers \u2014 \"the training images, the model storage, and the source and configuration storage\" \u2014 and does not name the Authorized Keys storage. gap-033 in this same group makes exactly that point: the storage access-control section does not mention that store. ctl-003 is also validated as contradicted (eas-040, recommendation downgrade_to_question), so the mapping credits a control the pipeline has flagged as possibly not existing as described.",
+        "rationale": "The mapping's satisfaction status is unverified, so nothing is claimed satisfied, but the control_ids list will be carried forward as the set of controls bearing on this requirement for this threat, and as written it asserts coverage of a store that the control's own evidence excludes. Revise to remove the ctl-003 reference, or to state explicitly that no documented control covers access to the Authorized Keys storage, leaving the unverified status resting on gap-033 (access control) and gap-035 (network placement) rather than on a control whose documented scope is elsewhere.",
+        "evidence_ids": [
+          "evd-002",
+          "evd-011",
+          "evd-012"
+        ],
+        "recommended_action": "revise",
+        "confidence": "medium"
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-007",
+        "critique_type": "missing_precondition",
+        "description": "Precondition 3 states that \"only public-key authentication is documented for this path\", citing evd-007. evd-007 also states \"Public to production: SSO\", and evd-009 states that access across the public-to-production boundary is authenticated with SSO; the source networks from which the Bastion's SSH endpoint is reachable are not stated at all (gap-035 records this). Whether the public-to-production SSO requirement governs administrative SSH sessions into production is an assumption \u2014 map-125 records it explicitly (\"Assumed that the 'public to production: SSO' statement describes end-user access to the API Gateway rather than administrative access\") \u2014 but thr-007 lists no such assumption and presents the narrower reading of evd-007 as documented.",
+        "rationale": "The threat's first attack step is theft of an engineer's private key, and its force depends on a stolen key alone being sufficient. If the documented SSO requirement covers an engineer's session crossing into production, that step does not hold as stated. This is not the conclusion map-126 already suppressed (that no factor policy exists, on grounds of silence); it concerns a passage that says something positive and is set aside by an assumption recorded in only one mapping. Revise the threat to carry that assumption in its preconditions, or to cite evd-010/evd-012 rather than evd-007 for the public-key element and label the SSO reading as unresolved.",
+        "evidence_ids": [
+          "evd-007",
+          "evd-009",
+          "evd-010",
+          "evd-012"
+        ],
+        "recommended_action": "revise",
+        "confidence": "low"
+      },
+      {
+        "subject_type": "documentation_gap",
+        "subject_id": "gap-038",
+        "critique_type": "duplicate",
+        "description": "gap-038 and gap-007 record the same contradiction \u2014 evd-002 restricting production model blob writes to the experimental deployment path and the Bastion, against evd-010/evd-012 describing the Jupyter environment writing the serialized model to the model storage blob \u2014 cite the same three passages, and request substantially the same evidence (effective role assignments on the blob, which description reflects the deployed configuration). They differ only in severity (medium against high) and in which objects they are attached to.",
+        "rationale": "One fact answered once will dispose of both, but carried separately at two severities they invite two different reviewer dispositions of the same question, and the contradiction is already recorded once against ctl-003 in eas-040. Merge into the single gap that also asks for the enforcing mechanism (role assignments, account keys, SAS, or network restriction), which gap-038 omits.",
+        "evidence_ids": [
+          "evd-002",
+          "evd-010",
+          "evd-012"
+        ],
+        "recommended_action": "merge",
+        "confidence": "high"
+      },
+      {
+        "subject_type": "documentation_gap",
+        "subject_id": "gap-041",
+        "critique_type": "duplicate",
+        "description": "gap-041, gap-034, and gap-010 all record the same unanswered question: whether a factor policy applies to the identities holding administrative SSH access to the Bastion, and which party enforces it. gap-041 and gap-034 cite overlapping passages (evd-007, evd-012, plus evd-005) and request nearly identical evidence \u2014 identity provider or organization policy documentation, and the enforcing party \u2014 while carrying different severities (low against medium); gap-010 asks the same for the wider boundary set. gap-041's third request, the procedure for adding and removing keys from the Authorized Keys storage, duplicates gap-033's third request.",
+        "rationale": "A single answer \u2014 the identity provider or organization policy covering the accounts with Bastion access \u2014 discharges all three, and the same question standing at three severities gives a reviewer no consistent signal about its weight. Merge so that the factor-policy question appears once, and leave the key add/remove procedure with gap-033, where the store's access control is already the subject.",
+        "evidence_ids": [
+          "evd-005",
+          "evd-007",
+          "evd-012"
+        ],
+        "recommended_action": "merge",
+        "confidence": "high"
+      },
+      {
+        "subject_type": "documentation_gap",
+        "subject_id": "gap-040",
+        "critique_type": "duplicate",
+        "description": "gap-040, gap-012, and gap-036 all record that the Bastion's session-level records (evd-005, evd-011, evd-012) do not establish whether a write or overwrite of the serialized model artifact is attributed to the acting operator. All three cite the same passages and request the same items: the record format written by the Bastion, whether diagnostic or access logging is enabled on the model blob, and which identity is carried on each recorded action. gap-036's additional question \u2014 whether operators can modify the Bastion Logs store \u2014 is already the subject of gap-039.",
+        "rationale": "Three gaps for one question triples the reviewer's evidence requests without adding a distinct answer, and all three are cited by the same control (ctl-002) and the same mapping chain. Merge into one attribution gap, leaving gap-039 to carry the separate question of the log store's own access control, retention, and immutability.",
+        "evidence_ids": [
+          "evd-005",
+          "evd-011",
+          "evd-012"
+        ],
+        "recommended_action": "merge",
+        "confidence": "high"
+      }
+    ]
+  }
+}

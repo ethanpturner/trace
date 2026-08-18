@@ -1,0 +1,409 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "claude-opus-5",
+    "input_tokens": 2524,
+    "output_tokens": 18302,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 31312,
+    "estimated_cost": "0.66587",
+    "duration_seconds": 219.08392720797565
+  },
+  "response": {
+    "controls": [
+      {
+        "key": "tls-cognitive-services-image-collection",
+        "name": "TLS with server certificate validation on the Azure Cognitive Services image collection path",
+        "description": "The documentation states that image collection from Azure Cognitive Services uses TLS and that server certificates are validated during transmission. Two passages agree on this (evd-006, evd-012), and the document containing evd-006 describes itself as recording controls in place today (evd-001). The scope stated is the Azure Cognitive Services path only; the documentation makes no equivalent statement about the third-party image tools that the same application also pulls from (evd-009, evd-010).",
+        "control_type": "implemented",
+        "provider_component_id": null,
+        "protected_component_ids": [
+          "cmp-004"
+        ],
+        "protected_asset_ids": [
+          "ast-002",
+          "ast-003"
+        ],
+        "implementation_status": "implemented",
+        "evidence_ids": [
+          "evd-006",
+          "evd-012",
+          "evd-001"
+        ],
+        "owner": null,
+        "limitations": [
+          "Stated only for the Azure Cognitive Services collection path; the transport used for the third-party image tools (df-002, cmp-015) is not stated.",
+          "No cipher suite, TLS version, or trust store detail is given, and no configuration artifact is cited.",
+          "Protects the transport only; it establishes nothing about the trustworthiness of the content an authenticated endpoint returns."
+        ]
+      },
+      {
+        "key": "experimental-blob-access-control",
+        "name": "Access control and authorization configured on the experimental Azure Blob storage accounts",
+        "description": "Access control and authorization are described as configured on the Azure Blob storage accounts, including the training images storage, with access granted per environment (evd-002). The system overview records RBAC and ACLs applied at each environment boundary (evd-009). This bears on the stores this threat reaches: the training and validation images blob (cmp-007) and the API Key storage (cmp-008).",
+        "control_type": "implemented",
+        "provider_component_id": null,
+        "protected_component_ids": [
+          "cmp-007",
+          "cmp-008"
+        ],
+        "protected_asset_ids": [
+          "ast-002",
+          "ast-003"
+        ],
+        "implementation_status": "claimed",
+        "evidence_ids": [
+          "evd-002",
+          "evd-009",
+          "evd-011"
+        ],
+        "owner": null,
+        "limitations": [
+          "evd-002 names the training images, model, and source/configuration storage accounts; it does not state whether the API Key storage account (cmp-008) is covered.",
+          "The network reachability of these storage accounts is not stated, only that they sit in the experimental environment (evd-009, evd-011).",
+          "Authorization on write does not address whether the content written by an authorized writer is genuine; no image validation is described (evd-010, evd-012)."
+        ]
+      }
+    ],
+    "mappings": [
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [
+          "tls-cognitive-services-image-collection"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The threat turns on an API key (ast-003, a confidential credential) and image content crossing the boundary between the experimental VPC and third-party services on the public internet (df-002, evd-009), which matches the applicable condition that data crosses a network boundary the system does not control. No non-applicable condition holds: the data in question is neither public nor confined to a component that neither stores nor transmits it.",
+        "suppressed_conclusion": "That transport encryption or server certificate validation is absent on the third-party image collection path (df-002), leaving the API key readable and the returned image bytes alterable in transit.",
+        "suppressed_by": "req-DATA-001 common_false_positives entry 'absent encryption detail for a managed service that encrypts by default': the third-party image tools are externally managed internet services (evd-009, evd-013), and documentation silence about the transport used to reach them is not evidence that the path is unencrypted.",
+        "satisfaction_status": "partially_satisfied",
+        "evidence_ids": [
+          "evd-006",
+          "evd-012",
+          "evd-009",
+          "evd-010"
+        ],
+        "assumptions": [
+          "The transport statements in evd-006 and evd-012 are read as scoped to Azure Cognitive Services, because both name that provider specifically while the overview describes a second, distinct source of images (evd-009, evd-010)."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-SECRET-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-008"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The applicable condition 'the system holds a credential that authenticates it to an external platform' holds directly: the Gather Images application authenticates to Azure Cognitive Services and the third-party image tools with API keys (ast-003, evd-010), and this threat's confidentiality impact is disclosure of exactly those keys. Neither non-applicable condition holds, since the system does hold its own credentials and no short-lived workload identity is described.",
+        "suppressed_conclusion": "That the API keys are held outside a managed secret store, or that key custody is inadequate.",
+        "suppressed_by": "Evidence discipline rather than a catalog entry: evd-011 records an 'API Key storage' in the experimental environment without stating its technology, so the store's nature is unestablished and cannot be concluded to be inadequate. The requirement's own common_false_positives do not cover this shortfall \u2014 the first concerns the store's own encryption and the second applies only 'where the managed store is named', which is precisely what is missing here.",
+        "satisfaction_status": "partially_satisfied",
+        "evidence_ids": [
+          "evd-010",
+          "evd-011"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-SECRET-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'the system accesses no customer resources on external platforms' holds. The API keys in this threat authenticate the organisation's own image collection from Azure Cognitive Services and third-party tools (evd-010, evd-012); no resource belonging to a customer of Husky AI is reached on an external platform, so there is no per-customer credential whose lifetime this requirement would bound.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-010",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-TPI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'no customer data leaves the system's trust boundary' holds for the flow this threat attacks. df-002 is an inbound retrieval of images from external suppliers into the experimental environment (evd-010, evd-012); the outbound half carries the system's own API key and a request, not customer data. End-user uploaded images travel only on the serving path in production (evd-012) and never reach these providers.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-010",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-TPI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The applicable conditions require work triggered by an event the system does not originate, or automatic retry of failed work. The image collection this threat attacks is initiated from inside the experimental environment as a step in the training path (evd-010, evd-012); the documentation describes no external trigger and no retry behaviour, and the attack path here is a network position, not a repeated trigger. The consumption concern arising from a disclosed key would occur at the third-party provider, outside any bound this system could enforce.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-010",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The requirement addresses content passed into a model through a channel that carries instructions alongside data, so that embedded text can redirect the model's task. The model here is a convolutional neural network trained on collected images and evaluated against uploaded images (evd-008, evd-010); there is no prompt channel in which substituted image bytes could act as instructions. The integrity concern this threat raises \u2014 attacker-chosen images entering the training corpus \u2014 is a training-data poisoning concern that this requirement's statement and mechanisms do not reach, and it is raised as a catalog-gap candidate rather than stretched to fit here.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-008",
+          "evd-010"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AI-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Both non-applicable conditions bear: model training runs inside the experimental VPC in the Jupyter environment (evd-009, evd-010), so the model is within the system's own trust boundary, and no customer content is sent to the external image services on the flow this threat attacks \u2014 the direction is inbound retrieval of images (evd-012).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-009",
+          "evd-010",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-WEBHOOK-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'inbound events are polled by the system rather than delivered to it' holds: the Gather Images application pulls images from the external services (evd-010, evd-012), and the documentation describes no endpoint in the experimental environment that accepts delivered events. The origin-authenticity element of this threat \u2014 an actor impersonating the tool's endpoint \u2014 is a server-authentication question on an outbound connection, which is mapped under req-DATA-001 rather than here.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-010",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-WEBHOOK-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Replay of an inbound event presupposes an endpoint that accepts delivered events; the same non-applicable condition as req-WEBHOOK-001 holds, because image collection is initiated and polled by the Gather Images application (evd-010, evd-012). No state-changing event is accepted from the third-party services.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-010",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-NET-001",
+        "control_keys": [
+          "experimental-blob-access-control"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The applicable condition 'the system uses a data store, queue, or cache that is not itself a public interface' holds for the two stores on this threat's path: the API Key storage holding the credential the actor seeks (cmp-008, evd-011) and the training images blob into which substituted images would be written (cmp-007, evd-011). Neither is described as a public interface, so no non-applicable condition holds, and the reachability of these stores affects how far a network-positioned actor could get.",
+        "suppressed_conclusion": "That the API Key storage and the training images blob are reachable from an untrusted network, or that no network restriction exists in front of them.",
+        "suppressed_by": "req-NET-001 common_false_positives entry 'absent description of network placement for an internal component, which is not evidence that the component is publicly reachable' \u2014 evd-009 places the experimental environment in an internal Azure VPC and evd-002 documents per-environment access control, and the absence of a placement statement for the storage accounts cannot be read as exposure.",
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-002",
+          "evd-009",
+          "evd-011"
+        ],
+        "assumptions": [
+          "Both stores are treated as sitting in the experimental environment, as evd-011 records, but environment membership is not the same as a stated network placement or restriction to named workloads."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AUTHZ-002",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-008"
+        ],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "The requirement applies if the API keys constitute delegated access to an external platform in the sense of applicable condition one. The documentation names neither the third-party tools nor what their keys authorise (evd-010, evd-011, evd-013; recorded as a limitation of ctl-008), so whether these are narrow read-only image-search keys or broader account credentials cannot be established \u2014 and that scope is exactly what determines the impact of the key disclosure this threat describes. The second applicable condition, acting on a customer resource on a customer's behalf, does not hold.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-010",
+          "evd-011",
+          "evd-013"
+        ],
+        "assumptions": [
+          "Treating service API keys as delegated access; if the keys grant only anonymous-equivalent read of a public image catalogue, the requirement would be not applicable."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-DATA-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'no customer artifacts are stored' holds for the stores on this threat's path. The training and validation images blob holds images collected from external suppliers for model training (evd-010, evd-011), and the API Key storage holds the system's own credentials; neither holds artifacts belonging to distinct customers whose separation would need enforcing on access.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-010",
+          "evd-011"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-CICD-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The applicable conditions concern pipeline authentication to deployment environments and third-party software components entering a build. This threat's path ends where collected images are written to the training blob (df-004); the deployment service and its path into production through the Bastion (evd-010, evd-012) are not on it, and externally supplied training images are data rather than build components. Reading images as 'components entering a build' would stretch the requirement past its statement, so the concern is raised as a catalog-gap candidate instead.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-010",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "low"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Transport protection for the third-party image collection path is not established",
+        "description": "The documentation states TLS with server certificate validation for image collection from Azure Cognitive Services (evd-006, evd-012) but makes no statement about the transport used when the Gather Images application pulls images from the third-party tools on the public internet (evd-009, evd-010). It cannot be determined from the material whether that flow (df-002) is encrypted, whether server certificates are validated on it, or which endpoints it reaches. This is a statement about what the documentation does not settle, not a claim that the path is unprotected.",
+        "importance": "The API key presented on this flow (ast-003) and the integrity of the images returned and written into the training blob (ast-002) both depend on this transport. The answer decides whether thr-004 is a live exposure or already addressed by the same mechanism used for the Cognitive Services path.",
+        "related_object_ids": [
+          "df-002",
+          "cmp-004",
+          "cmp-015",
+          "ast-002",
+          "ast-003"
+        ],
+        "requested_evidence": [
+          "A statement of the protocol used by the Gather Images application when calling the third-party image tools, and whether TLS is required",
+          "A statement of whether server certificates are validated on that path, equivalent to the statement made for Azure Cognitive Services",
+          "The names or endpoints of the third-party image services the experimental environment pulls from"
+        ],
+        "evidence_ids": [
+          "evd-006",
+          "evd-012",
+          "evd-009",
+          "evd-010"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "The nature of the API Key storage and how the application obtains keys is not established",
+        "description": "The overview records an 'API Key storage' in the experimental environment holding API keys for the external image services (evd-010, evd-011), but does not state whether this is a managed secret service or an ordinary storage account, nor how the Gather Images application authenticates to it, nor whether access policy, rotation, or encryption at rest apply. ctl-008 already records these limitations; the material does not settle whether the custody expectation in req-SECRET-001 is met.",
+        "importance": "These keys are the credential this threat targets, and their custody determines both how exposed they are at rest and how quickly a disclosed key could be replaced. Without the store's type, an inherited managed-secret control cannot be distinguished from an ordinary blob holding plaintext keys.",
+        "related_object_ids": [
+          "cmp-008",
+          "cmp-004",
+          "df-003",
+          "ast-003"
+        ],
+        "requested_evidence": [
+          "The technology backing the API Key storage \u2014 whether a managed secret service or a general-purpose storage account",
+          "How the Gather Images application authenticates to that store and retrieves keys",
+          "Any access policy, rotation schedule, or encryption-at-rest provider applying to the stored keys"
+        ],
+        "evidence_ids": [
+          "evd-010",
+          "evd-011",
+          "evd-002"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "The privileges granted by the third-party image service API keys are not established",
+        "description": "The third-party image tools are referred to generically (evd-010, evd-013) and the keys held for them are listed only as 'API keys for the external image services' (evd-011). The material does not establish which services are involved or what each key authorises, so the reach of a disclosed key cannot be assessed.",
+        "importance": "The impact half of this threat \u2014 use of external services in the organisation's name \u2014 scales entirely with what the keys permit. A read-only image-search key and an account-level key produce very different consequences from the same interception, and the mapping for req-AUTHZ-002 cannot be resolved without this.",
+        "related_object_ids": [
+          "cmp-015",
+          "cmp-008",
+          "ast-003"
+        ],
+        "requested_evidence": [
+          "The names of the third-party image services accessed by the Gather Images application",
+          "The scope or permission set attached to each API key held for those services",
+          "Whether the keys are read-only with respect to the provider account"
+        ],
+        "evidence_ids": [
+          "evd-010",
+          "evd-011",
+          "evd-013"
+        ],
+        "severity": "low"
+      }
+    ],
+    "catalog_gap_candidates": [
+      {
+        "concern": "Data ingested from external suppliers into a model training corpus has no integrity or provenance expectation in the catalog. The Gather Images application writes images collected from Azure Cognitive Services and unnamed third-party tools straight into the training and validation blob (evd-010, evd-012), and those images are the training input to the classifier that is packaged and served (evd-008). If a supplier is impersonated, compromised, or simply hostile, attacker-chosen content enters the corpus and propagates into the deployed model, and no catalog requirement asks for provenance recording, content validation, or a check on what an authenticated-but-untrusted supplier returns.",
+        "suggested_category": "ai_training_data_integrity",
+        "nearest_requirements": [
+          {
+            "requirement_id": "req-AI-001",
+            "why_not": "It addresses untrusted content passed to a model through a channel that mixes instructions and data at inference time, and its mechanisms are instruction/content separation and output validation. A convolutional classifier trained on image bytes has no such channel, and none of its acceptable implementations would detect or prevent a substituted training image."
+          },
+          {
+            "requirement_id": "req-CICD-001",
+            "why_not": "It covers pipeline authentication to deployment environments and identification of third-party software components entering a build. Training images are data consumed by the training step, not dependencies in a build manifest, and a pinned-version or component-inventory control has no analogue for a collected image set."
+          },
+          {
+            "requirement_id": "req-DATA-001",
+            "why_not": "It bounds exposure and tampering in transit and at rest. Even fully satisfied, it says nothing about whether the content a correctly authenticated supplier returns is trustworthy, which is the substitution risk here."
+          },
+          {
+            "requirement_id": "req-AI-003",
+            "why_not": "It concerns minimising customer content sent outward to an external model provider. The flow here is inbound retrieval of supplier content, the opposite direction, and no scoping or redaction control addresses ingested integrity."
+          }
+        ],
+        "evidence_ids": [
+          "evd-008",
+          "evd-010",
+          "evd-012"
+        ]
+      }
+    ]
+  }
+}

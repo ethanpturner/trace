@@ -1,21 +1,105 @@
 {
   "schema": "ContextExtractionProposal",
+  "usage": {
+    "model": "claude-opus-5",
+    "input_tokens": 2524,
+    "output_tokens": 32437,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 13978,
+    "estimated_cost": "0.9109075",
+    "duration_seconds": 321.143663667026
+  },
   "response": {
     "system": {
       "system_name": "Husky AI",
-      "system_purpose": "classify uploaded images as huskies or non-huskies behind a public API",
+      "system_purpose": "A machine learning system that classifies uploaded images as huskies or non-huskies. A convolutional neural network is trained on collected images, packaged, and served behind a public API.",
       "business_criticality": null,
-      "environment": [],
-      "deployment_model": null,
-      "data_classifications": []
+      "environment": [
+        "production",
+        "experimental",
+        "public_internet"
+      ],
+      "deployment_model": "Azure cloud: two internal Azure VPCs (production and experimental) plus the public internet.",
+      "data_classifications": [],
+      "access_model": "unknown"
     },
     "claims": [
       {
-        "key": "experimental-password-auth",
+        "key": "clm-system-purpose",
+        "subject_type": "system",
+        "subject_key": null,
+        "predicate": "purpose",
+        "value": "Classifies uploaded images as huskies or non-huskies using a convolutional neural network trained on collected images, packaged and served behind a public API.",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-008"
+        ]
+      },
+      {
+        "key": "clm-environments",
+        "subject_type": "system",
+        "subject_key": null,
+        "predicate": "environments",
+        "value": [
+          "production",
+          "experimental",
+          "public internet"
+        ],
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-009"
+        ]
+      },
+      {
+        "key": "clm-gateway-https",
         "subject_type": "component",
-        "subject_key": "jupyter",
-        "predicate": "boundary_authentication",
-        "value": "access across the public-to-experimental boundary is password-authenticated",
+        "subject_key": "api-gateway",
+        "predicate": "transport_security",
+        "value": "The public API is HTTPS-only; the API Gateway is exposed over HTTPS.",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-006",
+          "evd-010"
+        ]
+      },
+      {
+        "key": "clm-gateway-validation",
+        "subject_type": "component",
+        "subject_key": "api-gateway",
+        "predicate": "request_validation",
+        "value": "The API Gateway enforces request validation and ensures access control to internal services.",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-010"
+        ]
+      },
+      {
+        "key": "clm-uploaded-image-content-validation",
+        "subject_type": "component",
+        "subject_key": "api-gateway",
+        "predicate": "uploaded_image_content_validation",
+        "value": "unknown",
+        "status": "unknown",
+        "confidence": "medium",
+        "rationale": "The documentation states that the gateway enforces request validation but does not describe any checks on uploaded image content, type, or size.",
+        "evidence_ids": [
+          "evd-010"
+        ]
+      },
+      {
+        "key": "clm-boundary-auth-public-prod",
+        "subject_type": "trust_boundary",
+        "subject_key": "tb-public-production",
+        "predicate": "authentication",
+        "value": "Access across the public-to-production boundary is authenticated with SSO.",
         "status": "documented",
         "confidence": "high",
         "rationale": null,
@@ -25,24 +109,394 @@
         ]
       },
       {
-        "key": "notes-completeness",
-        "subject_type": "component",
-        "subject_key": "jupyter",
-        "predicate": "documentation_completeness",
-        "value": "the security notes record what is implemented and do not list planned work",
+        "key": "clm-boundary-auth-public-exp",
+        "subject_type": "trust_boundary",
+        "subject_key": "tb-public-experimental",
+        "predicate": "authentication",
+        "value": "Access across the public-to-experimental boundary is password-authenticated.",
         "status": "documented",
         "confidence": "high",
         "rationale": null,
         "evidence_ids": [
-          "evd-001"
+          "evd-007",
+          "evd-009"
         ]
       },
       {
-        "key": "api-keys-in-storage",
+        "key": "clm-boundary-auth-prod-exp",
+        "subject_type": "trust_boundary",
+        "subject_key": "tb-production-experimental",
+        "predicate": "authentication",
+        "value": "Movement between the production and experimental environments uses public-key authentication.",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-007",
+          "evd-009"
+        ]
+      },
+      {
+        "key": "clm-boundary-rbac-acl",
+        "subject_type": "system",
+        "subject_key": null,
+        "predicate": "boundary_authorization",
+        "value": "RBAC and ACLs are applied at each boundary.",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-007",
+          "evd-009"
+        ]
+      },
+      {
+        "key": "clm-blob-access-control",
+        "subject_type": "system",
+        "subject_key": null,
+        "predicate": "blob_storage_access_control",
+        "value": "Access control and authorization are configured on the Azure Blob storage accounts \u2014 the training images, the model storage, and the source and configuration storage \u2014 and access is granted per environment.",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-002"
+        ]
+      },
+      {
+        "key": "clm-blob-authorization-mechanisms",
+        "subject_type": "system",
+        "subject_key": null,
+        "predicate": "blob_storage_authorization_mechanisms",
+        "value": [
+          "rbac",
+          "acl"
+        ],
+        "status": "inferred",
+        "confidence": "medium",
+        "rationale": "The security notes state that access control and authorization are configured on the blob storage accounts (evd-002) without naming mechanisms; the authentication summary states RBAC and ACLs are used at each boundary (evd-007). The specific mechanisms protecting the blob accounts are therefore inferred rather than stated.",
+        "evidence_ids": [
+          "evd-002",
+          "evd-007"
+        ]
+      },
+      {
+        "key": "clm-access-control-other-stores",
+        "subject_type": "system",
+        "subject_key": null,
+        "predicate": "access_control_for_api_key_authorized_keys_and_log_stores",
+        "value": "unknown",
+        "status": "unknown",
+        "confidence": "medium",
+        "rationale": "The storage access-control section names only the training images, model storage, and source/configuration storage (evd-002). The API Key storage, Authorized Keys storage, and Bastion Logs storage are listed as data stores (evd-011) but the documentation is silent on how access to them is controlled. Silence is not evidence that controls are absent.",
+        "evidence_ids": [
+          "evd-002",
+          "evd-011"
+        ]
+      },
+      {
+        "key": "clm-model-blob-write-restriction",
         "subject_type": "component",
-        "subject_key": "gather",
-        "predicate": "credential_storage",
-        "value": "API keys for the external image services are held in the API Key storage, a blob storage account of the experimental environment",
+        "subject_key": "model-blob",
+        "predicate": "documented_write_restriction",
+        "value": "The production model blob is writable only from the experimental deployment path and the Bastion.",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-002"
+        ]
+      },
+      {
+        "key": "clm-jupyter-writes-model-blob",
+        "subject_type": "component",
+        "subject_key": "jupyter-notebook",
+        "predicate": "writes_to_model_storage_blob",
+        "value": "Notebooks train the convolutional neural network and write the serialized model to the model storage blob; the trained model is then packaged by the deployment service.",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-010",
+          "evd-012"
+        ]
+      },
+      {
+        "key": "clm-model-blob-effective-writers",
+        "subject_type": "component",
+        "subject_key": "model-blob",
+        "predicate": "effective_set_of_writers",
+        "value": "unknown",
+        "status": "unknown",
+        "confidence": "medium",
+        "rationale": "The two documents cannot both be read straightforwardly: the security notes restrict writes to the production model blob to the experimental deployment path and the Bastion (evd-002), while the overview has the Jupyter environment writing the serialized model to the model storage blob (evd-010), and the store table lists only one Machine Learning Model blob, located in production (evd-011). Whether the notebook write is part of the 'experimental deployment path', or targets a different blob, is not established. Recorded as unknown pending reviewer resolution.",
+        "evidence_ids": [
+          "evd-002",
+          "evd-010",
+          "evd-011",
+          "evd-012"
+        ]
+      },
+      {
+        "key": "clm-model-blob-cross-boundary-write",
+        "subject_type": "data_flow",
+        "subject_key": "flow-jupyter-to-model-blob",
+        "predicate": "crosses_production_experimental_boundary",
+        "value": true,
+        "status": "inferred",
+        "confidence": "medium",
+        "rationale": "The Jupyter environment is in the experimental VPC (evd-009, evd-010) and the Machine Learning Model blob is listed as a production store (evd-011); a write from the former to the latter therefore crosses the production/experimental boundary. The documents do not describe this write as a boundary crossing explicitly.",
+        "evidence_ids": [
+          "evd-009",
+          "evd-010",
+          "evd-011"
+        ]
+      },
+      {
+        "key": "clm-model-integrity-verification",
+        "subject_type": "asset",
+        "subject_key": "trained-model",
+        "predicate": "integrity_verification_before_loading",
+        "value": "unknown",
+        "status": "unknown",
+        "confidence": "medium",
+        "rationale": "The documentation describes the model being written, packaged, deployed, and loaded (evd-010, evd-012) but says nothing about signing, checksums, or other verification of the artifact. Absence of a statement is not evidence that no verification exists.",
+        "evidence_ids": [
+          "evd-010",
+          "evd-012"
+        ]
+      },
+      {
+        "key": "clm-notebook-access-control",
+        "subject_type": "component",
+        "subject_key": "jupyter-notebook",
+        "predicate": "access_control",
+        "value": "The Jupyter Notebook environment enforces access control and authorization, and engineers authenticate before reaching any notebook.",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-003"
+        ]
+      },
+      {
+        "key": "clm-notebook-not-exposed",
+        "subject_type": "component",
+        "subject_key": "jupyter-notebook",
+        "predicate": "network_exposure",
+        "value": "The notebook environment is not exposed outside the experimental VPC.",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-003"
+        ]
+      },
+      {
+        "key": "clm-redis-in-memory",
+        "subject_type": "asset",
+        "subject_key": "uploaded-user-images",
+        "predicate": "storage_handling",
+        "value": "Uploaded images are held in memory in the Redis cache while awaiting classification and are not written to disk; in-memory storage was chosen to make user-submitted images difficult to access after the request completes.",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-004"
+        ]
+      },
+      {
+        "key": "clm-redis-retention",
+        "subject_type": "component",
+        "subject_key": "redis-cache",
+        "predicate": "retention_or_eviction_of_uploaded_images",
+        "value": "unknown",
+        "status": "unknown",
+        "confidence": "medium",
+        "rationale": "The documentation says images are held while awaiting classification and not written to disk (evd-004) but states no retention period, expiry, or eviction behaviour.",
+        "evidence_ids": [
+          "evd-004",
+          "evd-011"
+        ]
+      },
+      {
+        "key": "clm-redis-auth",
+        "subject_type": "component",
+        "subject_key": "redis-cache",
+        "predicate": "authentication_and_access_control",
+        "value": "unknown",
+        "status": "unknown",
+        "confidence": "medium",
+        "rationale": "The storage access-control section covers the blob storage accounts only (evd-002); no passage describes authentication or authorization for the Redis cache.",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004",
+          "evd-011"
+        ]
+      },
+      {
+        "key": "clm-bastion-ssh-logging",
+        "subject_type": "component",
+        "subject_key": "bastion-server",
+        "predicate": "access_logging",
+        "value": "All SSH access attempts through the Bastion are logged to the Bastion Logs storage, successful or not.",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-005"
+        ]
+      },
+      {
+        "key": "clm-bastion-only-admin-path",
+        "subject_type": "component",
+        "subject_key": "bastion-server",
+        "predicate": "administrative_access_path",
+        "value": "The Bastion is the only administrative path into production; administrators reach production hosts over SSH through it, authenticated against the Authorized Keys storage, with onward access to the API Gateway, the web server, and the model blob.",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-005",
+          "evd-010",
+          "evd-012"
+        ]
+      },
+      {
+        "key": "clm-bastion-network-reachability",
+        "subject_type": "component",
+        "subject_key": "bastion-server",
+        "predicate": "network_reachability",
+        "value": "unknown",
+        "status": "unknown",
+        "confidence": "medium",
+        "rationale": "The documents state that engineers SSH to the Bastion (evd-012) and that it is the only administrative path (evd-005), but do not state from which networks it is reachable or whether it is exposed to the public internet.",
+        "evidence_ids": [
+          "evd-005",
+          "evd-012"
+        ]
+      },
+      {
+        "key": "clm-admin-mfa",
+        "subject_type": "component",
+        "subject_key": "bastion-server",
+        "predicate": "multi_factor_authentication",
+        "value": "unknown",
+        "status": "unknown",
+        "confidence": "medium",
+        "rationale": "Public-key authentication is documented for administrative and cross-environment access (evd-007, evd-010); no passage states whether any additional factor is required.",
+        "evidence_ids": [
+          "evd-007",
+          "evd-010"
+        ]
+      },
+      {
+        "key": "clm-tls-cognitive-services",
+        "subject_type": "data_flow",
+        "subject_key": "flow-cognitive-to-gather",
+        "predicate": "encryption_in_transit",
+        "value": "Image collection from Azure Cognitive Services uses TLS with server certificate validation.",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-006",
+          "evd-012"
+        ]
+      },
+      {
+        "key": "clm-tls-third-party",
+        "subject_type": "data_flow",
+        "subject_key": "flow-thirdparty-to-gather",
+        "predicate": "encryption_in_transit",
+        "value": "unknown",
+        "status": "unknown",
+        "confidence": "medium",
+        "rationale": "The transport-security section names only Azure Cognitive Services (evd-006), while the overview describes images also being pulled from third-party tools (evd-010). The transport protections for the third-party collection path are not stated.",
+        "evidence_ids": [
+          "evd-006",
+          "evd-010",
+          "evd-012"
+        ]
+      },
+      {
+        "key": "clm-internal-encryption-in-transit",
+        "subject_type": "system",
+        "subject_key": null,
+        "predicate": "encryption_in_transit_for_internal_flows",
+        "value": "unknown",
+        "status": "unknown",
+        "confidence": "medium",
+        "rationale": "Transport security is documented for the public API and for image collection from Azure Cognitive Services (evd-006). No passage describes transport protection for gateway-to-web-server, web-server-to-Redis, or model-blob read traffic (evd-012).",
+        "evidence_ids": [
+          "evd-006",
+          "evd-012"
+        ]
+      },
+      {
+        "key": "clm-encryption-at-rest",
+        "subject_type": "system",
+        "subject_key": null,
+        "predicate": "encryption_at_rest",
+        "value": "unknown",
+        "status": "unknown",
+        "confidence": "medium",
+        "rationale": "The data stores are enumerated (evd-011) and access control on the blob accounts is described (evd-002), but no passage addresses encryption at rest for any store.",
+        "evidence_ids": [
+          "evd-002",
+          "evd-011"
+        ]
+      },
+      {
+        "key": "clm-access-model",
+        "subject_type": "system",
+        "subject_key": null,
+        "predicate": "authorization_posture",
+        "value": "unknown",
+        "status": "unknown",
+        "confidence": "medium",
+        "rationale": "The documents state that RBAC and ACLs are applied at each boundary and that blob access is granted per environment (evd-002, evd-007), but they do not state a default posture such as deny-by-default.",
+        "evidence_ids": [
+          "evd-002",
+          "evd-007"
+        ]
+      },
+      {
+        "key": "clm-end-user-auth",
+        "subject_type": "actor",
+        "subject_key": "end-users",
+        "predicate": "authentication_for_classification_api",
+        "value": "End users submitting images to the public API are likely authenticated via SSO.",
+        "status": "inferred",
+        "confidence": "low",
+        "rationale": "The authentication summary and the environments section state that access across the public-to-production boundary is SSO-authenticated (evd-007, evd-009), and the API Gateway is the production entry point for external users (evd-010). No passage states directly that image submission itself requires authentication, so this is a low-confidence inference rather than a documented fact.",
+        "evidence_ids": [
+          "evd-007",
+          "evd-009",
+          "evd-010",
+          "evd-012"
+        ]
+      },
+      {
+        "key": "clm-deployment-path-via-bastion",
+        "subject_type": "data_flow",
+        "subject_key": "flow-deployment-to-bastion",
+        "predicate": "deployment_path",
+        "value": "The deployment service packages the trained model with source code and configuration and deploys the result to production via the Bastion.",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-010",
+          "evd-012"
+        ]
+      },
+      {
+        "key": "clm-gather-api-keys",
+        "subject_type": "component",
+        "subject_key": "gather-images-app",
+        "predicate": "credential_use",
+        "value": "The Gather Images application collects images from Azure Cognitive Services and third-party tools using API keys held in the API key store.",
         "status": "documented",
         "confidence": "high",
         "rationale": null,
@@ -52,180 +506,403 @@
         ]
       },
       {
-        "key": "blob-access-control",
-        "subject_type": "component",
-        "subject_key": "jupyter",
-        "predicate": "storage_access_control",
-        "value": "access control and authorization are configured on the training, model, and source storage accounts, granted per environment, and the production model blob is writable only from the deployment path and the Bastion",
-        "status": "documented",
-        "confidence": "high",
-        "rationale": null,
+        "key": "clm-logging-scope",
+        "subject_type": "system",
+        "subject_key": null,
+        "predicate": "logging_and_monitoring_beyond_bastion",
+        "value": "unknown",
+        "status": "unknown",
+        "confidence": "medium",
+        "rationale": "Bastion SSH access logging is documented (evd-005, evd-011). No passage describes application, gateway, or storage logging, alerting, or log retention and protection.",
         "evidence_ids": [
-          "evd-002"
+          "evd-005",
+          "evd-011"
         ]
       },
       {
-        "key": "uploads-in-memory",
-        "subject_type": "component",
-        "subject_key": "web-server",
-        "predicate": "uploaded_image_handling",
-        "value": "uploaded images are held in memory in the Redis cache while awaiting classification and not written to disk",
-        "status": "documented",
-        "confidence": "high",
-        "rationale": null,
+        "key": "clm-uploaded-image-classification",
+        "subject_type": "asset",
+        "subject_key": "uploaded-user-images",
+        "predicate": "data_classification",
+        "value": "unknown",
+        "status": "unknown",
+        "confidence": "medium",
+        "rationale": "No passage assigns a sensitivity classification to user-submitted images or states whether they may contain personal data.",
         "evidence_ids": [
-          "evd-004"
+          "evd-004",
+          "evd-012"
         ]
       },
       {
-        "key": "bastion-logging",
-        "subject_type": "component",
-        "subject_key": "bastion",
-        "predicate": "administrative_logging",
-        "value": "all SSH access attempts through the Bastion are logged to the Bastion Logs storage, successful or not, and the Bastion is the only administrative path into production",
+        "key": "clm-security-notes-scope",
+        "subject_type": "system",
+        "subject_key": null,
+        "predicate": "scope_of_security_notes",
+        "value": "The security notes record controls stated to be implemented today and explicitly do not list planned work.",
         "status": "documented",
         "confidence": "high",
         "rationale": null,
         "evidence_ids": [
-          "evd-005"
-        ]
-      },
-      {
-        "key": "transport-security",
-        "subject_type": "component",
-        "subject_key": "gateway",
-        "predicate": "transport_encryption",
-        "value": "the public API is HTTPS-only, and image collection from Azure Cognitive Services uses TLS with certificate validation",
-        "status": "documented",
-        "confidence": "high",
-        "rationale": null,
-        "evidence_ids": [
-          "evd-006"
-        ]
-      },
-      {
-        "key": "production-sso",
-        "subject_type": "component",
-        "subject_key": "gateway",
-        "predicate": "boundary_authentication",
-        "value": "access across the public-to-production boundary is authenticated with SSO",
-        "status": "documented",
-        "confidence": "high",
-        "rationale": null,
-        "evidence_ids": [
-          "evd-007",
-          "evd-009"
+          "evd-001"
         ]
       }
     ],
     "components": [
       {
-        "key": "gateway",
+        "key": "api-gateway",
         "name": "API Gateway",
-        "component_type": "gateway",
-        "description": "the entry point for external users over HTTPS; routes requests to the web server, enforces request validation, and manages access control to internal services",
-        "technology": [],
+        "component_type": "api_gateway",
+        "description": "Entry point for external users, exposed over HTTPS. Routes user requests to the Python web server, enforces request validation, and manages the public APIs while ensuring access control to internal services.",
+        "technology": [
+          "HTTPS"
+        ],
         "ownership": null,
         "deployment_zone": "production",
         "internet_accessible": true,
         "externally_managed": null,
+        "entry_point_types": [
+          "api"
+        ],
         "data_classifications": [],
         "authentication_mechanisms": [
           "sso"
         ],
-        "authorization_mechanisms": [],
+        "authorization_mechanisms": [
+          "rbac",
+          "acl"
+        ],
         "evidence_ids": [
-          "evd-010"
+          "evd-006",
+          "evd-009",
+          "evd-010",
+          "evd-012"
         ]
       },
       {
-        "key": "web-server",
+        "key": "python-web-server",
         "name": "Simple Python Web Server",
         "component_type": "service",
-        "description": "serves the classification application; loads the trained model from the model blob and evaluates uploaded images against it",
-        "technology": [],
+        "description": "Serves the classification application. Loads the trained model from the model storage blob and evaluates uploaded images against it; holds uploaded images in the Redis cache during a request.",
+        "technology": [
+          "Python"
+        ],
         "ownership": null,
         "deployment_zone": "production",
         "internet_accessible": null,
         "externally_managed": null,
+        "entry_point_types": [
+          "inter_system_interface"
+        ],
         "data_classifications": [],
         "authentication_mechanisms": [],
         "authorization_mechanisms": [],
         "evidence_ids": [
-          "evd-010"
+          "evd-010",
+          "evd-012"
         ]
       },
       {
-        "key": "bastion",
+        "key": "bastion-server",
         "name": "Bastion Server",
-        "component_type": "bastion",
-        "description": "the administrative access path into production over SSH; reads authorized keys, writes access logs, and carries deployment releases",
-        "technology": [],
+        "component_type": "jump_host",
+        "description": "The administrative access path into production. Administrators reach production hosts over SSH through the Bastion; it reads authorized keys from the Authorized Keys storage and writes access logs to the Bastion Logs storage. The deployment service also delivers releases into production through the Bastion.",
+        "technology": [
+          "SSH"
+        ],
         "ownership": null,
         "deployment_zone": "production",
         "internet_accessible": null,
         "externally_managed": null,
+        "entry_point_types": [
+          "ssh",
+          "admin_interface"
+        ],
         "data_classifications": [],
         "authentication_mechanisms": [
           "ssh_public_key"
         ],
         "authorization_mechanisms": [],
         "evidence_ids": [
-          "evd-010"
+          "evd-005",
+          "evd-010",
+          "evd-012"
         ]
       },
       {
-        "key": "gather",
+        "key": "gather-images-app",
         "name": "Gather Images Application",
         "component_type": "service",
-        "description": "collects husky and non-husky images from Azure Cognitive Services and third-party tools using API keys from the API key store, and writes them to the training images blob",
-        "technology": [],
+        "description": "A Python application that collects husky and non-husky images from Azure Cognitive Services and third-party tools, using API keys held in the API key store, and writes them to the training images blob.",
+        "technology": [
+          "Python"
+        ],
         "ownership": null,
         "deployment_zone": "experimental",
         "internet_accessible": null,
         "externally_managed": null,
+        "entry_point_types": [],
         "data_classifications": [],
         "authentication_mechanisms": [],
         "authorization_mechanisms": [],
         "evidence_ids": [
-          "evd-010"
+          "evd-010",
+          "evd-012"
         ]
       },
       {
-        "key": "jupyter",
-        "name": "Jupyter Notebook",
+        "key": "jupyter-notebook",
+        "name": "Jupyter Notebook environment",
         "component_type": "development_environment",
-        "description": "the model development environment; reads training and validation images, trains the network, and writes the serialized model to the model blob",
-        "technology": [],
+        "description": "The model development environment. Notebooks read the training and validation images, train the convolutional neural network, and write the serialized model to the model storage blob. Engineers authenticate before reaching any notebook, and the environment is not exposed outside the experimental VPC.",
+        "technology": [
+          "Jupyter"
+        ],
         "ownership": null,
         "deployment_zone": "experimental",
-        "internet_accessible": null,
+        "internet_accessible": false,
         "externally_managed": null,
+        "entry_point_types": [
+          "login"
+        ],
         "data_classifications": [],
         "authentication_mechanisms": [
           "password"
         ],
-        "authorization_mechanisms": [],
+        "authorization_mechanisms": [
+          "rbac",
+          "acl"
+        ],
         "evidence_ids": [
           "evd-003",
+          "evd-009",
           "evd-010"
         ]
       },
       {
-        "key": "deployment",
+        "key": "deployment-service",
         "name": "Deployment Service",
         "component_type": "service",
-        "description": "packages the trained model with source and configuration and deploys the result to production via the Bastion",
+        "description": "Packages the trained model together with source code and configuration from the source storage and deploys the result to production via the Bastion.",
         "technology": [],
         "ownership": null,
         "deployment_zone": "experimental",
         "internet_accessible": null,
         "externally_managed": null,
+        "entry_point_types": [],
         "data_classifications": [],
         "authentication_mechanisms": [],
         "authorization_mechanisms": [],
         "evidence_ids": [
-          "evd-010"
+          "evd-010",
+          "evd-012"
+        ]
+      },
+      {
+        "key": "training-images-blob",
+        "name": "Training and Validation Images blob",
+        "component_type": "blob_storage",
+        "description": "Azure Blob storage holding images used for training and validation.",
+        "technology": [
+          "Azure Blob storage"
+        ],
+        "ownership": null,
+        "deployment_zone": "experimental",
+        "internet_accessible": null,
+        "externally_managed": null,
+        "entry_point_types": [],
+        "data_classifications": [],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [
+          "rbac",
+          "acl"
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-011"
+        ]
+      },
+      {
+        "key": "api-key-storage",
+        "name": "API Key storage",
+        "component_type": "blob_storage",
+        "description": "Experimental-environment store holding API keys for the external image services.",
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": "experimental",
+        "internet_accessible": null,
+        "externally_managed": null,
+        "entry_point_types": [],
+        "data_classifications": [],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-010",
+          "evd-011"
+        ]
+      },
+      {
+        "key": "source-config-storage",
+        "name": "Source Code and Configuration storage",
+        "component_type": "blob_storage",
+        "description": "Experimental-environment store holding source and configuration used by deployment.",
+        "technology": [
+          "Azure Blob storage"
+        ],
+        "ownership": null,
+        "deployment_zone": "experimental",
+        "internet_accessible": null,
+        "externally_managed": null,
+        "entry_point_types": [],
+        "data_classifications": [],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [
+          "rbac",
+          "acl"
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-010",
+          "evd-011"
+        ]
+      },
+      {
+        "key": "model-blob",
+        "name": "Machine Learning Model blob",
+        "component_type": "blob_storage",
+        "description": "Production Azure Blob storage holding trained models in serialized form. Documented as writable only from the experimental deployment path and the Bastion; the Jupyter environment is also described as writing the serialized model to the model storage blob.",
+        "technology": [
+          "Azure Blob storage"
+        ],
+        "ownership": null,
+        "deployment_zone": "production",
+        "internet_accessible": null,
+        "externally_managed": null,
+        "entry_point_types": [],
+        "data_classifications": [],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [
+          "rbac",
+          "acl"
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-010",
+          "evd-011",
+          "evd-012"
+        ]
+      },
+      {
+        "key": "authorized-keys-storage",
+        "name": "Authorized Keys storage",
+        "component_type": "blob_storage",
+        "description": "Production store holding SSH keys authorizing administrative access; read by the Bastion when authenticating administrators.",
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": "production",
+        "internet_accessible": null,
+        "externally_managed": null,
+        "entry_point_types": [],
+        "data_classifications": [],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-010",
+          "evd-011",
+          "evd-012"
+        ]
+      },
+      {
+        "key": "bastion-logs-storage",
+        "name": "Bastion Logs storage",
+        "component_type": "log_storage",
+        "description": "Production store holding SSH access and activity logs from the Bastion; all SSH access attempts, successful or not, are logged here.",
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": "production",
+        "internet_accessible": null,
+        "externally_managed": null,
+        "entry_point_types": [],
+        "data_classifications": [],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-005",
+          "evd-011",
+          "evd-012"
+        ]
+      },
+      {
+        "key": "redis-cache",
+        "name": "Azure Cache for Redis",
+        "component_type": "cache",
+        "description": "In-memory store in production for uploaded images awaiting classification. Documented as holding images in memory rather than writing them to disk.",
+        "technology": [
+          "Azure Cache for Redis"
+        ],
+        "ownership": null,
+        "deployment_zone": "production",
+        "internet_accessible": null,
+        "externally_managed": null,
+        "entry_point_types": [],
+        "data_classifications": [],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-004",
+          "evd-011",
+          "evd-012"
+        ]
+      },
+      {
+        "key": "azure-cognitive-services",
+        "name": "Azure Cognitive Services",
+        "component_type": "external_service",
+        "description": "External service supplying training images to the Gather Images application; accessed over TLS with server certificate validation.",
+        "technology": [
+          "TLS"
+        ],
+        "ownership": "third_party",
+        "deployment_zone": "public_internet",
+        "internet_accessible": true,
+        "externally_managed": true,
+        "entry_point_types": [
+          "api"
+        ],
+        "data_classifications": [],
+        "authentication_mechanisms": [
+          "api_key"
+        ],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-006",
+          "evd-009",
+          "evd-010",
+          "evd-012",
+          "evd-013"
+        ]
+      },
+      {
+        "key": "third-party-tools",
+        "name": "Third-party image tools",
+        "component_type": "external_service",
+        "description": "Third-party tools on the public internet from which the experimental environment pulls images, accessed with API keys held in the API key store.",
+        "technology": [],
+        "ownership": "third_party",
+        "deployment_zone": "public_internet",
+        "internet_accessible": true,
+        "externally_managed": true,
+        "entry_point_types": [
+          "api"
+        ],
+        "data_classifications": [],
+        "authentication_mechanisms": [
+          "api_key"
+        ],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-009",
+          "evd-010",
+          "evd-013"
         ]
       }
     ],
@@ -234,10 +911,17 @@
         "key": "end-users",
         "name": "End users",
         "actor_type": "external_user",
-        "trust_level": null,
-        "capabilities": [],
-        "authentication_method": "sso",
+        "trust_level": "untrusted",
+        "skill_level": null,
+        "access_level": null,
+        "capabilities": [
+          "submit images for classification through the public API"
+        ],
+        "authentication_method": "Not stated per-actor; the public-to-production boundary is documented as SSO-authenticated.",
         "evidence_ids": [
+          "evd-007",
+          "evd-009",
+          "evd-012",
           "evd-013"
         ]
       },
@@ -246,205 +930,486 @@
         "name": "Data engineers",
         "actor_type": "internal_user",
         "trust_level": null,
-        "capabilities": [],
-        "authentication_method": "password",
+        "skill_level": null,
+        "access_level": "authenticated",
+        "capabilities": [
+          "build, train, and deploy models",
+          "work in the experimental environment",
+          "work directly in the Jupyter environment"
+        ],
+        "authentication_method": "Authenticate before reaching any notebook; the public-to-experimental boundary is password-authenticated.",
         "evidence_ids": [
+          "evd-003",
+          "evd-009",
+          "evd-012",
           "evd-013"
         ]
       },
       {
-        "key": "platform-engineers",
+        "key": "azure-platform-engineers",
         "name": "Azure platform engineers",
-        "actor_type": "internal_user",
+        "actor_type": "administrator",
         "trust_level": null,
-        "capabilities": [],
-        "authentication_method": "ssh_public_key",
+        "skill_level": null,
+        "access_level": "privileged",
+        "capabilities": [
+          "secure and maintain production infrastructure",
+          "SSH to the Bastion and obtain onward access to the API Gateway, web server, and model blob"
+        ],
+        "authentication_method": "SSH public-key authentication against the Authorized Keys storage via the Bastion.",
         "evidence_ids": [
+          "evd-005",
+          "evd-010",
+          "evd-012",
           "evd-013"
         ]
       },
       {
-        "key": "image-services",
-        "name": "External image services",
-        "actor_type": "external_service",
+        "key": "external-image-services",
+        "name": "Azure Cognitive Services and third-party tools",
+        "actor_type": "third_party_service",
         "trust_level": null,
-        "capabilities": [],
-        "authentication_method": null,
+        "skill_level": null,
+        "access_level": null,
+        "capabilities": [
+          "supply training images to the Gather Images application"
+        ],
+        "authentication_method": "Accessed by the Gather Images application using API keys held in the API key store.",
         "evidence_ids": [
+          "evd-010",
+          "evd-012",
           "evd-013"
         ]
       }
     ],
     "assets": [
       {
-        "key": "training-images",
-        "name": "Training and validation images",
-        "asset_type": "training_data",
-        "description": null,
-        "confidentiality_impact": null,
-        "integrity_impact": null,
-        "availability_impact": null,
-        "data_classification": null,
-        "owner": null,
-        "component_keys": [
-          "gather",
-          "jupyter"
-        ],
-        "evidence_ids": [
-          "evd-011"
-        ]
-      },
-      {
-        "key": "model",
-        "name": "Trained model",
+        "key": "trained-model",
+        "name": "Trained convolutional neural network model",
         "asset_type": "model_artifact",
-        "description": "trained models in serialized form",
+        "description": "Serialized trained model written by the Jupyter environment, packaged by the deployment service, stored in the production model blob, and loaded by the Python web server to classify uploaded images.",
         "confidentiality_impact": null,
-        "integrity_impact": null,
-        "availability_impact": null,
-        "data_classification": null,
+        "integrity_impact": "The served model determines every classification returned to users; the documentation describes no verification of the artifact between writing and loading.",
+        "availability_impact": "The web server loads the model from the model blob in order to serve classifications.",
+        "data_classification": "unknown",
         "owner": null,
         "component_keys": [
-          "jupyter",
-          "web-server",
-          "deployment"
+          "jupyter-notebook",
+          "model-blob",
+          "deployment-service",
+          "python-web-server"
+        ],
+        "stored_in_component_keys": [
+          "model-blob"
         ],
         "evidence_ids": [
+          "evd-010",
+          "evd-011",
+          "evd-012"
+        ]
+      },
+      {
+        "key": "training-validation-images",
+        "name": "Training and validation images",
+        "asset_type": "data",
+        "description": "Husky and non-husky images collected from external services and used to train and validate the model.",
+        "confidentiality_impact": null,
+        "integrity_impact": "These images are the training input to the model; the documentation does not describe validation of collected images.",
+        "availability_impact": null,
+        "data_classification": "unknown",
+        "owner": null,
+        "component_keys": [
+          "gather-images-app",
+          "training-images-blob",
+          "jupyter-notebook"
+        ],
+        "stored_in_component_keys": [
+          "training-images-blob"
+        ],
+        "evidence_ids": [
+          "evd-010",
+          "evd-011",
+          "evd-012"
+        ]
+      },
+      {
+        "key": "external-service-api-keys",
+        "name": "API keys for external image services",
+        "asset_type": "credential",
+        "description": "API keys used by the Gather Images application to call Azure Cognitive Services and third-party tools.",
+        "confidentiality_impact": "Keys authorize calls to external image services on the organisation's behalf.",
+        "integrity_impact": null,
+        "availability_impact": null,
+        "data_classification": "unknown",
+        "owner": null,
+        "component_keys": [
+          "api-key-storage",
+          "gather-images-app"
+        ],
+        "stored_in_component_keys": [
+          "api-key-storage"
+        ],
+        "evidence_ids": [
+          "evd-010",
           "evd-011"
         ]
       },
       {
-        "key": "uploaded-images",
-        "name": "Uploaded images",
-        "asset_type": "user_data",
-        "description": "user-submitted images held in the Redis cache while awaiting classification",
+        "key": "source-and-configuration",
+        "name": "Source code and configuration",
+        "asset_type": "data",
+        "description": "Source and configuration read by the deployment service and packaged with the model for deployment into production.",
         "confidentiality_impact": null,
-        "integrity_impact": null,
+        "integrity_impact": "Packaged into production releases delivered through the Bastion.",
         "availability_impact": null,
-        "data_classification": null,
+        "data_classification": "unknown",
         "owner": null,
         "component_keys": [
-          "web-server"
+          "source-config-storage",
+          "deployment-service"
         ],
+        "stored_in_component_keys": [
+          "source-config-storage"
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-010",
+          "evd-011"
+        ]
+      },
+      {
+        "key": "ssh-authorized-keys",
+        "name": "SSH authorized keys",
+        "asset_type": "credential",
+        "description": "SSH keys authorizing administrative access, read by the Bastion when authenticating administrators.",
+        "confidentiality_impact": "Keys authorize administrative access to production through the Bastion.",
+        "integrity_impact": "The Bastion authenticates administrators against this store.",
+        "availability_impact": null,
+        "data_classification": "unknown",
+        "owner": null,
+        "component_keys": [
+          "authorized-keys-storage",
+          "bastion-server"
+        ],
+        "stored_in_component_keys": [
+          "authorized-keys-storage"
+        ],
+        "evidence_ids": [
+          "evd-010",
+          "evd-011",
+          "evd-012"
+        ]
+      },
+      {
+        "key": "bastion-access-logs",
+        "name": "Bastion SSH access and activity logs",
+        "asset_type": "log_data",
+        "description": "Records of all SSH access attempts through the Bastion, successful or not, plus session activity.",
+        "confidentiality_impact": null,
+        "integrity_impact": "These logs are the documented record of administrative access to production.",
+        "availability_impact": null,
+        "data_classification": "unknown",
+        "owner": null,
+        "component_keys": [
+          "bastion-server",
+          "bastion-logs-storage"
+        ],
+        "stored_in_component_keys": [
+          "bastion-logs-storage"
+        ],
+        "evidence_ids": [
+          "evd-005",
+          "evd-011",
+          "evd-012"
+        ]
+      },
+      {
+        "key": "uploaded-user-images",
+        "name": "User-uploaded images awaiting classification",
+        "asset_type": "data",
+        "description": "Images submitted by end users through the public API, held in memory in the Redis cache while awaiting classification and, per the documentation, not written to disk. No store is documented as holding them at rest.",
+        "confidentiality_impact": "In-memory storage was chosen to make user-submitted images difficult to access after the request completes.",
+        "integrity_impact": null,
+        "availability_impact": null,
+        "data_classification": "unknown",
+        "owner": null,
+        "component_keys": [
+          "api-gateway",
+          "python-web-server",
+          "redis-cache"
+        ],
+        "stored_in_component_keys": [],
         "evidence_ids": [
           "evd-004",
-          "evd-011"
+          "evd-011",
+          "evd-012"
         ]
       },
       {
-        "key": "ssh-keys",
-        "name": "SSH authorized keys",
-        "asset_type": "credentials",
-        "description": "SSH keys authorizing administrative access",
+        "key": "classification-service-availability",
+        "name": "Availability of the public classification service",
+        "asset_type": "availability",
+        "description": "The ability of end users to submit an image to the public API and receive a classification.",
         "confidentiality_impact": null,
         "integrity_impact": null,
-        "availability_impact": null,
-        "data_classification": null,
+        "availability_impact": "The documented serving path depends on the API Gateway, the Python web server, the Redis cache, and the model blob.",
+        "data_classification": "unknown",
         "owner": null,
         "component_keys": [
-          "bastion"
+          "api-gateway",
+          "python-web-server",
+          "redis-cache",
+          "model-blob"
         ],
+        "stored_in_component_keys": [],
         "evidence_ids": [
-          "evd-011"
-        ]
-      },
-      {
-        "key": "bastion-logs",
-        "name": "Bastion logs",
-        "asset_type": "audit_data",
-        "description": "SSH access and activity logs from the Bastion",
-        "confidentiality_impact": null,
-        "integrity_impact": null,
-        "availability_impact": null,
-        "data_classification": null,
-        "owner": null,
-        "component_keys": [
-          "bastion"
-        ],
-        "evidence_ids": [
-          "evd-011"
-        ]
-      },
-      {
-        "key": "source-config",
-        "name": "Source code and configuration",
-        "asset_type": "source_code",
-        "description": "source and configuration used by deployment",
-        "confidentiality_impact": null,
-        "integrity_impact": null,
-        "availability_impact": null,
-        "data_classification": null,
-        "owner": null,
-        "component_keys": [
-          "deployment",
-          "jupyter"
-        ],
-        "evidence_ids": [
-          "evd-011"
-        ]
-      },
-      {
-        "key": "api-keys",
-        "name": "External image-service API keys",
-        "asset_type": "credentials",
-        "description": "API keys for the external image services, held in the API Key storage",
-        "confidentiality_impact": null,
-        "integrity_impact": null,
-        "availability_impact": null,
-        "data_classification": null,
-        "owner": null,
-        "component_keys": [
-          "gather"
-        ],
-        "evidence_ids": [
-          "evd-011"
-        ]
-      },
-      {
-        "key": "classifications",
-        "name": "Classification results",
-        "asset_type": "operational_data",
-        "description": null,
-        "confidentiality_impact": null,
-        "integrity_impact": null,
-        "availability_impact": null,
-        "data_classification": null,
-        "owner": null,
-        "component_keys": [
-          "web-server"
-        ],
-        "evidence_ids": [
+          "evd-008",
           "evd-012"
         ]
       }
     ],
     "data_flows": [
       {
-        "key": "serving",
-        "name": "Serving path",
-        "source_component_key": "gateway",
-        "destination_component_key": "web-server",
-        "direction": "bidirectional",
-        "protocol": "https",
-        "data_types": [],
-        "authentication": "sso",
-        "encryption_in_transit": "https",
+        "key": "flow-cognitive-to-gather",
+        "name": "Azure Cognitive Services supplies images to Gather Images application",
+        "source_component_key": "azure-cognitive-services",
+        "destination_component_key": "gather-images-app",
+        "direction": "one_way",
+        "protocol": "TLS (HTTPS)",
+        "data_types": [
+          "training images"
+        ],
+        "authentication": "api_key",
+        "encryption_in_transit": "tls",
         "crosses_trust_boundary_keys": [
-          "public-production"
+          "tb-public-experimental"
         ],
         "internet_exposed": true,
         "evidence_ids": [
+          "evd-006",
+          "evd-010",
           "evd-012"
         ]
       },
       {
-        "key": "training",
-        "name": "Training path",
-        "source_component_key": "gather",
-        "destination_component_key": "jupyter",
+        "key": "flow-thirdparty-to-gather",
+        "name": "Third-party tools supply images to Gather Images application",
+        "source_component_key": "third-party-tools",
+        "destination_component_key": "gather-images-app",
         "direction": "one_way",
         "protocol": null,
-        "data_types": [],
+        "data_types": [
+          "training images"
+        ],
+        "authentication": "api_key",
+        "encryption_in_transit": "unknown",
+        "crosses_trust_boundary_keys": [
+          "tb-public-experimental"
+        ],
+        "internet_exposed": true,
+        "evidence_ids": [
+          "evd-010",
+          "evd-012"
+        ]
+      },
+      {
+        "key": "flow-apikeys-to-gather",
+        "name": "Gather Images application reads API keys",
+        "source_component_key": "api-key-storage",
+        "destination_component_key": "gather-images-app",
+        "direction": "one_way",
+        "protocol": null,
+        "data_types": [
+          "api keys"
+        ],
+        "authentication": "unknown",
+        "encryption_in_transit": "unknown",
+        "crosses_trust_boundary_keys": [],
+        "internet_exposed": null,
+        "evidence_ids": [
+          "evd-010",
+          "evd-011"
+        ]
+      },
+      {
+        "key": "flow-gather-to-training-blob",
+        "name": "Gather Images application writes collected images to training blob",
+        "source_component_key": "gather-images-app",
+        "destination_component_key": "training-images-blob",
+        "direction": "one_way",
+        "protocol": null,
+        "data_types": [
+          "training images"
+        ],
+        "authentication": "unknown",
+        "encryption_in_transit": "unknown",
+        "crosses_trust_boundary_keys": [],
+        "internet_exposed": null,
+        "evidence_ids": [
+          "evd-010",
+          "evd-012"
+        ]
+      },
+      {
+        "key": "flow-training-blob-to-jupyter",
+        "name": "Jupyter environment reads training and validation images",
+        "source_component_key": "training-images-blob",
+        "destination_component_key": "jupyter-notebook",
+        "direction": "one_way",
+        "protocol": null,
+        "data_types": [
+          "training images",
+          "validation images"
+        ],
+        "authentication": "unknown",
+        "encryption_in_transit": "unknown",
+        "crosses_trust_boundary_keys": [],
+        "internet_exposed": null,
+        "evidence_ids": [
+          "evd-010",
+          "evd-012"
+        ]
+      },
+      {
+        "key": "flow-jupyter-to-model-blob",
+        "name": "Jupyter environment writes serialized model to model storage blob",
+        "source_component_key": "jupyter-notebook",
+        "destination_component_key": "model-blob",
+        "direction": "one_way",
+        "protocol": null,
+        "data_types": [
+          "serialized model"
+        ],
+        "authentication": "unknown",
+        "encryption_in_transit": "unknown",
+        "crosses_trust_boundary_keys": [
+          "tb-production-experimental"
+        ],
+        "internet_exposed": null,
+        "evidence_ids": [
+          "evd-010",
+          "evd-011",
+          "evd-012"
+        ]
+      },
+      {
+        "key": "flow-model-blob-to-deployment",
+        "name": "Deployment service reads trained model for packaging",
+        "source_component_key": "model-blob",
+        "destination_component_key": "deployment-service",
+        "direction": "one_way",
+        "protocol": null,
+        "data_types": [
+          "serialized model"
+        ],
+        "authentication": "unknown",
+        "encryption_in_transit": "unknown",
+        "crosses_trust_boundary_keys": [
+          "tb-production-experimental"
+        ],
+        "internet_exposed": null,
+        "evidence_ids": [
+          "evd-010",
+          "evd-011",
+          "evd-012"
+        ]
+      },
+      {
+        "key": "flow-source-to-deployment",
+        "name": "Deployment service reads source code and configuration",
+        "source_component_key": "source-config-storage",
+        "destination_component_key": "deployment-service",
+        "direction": "one_way",
+        "protocol": null,
+        "data_types": [
+          "source code",
+          "configuration"
+        ],
+        "authentication": "unknown",
+        "encryption_in_transit": "unknown",
+        "crosses_trust_boundary_keys": [],
+        "internet_exposed": null,
+        "evidence_ids": [
+          "evd-010",
+          "evd-011"
+        ]
+      },
+      {
+        "key": "flow-deployment-to-bastion",
+        "name": "Deployment service delivers releases into production through the Bastion",
+        "source_component_key": "deployment-service",
+        "destination_component_key": "bastion-server",
+        "direction": "one_way",
+        "protocol": "SSH",
+        "data_types": [
+          "release package",
+          "serialized model",
+          "source code",
+          "configuration"
+        ],
+        "authentication": "public_key",
+        "encryption_in_transit": "unknown",
+        "crosses_trust_boundary_keys": [
+          "tb-production-experimental"
+        ],
+        "internet_exposed": null,
+        "evidence_ids": [
+          "evd-007",
+          "evd-009",
+          "evd-010",
+          "evd-012"
+        ]
+      },
+      {
+        "key": "flow-authorized-keys-to-bastion",
+        "name": "Bastion reads authorized keys for SSH authentication",
+        "source_component_key": "authorized-keys-storage",
+        "destination_component_key": "bastion-server",
+        "direction": "one_way",
+        "protocol": null,
+        "data_types": [
+          "ssh public keys"
+        ],
+        "authentication": "unknown",
+        "encryption_in_transit": "unknown",
+        "crosses_trust_boundary_keys": [],
+        "internet_exposed": null,
+        "evidence_ids": [
+          "evd-010",
+          "evd-012"
+        ]
+      },
+      {
+        "key": "flow-bastion-to-logs",
+        "name": "Bastion writes SSH access and session logs",
+        "source_component_key": "bastion-server",
+        "destination_component_key": "bastion-logs-storage",
+        "direction": "one_way",
+        "protocol": null,
+        "data_types": [
+          "access logs",
+          "session logs"
+        ],
+        "authentication": "unknown",
+        "encryption_in_transit": "unknown",
+        "crosses_trust_boundary_keys": [],
+        "internet_exposed": null,
+        "evidence_ids": [
+          "evd-005",
+          "evd-010",
+          "evd-012"
+        ]
+      },
+      {
+        "key": "flow-bastion-to-gateway",
+        "name": "Bastion provides administrative access to the API Gateway",
+        "source_component_key": "bastion-server",
+        "destination_component_key": "api-gateway",
+        "direction": "bidirectional",
+        "protocol": "SSH",
+        "data_types": [
+          "administrative commands"
+        ],
         "authentication": "unknown",
         "encryption_in_transit": "unknown",
         "crosses_trust_boundary_keys": [],
@@ -454,97 +1419,340 @@
         ]
       },
       {
-        "key": "deployment-flow",
-        "name": "Deployment path",
-        "source_component_key": "deployment",
-        "destination_component_key": "bastion",
-        "direction": "one_way",
-        "protocol": null,
-        "data_types": [],
-        "authentication": "public_key",
-        "encryption_in_transit": "unknown",
-        "crosses_trust_boundary_keys": [
-          "production-experimental"
+        "key": "flow-bastion-to-webserver",
+        "name": "Bastion provides administrative access to the Python web server",
+        "source_component_key": "bastion-server",
+        "destination_component_key": "python-web-server",
+        "direction": "bidirectional",
+        "protocol": "SSH",
+        "data_types": [
+          "administrative commands"
         ],
+        "authentication": "unknown",
+        "encryption_in_transit": "unknown",
+        "crosses_trust_boundary_keys": [],
         "internet_exposed": null,
         "evidence_ids": [
           "evd-012"
         ]
       },
       {
-        "key": "administrative",
-        "name": "Administrative path",
-        "source_component_key": "bastion",
-        "destination_component_key": "web-server",
-        "direction": "one_way",
-        "protocol": "ssh",
-        "data_types": [],
-        "authentication": "ssh_public_key",
-        "encryption_in_transit": "ssh",
-        "crosses_trust_boundary_keys": [
-          "public-production"
+        "key": "flow-bastion-to-model-blob",
+        "name": "Bastion provides access to the model blob",
+        "source_component_key": "bastion-server",
+        "destination_component_key": "model-blob",
+        "direction": "bidirectional",
+        "protocol": null,
+        "data_types": [
+          "serialized model"
         ],
+        "authentication": "unknown",
+        "encryption_in_transit": "unknown",
+        "crosses_trust_boundary_keys": [],
         "internet_exposed": null,
         "evidence_ids": [
+          "evd-002",
           "evd-012"
+        ]
+      },
+      {
+        "key": "flow-gateway-to-webserver",
+        "name": "API Gateway forwards classification requests to the web server",
+        "source_component_key": "api-gateway",
+        "destination_component_key": "python-web-server",
+        "direction": "bidirectional",
+        "protocol": null,
+        "data_types": [
+          "uploaded image",
+          "classification result"
+        ],
+        "authentication": "unknown",
+        "encryption_in_transit": "unknown",
+        "crosses_trust_boundary_keys": [],
+        "internet_exposed": null,
+        "evidence_ids": [
+          "evd-010",
+          "evd-012"
+        ]
+      },
+      {
+        "key": "flow-webserver-to-redis",
+        "name": "Web server holds uploaded images in the Redis cache",
+        "source_component_key": "python-web-server",
+        "destination_component_key": "redis-cache",
+        "direction": "bidirectional",
+        "protocol": null,
+        "data_types": [
+          "uploaded image"
+        ],
+        "authentication": "unknown",
+        "encryption_in_transit": "unknown",
+        "crosses_trust_boundary_keys": [],
+        "internet_exposed": null,
+        "evidence_ids": [
+          "evd-004",
+          "evd-011",
+          "evd-012"
+        ]
+      },
+      {
+        "key": "flow-model-blob-to-webserver",
+        "name": "Web server loads the trained model from the model blob",
+        "source_component_key": "model-blob",
+        "destination_component_key": "python-web-server",
+        "direction": "one_way",
+        "protocol": null,
+        "data_types": [
+          "serialized model"
+        ],
+        "authentication": "unknown",
+        "encryption_in_transit": "unknown",
+        "crosses_trust_boundary_keys": [],
+        "internet_exposed": null,
+        "evidence_ids": [
+          "evd-010"
         ]
       }
     ],
     "trust_boundaries": [
       {
-        "key": "public-production",
-        "name": "Public-to-production boundary",
-        "boundary_type": "internet_to_application",
-        "description": "authenticated with SSO",
+        "key": "tb-public-production",
+        "name": "Public internet to production boundary",
+        "boundary_type": "network",
+        "description": "Boundary between the public internet (end users, external services) and the production VPC. Access across it is documented as SSO-authenticated, with RBAC and ACLs applied; the public API is HTTPS-only.",
         "inside_component_keys": [
-          "gateway",
-          "web-server",
-          "bastion"
-        ],
-        "outside_component_keys": [],
-        "controls": [],
-        "evidence_ids": [
-          "evd-009"
-        ]
-      },
-      {
-        "key": "public-experimental",
-        "name": "Public-to-experimental boundary",
-        "boundary_type": "internet_to_application",
-        "description": "password-authenticated",
-        "inside_component_keys": [
-          "gather",
-          "jupyter",
-          "deployment"
-        ],
-        "outside_component_keys": [],
-        "controls": [],
-        "evidence_ids": [
-          "evd-009"
-        ]
-      },
-      {
-        "key": "production-experimental",
-        "name": "Production-to-experimental boundary",
-        "boundary_type": "environment_to_environment",
-        "description": "public-key authentication, with RBAC and ACLs applied at each boundary",
-        "inside_component_keys": [
-          "gateway",
-          "web-server",
-          "bastion"
+          "api-gateway",
+          "python-web-server",
+          "bastion-server",
+          "model-blob",
+          "authorized-keys-storage",
+          "bastion-logs-storage",
+          "redis-cache"
         ],
         "outside_component_keys": [
-          "gather",
-          "jupyter",
-          "deployment"
+          "azure-cognitive-services",
+          "third-party-tools"
         ],
-        "controls": [],
+        "controls": [
+          "sso",
+          "https",
+          "rbac",
+          "acl",
+          "request validation at the API Gateway"
+        ],
         "evidence_ids": [
+          "evd-006",
+          "evd-007",
+          "evd-009",
+          "evd-010"
+        ]
+      },
+      {
+        "key": "tb-public-experimental",
+        "name": "Public internet to experimental boundary",
+        "boundary_type": "network",
+        "description": "Boundary between the public internet (external image services, third-party tools) and the experimental VPC. Access across it is documented as password-authenticated, with RBAC and ACLs applied. The Jupyter environment is documented as not exposed outside the experimental VPC.",
+        "inside_component_keys": [
+          "gather-images-app",
+          "jupyter-notebook",
+          "deployment-service",
+          "training-images-blob",
+          "api-key-storage",
+          "source-config-storage"
+        ],
+        "outside_component_keys": [
+          "azure-cognitive-services",
+          "third-party-tools"
+        ],
+        "controls": [
+          "password authentication",
+          "rbac",
+          "acl",
+          "tls with certificate validation for image collection from Azure Cognitive Services"
+        ],
+        "evidence_ids": [
+          "evd-003",
+          "evd-006",
+          "evd-007",
           "evd-009"
+        ]
+      },
+      {
+        "key": "tb-production-experimental",
+        "name": "Production to experimental boundary",
+        "boundary_type": "network",
+        "description": "Boundary between the production and experimental VPCs. Movement between them is documented as using public-key authentication, with RBAC and ACLs applied. Releases cross it via the deployment service and the Bastion, and the production model blob is written from across it.",
+        "inside_component_keys": [
+          "api-gateway",
+          "python-web-server",
+          "bastion-server",
+          "model-blob",
+          "authorized-keys-storage",
+          "bastion-logs-storage",
+          "redis-cache"
+        ],
+        "outside_component_keys": [
+          "gather-images-app",
+          "jupyter-notebook",
+          "deployment-service",
+          "training-images-blob",
+          "api-key-storage",
+          "source-config-storage"
+        ],
+        "controls": [
+          "public-key authentication",
+          "rbac",
+          "acl",
+          "deployment delivered through the Bastion"
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-007",
+          "evd-009",
+          "evd-010",
+          "evd-012"
         ]
       }
     ],
-    "questions": [],
-    "observations": []
+    "questions": [
+      {
+        "key": "q-model-blob-writers",
+        "question": "Which components may write to the production Machine Learning Model blob, and is the Jupyter Notebook write the same path as the 'experimental deployment path' named in the security notes \u2014 or are there two distinct model blobs?",
+        "rationale": "The security notes restrict writes to the deployment path and the Bastion, while the overview has the notebook environment writing the serialized model to the model blob. The answer determines which components can change the model served to end users and where the production/experimental boundary is actually crossed, so it changes the trust-boundary and asset-integrity picture materially.",
+        "related_object_key": "model-blob",
+        "priority": "high",
+        "blocking": true
+      },
+      {
+        "key": "q-other-store-access-control",
+        "question": "How is access controlled to the API Key storage, the Authorized Keys storage, and the Bastion Logs storage?",
+        "rationale": "The storage access-control section covers only the training images, model storage, and source/configuration storage. The three unlisted stores hold external-service API keys, the SSH keys that authorize administrative access, and the audit record of that access \u2014 the controls on them bear directly on credential and log integrity.",
+        "related_object_key": "authorized-keys-storage",
+        "priority": "high",
+        "blocking": false
+      },
+      {
+        "key": "q-end-user-authentication",
+        "question": "Are end users authenticated (for example via SSO) when submitting images to the public classification API, or is that endpoint anonymous?",
+        "rationale": "The documents state SSO at the public-to-production boundary but describe end users simply submitting images through the public API. Whether the classification endpoint is anonymous or authenticated changes who the untrusted callers are and what abuse of the endpoint means.",
+        "related_object_key": "api-gateway",
+        "priority": "high",
+        "blocking": false
+      },
+      {
+        "key": "q-model-integrity-verification",
+        "question": "Is the packaged model artifact integrity-verified (for example signed or checksummed) between being written in the experimental environment and being loaded by the production web server?",
+        "rationale": "The model is the artifact that determines every classification returned to users, and it crosses from experimental to production. Whether its integrity is verified on load changes how significant write access to the model blob is.",
+        "related_object_key": "trained-model",
+        "priority": "high",
+        "blocking": false
+      },
+      {
+        "key": "q-internal-transport-security",
+        "question": "Are the internal production flows \u2014 API Gateway to web server, web server to Redis, and web server to model blob \u2014 authenticated and encrypted in transit?",
+        "rationale": "Transport security is documented only for the public API and for image collection from Azure Cognitive Services. The protections on internal production traffic carrying uploaded images and the serialized model are unstated.",
+        "related_object_key": "flow-gateway-to-webserver",
+        "priority": "medium",
+        "blocking": false
+      },
+      {
+        "key": "q-encryption-at-rest",
+        "question": "Is data encrypted at rest in the blob storage accounts and the Redis cache, and if so, who manages the keys?",
+        "rationale": "No passage addresses encryption at rest for any of the seven data stores, which include training images, models, API keys, SSH authorized keys, and access logs. The answer affects the impact of storage-level compromise.",
+        "related_object_key": "model-blob",
+        "priority": "medium",
+        "blocking": false
+      },
+      {
+        "key": "q-redis-retention",
+        "question": "How long are uploaded images retained in the Redis cache, and what eviction or expiry policy applies?",
+        "rationale": "The documentation states images are held in memory while awaiting classification and not written to disk, but gives no lifetime. The answer determines how long user-submitted content is exposed in a production component.",
+        "related_object_key": "redis-cache",
+        "priority": "medium",
+        "blocking": false
+      },
+      {
+        "key": "q-redis-access-control",
+        "question": "What authentication and network access controls protect the Azure Cache for Redis instance?",
+        "rationale": "Redis holds user-submitted images in production. The storage access-control section covers only the blob accounts, so the controls on the cache are unstated and would change the exposure of uploaded images.",
+        "related_object_key": "redis-cache",
+        "priority": "medium",
+        "blocking": false
+      },
+      {
+        "key": "q-third-party-transport",
+        "question": "Does image collection from the third-party tools use TLS with certificate validation, as documented for Azure Cognitive Services?",
+        "rationale": "The transport-security section names only Azure Cognitive Services, while the overview describes images also being pulled from third-party tools. Unvalidated transport on that path would affect the integrity of training data.",
+        "related_object_key": "flow-thirdparty-to-gather",
+        "priority": "medium",
+        "blocking": false
+      },
+      {
+        "key": "q-bastion-reachability",
+        "question": "From which networks is the Bastion reachable, and is it exposed to the public internet?",
+        "rationale": "The Bastion is documented as the only administrative path into production and grants onward access to the gateway, web server, and model blob. Its exposure determines who can attempt administrative authentication.",
+        "related_object_key": "bastion-server",
+        "priority": "medium",
+        "blocking": false
+      },
+      {
+        "key": "q-input-validation",
+        "question": "What validation is applied to uploaded image content \u2014 for example file type, size, and content checks \u2014 beyond the API Gateway's request validation?",
+        "rationale": "Uploaded images are attacker-controlled input that reaches the web server, the cache, and the model. What is validated determines whether malformed or hostile input is a live concern.",
+        "related_object_key": "api-gateway",
+        "priority": "medium",
+        "blocking": false
+      },
+      {
+        "key": "q-access-model-posture",
+        "question": "Is the authorization posture across boundaries and storage accounts deny-by-default, or are some paths open by default?",
+        "rationale": "RBAC and ACLs are documented as applied at each boundary, but no default posture is stated. The posture affects how newly added components and paths behave and whether unlisted access is implicitly permitted.",
+        "related_object_key": null,
+        "priority": "medium",
+        "blocking": false
+      },
+      {
+        "key": "q-logging-scope",
+        "question": "Beyond Bastion SSH logging, what logging, alerting, and log-protection exist for the API Gateway, the web server, and the storage accounts?",
+        "rationale": "Only Bastion access logging is documented. The presence or absence of application and storage logging changes what detection capability exists for the serving and training paths.",
+        "related_object_key": null,
+        "priority": "medium",
+        "blocking": false
+      },
+      {
+        "key": "q-image-data-sensitivity",
+        "question": "Can user-submitted images contain personal or otherwise sensitive data, and is any data classification assigned to them?",
+        "rationale": "No classification is assigned to uploaded images. Whether they may contain personal data changes the impact of exposure in the cache or in transit, and any retention obligations.",
+        "related_object_key": "uploaded-user-images",
+        "priority": "medium",
+        "blocking": false
+      },
+      {
+        "key": "q-api-key-lifecycle",
+        "question": "How are the external-service API keys provisioned, rotated, and scoped, and which identities can read the API key store?",
+        "rationale": "The keys authorize calls to external image services and are held in a store whose access controls are not described. Their lifecycle affects the impact of a compromise of the experimental environment.",
+        "related_object_key": "api-key-storage",
+        "priority": "low",
+        "blocking": false
+      }
+    ],
+    "observations": [
+      {
+        "key": "obs-model-blob-write-conflict",
+        "kind": "contradiction",
+        "summary": "The two documents give incompatible accounts of who can write the production model blob. The security notes state the production model blob is writable only from the experimental deployment path and the Bastion (evd-002), while the system overview states the Jupyter Notebook environment writes the serialized model to the model storage blob (evd-010) and the store table lists a single Machine Learning Model blob located in production (evd-011). Either the notebook write is intended to count as the 'experimental deployment path', or there is an additional writer, or more than one model blob exists. Which reading is authoritative changes which components can alter the model that is served to users, and is left for the reviewer.",
+        "evidence_ids": [
+          "evd-002",
+          "evd-010",
+          "evd-011",
+          "evd-012"
+        ],
+        "subject_claim_keys": [
+          "clm-model-blob-write-restriction",
+          "clm-jupyter-writes-model-blob",
+          "clm-model-blob-effective-writers"
+        ]
+      }
+    ]
   }
 }
