@@ -58,7 +58,13 @@ def _actual() -> set[Path]:
     actual.add(Path("src"))
     actual.add(Path("src") / "trace_ai")
     for path in package.rglob("*"):
-        if path.is_dir() and "__pycache__" not in path.parts:
+        # A package directory counts only when it holds Python source: a directory left behind
+        # by a branch switch, containing nothing but `__pycache__`, is residue, not layout.
+        if (
+            path.is_dir()
+            and "__pycache__" not in path.parts
+            and any(child.suffix == ".py" for child in path.iterdir())
+        ):
             actual.add(path.relative_to(PROJECT_ROOT))
     for scope in ("tests", "docs"):
         for child in (PROJECT_ROOT / scope).iterdir():

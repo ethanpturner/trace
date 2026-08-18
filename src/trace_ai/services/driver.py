@@ -378,6 +378,7 @@ class ContextValidationAdapter:
                 "error_count": len(outcome.errors),
                 "trigger_count": len(outcome.triggers),
                 "zone_mismatch_count": len(outcome.zone_mismatches),
+                "cross_claim_observation_count": len(outcome.cross_claim_observations),
                 "privilege_extreme_questions": len(raised),
             },
         )
