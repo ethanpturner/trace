@@ -6322,6 +6322,13 @@ metrics as a mapping, the DEC-075 adversarial block where the feed holds one, th
 feed path, and the offline replay pin's verdict. Exit codes are unchanged by the flag, including
 the drift answer.
 
+Amendment (2026-08-17, #523): **`report show` and `verify` take `--json`.** The consumer this
+entry's tradeoff waited for appeared: the release-record machinery (#524) reads `verify --json`
+as its integrity gate. `report show --json` carries the report body — or, with `--manifest`,
+the parsed manifest — exactly as the human view prints it; `verify --json` carries the walk's
+counts and every drifted item by identifier and hash, never content. Exit codes are unchanged
+by the flag: drift is still exit 3 (DEC-088).
+
 ## DEC-097: Assessment diffing compares approved models by content fingerprint, conservatively
 
 Date: 2026-08-17

@@ -83,7 +83,7 @@ from trace_ai.services.findings.review_package import (
 )
 from trace_ai.services.ingestion.loader import DocumentLoader, DocumentLoadError
 from trace_ai.services.requirements.loader import CatalogError
-from trace_ai.services.verification import verify_assessment
+from trace_ai.services.verification import Drift, verify_assessment
 from trace_ai.workflow.checkpoint import load_state
 from trace_ai.workflow.context_review import (
     ApprovalRefusedError,
@@ -733,6 +733,7 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     verify.add_argument("assessment_id")
+    _json_flag(verify)
 
     report = commands.add_parser("report", help="inspect the rendered report")
     report_commands = report.add_subparsers(dest="command")
@@ -744,6 +745,7 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="print the report's manifest instead of the report",
     )
+    _json_flag(report_show)
 
     report_rubric = report_commands.add_parser(
         "rubric",
@@ -2636,6 +2638,29 @@ def _verify(args: argparse.Namespace, service: AssessmentService) -> int:
     """
     outcome = verify_assessment(service.handle(args.assessment_id))
 
+    if args.as_json:
+        _print_json(
+            "verification",
+            {
+                "assessment_id": args.assessment_id,
+                "ok": outcome.ok,
+                "document_count": outcome.document_count,
+                "evidence_count": outcome.evidence_count,
+                "manifest_checked": outcome.manifest_checked,
+                "document_drift": [_drift_entry(drift) for drift in outcome.document_drift],
+                "evidence_failures": [
+                    {
+                        "evidence_id": failure.evidence_id,
+                        "outcome": failure.outcome.value,
+                        "detail": failure.detail,
+                    }
+                    for failure in outcome.evidence_failures
+                ],
+                "manifest_drift": [_drift_entry(drift) for drift in outcome.manifest_drift],
+            },
+        )
+        return 0 if outcome.ok else REFUSED
+
     if outcome.ok:
         manifest = "1 manifest" if outcome.manifest_checked else "no manifest yet"
         print(
@@ -2659,6 +2684,11 @@ def _verify(args: argparse.Namespace, service: AssessmentService) -> int:
     return REFUSED
 
 
+def _drift_entry(drift: Drift) -> dict[str, str]:
+    """One drift as the fields the human line prints: identifiers and hashes, never content."""
+    return {"subject": drift.subject, "expected": drift.expected, "found": drift.found}
+
+
 def _report_show(args: argparse.Namespace, service: AssessmentService) -> int:
     """Print the rendered report, or its manifest. Non-zero while no report exists."""
     assessment = service.get(args.assessment_id)
@@ -2673,7 +2703,24 @@ def _report_show(args: argparse.Namespace, service: AssessmentService) -> int:
     if args.manifest:
         filename = filename.removesuffix(".md") + ".manifest.json"
     handle = service.handle(args.assessment_id)
-    print(handle.artifacts.read("outputs", filename).decode("utf-8"))
+    text = handle.artifacts.read("outputs", filename).decode("utf-8")
+    if args.as_json:
+        import json
+
+        if args.manifest:
+            return _print_json(
+                "report-manifest",
+                {
+                    "assessment_id": args.assessment_id,
+                    "filename": filename,
+                    "manifest": json.loads(text),
+                },
+            )
+        return _print_json(
+            "report",
+            {"assessment_id": args.assessment_id, "filename": filename, "report": text},
+        )
+    print(text)
     return 0
 
 
