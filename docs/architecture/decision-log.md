@@ -8351,3 +8351,71 @@ Tradeoffs:
   parser should resolve by matching heuristics.
 - An unlabelled edge — legal Mermaid, never emitted by the exporter — yields nothing rather
   than a nameless flow. The subset rule wins over completeness, and the line is stated here.
+
+## DEC-130: The IaC admission rule widens to closed-vocabulary strings, and cross-resource closes permanently
+
+Date: 2026-08-18
+
+Status: Accepted
+
+Decision:
+
+**The admission rule is the decision, and it widens once, deliberately** (amending DEC-121;
+the attributes below are corollaries). An attribute is admitted when it is a **literal value
+with self-contained meaning where every stated value is worth reporting** — and "literal value"
+now names two classes: the stated boolean DEC-121 admitted, and a **closed-vocabulary string**,
+where the platform defines a finite enumerated value set and a stated member is as literal as a
+stated boolean. The vocabulary test: the value set is the platform's own enumeration, not free
+text; any member is self-contained without cross-resource reasoning; and no member is
+uninteresting. The claim carries the stated string verbatim. An expression, a variable
+reference, or an interpolated string — quoted or not — is still not a stated value and yields
+nothing, in every dialect.
+
+**The corollary admissions**: Terraform (both syntaxes) reads `minimum_tls_version`;
+CloudFormation reads `SslPolicy` at `Properties`' top level, mapped to `ssl_policy`. Kubernetes
+admits nothing new — the allowlisted kinds state their admitted facts as booleans, and a
+vocabulary nested below the read surface (CloudFront's `MinimumProtocolVersion` under
+`ViewerCertificate`) is not admitted by this rule existing: reading nested paths is its own
+decision, unmade.
+
+**Cross-resource closes permanently.** DEC-121 held security-group reachability out as the
+test of whether cross-resource reading ever passes the self-contained-meaning bar. It cannot,
+by construction: the bar's own definition — meaning without cross-resource reasoning — excludes
+any reading that joins resources, and the candidate adds CIDR semantics, port ranges, and rule
+precedence on top, exactly the graph judgment DEC-113 rejected when it declined to derive
+exposure. Rather than leaving the candidate armed for a future session to re-litigate, this
+entry closes it: **no IaC parser derives a claim from more than one resource declaration.** A
+future revisit must reopen the rule itself, with evidence that some join is honest — not admit
+an attribute under it. The must-not-conclude negative is pinned in the corpus: a world-open
+(`0.0.0.0/0`) security-group rule seeds a component and no claim of any kind.
+
+Why:
+
+- DEC-121 named both candidates and deferred both; leaving them undecided invites one-at-a-time
+  accretion, which is what the rule exists to prevent. The string class passes the bar for the
+  same reasons booleans did; the cross-resource class fails it by definition.
+- A closed vocabulary is evidence in the DEC-009 sense: `minimum_tls_version = "TLS1_2"` is the
+  document saying, in writing with a line number, which floor is configured — silence about it
+  still yields nothing.
+
+Alternatives Considered:
+
+- Admitting free-text strings with a length bound (rejected: free text has no both-directions
+  property — an arbitrary string states nothing checkable, and the claim would be a quotation
+  wearing a fact's shape).
+- Admitting the security-group reading behind a "stated reachability" hedge (rejected: the
+  hedge concedes the point — a claim needing a hedge about its own derivation is not
+  self-contained, and DEC-113's exposure rejection already decided this).
+- Leaving cross-resource open for a later revisit (rejected: an armed, undecided candidate is
+  the accretion pressure this rule exists to remove; closure with a stated reopening path is
+  the honest resting state).
+
+Tradeoffs:
+
+- Closing cross-resource forgoes real signal — a world-open security group is a finding-shaped
+  fact — and the entry says so plainly: that signal belongs to an analysis step that owns graph
+  judgment, not to a parser whose contract is stated facts. The model-assisted pipeline sees
+  the component and its quoted declaration; the judgment stays where judgment lives.
+- The measurement is fixture-level (verbatim string reads in three spellings, expression and
+  interpolation refusals, the pinned must-not-conclude negative), not a scenario re-record —
+  the #569 precedent, third time.

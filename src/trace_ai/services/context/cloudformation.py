@@ -67,6 +67,17 @@ _STATED_PROPERTIES: Final[dict[str, str]] = {
     "DeletionProtection": "deletion_protection",
 }
 
+# Closed-vocabulary string properties, admitted by the widened rule (DEC-121 as amended): the
+# platform defines a finite enumerated value set — a listener's `SslPolicy` is one of AWS's
+# published policy names — and a stated member is as literal as a stated boolean. The claim
+# carries the stated string verbatim; an intrinsic is a mapping and yields nothing. Reading
+# stays at `Properties`' top level, the family discipline: a vocabulary nested deeper (say
+# CloudFront's `MinimumProtocolVersion` under `ViewerCertificate`) is not admitted by this
+# table existing — nesting is its own decision, unmade.
+_STATED_STRING_PROPERTIES: Final[dict[str, str]] = {
+    "SslPolicy": "ssl_policy",
+}
+
 # CloudFormation type strings (`AWS::Service::Kind`) mapped to the family's open-vocabulary
 # component spellings (DEC-036). Matching is by substring of the casefolded type, first hit
 # wins; an unmatched type stays a generic `infrastructure_resource`.
@@ -86,7 +97,7 @@ _TYPE_FAMILIES: Final[tuple[tuple[str, str], ...]] = (
 class ParsedCloudFormationResource:
     logical_id: str
     resource_type: str
-    stated: tuple[tuple[str, bool], ...]
+    stated: tuple[tuple[str, bool | str], ...]
     """The admitted properties this declaration states, as (family predicate, stated value)."""
 
 
@@ -135,10 +146,17 @@ def parse_cloudformation(text: str, *, media_type: MediaType) -> ParsedCloudForm
             continue
         properties = declared.get("Properties")
         attributes: dict[str, Any] = properties if isinstance(properties, dict) else {}
-        stated = tuple(
-            (predicate, bool(attributes[spelling]))
-            for spelling, predicate in _STATED_PROPERTIES.items()
-            if isinstance(attributes.get(spelling), bool)
+        stated: tuple[tuple[str, bool | str], ...] = tuple(
+            [
+                (predicate, bool(attributes[spelling]))
+                for spelling, predicate in _STATED_PROPERTIES.items()
+                if isinstance(attributes.get(spelling), bool)
+            ]
+            + [
+                (predicate, str(attributes[spelling]))
+                for spelling, predicate in _STATED_STRING_PROPERTIES.items()
+                if isinstance(attributes.get(spelling), str)
+            ]
         )
         resources.append(
             ParsedCloudFormationResource(

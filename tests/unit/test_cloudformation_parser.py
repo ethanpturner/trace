@@ -211,3 +211,31 @@ def test_yaml_seeding_quotes_the_resources_own_lines(tmp_path: Path) -> None:
         assert "StorageEncrypted: true" in reference.quoted_text
         assert reference.quoted_text.splitlines()[0].strip() == "TicketsDb:"
         assert "Exports" not in reference.quoted_text
+
+
+def test_a_closed_vocabulary_string_property_reads_verbatim() -> None:
+    """The widened admission rule, in CloudFormation's spelling: a stated `SslPolicy` is read
+    verbatim at `Properties`' top level; an intrinsic is a mapping and yields nothing."""
+    parsed = parse_cloudformation(
+        """{
+  "Resources": {
+    "Listener": {
+      "Type": "AWS::ElasticLoadBalancingV2::Listener",
+      "Properties": {
+        "SslPolicy": "ELBSecurityPolicy-TLS13-1-2-2021-06"
+      }
+    },
+    "Templated": {
+      "Type": "AWS::ElasticLoadBalancingV2::Listener",
+      "Properties": {
+        "SslPolicy": {"Ref": "PolicyName"}
+      }
+    }
+  }
+}
+""",
+        media_type=MediaType.JSON,
+    )
+    by_id = {resource.logical_id: resource for resource in parsed.resources}
+    assert dict(by_id["Listener"].stated) == {"ssl_policy": "ELBSecurityPolicy-TLS13-1-2-2021-06"}
+    assert by_id["Templated"].stated == ()
