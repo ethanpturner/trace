@@ -7980,7 +7980,7 @@ Tradeoffs:
   The extraction is what the reviewer sees and approves at checkpoint 1, so imperfection is
   visible there rather than hidden behind the original.
 
-## DEC-124: The single-pass baseline prices the agent-set structure, with one combined schema
+## DEC-125: The single-pass baseline prices the agent-set structure, with one combined schema
 
 Date: 2026-08-18
 

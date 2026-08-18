@@ -552,7 +552,7 @@ The baseline comparison protocol is DEC-074's: the prompt baselines run through 
 seam with versioned, hashed prompts, emit schema-forced output, and are scored by the same
 parallel matchers; they receive the same source documents and the requirements catalog, with
 input-choice ties resolved against Trace. The external comparable is scored in the portfolio
-write-up, not in-repo. The single-agent-versus-multi-agent row is DEC-124's
+write-up, not in-repo. The single-agent-versus-multi-agent row is DEC-125's
 `baseline-single-pass`: the whole assessment in one call, one combined schema, run as a
 non-authoritative harness condition; its live pair rides the keyed capture step.
 

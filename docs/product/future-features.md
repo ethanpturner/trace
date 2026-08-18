@@ -660,7 +660,7 @@ The harness applies the section-14 ablations (evidence validation, critical revi
 approval) harness-side per DEC-012, marks each ablated run non-authoritative (DEC-031), and
 `trace evaluate --ablation-set` reports what each removal changes at the finding level — the
 DEC-012 decision gate answered per scenario. The restructuring ablation's first member is built:
-DEC-124's `baseline-single-pass` prices the whole agent set against one combined-schema call
+DEC-125's `baseline-single-pass` prices the whole agent set against one combined-schema call
 (issue #592; its recording and live pair ride the keyed capture step). Remaining from the
 sketch: the per-stage-schemas-in-sequence variant that isolates decomposition from iteration.
 

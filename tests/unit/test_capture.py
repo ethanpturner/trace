@@ -372,7 +372,7 @@ def test_a_zero_finding_run_completes_the_capture_inside_the_reason_stage(
 
 
 def test_the_single_pass_baseline_stage_captures_its_own_schema(tmp_path: Path) -> None:
-    """`trace capture <s> baseline-single-pass` stages a BaselineAssessment (DEC-124), and a
+    """`trace capture <s> baseline-single-pass` stages a BaselineAssessment (DEC-125), and a
     finding-only response supplied for it is refused rather than silently rescored."""
     from trace_ai.domain.proposals.baseline import BaselineAssessment, BaselineFindings
     from trace_ai.services.evaluation.capture import stage_baseline
