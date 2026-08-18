@@ -120,6 +120,10 @@ def route(path: str, service: AssessmentService) -> Response:
         return Response(200, render.render_lineage(handle, assessment, segments[2]))
     if view == "lineage":
         return Response(200, render.render_lineage_index(handle, assessment))
+    if view == "source" and len(segments) > 2:
+        # /<assessment>/source/<evidence-id>: the lineage walk's last hop — the stored original
+        # document with the cited span marked (#572). Still one GET of derived state.
+        return Response(200, render.render_source_span(handle, assessment, segments[2]))
     return Response(404, render.render_page("Not found", None, "", "<p>No such view.</p>"))
 
 
