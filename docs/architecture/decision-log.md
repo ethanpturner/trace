@@ -8488,3 +8488,71 @@ Tradeoffs:
 - The conformance test admits `annotations/second/` as a directory rather than per file, so a
   stray file inside it would pass; the adjudication reader, not the layout guard, is what
   validates that content.
+
+## DEC-132: Repository ingestion is read-only at a pinned commit, and the commit is the identity
+
+Date: 2026-08-18
+
+Status: Accepted
+
+Decision:
+
+**Future-features 3.1 discharges as `trace source add-repo`: a read-only fetch of an
+allowlisted, loader-readable file set from a named repository at a pinned commit.** The deferral
+said "not until local document ingestion and evidence traceability are reliable"; DEC-121's
+family, DEC-123's PDF path, and the lineage walk are that reliability, and the standing
+non-instruction — do not *begin* with GitHub integration — is not violated by an integration
+arriving after the pipeline, the harness, and fifteen scenarios.
+
+**The commit is the identity.** Ingestion names `(repository, commit)`, refuses anything that is
+not a full forty-hex SHA — a branch or tag is a moving reference, and a moving reference is not
+an ingestible identity — and re-resolves HEAD after checkout so a substituted tree is caught
+before a byte registers. Every registered document records the credential-free URL, the commit,
+and its true in-repo path in metadata; the stored filename is the flattened path, so the
+artifact store's untrusted-filename refusals hold unchanged.
+
+**The fetch is the application's, at ingestion time, through the system `git` client.** Agents
+keep no internet and nothing behind the model seam imports the module. The client choice over a
+Python git library is a dependency decision: the operator already trusts their git client for
+this host, the subprocess receives only operator-typed arguments, prompting is off, and a clone
+executes no repository-provided code. A configured `github_token` (`Settings`, `SecretStr`)
+reaches only the subprocess clone URL; an operator URL embedding credentials is refused, and
+error text is token-redacted before it can surface.
+
+**Selection is decided, not everything.** Every file whose suffix the loader reads, excluding
+dot-directories except `.github/workflows`. Skipping the rest deliberately differs from
+`load_directory`'s refuse-unsupported rule: a curated input directory containing an Office file
+is a reviewer expecting it assessed, while a repository is a whole codebase and "what the loader
+reads" is the curated rule. Fetched content is untrusted source-document content through the
+existing boundary — origin stays `uploaded_document`, because the trust story is identical and a
+new origin value would be a vocabulary change with no consumer. The threat model's
+source-document boundary carries the channel's transport rows in the same change.
+
+Why:
+
+- The issue's own condition held: the deferral's stated prerequisites are met, and the first
+  Later-Stage integration should land scoped exactly as the deferral asked — read-only, pinned,
+  allowlisted — rather than growing PR analysis or Actions surface it does not need.
+- Reproducibility is the constraint everything else serves: an `EvidenceReference` hash is only
+  verifiable if the source set cannot move under it.
+
+Alternatives Considered:
+
+- A Python git library (rejected: a new dependency with its own parser surface for no capability
+  the system client lacks here).
+- Fetching by branch with the resolved SHA recorded (rejected: the recorded SHA would be honest,
+  but the operator's stated input would be a moving reference, and two operators typing the same
+  thing would ingest different trees).
+- A new `SourceOrigin` value for repository content (rejected for now: the trust story is
+  identical to an uploaded document; DEC-030-style restraint until a consumer needs the
+  distinction).
+
+Tradeoffs:
+
+- A full clone fetches more than the allowlist reads; shallow and filtered clones are an
+  optimization left until a real repository's size demands it, stated here rather than built
+  speculatively.
+- The issue's named measurement — ingesting the published benchmark repository (#574) and
+  pinning claim-equivalence against local ingestion — waits for #574 to exist; the fixture
+  suite carries the properties (pin holds, selection decided, provenance survives flattening,
+  token never surfaces) until then, and the gap is stated.
