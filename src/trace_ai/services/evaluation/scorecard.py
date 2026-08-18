@@ -414,6 +414,67 @@ over the authoritative rows of each snapshot; per-row detail is retained in
 </div>"""
 
 
+def _trend_section(history: Sequence[ScorecardSnapshot]) -> str:
+    """Per-scenario F1 across the retained snapshots (#535): the across-versions view
+    evaluation-plan section 16 asks for.
+
+    The history table pools each snapshot, and pooling is exactly what hides a single scenario
+    regressing while the pool barely moves. This matrix keeps the scenario axis: one row per
+    authoritative scenario-condition pair, one column per snapshot, oldest first so a row reads
+    left to right as the pipeline's history. A cell is a dash where that snapshot did not run
+    the pair, or where F1 is undefined for it. It takes two snapshots to make a trend; with
+    fewer, the section is absent rather than a one-column table pretending otherwise.
+    """
+    if len(history) < 2:
+        return ""
+    ordered = list(history)
+    pairs = sorted(
+        {
+            (row.scenario, row.condition)
+            for snap in ordered
+            for row in snap.rows
+            if row.authoritative
+        }
+    )
+    columns = "".join(
+        f"<th>{html.escape(snap.recorded_at)}<br><code>{html.escape(snap.git_ref)}</code></th>"
+        for snap in ordered
+    )
+    lines = []
+    for scenario, condition in pairs:
+        cells = []
+        for snap in ordered:
+            row = next(
+                (
+                    candidate
+                    for candidate in snap.rows
+                    if candidate.authoritative
+                    and candidate.scenario == scenario
+                    and candidate.condition == condition
+                ),
+                None,
+            )
+            cells.append(f"<td>{_pct(row.f1) if row is not None else '—'}</td>")
+        lines.append(
+            f"<tr><td>{html.escape(scenario)}</td><td>{html.escape(condition)}</td>"
+            f"{''.join(cells)}</tr>"
+        )
+    return f"""
+<h2>F1 across versions</h2>
+<p class="meta">One row per authoritative scenario and condition, one column per retained
+snapshot, oldest first (#535). The pooled History table hides a single scenario regressing while
+the pool barely moves; this matrix keeps the scenario axis. A dash is a pair the snapshot did
+not run, or an undefined ratio.</p>
+<div class="scroll">
+<table>
+<thead><tr><th>Scenario</th><th>Condition</th>{columns}</tr></thead>
+<tbody>
+{chr(10).join(lines)}
+</tbody>
+</table>
+</div>"""
+
+
 def render_scorecard(
     feeds: Sequence[dict[str, Any]],
     *,
@@ -483,6 +544,7 @@ where the run was an offline replay that measured nothing.</p>
 {_truth_section(rows)}
 {_live_stability_section(live_stability)}
 {_history_section(history)}
+{_trend_section(history)}
 </body>
 </html>
 """
