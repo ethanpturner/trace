@@ -1125,6 +1125,28 @@ def test_an_unedited_review_file_applies_nothing(
     assert "no decisions recorded" in capsys.readouterr().out
 
 
+def test_a_review_command_records_a_session(
+    data_root: Path, capsys: pytest.CaptureFixture[str], tmp_path: Path
+) -> None:
+    """DEC-117: the review command is where the clock starts, whichever path the invocation
+    takes. An unedited export records no decisions but does record that a person looked."""
+    from trace_ai.domain.review_session import ReviewCheckpoint, ReviewSession
+    from trace_ai.infrastructure.database.store import AssessmentStore
+
+    identifier = extracted(data_root, capsys, tmp_path)
+    exported = tmp_path / "review.yaml"
+    assert invoke(data_root, "context", "review", identifier, "--export", str(exported)) == 0
+    assert invoke(data_root, "context", "review", identifier, "--apply", str(exported)) == 0
+    capsys.readouterr()
+
+    with AssessmentStore.at_root(data_root) as store:
+        sessions = store.repository(identifier).list(ReviewSession)
+    assert [session.checkpoint for session in sessions] == [
+        ReviewCheckpoint.CONTEXT_APPROVAL,
+        ReviewCheckpoint.CONTEXT_APPROVAL,
+    ]
+
+
 def test_a_review_file_for_another_assessment_is_refused(
     data_root: Path, capsys: pytest.CaptureFixture[str], tmp_path: Path
 ) -> None:

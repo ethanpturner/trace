@@ -100,6 +100,8 @@ mrg- Finding merge record
 
 cgc- Catalog gap candidate
 
+rvs- Review session
+
 ## What the scheme governs
 
 The scheme governs **objects an assessment produces**. An object is inside it when all three hold:
@@ -557,6 +559,7 @@ Stores settings that affect an assessment run.
 | retain_debug_artifacts | boolean | Yes | Preserve debugging output |
 | enable_external_tracing | boolean | Yes | Allow configured external tracing |
 | evidence_threshold | string | Yes | Minimum evidence policy for findings. `direct-or-confirmed` or `permissive` (DEC-013) |
+| evidence_age_threshold_days | integer | No | Days after which a cited evidence capture is flagged stale in the report and the view; flags only, nothing suppressed (DEC-118) |
 
 ## Example
 
@@ -1976,6 +1979,32 @@ created_at: 2026-08-05T15:30:00-06:00
 
 workflow_run_id: run-001
 
+# 25a. ReviewSession
+
+## Purpose
+
+Records when a checkpoint's review material was first rendered to a person. Added by DEC-117
+after the sections were numbered, the way 10a, 21a, 23a, and 30a were. A `ReviewerDecision`
+carries the moment a decision landed; nothing carried the moment the review began, so the
+pipeline could not say how long a checkpoint took. The measurement is wall clock from the
+earliest session to the checkpoint's conclusion; it never gates anything, and a
+harness-decided checkpoint has no session — its timing is absent, never zero.
+
+## Fields
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| id | string | Yes | Stable session identifier |
+| assessment_id | string | Yes | Parent assessment |
+| checkpoint | ReviewCheckpoint | Yes | Which structural checkpoint |
+| reviewer_id | string | No | Reviewer identifier |
+| created_at | datetime | Yes | When the review material was rendered |
+| workflow_run_id | string | No | Related workflow run |
+
+`checkpoint` is a closed vocabulary, like `DataFlow.direction`: the values are
+`context_approval` and `finding_approval`, and there is no third structural checkpoint
+(DEC-005). The `*_type` reasoning of DEC-036 does not apply — nothing here is illustrated.
+
 # 26. WorkflowRun
 
 ## Purpose
@@ -2201,6 +2230,7 @@ conclusion).
 | mechanism | string | Yes | The mechanism class that provides it |
 | applies_when | list[string] | No | Conditions under which the control bears on a system |
 | catalog_version | string | Yes | The org-controls catalog version that defines it |
+| references | list[string] | No | Pointers to the organizational documentation that evidences the control (DEC-122); pointers a reviewer can check, never authority, and never an EvidenceReference |
 
 ## Note on identity
 
@@ -2628,6 +2658,7 @@ Implement these first:
 28. CatalogGapCandidate
 29. PromptDefinition
 30. OrganizationalControl
+31. ReviewSession
 
 `SourceObservation` (section 10a) was added by DEC-021 after this list was written, and the list
 was not updated with it. It is not optional: DEC-021 makes contradictions and detected
@@ -2642,6 +2673,10 @@ entry above places `Actor` after `Asset` and before `DataFlow`.
 `CatalogGapCandidate` (section 23a) was added by DEC-065 after this list was written. It sits
 last: the Threat Analysis and Mapping agents raise it as an optional output, nothing downstream
 consumes it, and the M12 decision-debt milestone is where it was built.
+
+`ReviewSession` (section 25a) was added by DEC-117 after this list was written, the way 10a,
+21a, 23a, and 30a were. It sits last: the review commands write it, the timing metrics read it,
+and nothing else consumes it.
 
 `RequirementsCatalog` (section 30) was on the deferred list, on the grounds that it should arrive
 once the workflow operates. It arrives earlier than that, and not by preference: DEC-019 makes its

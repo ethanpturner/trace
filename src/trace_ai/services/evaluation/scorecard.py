@@ -570,9 +570,11 @@ attack (DEC-075) — zero is the target — shown only for adversarial condition
 non-authoritative (baselines and ablations, DEC-012). Run-to-run variance (DEC-077) is a live
 measurement is recorded per DEC-077 where a live protocol ran; deterministic replays show none.
 Per-item diffs stay local (DEC-073). The forgeflow row is the live-model run scored against an
-independently authored truth set: it approved four defensible findings under different requirement
-identifiers than the truth set names and matched none of the three expected — real weaknesses,
-wrong requirement lens (<code>demo/forgeflow/recorded/provenance.md</code>). Cost shows a dash
+independently authored truth set: it approved four defensible findings and matched none of the
+three expected. The run did produce mappings under all three expected requirements; none became a
+finding, because the single evidence-validation call assessed 25 of 185 mappings — an unassessed
+mapping resolves to no output (DEC-013) — and the assessed ones were downgraded to questions on
+recorded contradictions (DEC-116, <code>docs/eval/live-diagnosis.md</code>). Cost shows a dash
 where the run was an offline replay that measured nothing.</p>
 {_adversarial_section(rows)}
 {_truth_section(rows)}

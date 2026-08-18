@@ -1,0 +1,96 @@
+# The organizational control catalog, version 0.2 (#568, DEC-122).
+#
+# The operator fact set DEC-115's v0 was waiting for: the controls the organization provides,
+# stated as a coherent whole rather than as the two entries the mechanism shipped with. 0.1 is
+# retained unchanged — a catalog version's content never moves (DEC-115) — and the two 0.1
+# entries carry forward here with `references` added.
+#
+# `references` (DEC-122) points at the organizational documentation that evidences a control:
+# a policy page, an audit-report identifier. Pointers only, never authority — the referenced
+# documents are not in any assessment's store, so a reference can never become evidence; it
+# rides in the seeded claim's value for the reviewer to go and check. The organization and
+# every document named here are fictional and clean-room (design-principles section 19).
+#
+# The catalog asserts existence only: whether a given system inherits a control is the
+# assessment's ordinary work, decided at checkpoint 1 and judged by evidence validation like
+# any other claim. `services/org_controls/loader.py` is this file's only reader; it recomputes
+# `content_hash` over the parsed catalog (the DEC-019 rule) on every load and refuses a
+# drifted file. Regenerate the hash after an edit with
+#   uv run python scripts/org_controls_hash.py --version 0.2 --write
+#
+# Entries carry names, not identifiers (DEC-034): a control is identified by
+# (name, catalog_version).
+
+org_controls_catalog:
+  version: "0.2"
+  content_hash: sha256:716d8f2688bd6d14245c14b24de17dffdd1e0b8b8994ebe1645e5eec7391984b
+  controls:
+
+    - name: enterprise-idp-mfa
+      catalog_version: "0.2"
+      title: Enterprise identity provider enforces multi-factor authentication
+      statement: >
+        Workforce authentication is delegated to the enterprise identity provider, and
+        multi-factor enrolment and factor policy are set and enforced at the identity
+        provider organization level for all workforce identities.
+      mechanism: enterprise identity provider factor policy
+      applies_when:
+        - the system delegates workforce authentication to the enterprise identity provider
+      references:
+        - Identity Standard IS-2, section 4 (factor policy)
+        - SOC 2 Type II report 2026, control CC6.2
+
+    - name: central-logging
+      catalog_version: "0.2"
+      title: Platform workloads ship logs to the central logging service
+      statement: >
+        Workloads deployed on the platform ship their runtime logs to the central logging
+        service by default through the platform's log forwarding, with retention managed
+        centrally.
+      mechanism: platform log forwarding to the central logging service
+      applies_when:
+        - the system runs on the platform's standard workload deployment
+      references:
+        - Platform Security Standard PS-7, section 3 (log forwarding)
+        - SOC 2 Type II report 2026, control CC7.2
+
+    - name: secrets-vault
+      catalog_version: "0.2"
+      title: Workload credentials are provisioned and rotated by the enterprise secrets service
+      statement: >
+        Service credentials for workloads deployed on the platform are provisioned into the
+        enterprise secrets service, injected into the workload at deploy time, and rotated on
+        a ninety-day schedule. Workload credentials are not held in source control, container
+        images, or configuration files.
+      mechanism: enterprise secrets service with deploy-time injection
+      applies_when:
+        - the system's credentials are provisioned through the standard workload deployment
+      references:
+        - Platform Security Standard PS-4, section 2 (secrets handling)
+        - SOC 2 Type II report 2026, control CC6.1
+
+    - name: managed-db-encryption
+      catalog_version: "0.2"
+      title: The platform's managed relational databases encrypt stored data
+      statement: >
+        Relational databases provisioned through the platform's managed database service
+        encrypt data at rest by default with platform-managed keys, and the setting cannot be
+        disabled by a workload team.
+      mechanism: managed database service default encryption at rest
+      applies_when:
+        - the system persists data in the platform's managed relational database service
+      references:
+        - Platform Security Standard PS-3, section 1 (data at rest)
+
+    - name: cicd-approved-platform
+      catalog_version: "0.2"
+      title: Builds and deployments run on the approved CI/CD platform
+      statement: >
+        Production builds and deployments run on the organization's approved CI/CD platform,
+        which enforces review before merge to a production branch and records a build
+        provenance entry for every deployment.
+      mechanism: approved CI/CD platform with enforced review and build provenance
+      applies_when:
+        - the system is built and deployed through the organization's standard pipeline
+      references:
+        - Engineering Standard ES-11, section 2 (change control)

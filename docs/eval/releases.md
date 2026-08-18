@@ -37,8 +37,10 @@ this surface are recorded in the journal and the decision log (through DEC-115).
 
 None recorded — this is the first entry, so there is no prior release to regress from. The
 live-capture caveat carries forward rather than regressing: the flagship live run's approved
-findings matched none of the truth set's three expected findings (real weaknesses, wrong
-requirement lens; `demo/forgeflow/recorded/provenance.md`).
+findings matched none of the truth set's three expected findings. Diagnosed after this release
+(#564, DEC-116): the expected requirement lenses were produced as mappings and lost in the
+evidence-validation funnel — see `docs/eval/live-diagnosis.md`; the release-time reading
+("wrong requirement lens", `demo/forgeflow/recorded/provenance.md`) understated the mechanism.
 
 ### Outstanding issues
 

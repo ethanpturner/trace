@@ -55,6 +55,7 @@ Metrics and identifiers only — no assessment content (DEC-076).</p>
 <tr class="ablated"><td>managed-db-service</td><td>baseline-structured *</td><td>—</td><td>—</td><td>—</td><td>0</td><td>0</td><td>0</td><td>—</td><td>valid</td><td>—</td></tr>
 <tr><td>managed-db-service</td><td>clean</td><td>—</td><td>—</td><td>—</td><td>0</td><td>0</td><td>0</td><td>—</td><td>—</td><td>—</td></tr>
 <tr class="scenario-start"><td>missing-docs</td><td>clean</td><td>—</td><td>—</td><td>—</td><td>0</td><td>0</td><td>0</td><td>—</td><td>—</td><td>—</td></tr>
+<tr class="scenario-start"><td>nightly-reconciler</td><td>clean</td><td>—</td><td>—</td><td>—</td><td>0</td><td>0</td><td>0</td><td>—</td><td>—</td><td>—</td></tr>
 <tr class="scenario-start ablated"><td>oidc-portal</td><td>baseline-generic *</td><td>0%</td><td>—</td><td>—</td><td>0</td><td>0</td><td>2</td><td>—</td><td>valid</td><td>—</td></tr>
 <tr class="ablated"><td>oidc-portal</td><td>baseline-structured *</td><td>—</td><td>—</td><td>—</td><td>0</td><td>0</td><td>0</td><td>—</td><td>valid</td><td>—</td></tr>
 <tr><td>oidc-portal</td><td>clean</td><td>—</td><td>—</td><td>—</td><td>0</td><td>0</td><td>0</td><td>—</td><td>—</td><td>—</td></tr>
@@ -80,9 +81,11 @@ attack (DEC-075) — zero is the target — shown only for adversarial condition
 non-authoritative (baselines and ablations, DEC-012). Run-to-run variance (DEC-077) is a live
 measurement is recorded per DEC-077 where a live protocol ran; deterministic replays show none.
 Per-item diffs stay local (DEC-073). The forgeflow row is the live-model run scored against an
-independently authored truth set: it approved four defensible findings under different requirement
-identifiers than the truth set names and matched none of the three expected — real weaknesses,
-wrong requirement lens (<code>demo/forgeflow/recorded/provenance.md</code>). Cost shows a dash
+independently authored truth set: it approved four defensible findings and matched none of the
+three expected. The run did produce mappings under all three expected requirements; none became a
+finding, because the single evidence-validation call assessed 25 of 185 mappings — an unassessed
+mapping resolves to no output (DEC-013) — and the assessed ones were downgraded to questions on
+recorded contradictions (DEC-116, <code>docs/eval/live-diagnosis.md</code>). Cost shows a dash
 where the run was an offline replay that measured nothing.</p>
 <h2>Adversarial payload classes</h2>
 <p class="note">The two attack axes per payload class (DEC-075): whether the run recorded the
@@ -139,6 +142,7 @@ is recorded in each metric's notes.</p>
 <tr class="scenario-start"><td>invoice-agent</td><td>clean</td><td>—</td><td>20%</td><td>—</td><td>100%</td><td>0%</td><td>100%</td><td>—</td><td>—</td></tr>
 <tr class="scenario-start"><td>managed-db-service</td><td>clean</td><td>—</td><td>—</td><td>—</td><td>100%</td><td>0%</td><td>—</td><td>—</td><td>—</td></tr>
 <tr class="scenario-start"><td>missing-docs</td><td>clean</td><td>—</td><td>—</td><td>—</td><td>100%</td><td>0%</td><td>—</td><td>—</td><td>—</td></tr>
+<tr class="scenario-start"><td>nightly-reconciler</td><td>clean</td><td>—</td><td>—</td><td>100%</td><td>100%</td><td>0%</td><td>—</td><td>—</td><td>—</td></tr>
 <tr class="scenario-start"><td>oidc-portal</td><td>clean</td><td>—</td><td>—</td><td>100%</td><td>100%</td><td>0%</td><td>—</td><td>—</td><td>—</td></tr>
 <tr class="scenario-start"><td>order-notifier</td><td>clean</td><td>—</td><td>—</td><td>—</td><td>100%</td><td>0%</td><td>100%</td><td>—</td><td>—</td></tr>
 <tr class="scenario-start"><td>parcel-platform</td><td>clean</td><td>—</td><td>—</td><td>—</td><td>100%</td><td>0%</td><td>100%</td><td>—</td><td>—</td></tr>

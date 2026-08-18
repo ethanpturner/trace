@@ -225,14 +225,17 @@ Trend analysis should not reduce complex risk to a misleading single score.
 
 ## 5.1 Organizational Control Catalog
 
-**Status:** Built in part (DEC-115, issue #528)
+**Status:** Built (DEC-115 and DEC-122, issues #528 and #568)
 
 A deliberate v0 shipped with DEC-115: a flat, version-controlled `org-controls/` catalog read by
 its own loader, a fourth structured parser, and existence-only assertions — an organizational
 control enters context as a documented claim, never as authority. The oidc-portal scenario
-asserts `enterprise-idp-mfa` from its first commit. Remaining from the sketch: a real operator's
-fact set and per-control evidence links (issue #568). The inheritance graph is 5.2 and stays
-Research.
+asserts `enterprise-idp-mfa` from its first commit. DEC-122 filled in what v0 stated as gaps:
+catalog 0.2 is the operator fact set, each control carries `references` — pointers to
+organizational documentation, riding in the seeded claim's value, never authority — and the
+fifteenth scenario (nightly-reconciler) measures the suppression the sketch promised: two
+false positives a generic review raises, answered by asserted organizational facts. The
+inheritance graph is 5.2 and stays Research.
 
 The original sketch — maintain a reusable catalog of organization-wide controls.
 
@@ -1037,8 +1040,9 @@ report formats, and the family is delivered: TM-BOM (issue #383), SARIF (issue #
 standalone Mermaid DFD (issue #503) all ship as deterministic serializers over approved
 objects; CycloneDX for the catalog stays deferred until a consumer exists. No export contains
 prose or a model call. DEC-108 (issue #527) added HTML rendering as a derived view of the
-Markdown report — a rendering, not a second format. The family's one open question — whether
-TM-BOM round-trips as input — is issue #573.
+Markdown report — a rendering, not a second format. The family's last open question is closed:
+TM-BOM round-trips as input through the DEC-070 parser family (DEC-120, issue #573), with the
+schema's conservative booleans refused as negatives on the way back in.
 
 Still ideas, not decided: PDF, ticketing-system formats, audit packages, and any
 executive-report format.

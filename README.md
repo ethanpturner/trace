@@ -361,7 +361,7 @@ remains open is the narrated demo video.
   Anthropic and OpenAI (DEC-095) — makes exactly one attempt and returns a structured failure
   carrying the raw output rather than raising; a test asserts each may import exactly its own
   provider SDK and nothing else in the tree imports one.
-- **Identifiers and content hashing** — the twenty-five prefixes of section 2.1 as a closed
+- **Identifiers and content hashing** — the twenty-six prefixes of section 2.1 as a closed
   registry, both identifier forms DEC-018 defines, a typed identifier per object so a threat
   identifier cannot be assigned to a finding's field, and the single SHA-256 utility DEC-019
   requires. The scheme governs objects an assessment produces (DEC-034); authored configuration —
@@ -444,11 +444,13 @@ remains open is the narrated demo video.
 - **The adversarial condition** — DEC-075's poisoned-document variant with all five payload
   classes, run as an ordinary scenario condition, with the two-axis attack metrics (detection,
   and injected-instruction compliance with a target of zero) reported per payload class.
-- **The fourteen benchmark scenarios** — every registered scenario carries a full outcome truth
+- **The fifteen benchmark scenarios** — every registered scenario carries a full outcome truth
   set and an offline recording, every roadmap Stage 5 coverage category has a scenario — the
-  thirteenth (rag-support-bot, DEC-098) exercises the 0.2 catalog's AI-system requirements, and
-  the fourteenth (reply-tuner, DEC-114) exercises the 0.3 catalog's fine-tuning pack — and
-  `trace evaluate --all` runs the register with nothing skipped.
+  thirteenth (rag-support-bot, DEC-098) exercises the 0.2 catalog's AI-system requirements, the
+  fourteenth (reply-tuner, DEC-114) exercises the 0.3 catalog's fine-tuning pack, and the
+  fifteenth (nightly-reconciler, DEC-122) exercises the org-controls assertion, its two
+  suppressions resting on asserted organizational facts — and `trace evaluate --all` runs the
+  register with nothing skipped.
 - **The M12 decision debt, closed** — DEC-057 through DEC-072 (risk treatment, episodic revisit,
   routing reasons, the STRIDE coverage baseline, the precedent feed, catalog-gap candidates,
   fingerprints, cache accounting, context extensions, profile overlays, parsers, the coverage
@@ -761,11 +763,12 @@ baseline runs, regenerated offline. Two failure categories appear. The live view
 
 | Failure mode | Frequency | Observed in |
 |---|---|---|
-| **Live run answers beside the truth set** — the captured `claude-opus-5` run produces four approved, defensible findings that match none of the three expected, for 0 of 3 matched with 4 spurious by the structural matcher: the model mapped real weaknesses to different requirements than the truth set names. This is the live-model failure mode the offline recordings could not show. | 1 of 14 authoritative Trace runs | forgeflow (clean, live capture) |
+| **Live run answers beside the truth set** — the captured `claude-opus-5` run produces four approved, defensible findings that match none of the three expected, for 0 of 3 matched with 4 spurious by the structural matcher. The diagnosis (#564, DEC-116, `docs/eval/live-diagnosis.md`): the run *did* produce mappings under all three expected requirements, but its single evidence-validation call assessed only 25 of 185 mappings — an unassessed mapping resolves to no output (DEC-013) — and the assessed ones were downgraded to questions on recorded contradictions the truth set resolves. This is the live-model failure mode the offline recordings could not show. | 1 of 14 authoritative Trace runs | forgeflow (clean, live capture) |
 | **Silence read as a weakness** — a baseline invents a finding where the documentation is simply quiet: missing MFA and password policy an inherited identity provider covers, an encryption detail a managed database supplies, absent replay protection, unencrypted exports, index retention concluded to violate a schedule nothing states it violates. This is the DEC-009 failure the pipeline exists to prevent, and on the retrieval scenario even the structured baseline commits it — structure alone does not stop silence being read as absence. | 8 spurious findings across 6 runs | baseline-generic on oidc-portal (2), managed-db-service (1), contradictory-docs (1), unsigned-webhooks (1), rag-support-bot (2); baseline-structured on rag-support-bot (1) |
 
 The thirteen offline Trace runs produced no spurious finding; the live capture's four are the
-first row's mismatches, real findings on requirements the truth set does not name. The second
+first row's mismatches, real findings scored spurious because the expected lenses never survived
+the evidence-validation funnel. The second
 row stays a baseline failure — inventing weaknesses from silence — which no Trace run, live or
 offline, has produced: the comparison exists to measure
 that difference, not to assert it.

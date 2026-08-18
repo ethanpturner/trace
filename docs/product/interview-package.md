@@ -116,9 +116,11 @@ The evaluation harness is not a report card bolted on; it repeatedly changed wha
   (`model_call_count`, fixed in #424); demo preparation found report section 7 structurally
   empty because its filter was never satisfiable (DEC-101, renumbered from a duplicate DEC-083 heading).
 - **The live capture measured the miss.** The flagship run matched none of the three authored
-  expected findings and approved four defensible ones under different requirement identifiers
-  — real weaknesses, wrong requirement lens — and that number is on the public scorecard with
-  its explanation, not in a drawer. The DEC-077 stability protocol (five live runs, ~$6.92 ±
+  expected findings and approved four defensible ones. The diagnosis (#564, DEC-116) is the
+  better story: the run produced mappings under all three expected requirements, and they died
+  in the evidence-validation funnel — one call assessed 25 of 185 mappings, and an unassessed
+  mapping resolves to no output — so the number is on the public scorecard with its mechanism,
+  not in a drawer. The DEC-077 stability protocol (five live runs, ~$6.92 ±
   $3.28 each) showed the headline finding reproducing in only two of five runs; the flicker is
   reported and gates nothing.
 

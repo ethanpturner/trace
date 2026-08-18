@@ -38,14 +38,20 @@ import yaml
 
 from trace_ai.domain.base import now
 from trace_ai.domain.component import Component
+from trace_ai.domain.context_claim import ContextClaim
+from trace_ai.domain.control import Control
 from trace_ai.domain.control_mapping import ControlMapping
 from trace_ai.domain.documentation_gap import DocumentationGap
 from trace_ai.domain.enums import ObjectStatus, ReviewDisposition
 from trace_ai.domain.evaluation_result import EvaluationResult, EvaluatorType
 from trace_ai.domain.evidence import EvidenceReference
+from trace_ai.domain.evidence_assessment import EvidenceAssessment
 from trace_ai.domain.execution import ExecutionRecord, ExecutionStatus
 from trace_ai.domain.finding import Finding
+from trace_ai.domain.review_session import ReviewCheckpoint
 from trace_ai.domain.reviewer_decision import ReviewerDecision
+from trace_ai.domain.system_context import SystemContext
+from trace_ai.domain.threat import Threat
 from trace_ai.services.evaluation.matching import (
     match_context,
     match_expected_mappings,
@@ -56,6 +62,7 @@ from trace_ai.services.evaluation.matching import (
     normalized_name,
 )
 from trace_ai.services.execution_ledger import ExecutionLedger
+from trace_ai.services.review_timing import review_seconds
 
 if TYPE_CHECKING:
     from decimal import Decimal
@@ -209,6 +216,81 @@ def compute_metrics(
             ),
         )
     )
+
+    # --- evidence_assessment_coverage: the evidence agent's subjects that actually came back
+    # assessed. An unassessed subject resolves to no output under DEC-013 with nothing recording
+    # the omission, so a shortfall here is a truncated funnel, not a set of judgments (#564).
+    assessable_ids: list[str] = [
+        *(claim.id for claim in repository.list(ContextClaim)),
+        *(control.id for control in repository.list(Control)),
+        *(mapping.id for mapping in repository.list(ControlMapping)),
+        *(threat.id for threat in repository.list(Threat)),
+    ]
+    assessed_ids = {assessment.subject_id for assessment in repository.list(EvidenceAssessment)}
+    unassessed_count = len([sid for sid in assessable_ids if sid not in assessed_ids])
+    results.append(
+        _metric(
+            handle,
+            run.id,
+            "evidence_assessment_coverage",
+            (
+                _ratio(len(assessable_ids) - unassessed_count, len(assessable_ids))
+                if assessable_ids
+                else 1.0
+            ),
+            unit="percentage",
+            sample_size=len(assessable_ids),
+            notes=(
+                f"{unassessed_count} of {len(assessable_ids)} assessable subjects received no "
+                "evidence assessment; an unassessed mapping resolves to no output (DEC-013)"
+                if unassessed_count
+                else None
+            ),
+        )
+    )
+    # --- checkpoint review timing (DEC-117): wall clock from the first review-command rendering
+    # to the checkpoint's conclusion. Emitted only when a session exists and a conclusion follows
+    # it — a harness-decided checkpoint writes no session, so a replayed or protocol-driven run
+    # carries no timing metric at all: absent, never a fabricated zero (the DEC-092 discipline).
+    approved_context_times = [
+        revision.approved_at
+        for revision in repository.list(SystemContext)
+        if revision.approved_at is not None
+    ]
+    if approved_context_times:
+        context_seconds = review_seconds(
+            handle, ReviewCheckpoint.CONTEXT_APPROVAL, max(approved_context_times)
+        )
+        if context_seconds is not None:
+            results.append(
+                _metric(
+                    handle,
+                    run.id,
+                    "context_review_seconds",
+                    context_seconds,
+                    unit="seconds",
+                    method="wall clock from the first `trace context review` invocation to "
+                    "context approval (DEC-117); never gates anything",
+                )
+            )
+    if decisions:
+        finding_seconds = review_seconds(
+            handle,
+            ReviewCheckpoint.FINDING_APPROVAL,
+            max(decision.created_at for decision in decisions),
+        )
+        if finding_seconds is not None:
+            results.append(
+                _metric(
+                    handle,
+                    run.id,
+                    "finding_review_seconds",
+                    finding_seconds,
+                    unit="seconds",
+                    method="wall clock from the first `trace findings review` invocation to the "
+                    "last finding decision (DEC-117); never gates anything",
+                )
+            )
 
     # --- reviewer rates, derived from decisions rather than status alone. A finding edited and
     # then approved counts in both rates: the subjects are per-disposition sets.

@@ -24,6 +24,7 @@ from typing import TYPE_CHECKING
 
 from trace_ai.domain.actor import Actor
 from trace_ai.domain.asset import Asset
+from trace_ai.domain.base import now
 from trace_ai.domain.component import Component
 from trace_ai.domain.context_claim import ContextClaim
 from trace_ai.domain.control_mapping import ControlMapping
@@ -40,6 +41,7 @@ from trace_ai.domain.threat import Threat
 from trace_ai.domain.trust_boundary import TrustBoundary
 from trace_ai.infrastructure.filesystem.artifact_store import ArtifactStoreError
 from trace_ai.services.evidence.index import EvidenceIndex, EvidenceNotFoundError
+from trace_ai.services.evidence.staleness import stale_evidence_ids
 from trace_ai.services.findings.lineage import finding_lineage
 
 if TYPE_CHECKING:
@@ -417,13 +419,26 @@ def render_questions(handle: AssessmentHandle, assessment: Assessment) -> str:
 
 
 def render_findings(handle: AssessmentHandle, assessment: Assessment) -> str:
-    """The findings, each linking to its lineage walk."""
+    """The findings, each linking to its lineage walk.
+
+    With `evidence_age_threshold_days` configured, a stale-evidence column names how many of
+    each finding's citations were captured past the threshold as of this request — a view is a
+    point-in-time look, so the request's time is the honest anchor (DEC-118). Without the
+    threshold the column is absent rather than zero: no policy is not a policy.
+    """
     findings = handle.objects.list(Finding)
+    threshold = assessment.configuration.evidence_age_threshold_days
     if not findings:
         body = '<p class="muted">No findings.</p>'
     else:
-        rows = [
-            [
+        references = {ref.id: ref for ref in handle.objects.list(EvidenceReference)}
+        as_of = now()
+        headers = ["Finding", "Severity", "Status", "Title", "Summary", "Evidence"]
+        if threshold is not None:
+            headers.append(f"Stale evidence (>{threshold}d)")
+        rows = []
+        for f in findings:
+            row = [
                 _link(f.id, f"/{assessment.id}/lineage/{f.id}", css="finding"),
                 _e(f.severity.value),
                 _e(f.status.value),
@@ -431,9 +446,11 @@ def render_findings(handle: AssessmentHandle, assessment: Assessment) -> str:
                 _e(f.summary),
                 _e(len(f.evidence_ids)),
             ]
-            for f in findings
-        ]
-        body = _table_raw(["Finding", "Severity", "Status", "Title", "Summary", "Evidence"], rows)
+            if threshold is not None:
+                stale = stale_evidence_ids(f, references, threshold_days=threshold, as_of=as_of)
+                row.append(", ".join(stale) if stale else "none")
+            rows.append(row)
+        body = _table_raw(headers, rows)
     return render_page("Findings", assessment.id, "findings", body)
 
 

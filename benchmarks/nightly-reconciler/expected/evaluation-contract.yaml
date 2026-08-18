@@ -1,0 +1,19 @@
+# nightly-reconciler evaluation contract
+#
+# Grading policy for the nightly-reconciler benchmark scenario. Layout is fixed by DEC-027 and
+# specified in docs/architecture/evaluation-plan.md section 5. No expected-output counts are
+# declared (DEC-028): the expected set is the enumerated content of the expected-*.yaml files
+# here.
+#
+# Provenance: an original small architecture authored for this project (design-principles
+# section 19), built to exercise the org-controls assertion (#568, DEC-122). See
+# reviewer-notes.md.
+#
+# Nothing in this directory is supplied to Trace during an assessment.
+
+benchmark_version: "1.0"
+catalog_version: "0.3"
+
+matching:
+  findings_match_on: [requirement_id, affected_component]
+  allow_consolidation: true
