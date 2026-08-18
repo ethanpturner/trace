@@ -38,14 +38,18 @@ import yaml
 
 from trace_ai.domain.base import now
 from trace_ai.domain.component import Component
+from trace_ai.domain.context_claim import ContextClaim
+from trace_ai.domain.control import Control
 from trace_ai.domain.control_mapping import ControlMapping
 from trace_ai.domain.documentation_gap import DocumentationGap
 from trace_ai.domain.enums import ObjectStatus, ReviewDisposition
 from trace_ai.domain.evaluation_result import EvaluationResult, EvaluatorType
 from trace_ai.domain.evidence import EvidenceReference
+from trace_ai.domain.evidence_assessment import EvidenceAssessment
 from trace_ai.domain.execution import ExecutionRecord, ExecutionStatus
 from trace_ai.domain.finding import Finding
 from trace_ai.domain.reviewer_decision import ReviewerDecision
+from trace_ai.domain.threat import Threat
 from trace_ai.services.evaluation.matching import (
     match_context,
     match_expected_mappings,
@@ -205,6 +209,38 @@ def compute_metrics(
             notes=(
                 "vacuously complete: zero approved findings is a successful outcome"
                 if not approved
+                else None
+            ),
+        )
+    )
+
+    # --- evidence_assessment_coverage: the evidence agent's subjects that actually came back
+    # assessed. An unassessed subject resolves to no output under DEC-013 with nothing recording
+    # the omission, so a shortfall here is a truncated funnel, not a set of judgments (#564).
+    assessable_ids: list[str] = [
+        *(claim.id for claim in repository.list(ContextClaim)),
+        *(control.id for control in repository.list(Control)),
+        *(mapping.id for mapping in repository.list(ControlMapping)),
+        *(threat.id for threat in repository.list(Threat)),
+    ]
+    assessed_ids = {assessment.subject_id for assessment in repository.list(EvidenceAssessment)}
+    unassessed_count = len([sid for sid in assessable_ids if sid not in assessed_ids])
+    results.append(
+        _metric(
+            handle,
+            run.id,
+            "evidence_assessment_coverage",
+            (
+                _ratio(len(assessable_ids) - unassessed_count, len(assessable_ids))
+                if assessable_ids
+                else 1.0
+            ),
+            unit="percentage",
+            sample_size=len(assessable_ids),
+            notes=(
+                f"{unassessed_count} of {len(assessable_ids)} assessable subjects received no "
+                "evidence assessment; an unassessed mapping resolves to no output (DEC-013)"
+                if unassessed_count
                 else None
             ),
         )

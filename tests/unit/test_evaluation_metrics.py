@@ -27,6 +27,7 @@ from trace_ai.domain.control_mapping import (
 from trace_ai.domain.documentation_gap import DocumentationGap
 from trace_ai.domain.enums import (
     ConfidenceLevel,
+    EvidenceStrength,
     ObjectStatus,
     Severity,
     SourceOrigin,
@@ -34,6 +35,11 @@ from trace_ai.domain.enums import (
 )
 from trace_ai.domain.evaluation_result import EvaluationResult, EvaluatorType
 from trace_ai.domain.evidence import EvidenceReference
+from trace_ai.domain.evidence_assessment import (
+    EvidenceAssessment,
+    Recommendation,
+    SubjectType,
+)
 from trace_ai.domain.finding import Finding
 from trace_ai.domain.hashing import content_hash
 from trace_ai.infrastructure.database.store import AssessmentStore
@@ -133,6 +139,50 @@ def a_finding(handle: AssessmentHandle, **changes: Any) -> Finding:
     return save(handle, Finding.model_validate(payload))
 
 
+def a_mapping(handle: AssessmentHandle, mapping_id: str) -> ControlMapping:
+    return save(
+        handle,
+        ControlMapping.model_validate(
+            {
+                "id": mapping_id,
+                "assessment_id": handle.assessment_id,
+                "threat_id": "thr-001",
+                "requirement_id": "req-AI-002",
+                "control_ids": [],
+                "applicability_status": ApplicabilityStatus.APPLICABLE,
+                "applicability_reason": "The threat concerns published AI output.",
+                "satisfaction_status": SatisfactionStatus.PARTIALLY_SATISFIED,
+                "evidence_ids": ["evd-001"],
+                "confidence": ConfidenceLevel.MEDIUM,
+                "generated_by": "mapping-v1",
+                "reviewer_status": ObjectStatus.CANDIDATE,
+            }
+        ),
+    )
+
+
+def an_assessment_of(handle: AssessmentHandle, subject_id: str) -> EvidenceAssessment:
+    return save(
+        handle,
+        EvidenceAssessment.model_validate(
+            {
+                "id": f"eas-{subject_id[-3:]}",
+                "assessment_id": handle.assessment_id,
+                "subject_type": SubjectType.CONTROL_MAPPING,
+                "subject_id": subject_id,
+                "evidence_ids": ["evd-001"],
+                "evidence_strengths": {"evd-001": EvidenceStrength.DIRECT},
+                "validation_status": ValidationStatus.PARTIALLY_SUPPORTED,
+                "rationale": "The passage states the posting behaviour but not the review step.",
+                "confidence": ConfidenceLevel.MEDIUM,
+                "recommendation": Recommendation.CONTINUE,
+                "generated_by": "evidence-validation-v1",
+                "created_at": now(),
+            }
+        ),
+    )
+
+
 def metrics_by_name(results: list[EvaluationResult]) -> dict[str, EvaluationResult]:
     return {result.metric_name: result for result in results}
 
@@ -203,6 +253,40 @@ def test_rejection_and_false_positive_rates_count_the_rejected(
     assert named["reviewer_rejection_rate"].metric_value == 0.5
     assert named["false_positive_rate"].metric_value == 0.5
     assert named["duplicate_finding_rate"].metric_value == 0.0
+
+
+def test_evidence_assessment_coverage_names_the_unassessed(prepared: dict[str, Any]) -> None:
+    """An unassessed subject resolves to no output (DEC-013) with nothing recording the
+    omission; the metric is what makes the truncation visible (#564)."""
+    handle = prepared["handle"]
+    an_evidence(handle)
+    a_mapping(handle, "map-001")
+    a_mapping(handle, "map-002")
+    an_assessment_of(handle, "map-001")
+
+    named = metrics_by_name(compute_metrics(handle, prepared["run"]))
+    coverage = named["evidence_assessment_coverage"]
+    assert coverage.metric_value == 0.5
+    assert coverage.sample_size == 2
+    assert coverage.notes is not None
+    assert "1 of 2" in coverage.notes
+
+
+def test_full_assessment_coverage_carries_no_note(prepared: dict[str, Any]) -> None:
+    handle = prepared["handle"]
+    an_evidence(handle)
+    a_mapping(handle, "map-001")
+    an_assessment_of(handle, "map-001")
+
+    named = metrics_by_name(compute_metrics(handle, prepared["run"]))
+    coverage = named["evidence_assessment_coverage"]
+    assert coverage.metric_value == 1.0
+    assert coverage.notes is None
+
+
+def test_no_assessable_subjects_is_vacuously_covered(prepared: dict[str, Any]) -> None:
+    named = metrics_by_name(compute_metrics(prepared["handle"], prepared["run"]))
+    assert named["evidence_assessment_coverage"].metric_value == 1.0
 
 
 # ------------------------------------------------------------------------------------------
