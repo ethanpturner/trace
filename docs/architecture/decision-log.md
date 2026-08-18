@@ -7129,3 +7129,62 @@ Tradeoffs:
   per-object-type rule — recorded here rather than silently widening that rule.
 
 ## DEC-111: Catalog 0.3 carries the delegated-authentication pack, measured against oidc-portal from its first commit
+
+## DEC-112: Truth-set agreement is measurable; the first set stays authoritative
+
+Date: 2026-08-17
+
+Status: Accepted
+
+Decision:
+
+**A scenario may carry a second annotation set at `annotations/second/`, and the harness scores
+agreement between it and the authoritative `expected/` set (#530).** The second set mirrors the
+expected file shapes; comparison is over the DEC-056 identity forms the run matcher already
+uses — a finding is its requirement and normalized component, a gap its requirement, a question
+its normalized text — and wording is never compared, exactly as the run-side matcher never
+compares it. The statistic is Jaccard set agreement per artifact, pooled for the headline
+(`annotation_agreement` in the feed, an "Annotator agreement" section on the scorecard).
+Chance-corrected kappa is deliberately not computed: kappa needs a negative universe, and an
+open-world truth set has no enumerable set of findings both annotators declined.
+
+**Three rules keep the instrument honest.** The first set stays authoritative whatever the
+number: disagreement is a review question for the truth set's owner, never an automatic edit.
+The statistic gates nothing (the DEC-063 posture). And absence measures nothing: a scenario
+with no second set, or an artifact the second pass has not covered, contributes no
+disagreement — silence is not an empty annotation, which is DEC-009 applied to annotators.
+
+**The machinery lands without data, and says so.** No second set is authored in this change,
+because a second annotation authored by the same session that wrote the machinery would be
+self-agreement wearing independence's clothes — the exact confusion the instrument exists to
+dissolve. The README's limitation paragraph now names the instrument and states that it stands
+empty until a person records a genuinely second pass; the documented fallback for a solo
+maintainer is blind test-retest — the same annotator, months later, without consulting the
+first set — reported as test-retest agreement, never as inter-annotator agreement.
+
+Why:
+
+- The README's own limitation — every number is one person's judgment measured against
+  itself — is the portfolio's most probeable claim, and the difference between "my numbers
+  agree with me" and a measured agreement statistic is the difference a skeptical reader acts
+  on. Building the instrument first makes the second pass a bounded afternoon instead of a
+  project.
+- Reusing the run matcher's identity forms means the agreement number and the benchmark
+  numbers disagree about nothing structural: what counts as "the same finding" is decided in
+  one place.
+
+Alternatives Considered:
+
+- Authoring the second set now (rejected: see above — the labor is deliberately left to a
+  person, and the issue closes on the machinery with the pass recorded as the operator's own
+  session).
+- Krippendorff's alpha or kappa over a constructed negative universe (rejected: constructing
+  the universe *is* the judgment being measured, and a statistic built on it would smuggle the
+  first annotator's frame into the correction term).
+
+Tradeoffs:
+
+- Jaccard punishes scope differences as disagreement: a second annotator who found a real
+  extra finding lowers the number even though the truth set should grow. Accepted and
+  intended — that disagreement is exactly what the truth set's owner should review, and the
+  per-artifact counts keep the direction visible.

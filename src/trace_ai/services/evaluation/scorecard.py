@@ -60,6 +60,7 @@ class ScorecardRow:
     token_usage: float | None = None
     severity_concordance: float | None = None
     duplicate_miss_rate: float | None = None
+    annotation_agreement: float | None = None
     """The reserved truth-set and run metrics (#329, #507, #536). None where the scenario
     authors no truth for the metric or the run reported no measurement — unmeasured, never
     zero. `severity_concordance` (DEC-030) is None when no matched finding carries scalar
@@ -133,6 +134,7 @@ def rows_from_feeds(feeds: Sequence[dict[str, Any]]) -> list[ScorecardRow]:
             token_usage=_metric(feed, "token_usage"),
             severity_concordance=_metric(feed, "severity_concordance"),
             duplicate_miss_rate=_metric(feed, "duplicate_miss_rate"),
+            annotation_agreement=_metric(feed, "annotation_agreement"),
         )
         for feed in feeds
     ]
@@ -419,6 +421,33 @@ over the authoritative rows of each snapshot; per-row detail is retained in
 </div>"""
 
 
+def _agreement_section(rows: Sequence[ScorecardRow]) -> str:
+    """Annotator agreement (#530, DEC-112): a statement about the truth sets, kept apart from
+    the run metrics so the two are never read as one claim. Absent until a scenario carries a
+    second annotation set."""
+    carrying = [row for row in rows if row.annotation_agreement is not None and row.authoritative]
+    if not carrying:
+        return ""
+    lines = [
+        f"<tr><td>{html.escape(row.scenario)}</td><td>{_pct(row.annotation_agreement)}</td></tr>"
+        for row in carrying
+    ]
+    return f"""
+<h2>Annotator agreement</h2>
+<p class="meta">Jaccard agreement between the authoritative truth set and a second annotation
+set, pooled over the DEC-056 identity forms (DEC-112). A statement about the truth set, not
+the run: the first set stays authoritative, and the statistic gates nothing. Scenarios with no
+second set measure nothing here.</p>
+<div class="scroll">
+<table>
+<thead><tr><th>Scenario</th><th>Agreement</th></tr></thead>
+<tbody>
+{chr(10).join(lines)}
+</tbody>
+</table>
+</div>"""
+
+
 def _trend_section(history: Sequence[ScorecardSnapshot]) -> str:
     """Per-scenario F1 across the retained snapshots (#535): the across-versions view
     evaluation-plan section 16 asks for.
@@ -547,6 +576,7 @@ wrong requirement lens (<code>demo/forgeflow/recorded/provenance.md</code>). Cos
 where the run was an offline replay that measured nothing.</p>
 {_adversarial_section(rows)}
 {_truth_section(rows)}
+{_agreement_section(rows)}
 {_live_stability_section(live_stability)}
 {_history_section(history)}
 {_trend_section(history)}
