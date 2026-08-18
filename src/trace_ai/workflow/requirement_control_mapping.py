@@ -204,7 +204,7 @@ class RequirementControlMappingNode:
                 usages=usages,
                 cache_prefix=cache_prefix,
                 # The catalog leads the trusted region so it is cacheable across the run's
-                # mapping calls, not only across one threat's retries (DEC-104, DEC-024).
+                # mapping calls, not only across one threat's retries (DEC-105, DEC-024).
                 system_cache_prefix=package.trusted_cache_prefix,
             )
             # Keys first: an unresolved control key and an unknown identifier are different

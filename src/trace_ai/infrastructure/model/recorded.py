@@ -103,13 +103,18 @@ def _is_envelope(data: object) -> bool:
 
 
 def parse_recorded_response(
-    text: str, *, described_as: str = "recorded response"
+    text: str, *, described_as: str = "recorded response", allow_rehearsal: bool = False
 ) -> RecordedResponse:
     """The proposal and usage this recording carries, or an error naming why it is not one.
 
     An envelope validates its `response` against the schema its `schema` names and reports the
     field-level errors on a mismatch. A bare proposal falls back to structural inference and carries
     no usage.
+
+    An envelope marked `rehearsal` is refused unless the caller says it is rehearsing: a rehearsal
+    staging file records the deterministic substitute, not a provider, and every other reader —
+    the replay, the evaluate harness, a promoted recording — must refuse it rather than replay a
+    response no model ever gave (#534, DEC-091).
     """
     try:
         data = json.loads(text)
@@ -118,6 +123,13 @@ def parse_recorded_response(
 
     if not _is_envelope(data):
         return RecordedResponse(response=_infer_schema(text, described_as))
+
+    if data.get("rehearsal") and not allow_rehearsal:
+        raise ValueError(
+            f"{described_as} is a rehearsal artifact: it was staged by `trace capture "
+            f"--rehearse` from the deterministic substitute and records no live response. It "
+            f"cannot be promoted into recorded/ or replayed as a recording."
+        )
 
     name = data["schema"]
     schema = _SCHEMA_BY_NAME.get(name)
@@ -137,9 +149,15 @@ def parse_recorded_response(
     return RecordedResponse(response=response, usage=usage)
 
 
-def load_recorded_responses(paths: Sequence[Path]) -> list[RecordedResponse]:
+def load_recorded_responses(
+    paths: Sequence[Path], *, allow_rehearsal: bool = False
+) -> list[RecordedResponse]:
     """Parse each file, in the order given — which is the order the run will consume them."""
     return [
-        parse_recorded_response(path.read_text(encoding="utf-8"), described_as=str(path.name))
+        parse_recorded_response(
+            path.read_text(encoding="utf-8"),
+            described_as=str(path.name),
+            allow_rehearsal=allow_rehearsal,
+        )
         for path in paths
     ]

@@ -207,5 +207,5 @@ work them.
   between a finding and a documentation gap, and how to trace a conclusion back to its evidence.
 - [Troubleshooting](troubleshooting.md) covers rerun hygiene, replay failures, and where output
   lands on disk.
-- The README's [Running it today](../../README.md#running-it-today) section is the condensed
+- The README's [Running it today](https://github.com/ethanpturner/trace/blob/main/README.md#running-it-today) section is the condensed
   version of this guide, kept to one screen.

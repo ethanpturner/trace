@@ -141,6 +141,97 @@ def test_the_fake_profile_is_refused_before_any_side_effect(tmp_path: Path) -> N
 def test_the_default_data_root_is_named_for_the_scenario() -> None:
     scenario = Scenario(slug="tiny", name="Tiny", path=PROJECT_ROOT, status="authored")
     assert capture_data_root(scenario) == PROJECT_ROOT / "data" / "capture-tiny"
+    rehearsing = capture_data_root(scenario, rehearsal=True)
+    assert rehearsing == PROJECT_ROOT / "data" / "capture-rehearsal-tiny"
+
+
+# ------------------------------------------------------------------------------------------
+# The rehearsal (#534): the same three stages, the money removed, nothing promotable
+# ------------------------------------------------------------------------------------------
+
+
+def _run_rehearsal_stage(scenario: Scenario, tmp_path: Path, stage: str) -> None:
+    if stage == "extract":
+        stage_extract(
+            scenario,
+            profile_name=PROFILE,
+            live=_recorded("extraction"),
+            data_root=tmp_path / "rehearsal-data",
+            rehearsal=True,
+        )
+    elif stage == "reason":
+        shutil.copy(
+            FORGEFLOW / "recorded" / "decisions-context.yaml",
+            capture_dir(scenario, rehearsal=True) / "decisions-context.yaml",
+        )
+        stage_reason(
+            scenario,
+            profile_name=PROFILE,
+            live=_recorded("reasoning"),
+            data_root=tmp_path / "rehearsal-data",
+            rehearsal=True,
+        )
+    else:
+        shutil.copy(
+            FORGEFLOW / "recorded" / "decisions-findings.yaml",
+            capture_dir(scenario, rehearsal=True) / "decisions-findings.yaml",
+        )
+        stage_report(
+            scenario,
+            profile_name=PROFILE,
+            live=_recorded("report"),
+            data_root=tmp_path / "rehearsal-data",
+            rehearsal=True,
+        )
+
+
+def test_the_rehearsal_round_trips_offline_into_its_own_marked_directory(tmp_path: Path) -> None:
+    """The whole three-stage flow rehearses without a provider, staging apart from a real
+    capture, every envelope marked, and the committed report hash still reproduced — the
+    mechanics are the real ones, only the money is missing."""
+    scenario = _scenario(tmp_path)
+    _run_rehearsal_stage(scenario, tmp_path, "extract")
+
+    staging = capture_dir(scenario, rehearsal=True)
+    assert staging.name == "capture-rehearsal"
+    assert not capture_dir(scenario).exists(), "a rehearsal must not touch the real staging"
+    assert (staging / "REHEARSAL").is_file()
+    envelopes = sorted(staging.glob("[0-9]*.json"))
+    assert envelopes
+    first = json.loads(envelopes[0].read_text(encoding="utf-8"))
+    assert first["rehearsal"] is True
+
+    _run_rehearsal_stage(scenario, tmp_path, "reason")
+    _run_rehearsal_stage(scenario, tmp_path, "report")
+    committed = (FORGEFLOW / "recorded" / "report-hash.txt").read_text(encoding="utf-8")
+    assert (staging / "report-hash.txt").read_text(encoding="utf-8") == committed
+
+
+def test_a_rehearsal_artifact_is_refused_as_a_recording(tmp_path: Path) -> None:
+    """The structural half of the promotion guard: every reader of a recording refuses a
+    rehearsal envelope, so a hand-copied rehearsal file cannot enter recorded/ quietly."""
+    scenario = _scenario(tmp_path)
+    _run_rehearsal_stage(scenario, tmp_path, "extract")
+    staged = sorted(capture_dir(scenario, rehearsal=True).glob("[0-9]*.json"))
+
+    with pytest.raises(ValueError, match="rehearsal"):
+        load_recorded_responses(staged)
+
+    replayable = load_recorded_responses(staged, allow_rehearsal=True)
+    assert replayable, "the rehearsal's own resume path still reads its staging"
+
+
+def test_a_rehearsal_without_a_model_is_refused_before_any_side_effect(tmp_path: Path) -> None:
+    scenario = _scenario(tmp_path)
+    with pytest.raises(CaptureError, match="rehearsal"):
+        stage_extract(
+            scenario,
+            profile_name=PROFILE,
+            data_root=tmp_path / "rehearsal-data",
+            rehearsal=True,
+        )
+    assert not capture_dir(scenario, rehearsal=True).exists()
+    assert not (tmp_path / "rehearsal-data").exists()
 
 
 def test_a_scenario_catalog_pin_reaches_the_assessment(tmp_path: Path) -> None:

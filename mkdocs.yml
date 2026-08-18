@@ -1,0 +1,78 @@
+# The documentation site (DEC-104): a rendered view of docs/, built by .github/workflows/pages.yml
+# and deployed to GitHub Pages from main. The Markdown sources are authoritative; the site is not.
+# docs_dir is the docs/ tree in place -- the conformance tests read those files by path, so the
+# tree is never restructured for the site's benefit.
+
+site_name: Trace
+site_description: Context-aware security architecture analysis
+site_url: https://ethanpturner.github.io/trace/
+repo_url: https://github.com/ethanpturner/trace
+repo_name: ethanpturner/trace
+edit_uri: blob/main/docs/
+
+docs_dir: docs
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.sections
+    - navigation.top
+    - search.suggest
+    - content.code.copy
+
+# Setting markdown_extensions replaces MkDocs' defaults, so toc and tables are restated here.
+# footnotes is load-bearing: docs/eval/comparison.md is generated with footnote syntax.
+markdown_extensions:
+  - toc:
+      permalink: true
+  - tables
+  - fenced_code
+  - footnotes
+  - admonition
+
+# Explicit nav: the site's structure is deliberate, not alphabetical. Files under docs/ that are
+# absent here (eval/scorecard.html, the feeds, assets/) are still copied into the site verbatim.
+nav:
+  - Home: index.md
+  - Guide:
+      - guide/getting-started.md
+      - guide/assessment-walkthrough.md
+      - guide/cli-reference.md
+      - guide/reading-the-report.md
+      - guide/troubleshooting.md
+  - Architecture:
+      - architecture/project-scope.md
+      - architecture/current-architecture.md
+      - architecture/agent-design.md
+      - architecture/data-model.md
+      - architecture/evaluation-plan.md
+      - architecture/threat-model.md
+      - architecture/adversarial-defence.md
+      - architecture/decision-log.md
+  - Product:
+      - product/vision.md
+      - product/design-principles.md
+      - product/roadmap.md
+      - product/future-features.md
+      - product/demo-script.md
+      - product/ablation-narrative.md
+      - product/interview-package.md
+  - Evaluation:
+      - eval/comparison.md
+      - eval/ablation.md
+  - Presentation:
+      - presentation/README.md
+      - presentation/deck.md
+      - presentation/traceability.md
+      - presentation/handout.md

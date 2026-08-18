@@ -265,7 +265,7 @@ def test_the_package_carries_no_handle_index_or_profile(
     assert not held & {"handle", "index", "profile", "store", "session", "repository"}
 
 
-# The cacheable stable span (DEC-104)
+# The cacheable stable span (DEC-105)
 
 
 def test_the_trusted_region_opens_with_its_stable_span(

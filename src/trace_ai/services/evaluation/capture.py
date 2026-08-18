@@ -18,6 +18,15 @@ The committed files are a starting point for authoring, never an input to a live
 
 The capture spends real money and each stage refuses to run twice: re-running a stage would
 re-spend it. The refusal is an answer, not a fault — the CLI renders it as exit code 3 (DEC-088).
+
+A rehearsal (#534) is the same three stages with the money removed: the caller supplies a
+deterministic model serving authored responses, staging goes to `capture-rehearsal/` beside the
+real staging directory, and every envelope written carries a `rehearsal` marker that
+`load_recorded_responses` refuses everywhere except inside a rehearsal's own resume. DEC-091
+traded away offline rehearsal to keep a zero-usage capture out of staging; the marker keeps that
+guarantee — a rehearsal artifact cannot be promoted, because every reader of a promoted
+recording refuses it — while giving a new scenario's capture flow a free dry run before the
+first dollar.
 """
 
 from __future__ import annotations
@@ -82,6 +91,7 @@ if TYPE_CHECKING:
     from trace_ai.services.evaluation.registry import Scenario
 
 __all__ = [
+    "REHEARSAL_MARKER",
     "CaptureError",
     "CaptureRefusedError",
     "RecordingModel",
@@ -127,14 +137,25 @@ class CaptureRefusedError(ValueError):
     stage's output exists — so the CLI renders it as exit code 3, not a fault (DEC-088)."""
 
 
-def capture_dir(scenario: Scenario) -> Path:
-    """The staging directory a capture writes into, beside the scenario's `recorded/`."""
-    return scenario.path / "capture"
+REHEARSAL_MARKER = "REHEARSAL"
+"""The marker file a rehearsal staging directory carries, for the operator's eyes; the
+load-bearing guard is the `rehearsal` key each staged envelope carries (#534)."""
 
 
-def capture_data_root(scenario: Scenario) -> Path:
+def capture_dir(scenario: Scenario, *, rehearsal: bool = False) -> Path:
+    """The staging directory a capture writes into, beside the scenario's `recorded/`.
+
+    A rehearsal stages into its own directory: its artifacts are mechanics-validation output from
+    the deterministic substitute, and a directory shared with a real capture would put a
+    no-model-ever-said-this file one copy away from `recorded/` (#534).
+    """
+    return scenario.path / ("capture-rehearsal" if rehearsal else "capture")
+
+
+def capture_data_root(scenario: Scenario, *, rehearsal: bool = False) -> Path:
     """The capture's own data root, apart from the operator's assessments."""
-    return PROJECT_ROOT / "data" / f"capture-{scenario.slug}"
+    prefix = "capture-rehearsal" if rehearsal else "capture"
+    return PROJECT_ROOT / "data" / f"{prefix}-{scenario.slug}"
 
 
 def _usage_dict(usage: ModelUsage) -> dict[str, object]:
@@ -160,9 +181,10 @@ class RecordingModel:
     and does not need to; a live retry that recovered replays as a first-attempt success.
     """
 
-    def __init__(self, inner: StructuredModel, staging: Path) -> None:
+    def __init__(self, inner: StructuredModel, staging: Path, *, rehearsal: bool = False) -> None:
         self._inner = inner
         self._staging = staging
+        self._rehearsal = rehearsal
 
     @property
     def name(self) -> str:
@@ -197,11 +219,15 @@ class RecordingModel:
             # The envelope (#461): the named schema, the captured usage the offline ledger replays,
             # and the response. A live capture is the one place real usage exists, so this is where
             # it is written.
-            envelope = {
+            envelope: dict[str, object] = {
                 "schema": type(outcome.value).__name__,
                 "usage": _usage_dict(outcome.usage),
                 "response": outcome.value.model_dump(mode="json"),
             }
+            if self._rehearsal:
+                # The guard every other reader refuses on (#534): a rehearsal envelope records
+                # the deterministic substitute, and must never replay as a recording.
+                envelope["rehearsal"] = True
             path.write_text(json.dumps(envelope, indent=2) + "\n", encoding="utf-8")
             cost = outcome.usage.estimated_cost
             print(f"  recorded {path.name}  (${cost:.4f}, {outcome.usage.output_tokens} out)")
@@ -305,17 +331,36 @@ def _model(
     from_recorded: bool,
     skip: int = 0,
     live: StructuredModel | None = None,
+    rehearsal: bool = False,
 ) -> StructuredModel:
-    staging = capture_dir(scenario)
-    recording = RecordingModel(live if live is not None else _live_model(profile), staging)
+    staging = capture_dir(scenario, rehearsal=rehearsal)
+    recording = RecordingModel(
+        live if live is not None else _live_model(profile), staging, rehearsal=rehearsal
+    )
     if not from_recorded:
         return recording
     paths = sorted(staging.glob("[0-9]*.json"))[skip:]
-    return _FallbackModel(list(load_recorded_responses(paths)), recording)
+    return _FallbackModel(
+        list(load_recorded_responses(paths, allow_rehearsal=rehearsal)), recording
+    )
 
 
-def _assessment_id(scenario: Scenario) -> str:
-    return (capture_dir(scenario) / "assessment-id.txt").read_text(encoding="utf-8").strip()
+def _assessment_id(scenario: Scenario, *, rehearsal: bool = False) -> str:
+    staging = capture_dir(scenario, rehearsal=rehearsal)
+    return (staging / "assessment-id.txt").read_text(encoding="utf-8").strip()
+
+
+def _require_rehearsal_model(rehearsal: bool, live: StructuredModel | None) -> None:
+    """A rehearsal never constructs a provider: the caller supplies the substitute it runs.
+
+    The CLI builds a `DeterministicModel` from `--response` recordings; a rehearsal reaching this
+    guard with nothing to serve is an operator slip, named before any side effect (#534).
+    """
+    if rehearsal and live is None:
+        raise CaptureError(
+            "a rehearsal runs the deterministic substitute; supply --response recordings for it "
+            "to serve"
+        )
 
 
 def _spent(service: AssessmentService, assessment_id: str) -> str:
@@ -333,16 +378,19 @@ def stage_extract(
     from_recorded: bool = False,
     live: StructuredModel | None = None,
     data_root: Path | None = None,
+    rehearsal: bool = False,
 ) -> None:
     """Create the assessment, load the scenario's inputs, and run to checkpoint 1.
 
     With `from_recorded`, existing staged recordings answer the calls they cover (an interrupted
     capture resumed on a fresh data root) and only unanswered calls go live. `data_root` exists
-    for tests, which must not write under the repository's `data/`.
+    for tests, which must not write under the repository's `data/`. With `rehearsal`, the whole
+    stage runs against a supplied deterministic model into the rehearsal staging directory,
+    spending nothing (#534) — the mechanics-validation pass DEC-091 traded away.
     """
-    staging = capture_dir(scenario)
+    staging = capture_dir(scenario, rehearsal=rehearsal)
     if data_root is None:
-        data_root = capture_data_root(scenario)
+        data_root = capture_data_root(scenario, rehearsal=rehearsal)
     if staging.exists() and any(staging.glob("[0-9]*.json")) and not from_recorded:
         raise CaptureRefusedError(
             f"{staging} holds recordings; a re-run would re-spend them. Resume with "
@@ -354,8 +402,16 @@ def stage_extract(
     from trace_ai.infrastructure.model.profiles import resolve_profile
 
     profile = resolve_profile(profile_name)
+    _require_rehearsal_model(rehearsal, live)
     _refuse_fake(profile, live)
     staging.mkdir(parents=True, exist_ok=True)
+    if rehearsal:
+        (staging / REHEARSAL_MARKER).write_text(
+            "This directory was staged by `trace capture --rehearse` from the deterministic\n"
+            "substitute. Nothing in it records a model response; nothing in it may be promoted\n"
+            "into recorded/.\n",
+            encoding="utf-8",
+        )
     with AssessmentStore.at_root(data_root) as store:
         service = AssessmentService(store, artifact_root=data_root)
         created = service.create(
@@ -372,7 +428,13 @@ def stage_extract(
         outcome = run_assessment(
             service,
             created.id,
-            model=_model(scenario, profile=profile, from_recorded=from_recorded, live=live),
+            model=_model(
+                scenario,
+                profile=profile,
+                from_recorded=from_recorded,
+                live=live,
+                rehearsal=rehearsal,
+            ),
             profile=profile,
             budget=_budget(),
         )
@@ -402,11 +464,12 @@ def stage_reason(
     from_recorded: bool = False,
     live: StructuredModel | None = None,
     data_root: Path | None = None,
+    rehearsal: bool = False,
 ) -> None:
     """Apply the authored context decisions, approve, and run live to checkpoint 2."""
-    staging = capture_dir(scenario)
+    staging = capture_dir(scenario, rehearsal=rehearsal)
     if data_root is None:
-        data_root = capture_data_root(scenario)
+        data_root = capture_data_root(scenario, rehearsal=rehearsal)
     decisions = staging / "decisions-context.yaml"
     if not decisions.is_file():
         raise CaptureError(f"{decisions} does not exist; author it from review-export.yaml first")
@@ -418,8 +481,9 @@ def stage_reason(
     from trace_ai.infrastructure.model.profiles import resolve_profile
 
     profile = resolve_profile(profile_name)
+    _require_rehearsal_model(rehearsal, live)
     _refuse_fake(profile, live)
-    assessment_id = _assessment_id(scenario)
+    assessment_id = _assessment_id(scenario, rehearsal=rehearsal)
     with AssessmentStore.at_root(data_root) as store:
         service = AssessmentService(store, artifact_root=data_root)
         handle = service.handle(assessment_id)
@@ -440,7 +504,14 @@ def stage_reason(
         outcome = resume_assessment(
             service,
             assessment_id,
-            model=_model(scenario, profile=profile, from_recorded=from_recorded, skip=1, live=live),
+            model=_model(
+                scenario,
+                profile=profile,
+                from_recorded=from_recorded,
+                skip=1,
+                live=live,
+                rehearsal=rehearsal,
+            ),
             profile=profile,
             budget=_budget(),
         )
@@ -483,11 +554,12 @@ def stage_report(
     profile_name: str,
     live: StructuredModel | None = None,
     data_root: Path | None = None,
+    rehearsal: bool = False,
 ) -> None:
     """Apply the authored finding decisions and run live to completion."""
-    staging = capture_dir(scenario)
+    staging = capture_dir(scenario, rehearsal=rehearsal)
     if data_root is None:
-        data_root = capture_data_root(scenario)
+        data_root = capture_data_root(scenario, rehearsal=rehearsal)
     decisions = staging / "decisions-findings.yaml"
     if not decisions.is_file():
         raise CaptureError(f"{decisions} does not exist; author it from findings-export.yaml first")
@@ -497,8 +569,9 @@ def stage_report(
     from trace_ai.infrastructure.model.profiles import resolve_profile
 
     profile = resolve_profile(profile_name)
+    _require_rehearsal_model(rehearsal, live)
     _refuse_fake(profile, live)
-    assessment_id = _assessment_id(scenario)
+    assessment_id = _assessment_id(scenario, rehearsal=rehearsal)
     with AssessmentStore.at_root(data_root) as store:
         service = AssessmentService(store, artifact_root=data_root)
         handle = service.handle(assessment_id)
@@ -529,7 +602,9 @@ def stage_report(
         outcome = resume_assessment(
             service,
             assessment_id,
-            model=_model(scenario, profile=profile, from_recorded=False, live=live),
+            model=_model(
+                scenario, profile=profile, from_recorded=False, live=live, rehearsal=rehearsal
+            ),
             profile=profile,
             budget=_budget(),
             generated_at=GENERATED_AT,
@@ -549,7 +624,10 @@ def stage_report(
             "spent": _spent(service, assessment_id),
         }
         print(json.dumps(summary, indent=2))
-        print(f"verify the round trip, then promote {staging.name}/ into recorded/")
+        if rehearsal:
+            print("rehearsal complete; nothing staged here may be promoted into recorded/")
+        else:
+            print(f"verify the round trip, then promote {staging.name}/ into recorded/")
 
 
 def stage_baseline(

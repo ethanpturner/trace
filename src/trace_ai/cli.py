@@ -721,6 +721,26 @@ def build_parser() -> argparse.ArgumentParser:
         default=DEFAULT_MODEL_PROFILE,
         help="the provider, model, and settings bundle to capture with (the fake one is refused)",
     )
+    capture.add_argument(
+        "--rehearse",
+        action="store_true",
+        help=(
+            "run the stage offline against the deterministic substitute serving --response "
+            "recordings, staging into capture-rehearsal/ (#534); nothing staged can be promoted"
+        ),
+    )
+    capture.add_argument(
+        "--response",
+        action="append",
+        dest="responses",
+        default=[],
+        type=_path,
+        metavar="PATH",
+        help=(
+            "a recorded response for --rehearse to serve, in consumption order; a directory "
+            "stands for its numbered recordings, as with run --response"
+        ),
+    )
 
     verify = commands.add_parser(
         "verify",
@@ -1093,16 +1113,58 @@ def _capture(args: argparse.Namespace) -> int:
     from trace_ai.services.evaluation.registry import scenario as registered_scenario
 
     target = registered_scenario(args.scenario)
+    rehearsal_model = None
+    if args.rehearse:
+        # The rehearsal's whole model: the deterministic substitute serving the supplied
+        # recordings (#534). The service refuses a rehearsal with nothing to serve, and
+        # rehearsal staging files are readable here because this is the rehearsal reading them.
+        if args.stage.startswith("baseline-"):
+            raise CommandInputError(
+                "--rehearse covers the three pipeline stages; a baseline capture is one call "
+                "and has no mechanics to rehearse"
+            )
+        from trace_ai.infrastructure.model.fake import DeterministicModel
+
+        if not args.responses:
+            raise CommandInputError(
+                "a rehearsal runs the deterministic substitute; supply --response recordings "
+                "for it to serve"
+            )
+        try:
+            responses = load_recorded_responses(
+                _response_files(args.responses), allow_rehearsal=True
+            )
+        except CommandInputError:
+            raise
+        except (OSError, ValueError) as error:
+            raise CommandInputError(f"a recorded response could not be read: {error}") from None
+        rehearsal_model = DeterministicModel(list(responses))
+    elif args.responses:
+        raise CommandInputError("--response is how --rehearse is fed; a live capture records")
+
     if args.stage == "extract":
         capture_service.stage_extract(
-            target, profile_name=args.model_profile, from_recorded=args.from_recorded
+            target,
+            profile_name=args.model_profile,
+            from_recorded=args.from_recorded,
+            live=rehearsal_model,
+            rehearsal=args.rehearse,
         )
     elif args.stage == "reason":
         capture_service.stage_reason(
-            target, profile_name=args.model_profile, from_recorded=args.from_recorded
+            target,
+            profile_name=args.model_profile,
+            from_recorded=args.from_recorded,
+            live=rehearsal_model,
+            rehearsal=args.rehearse,
         )
     elif args.stage == "report":
-        capture_service.stage_report(target, profile_name=args.model_profile)
+        capture_service.stage_report(
+            target,
+            profile_name=args.model_profile,
+            live=rehearsal_model,
+            rehearsal=args.rehearse,
+        )
     else:
         capture_service.stage_baseline(
             target,

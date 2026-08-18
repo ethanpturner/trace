@@ -196,7 +196,7 @@ def test_a_cache_prefix_is_accepted_and_the_message_stays_plain() -> None:
 
 
 def test_a_system_cache_prefix_is_accepted_and_the_system_message_stays_plain() -> None:
-    """DEC-104's hint has no marker on this provider either; the request is unchanged."""
+    """DEC-105's hint has no marker on this provider either; the request is unchanged."""
     adapter, client = _adapter(_response('{"name": "ok"}'))
     adapter.generate(
         prompt="the prompt",

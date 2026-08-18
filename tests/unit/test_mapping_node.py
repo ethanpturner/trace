@@ -311,7 +311,7 @@ def test_a_single_mapping_succeeds_with_no_retry(prepared: Any, catalog: LoadedC
 def test_the_node_hints_the_stable_catalog_span_to_the_model(
     prepared: Any, catalog: LoadedCatalog
 ) -> None:
-    """DEC-104: the call carries `system_cache_prefix`, a real prefix of the system region that
+    """DEC-105: the call carries `system_cache_prefix`, a real prefix of the system region that
     holds the whole catalog — the span an adapter caches across the run's mapping calls."""
     captured: list[dict[str, Any]] = []
 

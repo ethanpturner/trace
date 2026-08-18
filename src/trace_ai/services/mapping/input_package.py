@@ -139,7 +139,7 @@ class MappingInput:
 
     trusted_cache_prefix: str
     """The leading span of `trusted` that is byte-identical across the assessment's mapping calls
-    — the assessment header and the whole catalog (DEC-104). The seam's `system_cache_prefix`
+    — the assessment header and the whole catalog (DEC-105). The seam's `system_cache_prefix`
     hint; empty never occurs by construction, but a consumer treats a non-prefix as no hint."""
 
     assessment_id: str
@@ -333,7 +333,7 @@ def _stable_span(
     *, assessment_id: str, catalog_version: str, requirements: list[dict[str, Any]]
 ) -> str:
     """The leading span of the trusted region that is byte-identical across every mapping call
-    an assessment makes: the assessment header and the whole requirements catalog (DEC-104).
+    an assessment makes: the assessment header and the whole requirements catalog (DEC-105).
 
     DEC-024 sends the full catalog on every call and names it the pipeline's largest stable
     prefix; putting it first — before anything the threat varies — is what lets an adapter cache
@@ -370,7 +370,7 @@ def _trusted_region(
     source text appears once, inside the fence, and never here.
 
     The region opens with `_stable_span` — the assessment header and the catalog — and everything
-    the threat varies follows it, so the whole leading span is cacheable across calls (DEC-104).
+    the threat varies follows it, so the whole leading span is cacheable across calls (DEC-105).
     """
     sections = [
         _stable_span(

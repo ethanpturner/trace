@@ -349,7 +349,7 @@ def _user_content(prompt: str, cache_prefix: str | None) -> str | list[dict[str,
 
 
 def _system_content(system: str, system_cache_prefix: str | None) -> str | list[dict[str, Any]]:
-    """The system region, split at `system_cache_prefix` so its stable span is marked (DEC-104).
+    """The system region, split at `system_cache_prefix` so its stable span is marked (DEC-105).
 
     The same degradation rules as `_user_content`: no hint, or a hint that is not a prefix, sends
     the plain string. The split earns its keep exactly where the user-message marker cannot — a

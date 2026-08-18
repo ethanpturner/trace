@@ -196,7 +196,7 @@ class CachingModel:
     ) -> ModelOutcome[T]:
         # The cache hints are provider-side and do not change the prompt or system text, so they
         # are not part of the cache key; both are forwarded to the inner adapter for a live call
-        # (WS10, DEC-104).
+        # (WS10, DEC-105).
         resolved = settings if settings is not None else self._profile.settings
         key = cache_key(
             prompt=prompt,

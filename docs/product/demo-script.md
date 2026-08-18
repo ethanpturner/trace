@@ -11,7 +11,7 @@ It is the source for the roadmap Stage 6 presentation's demo segment as well as 
 walkthrough. The live-model variant is the same commands with a live `--model-profile` and every
 `--response` dropped; it is an option, never a dependency, and nothing below needs it. The spoken
 narration for the presentation's eight-step variant is
-[`demo/forgeflow/speaker-notes.md`](../../demo/forgeflow/speaker-notes.md).
+[`demo/forgeflow/speaker-notes.md`](https://github.com/ethanpturner/trace/blob/main/demo/forgeflow/speaker-notes.md).
 
 ## Before the room
 
