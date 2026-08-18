@@ -7127,3 +7127,5 @@ Tradeoffs:
   reviewable where it sits.
 - The file is a truth-set schema addition outside evaluation-plan section 5's derived
   per-object-type rule — recorded here rather than silently widening that rule.
+
+## DEC-111: Catalog 0.3 carries the delegated-authentication pack, measured against oidc-portal from its first commit

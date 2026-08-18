@@ -1,0 +1,204 @@
+# Category: cloud_operations
+# Requirements about operating a system in a cloud: the ground where an
+# architecture is compromised through its operations rather than its code.
+# Mined from OWASP Cumulus v1.2.0 (DEC-059), whose cards name operational
+# expectations the application-shaped categories do not cover. Cumulus is
+# CC BY 4.0 -- wording may be adapted with attribution, unlike the ASVS and
+# AISVS posture (see requirements/README.md). Every statement is phrased so
+# that silence resolves to `unverified`, never `unmet` (DEC-009).
+
+requirements:
+
+  - id: req-OPS-001
+    catalog_version: "0.3"
+    title: Backup deletion is separated from backup creation
+    statement: >
+      Where the system maintains backups, the documentation must describe how
+      the ability to delete or alter backups is separated from the credentials
+      and roles that write them and operate the systems they protect.
+    rationale: >
+      A backup exists for the day the primary data is destroyed or encrypted,
+      and an attacker who can do that destruction usually holds the operating
+      credentials. If those same credentials can delete the backups, the
+      backups protect against hardware failure and nothing else. Separation is
+      an access-design fact -- distinct roles, immutability windows, a
+      separate account -- that architecture documentation can state.
+    category:
+      - cloud_operations
+      - data_protection
+      - authorization
+    applicable_conditions:
+      - the system maintains backups of data it is responsible for
+      - backup storage is reachable with credentials the system's operators hold
+    non_applicable_conditions:
+      - the system holds no data requiring recovery
+      - backups are owned and operated entirely by a separate organization, documented as such
+    acceptable_implementations:
+      - backups written to an account or project the operating credentials cannot delete from
+      - object-storage immutability or retention locks covering the backup window
+      - a distinct backup-administration role granted to nobody who operates the primary system
+    evidence_expectations:
+      - backup and recovery documentation
+      - a description of the roles or accounts involved in backup administration
+      - retention or immutability configuration
+    common_false_positives:
+      - absent backup redundancy across regions, which is a different expectation
+      - absent restore testing, which is operational practice rather than access design
+    default_severity: high
+    source_frameworks:
+      - "OWASP Cumulus v1.2.0: Recovery K"
+      - "OWASP Cumulus v1.2.0: Recovery J"
+      - "NIST SP 800-53 5.2.0: AC-5"
+      - "NIST SP 800-53 5.2.0: CP-9"
+    status: active
+
+  - id: req-OPS-002
+    catalog_version: "0.3"
+    title: Cost anomalies reach a person
+    statement: >
+      Where the system runs on metered infrastructure, the documentation must
+      describe how anomalous spend is detected and who is alerted to it.
+    rationale: >
+      On metered infrastructure, resource abuse arrives as a bill: a
+      compromised credential mining currency, an unbounded loop, or an abusive
+      end user all show up in spend before they show up anywhere else. A cost
+      alert is therefore a security signal, not only a finance one, and whether
+      one exists and reaches someone is stated in operational design rather
+      than deduced from the application.
+    category:
+      - cloud_operations
+      - availability
+    applicable_conditions:
+      - the system runs on infrastructure billed by consumption
+      - end users or automated processes can cause the system to consume resources
+    non_applicable_conditions:
+      - the system runs on fixed-capacity infrastructure with no metered billing
+    acceptable_implementations:
+      - provider budget alerts with a named recipient or channel
+      - spend-anomaly detection routed to the operating team
+      - per-tenant or per-feature consumption limits with alerting on breach
+    evidence_expectations:
+      - operational documentation describing cost monitoring
+      - alerting configuration naming recipients
+    common_false_positives:
+      - absent hard spend caps, where alerting with a recipient is documented
+      - absent per-request cost attribution, which exceeds this expectation
+    default_severity: medium
+    source_frameworks:
+      - "OWASP Cumulus v1.2.0: Monitoring 7"
+    status: active
+
+  - id: req-OPS-003
+    catalog_version: "0.3"
+    title: Production is separated from other environments, including indirectly
+    statement: >
+      The documentation must describe how production is separated from
+      non-production environments, including indirect paths such as shared
+      tooling, shared credentials, and CI/CD systems that can reach both.
+    rationale: >
+      Environment separation fails indirectly more often than directly: the
+      staging environment that shares a database user, the CI/CD runner that
+      deploys to both, the developer tool with credentials for each. A
+      compromise of the weaker environment then is a compromise of production
+      with extra steps. The indirect paths are architectural facts that
+      documentation either names or omits.
+    category:
+      - cloud_operations
+      - network_segmentation
+      - cicd_trust
+    applicable_conditions:
+      - the system operates more than one environment
+      - shared tooling or pipelines can reach more than one environment
+    non_applicable_conditions:
+      - the system operates a single environment, documented as such
+    acceptable_implementations:
+      - separate accounts, projects, or subscriptions per environment
+      - environment-scoped deployment identities with no cross-environment grants
+      - network rules that refuse connections between environments
+    evidence_expectations:
+      - environment or account topology documentation
+      - CI/CD documentation describing which identities reach which environments
+    common_false_positives:
+      - a shared CI/CD system being documented, where its identities are environment-scoped
+      - absent physical separation, which cloud tenancy does not offer at this level
+    default_severity: high
+    source_frameworks:
+      - "OWASP Cumulus v1.2.0: Resources Q"
+      - "NIST SP 800-53 5.2.0: SC-7"
+    status: active
+
+  - id: req-OPS-004
+    catalog_version: "0.3"
+    title: Changes to the deployment pipeline are visible
+    statement: >
+      The documentation must describe how changes to the deployment pipeline's
+      definition are reviewed or surfaced, and how a deployment initiated
+      outside the ordinary path would become visible.
+    rationale: >
+      The pipeline definition is executable configuration with production
+      reach; editing it is equivalent to editing what runs in production,
+      through a file that application-focused review often skips. A silent
+      pipeline change or a silent out-of-band deployment defeats every control
+      the pipeline itself enforces. Visibility -- review on the definition,
+      alerts on unusual runs -- is a stated property of the delivery design.
+    category:
+      - cloud_operations
+      - cicd_trust
+      - logging
+    applicable_conditions:
+      - the system is deployed by an automated pipeline
+      - the pipeline definition is stored where its authors can change it
+    non_applicable_conditions:
+      - deployment is manual and performed by named operators
+    acceptable_implementations:
+      - pipeline definitions in version control with mandatory review
+      - alerts on pipeline runs initiated outside the ordinary trigger
+      - deploy-time recording of which definition version executed
+    evidence_expectations:
+      - delivery documentation describing pipeline change control
+      - a statement of how out-of-band deployments are detected
+    common_false_positives:
+      - absent signed pipeline definitions, which exceed this expectation
+      - absent build reproducibility, which is a supply-chain expectation rather than a visibility one
+    default_severity: medium
+    source_frameworks:
+      - "OWASP Cumulus v1.2.0: Delivery A"
+      - "OWASP Cumulus v1.2.0: Delivery K"
+      - "NIST SP 800-53 5.2.0: CM-3"
+    status: active
+
+  - id: req-OPS-005
+    catalog_version: "0.3"
+    title: Alerts are scoped to remain actionable
+    statement: >
+      Where the system raises operational or security alerts, the
+      documentation must describe how alert volume is kept at a level a person
+      can act on -- which conditions alert, at what priority, and to whom.
+    rationale: >
+      An alerting system that cries constantly trains its recipients to stop
+      reading, and the alert that mattered arrives identically to the hundred
+      that did not. Alert fatigue is a design outcome, not an operator
+      failing: the conditions, priorities, and routing are decided when the
+      alerting is designed, which is exactly when documentation can state
+      them. A pile of unactionable alerts is not monitoring.
+    category:
+      - cloud_operations
+      - logging
+    applicable_conditions:
+      - the system raises alerts intended for human response
+    non_applicable_conditions:
+      - the system raises no alerts and is documented as monitored by review only
+    acceptable_implementations:
+      - a severity scheme where only actionable conditions page a person
+      - alert routing that separates informational signals from response demands
+      - periodic review that retires alerts nobody acts on
+    evidence_expectations:
+      - monitoring documentation describing alert conditions and priorities
+      - routing configuration naming recipients per severity
+    common_false_positives:
+      - absent formal SLOs, which exceed this expectation
+      - a low alert count being documented, which this expectation permits deliberately
+    default_severity: low
+    source_frameworks:
+      - "OWASP Cumulus v1.2.0: Monitoring 4"
+    status: active

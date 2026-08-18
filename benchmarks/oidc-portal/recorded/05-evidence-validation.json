@@ -1,61 +1,61 @@
 {
-  "schema": "EvidenceValidationProposal",
-  "response": {
-    "assessments": [
-      {
-        "subject_type": "control_mapping",
-        "subject_id": "map-001",
-        "evidence_ids": [
-          "evd-003"
-        ],
-        "evidence_strengths": {
-          "evd-003": "direct"
-        },
-        "validation_status": "supported",
-        "rationale": "The authentication section affirmatively states the delegation, the absence of a local password store, and that the portal issues no credentials.",
-        "missing_evidence": [],
-        "contradictions": [],
-        "confidence": "high",
-        "recommendation": "continue",
-        "quoted_text": {}
-      },
-      {
-        "subject_type": "control_mapping",
-        "subject_id": "map-002",
-        "evidence_ids": [
-          "evd-003"
-        ],
-        "evidence_strengths": {
-          "evd-003": "direct"
-        },
-        "validation_status": "supported",
-        "rationale": "The document affirmatively assigns multi-factor enrolment and factor policy to the identity provider organization level.",
-        "missing_evidence": [],
-        "contradictions": [],
-        "confidence": "high",
-        "recommendation": "continue",
-        "quoted_text": {}
-      },
-      {
-        "subject_type": "control_mapping",
-        "subject_id": "map-003",
-        "evidence_ids": [
-          "evd-002"
-        ],
-        "evidence_strengths": {
-          "evd-002": "indirect"
-        },
-        "validation_status": "unsupported",
-        "rationale": "The cited passage states the reachability restriction as a fact of the deployment; no passage establishes what enforces it, so the restriction cannot be verified from what was supplied.",
-        "missing_evidence": [
-          "how the ticket service is restricted to the application subnet",
-          "whether the restriction is enforced by network policy or assumed by topology"
-        ],
-        "contradictions": [],
-        "confidence": "low",
-        "recommendation": "documentation_gap",
-        "quoted_text": {}
-      }
-    ]
-  }
+ "schema": "EvidenceValidationProposal",
+ "response": {
+  "assessments": [
+   {
+    "subject_type": "control_mapping",
+    "subject_id": "map-001",
+    "evidence_ids": [
+     "evd-003"
+    ],
+    "evidence_strengths": {
+     "evd-003": "direct"
+    },
+    "validation_status": "supported",
+    "rationale": "The authentication section affirmatively states the delegation, the absence of a local password store, and that the portal issues no credentials.",
+    "missing_evidence": [],
+    "contradictions": [],
+    "confidence": "high",
+    "recommendation": "continue",
+    "quoted_text": {}
+   },
+   {
+    "subject_type": "control_mapping",
+    "subject_id": "map-002",
+    "evidence_ids": [
+     "evd-003"
+    ],
+    "evidence_strengths": {
+     "evd-003": "direct"
+    },
+    "validation_status": "supported",
+    "rationale": "The document affirmatively assigns multi-factor enrolment and factor policy to the identity provider organization level.",
+    "missing_evidence": [],
+    "contradictions": [],
+    "confidence": "high",
+    "recommendation": "continue",
+    "quoted_text": {}
+   },
+   {
+    "subject_type": "control_mapping",
+    "subject_id": "map-007",
+    "evidence_ids": [
+     "evd-002"
+    ],
+    "evidence_strengths": {
+     "evd-002": "indirect"
+    },
+    "validation_status": "unsupported",
+    "rationale": "The cited passage states the reachability restriction as a fact of the deployment; no passage establishes what enforces it, so the restriction cannot be verified from what was supplied.",
+    "missing_evidence": [
+     "how the ticket service is restricted to the application subnet",
+     "whether the restriction is enforced by network policy or assumed by topology"
+    ],
+    "contradictions": [],
+    "confidence": "low",
+    "recommendation": "documentation_gap",
+    "quoted_text": {}
+   }
+  ]
+ }
 }

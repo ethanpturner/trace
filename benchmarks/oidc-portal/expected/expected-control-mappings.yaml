@@ -1,0 +1,75 @@
+# oidc-portal expected control mappings (#537, DEC-111)
+#
+# Benchmark truth for the requirement-and-control-mapping step, added with catalog 0.3's
+# delegated-authentication pack so the pack is measured from its first commit. Layout is
+# fixed by DEC-027; the satisfaction rules are DEC-013's. Requirements are referenced,
+# never restated (see forgeflow's file for the reasoning); `catalog_version` fixes which
+# text the identifiers mean.
+#
+# The scenario's original point stands beside the new pack: this system's correct
+# assessment produces zero findings, and the delegated surface resolves to `unverified`
+# where the overview states the delegation without the mechanism detail — never to a
+# password-policy finding the architecture cannot have.
+#
+# Nothing in this directory is supplied to Trace during an assessment.
+
+benchmark_version: "1.0"
+scenario: oidc-portal
+catalog_version: "0.3"
+
+mappings:
+  - threat_key: THR-OP-01
+    applicable:
+      - requirement_id: req-AUTH-001
+        expected_satisfaction: satisfied
+        reason: >
+          The authentication section states the delegation explicitly: all access is
+          authenticated through the enterprise identity provider over OpenID Connect, and
+          the portal maintains no password store and issues no credentials.
+      - requirement_id: req-OIDC-001
+        expected_satisfaction: unverified
+        reason: >
+          The sign-in flow redirects to the identity provider and back, which is the
+          requirement's applicable condition. No passage describes the client registration
+          or which return destinations are registered.
+      - requirement_id: req-OIDC-002
+        expected_satisfaction: unverified
+        reason: >
+          The overview states the portal validates the returned ID token without stating the
+          mechanism or the validated claims. This is the requirement's common-false-positive
+          case: validation stated, detail unstated, and the honest answer is unverified.
+        expected_suppression:
+          suppressed_conclusion: that token validation is absent at the portal
+          suppressed_by: >
+            documentation stating the portal validates the returned ID token, with the
+            mechanism and validated claims unstated
+      - requirement_id: req-OIDC-003
+        expected_satisfaction: unverified
+        reason: >
+          A delegated sign-in establishes the portal's own session. No passage states the
+          session's lifetime or how it ends.
+      - requirement_id: req-OIDC-004
+        expected_satisfaction: unverified
+        reason: >
+          The flow described is redirect-based sign-in returning a token; the grant type and
+          any binding on the code exchange are unstated.
+
+  - threat_key: THR-OP-02
+    applicable:
+      - requirement_id: req-NET-001
+        expected_satisfaction: unverified
+        reason: >
+          The ticket service is stated to be reachable only from the portal inside the
+          application subnet; what enforces that reachability is not described.
+
+must_not_conclude:
+  - conclusion: that a local password policy, rotation policy, or account lockout is absent
+    suppressed_by: >
+      req-AUTH-002's non-applicable condition: the portal maintains no password store and
+      issues no credentials, so there is no local policy to lack. The scenario exists for
+      this negative.
+  - conclusion: that multi-factor authentication is absent
+    suppressed_by: >
+      the documented delegation: factor policy is set at the identity provider organization
+      level, which the overview states, making factor enforcement the provider's documented
+      responsibility rather than a portal absence.

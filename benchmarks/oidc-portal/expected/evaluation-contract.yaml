@@ -10,7 +10,7 @@
 # Nothing in this directory is supplied to Trace during an assessment.
 
 benchmark_version: "1.0"
-catalog_version: "0.1"
+catalog_version: "0.3"
 
 matching:
   findings_match_on: [requirement_id, affected_component]
