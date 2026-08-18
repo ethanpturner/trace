@@ -7492,3 +7492,213 @@ Tradeoffs:
 - A reviewer who works entirely from a pre-exported file in a later session starts the clock at
   the export, which may precede the real work by days. The metric is therefore a ceiling on
   review effort, never an estimate of attention, and consumers read it with that label.
+
+## DEC-119: The second-annotation protocol, and the adjudication rule behind the agreement number
+
+Date: 2026-08-18
+
+Status: Accepted
+
+Decision:
+
+**`docs/eval/annotation-protocol.md` is the procedure that fills the DEC-112 instrument, and
+adjudication never rewrites the measurement.** The protocol names five scenarios — forgeflow,
+unsigned-webhooks, missing-docs, contradictory-docs, oidc-portal — chosen so the pass covers
+the judgment classes the truth sets exercise: the flagship's full surface, the finding/gap
+boundary, silence, contradiction, and inherited-control restraint. The annotator reads a
+scenario's `input/` and the catalog version the registry names, and nothing else; the
+withholding rule that keeps `expected/` from Trace keeps it from the annotator. The pass
+produces `annotations/second/` files mirroring the truth-set shapes, scored on identity fields
+only.
+
+**The adjudication rule:** the second set is immutable once submitted — it is the measurement,
+and the agreement statistic is always reported against it as submitted. The first set stays
+authoritative whatever the number (DEC-112). The truth-set owner reviews every disagreement and
+records each outcome in `annotations/second/adjudication.md` as agree, hold, or out of scope;
+an *agree* changes `expected/` through an ordinary, separately-committed truth-set edit that
+moves the benchmark going forward, never the recorded agreement.
+
+**One glue defect is fixed with the protocol:** the instrument read a question's text from a
+`question` field no committed truth set carries — every `expected-questions.yaml` uses `asks`
+— so a real second set containing questions would have crashed the metric. No test exercised
+the questions artifact. The reader now uses `asks`, a corpus-conformance test runs the
+identity readers over every committed truth set, and a doc-conformance test pins the protocol
+document to the file names and fields the instrument reads.
+
+Why:
+
+- DEC-112 deliberately shipped the machinery empty and left the labor to a person; the missing
+  piece was a procedure that person can follow without the author in the room, and a decided
+  rule for what happens to disagreements — without one, the first disagreement becomes an
+  improvised edit to either the truth set or the measurement.
+- The `asks` defect is the argument for the conformance tests in miniature: an instrument
+  tested only against fixtures it authored agrees with itself, which is the exact failure
+  DEC-112 exists to dissolve, one level up.
+
+Alternatives Considered:
+
+- Adjudication by merging the second set into `expected/` wholesale (rejected: it destroys the
+  measurement and promotes unreviewed judgments to authority in one motion).
+- Scoring adjudicated agreement — recomputing after the owner accepts items (rejected as the
+  headline: post-adjudication numbers measure the owner's persuadability, not independent
+  agreement; the counts per artifact already keep the direction of disagreement visible).
+- All fourteen scenarios in the pass (rejected: the marginal scenarios repeat judgment classes
+  the five already cover, and a six-hour ask that becomes a thirty-hour ask stops happening).
+
+Tradeoffs:
+
+- Five scenarios measure agreement on a sample, and the headline must say so; the protocol
+  records time spent so a fuller pass can be costed honestly.
+- An immutable second set means a typo the annotator wants to fix after submission stands as
+  disagreement; adjudication records it as such. Accepted: an editable measurement is not a
+  measurement.
+
+## DEC-120: TM-BOM round-trips as input — the family's fifth parser, context only, booleans never negatives
+
+Date: 2026-08-18
+
+Status: Accepted
+
+Decision:
+
+**DEC-072's open question is answered: the export is not one-way.** A TM-BOM file — from Threat
+Dragon, another tool, or a previous Trace assessment — registers like any source document and
+seeds through the DEC-070 parser family as its fifth member (`services/context/tm_bom.py`,
+`tm-bom-parser-v1`), after org-controls in the family order. What it seeds is the schema's
+*context*: one candidate component per `components` row with its stated trust zone as
+`deployment_zone`, one candidate data flow per component-to-component `data_flows` row, one
+`assumed` claim per `assumptions` row, and one claim per declared control. Everything enters as
+proposals with `structured_input` provenance, is validated by Context Validation, and is decided
+at checkpoint 1 — DEC-115's rule, unchanged: external facts enter as documented claims, never as
+pre-approved authority. A round-trip test exports an approved context and re-ingests the export.
+
+**The schema's booleans import asymmetrically, and this is the entry's load-bearing rule.** The
+exporter writes `encrypted: false` for a flow whose encryption is *unstated*, naming the default
+in an assumption row, because the schema has no third value. The import therefore cannot read
+`false` as a documented negative: `encrypted: true` becomes the flow's stated transport
+encryption, and `false` becomes `unknown` — nothing. The same discipline governs controls, where
+TM-BOM makes `assumed` first-class (DEC-072's own note): `active` imports as a documented claim
+*about the declaration* (`declared_control_active`, quoting the file's lines), `assumed` imports
+as an `assumed` claim whose rationale names the file — never an existence assertion — and
+`suggested` imports as nothing, because a recommendation asserts nothing about the system.
+
+**Conclusions do not import.** Threats and threat personas are another tool's analysis; seeding
+them as Trace threats would carry foreign conclusions into checkpoint-2 material without Trace's
+evidence chain, so they stay document text the extraction agent reads like anything else. The
+`extensions` block is ignored entirely: a Trace export carries approved findings there verbatim,
+and re-importing them would launder one assessment's conclusions into another's documented
+ground.
+
+Why:
+
+- Section 17's gate: decided-family questions close before new decision spaces open, and this
+  was the DEC-072 family's last named question.
+- The parser family exists precisely for this shape — a machine-readable declaration converted
+  to documented claims at zero model cost, inside boundaries already built: the untrusted-source
+  fence, proposal conversion, checkpoint 1.
+- Interop both directions is the difference between emitting a format and speaking it.
+
+Alternatives Considered:
+
+- Rejecting round-trip (considered seriously: the export's conservative booleans mean a lossy
+  cycle. Rejected because the loss is confined to exactly the values the import refuses to
+  trust — the asymmetry rule keeps the cycle honest rather than making it impossible).
+- Importing threats as Trace threats (rejected: conclusions without Trace's evidence chain
+  entering checkpoint-2 material; the reviewer would approve findings resting on provenance
+  Trace cannot walk).
+- Importing actors (deferred, stated in the module: the family's seeding contract in
+  `parsers.py` merges components, flows, and claims only; widening `ConvertedContext` handling
+  is its own change, and an actor list is the least load-bearing context an import can carry).
+- Content-sniffing detection (rejected: the loader decides format by name and type, never by
+  content, and the parser follows — the exporter's own `tm-bom-*` naming plus the org-controls
+  prefix convention cover the real cases).
+
+Tradeoffs:
+
+- A foreign file's `encrypted: false` that genuinely meant "stated unencrypted" imports as
+  `unknown`; the extraction agent can still read the document text and propose the documented
+  negative with a quotation, so the fact is recoverable — it just cannot arrive on a boolean's
+  authority.
+- Symbolic names from a Trace export are allocated identifiers, which the proposal schema
+  refuses as local keys (DEC-018); the parser prefixes them (`tmb_cmp_001`), so a re-imported
+  object's key shows its origin rather than colliding with the scheme.
+- The import reads standard fields only, so Trace-specific context riding a Trace export's
+  extensions block (assets, verbatim flows) does not round-trip; assets never had a TM-BOM
+  shape to come back through, and the entry says so rather than inventing one.
+
+## DEC-121: HCL joins the IaC parser through a subset scanner, and attribute coverage grows by rule
+
+Date: 2026-08-18
+
+Status: Accepted
+
+Decision:
+
+**Terraform's HCL syntax (`*.tf`) is read by a deterministic subset scanner inside
+`services/context/iac.py`, not by an HCL dependency (#569).** DEC-113 deferred HCL because the
+vetted parser candidates are heavyweight for a resource list and a handful of attributes; that
+reasoning is engaged rather than overridden, and it decides the *how*: what the family reads —
+`resource "type" "name"` block openers and literal boolean attributes at the block's own top
+level — is a line-oriented subset a page of code scans deterministically, with no grammar
+dependency to vet under the supply-chain posture and no stubs to carry under strict mypy.
+Anything the subset cannot read literally — an expression, a variable reference, an
+interpolation — is *not stated* and yields nothing: `storage_encrypted = var.encrypt` states no
+boolean, and reading one out of it would be the parser doing analysis the agents own. Full-line
+comments and `/* */` blocks are skipped so a commented-out attribute is never read; a nested
+block's attributes never count as the resource's own.
+
+**The loader admits `.tf` through its plain-text suffix.** The media-type set stays section
+5.4's four; the pairing (`.tf` + plain text) is recognized by `looks_like_terraform` the same
+way `.tf.json` + JSON is, and content is never sniffed by either side. One asymmetry is
+deliberate: a `.tf.json` without a `resource` block still refuses (in JSON syntax the block is
+what marks the document as Terraform at all), while a resource-free `.tf` — `variables.tf`,
+`outputs.tf`, ordinary in a real corpus — parses to an empty declaration and seeds nothing,
+because the suffix already named the format and silence yields silence.
+
+**Attribute coverage is governed by a rule, and the rule admits two more attributes.** An
+attribute is read when it is a literal boolean in the declaration, its meaning stands alone
+without cross-resource reasoning, and both stated directions are meaningful documented claims.
+Under that rule `encrypted` (the `storage_encrypted` spelling on volume and disk resources) and
+`deletion_protection` join the table; `_STATED_ATTRIBUTES` is the visible small diff DEC-113's
+tradeoff asked for. String-valued and cross-resource candidates (`minimum_tls_version`,
+security-group reachability) stay out under the same rule that kept them out of DEC-113.
+
+**The corpus exercise is fixture-level parity, not a scenario re-record.** The unit suite
+carries an HCL twin of the managed-db-service declaration and pins that both syntaxes parse to
+the same resources and stated attributes, plus the subset's refusal cases. The scenario's
+committed recording is untouched: adding an input file shifts evidence and identifier
+allocation, DEC-113 already paid the re-authoring cost once to put Terraform in the corpus, and
+paying it again for a second spelling of the same declaration would buy no new measurement —
+the parity test is the measurement that the second syntax reads identically.
+
+Why:
+
+- Future-features 3.1 defers repository ingestion until local ingestion is reliable, and real
+  Terraform corpora are HCL: a parser that reads only the JSON syntax passes over most real
+  `.tf` files in silence. Extending the family is the reliability work the deferral names,
+  without starting the integration it gates.
+- DEC-113's "revisit if a real corpus arrives HCL-only" set the revisit condition; the feature
+  plan's ingestion-reliability tier (#569) is that revisit, taken deliberately.
+
+Alternatives Considered:
+
+- python-hcl2 as a dependency (rejected: MIT-licensed and maintained, but it pulls a Lark
+  grammar stack and ships no type stubs — a supply-chain and strict-mypy cost out of proportion
+  to reading block openers and boolean literals; DEC-113 declined it for the same shape of
+  reason).
+- A full in-repo HCL parser (rejected: heredocs, splat expressions, and templates are exactly
+  the grammar surface the subset never needs; maintaining them would be cost without a claim).
+- Re-recording managed-db-service with an HCL input beside the JSON one (rejected: allocation
+  shifts force a decisions re-author for no new measurement; the parity test pins the
+  equivalence the re-record would demonstrate).
+
+Tradeoffs:
+
+- A subset scanner under-reads by construction: a stated boolean spelled across a line
+  continuation, or inside syntax the subset skips, yields nothing. The direction of the error
+  is silence, which DEC-009 prices as acceptable and a fuller parse can later reclaim.
+- Brace counting is line-based and tolerant, like the JSON span logic: a `{` inside a quoted
+  string can widen a span. The span exists to quote the document's own lines for an excerpt,
+  and a wide excerpt is verbose, not wrong.
+- `.tf` mapping to plain text means a non-Terraform file named `.tf` ingests as ordinary text
+  and seeds nothing; the loader's allowlist gains a suffix whose media type it already served.

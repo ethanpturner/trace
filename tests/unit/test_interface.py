@@ -200,7 +200,7 @@ def test_the_diff_route_shapes_are_guarded(replayed: Path) -> None:
 
 
 def test_no_route_writes_to_the_store_including_the_new_ones() -> None:
-    """The read-only guarantee extends to threats, ledger, and diff: DEC-078."""
+    """The read-only guarantee extends to threats, ledger, diff, and source: DEC-078."""
     import ast
 
     source = (INTERFACE / "server.py").read_text(encoding="utf-8")
@@ -208,3 +208,68 @@ def test_no_route_writes_to_the_store_including_the_new_ones() -> None:
     for node in ast.walk(tree):
         if isinstance(node, ast.Attribute) and node.attr in {"save", "transaction", "allocate"}:
             raise AssertionError(f"server.py calls a write method: {node.attr}")
+
+
+def test_the_lineage_excerpts_link_into_the_source(replayed: Path) -> None:
+    """#572: the excerpt is not the end of the chain — it links to the stored document itself,
+    at the span the citation names, so the walk is clickable from the finding to the source."""
+    for service in _service(replayed):
+        body = route("/asm-001/lineage/fnd-001", service).body
+        assert 'href="/asm-001/source/evd-' in body
+        assert "open the source at this span" in body
+
+
+def test_the_source_view_marks_the_cited_span(replayed: Path) -> None:
+    """The source view renders the whole original document, escaped and labelled untrusted,
+    with an anchor per line and the cited lines highlighted."""
+    import re
+
+    for service in _service(replayed):
+        lineage = route("/asm-001/lineage/fnd-001", service).body
+        links = re.findall(r'href="(/asm-001/source/evd-[^"#]+)#L(\d+)"', lineage)
+        assert links, "at least one excerpt cites a line span"
+        path, start = links[0]
+        body = route(path, service).body
+        assert render.UNTRUSTED_LABEL in body
+        assert f'id="L{start}" class="src-line hit"' in body
+        assert 'id="L1" class="src-line' in body, "the whole document renders, not the excerpt"
+        assert "verifies" in body or "drift" in body
+
+
+def test_the_lineage_hops_cross_link_by_anchor(replayed: Path) -> None:
+    """#572: an identifier that names another object in the walk is a link to its anchor —
+    the assessment's subject, the mapping's threat and evidence — not bare text."""
+    import re
+
+    for service in _service(replayed):
+        body = route("/asm-001/lineage/fnd-001", service).body
+        assert re.search(r'<a href="#(thr|map)-\d+"><code>', body), "the assessment's subject"
+        assert re.search(r'<a href="#evd-[^"]+"><code>', body), "the mapping's evidence"
+
+
+def test_hostile_source_content_is_escaped_in_the_source_view(replayed: Path) -> None:
+    """The injection fixture renders as text: the whole document passes through the escaper,
+    so instruction-shaped content is visible to the reviewer and inert to the browser."""
+    from trace_ai.domain.evidence import EvidenceReference
+    from trace_ai.domain.source_document import SourceDocument
+
+    for service in _service(replayed):
+        handle = service.handle("asm-001")
+        documents = {doc.id: doc.filename for doc in handle.objects.list(SourceDocument)}
+        hostile = next(
+            reference
+            for reference in handle.objects.list(EvidenceReference)
+            if documents[reference.source_document_id] == "sample-repository-notes.md"
+        )
+        body = route(f"/asm-001/source/{hostile.id}", service).body
+        assert "<script" not in body.lower()
+        raw = handle.artifacts.read("sources", "sample-repository-notes.md").decode("utf-8")
+        for line in raw.splitlines():
+            if "<" in line:
+                assert line not in body, "raw markup from the document reached the page"
+
+
+def test_an_unknown_evidence_reference_renders_a_refusal(replayed: Path) -> None:
+    for service in _service(replayed):
+        body = route("/asm-001/source/evd-999", service).body
+        assert "No such evidence reference" in body

@@ -2,7 +2,8 @@
 
 Each parser converts what one artifact kind declares; this module is where the family meets the
 driver. One call seeds every registered machine-readable artifact — compose manifests, then OpenAPI
-specifications, then Terraform declarations, then org-controls assertions (#528), matching DEC-070's order — and the idempotence marker is checked
+specifications, then Terraform declarations, then org-controls assertions (#528), then TM-BOM
+threat models (#573), matching DEC-070's order — and the idempotence marker is checked
 once for the family: components carry no `generated_by`, so `source_origin ==
 structured_input` says *some* parser already seeded, and a re-extraction run (DEC-038) reuses
 what the first run produced instead of minting duplicates. Per-parser idempotence would need a
@@ -21,6 +22,7 @@ from trace_ai.services.context.org_controls import (
     looks_like_org_controls,
     seed_org_controls_context,
 )
+from trace_ai.services.context.tm_bom import looks_like_tm_bom, seed_tm_bom_context
 
 if TYPE_CHECKING:
     from trace_ai.domain.proposals.conversion import ConvertedContext
@@ -74,6 +76,8 @@ def seed_structured_documents(handle: AssessmentHandle) -> ConvertedContext | No
         (d for d in documents if looks_like_org_controls(d)), key=lambda d: d.id
     ):
         seeded.append(seed_org_controls_context(handle, document))
+    for document in sorted((d for d in documents if looks_like_tm_bom(d)), key=lambda d: d.id):
+        seeded.append(seed_tm_bom_context(handle, document))
     if not seeded:
         return None
 
