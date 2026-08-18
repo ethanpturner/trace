@@ -51,6 +51,7 @@ from trace_ai.domain.enums import ReviewDisposition, RiskTreatment, Severity, So
 from trace_ai.domain.evidence import EvidenceReference
 from trace_ai.domain.execution import RunStatus, WorkflowRun
 from trace_ai.domain.finding import Finding
+from trace_ai.domain.review_session import ReviewCheckpoint
 from trace_ai.domain.source_document import IngestionStatus, SourceDocument, TrustLevel
 from trace_ai.infrastructure.database.store import AssessmentStore, StoreError
 from trace_ai.infrastructure.filesystem.artifact_store import DEFAULT_ROOT, ArtifactStoreError
@@ -83,6 +84,7 @@ from trace_ai.services.findings.review_package import (
 )
 from trace_ai.services.ingestion.loader import DocumentLoader, DocumentLoadError
 from trace_ai.services.requirements.loader import CatalogError
+from trace_ai.services.review_timing import record_review_session
 from trace_ai.services.verification import Drift, verify_assessment
 from trace_ai.workflow.checkpoint import load_state
 from trace_ai.workflow.context_review import (
@@ -2225,6 +2227,9 @@ def _context_review(args: argparse.Namespace, service: AssessmentService) -> int
     reviewer = args.reviewer or _default_reviewer()
     run = _latest_run(handle)
     run_id = run.id if run is not None else None
+    record_review_session(
+        handle, ReviewCheckpoint.CONTEXT_APPROVAL, reviewer_id=reviewer, workflow_run_id=run_id
+    )
 
     if args.export is not None:
         _write_named_file(args.export, write_review_file(_package_for(handle)))
@@ -2629,6 +2634,9 @@ def _findings_review(args: argparse.Namespace, service: AssessmentService) -> in
     reviewer = args.reviewer or _default_reviewer()
     run = _latest_run(handle)
     run_id = run.id if run is not None else None
+    record_review_session(
+        handle, ReviewCheckpoint.FINDING_APPROVAL, reviewer_id=reviewer, workflow_run_id=run_id
+    )
 
     if args.export:
         package = build_finding_review_package(handle, index=EvidenceIndex(handle))
