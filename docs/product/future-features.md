@@ -47,9 +47,16 @@ Most items in this document should remain Idea or Deferred.
 
 ## 3.1 GitHub Repository Ingestion
 
-**Status:** Deferred
+**Status:** Built (DEC-131, issue #597)
 
-Allow Trace to ingest repository documentation and selected configuration files directly from GitHub.
+`trace source add-repo` fetches an allowlisted, loader-readable file set from a named repository
+at a pinned full-SHA commit — read-only, the commit as the capture identity, fetched content
+entering as untrusted source documents through the existing boundary, and a configured token
+confined to the clone subprocess. The deferral's stated condition below was met by the parser
+family, PDF ingestion, and the lineage walk; the threat model's source-document boundary carries
+the channel's transport rows.
+
+The original sketch — allow Trace to ingest repository documentation and selected configuration files directly from GitHub.
 
 Possible inputs include:
 

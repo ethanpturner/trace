@@ -52,6 +52,7 @@ from trace_ai.domain.source_document import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
     from pathlib import Path
 
     from trace_ai.services.assessment import AssessmentHandle
@@ -187,6 +188,7 @@ class DocumentLoader:
         *,
         origin: SourceOrigin,
         trust_level: TrustLevel,
+        extra_metadata: Mapping[str, object] | None = None,
     ) -> SourceDocument:
         """Register one file. `origin` and `trust_level` are required, never inferred.
 
@@ -194,15 +196,32 @@ class DocumentLoader:
 
         Registration is idempotent: a file whose name and bytes are already registered returns
         the existing `SourceDocument` unchanged (#320).
+
+        `extra_metadata` is caller-supplied provenance — repository ingestion records the
+        repository, commit, and in-repo path here. It is merged over the size-derived
+        metadata and is provenance about *where the file came from*, never a reading of what
+        the file says: the loader's content-indifference holds because the caller computed
+        these values without opening the document.
         """
         if self._ledger is None:
-            return self._load(path, origin=origin, trust_level=trust_level)
+            return self._load(
+                path, origin=origin, trust_level=trust_level, extra_metadata=extra_metadata
+            )
         with self._ledger.record(NODE_NAME, node_version=NODE_VERSION) as execution:
-            document = self._load(path, origin=origin, trust_level=trust_level)
+            document = self._load(
+                path, origin=origin, trust_level=trust_level, extra_metadata=extra_metadata
+            )
             execution.produced(document.id)
             return document
 
-    def _load(self, path: Path, *, origin: SourceOrigin, trust_level: TrustLevel) -> SourceDocument:
+    def _load(
+        self,
+        path: Path,
+        *,
+        origin: SourceOrigin,
+        trust_level: TrustLevel,
+        extra_metadata: Mapping[str, object] | None = None,
+    ) -> SourceDocument:
         media_type = self._media_type(path)
         content = self._read(path, text=media_type is not MediaType.PDF)
         if media_type is MediaType.PDF:
@@ -210,6 +229,8 @@ class DocumentLoader:
         else:
             self._parse(path, media_type, content)
             metadata = describe(content, media_type)
+        if extra_metadata:
+            metadata = {**metadata, **extra_metadata}
 
         # Registration is idempotent per (filename, content): `source add` run twice must return
         # the document it already made, not mint a second one — every count downstream (documents,

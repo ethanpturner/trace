@@ -353,6 +353,21 @@ def build_parser() -> argparse.ArgumentParser:
         help="register without normalizing and indexing",
     )
 
+    add_repo = source_commands.add_parser(
+        "add-repo",
+        help="register a repository's readable files at a pinned commit, read-only (#597)",
+    )
+    add_repo.add_argument("assessment_id")
+    add_repo.add_argument("url", help="https:// repository URL (file:// for local fixtures)")
+    add_repo.add_argument(
+        "commit", help="full forty-character commit SHA; a branch or tag is refused"
+    )
+    add_repo.add_argument(
+        "--no-index",
+        action="store_true",
+        help="register without normalizing and indexing",
+    )
+
     listed = source_commands.add_parser("list", help="list registered documents")
     _json_flag(listed)
     listed.add_argument("assessment_id")
@@ -1085,6 +1100,7 @@ def run(argv: Sequence[str] | None = None) -> int:
         ("export", "sarif"): _export_sarif,
         ("export", "mermaid"): _export_mermaid,
         ("source", "add"): _source_add,
+        ("source", "add-repo"): _source_add_repo,
         ("source", "list"): _source_list,
         ("evidence", "list"): _evidence_list,
         ("evidence", "show"): _evidence_show,
@@ -1920,6 +1936,45 @@ def _source_add(args: argparse.Namespace, service: AssessmentService) -> int:
                 references += len(index_document(handle, document))
 
     print(f"registered {len(documents) - len(skipped)} document(s)")
+    for document in skipped:
+        print(f"already registered: {document.id}  {document.filename}")
+    if not args.no_index:
+        print(f"indexed {references} evidence reference(s)")
+    return 0
+
+
+def _source_add_repo(args: argparse.Namespace, service: AssessmentService) -> int:
+    """Register a repository's selected files at a pinned commit (#597).
+
+    Same reporting contract as `source add`: idempotent registration, counts that do not move
+    on a rerun, and indexing for whatever is still unindexed.
+    """
+    from trace_ai.config import get_settings
+    from trace_ai.services.ingestion.repository import (
+        RepositoryIngestionError,
+        ingest_repository,
+    )
+
+    handle = service.handle(args.assessment_id)
+    before = {document.id for document in handle.objects.list(SourceDocument)}
+    try:
+        documents = ingest_repository(
+            handle, args.url, args.commit, github_token=get_settings().github_token
+        )
+    except RepositoryIngestionError as refused:
+        print(f"error: {refused}", file=sys.stderr)
+        return 1
+    skipped = [document for document in documents if document.id in before]
+
+    references = 0
+    if not args.no_index:
+        for document in documents:
+            if document.ingestion_status is IngestionStatus.REGISTERED:
+                references += len(index_document(handle, document))
+
+    print(
+        f"registered {len(documents) - len(skipped)} document(s) from {args.url} @ {args.commit[:12]}"
+    )
     for document in skipped:
         print(f"already registered: {document.id}  {document.filename}")
     if not args.no_index:
