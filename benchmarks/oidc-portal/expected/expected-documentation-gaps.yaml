@@ -5,7 +5,7 @@
 
 benchmark_version: "1.0"
 scenario: oidc-portal
-catalog_version: "0.1"
+catalog_version: "0.3"
 source: system-overview.md
 
 documentation_gaps:

@@ -860,10 +860,19 @@ Tradeoffs:
 
 Open Questions:
 
-- Should the transition table be data or code, and if data, is it checked against `current-architecture.md` section 5.3 by a test?
+- ~~Should the transition table be data or code, and if data, is it checked against `current-architecture.md` section 5.3 by a test?~~ Answered by the 2026-08-18 amendment: code, checked by `tests/unit/test_phase_doc_conformance.py`.
 - Does the orchestrator need a dry-run mode that walks the table without executing nodes, for evaluation and for verifying the graph matches the documented phases?
 - At what point does a workflow stop being a list, and is that trigger observable before the orchestrator has already grown?
 - Where do the five execution ceilings live — checked centrally before each step, or by each node?
+
+Amendment (2026-08-18, #602): **The transition table is checked against section 5.3 by a test.**
+The tradeoff above and the first open question are discharged together:
+`tests/unit/test_phase_doc_conformance.py` parses the document's fourteen-phase list and holds it
+equal, in order, to the `Phase` enum, and holds the transition table to the documented linear
+chain — every phase's permitted successors are exactly the next phase, and the last phase's are
+none. A phase renamed in either place, or a transition added nobody documented, now fails a test
+rather than surfacing as a run stopped on a refusal nobody meant. The table stays code; the test
+is what makes it answerable to the document, which is what the open question actually wanted.
 
 ## DEC-017: Pause by persisting the run and exiting; resume from recorded decisions
 
@@ -927,7 +936,20 @@ Open Questions:
 - Does a partially-decided checkpoint need to be visible as such, or is "paused with *n* of *m* decided" derivable from the decision rows alone?
 - Should resume verify that the objects pending decision still exist and are unchanged since the pause, and what happens when they are not?
 - ~~Where does the reviewer identity on a `ReviewerDecision` come from under DEC-004, where there is no authentication?~~ Answered by DEC-023: a configured local string defaulting to the OS username, recorded for evaluation attribution and explicitly not authentication.
-- Does an abandoned paused run need an expiry, or is accumulation acceptable for a local single-user application?
+- ~~Does an abandoned paused run need an expiry, or is accumulation acceptable for a local single-user application?~~ Answered by the 2026-08-18 amendment: no automatic expiry; `trace runs prune` removes abandoned runs when a person asks.
+
+Amendment (2026-08-18, #602): **`trace runs prune` removes abandoned paused runs; nothing else
+is expired.** The tradeoff above and the last open question are answered: accumulation was
+acceptable until the first live captures made paused-and-superseded runs a routine byproduct,
+and the cleanup is deliberately narrow. A run is abandoned when it is `paused` and a later run
+exists on the same assessment, or — only when the caller states an age with `--older-than` —
+when it started at least that many days ago; an expiry nobody set is not a policy. Pruning
+removes the run row, its execution records, and its `traces/` state file, through the scoped
+repository and the artifact area; the assessment, its objects, its decisions, and every
+completed or failed run stay. Dry-run by default with a stated refusal (DEC-088's exit 3,
+DEC-089's shape), and the pruned runs' rolled-up spend is printed with the deletion — cost
+history may be removed here, never silently. Identifier counters are untouched, so a pruned
+run's identifier is never re-minted (DEC-018).
 
 ## DEC-018: Assign prefixed sequential identifiers at persistence, scoped per assessment
 
@@ -7979,3 +8001,51 @@ Tradeoffs:
 - Extraction quality is `pypdf`'s: a PDF with an unusual text encoding may extract imperfectly.
   The extraction is what the reviewer sees and approves at checkpoint 1, so imperfection is
   visible there rather than hidden behind the original.
+
+## DEC-125: The migration posture is refusal — the store's version stamp gates open, and re-running from sources is the upgrade path
+
+Date: 2026-08-18
+
+Status: Accepted
+
+Decision:
+
+**There is no migration framework, and none is planned.** The mechanism DEC-020 and DEC-089
+built is the whole posture, and this entry decides it rather than leaving it implied: the store
+records its schema version at creation, checks it before anything else on open, and refuses an
+incompatible database with a message naming the recovery — create a new database and re-run the
+assessment from its sources. `SCHEMA_VERSION` moves only for table-layout changes; a
+domain-object change is invisible to SQLite by design, which is why the JSON-payload store needs
+no migrations for the changes that actually happen. A layout change that would strand data
+someone cannot regenerate is the trigger to revisit this entry, not a reason to soften the
+refusal.
+
+Why:
+
+- The v0.1 release made DEC-020's open question — at what point does an assessment become worth
+  keeping — real. The answer the corpus already implies: the data root is gitignored and
+  regenerable, the sources and decisions are what carry value, and both survive a re-run. A
+  migration framework would preserve exactly the part that is cheapest to rebuild.
+- A refusal with a named recovery is honest at the moment it matters — the operator with an old
+  database learns what happened and what to do, rather than a best-effort migration silently
+  producing rows nobody validated (the DEC-020 objection, applied to upgrades).
+
+Alternatives Considered:
+
+- Adopting a migration tool (rejected: two table-layout changes in the project's whole history,
+  both absorbed by regeneration; a framework is standing complexity for a case that has not
+  occurred).
+- Auto-deleting an incompatible database and starting fresh (rejected: deletion is a person's
+  decision; `trace reset --force` and `trace assessment purge --force` exist and are explicit).
+- Versioning each object payload for in-place upgrade (rejected: DEC-006 makes domain objects
+  authoritative through Pydantic validation; a payload the current schema cannot read is a
+  defect to fix at the schema, not a datum to transform in the dark).
+
+Tradeoffs:
+
+- An operator with a long-lived local store loses accumulated runs on a layout change and must
+  re-run assessments to rebuild them. Accepted under DEC-004: local, single-user, regenerable —
+  and the refusal message says so at the moment it applies.
+- The posture leans on discipline about what a "table-layout change" is; the store's own comment
+  and this entry are the record, and `tests/unit/test_store.py` pins the refusal and its
+  recovery wording.

@@ -141,6 +141,8 @@ def test_an_incompatible_schema_version_refuses_to_open(tmp_path: Path) -> None:
 
     assert "99" in str(caught.value)
     assert str(SCHEMA_VERSION) in str(caught.value)
+    # DEC-125: the refusal names the recovery, at the moment it applies.
+    assert "re-run" in str(caught.value)
 
 
 def test_a_malformed_schema_version_refuses_to_open(tmp_path: Path) -> None:

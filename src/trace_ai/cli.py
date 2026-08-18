@@ -908,6 +908,42 @@ def build_parser() -> argparse.ArgumentParser:
     )
     _json_flag(diff)
 
+    runs_commands = commands.add_parser(
+        "runs",
+        help="workflow-run housekeeping",
+    ).add_subparsers(dest="command", required=True)
+    prune = runs_commands.add_parser(
+        "prune",
+        help="remove abandoned paused runs: superseded, or paused past a stated age "
+        "(DEC-017 amendment)",
+        description=(
+            "A paused run nobody will resume accumulates forever (DEC-017). A run is abandoned "
+            "when it is paused and a later run exists on the same assessment, or -- only when "
+            "--older-than is stated -- when it started longer ago than that many days. Pruning "
+            "removes the run row, its execution records, and its state file; the assessment, its "
+            "objects, and its decisions stay. Completed and failed runs are never pruned. "
+            "Destructive: without --force it lists what would go, removes nothing, and exits "
+            "non-zero."
+        ),
+    )
+    prune.add_argument(
+        "assessment_id",
+        nargs="?",
+        default=None,
+        help="limit to one assessment; omitted, the whole data root is examined",
+    )
+    prune.add_argument(
+        "--older-than",
+        type=int,
+        default=None,
+        metavar="DAYS",
+        help="also treat a paused run started at least DAYS days ago as abandoned; "
+        "without it, age alone abandons nothing",
+    )
+    prune.add_argument(
+        "--force", action="store_true", help="actually remove; without it, a dry run"
+    )
+
     reset = commands.add_parser(
         "reset",
         help="return the data root to the fresh-clone state",
@@ -1065,6 +1101,7 @@ def run(argv: Sequence[str] | None = None) -> int:
         ("catalog", "show"): _catalog_show,
         ("catalog", "validate"): _catalog_validate,
         ("diff", None): _diff,
+        ("runs", "prune"): _runs_prune,
     }
 
     if args.group is None:
@@ -1787,6 +1824,39 @@ def _assessment_archive(args: argparse.Namespace, service: AssessmentService) ->
     """The only status transition a person performs (DEC-031)."""
     archived = service.archive(args.assessment_id)
     print(f"{archived.id} {archived.status}")
+    return 0
+
+
+def _runs_prune(args: argparse.Namespace, service: AssessmentService) -> int:
+    """Remove abandoned paused runs (DEC-017 amendment). A dry run without --force refuses."""
+    from trace_ai.services.run_pruning import abandoned_runs, prune_runs
+
+    targets = abandoned_runs(
+        service, assessment_id=args.assessment_id, older_than_days=args.older_than
+    )
+    if not targets:
+        print("no abandoned runs")
+        return 0
+    for target in targets:
+        cost = "-" if target.estimated_cost is None else f"${target.estimated_cost}"
+        state = "state file" if target.has_state_file else "no state file"
+        print(
+            f"{target.assessment_id}  {target.run_id}  {target.reason:<10}  "
+            f"started {target.started_at_display}  "
+            f"{target.execution_record_count} execution record(s)  {cost}  {state}"
+        )
+    if not args.force:
+        print(
+            f"nothing was removed; pass --force to remove {len(targets)} run(s)",
+            file=sys.stderr,
+        )
+        return REFUSED
+    result = prune_runs(service, targets)
+    print(
+        f"pruned {result.runs_removed} run(s): {result.execution_records_removed} execution "
+        f"record(s), {result.state_files_removed} state file(s), recorded spend "
+        f"${result.estimated_cost_removed} removed with them"
+    )
     return 0
 
 
