@@ -2051,6 +2051,22 @@ def _context_show(args: argparse.Namespace, service: AssessmentService) -> int:
                     {"object_id": e.object_id, "field": e.field, "message": e.message}
                     for e in package.outstanding_errors
                 ],
+                "consistency_observations": [
+                    {
+                        "kind": "zone_mismatch",
+                        "object_ids": [mismatch.flow_id],
+                        "detail": mismatch.detail,
+                    }
+                    for mismatch in package.zone_mismatches
+                ]
+                + [
+                    {
+                        "kind": observation.kind,
+                        "object_ids": list(observation.object_ids),
+                        "detail": observation.detail,
+                    }
+                    for observation in package.cross_claim_observations
+                ],
                 "can_approve": package.can_approve,
             },
         )
@@ -2106,6 +2122,17 @@ def _context_show(args: argparse.Namespace, service: AssessmentService) -> int:
     for trigger in package.triggers:
         caused = ", ".join(trigger.object_ids) if trigger.object_ids else "-"
         print(f"  {trigger.name}: {trigger.detail} [{caused}]")
+
+    consistency = len(package.zone_mismatches) + len(package.cross_claim_observations)
+    if consistency:
+        # Warn-only consistency observations (DEC-068's zone check, DEC-070's cross-claim
+        # checks, #526): stated disagreements shown for the reviewer, blocking nothing.
+        print()
+        print(f"consistency observations ({consistency}, warn-only)")
+        for mismatch in package.zone_mismatches:
+            print(f"  zone_mismatch: {mismatch.detail}")
+        for observation in package.cross_claim_observations:
+            print(f"  {observation.kind}: {observation.detail}")
 
     if package.outstanding_errors:
         print()

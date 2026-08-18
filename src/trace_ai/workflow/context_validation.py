@@ -149,6 +149,25 @@ class ZoneMismatch:
 
 
 @dataclass(frozen=True, slots=True)
+class CrossClaimObservation:
+    """Two stated claims about the same surface that disagree (DEC-070, #526).
+
+    The parser family's residual: once structured parsers emit mechanically-derived claims
+    beside agent-extracted ones, contradictions become both likely and checkable. Warn-only in
+    the DEC-063 posture — outside `errors` by construction, so nothing blocks and nothing is
+    retried against — and nothing is corrected: report-and-route holds, and a reviewer decides
+    which statement is wrong. Every check requires both sides to *state* their value; silence
+    is never a side of a conflict (DEC-009).
+    """
+
+    kind: str
+    """`exposure_conflict`, `transport_conflict`, or `claim_conflict`."""
+
+    object_ids: tuple[str, ...]
+    detail: str
+
+
+@dataclass(frozen=True, slots=True)
 class PrivilegeExtreme:
     """An attack-surface extreme the context does not represent (DEC-068).
 
@@ -185,6 +204,10 @@ class ContextValidationOutcome:
     """DEC-068's privilege-extremes check: attack-surface extremes no actor represents. The
     driver raises a `Question` per entry — the DEC-009 outlet for exactly that silence — and
     nothing here blocks."""
+
+    cross_claim_observations: tuple[CrossClaimObservation, ...] = ()
+    """DEC-070's cross-claim consistency checks (#526), warn-only like the zone check: two
+    stated claims about the same surface that disagree, reported for the reviewer."""
 
     @property
     def ready_for_review(self) -> bool:
@@ -356,6 +379,7 @@ def validate_context(
         duplicate_groups=tuple(duplicates),
         zone_mismatches=tuple(_zone_mismatches(objects)),
         privilege_extremes=tuple(_privilege_extremes(objects)),
+        cross_claim_observations=tuple(_cross_claim_observations(objects)),
     )
 
 
@@ -391,6 +415,105 @@ def _zone_mismatches(objects: Sequence[DomainModel]) -> list[ZoneMismatch]:
             )
         )
     return mismatches
+
+
+# Transport spellings for the transport-conflict check (#526). Documentation, not validation
+# (DEC-036): the sets bound what the *check* recognizes, never what a flow may say — a protocol
+# outside both sets is simply not checked. Encrypted spellings imply TLS on the wire; the
+# "none" family is an explicit statement that the transport is unencrypted.
+_ENCRYPTED_PROTOCOLS: Final[frozenset[str]] = frozenset(
+    {"https", "tls", "ssh", "sftp", "wss", "grpcs", "ftps", "smtps", "ldaps"}
+)
+_UNENCRYPTED_STATEMENTS: Final[frozenset[str]] = frozenset(
+    {"none", "no", "unencrypted", "cleartext", "plaintext"}
+)
+
+# Claim statuses that assert something. `assumed` and `unknown` are DEC-009's outlets and never
+# a side of a conflict; `contradicted` and `rejected` are outcomes, already decided.
+_ASSERTING_STATUSES: Final[frozenset[ClaimStatus]] = frozenset(
+    {ClaimStatus.DOCUMENTED, ClaimStatus.INFERRED, ClaimStatus.USER_CONFIRMED}
+)
+
+
+def _cross_claim_observations(objects: Sequence[DomainModel]) -> list[CrossClaimObservation]:
+    """DEC-070's consistency checks (#526): stated disagreements, reported and never corrected.
+
+    Three checks, each requiring both sides to state a value so silence never conflicts:
+
+    - **exposure_conflict**: a flow states `internet_exposed` true while its destination
+      component states `internet_accessible` false — two claims about one surface.
+    - **transport_conflict**: a flow's protocol implies TLS while its `encryption_in_transit`
+      states the unencrypted family. Only the spellings the sets above recognize are checked.
+    - **claim_conflict**: two asserting claims share a subject and normalized predicate and
+      state different values — the parser-versus-document case DEC-070 anticipated.
+    """
+    observations: list[CrossClaimObservation] = []
+    components = {obj.id: obj for obj in objects if isinstance(obj, Component)}
+
+    for flow in (obj for obj in objects if isinstance(obj, DataFlow)):
+        destination = components.get(flow.destination_component_id)
+        if (
+            flow.internet_exposed is True
+            and destination is not None
+            and destination.internet_accessible is False
+        ):
+            observations.append(
+                CrossClaimObservation(
+                    kind="exposure_conflict",
+                    object_ids=(flow.id, destination.id),
+                    detail=(
+                        f"{flow.id} states internet_exposed=true while its destination "
+                        f"{destination.id} states internet_accessible=false. One of the two "
+                        f"statements is wrong; a reviewer decides which."
+                    ),
+                )
+            )
+        if (
+            flow.protocol
+            and _normalized_name(flow.protocol) in _ENCRYPTED_PROTOCOLS
+            and str(flow.encryption_in_transit) != str(UNKNOWN)
+            and _normalized_name(str(flow.encryption_in_transit)) in _UNENCRYPTED_STATEMENTS
+        ):
+            observations.append(
+                CrossClaimObservation(
+                    kind="transport_conflict",
+                    object_ids=(flow.id,),
+                    detail=(
+                        f"{flow.id} names protocol {flow.protocol!r}, which implies transport "
+                        f"encryption, while stating encryption_in_transit="
+                        f"{str(flow.encryption_in_transit)!r}. The two statements disagree."
+                    ),
+                )
+            )
+
+    asserting = [
+        claim
+        for claim in objects
+        if isinstance(claim, ContextClaim) and claim.status in _ASSERTING_STATUSES
+    ]
+    by_fact: dict[tuple[str | None, str], list[ContextClaim]] = defaultdict(list)
+    for claim in asserting:
+        by_fact[(claim.subject_id, _normalized_name(claim.predicate))].append(claim)
+    for (subject_id, _predicate), claims in sorted(
+        by_fact.items(), key=lambda item: (item[0][0] or "", item[0][1])
+    ):
+        stated_values = {repr(claim.value) for claim in claims}
+        if len(claims) < 2 or len(stated_values) < 2:
+            continue
+        identifiers = tuple(sorted(claim.id for claim in claims))
+        subject = subject_id or "the system"
+        observations.append(
+            CrossClaimObservation(
+                kind="claim_conflict",
+                object_ids=identifiers,
+                detail=(
+                    f"{', '.join(identifiers)} assert {claims[0].predicate!r} about {subject} "
+                    f"with different values. Two asserted statements about one fact disagree; "
+                    f"a reviewer decides which stands."
+                ),
+            )
+        )
+    return observations
 
 
 # What counts as each attack-surface extreme (DEC-068). An actor qualifies through its persona

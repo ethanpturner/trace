@@ -94,6 +94,7 @@ if TYPE_CHECKING:
     from trace_ai.workflow.checkpoint import ReviewPackage
     from trace_ai.workflow.context_validation import (
         ContextValidationOutcome,
+        CrossClaimObservation,
         ReviewTrigger,
         ValidationError,
         ZoneMismatch,
@@ -294,6 +295,10 @@ class ContextReviewPackage:
     declared boundary. Shown for the reviewer to resolve — declare the boundary or fix the zone
     label — and blocking nothing."""
 
+    cross_claim_observations: tuple[CrossClaimObservation, ...] = ()
+    """DEC-070's consistency checks (#526), the same warn-only posture: stated disagreements
+    between claims about one surface, shown for the reviewer and blocking nothing."""
+
     contradictions: tuple[SourceObservation, ...] = ()
     """Contradiction observations awaiting a resolution, oldest first.
 
@@ -470,6 +475,7 @@ def build_context_review_package(
         triggers=validation.triggers,
         outstanding_errors=validation.blocking_errors,
         zone_mismatches=validation.zone_mismatches,
+        cross_claim_observations=validation.cross_claim_observations,
         contradictions=tuple(
             observation
             for observation in handle.objects.list(SourceObservation)
