@@ -195,6 +195,20 @@ def test_a_cache_prefix_is_accepted_and_the_message_stays_plain() -> None:
     assert messages[-1] == {"role": "user", "content": "stable prefix. variable tail"}
 
 
+def test_a_system_cache_prefix_is_accepted_and_the_system_message_stays_plain() -> None:
+    """DEC-105's hint has no marker on this provider either; the request is unchanged."""
+    adapter, client = _adapter(_response('{"name": "ok"}'))
+    adapter.generate(
+        prompt="the prompt",
+        schema=_Schema,
+        settings=GenerationSettings(),
+        system="catalog span. per-threat tail",
+        system_cache_prefix="catalog span. ",
+    )
+    messages = client.completions.requests[0]["messages"]
+    assert messages[0] == {"role": "system", "content": "catalog span. per-threat tail"}
+
+
 def test_the_system_region_is_its_own_message() -> None:
     adapter, client = _adapter(_response('{"name": "ok"}'))
     adapter.generate(

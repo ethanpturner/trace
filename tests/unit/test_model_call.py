@@ -61,8 +61,16 @@ class _Model:
         settings: GenerationSettings | None = None,
         system: str | None = None,
         cache_prefix: str | None = None,
+        system_cache_prefix: str | None = None,
     ) -> ModelOutcome[T]:
-        self.calls.append({"prompt": prompt, "system": system, "cache_prefix": cache_prefix})
+        self.calls.append(
+            {
+                "prompt": prompt,
+                "system": system,
+                "cache_prefix": cache_prefix,
+                "system_cache_prefix": system_cache_prefix,
+            }
+        )
         return self._outcome  # type: ignore[return-value]
 
 
@@ -96,7 +104,9 @@ def test_success_returns_the_value_and_records_usage() -> None:
 
     assert isinstance(value, _Proposal)
     assert len(usages) == 1
-    assert model.calls == [{"prompt": "p", "system": "sys", "cache_prefix": None}]
+    assert model.calls == [
+        {"prompt": "p", "system": "sys", "cache_prefix": None, "system_cache_prefix": None}
+    ]
 
 
 def test_success_copies_the_recorded_conditions_including_schema_grammar() -> None:
