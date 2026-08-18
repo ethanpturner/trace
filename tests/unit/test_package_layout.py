@@ -87,6 +87,9 @@ PACKAGES = (
     # The model seam (DEC-014). `tests/unit/test_model_boundary.py` holds the rule this package
     # exists to enforce: the adapter inside it is the only module that may import a provider SDK.
     "trace_ai.infrastructure.model",
+    # External tracing (#538, DEC-109): the execution ledger exported as spans, structurally
+    # unable to carry prompt or source content. Section 5.17's boundary, implemented.
+    "trace_ai.infrastructure.tracing",
     # The read-only demonstration interface (DEC-032, issue #276): the Stage 5 view that renders
     # persisted objects to HTML over localhost and drives nothing. Its own top-level package
     # rather than a service, because it is a presentation surface over the services, not one of

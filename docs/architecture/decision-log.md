@@ -7016,3 +7016,61 @@ Tradeoffs:
   structurally (a description line starting `# ` becomes a heading). The renderer flattens
   cell text and the template controls line starts today; the risk is accepted and the
   escape-first rule bounds it to formatting, never to markup injection.
+
+## DEC-109: The tracing integration exists, and a span structurally cannot carry content
+
+Date: 2026-08-17
+
+Status: Accepted
+
+Decision:
+
+**Execution spans export to an external destination when an assessment opts in, and the span is
+built so content cannot travel in it.** `infrastructure/tracing/` holds the emitter. A span is a
+projection of one `ExecutionRecord` — the section 5.17 fields: run and record identifiers, node
+name and version, prompt *version*, model name, input and output object identifiers, timestamps,
+status, retry number, safe error type and message, duration, the disjoint token counts, and
+cost. There is no field a prompt, a source excerpt, or a document could occupy, and the test
+suite holds the span's key set closed, so adding a content-bearing field is a visible decision
+rather than a drift. The driver emits after the orchestrator returns — paused, failed, and
+completed runs alike — when `enable_external_tracing` is on; the destination is
+`Settings.tracing_endpoint` (`file://` appends JSON lines, `http(s)://` posts one batch with
+one attempt and the key in a header); emission failures are logged with identifiers and counts
+and swallowed. The local ledger remains the authoritative execution record, exactly as
+section 5.17 requires, and the threat model's one Designed row flips to Enforced.
+
+**This entry is the section 5.17 data-handling review.** What leaves the machine when the flag
+is on: the span fields above, nothing else. What cannot leave: prompt text (only the prompt
+*version* travels), source-document content, evidence quotations, proposal payloads, and raw
+failed output (which goes to `traces/` and never into `error_message`, per section 27). The
+`error_message` field is included because section 27 already requires it safe; the observability
+module's known gap — a secret interpolated into a message before `logging` sees it — does not
+extend here, because span fields are projected from typed record fields, never formatted prose.
+
+Why:
+
+- The threat model carried exactly one Designed row, and Stage 6 publishes that document; a
+  shareable threat model whose only unbuilt mitigation is its observability boundary invites
+  the question this entry answers. The keyed track's live runs (#484) also want spans.
+- Structural inability beats policy: a reviewer of `span_of` can enumerate everything that can
+  ever leave, which is design principle 13's "understand which external services receive
+  assessment information" made checkable.
+
+Alternatives Considered:
+
+- An OpenTelemetry SDK (rejected for now: a heavy dependency for what is one projection and two
+  sinks; the span shape is ours and section 27 already fixes its safety rules. An OTLP exporter
+  is an adapter behind the same `TracingEmitter` protocol if a consumer wants one).
+- Emitting per-node during the run (rejected: a slow endpoint would sit inside the pipeline's
+  latency, and a failed POST mid-run would tangle with the orchestrator's error taxonomy;
+  after-the-run batch emission keeps observability out of the control path).
+- Restoring LangSmith (rejected: DEC-090 removed it unwired, and nothing here needs a vendor).
+
+Tradeoffs:
+
+- After-the-run emission means a run killed mid-flight exports nothing until its resume
+  finishes; the local ledger holds the records either way, which is the authority order 5.17
+  fixes.
+- One attempt per batch loses spans on a transient endpoint failure. Accepted: tracing is a
+  copy of an authoritative local record, and a retry queue would be state the pipeline does
+  not want.
