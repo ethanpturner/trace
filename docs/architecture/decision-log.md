@@ -8002,7 +8002,7 @@ Tradeoffs:
   The extraction is what the reviewer sees and approves at checkpoint 1, so imperfection is
   visible there rather than hidden behind the original.
 
-## DEC-125: The migration posture is refusal — the store's version stamp gates open, and re-running from sources is the upgrade path
+## DEC-126: The migration posture is refusal — the store's version stamp gates open, and re-running from sources is the upgrade path
 
 Date: 2026-08-18
 
