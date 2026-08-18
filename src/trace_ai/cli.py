@@ -615,10 +615,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     evaluate.add_argument(
         "--baseline",
-        choices=["generic", "structured"],
+        choices=["generic", "structured", "single-pass"],
         help=(
-            "score a single-pass baseline instead of the pipeline (DEC-074): one model call over "
-            "the same documents, replayed from the scenario's recorded baseline response"
+            "score a prompt baseline instead of the pipeline (DEC-074): one model call over "
+            "the same documents, replayed from the scenario's recorded baseline response; "
+            "single-pass is the structural baseline — the whole assessment in one call"
         ),
     )
     evaluate.add_argument(
@@ -704,7 +705,14 @@ def build_parser() -> argparse.ArgumentParser:
     capture.add_argument("scenario", help="a registered scenario slug")
     capture.add_argument(
         "stage",
-        choices=["extract", "reason", "report", "baseline-generic", "baseline-structured"],
+        choices=[
+            "extract",
+            "reason",
+            "report",
+            "baseline-generic",
+            "baseline-structured",
+            "baseline-single-pass",
+        ],
         help=(
             "extract runs to checkpoint 1 and exports the review file; reason applies the "
             "authored context decisions and runs to checkpoint 2; report applies the authored "
@@ -3297,8 +3305,11 @@ def _evaluate_baseline(args: argparse.Namespace) -> int:
     no baseline recording or no truth set, so a comparison cannot silently score nothing.
     """
     from trace_ai.config import PROJECT_ROOT
-    from trace_ai.domain.proposals.baseline import BaselineFindings
-    from trace_ai.services.evaluation.baselines import BaselineError, run_baseline
+    from trace_ai.services.evaluation.baselines import (
+        BASELINE_SCHEMAS,
+        BaselineError,
+        run_baseline,
+    )
     from trace_ai.services.evaluation.registry import scenario as load_scenario
 
     condition = f"baseline-{args.baseline}"
@@ -3311,7 +3322,9 @@ def _evaluate_baseline(args: argparse.Namespace) -> int:
             file=sys.stderr,
         )
         return 1
-    response = BaselineFindings.model_validate_json(recording.read_text(encoding="utf-8"))
+    response = BASELINE_SCHEMAS[condition].model_validate_json(
+        recording.read_text(encoding="utf-8")
+    )
 
     try:
         outcome = run_baseline(

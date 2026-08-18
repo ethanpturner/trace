@@ -1,23 +1,29 @@
 """The baseline comparisons: a single model call over the same documents (DEC-074).
 
 Roadmap Stage 4's decision gate asks whether the multi-stage pipeline beats a simpler prompt. The
-two prompt baselines answer it honestly: each is one call through the same seam, over the same
+prompt baselines answer it honestly: each is one call through the same seam, over the same
 source documents and the same requirements catalog the pipeline sees, emitting a schema-forced
-findings list scored by the same structural matcher (DEC-056). No context model, no evidence
+output scored by the same parallel matchers (DEC-056). No context model, no evidence
 validation, no critical review, no human checkpoint — the difference between a baseline and Trace
 is the pipeline, and the comparison is built so a skeptic re-running it from the repository finds
 nothing tuned in Trace's favour.
 
-**Schema-forced, never hand-normalized.** The baseline emits `BaselineFindings`; a response that
-fails to validate is a schema failure recorded in the schema-validity rate, which is a result, not
-an excuse. **Fairness ties go to the baseline** (DEC-074): it gets the catalog so it can cite
-requirements, and it never gets the curated context — the checkpoint-ablated run is the
-like-for-like comparator, and the full pipeline is the system as operated.
+The two DEC-074 baselines emit `BaselineFindings`: findings only, the pipeline's discipline
+priced. The third — `baseline-single-pass` — prices the pipeline's *structure*: the whole
+assessment in one call, one combined `BaselineAssessment` schema (DEC-074's open question,
+decided), so a disciplined single pass can express a gap or a question where a finding is not
+supported, and its restraint is measurable rather than only an empty list.
+
+**Schema-forced, never hand-normalized.** A response that fails to validate is a schema failure
+recorded in the schema-validity rate, which is a result, not an excuse. **Fairness ties go to
+the baseline** (DEC-074): it gets the catalog so it can cite requirements, and it never gets the
+curated context — the checkpoint-ablated run is the like-for-like comparator, and the full
+pipeline is the system as operated.
 
 The result feed lands in the same tree as a pipeline run, keyed by the baseline as its condition
-(`baseline-generic`, `baseline-structured`), so the scorecard reads baselines and Trace through one
-format. STRIDE GPT is not here: it cannot run through the seam, and a wrapper would measure the
-wrapper (DEC-074) — it belongs in the portfolio write-up.
+(`baseline-generic`, `baseline-structured`, `baseline-single-pass`), so the scorecard reads
+baselines and Trace through one format. STRIDE GPT is not here: it cannot run through the seam,
+and a wrapper would measure the wrapper (DEC-074) — it belongs in the portfolio write-up.
 """
 
 from __future__ import annotations
@@ -28,7 +34,7 @@ from typing import TYPE_CHECKING, Any
 
 import yaml
 
-from trace_ai.domain.proposals.baseline import BaselineFindings
+from trace_ai.domain.proposals.baseline import BaselineAssessment, BaselineFindings
 from trace_ai.infrastructure.model.factory import build_model
 from trace_ai.infrastructure.model.profiles import resolve_profile
 from trace_ai.infrastructure.model.seam import Creativity, GenerationSettings, ModelSuccess
@@ -43,14 +49,25 @@ if TYPE_CHECKING:
 
     from trace_ai.services.evaluation.registry import Scenario
 
-__all__ = ["BASELINES", "BaselineOutcome", "run_baseline"]
+__all__ = ["BASELINES", "BASELINE_SCHEMAS", "BaselineOutcome", "run_baseline"]
 
-# The two prompt baselines DEC-074 fixes, by the condition name their feed is keyed under and the
-# prompt each composes. The ablation family (the third baseline group) is the harness's own, run
-# through `trace evaluate --ablate` rather than here.
+# The prompt baselines, by the condition name their feed is keyed under and the prompt each
+# composes. The first two are DEC-074's; the third prices the agent-set structure itself — the
+# whole assessment in one call, one combined schema, DEC-074's open question decided. The
+# ablation family (the remaining baseline group) is the harness's own, run through
+# `trace evaluate --ablate` rather than here.
 BASELINES: dict[str, str] = {
     "baseline-generic": "generic-security-review",
     "baseline-structured": "structured-single-pass",
+    "baseline-single-pass": "single-pass-assessment",
+}
+
+# What each baseline is schema-forced to. The finding-only shape is the two DEC-074 baselines'
+# comparison surface; the combined shape is the structural baseline's whole job.
+BASELINE_SCHEMAS: dict[str, type[BaselineFindings] | type[BaselineAssessment]] = {
+    "baseline-generic": BaselineFindings,
+    "baseline-structured": BaselineFindings,
+    "baseline-single-pass": BaselineAssessment,
 }
 
 
@@ -97,7 +114,7 @@ def run_baseline(
     profile_name: str = "offline-fake",
     registry_path: Path | None = None,
     results_root: Path | None = None,
-    response: BaselineFindings | None = None,
+    response: BaselineFindings | BaselineAssessment | None = None,
     record_to: Path | None = None,
 ) -> BaselineOutcome:
     """Run one baseline over one scenario and score it against the truth set.
@@ -113,7 +130,7 @@ def run_baseline(
     """
     if baseline not in BASELINES:
         raise BaselineError(
-            f"{baseline!r} is not a baseline; the two are {', '.join(sorted(BASELINES))}"
+            f"{baseline!r} is not a baseline; the baselines are {', '.join(sorted(BASELINES))}"
         )
     entry = load_scenario(slug, registry_path=registry_path)
     if not entry.has_outcome_truth:
@@ -138,16 +155,21 @@ def run_baseline(
     model = build_model(profile, responses=responses)
     outcome = model.generate(
         prompt=composed.text,
-        schema=BaselineFindings,
+        schema=BASELINE_SCHEMAS[baseline],
         settings=GenerationSettings(creativity=Creativity.LOW),
     )
 
     schema_valid = outcome.succeeded
-    produced = list(outcome.value.findings) if isinstance(outcome, ModelSuccess) else []
-    if record_to is not None and isinstance(outcome, ModelSuccess):
+    value = outcome.value if isinstance(outcome, ModelSuccess) else None
+    produced = (
+        list(value.findings) if isinstance(value, (BaselineFindings, BaselineAssessment)) else []
+    )
+    if record_to is not None and value is not None:
         record_to.parent.mkdir(parents=True, exist_ok=True)
-        record_to.write_text(outcome.value.model_dump_json(indent=2) + "\n", encoding="utf-8")
+        record_to.write_text(value.model_dump_json(indent=2) + "\n", encoding="utf-8")
     scored = _score(entry, produced)
+    if isinstance(value, BaselineAssessment):
+        scored = _score_assessment_extras(entry, value, scored)
     feed_path = _export_feed(
         entry,
         baseline=baseline,
@@ -222,6 +244,71 @@ def _score(entry: Scenario, produced: Sequence[Any]) -> dict[str, Any]:
     return {"matched": matched, "missed": missed, "spurious": spurious, "metrics": metrics}
 
 
+def _score_assessment_extras(
+    entry: Scenario, value: BaselineAssessment, scored: dict[str, Any]
+) -> dict[str, Any]:
+    """Score the single-pass baseline's gaps and questions against the truth set, in parallel.
+
+    The same shape as the finding scorer: requirement-identifier matching, no wording compared,
+    no identifiers to resolve. `documentation_gap_precision` mirrors the pipeline metric —
+    produced gaps that match an expected gap's requirement, over produced gaps — and
+    `question_usefulness` mirrors the pipeline's: expected questions matched by requirement,
+    over the expected questions that are not another gap's `paired_question` (the pipeline's
+    denominator rule, applied here so the two columns mean the same thing). Threats and
+    components are counted, never matched: the finding, gap, and question layers are where the
+    truth sets bind, and a parallel threat matcher would be a second implementation of
+    `match_threats` waiting to drift.
+    """
+    expected_gaps = (
+        yaml.safe_load(
+            (entry.expected_dir / "expected-documentation-gaps.yaml").read_text(encoding="utf-8")
+        ).get("documentation_gaps")
+        or []
+    )
+    expected_questions_doc = (
+        yaml.safe_load(
+            (entry.expected_dir / "expected-questions.yaml").read_text(encoding="utf-8")
+        ).get("questions")
+        or []
+    )
+
+    expected_gap_requirements = {str(gap["requirement_id"]) for gap in expected_gaps}
+    produced_gap_requirements = [gap.requirement_id for gap in value.documentation_gaps]
+    gap_hits = [req for req in produced_gap_requirements if req in expected_gap_requirements]
+
+    paired = {str(gap["paired_question"]) for gap in expected_gaps if gap.get("paired_question")}
+    scoreable_questions = [
+        question for question in expected_questions_doc if str(question.get("key")) not in paired
+    ]
+    produced_question_requirements = {question.requirement_id for question in value.questions}
+    question_hits = [
+        str(question["key"])
+        for question in scoreable_questions
+        if str(question.get("requirement_id")) in produced_question_requirements
+    ]
+
+    metrics = dict(scored["metrics"])
+    metrics["documentation_gap_precision"] = (
+        len(gap_hits) / len(produced_gap_requirements) if produced_gap_requirements else 0.0
+    )
+    metrics["question_usefulness"] = (
+        len(question_hits) / len(scoreable_questions) if scoreable_questions else 0.0
+    )
+    metrics["component_count"] = float(len(value.components))
+    metrics["threat_count"] = float(len(value.threats))
+    return {
+        **scored,
+        "metrics": metrics,
+        "extra_items": {
+            "documentation_gaps": {
+                "produced": produced_gap_requirements,
+                "matched_requirements": gap_hits,
+            },
+            "questions": {"matched_expected": question_hits},
+        },
+    }
+
+
 def _export_feed(
     entry: Scenario,
     *,
@@ -234,6 +321,19 @@ def _export_feed(
     from trace_ai.services.evaluation.harness import RESULTS_ROOT
 
     root = results_root if results_root is not None else RESULTS_ROOT
+    metrics: dict[str, dict[str, float]] = {
+        "schema_validity_rate": {"value": 1.0 if schema_valid else 0.0},
+    }
+    for name, metric_value in scored["metrics"].items():
+        metrics[name] = {"value": metric_value}
+    items: dict[str, Any] = {
+        "findings": {
+            "matched": scored["matched"],
+            "missed": scored["missed"],
+            "spurious": [entry_["title"] for entry_ in scored["spurious"]],
+        }
+    }
+    items.update(scored.get("extra_items") or {})
     feed = {
         "feed_version": "1",
         "scenario": entry.slug,
@@ -242,18 +342,8 @@ def _export_feed(
         "baseline": baseline,
         "authoritative": False,
         "schema_valid": schema_valid,
-        "metrics": {
-            "schema_validity_rate": {"value": 1.0 if schema_valid else 0.0},
-            "false_negative_rate": {"value": scored["metrics"]["false_negative_rate"]},
-            "spurious_finding_count": {"value": scored["metrics"]["spurious_finding_count"]},
-        },
-        "items": {
-            "findings": {
-                "matched": scored["matched"],
-                "missed": scored["missed"],
-                "spurious": [entry_["title"] for entry_ in scored["spurious"]],
-            }
-        },
+        "metrics": metrics,
+        "items": items,
     }
     target = root / entry.slug / baseline / f"{label}.json"
     target.parent.mkdir(parents=True, exist_ok=True)
