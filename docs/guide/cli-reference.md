@@ -539,6 +539,22 @@ reported.
 (DEC-103) — findings and questions first, context after — instead of printing the structural
 diff.
 
+## runs
+
+```
+trace runs prune [assessment_id] [--older-than DAYS] [--force]
+```
+
+Removes abandoned paused runs (DEC-017 amendment). A run is abandoned when it is paused and a
+later run exists on the same assessment, or — only when `--older-than` states an age — when it
+started at least that many days ago; with no age stated, age alone abandons nothing. Pruning
+removes the run row, its execution records, and its `traces/` state file; the assessment, its
+objects, its reviewer decisions, and every completed or failed run stay, and identifier counters
+are untouched so a pruned run's identifier is never re-minted. Without `--force` it lists what
+would go with each run's recorded spend, removes nothing, and exits 3; with `--force` it deletes
+and prints what went, including the spend removed with it. With no abandoned runs it exits 0.
+Omitting `assessment_id` examines the whole data root.
+
 ## reset
 
 ```

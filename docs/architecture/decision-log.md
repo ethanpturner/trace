@@ -8165,3 +8165,51 @@ Tradeoffs:
 - The gap and question parallel scorers match on requirement identifiers only, which is more
   generous than the pipeline's gap matcher (which walks the produced gap's mapping); the
   direction of error favours the baseline, which is DEC-074's chosen direction.
+
+## DEC-127: The migration posture is refusal — the store's version stamp gates open, and re-running from sources is the upgrade path
+
+Date: 2026-08-18
+
+Status: Accepted
+
+Decision:
+
+**There is no migration framework, and none is planned.** The mechanism DEC-020 and DEC-089
+built is the whole posture, and this entry decides it rather than leaving it implied: the store
+records its schema version at creation, checks it before anything else on open, and refuses an
+incompatible database with a message naming the recovery — create a new database and re-run the
+assessment from its sources. `SCHEMA_VERSION` moves only for table-layout changes; a
+domain-object change is invisible to SQLite by design, which is why the JSON-payload store needs
+no migrations for the changes that actually happen. A layout change that would strand data
+someone cannot regenerate is the trigger to revisit this entry, not a reason to soften the
+refusal.
+
+Why:
+
+- The v0.1 release made DEC-020's open question — at what point does an assessment become worth
+  keeping — real. The answer the corpus already implies: the data root is gitignored and
+  regenerable, the sources and decisions are what carry value, and both survive a re-run. A
+  migration framework would preserve exactly the part that is cheapest to rebuild.
+- A refusal with a named recovery is honest at the moment it matters — the operator with an old
+  database learns what happened and what to do, rather than a best-effort migration silently
+  producing rows nobody validated (the DEC-020 objection, applied to upgrades).
+
+Alternatives Considered:
+
+- Adopting a migration tool (rejected: two table-layout changes in the project's whole history,
+  both absorbed by regeneration; a framework is standing complexity for a case that has not
+  occurred).
+- Auto-deleting an incompatible database and starting fresh (rejected: deletion is a person's
+  decision; `trace reset --force` and `trace assessment purge --force` exist and are explicit).
+- Versioning each object payload for in-place upgrade (rejected: DEC-006 makes domain objects
+  authoritative through Pydantic validation; a payload the current schema cannot read is a
+  defect to fix at the schema, not a datum to transform in the dark).
+
+Tradeoffs:
+
+- An operator with a long-lived local store loses accumulated runs on a layout change and must
+  re-run assessments to rebuild them. Accepted under DEC-004: local, single-user, regenerable —
+  and the refusal message says so at the moment it applies.
+- The posture leans on discipline about what a "table-layout change" is; the store's own comment
+  and this entry are the record, and `tests/unit/test_store.py` pins the refusal and its
+  recovery wording.
