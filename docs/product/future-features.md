@@ -225,9 +225,16 @@ Trend analysis should not reduce complex risk to a misleading single score.
 
 ## 5.1 Organizational Control Catalog
 
-**Status:** Candidate
+**Status:** Built in part (DEC-115, issue #528)
 
-Maintain a reusable catalog of organization-wide controls.
+A deliberate v0 shipped with DEC-115: a flat, version-controlled `org-controls/` catalog read by
+its own loader, a fourth structured parser, and existence-only assertions — an organizational
+control enters context as a documented claim, never as authority. The oidc-portal scenario
+asserts `enterprise-idp-mfa` from its first commit. Remaining from the sketch: a real operator's
+fact set and per-control evidence links (issue #568). The inheritance graph is 5.2 and stays
+Research.
+
+The original sketch — maintain a reusable catalog of organization-wide controls.
 
 Examples include:
 
@@ -434,9 +441,15 @@ This feature should be narrow and evidence-oriented.
 
 ## 7.2 Infrastructure-as-Code Analysis
 
-**Status:** Idea
+**Status:** Built in part (DEC-113, issue #525)
 
-Analyze Terraform, CloudFormation, Kubernetes manifests, or similar artifacts for architecture and control evidence.
+DEC-113 shipped the first member: a Terraform JSON parser, corpus-measured, reading two
+attributes (`storage_encrypted`, `publicly_accessible`) as documented claims. HCL syntax and a
+decided attribute-coverage rule are issue #569; CloudFormation and Kubernetes manifests remain
+from the sketch. The parsing-over-model-analysis instinct below held: technology-specific
+parsing is what was built.
+
+The original sketch — analyze Terraform, CloudFormation, Kubernetes manifests, or similar artifacts for architecture and control evidence.
 
 Potential outputs include:
 
@@ -523,13 +536,13 @@ Final severity should remain subject to reviewer judgment.
 
 ## 8.1 AI System Threat-Modeling Pack
 
-**Status:** Built in part (DEC-098, issue #489)
+**Status:** Built (DEC-098 and DEC-114, issues #489 and #531)
 
-Catalog 0.2 (draft) carries the pack's first wave: ai-input-handling and agentic-orchestration
-arrived with DEC-058, and retrieval-augmentation (req-RAG-001..003) and model-generated-code
-(req-CODEGEN-001..002) arrive with DEC-098, alongside the rag-support-bot benchmark scenario
-that makes the retrieval requirements measurable. Remaining from the sketch below: fine-tuning
-and training-data supply chains, and deeper model-provider integration coverage.
+The pack arrived in three waves: ai-input-handling and agentic-orchestration with DEC-058;
+retrieval-augmentation (req-RAG-001..003) and model-generated-code (req-CODEGEN-001..002) with
+DEC-098, alongside the rag-support-bot benchmark scenario; and the fine-tuning category
+(req-TRAIN-001..003) with DEC-114 in catalog 0.3, alongside the reply-tuner scenario. DEC-114
+completes the sketch below — every row has requirements and a measuring scenario.
 
 The original sketch — add threat patterns and requirements specifically for systems using:
 
@@ -1016,15 +1029,17 @@ The executive report must remain traceable to the technical assessment.
 
 ## 13.5 Export Formats
 
-**Status:** Decided in part (DEC-072)
+**Status:** Built in part (DEC-072 family; DEC-108)
 
-Markdown remains the report's only MVP format. DEC-072 separates *exports* from report formats:
-a post-MVP family of deterministic serializers over approved objects — TM-BOM first, SARIF
-second (approved findings only, reviewer-assigned severity only), a standalone Mermaid DFD
-third, CycloneDX for the catalog deferred until a consumer exists. No export contains prose or
-a model call.
+Markdown remains the report's only authoritative format. DEC-072 separates *exports* from
+report formats, and the family is delivered: TM-BOM (issue #383), SARIF (issue #487), and the
+standalone Mermaid DFD (issue #503) all ship as deterministic serializers over approved
+objects; CycloneDX for the catalog stays deferred until a consumer exists. No export contains
+prose or a model call. DEC-108 (issue #527) added HTML rendering as a derived view of the
+Markdown report — a rendering, not a second format. The family's one open question — whether
+TM-BOM round-trips as input — is issue #573.
 
-Still ideas, not decided: PDF, HTML, ticketing-system formats, audit packages, and any
+Still ideas, not decided: PDF, ticketing-system formats, audit packages, and any
 executive-report format.
 
 # 14. Potential Research Questions
