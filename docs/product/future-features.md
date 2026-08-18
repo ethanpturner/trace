@@ -444,14 +444,16 @@ This feature should be narrow and evidence-oriented.
 
 ## 7.2 Infrastructure-as-Code Analysis
 
-**Status:** Built in part (DEC-113 and DEC-121, issues #525 and #569)
+**Status:** Built in part (DEC-113, DEC-121, and DEC-124; issues #525, #569, and #593)
 
 DEC-113 shipped the first member: a Terraform JSON parser, corpus-measured, reading stated
 booleans as documented claims. DEC-121 added HCL syntax through a deterministic subset scanner
 and put the attribute table under a coverage rule — literal boolean, self-contained meaning,
 both directions meaningful — which admitted `encrypted` and `deletion_protection` beside the
-first pair. CloudFormation and Kubernetes manifests remain from the sketch. The
-parsing-over-model-analysis instinct below held: technology-specific parsing is what was built.
+first pair. DEC-124 added CloudFormation — JSON plus tag-free YAML, the syntax boundary the
+loader's own safe-parse rule — under the same table in CloudFormation's spelling. Kubernetes
+manifests remain from the sketch. The parsing-over-model-analysis instinct below held:
+technology-specific parsing is what was built.
 
 The original sketch — analyze Terraform, CloudFormation, Kubernetes manifests, or similar artifacts for architecture and control evidence.
 
@@ -470,7 +472,7 @@ This could strengthen context extraction, but technology-specific parsing may be
 
 ## 7.3 Architecture Diagram Analysis
 
-**Status:** Built in part (DEC-124, issue #599)
+**Status:** Built in part (DEC-125, issue #599)
 
 The first slice shipped without a vision model: the Mermaid DFD dialect `trace export mermaid`
 emits parses back deterministically as the DEC-070 family's sixth member — components, flows,

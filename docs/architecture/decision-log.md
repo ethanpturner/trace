@@ -7980,7 +7980,61 @@ Tradeoffs:
   The extraction is what the reviewer sees and approves at checkpoint 1, so imperfection is
   visible there rather than hidden behind the original.
 
-## DEC-124: The Mermaid export dialect round-trips as input, scoped to what the exporter emits
+## DEC-124: CloudFormation joins the IaC family — JSON plus tag-free YAML, at the loader's own boundary
+
+Date: 2026-08-18
+
+Status: Accepted
+
+Decision:
+
+**A CloudFormation parser joins the DEC-070 family** (`services/context/cloudformation.py`,
+`cloudformation-parser-v1`), under the shape DEC-113 and DEC-121 settled: one component per
+declared resource, one documented claim per admitted property the template states as a literal
+boolean, both directions, and silence for everything else. An intrinsic — long-form `Ref`,
+`Fn::GetAtt`, `Fn::Sub` — parses as a mapping, is not a literal boolean, and yields nothing:
+an expression is *not stated*, the DEC-113 posture unchanged.
+
+**The syntax scope is what already parses at the ingestion boundary.** JSON templates
+(`*.cfn.json`) and tag-free YAML templates (`*.cfn.yaml`, `*.cfn.yml`) are in scope.
+CloudFormation's short-form tags (`!Ref`, `!Sub`) fail `yaml.safe_load`, and the loader already
+refuses a YAML document that does not safe-parse — so a short-form template is refused at
+ingestion by the existing untrusted-input rule, and the parser adds no tag handling to admit
+it. No YAML tag library joins the tree; the python-hcl2 rejection reasoning (DEC-121) applies
+to those libraries unchanged. The suffix names the format; content is never sniffed.
+
+**Admitted properties are DEC-121's table in CloudFormation's spelling.** `StorageEncrypted`,
+`PubliclyAccessible`, `Encrypted`, and `DeletionProtection` map to the family predicates their
+Terraform twins use, so the same stated fact makes the same documented claim whichever dialect
+declared it. The admission rule is DEC-121's and is not widened here; widening is its own
+decision (#595).
+
+Why:
+
+- Future-features 7.2 has named CloudFormation since the sketch, and the family's contract —
+  parsers read literal declarations into documented claims at zero model cost, nothing becomes
+  authority — was settled twice over. The remaining question was only the syntax boundary, and
+  the loader had already answered it: what safe-parses is in scope, what does not is refused
+  before any parser sees it.
+
+Alternatives Considered:
+
+- A YAML tag library (or a custom multi-constructor) to admit short-form templates (rejected:
+  tag handling is interpretation machinery for a subset that long-form spelling expresses
+  anyway, and the loader's safe-parse rule is the untrusted-input boundary — loosening it for
+  one suffix would trade a security invariant for a convenience).
+- Recognizing bare `template.json` / `template.yaml` names (rejected: a generic name states no
+  format, and the family rule is that the suffix names it — content is never sniffed).
+
+Tradeoffs:
+
+- Real-world templates written with short-form tags must be converted to long form (or JSON)
+  before ingestion; the refusal at load says why. Deliberate: the boundary stays where it is.
+- The measurement is fixture-level (corpus-measured claims over committed fixtures, JSON/YAML
+  parity, pinned intrinsic refusals), not a scenario re-record — the #569 precedent: extending
+  a live scenario's inputs would invalidate its recorded decisions for no new measurement.
+
+## DEC-125: The Mermaid export dialect round-trips as input, scoped to what the exporter emits
 
 Date: 2026-08-18
 
