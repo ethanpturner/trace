@@ -441,13 +441,14 @@ This feature should be narrow and evidence-oriented.
 
 ## 7.2 Infrastructure-as-Code Analysis
 
-**Status:** Built in part (DEC-113, issue #525)
+**Status:** Built in part (DEC-113 and DEC-121, issues #525 and #569)
 
-DEC-113 shipped the first member: a Terraform JSON parser, corpus-measured, reading two
-attributes (`storage_encrypted`, `publicly_accessible`) as documented claims. HCL syntax and a
-decided attribute-coverage rule are issue #569; CloudFormation and Kubernetes manifests remain
-from the sketch. The parsing-over-model-analysis instinct below held: technology-specific
-parsing is what was built.
+DEC-113 shipped the first member: a Terraform JSON parser, corpus-measured, reading stated
+booleans as documented claims. DEC-121 added HCL syntax through a deterministic subset scanner
+and put the attribute table under a coverage rule — literal boolean, self-contained meaning,
+both directions meaningful — which admitted `encrypted` and `deletion_protection` beside the
+first pair. CloudFormation and Kubernetes manifests remain from the sketch. The
+parsing-over-model-analysis instinct below held: technology-specific parsing is what was built.
 
 The original sketch — analyze Terraform, CloudFormation, Kubernetes manifests, or similar artifacts for architecture and control evidence.
 
