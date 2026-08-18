@@ -419,6 +419,7 @@ report. Otherwise exits 0 on a scored run, 1 on a refusal or error.
 ```
 trace capture scenario {extract,reason,report,baseline-generic,baseline-structured}
               [--from-recorded] [--model-profile MODEL_PROFILE]
+              [--rehearse] [--response PATH]...
 ```
 
 Captures a registered scenario's recording from a live model run (DEC-091). Every response the
@@ -445,6 +446,14 @@ capture: staged recordings answer the calls they cover, and only unanswered call
 Each stage refuses to run twice — a re-run would re-spend it — and the refusal exits 3. The
 offline profile is refused (exit 1) before any side effect. The capture uses its own data root,
 `data/capture-<slug>`, apart from your assessments.
+
+`--rehearse` runs a pipeline stage offline (#534): the deterministic substitute serves the
+`--response` recordings you supply, staging goes to `capture-rehearsal/` beside the real staging
+directory with a `REHEARSAL` marker, and the data root is `data/capture-rehearsal-<slug>`. A
+rehearsal validates the capture mechanics for a new scenario — inputs load, the checkpoints
+pause, the decision files apply — before a dollar is spent. Nothing a rehearsal stages can be
+promoted: every rehearsal envelope is marked, and every reader of a recording refuses the mark.
+Baseline stages take no `--rehearse`; one call has no mechanics to rehearse.
 
 ## ledger
 

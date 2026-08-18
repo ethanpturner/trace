@@ -5989,7 +5989,18 @@ Tradeoffs:
   unit tests carry that instead, which keeps a meaningless zero-usage "capture" from ever landing
   in a staging directory.
 
-## DEC-092: The measured cost supersedes the estimate, and `trace ledger` is how spend is read
+Amendment (2026-08-17, #534): **`trace capture <scenario> <stage> --rehearse` runs the stage
+offline, and nothing it stages can be promoted.** The tradeoff above bit harder than expected:
+the entire keyed track queues behind `trace capture`, and the first run of the three-stage flow
+for a new scenario happened with live spend. A rehearsal runs the same stage functions against
+the deterministic substitute serving `--response` recordings, staging into its own
+`capture-rehearsal/` directory beside the real one, with a `REHEARSAL` marker file for the
+operator. The refusal this entry traded on is kept, structurally: every envelope a rehearsal
+stages carries a `rehearsal` key, and `load_recorded_responses` — the reader behind the replay,
+the harness, and any promoted recording — refuses such an envelope everywhere except inside the
+rehearsal's own resume. A zero-usage artifact still cannot land where a recording is expected;
+what changed is that the mechanics-validation pass no longer costs a dollar. Baseline stages are
+excluded: one call has no mechanics to rehearse.
 
 Date: 2026-08-17
 
