@@ -176,6 +176,60 @@ def test_a_stale_cache_prefix_that_is_not_a_prefix_is_ignored() -> None:
     assert request["messages"][0]["content"] == "the actual prompt"
 
 
+def test_a_system_cache_prefix_splits_the_system_region_and_marks_the_prefix(  # DEC-105
+) -> None:
+    """The system region's own stable span (mapping's catalog) carries cache_control, so it is
+    reused across calls whose system regions differ after it — the case the user-message marker
+    structurally cannot serve, because the varying system precedes it in the cacheable sequence."""
+    client = _StubClient(_response('{"name": "x"}'))
+    adapter = AnthropicModel("primary-development", client=client)
+
+    adapter.generate(
+        prompt="the prompt",
+        schema=Proposal,
+        settings=GenerationSettings(),
+        system="CATALOG SPAN::per-threat tail",
+        system_cache_prefix="CATALOG SPAN::",
+    )
+
+    (request,) = client.messages.requests
+    assert request["system"] == [
+        {"type": "text", "text": "CATALOG SPAN::", "cache_control": {"type": "ephemeral"}},
+        {"type": "text", "text": "per-threat tail"},
+    ]
+
+
+def test_a_stale_system_cache_prefix_sends_the_system_region_plain() -> None:
+    client = _StubClient(_response('{"name": "x"}'))
+    adapter = AnthropicModel("primary-development", client=client)
+
+    adapter.generate(
+        prompt="the prompt",
+        schema=Proposal,
+        settings=GenerationSettings(),
+        system="the actual system region",
+        system_cache_prefix="something that is not a prefix",
+    )
+
+    (request,) = client.messages.requests
+    assert request["system"] == "the actual system region"
+
+
+def test_no_system_cache_prefix_sends_the_system_region_as_before() -> None:
+    client = _StubClient(_response('{"name": "x"}'))
+    adapter = AnthropicModel("primary-development", client=client)
+
+    adapter.generate(
+        prompt="the prompt",
+        schema=Proposal,
+        settings=GenerationSettings(),
+        system="plain system",
+    )
+
+    (request,) = client.messages.requests
+    assert request["system"] == "plain system"
+
+
 def test_prompt_caching_is_reported_only_when_the_response_serves_cache_tokens() -> None:
     client = _StubClient(_cached_response(cache_read=800))
     adapter = AnthropicModel("primary-development", client=client)

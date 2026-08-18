@@ -6763,3 +6763,55 @@ Tradeoffs:
   itself syncs `--only-group docs` and skips the project entirely.
 - The scorecard page renders without the site's chrome, because it is copied verbatim as DEC-076
   requires. Accepted: it carries its own styling and always has.
+
+## DEC-105: The catalog leads the mapping trusted region, and the seam carries a system-region cache hint
+
+Date: 2026-08-17
+
+Status: Accepted
+
+Decision:
+
+**The mapping trusted region opens with its stable span — the assessment header and the whole
+requirements catalog — and everything the threat varies follows it.** The section order was
+Assessment, Threat, Catalog, Controls, architecture, Evidence; it is now Assessment, Catalog,
+Threat, Controls, architecture, Evidence. The reorder changes no content, only position, and the
+composed prompt files are untouched — this is the runtime system region only.
+
+**The seam gains `system_cache_prefix`, the same provider-neutral hint `cache_prefix` already
+is, for the system region.** `MappingInput` carries the stable span as `trusted_cache_prefix`,
+and the mapping node passes it through. The Anthropic adapter splits the system region at the
+hint and marks the stable block ephemeral, with the same degradation rules as the user-message
+split: no hint, or a hint that is not a prefix, sends the plain string. The OpenAI adapter
+accepts and ignores it — that provider caches prefixes automatically and has no marker. Both
+remain one contract under the adapter conformance suite.
+
+Why:
+
+- DEC-024 sends the full catalog on every mapping call and defends the cost by calling the
+  catalog "a stable cacheable prefix on every mapping call" — but it was not one. The cache
+  marker sat in the user message, after a system region that varies per threat, so across an
+  assessment's ~15 mapping calls the catalog was re-sent uncached every time; only one threat's
+  retries ever hit. DEC-098 grew the catalog to 37 requirements riding every call, making this
+  the cheapest real cost lever available before the DEC-092-funded live sweep measures the
+  pipeline again.
+- The user-message marker stays: within one threat's retries the whole system region is
+  identical, so the longer prefix still hits there, and the two markers compose.
+
+Alternatives Considered:
+
+- Moving the per-threat trusted content into the user message so the whole system region is
+  stable (rejected: the trusted/untrusted boundary is decided surface — the system region is
+  the application's voice and the user message carries the fenced source content; relocating
+  approved objects across that line to serve a cache is the tail wagging the dog).
+- Partitioning the catalog instead (deferred, unchanged: that is DEC-024's own open question,
+  to be taken on cost evidence; this change extracts the available win without deciding it).
+
+Tradeoffs:
+
+- The seam's `generate` widens by one optional parameter across every implementation, including
+  the test doubles. Accepted: the alternative was a mapping-only side channel past the seam,
+  which DEC-014 exists to prevent.
+- Marking the stable span costs the cache-write surcharge on the first mapping call of a run;
+  every subsequent call reads it back. A run with one threat gains nothing and pays the
+  surcharge once — the degenerate case, accepted.

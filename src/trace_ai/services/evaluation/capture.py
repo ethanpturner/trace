@@ -202,6 +202,7 @@ class RecordingModel:
         settings: GenerationSettings | None = None,
         system: str | None = None,
         cache_prefix: str | None = None,
+        system_cache_prefix: str | None = None,
     ) -> ModelOutcome[T]:
         outcome = self._inner.generate(
             prompt=prompt,
@@ -209,6 +210,7 @@ class RecordingModel:
             settings=settings,
             system=system,
             cache_prefix=cache_prefix,
+            system_cache_prefix=system_cache_prefix,
         )
         if isinstance(outcome, ModelSuccess):
             index = len(list(self._staging.glob("[0-9]*.json"))) + 1
@@ -261,6 +263,7 @@ class _FallbackModel:
         settings: GenerationSettings | None = None,
         system: str | None = None,
         cache_prefix: str | None = None,
+        system_cache_prefix: str | None = None,
     ) -> ModelOutcome[T]:
         if self._recorded:
             queued = self._recorded.pop(0)
@@ -280,6 +283,7 @@ class _FallbackModel:
             settings=settings,
             system=system,
             cache_prefix=cache_prefix,
+            system_cache_prefix=system_cache_prefix,
         )
 
 
