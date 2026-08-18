@@ -11,6 +11,10 @@ The lineage view is the differentiator. It walks one finding to its hashed evide
 chain `services/findings/lineage.py` already assembles — threat, mapping, evidence assessment,
 critique, context claim, evidence excerpt, document hash — and renders each link with the identifier
 that ties it to the next. No assessment content is invented; the walk shows what the store holds.
+Identifiers that name another hop's object are links to that hop's anchor, and each excerpt links
+one hop further, to the source view: the stored original document with the cited span marked
+(#572). The chain is clickable end to end — finding, requirement, threat, evidence, source span —
+and every hop stays a plain GET of derived state.
 """
 
 from __future__ import annotations
@@ -34,7 +38,8 @@ from trace_ai.domain.reviewer_decision import ReviewerDecision
 from trace_ai.domain.source_document import SourceDocument
 from trace_ai.domain.threat import Threat
 from trace_ai.domain.trust_boundary import TrustBoundary
-from trace_ai.services.evidence.index import EvidenceIndex
+from trace_ai.infrastructure.filesystem.artifact_store import ArtifactStoreError
+from trace_ai.services.evidence.index import EvidenceIndex, EvidenceNotFoundError
 from trace_ai.services.findings.lineage import finding_lineage
 
 if TYPE_CHECKING:
@@ -56,6 +61,7 @@ __all__ = [
     "render_overview",
     "render_page",
     "render_questions",
+    "render_source_span",
     "render_threats",
     "render_workflow",
 ]
@@ -132,6 +138,12 @@ code { font:13px/1.4 ui-monospace, monospace; }
 a.finding { color:var(--accent); }
 .ok { color:#1a7f37; font-weight:600; }
 .drift { color:var(--flag); font-weight:600; }
+.src { border:1px solid var(--line); margin:0.5rem 0; overflow-x:auto; }
+.src pre { margin:0; font:13px/1.5 ui-monospace, monospace; }
+.src-line { display:block; white-space:pre-wrap; }
+.src-line .no { display:inline-block; min-width:3.2em; padding-right:0.8em; text-align:right;
+                color:var(--muted); user-select:none; }
+.src-line.hit { background:color-mix(in srgb, var(--flag) 14%, var(--bg)); }
 """
 
 
@@ -443,6 +455,27 @@ def render_lineage(handle: AssessmentHandle, assessment: Assessment, finding_id:
         source_documents=handle.objects.list(SourceDocument),
     )
 
+    # Every object in the walk has an in-page anchor; an identifier that names one of them is a
+    # link to that anchor (#572), so the chain is followed by clicking rather than by searching.
+    anchored = {
+        obj.id
+        for group in (
+            lineage.threats,
+            lineage.control_mappings,
+            lineage.evidence_assessments,
+            lineage.critiques,
+            lineage.context_claims,
+            lineage.evidence_references,
+        )
+        for obj in group
+    }
+
+    def _ref(identifier: str) -> str:
+        code = f"<code>{_e(identifier)}</code>"
+        if identifier in anchored:
+            return f'<a href="#{_e(identifier.lower())}">{code}</a>'
+        return code
+
     # The walk's hops, each a section with its own anchor so every hop is linkable and
     # screenshot-able (#533), and a contents line so the chain is navigated, not scrolled.
     hops: list[tuple[str, str, list[str]]] = [
@@ -461,7 +494,8 @@ def render_lineage(handle: AssessmentHandle, assessment: Assessment, finding_id:
             "Control mappings",
             [
                 f'<a id="{_e(m.id.lower())}"></a><code>{_e(m.id)}</code>: {_e(m.requirement_id)}'
-                f" — {_e(m.satisfaction_status.value)}"
+                f" — {_e(m.satisfaction_status.value)} — for {_ref(m.threat_id)}, evidence "
+                + (", ".join(_ref(eid) for eid in m.evidence_ids) or "none cited")
                 for m in lineage.control_mappings
             ],
         ),
@@ -470,7 +504,8 @@ def render_lineage(handle: AssessmentHandle, assessment: Assessment, finding_id:
             "Evidence assessments",
             [
                 f'<a id="{_e(a.id.lower())}"></a><code>{_e(a.id)}</code>: '
-                f"{_e(a.subject_type.value)} {_e(a.subject_id)} — {_e(a.validation_status.value)}"
+                f"{_e(a.subject_type.value)} {_ref(a.subject_id)} — "
+                f"{_e(a.validation_status.value)}"
                 for a in lineage.evidence_assessments
             ],
         ),
@@ -479,7 +514,7 @@ def render_lineage(handle: AssessmentHandle, assessment: Assessment, finding_id:
             "Critiques",
             [
                 f'<a id="{_e(c.id.lower())}"></a><code>{_e(c.id)}</code>: '
-                f"{_e(c.critique_type.value)} on {_e(c.subject_id)}"
+                f"{_e(c.critique_type.value)} on {_ref(c.subject_id)}"
                 for c in lineage.critiques
             ],
         ),
@@ -522,13 +557,17 @@ def render_lineage(handle: AssessmentHandle, assessment: Assessment, finding_id:
             if checked.ok
             else f'<span class="drift">{_e(checked.outcome.value)}</span>'
         )
+        span_href = f"/{assessment.id}/source/{reference.id}"
+        if reference.start_line is not None:
+            span_href += f"#L{reference.start_line}"
         parts.append(
             f'<a id="{_e(reference.id.lower())}"></a><div class="excerpt">'
             f'<div class="label">[{UNTRUSTED_LABEL} — {_e(reference.id)}'
             f"{f', {_e(where)}' if where else ''}] · {verdict}</div>"
             f"<pre>{_e(reference.quoted_text)}</pre>"
             f'<div class="muted">{_e(names.get(reference.source_document_id, "?"))} · '
-            f"<code>{_e(reference.content_hash)}</code></div></div>"
+            f"<code>{_e(reference.content_hash)}</code> · "
+            f"{_link('open the source at this span', span_href)}</div></div>"
         )
     if lineage.source_documents:
         parts.append('<a id="documents"></a><h3>Source documents</h3>')
@@ -586,6 +625,94 @@ def render_lineage_index(handle: AssessmentHandle, assessment: Assessment) -> st
             + _table_raw(["Finding", "Severity", "Title"], rows)
         )
     return render_page("Lineage", assessment.id, "lineage", body)
+
+
+def render_source_span(handle: AssessmentHandle, assessment: Assessment, evidence_id: str) -> str:
+    """The lineage walk's last hop: the stored original document with the cited span marked (#572).
+
+    The whole document is untrusted source content, so every line is escaped and the page carries
+    the same label the excerpts do. Each line gets an `L<n>` anchor, the reference's span the
+    highlight, so the lineage excerpt's link lands the reader on the exact lines the finding rests
+    on. A reference that addresses a structured document by JSON Pointer has no line span; the
+    pointer is stated instead of a highlight nobody computed. Read-only throughout: the document
+    bytes are read from the artifact store exactly as verification reads them.
+    """
+    index = EvidenceIndex(handle)
+    try:
+        reference = index.get(evidence_id)
+    except EvidenceNotFoundError:
+        return render_page(
+            "Source", assessment.id, "findings", '<p class="muted">No such evidence reference.</p>'
+        )
+    document = handle.objects.find(SourceDocument, reference.source_document_id)
+    if document is None:
+        return render_page(
+            "Source",
+            assessment.id,
+            "findings",
+            '<p class="muted">The reference names a source document the store does not hold.</p>',
+        )
+    checked = index.verify(evidence_id)
+    verdict = (
+        '<span class="ok">verifies</span>'
+        if checked.ok
+        else f'<span class="drift">{_e(checked.outcome.value)}</span>'
+    )
+    where = _location(reference)
+    header = (
+        "<h2>"
+        + _e(document.filename)
+        + "</h2>"
+        + (
+            "<table>"
+            + _rows(
+                [
+                    ("Evidence reference", reference.id),
+                    ("Cited at", where or "whole document"),
+                    ("Document hash", document.content_hash),
+                ]
+            )
+            + f"</table><p>Quoted text {verdict} against the stored document.</p>"
+        )
+    )
+
+    try:
+        raw: str | None = handle.artifacts.read("sources", document.filename).decode("utf-8")
+    except ArtifactStoreError, OSError, UnicodeDecodeError:
+        raw = None
+    if raw is None:
+        body = header + (
+            '<p class="drift">The stored source file is missing or unreadable; the verification '
+            "verdict above is the record of that.</p>"
+        )
+        return render_page("Source", assessment.id, "findings", body)
+
+    first = reference.start_line
+    last = reference.end_line if reference.end_line is not None else first
+    lines: list[str] = []
+    for number, line in enumerate(raw.splitlines(), start=1):
+        hit = first is not None and last is not None and first <= number <= last
+        css = "src-line hit" if hit else "src-line"
+        lines.append(
+            f'<span id="L{number}" class="{css}"><span class="no">{number}</span>{_e(line)}</span>'
+        )
+    note = (
+        f'<p class="muted">This reference addresses the document at '
+        f"<code>{_e(reference.json_pointer)}</code>; line spans apply to text citations, so "
+        "nothing is highlighted.</p>"
+        if reference.json_pointer and first is None
+        else ""
+    )
+    body = (
+        header
+        + note
+        + f'<div class="excerpt"><div class="label">[{UNTRUSTED_LABEL} — the whole of '
+        + f"{_e(document.filename)}]</div></div>"
+        + '<div class="src"><pre>'
+        + "".join(lines)
+        + "</pre></div>"
+    )
+    return render_page("Source", assessment.id, "findings", body)
 
 
 def _type_label(class_name: str) -> str:
