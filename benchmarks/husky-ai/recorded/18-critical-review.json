@@ -1,0 +1,100 @@
+{
+  "schema": "CriticalReviewProposal",
+  "usage": {
+    "model": "claude-opus-5",
+    "input_tokens": 2227,
+    "output_tokens": 19662,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 27289,
+    "estimated_cost": "0.67324125",
+    "duration_seconds": 238.24853075004648
+  },
+  "response": {
+    "critiques": [
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-002",
+        "critique_type": "weak_attack_path",
+        "description": "Attack path step 1 offers a second entry branch - modifying the release \"while it is packaged and delivered through the Bastion\" - and the threat's own stated reason for it is that transport protection for internal flows is not described (evd-006 covering only the public API and the Cognitive Services path). The only documented delivery mechanism is the Bastion, which evd-010 describes as the SSH administrative access path into production hosts and through which \"the deployment service also delivers releases into production\"; evd-012 repeats that releases are delivered through the Bastion. Neither passage places an actor on that flow nor establishes that it lacks integrity or transport protection, and the \"while it is packaged\" variant implies write access to the source and configuration storage or to the deployment service, which the cited passages do not give the actor. The first branch - a write to cmp-010 along a documented write path (evd-002, evd-010, evd-012) - is supported and should stand.",
+        "rationale": "evd-006 states only that the public API is HTTPS-only and that image collection from Cognitive Services uses TLS with certificate validation. Silence about the deployment flow is not evidence that the flow is modifiable in transit; gap-011 already records that silence as an open question, and map-030 records the SSH-carries-transport-encryption reading as an assumption. Leaving the in-transit branch in the attack path converts a documentation gap into an entry point and overstates how reachable this threat is.",
+        "evidence_ids": [
+          "evd-006",
+          "evd-010",
+          "evd-012"
+        ],
+        "recommended_action": "revise",
+        "confidence": "medium"
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-035",
+        "critique_type": "unsupported_claim",
+        "description": "map-035 rules req-DATA-004 not applicable on the stated ground that \"uploaded images exist only in memory for the duration of a request (evd-004, evd-011)\". evd-004 says images are \"held in memory in the Redis cache while awaiting classification, not written to disk\" and that in-memory storage \"was chosen to make user-submitted images difficult to access after the request completes\"; evd-011 lists the cache as the in-memory store for uploaded images awaiting classification. Neither passage states that entries are removed when a request completes. ctl-007's own limitations record that \"No retention period or eviction policy for the cache is stated\", and gap-048 records retention and eviction behaviour as undocumented.",
+        "rationale": "The per-request duration claim is the entire basis for the non-applicable condition \"no customer data is retained\", so an unstated premise is carrying a requirement dismissal. Compare map-033, which reaches not_applicable on the narrower and actually documented ground that nothing is written to disk. The mapping should rest on what evd-004 says, or record applicability as conditional pending the fact gap-048 requests.",
+        "evidence_ids": [
+          "evd-004",
+          "evd-011"
+        ],
+        "recommended_action": "revise",
+        "confidence": "medium"
+      },
+      {
+        "subject_type": "evidence_assessment",
+        "subject_id": "eas-038",
+        "critique_type": "unsupported_claim",
+        "description": "eas-038 marks evd-007 contextual and concludes that the \"public-key authentication\" element of ctl-001 \"rests on evd-007, which describes production-to-experimental movement rather than administrative SSH; the key-store reference makes it plausible but not stated\". Three passages in this group state it directly: evd-010 says the Bastion \"reads authorized keys from the Authorized Keys storage\", evd-012 says the Bastion \"authenticates them against the Authorized Keys storage\", and evd-011 records that store's contents as \"SSH keys authorizing administrative access\". The assessment's own missing-evidence item asks for confirmation of public-key-*only* authentication, which is a different and genuinely open question.",
+        "rationale": "Checking the cited passages against the claim: key-based authentication of administrative SSH at the Bastion is documented, not merely plausible; what is undocumented is exclusivity (whether password authentication is also accepted) and configuration-level confirmation. Treating the documented element as unstated drives a revise recommendation on ctl-001 wider than the evidence warrants, and downstream objects (eas-060, map-025) lean on that characterisation.",
+        "evidence_ids": [
+          "evd-010",
+          "evd-011",
+          "evd-012"
+        ],
+        "recommended_action": "revise",
+        "confidence": "medium"
+      },
+      {
+        "subject_type": "documentation_gap",
+        "subject_id": "gap-012",
+        "critique_type": "duplicate",
+        "description": "gap-012 and gap-040 are the same gap. Both cite evd-005, evd-011 and evd-012; both ask whether a write or overwrite of the serialized artifact in the production model blob is recorded and attributed to the acting operator; both name ctl-002, cmp-010 and ast-001; both request storage-level diagnostic or access logging on the model blob and a statement of which operator identity is carried on each recorded action; both carry medium severity. gap-012's only further element - whether the record destination is managed separately from production - is the subject of gap-039, which asks the same thing in more detail.",
+        "rationale": "Three overlapping gaps built on the same three passages will produce three findings that answer one question, and map-026 already routes the tamper-evidence angle separately. Consolidating leaves one attribution question (gap-040, which additionally asks for the record format) and one question about the log store itself (gap-039).",
+        "evidence_ids": [
+          "evd-005",
+          "evd-011",
+          "evd-012"
+        ],
+        "recommended_action": "merge",
+        "confidence": "high"
+      },
+      {
+        "subject_type": "documentation_gap",
+        "subject_id": "gap-041",
+        "critique_type": "duplicate",
+        "description": "gap-041 asks for the factor policy applied to identities holding Bastion SSH access. That is already gap-010's second requested-evidence item, worded almost identically (\"The factor policy applied to the identity presenting the SSH key at the Bastion, and which party enforces it\"), and gap-010 covers the same passages (evd-005, evd-007, evd-009, evd-010) plus the identity provider and the role definitions behind the RBAC/ACL summary. The two also assign different severities - gap-010 medium, gap-041 low - to the same undocumented fact.",
+        "rationale": "map-027 already carries the MFA question as a suppressed conclusion pending the same fact, so the reviewer needs one factor-policy question rather than two of differing severity. gap-041's one distinct request - the procedure for adding and removing keys in the Authorized Keys storage - can be carried into gap-010 without loss.",
+        "evidence_ids": [
+          "evd-005",
+          "evd-007",
+          "evd-010"
+        ],
+        "recommended_action": "merge",
+        "confidence": "medium"
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-026",
+        "critique_type": "contradictory_analysis",
+        "description": "map-026 declines the negative conclusion about record integrity by citing the catalog entry \"absent tamper-evidence detail where records are sent to a separately managed platform\". The entry's condition is not documented for this system: evd-011 lists Bastion Logs storage as a production data store, evd-012 has the Bastion writing the session record to it on the same administrative path this threat's actor traverses, ctl-002's own limitation states \"whether it is separately managed is not stated\", and gap-039 records access control, retention and immutability of that store as unestablished. evd-002's storage access-control statement does not mention the log store at all.",
+        "rationale": "A suppression whose precondition the documentation does not establish removes a question rather than settling it. This critique does not assert that the records are alterable - the honest position is the unknown that gap-039 already records - but the mapping should rest on that recorded gap rather than on a false-positive entry premised on a separately managed logging platform that no passage describes.",
+        "evidence_ids": [
+          "evd-002",
+          "evd-005",
+          "evd-011",
+          "evd-012"
+        ],
+        "recommended_action": "revise",
+        "confidence": "medium"
+      }
+    ]
+  }
+}

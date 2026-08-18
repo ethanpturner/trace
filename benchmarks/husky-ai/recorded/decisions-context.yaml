@@ -1,15 +1,18 @@
 assessment_id: asm-001
 system_context_version: 1
-reviewer: recorded-reviewer
+reviewer: capture-reviewer
 components:
 - id: cmp-001
   decision: approve
+  attach_evidence: []
   editable:
     name: API Gateway
-    description: the entry point for external users over HTTPS; routes requests to the web server, enforces
-      request validation, and manages access control to internal services
-    component_type: gateway
-    technology: []
+    description: Entry point for external users, exposed over HTTPS. Routes user requests to the Python
+      web server, enforces request validation, and manages the public APIs while ensuring access control
+      to internal services.
+    component_type: api_gateway
+    technology:
+    - HTTPS
     ownership: null
     deployment_zone: production
     internet_accessible: true
@@ -17,15 +20,20 @@ components:
     data_classifications: []
     authentication_mechanisms:
     - sso
-    authorization_mechanisms: []
+    authorization_mechanisms:
+    - rbac
+    - acl
 - id: cmp-002
   decision: approve
+  attach_evidence: []
   editable:
     name: Simple Python Web Server
-    description: serves the classification application; loads the trained model from the model blob and
-      evaluates uploaded images against it
+    description: Serves the classification application. Loads the trained model from the model storage
+      blob and evaluates uploaded images against it; holds uploaded images in the Redis cache during a
+      request.
     component_type: service
-    technology: []
+    technology:
+    - Python
     ownership: null
     deployment_zone: production
     internet_accessible: null
@@ -35,12 +43,16 @@ components:
     authorization_mechanisms: []
 - id: cmp-003
   decision: approve
+  attach_evidence: []
   editable:
     name: Bastion Server
-    description: the administrative access path into production over SSH; reads authorized keys, writes
-      access logs, and carries deployment releases
-    component_type: bastion
-    technology: []
+    description: The administrative access path into production. Administrators reach production hosts
+      over SSH through the Bastion; it reads authorized keys from the Authorized Keys storage and writes
+      access logs to the Bastion Logs storage. The deployment service also delivers releases into production
+      through the Bastion.
+    component_type: jump_host
+    technology:
+    - SSH
     ownership: null
     deployment_zone: production
     internet_accessible: null
@@ -51,12 +63,15 @@ components:
     authorization_mechanisms: []
 - id: cmp-004
   decision: approve
+  attach_evidence: []
   editable:
     name: Gather Images Application
-    description: collects husky and non-husky images from Azure Cognitive Services and third-party tools
-      using API keys from the API key store, and writes them to the training images blob
+    description: A Python application that collects husky and non-husky images from Azure Cognitive Services
+      and third-party tools, using API keys held in the API key store, and writes them to the training
+      images blob.
     component_type: service
-    technology: []
+    technology:
+    - Python
     ownership: null
     deployment_zone: experimental
     internet_accessible: null
@@ -66,26 +81,33 @@ components:
     authorization_mechanisms: []
 - id: cmp-005
   decision: approve
+  attach_evidence: []
   editable:
-    name: Jupyter Notebook
-    description: the model development environment; reads training and validation images, trains the network,
-      and writes the serialized model to the model blob
+    name: Jupyter Notebook environment
+    description: The model development environment. Notebooks read the training and validation images,
+      train the convolutional neural network, and write the serialized model to the model storage blob.
+      Engineers authenticate before reaching any notebook, and the environment is not exposed outside
+      the experimental VPC.
     component_type: development_environment
-    technology: []
+    technology:
+    - Jupyter
     ownership: null
     deployment_zone: experimental
-    internet_accessible: null
+    internet_accessible: false
     externally_managed: null
     data_classifications: []
     authentication_mechanisms:
     - password
-    authorization_mechanisms: []
+    authorization_mechanisms:
+    - rbac
+    - acl
 - id: cmp-006
   decision: approve
+  attach_evidence: []
   editable:
     name: Deployment Service
-    description: packages the trained model with source and configuration and deploys the result to production
-      via the Bastion
+    description: Packages the trained model together with source code and configuration from the source
+      storage and deploys the result to production via the Bastion.
     component_type: service
     technology: []
     ownership: null
@@ -95,295 +117,1250 @@ components:
     data_classifications: []
     authentication_mechanisms: []
     authorization_mechanisms: []
+- id: cmp-007
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Training and Validation Images blob
+    description: Azure Blob storage holding images used for training and validation.
+    component_type: blob_storage
+    technology:
+    - Azure Blob storage
+    ownership: null
+    deployment_zone: experimental
+    internet_accessible: null
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms:
+    - rbac
+    - acl
+- id: cmp-008
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: API Key storage
+    description: Experimental-environment store holding API keys for the external image services.
+    component_type: blob_storage
+    technology: []
+    ownership: null
+    deployment_zone: experimental
+    internet_accessible: null
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+- id: cmp-009
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Source Code and Configuration storage
+    description: Experimental-environment store holding source and configuration used by deployment.
+    component_type: blob_storage
+    technology:
+    - Azure Blob storage
+    ownership: null
+    deployment_zone: experimental
+    internet_accessible: null
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms:
+    - rbac
+    - acl
+- id: cmp-010
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Machine Learning Model blob
+    description: Production Azure Blob storage holding trained models in serialized form. Documented as
+      writable only from the experimental deployment path and the Bastion; the Jupyter environment is
+      also described as writing the serialized model to the model storage blob.
+    component_type: blob_storage
+    technology:
+    - Azure Blob storage
+    ownership: null
+    deployment_zone: production
+    internet_accessible: null
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms:
+    - rbac
+    - acl
+- id: cmp-011
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Authorized Keys storage
+    description: Production store holding SSH keys authorizing administrative access; read by the Bastion
+      when authenticating administrators.
+    component_type: blob_storage
+    technology: []
+    ownership: null
+    deployment_zone: production
+    internet_accessible: null
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+- id: cmp-012
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Bastion Logs storage
+    description: Production store holding SSH access and activity logs from the Bastion; all SSH access
+      attempts, successful or not, are logged here.
+    component_type: log_storage
+    technology: []
+    ownership: null
+    deployment_zone: production
+    internet_accessible: null
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+- id: cmp-013
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Azure Cache for Redis
+    description: In-memory store in production for uploaded images awaiting classification. Documented
+      as holding images in memory rather than writing them to disk.
+    component_type: cache
+    technology:
+    - Azure Cache for Redis
+    ownership: null
+    deployment_zone: production
+    internet_accessible: null
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+- id: cmp-014
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Azure Cognitive Services
+    description: External service supplying training images to the Gather Images application; accessed
+      over TLS with server certificate validation.
+    component_type: external_service
+    technology:
+    - TLS
+    ownership: third_party
+    deployment_zone: public_internet
+    internet_accessible: true
+    externally_managed: true
+    data_classifications: []
+    authentication_mechanisms:
+    - api_key
+    authorization_mechanisms: []
+- id: cmp-015
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Third-party image tools
+    description: Third-party tools on the public internet from which the experimental environment pulls
+      images, accessed with API keys held in the API key store.
+    component_type: external_service
+    technology: []
+    ownership: third_party
+    deployment_zone: public_internet
+    internet_accessible: true
+    externally_managed: true
+    data_classifications: []
+    authentication_mechanisms:
+    - api_key
+    authorization_mechanisms: []
 actors:
 - id: act-001
   decision: approve
+  attach_evidence: []
   editable:
     name: End users
     actor_type: external_user
-    trust_level: null
-    capabilities: []
-    authentication_method: sso
+    trust_level: untrusted
+    capabilities:
+    - submit images for classification through the public API
+    authentication_method: Not stated per-actor; the public-to-production boundary is documented as SSO-authenticated.
 - id: act-002
   decision: approve
+  attach_evidence: []
   editable:
     name: Data engineers
     actor_type: internal_user
     trust_level: null
-    capabilities: []
-    authentication_method: password
+    capabilities:
+    - build, train, and deploy models
+    - work in the experimental environment
+    - work directly in the Jupyter environment
+    authentication_method: Authenticate before reaching any notebook; the public-to-experimental boundary
+      is password-authenticated.
 - id: act-003
   decision: approve
+  attach_evidence: []
   editable:
     name: Azure platform engineers
-    actor_type: internal_user
+    actor_type: administrator
     trust_level: null
-    capabilities: []
-    authentication_method: ssh_public_key
+    capabilities:
+    - secure and maintain production infrastructure
+    - SSH to the Bastion and obtain onward access to the API Gateway, web server, and model blob
+    authentication_method: SSH public-key authentication against the Authorized Keys storage via the Bastion.
 - id: act-004
   decision: approve
+  attach_evidence: []
   editable:
-    name: External image services
-    actor_type: external_service
+    name: Azure Cognitive Services and third-party tools
+    actor_type: third_party_service
     trust_level: null
-    capabilities: []
-    authentication_method: null
+    capabilities:
+    - supply training images to the Gather Images application
+    authentication_method: Accessed by the Gather Images application using API keys held in the API key
+      store.
 assets:
 - id: ast-001
   decision: approve
+  attach_evidence: []
   editable:
-    name: Training and validation images
-    asset_type: training_data
-    description: null
+    name: Trained convolutional neural network model
+    asset_type: model_artifact
+    description: Serialized trained model written by the Jupyter environment, packaged by the deployment
+      service, stored in the production model blob, and loaded by the Python web server to classify uploaded
+      images.
     confidentiality_impact: null
-    integrity_impact: null
-    availability_impact: null
-    data_classification: null
+    integrity_impact: The served model determines every classification returned to users; the documentation
+      describes no verification of the artifact between writing and loading.
+    availability_impact: The web server loads the model from the model blob in order to serve classifications.
+    data_classification: unknown
     owner: null
 - id: ast-002
   decision: approve
+  attach_evidence: []
   editable:
-    name: Trained model
-    asset_type: model_artifact
-    description: trained models in serialized form
+    name: Training and validation images
+    asset_type: data
+    description: Husky and non-husky images collected from external services and used to train and validate
+      the model.
     confidentiality_impact: null
-    integrity_impact: null
+    integrity_impact: These images are the training input to the model; the documentation does not describe
+      validation of collected images.
     availability_impact: null
-    data_classification: null
+    data_classification: unknown
     owner: null
 - id: ast-003
   decision: approve
+  attach_evidence: []
   editable:
-    name: Uploaded images
-    asset_type: user_data
-    description: user-submitted images held in the Redis cache while awaiting classification
-    confidentiality_impact: null
+    name: API keys for external image services
+    asset_type: credential
+    description: API keys used by the Gather Images application to call Azure Cognitive Services and third-party
+      tools.
+    confidentiality_impact: Keys authorize calls to external image services on the organisation's behalf.
     integrity_impact: null
     availability_impact: null
-    data_classification: null
+    data_classification: unknown
     owner: null
 - id: ast-004
   decision: approve
+  attach_evidence: []
   editable:
-    name: SSH authorized keys
-    asset_type: credentials
-    description: SSH keys authorizing administrative access
+    name: Source code and configuration
+    asset_type: data
+    description: Source and configuration read by the deployment service and packaged with the model for
+      deployment into production.
     confidentiality_impact: null
-    integrity_impact: null
+    integrity_impact: Packaged into production releases delivered through the Bastion.
     availability_impact: null
-    data_classification: null
+    data_classification: unknown
     owner: null
 - id: ast-005
   decision: approve
+  attach_evidence: []
   editable:
-    name: Bastion logs
-    asset_type: audit_data
-    description: SSH access and activity logs from the Bastion
-    confidentiality_impact: null
-    integrity_impact: null
+    name: SSH authorized keys
+    asset_type: credential
+    description: SSH keys authorizing administrative access, read by the Bastion when authenticating administrators.
+    confidentiality_impact: Keys authorize administrative access to production through the Bastion.
+    integrity_impact: The Bastion authenticates administrators against this store.
     availability_impact: null
-    data_classification: null
+    data_classification: unknown
     owner: null
 - id: ast-006
   decision: approve
+  attach_evidence: []
   editable:
-    name: Source code and configuration
-    asset_type: source_code
-    description: source and configuration used by deployment
+    name: Bastion SSH access and activity logs
+    asset_type: log_data
+    description: Records of all SSH access attempts through the Bastion, successful or not, plus session
+      activity.
     confidentiality_impact: null
-    integrity_impact: null
+    integrity_impact: These logs are the documented record of administrative access to production.
     availability_impact: null
-    data_classification: null
+    data_classification: unknown
     owner: null
 - id: ast-007
   decision: approve
+  attach_evidence: []
   editable:
-    name: External image-service API keys
-    asset_type: credentials
-    description: API keys for the external image services, held in the API Key storage
-    confidentiality_impact: null
+    name: User-uploaded images awaiting classification
+    asset_type: data
+    description: Images submitted by end users through the public API, held in memory in the Redis cache
+      while awaiting classification and, per the documentation, not written to disk. No store is documented
+      as holding them at rest.
+    confidentiality_impact: In-memory storage was chosen to make user-submitted images difficult to access
+      after the request completes.
     integrity_impact: null
     availability_impact: null
-    data_classification: null
+    data_classification: unknown
     owner: null
 - id: ast-008
   decision: approve
+  attach_evidence: []
   editable:
-    name: Classification results
-    asset_type: operational_data
-    description: null
+    name: Availability of the public classification service
+    asset_type: availability
+    description: The ability of end users to submit an image to the public API and receive a classification.
     confidentiality_impact: null
     integrity_impact: null
-    availability_impact: null
-    data_classification: null
+    availability_impact: The documented serving path depends on the API Gateway, the Python web server,
+      the Redis cache, and the model blob.
+    data_classification: unknown
     owner: null
 data_flows:
 - id: df-001
   decision: approve
+  attach_evidence: []
   editable:
-    name: Serving path
-    direction: bidirectional
-    protocol: https
-    data_types: []
-    authentication: sso
-    encryption_in_transit: https
+    name: Azure Cognitive Services supplies images to Gather Images application
+    direction: one_way
+    protocol: TLS (HTTPS)
+    data_types:
+    - training images
+    authentication: api_key
+    encryption_in_transit: tls
     internet_exposed: true
-    source_component_id: cmp-001
-    destination_component_id: cmp-002
+    source_component_id: cmp-014
+    destination_component_id: cmp-004
 - id: df-002
   decision: approve
+  attach_evidence: []
   editable:
-    name: Training path
+    name: Third-party tools supply images to Gather Images application
     direction: one_way
     protocol: null
-    data_types: []
+    data_types:
+    - training images
+    authentication: api_key
+    encryption_in_transit: unknown
+    internet_exposed: true
+    source_component_id: cmp-015
+    destination_component_id: cmp-004
+- id: df-003
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Gather Images application reads API keys
+    direction: one_way
+    protocol: null
+    data_types:
+    - api keys
+    authentication: unknown
+    encryption_in_transit: unknown
+    internet_exposed: null
+    source_component_id: cmp-008
+    destination_component_id: cmp-004
+- id: df-004
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Gather Images application writes collected images to training blob
+    direction: one_way
+    protocol: null
+    data_types:
+    - training images
     authentication: unknown
     encryption_in_transit: unknown
     internet_exposed: null
     source_component_id: cmp-004
-    destination_component_id: cmp-005
-- id: df-003
+    destination_component_id: cmp-007
+- id: df-005
   decision: approve
+  attach_evidence: []
   editable:
-    name: Deployment path
+    name: Jupyter environment reads training and validation images
     direction: one_way
     protocol: null
-    data_types: []
+    data_types:
+    - training images
+    - validation images
+    authentication: unknown
+    encryption_in_transit: unknown
+    internet_exposed: null
+    source_component_id: cmp-007
+    destination_component_id: cmp-005
+- id: df-006
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Jupyter environment writes serialized model to model storage blob
+    direction: one_way
+    protocol: null
+    data_types:
+    - serialized model
+    authentication: unknown
+    encryption_in_transit: unknown
+    internet_exposed: null
+    source_component_id: cmp-005
+    destination_component_id: cmp-010
+- id: df-007
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Deployment service reads trained model for packaging
+    direction: one_way
+    protocol: null
+    data_types:
+    - serialized model
+    authentication: unknown
+    encryption_in_transit: unknown
+    internet_exposed: null
+    source_component_id: cmp-010
+    destination_component_id: cmp-006
+- id: df-008
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Deployment service reads source code and configuration
+    direction: one_way
+    protocol: null
+    data_types:
+    - source code
+    - configuration
+    authentication: unknown
+    encryption_in_transit: unknown
+    internet_exposed: null
+    source_component_id: cmp-009
+    destination_component_id: cmp-006
+- id: df-009
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Deployment service delivers releases into production through the Bastion
+    direction: one_way
+    protocol: SSH
+    data_types:
+    - release package
+    - serialized model
+    - source code
+    - configuration
     authentication: public_key
     encryption_in_transit: unknown
     internet_exposed: null
     source_component_id: cmp-006
     destination_component_id: cmp-003
-- id: df-004
+- id: df-010
   decision: approve
+  attach_evidence: []
   editable:
-    name: Administrative path
+    name: Bastion reads authorized keys for SSH authentication
     direction: one_way
-    protocol: ssh
-    data_types: []
-    authentication: ssh_public_key
-    encryption_in_transit: ssh
+    protocol: null
+    data_types:
+    - ssh public keys
+    authentication: unknown
+    encryption_in_transit: unknown
+    internet_exposed: null
+    source_component_id: cmp-011
+    destination_component_id: cmp-003
+- id: df-011
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Bastion writes SSH access and session logs
+    direction: one_way
+    protocol: null
+    data_types:
+    - access logs
+    - session logs
+    authentication: unknown
+    encryption_in_transit: unknown
     internet_exposed: null
     source_component_id: cmp-003
+    destination_component_id: cmp-012
+- id: df-012
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Bastion provides administrative access to the API Gateway
+    direction: bidirectional
+    protocol: SSH
+    data_types:
+    - administrative commands
+    authentication: unknown
+    encryption_in_transit: unknown
+    internet_exposed: null
+    source_component_id: cmp-003
+    destination_component_id: cmp-001
+- id: df-013
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Bastion provides administrative access to the Python web server
+    direction: bidirectional
+    protocol: SSH
+    data_types:
+    - administrative commands
+    authentication: unknown
+    encryption_in_transit: unknown
+    internet_exposed: null
+    source_component_id: cmp-003
+    destination_component_id: cmp-002
+- id: df-014
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Bastion provides access to the model blob
+    direction: bidirectional
+    protocol: null
+    data_types:
+    - serialized model
+    authentication: unknown
+    encryption_in_transit: unknown
+    internet_exposed: null
+    source_component_id: cmp-003
+    destination_component_id: cmp-010
+- id: df-015
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: API Gateway forwards classification requests to the web server
+    direction: bidirectional
+    protocol: null
+    data_types:
+    - uploaded image
+    - classification result
+    authentication: unknown
+    encryption_in_transit: unknown
+    internet_exposed: null
+    source_component_id: cmp-001
+    destination_component_id: cmp-002
+- id: df-016
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Web server holds uploaded images in the Redis cache
+    direction: bidirectional
+    protocol: null
+    data_types:
+    - uploaded image
+    authentication: unknown
+    encryption_in_transit: unknown
+    internet_exposed: null
+    source_component_id: cmp-002
+    destination_component_id: cmp-013
+- id: df-017
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Web server loads the trained model from the model blob
+    direction: one_way
+    protocol: null
+    data_types:
+    - serialized model
+    authentication: unknown
+    encryption_in_transit: unknown
+    internet_exposed: null
+    source_component_id: cmp-010
     destination_component_id: cmp-002
 trust_boundaries:
 - id: tb-001
   decision: approve
+  attach_evidence: []
   editable:
-    name: Public-to-production boundary
-    boundary_type: internet_to_application
-    description: authenticated with SSO
-    controls: []
+    name: Public internet to production boundary
+    boundary_type: network
+    description: Boundary between the public internet (end users, external services) and the production
+      VPC. Access across it is documented as SSO-authenticated, with RBAC and ACLs applied; the public
+      API is HTTPS-only.
+    controls:
+    - sso
+    - https
+    - rbac
+    - acl
+    - request validation at the API Gateway
 - id: tb-002
   decision: approve
+  attach_evidence: []
   editable:
-    name: Public-to-experimental boundary
-    boundary_type: internet_to_application
-    description: password-authenticated
-    controls: []
+    name: Public internet to experimental boundary
+    boundary_type: network
+    description: Boundary between the public internet (external image services, third-party tools) and
+      the experimental VPC. Access across it is documented as password-authenticated, with RBAC and ACLs
+      applied. The Jupyter environment is documented as not exposed outside the experimental VPC.
+    controls:
+    - password authentication
+    - rbac
+    - acl
+    - tls with certificate validation for image collection from Azure Cognitive Services
 - id: tb-003
   decision: approve
+  attach_evidence: []
   editable:
-    name: Production-to-experimental boundary
-    boundary_type: environment_to_environment
-    description: public-key authentication, with RBAC and ACLs applied at each boundary
-    controls: []
+    name: Production to experimental boundary
+    boundary_type: network
+    description: Boundary between the production and experimental VPCs. Movement between them is documented
+      as using public-key authentication, with RBAC and ACLs applied. Releases cross it via the deployment
+      service and the Bastion, and the production model blob is written from across it.
+    controls:
+    - public-key authentication
+    - rbac
+    - acl
+    - deployment delivered through the Bastion
 claims:
 - id: ctx-001
   status: documented
   confidence: high
   decision: approve
   confirm: false
+  attach_evidence: []
   evidence:
-  - evd-007
-  - evd-009
+  - evd-008
   editable:
-    predicate: boundary_authentication
-    value: access across the public-to-experimental boundary is password-authenticated
+    predicate: purpose
+    value: Classifies uploaded images as huskies or non-huskies using a convolutional neural network trained
+      on collected images, packaged and served behind a public API.
     rationale: null
 - id: ctx-002
   status: documented
   confidence: high
   decision: approve
   confirm: false
+  attach_evidence: []
   evidence:
-  - evd-001
+  - evd-009
   editable:
-    predicate: documentation_completeness
-    value: the security notes record what is implemented and do not list planned work
+    predicate: environments
+    value:
+    - production
+    - experimental
+    - public internet
     rationale: null
 - id: ctx-003
   status: documented
   confidence: high
   decision: approve
   confirm: false
+  attach_evidence: []
   evidence:
+  - evd-006
   - evd-010
-  - evd-011
   editable:
-    predicate: credential_storage
-    value: API keys for the external image services are held in the API Key storage, a blob storage account
-      of the experimental environment
+    predicate: transport_security
+    value: The public API is HTTPS-only; the API Gateway is exposed over HTTPS.
     rationale: null
 - id: ctx-004
   status: documented
   confidence: high
   decision: approve
   confirm: false
+  attach_evidence: []
   evidence:
-  - evd-002
+  - evd-010
   editable:
-    predicate: storage_access_control
-    value: access control and authorization are configured on the training, model, and source storage
-      accounts, granted per environment, and the production model blob is writable only from the deployment
-      path and the Bastion
+    predicate: request_validation
+    value: The API Gateway enforces request validation and ensures access control to internal services.
     rationale: null
 - id: ctx-005
-  status: documented
-  confidence: high
+  status: unknown
+  confidence: medium
   decision: approve
   confirm: false
+  attach_evidence: []
   evidence:
-  - evd-004
+  - evd-010
   editable:
-    predicate: uploaded_image_handling
-    value: uploaded images are held in memory in the Redis cache while awaiting classification and not
-      written to disk
-    rationale: null
+    predicate: uploaded_image_content_validation
+    value: unknown
+    rationale: The documentation states that the gateway enforces request validation but does not describe
+      any checks on uploaded image content, type, or size.
 - id: ctx-006
   status: documented
   confidence: high
   decision: approve
   confirm: false
+  attach_evidence: []
   evidence:
-  - evd-005
+  - evd-007
+  - evd-009
   editable:
-    predicate: administrative_logging
-    value: all SSH access attempts through the Bastion are logged to the Bastion Logs storage, successful
-      or not, and the Bastion is the only administrative path into production
+    predicate: authentication
+    value: Access across the public-to-production boundary is authenticated with SSO.
     rationale: null
 - id: ctx-007
   status: documented
   confidence: high
   decision: approve
   confirm: false
+  attach_evidence: []
   evidence:
-  - evd-006
+  - evd-007
+  - evd-009
   editable:
-    predicate: transport_encryption
-    value: the public API is HTTPS-only, and image collection from Azure Cognitive Services uses TLS with
-      certificate validation
+    predicate: authentication
+    value: Access across the public-to-experimental boundary is password-authenticated.
     rationale: null
 - id: ctx-008
   status: documented
   confidence: high
   decision: approve
   confirm: false
+  attach_evidence: []
   evidence:
   - evd-007
   - evd-009
   editable:
-    predicate: boundary_authentication
-    value: access across the public-to-production boundary is authenticated with SSO
+    predicate: authentication
+    value: Movement between the production and experimental environments uses public-key authentication.
     rationale: null
-questions: []
+- id: ctx-009
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-007
+  - evd-009
+  editable:
+    predicate: boundary_authorization
+    value: RBAC and ACLs are applied at each boundary.
+    rationale: null
+- id: ctx-010
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-002
+  editable:
+    predicate: blob_storage_access_control
+    value: Access control and authorization are configured on the Azure Blob storage accounts — the training
+      images, the model storage, and the source and configuration storage — and access is granted per
+      environment.
+    rationale: null
+- id: ctx-011
+  status: inferred
+  confidence: medium
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-002
+  - evd-007
+  editable:
+    predicate: blob_storage_authorization_mechanisms
+    value:
+    - rbac
+    - acl
+    rationale: The security notes state that access control and authorization are configured on the blob
+      storage accounts (evd-002) without naming mechanisms; the authentication summary states RBAC and
+      ACLs are used at each boundary (evd-007). The specific mechanisms protecting the blob accounts are
+      therefore inferred rather than stated.
+- id: ctx-012
+  status: unknown
+  confidence: medium
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-002
+  - evd-011
+  editable:
+    predicate: access_control_for_api_key_authorized_keys_and_log_stores
+    value: unknown
+    rationale: The storage access-control section names only the training images, model storage, and source/configuration
+      storage (evd-002). The API Key storage, Authorized Keys storage, and Bastion Logs storage are listed
+      as data stores (evd-011) but the documentation is silent on how access to them is controlled. Silence
+      is not evidence that controls are absent.
+- id: ctx-013
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-002
+  editable:
+    predicate: documented_write_restriction
+    value: The production model blob is writable only from the experimental deployment path and the Bastion.
+    rationale: null
+- id: ctx-014
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-010
+  - evd-012
+  editable:
+    predicate: writes_to_model_storage_blob
+    value: Notebooks train the convolutional neural network and write the serialized model to the model
+      storage blob; the trained model is then packaged by the deployment service.
+    rationale: null
+- id: ctx-015
+  status: unknown
+  confidence: medium
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-002
+  - evd-010
+  - evd-011
+  - evd-012
+  editable:
+    predicate: effective_set_of_writers
+    value: unknown
+    rationale: 'The two documents cannot both be read straightforwardly: the security notes restrict writes
+      to the production model blob to the experimental deployment path and the Bastion (evd-002), while
+      the overview has the Jupyter environment writing the serialized model to the model storage blob
+      (evd-010), and the store table lists only one Machine Learning Model blob, located in production
+      (evd-011). Whether the notebook write is part of the ''experimental deployment path'', or targets
+      a different blob, is not established. Recorded as unknown pending reviewer resolution.'
+- id: ctx-016
+  status: inferred
+  confidence: medium
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-009
+  - evd-010
+  - evd-011
+  editable:
+    predicate: crosses_production_experimental_boundary
+    value: true
+    rationale: The Jupyter environment is in the experimental VPC (evd-009, evd-010) and the Machine Learning
+      Model blob is listed as a production store (evd-011); a write from the former to the latter therefore
+      crosses the production/experimental boundary. The documents do not describe this write as a boundary
+      crossing explicitly.
+- id: ctx-017
+  status: unknown
+  confidence: medium
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-010
+  - evd-012
+  editable:
+    predicate: integrity_verification_before_loading
+    value: unknown
+    rationale: The documentation describes the model being written, packaged, deployed, and loaded (evd-010,
+      evd-012) but says nothing about signing, checksums, or other verification of the artifact. Absence
+      of a statement is not evidence that no verification exists.
+- id: ctx-018
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-003
+  editable:
+    predicate: access_control
+    value: The Jupyter Notebook environment enforces access control and authorization, and engineers authenticate
+      before reaching any notebook.
+    rationale: null
+- id: ctx-019
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-003
+  editable:
+    predicate: network_exposure
+    value: The notebook environment is not exposed outside the experimental VPC.
+    rationale: null
+- id: ctx-020
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-004
+  editable:
+    predicate: storage_handling
+    value: Uploaded images are held in memory in the Redis cache while awaiting classification and are
+      not written to disk; in-memory storage was chosen to make user-submitted images difficult to access
+      after the request completes.
+    rationale: null
+- id: ctx-021
+  status: unknown
+  confidence: medium
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-004
+  - evd-011
+  editable:
+    predicate: retention_or_eviction_of_uploaded_images
+    value: unknown
+    rationale: The documentation says images are held while awaiting classification and not written to
+      disk (evd-004) but states no retention period, expiry, or eviction behaviour.
+- id: ctx-022
+  status: unknown
+  confidence: medium
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-002
+  - evd-004
+  - evd-011
+  editable:
+    predicate: authentication_and_access_control
+    value: unknown
+    rationale: The storage access-control section covers the blob storage accounts only (evd-002); no
+      passage describes authentication or authorization for the Redis cache.
+- id: ctx-023
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-005
+  editable:
+    predicate: access_logging
+    value: All SSH access attempts through the Bastion are logged to the Bastion Logs storage, successful
+      or not.
+    rationale: null
+- id: ctx-024
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-005
+  - evd-010
+  - evd-012
+  editable:
+    predicate: administrative_access_path
+    value: The Bastion is the only administrative path into production; administrators reach production
+      hosts over SSH through it, authenticated against the Authorized Keys storage, with onward access
+      to the API Gateway, the web server, and the model blob.
+    rationale: null
+- id: ctx-025
+  status: unknown
+  confidence: medium
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-005
+  - evd-012
+  editable:
+    predicate: network_reachability
+    value: unknown
+    rationale: The documents state that engineers SSH to the Bastion (evd-012) and that it is the only
+      administrative path (evd-005), but do not state from which networks it is reachable or whether it
+      is exposed to the public internet.
+- id: ctx-026
+  status: unknown
+  confidence: medium
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-007
+  - evd-010
+  editable:
+    predicate: multi_factor_authentication
+    value: unknown
+    rationale: Public-key authentication is documented for administrative and cross-environment access
+      (evd-007, evd-010); no passage states whether any additional factor is required.
+- id: ctx-027
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-006
+  - evd-012
+  editable:
+    predicate: encryption_in_transit
+    value: Image collection from Azure Cognitive Services uses TLS with server certificate validation.
+    rationale: null
+- id: ctx-028
+  status: unknown
+  confidence: medium
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-006
+  - evd-010
+  - evd-012
+  editable:
+    predicate: encryption_in_transit
+    value: unknown
+    rationale: The transport-security section names only Azure Cognitive Services (evd-006), while the
+      overview describes images also being pulled from third-party tools (evd-010). The transport protections
+      for the third-party collection path are not stated.
+- id: ctx-029
+  status: unknown
+  confidence: medium
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-006
+  - evd-012
+  editable:
+    predicate: encryption_in_transit_for_internal_flows
+    value: unknown
+    rationale: Transport security is documented for the public API and for image collection from Azure
+      Cognitive Services (evd-006). No passage describes transport protection for gateway-to-web-server,
+      web-server-to-Redis, or model-blob read traffic (evd-012).
+- id: ctx-030
+  status: unknown
+  confidence: medium
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-002
+  - evd-011
+  editable:
+    predicate: encryption_at_rest
+    value: unknown
+    rationale: The data stores are enumerated (evd-011) and access control on the blob accounts is described
+      (evd-002), but no passage addresses encryption at rest for any store.
+- id: ctx-031
+  status: unknown
+  confidence: medium
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-002
+  - evd-007
+  editable:
+    predicate: authorization_posture
+    value: unknown
+    rationale: The documents state that RBAC and ACLs are applied at each boundary and that blob access
+      is granted per environment (evd-002, evd-007), but they do not state a default posture such as deny-by-default.
+- id: ctx-032
+  status: inferred
+  confidence: low
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-007
+  - evd-009
+  - evd-010
+  - evd-012
+  editable:
+    predicate: authentication_for_classification_api
+    value: End users submitting images to the public API are likely authenticated via SSO.
+    rationale: The authentication summary and the environments section state that access across the public-to-production
+      boundary is SSO-authenticated (evd-007, evd-009), and the API Gateway is the production entry point
+      for external users (evd-010). No passage states directly that image submission itself requires authentication,
+      so this is a low-confidence inference rather than a documented fact.
+- id: ctx-033
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-010
+  - evd-012
+  editable:
+    predicate: deployment_path
+    value: The deployment service packages the trained model with source code and configuration and deploys
+      the result to production via the Bastion.
+    rationale: null
+- id: ctx-034
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-010
+  - evd-011
+  editable:
+    predicate: credential_use
+    value: The Gather Images application collects images from Azure Cognitive Services and third-party
+      tools using API keys held in the API key store.
+    rationale: null
+- id: ctx-035
+  status: unknown
+  confidence: medium
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-005
+  - evd-011
+  editable:
+    predicate: logging_and_monitoring_beyond_bastion
+    value: unknown
+    rationale: Bastion SSH access logging is documented (evd-005, evd-011). No passage describes application,
+      gateway, or storage logging, alerting, or log retention and protection.
+- id: ctx-036
+  status: unknown
+  confidence: medium
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-004
+  - evd-012
+  editable:
+    predicate: data_classification
+    value: unknown
+    rationale: No passage assigns a sensitivity classification to user-submitted images or states whether
+      they may contain personal data.
+- id: ctx-037
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-001
+  editable:
+    predicate: scope_of_security_notes
+    value: The security notes record controls stated to be implemented today and explicitly do not list
+      planned work.
+    rationale: null
+contradictions:
+- id: obs-001
+  summary: The two documents give incompatible accounts of who can write the production model blob. The
+    security notes state the production model blob is writable only from the experimental deployment path
+    and the Bastion (evd-002), while the system overview states the Jupyter Notebook environment writes
+    the serialized model to the model storage blob (evd-010) and the store table lists a single Machine
+    Learning Model blob located in production (evd-011). Either the notebook write is intended to count
+    as the 'experimental deployment path', or there is an additional writer, or more than one model blob
+    exists. Which reading is authoritative changes which components can alter the model that is served
+    to users, and is left for the reviewer.
+  claims:
+  - ctx-013
+  - ctx-014
+  - ctx-015
+  evidence:
+  - evd-002
+  - evd-010
+  - evd-011
+  - evd-012
+  resolution: null
+  rationale: null
+additions: []
+questions:
+- id: qst-001
+  question: Which components may write to the production Machine Learning Model blob, and is the Jupyter
+    Notebook write the same path as the 'experimental deployment path' named in the security notes — or
+    are there two distinct model blobs?
+  priority: high
+  blocking: true
+  answer: 'The documentation cannot settle this, and no further source exists. The security notes'' restriction
+    (writable only from the experimental deployment path and the Bastion) and the overview''s statement
+    that notebooks write the serialized model to the model storage blob cannot both be read straightforwardly,
+    and the store table lists a single production model blob. Treat the effective writer set as undetermined
+    for this assessment: both documented statements stand as documented, the write path is not assumed
+    authorized, and the ambiguity itself is analysis input. No second model blob is in evidence.'
+- id: qst-002
+  question: How is access controlled to the API Key storage, the Authorized Keys storage, and the Bastion
+    Logs storage?
+  priority: high
+  blocking: false
+  answer: null
+- id: qst-003
+  question: Are end users authenticated (for example via SSO) when submitting images to the public classification
+    API, or is that endpoint anonymous?
+  priority: high
+  blocking: false
+  answer: null
+- id: qst-004
+  question: Is the packaged model artifact integrity-verified (for example signed or checksummed) between
+    being written in the experimental environment and being loaded by the production web server?
+  priority: high
+  blocking: false
+  answer: null
+- id: qst-005
+  question: Are the internal production flows — API Gateway to web server, web server to Redis, and web
+    server to model blob — authenticated and encrypted in transit?
+  priority: medium
+  blocking: false
+  answer: null
+- id: qst-006
+  question: Is data encrypted at rest in the blob storage accounts and the Redis cache, and if so, who
+    manages the keys?
+  priority: medium
+  blocking: false
+  answer: null
+- id: qst-007
+  question: How long are uploaded images retained in the Redis cache, and what eviction or expiry policy
+    applies?
+  priority: medium
+  blocking: false
+  answer: null
+- id: qst-008
+  question: What authentication and network access controls protect the Azure Cache for Redis instance?
+  priority: medium
+  blocking: false
+  answer: null
+- id: qst-009
+  question: Does image collection from the third-party tools use TLS with certificate validation, as documented
+    for Azure Cognitive Services?
+  priority: medium
+  blocking: false
+  answer: null
+- id: qst-010
+  question: From which networks is the Bastion reachable, and is it exposed to the public internet?
+  priority: medium
+  blocking: false
+  answer: null
+- id: qst-011
+  question: What validation is applied to uploaded image content — for example file type, size, and content
+    checks — beyond the API Gateway's request validation?
+  priority: medium
+  blocking: false
+  answer: null
+- id: qst-012
+  question: Is the authorization posture across boundaries and storage accounts deny-by-default, or are
+    some paths open by default?
+  priority: medium
+  blocking: false
+  answer: null
+- id: qst-013
+  question: Beyond Bastion SSH logging, what logging, alerting, and log-protection exist for the API Gateway,
+    the web server, and the storage accounts?
+  priority: medium
+  blocking: false
+  answer: null
+- id: qst-014
+  question: Can user-submitted images contain personal or otherwise sensitive data, and is any data classification
+    assigned to them?
+  priority: medium
+  blocking: false
+  answer: null
+- id: qst-015
+  question: How are the external-service API keys provisioned, rotated, and scoped, and which identities
+    can read the API key store?
+  priority: low
+  blocking: false
+  answer: null

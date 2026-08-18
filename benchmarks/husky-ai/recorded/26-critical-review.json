@@ -1,0 +1,58 @@
+{
+  "schema": "CriticalReviewProposal",
+  "usage": {
+    "model": "claude-opus-5",
+    "input_tokens": 2063,
+    "output_tokens": 21558,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 19238,
+    "estimated_cost": "0.6695025",
+    "duration_seconds": 273.8023976669647
+  },
+  "response": {
+    "critiques": [
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-183",
+        "critique_type": "documentation_gap_only",
+        "description": "map-183 rates req-AUTH-001 `partially_satisfied`, and its own suppressed_by field states that the partial rating rests on \"the delegation being stated without the provider being named or its responsibility boundary described\". The passages cited carry only the delegation itself: evd-007 reads \"Public to production: SSO\" and evd-009 reads \"Access across the public-to-production boundary is authenticated with SSO ... with RBAC and ACLs applied at each boundary\", with evd-010 naming the API Gateway as that boundary's entry point. Neither passage says anything about who the provider is or where its responsibility stops, so the stated basis for rating the requirement short of satisfied is documentary silence, which gap-050 already records and requests evidence for.",
+        "rationale": "Absence of the provider's name does not establish that any part of req-AUTH-001 is unmet; it establishes that the material does not name the provider. For a delegation that is documented but not verifiable, `unverified` is the honest status, with the missing provider identity carried by gap-050 (whose requested evidence is exactly \"Architecture documentation naming the identity provider\"). The mapping's argument that no common_false_positives entry covers the un-named-provider reading is not a reason the reading is sound \u2014 the catalog list is not exhaustive of ways silence can be misread. If the intended basis was instead the unestablished coverage of the image-submission path df-015, which ctl-014's limitations and gap-050 both record, the mapping should say so; but that is an unknown too, not a partial shortfall, and map-183's own recorded assumption is that the SSO statement does cover end-user submission.",
+        "evidence_ids": [
+          "evd-007",
+          "evd-009",
+          "evd-010"
+        ],
+        "recommended_action": "revise",
+        "confidence": "medium"
+      },
+      {
+        "subject_type": "evidence_assessment",
+        "subject_id": "eas-068",
+        "critique_type": "missing_evidence",
+        "description": "eas-068 endorses map-184's `unknown` applicability for req-DATA-003 with high confidence and an empty missing_evidence list. The fact that would settle applicability is requested nowhere in this group: evd-008 and evd-013 describe a public classification service used by \"end users\", with no notion of customers or organizations, and evd-011 records a single shared \"Azure Cache for Redis ... In-memory store for uploaded images awaiting classification\". Whether those users belong to distinct tenants is therefore unstated, and none of gap-047 through gap-050 asks for it.",
+        "rationale": "Every sibling assessment in this group that rates a subject short of established names the evidence that would resolve it (eas-050 names gateway validation rules, eas-051 names confirmation of an authenticated endpoint, eas-067 names rate, size and concurrency limits). Here the assessment agrees the question cannot be settled from the material yet records nothing to ask for, so an unresolved applicability question that also underwrites this threat's cross-user impact claim \u2014 one submitter's pressure disrupting another's in-flight images \u2014 leaves the pipeline with no request attached to it. Recording the missing fact (a statement of whether the service serves multiple distinct customers or a single tenant, and whether cache entries are scoped per principal) would let it be raised as a documentation gap alongside gap-048.",
+        "evidence_ids": [
+          "evd-008",
+          "evd-011",
+          "evd-013"
+        ],
+        "recommended_action": "revise",
+        "confidence": "medium"
+      },
+      {
+        "subject_type": "control",
+        "subject_id": "ctl-007",
+        "critique_type": "contradictory_analysis",
+        "description": "ctl-007's description and first limitation are written against an actor already inside production: \"This bounds what an actor with execution inside the production web server can recover\" and \"images in memory remain readable to any process with access to the cache, which is the position this threat describes an actor reaching\". thr-010 describes no such position. Its attack path is an external submitter sending oversized or high-volume requests to the public API and the gateway forwarding them to the web server and cache (evd-012), and in this group the control is cited only by map-182 for req-DATA-002.",
+        "rationale": "As written, the limitation asserts something about the threat under review that the threat does not claim. Nothing in thr-010 or in the passages ctl-007 cites (evd-004, evd-011) or in the serving-path description (evd-012) places an actor inside the web server or with direct cache access, so a downstream reader consolidating this control against thr-010 would inherit a compromise-position claim that this lineage never made. The substantive point \u2014 that holding images in memory rather than writing them to disk (evd-004) bounds persistence and not access \u2014 stands on its evidence and should be stated without the phrase \"this threat\", which resolves to thr-010 in this group and misdescribes it.",
+        "evidence_ids": [
+          "evd-004",
+          "evd-011",
+          "evd-012"
+        ],
+        "recommended_action": "revise",
+        "confidence": "low"
+      }
+    ]
+  }
+}

@@ -1,0 +1,70 @@
+{
+  "schema": "CriticalReviewProposal",
+  "usage": {
+    "model": "claude-opus-5",
+    "input_tokens": 2176,
+    "output_tokens": 18770,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 23387,
+    "estimated_cost": "0.62629875",
+    "duration_seconds": 235.01178154104855
+  },
+  "response": {
+    "critiques": [
+      {
+        "subject_type": "documentation_gap",
+        "subject_id": "gap-041",
+        "critique_type": "duplicate",
+        "description": "gap-041 ('Factor policy for the identities holding administrative SSH access is not established') requests the same missing facts as gap-010, which already asks for 'the factor policy applied to the identity presenting the SSH key at the Bastion, and which party enforces it' and 'the identity provider behind the SSO and password boundaries'. Both rest on the same authentication summary (evd-007) and the same boundary and flow passages (evd-009, evd-005, evd-012), both name ctl-004 and ctl-001 as related objects, and both ask which party enforces multi-factor authentication for administrative access. The only request unique to gap-041 is the procedure by which keys are added to and removed from the Authorized Keys storage.",
+        "rationale": "Two gaps asking for the same evidence from the same passages will be answered by one document and will otherwise generate two findings with identical remediation. They also carry different severities for the same unknown (gap-010 medium, gap-041 low), which will read as inconsistent at triage. Merging gap-041 into gap-010 while carrying over its key add/remove request preserves everything that is unique to it.",
+        "evidence_ids": [
+          "evd-005",
+          "evd-007",
+          "evd-009",
+          "evd-012"
+        ],
+        "recommended_action": "merge",
+        "confidence": "high"
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-170",
+        "critique_type": "contradictory_analysis",
+        "description": "map-170 concludes req-DATA-004 not applicable on the ground that the non-applicable condition 'no customer data is retained' holds 'as documented', citing evd-004 and evd-011. Those passages state that uploaded images are held in memory in the Redis cache while awaiting classification and are not written to disk; neither states whether an entry is removed once its classification completes. map-168, working from the same two passages in this same group, reaches the opposite reading \u2014 'whether a copy is retained after processing cannot be settled' \u2014 and gap-048 records the cache's retention and eviction behaviour as undocumented, requesting key expiry configuration.",
+        "rationale": "Same threat, same two cited passages, incompatible conclusions: one mapping treats non-persistence to disk as settling retention, the other records retention as unsettled and raises a gap for it. Data resident in a cache with no stated expiry is retained data for the purposes of a deletion requirement, so the divergence is not cosmetic. map-170's second, independent ground \u2014 that no deletion-on-request path appears in this threat's attack path or impact \u2014 may carry the not-applicable conclusion on its own; the retention claim should not, and should either be recorded as unknown consistently with map-168 and gap-048 or the disagreement put to a reviewer.",
+        "evidence_ids": [
+          "evd-004",
+          "evd-011"
+        ],
+        "recommended_action": "revise",
+        "confidence": "medium"
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-009",
+        "critique_type": "missing_precondition",
+        "description": "The fourth attack-path step asserts that 'the malformed input triggers a defect in that path, producing a crash or execution of actor-supplied instructions', and the elevation_of_privilege category and the code-execution half of the impact rest entirely on that step. No precondition states it. The three preconditions listed cover the upload path, the unestablished scope of gateway validation, and the web server's co-location of decoding, model loading and cache writes. No cited passage names the decoding or preprocessing libraries in use or their patch level: evd-010 names only a 'Simple Python Web Server' that loads the model and evaluates uploaded images, and evd-012 only that it evaluates the image and returns a classification.",
+        "rationale": "Preconditions are the field a reviewer reads to see what must be true for the scenario to occur, and here the one condition that gates the code-execution impact appears only as a conditional clause in the prose description and as a flat assertion in the attack path, while an evidence gap (validation scope not established) is listed as a precondition instead. Stating 'the decode and preprocess path contains an exploitable parser or memory-safety defect' as an explicit, unverified precondition makes the dependency checkable \u2014 it is what map-166's stated assumption about third-party libraries and eas-079's missing evidence item on decoding libraries and patch status would answer \u2014 and stops the code-execution impact being read downstream as established.",
+        "evidence_ids": [
+          "evd-010",
+          "evd-012"
+        ],
+        "recommended_action": "revise",
+        "confidence": "medium"
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-162",
+        "critique_type": "documentation_gap_only",
+        "description": "map-162 records req-AUTH-001 as partially_satisfied against ctl-004 but never states the shortfall behind 'partially'. Its suppressed_by field rules out the catalog's local-credential false positives and states that 'none of them is what the partial shortfall recorded here rests on', without saying what does. The only candidate visible in this group is ctl-004's own limitations \u2014 the identity provider behind the SSO boundary is not named and no factor policy is stated \u2014 which is also the subject of gap-010 and gap-041. evd-007 and evd-009 say that access across the public-to-production boundary is authenticated with SSO and that RBAC and ACLs are applied at each boundary, and nothing more; neither describes a deficiency in that authentication.",
+        "rationale": "If the shortfall is that the identity provider and factor policy are undocumented, the honest status is unverified with the gap already recorded, not partially_satisfied: silence about how SSO is configured is not evidence that it falls short of the requirement, and a partial satisfaction with no named shortfall produces a finding whose remediation nobody can write. The suppressed_conclusion declines a different negative reading (password policy, lockout threshold, credential storage), so it does not cover this point, and eas-065's revise recommendation concerns the applicability reasoning rather than the satisfaction status. Either name the documented shortfall the partial rests on or record the requirement as unverified.",
+        "evidence_ids": [
+          "evd-007",
+          "evd-009"
+        ],
+        "recommended_action": "revise",
+        "confidence": "low"
+      }
+    ]
+  }
+}

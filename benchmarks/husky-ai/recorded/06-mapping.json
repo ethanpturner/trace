@@ -1,0 +1,648 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "claude-opus-5",
+    "input_tokens": 2524,
+    "output_tokens": 28632,
+    "cache_read_tokens": 14267,
+    "cache_creation_tokens": 21647,
+    "estimated_cost": "0.87084725",
+    "duration_seconds": 335.90578749997076
+  },
+  "response": {
+    "controls": [
+      {
+        "key": "api-key-store",
+        "name": "API keys for external image services held in a dedicated API Key storage account",
+        "description": "The Gather Images application authenticates to Azure Cognitive Services and the third-party image tools using API keys held in a dedicated API Key storage account in the experimental environment, rather than keys described as embedded in the application. The documentation names the store and its contents but does not state that it is a managed secret service, nor describe access policy, rotation, or how the application obtains the keys.",
+        "control_type": "implemented",
+        "provider_component_id": null,
+        "protected_component_ids": [
+          "cmp-004"
+        ],
+        "protected_asset_ids": [
+          "ast-002"
+        ],
+        "implementation_status": "claimed",
+        "evidence_ids": [
+          "evd-010",
+          "evd-011"
+        ],
+        "owner": null,
+        "limitations": [
+          "The nature of the store is not established: evd-011 lists it as an 'API Key storage' in the experimental environment without stating whether it is a managed secret service or an ordinary storage account.",
+          "No access policy, rotation, or retrieval mechanism is described for the keys.",
+          "The third-party image tools are not named, so the scope of what these keys authorise is not established."
+        ]
+      }
+    ],
+    "mappings": [
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-ADMIN-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The requirement's applicable conditions concern an operator interface through which operators act on customer data. This threat's actor is an external image supplier (act-004) and its documented path runs from the collection sources through the training blob, the notebook environment, the model blob and the deployment service (df-001, df-002, df-004, df-005, df-006, df-009, df-017); it does not traverse the Bastion, and the documented operator reach is production infrastructure and the model artifact (evd-005, evd-012) rather than data belonging to customers.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-005",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-AI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "The first applicable condition holds literally: content the system did not author (images collected from Azure Cognitive Services and third-party internet tools) is passed into a model, and those sources are open to outside contributors (evd-010, evd-012). But the requirement's statement addresses instructions embedded in content that shares a channel with the model's task, and it is not established that a convolutional neural network trained on image files has such a channel. The requirement therefore applies only if the model consumes a channel mixing instruction and data; the documented consumption is training-time fitting on image files, for which this requirement's mechanism does not describe the exposure. The residual concern, statistical corruption of the training set, is raised as a catalog-gap candidate rather than forced onto this requirement.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-010",
+          "evd-012"
+        ],
+        "assumptions": [
+          "Proceeding as though the CNN's image input carries no instruction channel of the kind this requirement addresses; the documentation describes only image files read for training (evd-010, evd-012) and does not describe any prompt construction."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-AI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'model output is shown only to the user who requested it' holds: the serving path is an end user submitting an image to the API Gateway and receiving the classification back (evd-008, evd-012). No path is documented in which model output is published to a destination outside the system.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-008",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-AI-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'the model runs within the system's own trust boundary' holds: the CNN is trained in the experimental VPC and loaded by the production Python web server (evd-010, evd-012). On this threat's path the external services supply images inbound to the system (df-001, df-002); no customer content is documented as being sent to an external model provider.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-010",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-AI-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The deployed model evaluates an uploaded image and the classification is returned through the API Gateway to the submitting user (evd-008, evd-012); no path is documented in which model output is rendered as markup into a user interface or submitted to another platform's markup. The nearest non-applicable condition, 'output is consumed only by machine processing that does not interpret markup', is inferred from the documented serving path rather than stated outright, and this threat's impact is misclassification rather than markup injection.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-008",
+          "evd-012"
+        ],
+        "assumptions": [
+          "Assuming the classification result is a label consumed by the caller rather than markup rendered into an interface; the documentation describes only that the web server 'returns the classification' (evd-012)."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-AUTH-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The requirement bears on how user authentication is delegated and documented. No step in this threat's attack path requires the actor to authenticate as a user: the poisoning is achieved by seeding content that the Gather Images application retrieves with its own service credentials (evd-010, evd-012). The documented SSO and password boundaries (evd-007, evd-009) are not on this path, so authentication delegation does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-007",
+          "evd-009",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-AUTH-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Multi-factor policy governs privileged and externally reachable human access. This threat is realised through content supplied by external image services (act-004) and carried by automated flows (df-001 through df-017); it requires no privileged authentication step, so which party enforces a factor policy on the Bastion or the environment boundaries (evd-005, evd-007) does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-005",
+          "evd-007"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-AUTHZ-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'the system serves a single tenant' holds as far as the documentation establishes: Husky AI is described as one public classification service whose users submit images for classification (evd-008, evd-013), with no organisations, tenant-scoped data, or shared multi-customer storage described. The assets on this threat's path are training imagery and a single deployed model artifact, not per-tenant data.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-008",
+          "evd-011",
+          "evd-013"
+        ],
+        "assumptions": [
+          "Assuming a single-tenant service; the documentation describes end users generically and records no organisation or tenant concept (evd-008, evd-013)."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-AUTHZ-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'the system holds no external delegated access' holds: the API keys used against Azure Cognitive Services and the third-party tools are the system's own service credentials for retrieving images (evd-010, evd-011, evd-013), not a delegated grant to act on a customer's resource on an external platform.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-010",
+          "evd-011",
+          "evd-013"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-CICD-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-001",
+          "ctl-004"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "Both applicable conditions hold on this threat's path: the system is deployed by an automated pipeline (the deployment service packages the trained model with source and configuration and delivers it into production through the Bastion, df-009, evd-010, evd-012), and that build incorporates third-party material collected from external internet services (evd-010). The requirement's first half is documented: the pipeline authenticates to production with public-key authentication over SSH through the Bastion (evd-007, evd-009, evd-012), recorded as ctl-001 and ctl-004. The second half, how third-party components entering the build are identified and controlled, is not addressed anywhere in the material: no dependency manifest, pinning, inventory, or provenance record is described for the source and configuration storage or for the collected images. That half is unestablished rather than shown absent, and is raised as a documentation gap.",
+        "suppressed_conclusion": "That no dependency identification, pinning, or provenance control exists for components entering the release package, and that this is a demonstrated absence rather than an undocumented one.",
+        "suppressed_by": "req-CICD-001 common_false_positives entry 'absent dependency scanning schedule, which is an operational process rather than an architectural control', together with the evidence rule that silence is not proof of absence; the material simply does not address build composition (evd-010, evd-012).",
+        "satisfaction_status": "partially_satisfied",
+        "evidence_ids": [
+          "evd-007",
+          "evd-009",
+          "evd-010",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-006"
+        ],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "The condition 'data crosses a network boundary the system does not control' holds for the collection legs on this threat's path: images are retrieved across the public internet from Azure Cognitive Services (df-001) and from third-party tools (df-002). The requirement bears on this threat through transport protection, since an in-path attacker on an unprotected leg could substitute images. Whether it applies in full turns on the classification of the training and validation images, which the context records as unknown (ast-002). One leg is documented: image collection from Azure Cognitive Services uses TLS with server certificate validation (evd-006, evd-012, ctl-006). Transport for the third-party tools leg and encryption at rest for the training and model blobs are not described, so the balance is unverified.",
+        "suppressed_conclusion": "That the training and validation images blob and the production model blob are unencrypted at rest, on the grounds that no passage describes encryption for them.",
+        "suppressed_by": "req-DATA-001 common_false_positives entry 'absent encryption detail for a managed service that encrypts by default' \u2014 both stores are Azure Blob storage accounts (evd-011), a managed service whose at-rest protection would ordinarily be inherited rather than described by the application team.",
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-006",
+          "evd-011",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-DATA-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'customer data is processed only in memory and never persisted' holds for the customer data this system handles: uploaded images are held in the Redis cache in memory while awaiting classification and are not written to disk (evd-004). The data persisted on this threat's path is training imagery collected by the operator from public services (evd-010, evd-011), not a by-product copy of customer data, so this requirement does not bear on the poisoning path.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-004",
+          "evd-010",
+          "evd-011"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-DATA-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable conditions 'the system serves a single tenant' and 'no customer artifacts are stored' both hold as far as the documentation establishes: the stores on this threat's path hold training imagery and serialized models (evd-011), and uploaded customer images are held only in memory (evd-004). No artifacts belonging to distinct customers share a storage system.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-004",
+          "evd-011"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-DATA-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'no customer data is retained' holds on the documented evidence: uploaded images are held in memory in the Redis cache and not written to disk (evd-004), and the persistent stores hold training imagery, model artifacts, keys, source and logs (evd-011). Deletion of customer data on request does not bear on a threat whose subject is the integrity of collected training images and the deployed model.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-004",
+          "evd-011"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-LOG-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The requirement governs restricted data reaching application logs. No log flow appears on this threat's attack path, whose steps are image retrieval, blob writes, training, packaging and serving (df-001 through df-017), and the data on that path is imagery pulled from public services (evd-010, evd-012). The only logging described is Bastion SSH access records (evd-005), which carry no content from this path.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-005",
+          "evd-010",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-LOG-002",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-002"
+        ],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The requirement records actions taken through a privileged interface. In this threat the model is corrupted through content the collection application retrieves and the automated training and deployment flows then carry (df-004, df-005, df-006, df-009); no operator action through the Bastion is involved, so operator attribution would not record or detect it. The record that would matter here \u2014 provenance of a training run and of the artifact it produced \u2014 is not an operator-action record and is not covered by this requirement; it is raised as a catalog-gap candidate.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-005",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-NET-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-003",
+          "ctl-005"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The applicable condition 'the system uses a data store that is not itself a public interface' holds for two components on this threat's path: the training and validation images blob (cmp-007) and the production model blob (cmp-010), both Azure Blob storage accounts (evd-011). Their network reachability bears directly on this threat, because an actor able to reach the training blob from an untrusted network could write poisoned images without going through the collection path at all. One adjacent component is documented: the Jupyter Notebook environment is not exposed outside the experimental VPC (evd-003, ctl-005). For the two blob stores the documentation states access control and per-environment granting (evd-002) but not network placement or the enforcing mechanism, so reachability is unverified.",
+        "suppressed_conclusion": "That the training and validation images blob and the production model blob are reachable from an untrusted network, on the grounds that no passage states their network placement.",
+        "suppressed_by": "req-NET-001 common_false_positives entries 'absent description of network placement for an internal component, which is not evidence that the component is publicly reachable' and 'a component described only as managed or hosted, where the provider's default placement is private and undescribed'.",
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-011"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-SECRET-001",
+        "control_keys": [
+          "api-key-store"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "The applicable condition 'the system holds a credential that authenticates it to an external platform' holds: the Gather Images application uses API keys to reach Azure Cognitive Services and the third-party tools (evd-010, evd-011), and those legs are the first two steps of this threat's attack path (df-001, df-002). The requirement bears on this threat only insofar as compromise or misuse of those collection credentials would let an actor influence what content is retrieved into the training blob, which the documentation neither confirms nor excludes. A dedicated API Key storage account is documented, so the credentials are not described as living in source or configuration; whether that store is a managed secret store is not established, leaving the requirement's custody expectation unverified.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-010",
+          "evd-011"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-SECRET-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'the system accesses no customer resources on external platforms' holds: the external services on this threat's path supply images to the system (evd-010, evd-012, evd-013), and no customer-owned resource on an external platform is accessed on a customer's behalf. Credential lifetime for such access therefore does not arise.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-010",
+          "evd-012",
+          "evd-013"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-TPI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'no customer data leaves the system's trust boundary' holds on this threat's path: the flows crossing to the external providers are inbound image retrievals (df-001, df-002, evd-010, evd-012), and no customer content is documented as being sent to Azure Cognitive Services or the third-party tools for processing. The providers are content sources here, not processors of the system's data.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-010",
+          "evd-012",
+          "evd-013"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-TPI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The requirement bounds consumption driven by an externally triggered workload. This threat's harm is the integrity of the training set and the served model, not consumption of a metered service, and the collection process is documented as an application in the experimental environment that pulls images (evd-010, evd-012) rather than work triggered by an event the system does not originate; no inbound event path, retry behaviour, or queue is described. The nearest non-applicable condition, 'work is initiated only by an authenticated operator', is inferred from that description rather than stated.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-010",
+          "evd-012"
+        ],
+        "assumptions": [
+          "Assuming image collection runs are initiated from within the experimental environment by data engineers rather than by an external trigger; the documentation describes the application and its flows but not what starts a collection run (evd-010, evd-012)."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-WEBHOOK-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'inbound events are polled by the system rather than delivered to it' holds: the Gather Images application collects images from Azure Cognitive Services and the third-party tools using its own API keys (evd-010, evd-012), and no endpoint accepting delivered events from an external platform is described anywhere in the architecture.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-010",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-WEBHOOK-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Replay of inbound events cannot arise where no inbound event endpoint exists: the system retrieves images from the external services rather than receiving delivered events (evd-010, evd-012), which is this requirement's non-applicable condition on the WEBHOOK family.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-010",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "No description of any validation, review, or provenance check on images collected from external sources",
+        "description": "The documentation describes the Gather Images application collecting husky and non-husky images from Azure Cognitive Services and unnamed third-party tools and writing them to the training and validation images blob, from which the Jupyter environment trains the CNN (evd-010, evd-011, evd-012). The only control described over that blob is access control and per-environment authorization (evd-002). Nothing in the material states whether collected images or their labels are checked, sampled, reviewed, or attributed to a source before training. Trace therefore cannot determine whether such a control exists; this record asserts nothing about whether one does.",
+        "importance": "This is the control that would determine whether the poisoning described in thr-003 could be detected before the model reaches production. Without it, the assessment cannot distinguish a pipeline with an undocumented review step from one with no check at all, and the two lead to very different conclusions about the same architecture.",
+        "related_object_ids": [
+          "thr-003",
+          "cmp-004",
+          "cmp-007",
+          "cmp-014",
+          "cmp-015",
+          "ast-002"
+        ],
+        "requested_evidence": [
+          "A description of any content or label validation applied to collected images before they enter the training and validation images blob",
+          "The identity of the third-party image tools and the basis on which they are trusted as a source",
+          "Any dataset manifest, provenance record, or per-source attribution kept for training data",
+          "Any acceptance criteria applied to a training dataset before a training run"
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-010",
+          "evd-011",
+          "evd-012"
+        ],
+        "severity": "high"
+      },
+      {
+        "title": "No description of a behavioural acceptance check on the trained model before deployment",
+        "description": "The documented path runs from training in the Jupyter environment, to the serialized model in the model blob, to packaging by the deployment service, to delivery through the Bastion and loading by the production web server (evd-010, evd-012). No passage describes an evaluation, acceptance threshold, approval step, or integrity verification between the artifact produced by training and the artifact loaded in production. Whether such a step exists cannot be determined from the material.",
+        "importance": "A behavioural acceptance check is the second place at which shifted model behaviour arising from poisoned training data could be caught, and an integrity check between write and load is what would establish that the served artifact is the one that was trained and evaluated. Its presence or absence changes the exposure of ast-001 and ast-008 materially.",
+        "related_object_ids": [
+          "thr-003",
+          "cmp-005",
+          "cmp-006",
+          "cmp-010",
+          "cmp-002",
+          "ast-001"
+        ],
+        "requested_evidence": [
+          "A description of any model evaluation or acceptance gate applied before a model is packaged or deployed",
+          "A statement of whether a human approves a model release",
+          "A description of any integrity verification of the serialized model between the training write and the web server load"
+        ],
+        "evidence_ids": [
+          "evd-010",
+          "evd-012"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Documentation disagrees about which principals can write the production model blob",
+        "description": "The security notes state that the production model blob is writable only from the experimental deployment path and the Bastion (evd-002). The system overview states that Jupyter notebooks write the serialized model to the model storage blob, and the data-flow description repeats that the trained model is written to the model blob from which the deployment service packages releases (evd-010, evd-012). The two passages describe different effective sets of writers, and which is authoritative is a reviewer's decision rather than one Trace should make.",
+        "importance": "The set of principals that can write the production model artifact determines how far a poisoned or substituted model can travel and which access controls stand between it and end users. The contradiction also leaves the enforcing mechanism of ctl-003 unestablished, so the strength of that control cannot be assessed.",
+        "related_object_ids": [
+          "thr-003",
+          "cmp-010",
+          "cmp-005",
+          "cmp-006",
+          "ast-001"
+        ],
+        "requested_evidence": [
+          "An authoritative list of the principals holding write access to the production model blob",
+          "The mechanism enforcing that restriction (role assignments, account keys, SAS tokens, or network restriction)",
+          "Confirmation of whether the Jupyter environment writes to the production model blob directly or to an experimental store"
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-010",
+          "evd-012"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Network placement of the training images and production model blob storage accounts is not described",
+        "description": "The two Azure Blob storage accounts on this threat's path are described by contents and by access control granted per environment (evd-002, evd-011), but no passage states their network placement \u2014 whether public network access is disabled, whether private endpoints or service endpoints are used, or which workloads are permitted to reach them. Trace cannot determine reachability from this material, and does not conclude that the stores are publicly reachable.",
+        "importance": "Reachability of the training images blob determines whether an actor could inject poisoned images directly rather than through the external collection sources, which would shorten the attack path in thr-003 considerably. It also bears on req-NET-001, which is currently unverified for these components.",
+        "related_object_ids": [
+          "thr-003",
+          "cmp-007",
+          "cmp-010"
+        ],
+        "requested_evidence": [
+          "Network configuration for the training and validation images blob and the production model blob (public network access setting, private endpoints, firewall rules)",
+          "A statement of which workloads are permitted to reach each storage account",
+          "The mechanism by which the per-environment access grants described in evd-002 are enforced"
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-011"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Third-party components entering the release package are not identified",
+        "description": "The deployment service packages the trained model together with source code and configuration from the source storage and deploys the result to production (evd-010, evd-012). No dependency manifest, version pinning, component inventory, or provenance statement is described for what enters that package. This record notes only that the material does not establish whether such identification exists.",
+        "importance": "req-CICD-001 asks both how the pipeline authenticates and how third-party components entering a build are identified and controlled. The first half is documented (public-key SSH through the Bastion); the second is unestablished, which is why that mapping is partially satisfied rather than satisfied. The answer affects whether a poisoned or substituted component could reach production alongside the model.",
+        "related_object_ids": [
+          "thr-003",
+          "cmp-006",
+          "cmp-005"
+        ],
+        "requested_evidence": [
+          "A dependency manifest or generated component inventory for the release package",
+          "A statement of whether component versions are pinned and how provenance is recorded",
+          "A description of what the source code and configuration storage contains and who can write to it"
+        ],
+        "evidence_ids": [
+          "evd-010",
+          "evd-012"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Transport protection for the third-party image collection path is not described",
+        "description": "The security notes state that image collection from Azure Cognitive Services uses TLS with certificate validation (evd-006), and the data-flow description repeats this for that provider (evd-012). Neither passage extends to the retrieval of images from the third-party tools (df-002), whose protocol and transport protection are unstated in the material.",
+        "importance": "The third-party retrieval leg crosses the public internet and feeds the same training blob. Whether it is transport-protected with certificate validation determines whether an in-path attacker could substitute images without compromising the source itself, which is a variant of the attack path in thr-003.",
+        "related_object_ids": [
+          "thr-003",
+          "cmp-004",
+          "cmp-015",
+          "ast-002"
+        ],
+        "requested_evidence": [
+          "The protocol used to retrieve images from the third-party tools and whether server certificates are validated",
+          "The identity of the third-party tools so that their published interfaces can be checked"
+        ],
+        "evidence_ids": [
+          "evd-006",
+          "evd-010",
+          "evd-012"
+        ],
+        "severity": "low"
+      }
+    ],
+    "catalog_gap_candidates": [
+      {
+        "concern": "The catalog contains no requirement covering the provenance, integrity, or validation of data used to train a model. Husky AI collects training and validation images from Azure Cognitive Services and unnamed third-party internet tools and writes them into the blob the CNN is trained from, with no documented content check, label review, or source attribution (evd-010, evd-011, evd-012), and the only documented control over that data is storage access control (evd-002). Every requirement in the catalog that touches models addresses inference-time behaviour or the boundary with an external model provider; none obliges a training-data path to be documented or controlled, so a reviewer working from this catalog alone would have no requirement against which to record the concern.",
+        "suggested_category": "training_data_integrity",
+        "nearest_requirements": [
+          {
+            "requirement_id": "req-AI-001",
+            "why_not": "It addresses untrusted content passed to a model at inference time, where the risk is instructions embedded in content redirecting the model's task within a shared prompt channel. Training-time corruption of a dataset for a CNN has no instruction channel and is not prevented by any of that requirement's acceptable implementations."
+          },
+          {
+            "requirement_id": "req-CICD-001",
+            "why_not": "It covers pipeline authentication and third-party software components entering a build. Training data is neither a build dependency nor a deployment credential, and dependency pinning or an SBOM would say nothing about whether collected images are correctly labelled."
+          },
+          {
+            "requirement_id": "req-AI-003",
+            "why_not": "It governs customer content sent outward to an external model provider. Here the flow is the opposite direction \u2014 content is pulled inward from external services into the system's own training corpus \u2014 so neither its statement nor its evidence expectations fit."
+          }
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-010",
+          "evd-011",
+          "evd-012"
+        ]
+      },
+      {
+        "concern": "No requirement covers verification of a trained model artifact before it is deployed and served. The documented path writes a serialized model to the model blob, packages it with source and configuration, delivers it through the Bastion, and loads it into the production web server (evd-010, evd-012), with no described behavioural acceptance check and no integrity verification between the artifact written by training and the artifact loaded by the server. Where the model artifact is the thing that determines every classification returned to users, the absence of any catalog requirement on its release control leaves a category of exposure unaddressed.",
+        "suggested_category": "model_release_integrity",
+        "nearest_requirements": [
+          {
+            "requirement_id": "req-AI-002",
+            "why_not": "It requires validation of model output before that output is published externally. It says nothing about validating the model itself, and in this system output is returned only to the requesting user, so the requirement is not even applicable here."
+          },
+          {
+            "requirement_id": "req-CICD-001",
+            "why_not": "It reaches the pipeline's authentication to its environments and the components entering a build, not whether the artifact the pipeline ships behaves acceptably or matches what was trained and evaluated."
+          },
+          {
+            "requirement_id": "req-LOG-002",
+            "why_not": "It records privileged operator actions on customer data or security configuration. The model write and deployment here are performed by automated components rather than an operator, and an audit record would attribute a change rather than verify the artifact."
+          }
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-010",
+          "evd-012"
+        ]
+      }
+    ]
+  }
+}

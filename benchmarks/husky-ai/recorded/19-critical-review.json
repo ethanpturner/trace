@@ -1,0 +1,101 @@
+{
+  "schema": "CriticalReviewProposal",
+  "usage": {
+    "model": "claude-opus-5",
+    "input_tokens": 2524,
+    "output_tokens": 20637,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 31135,
+    "estimated_cost": "0.72313875",
+    "duration_seconds": 251.98542179202195
+  },
+  "response": {
+    "critiques": [
+      {
+        "subject_type": "documentation_gap",
+        "subject_id": "gap-015",
+        "critique_type": "duplicate",
+        "description": "gap-015 records the same unresolved question as gap-007. Both describe evd-002's statement that the production model blob is 'writable only from the experimental deployment path and the Bastion' as disagreeing with evd-010 and evd-012, which describe the Jupyter environment writing the serialized model to the model storage blob and the deployment service reading it for packaging. Both cite the same three passages, and their requested evidence is the same three items: an authoritative list of principals holding write access, the enforcing mechanism (role assignments, account keys, SAS, or network restriction), and confirmation of whether notebooks write the production blob or an experimental store. The two records also carry different severities for the identical question (gap-007 high, gap-015 medium).",
+        "rationale": "One contradiction in the source material has produced two gap records that would generate two identical evidence requests to the same document owner and leave a reviewer reconciling two severities for one question. Merging into a single record keeps the request intact and makes the severity a decision the reviewer takes once. Nothing in either record adds a question the other does not ask, so neither needs to survive independently.",
+        "evidence_ids": [
+          "evd-002",
+          "evd-010",
+          "evd-012"
+        ],
+        "recommended_action": "merge",
+        "confidence": "high"
+      },
+      {
+        "subject_type": "documentation_gap",
+        "subject_id": "gap-040",
+        "critique_type": "duplicate",
+        "description": "gap-040 and gap-012 ask the same question of the same passages: whether a write or overwrite of the serialized model in the production model blob is recorded and attributed to the acting operator. Both cite evd-005 (all SSH access attempts logged, successful or not), evd-011 (the store holds 'SSH access and activity logs from the Bastion') and evd-012 (the session is logged); both name ctl-002; both request diagnostic or access logging on the model blob storage account and whether the acting identity is carried on each record; and both carry medium severity. gap-040's only additional request, a description or sample of the Bastion record format, falls inside gap-012's request for whether object-level writes are recorded with the acting operator.",
+        "rationale": "Two records over one gap double the evidence request without adding a question, and both feed the same reasoning about attribution of model-artifact writes. Merging preserves the one additional item (the Bastion record format) inside a single record rather than losing it, and leaves the reviewer one attribution question to resolve instead of two that must be checked against each other.",
+        "evidence_ids": [
+          "evd-005",
+          "evd-011",
+          "evd-012"
+        ],
+        "recommended_action": "merge",
+        "confidence": "medium"
+      },
+      {
+        "subject_type": "documentation_gap",
+        "subject_id": "gap-041",
+        "critique_type": "duplicate",
+        "description": "gap-041's substance is already inside gap-010. gap-041 requests the identity provider or organization policy covering accounts with Bastion SSH access and a statement of which party enforces multi-factor authentication for administrative access; gap-010's second requested item is 'the factor policy applied to the identity presenting the SSH key at the Bastion, and which party enforces it', drawn from the same passages (evd-007's per-boundary authentication summary and the Bastion authentication description in evd-005, evd-010, evd-012). The only request unique to gap-041 is the procedure for adding and removing keys from the Authorized Keys storage. The two records also disagree on severity for the same unresolved question (gap-010 medium, gap-041 low).",
+        "rationale": "A reviewer chasing factor policy for administrative access would receive two overlapping requests pointing at the same evidence owner and two different severities. Merging gap-041's key-lifecycle request into gap-010 keeps every question that was asked while removing the duplicate, and settles the severity once. This is a consolidation recommendation, not a challenge to either record's substance.",
+        "evidence_ids": [
+          "evd-005",
+          "evd-007",
+          "evd-010",
+          "evd-012"
+        ],
+        "recommended_action": "merge",
+        "confidence": "medium"
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-043",
+        "critique_type": "contradictory_analysis",
+        "description": "map-043's applicability reason states that this threat's documented path 'does not traverse the Bastion'. evd-010 states that 'the deployment service also delivers releases into production through the Bastion', and evd-012 states that the trained model is packaged by the deployment service and delivered 'through the Bastion into production' \u2014 which is step 4 of this threat's own attack path (df-009). Other objects in this same group read those passages the other way: map-052 describes the pipeline delivering into production through the Bastion, and gap-014 and gap-017 both describe the release leg as passing through it.",
+        "rationale": "The not_applicable conclusion may well stand on the mapping's second and independent ground, that the documented operator reach is production infrastructure and the model artifact rather than data belonging to customers. But as written the reason rests partly on a factual statement that the two cited documents contradict, and it is the kind of statement that travels: read downstream, it says the poisoning path never touches the administrative interface, which evd-010 and evd-012 do not support. The reason needs correcting even if the status survives, and the correction should be made where the error is rather than left for a reader to notice against map-052.",
+        "evidence_ids": [
+          "evd-010",
+          "evd-012"
+        ],
+        "recommended_action": "revise",
+        "confidence": "medium"
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-003",
+        "critique_type": "missing_precondition",
+        "description": "Attack path step 1 requires an actor to publish or inject adversarial or mislabelled images into a source the Gather Images application queries (cmp-014 Azure Cognitive Services, cmp-015 third-party tools), but none of the three recorded preconditions states the capability that step depends on: that an outside party can cause chosen content to be returned by those collection queries. The preconditions cover the origin of the images (evd-009, evd-010, evd-012), the absence of documented content or label validation, and the absence of a documented behavioural acceptance check. evd-010, evd-012 and evd-013 establish only that the two external services supply husky and non-husky images to the collection application, which authenticates with API keys; no passage describes what those sources index, who may contribute content to them, or whether their responses can be influenced by a third party \u2014 and nothing at all is said about Azure Cognitive Services' returned content.",
+        "rationale": "The description hedges the step ('An external source that is compromised, or that an actor can seed with chosen content so that the collection queries retrieve it'), but the preconditions are the field a reviewer reads to judge how reachable the scenario is, and they currently omit the one condition that is neither documented nor recorded as an assumption. Naming it as a fourth precondition, or as an explicit assumption, lets a reviewer challenge the seeding capability separately for the named managed provider and for the unnamed third-party tools, which are on very different footings. This is not an argument for dropping the threat: the supply-chain trust question raised by evd-009 and evd-013 and the undocumented validation recorded in gap-013 stand either way.",
+        "evidence_ids": [
+          "evd-009",
+          "evd-010",
+          "evd-012",
+          "evd-013"
+        ],
+        "recommended_action": "revise",
+        "confidence": "medium"
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-059",
+        "critique_type": "contradictory_analysis",
+        "description": "map-059 credits ctl-003 among the controls bearing on req-NET-001, citing evd-002's per-environment access grants. Within this same group, eas-040 concludes that ctl-003 is contradicted and recommends downgrading it to a question, and ctl-003's own limitations record that the enforcing mechanism is not named. ctl-003 also addresses who may write the production model blob \u2014 the disagreement between evd-002 and evd-010/evd-012 \u2014 rather than whether either storage account is reachable from an untrusted network, which is the property this requirement tests.",
+        "rationale": "If the reviewer accepts eas-040's recommendation, map-059 retains a credit to a control that no longer stands, and the credit is in any case for access control rather than network placement. ctl-005 remains a legitimate credit, since evd-003 states the notebook environment is not exposed outside the experimental VPC. The mapping's unverified status and its suppressed conclusion about public reachability are correct and should not change; only the control list overstates what this requirement is credited for.",
+        "evidence_ids": [
+          "evd-002",
+          "evd-010",
+          "evd-012"
+        ],
+        "recommended_action": "revise",
+        "confidence": "low"
+      }
+    ]
+  }
+}

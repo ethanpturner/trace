@@ -1,11 +1,45 @@
 assessment_id: asm-001
-reviewer: recorded-reviewer
 findings:
+- id: fnd-005
+  severity: high
+  decision: approve
+  rationale: 'The sharpest statement of the artifact-integrity weakness: the serialized model''s write,
+    packaging, deployment, and load are all documented, loading executes the artifact''s code inside the
+    production web server, and the documents affirmatively contradict each other about who can write the
+    blob (obs-001). This does not rest on silence alone; the contradiction is documented confusion about
+    a security-critical control.'
 - id: fnd-001
   severity: medium
   decision: approve
-  rationale: Where the image-service keys live is affirmatively documented — a blob storage account, not a secret store. The conclusion rests on the stated mechanism, not on silence.
-- id: fnd-002
+  rationale: Administrative onward reach from the Bastion to the production model blob is documented,
+    and the effective writer set is contradicted in the documents themselves (obs-001). The weakness rests
+    on what the documents state, not on what they omit.
+- id: fnd-006
   severity: medium
   decision: approve
-  rationale: The authentication summary names password authentication alone for the boundary in a document that states its own completeness; the environment behind it trains and ships the model production serves.
+  rationale: 'Distinct asset from fnd-005: injected source or configuration rides the same documented
+    packaging path into production. The pipeline''s existence and its crossing of the production boundary
+    are documented.'
+- id: fnd-007
+  severity: medium
+  decision: approve
+  rationale: The logs recording administrative access live in a production store reachable through the
+    same administrative path they record — a structural weakness the documents state affirmatively.
+- id: fnd-002
+  decision: reject
+  rationale: Duplicate of fnd-005's weakness under the same requirement lens (req-CICD-001) with a weaker
+    statement of the consequence; the approved finding carries this threat.
+- id: fnd-004
+  decision: reject
+  rationale: Duplicate of the logging-lens weakness fnd-007 states more precisely; approving both would
+    say the same thing twice under req-LOG-002.
+- id: fnd-003
+  decision: reject
+  rationale: Which principals can reach the blob to write is recorded as unknown (ctx-012, ctx-015), and
+    inability to verify reachability restriction is a documentation question, not evidence of a weakness.
+    That is the DEC-009 line, and the run already asked it (qst-002).
+- id: fnd-008
+  decision: reject
+  rationale: The boundary this requirement governs is documented as SSO-authenticated, and the crafted-image
+    exposure turns on an input-validation posture the documents leave unknown (ctx-005). Undetermined
+    validation is a question — the run asked it (qst-011) — not a finding. DEC-009.

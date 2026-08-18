@@ -1,0 +1,72 @@
+{
+  "schema": "CriticalReviewProposal",
+  "usage": {
+    "model": "claude-opus-5",
+    "input_tokens": 2403,
+    "output_tokens": 13154,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 28726,
+    "estimated_cost": "0.5204025",
+    "duration_seconds": 170.10836529103108
+  },
+  "response": {
+    "critiques": [
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-216",
+        "critique_type": "unsupported_claim",
+        "description": "map-216 records satisfaction_status 'satisfied' for req-NET-001, but no cited passage states a reachability restriction on the Python web server or the production model blob. evd-009 places production components inside an internal Azure VPC, evd-010 names the API Gateway as the external entry point that 'ensures access control to internal services', and evd-002 grants blob access per environment \u2014 architectural placement statements, none of which establishes that the web server or the model blob cannot be reached other than through the gateway, as the mapping's own suppressed_conclusion concedes when it notes the enforcing mechanism is not named. The mapping's validation (eas-069) reaches 'unsupported' and recommends revise, and one of the two controls it credits (ctl-003) carries validation_status 'contradicted' with gap-007 open over the same account.",
+        "rationale": "A 'satisfied' status is the one status in this group that closes a requirement without a residual question, and here it rests on placement rather than on any documented restriction, while the mapping's own evidence assessment says the opposite and remains unreconciled. Downstream, this suppresses the reachability question for ast-001 that gap-007 and eas-069 are still asking. Which of the two readings is authoritative is a reviewer's decision, but the mapping should not carry 'satisfied' while its validation says the status is unestablished.",
+        "evidence_ids": [
+          "evd-002",
+          "evd-009",
+          "evd-010"
+        ],
+        "recommended_action": "revise",
+        "confidence": "high"
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-214",
+        "critique_type": "unsupported_claim",
+        "description": "map-214 resolves req-AUTH-001 to 'partially_satisfied', with the shortfall confined (per its suppressed_conclusion) to the identity provider not being named and its responsibility boundary not being stated. That resolution presupposes that the boundary-level statements in evd-007 ('Public to production: SSO') and evd-009 apply to the image-submission endpoint on this threat's path; neither passage names any endpoint, and evd-010 describes the gateway as enforcing request validation and access control to internal services without saying that submitting users are authenticated. ctl-014's limitations, eas-051's missing_evidence entry, and gap-058 all record that this cannot be determined, yet the mapping's assumptions list carries only the assumption that SSO denotes delegation, not the assumption that the SSO gate covers df-015.",
+        "rationale": "Whether the classification endpoint authenticates callers is the pivot for this threat \u2014 it sets the population able to use the classifier as an oracle and whether any per-caller bound could attach \u2014 and map-215 treats exactly that fact as unestablished when deciding applicability of req-AUTH-002. A 'partially_satisfied' status on the same fact will read downstream as authentication being present on the serving path with only documentation shortfalls remaining, which the cited passages do not support. Either the coverage assumption belongs in the assumptions list or the status belongs at unverified pending gap-058.",
+        "evidence_ids": [
+          "evd-007",
+          "evd-009",
+          "evd-010"
+        ],
+        "recommended_action": "revise",
+        "confidence": "medium"
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-012",
+        "critique_type": "missing_precondition",
+        "description": "thr-012 combines two mechanisms \u2014 substitute-model training from collected label pairs, and search for inputs the deployed model misclassifies \u2014 under one set of preconditions that all concern unbounded query volume, absent per-caller quota, absent traffic monitoring, and unestablished endpoint authentication. The second mechanism (attack path steps 3-4, and the impact on ast-008) does not follow from those preconditions: obtaining a chosen label for a crafted input does not require large query volume, so bounding query volume would not close it. Its stated impact also presupposes that some party acts on the returned classification, and no cited passage establishes such a dependency: evd-013 lists end users who 'submit images for classification through the public API' and names no downstream consumer, and evd-012 shows the label returned to the submitting caller only (evd-008 states the system's purpose is to return that label).",
+        "rationale": "As written, the bounding requirement mapped for this threat (map-213, req-TPI-002) and the evidence request in gap-057 address query volume alone, so any rate limit or quota later evidenced will appear to answer the whole threat while answering only the extraction branch. The 'erosion of trustworthiness' impact on ast-008 likewise rests on an undocumented reliance on the classification rather than on a cited passage. Separating the evasion branch, or recording the consumer-reliance precondition explicitly as assumed, would let each branch be assessed against the evidence that actually bears on it.",
+        "evidence_ids": [
+          "evd-008",
+          "evd-012",
+          "evd-013"
+        ],
+        "recommended_action": "revise",
+        "confidence": "medium"
+      },
+      {
+        "subject_type": "documentation_gap",
+        "subject_id": "gap-057",
+        "critique_type": "duplicate",
+        "description": "gap-057 and gap-047 request the same fact about the same interface: gateway configuration showing any request-rate or per-caller volume limit applied to the public classification endpoint. Both cite evd-010 for the gateway's unscoped 'request validation' statement and evd-012 for the serving path, and both record that no bound appears in the material. The differences are peripheral: gap-047 adds upload size and inference concurrency, gap-057 adds whether classification traffic is monitored and what triggers investigation. Both are also attached to the same control (ctl-013) and, in gap-047's case, to req-TPI-002, which is the requirement map-213 maps for this threat.",
+        "rationale": "One gateway policy artifact will answer both, and issuing the request twice against the same configuration invites a partial answer being credited to one gap and not the other. Consolidating them keeps the request coherent, provided the monitoring element unique to gap-057 and the size/concurrency elements unique to gap-047 both survive the merge \u2014 which is why this is a recommendation for a reviewer rather than a defect in either gap's reasoning; both are correctly phrased as inability to determine rather than as asserted absence.",
+        "evidence_ids": [
+          "evd-004",
+          "evd-010",
+          "evd-012"
+        ],
+        "recommended_action": "merge",
+        "confidence": "medium"
+      }
+    ]
+  }
+}

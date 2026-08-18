@@ -1,0 +1,694 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "claude-opus-5",
+    "input_tokens": 2656,
+    "output_tokens": 20398,
+    "cache_read_tokens": 32424,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.539442",
+    "duration_seconds": 225.10146799997892
+  },
+  "response": {
+    "controls": [
+      {
+        "key": "bastion-admin-path",
+        "name": "Bastion as the sole administrative path into production, with SSH public-key authentication",
+        "description": "Administrators reach production hosts over SSH through the Bastion, which authenticates them against the Authorized Keys storage; the documentation states the Bastion is the only administrative path into production and lists its onward reach as the API Gateway, the web server, and the model blob.",
+        "control_type": "implemented",
+        "provider_component_id": "cmp-003",
+        "protected_component_ids": [
+          "cmp-010",
+          "cmp-002",
+          "cmp-003"
+        ],
+        "protected_asset_ids": [
+          "ast-001",
+          "ast-008"
+        ],
+        "implementation_status": "implemented",
+        "evidence_ids": [
+          "evd-005",
+          "evd-007",
+          "evd-010",
+          "evd-011",
+          "evd-012"
+        ],
+        "owner": "platform team",
+        "limitations": [
+          "The documentation states that the Bastion provides onward access to the model blob, so an operator on this path can write the artifact the web server loads (evd-012, evd-002).",
+          "No factor policy is stated for the identity presenting the SSH key, and no per-operator authorization restriction within the Bastion is described."
+        ]
+      },
+      {
+        "key": "bastion-ssh-logging",
+        "name": "Bastion SSH access logging",
+        "description": "All SSH access attempts through the Bastion, successful or not, are logged to the Bastion Logs storage in production; the administrative data flow describes the session being logged as part of authentication against the Authorized Keys storage.",
+        "control_type": "implemented",
+        "provider_component_id": "cmp-003",
+        "protected_component_ids": [
+          "cmp-003",
+          "cmp-010"
+        ],
+        "protected_asset_ids": [
+          "ast-001"
+        ],
+        "implementation_status": "implemented",
+        "evidence_ids": [
+          "evd-005",
+          "evd-011",
+          "evd-012"
+        ],
+        "owner": "platform team",
+        "limitations": [
+          "The records described are SSH access and session records; the documentation does not state that individual actions on the model blob (for example a write or overwrite of the serialized artifact) are recorded with the acting operator.",
+          "The Bastion Logs storage is a production store reached through the same administrative path; whether it is separately managed is not stated."
+        ]
+      },
+      {
+        "key": "model-blob-write-restriction",
+        "name": "Storage access control restricting writes to the production model blob",
+        "description": "Access control and authorization are configured on the Azure Blob storage accounts, granted per environment, with the production model blob documented as writable only from the experimental deployment path and the Bastion. The document introducing this statement says it records what is implemented today.",
+        "control_type": "implemented",
+        "provider_component_id": "cmp-010",
+        "protected_component_ids": [
+          "cmp-010"
+        ],
+        "protected_asset_ids": [
+          "ast-001"
+        ],
+        "implementation_status": "claimed",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-011"
+        ],
+        "owner": "platform team",
+        "limitations": [
+          "The effective set of writers is contradicted: evd-002 restricts writes to the deployment path and the Bastion, while evd-010 and evd-012 describe the Jupyter environment writing the serialized model to the model storage blob.",
+          "The enforcing mechanism (role assignments, account keys, SAS, or network restriction) is not named, so it is not established what a compromised principal on either permitted path is limited to."
+        ]
+      },
+      {
+        "key": "boundary-authn-rbac",
+        "name": "Authentication and RBAC/ACLs at environment boundaries",
+        "description": "Authentication is stated per boundary: SSO from public to production, password authentication from public to experimental, and public-key authentication between production and experimental, with RBAC and ACLs applied at each boundary. The deployment service delivers releases into production over SSH through the Bastion.",
+        "control_type": "implemented",
+        "provider_component_id": null,
+        "protected_component_ids": [
+          "cmp-005",
+          "cmp-006",
+          "cmp-003",
+          "cmp-010"
+        ],
+        "protected_asset_ids": [
+          "ast-001"
+        ],
+        "implementation_status": "claimed",
+        "evidence_ids": [
+          "evd-007",
+          "evd-009",
+          "evd-012"
+        ],
+        "owner": "platform team",
+        "limitations": [
+          "The identity provider behind the SSO and password boundaries is not named, and no factor policy is stated for either.",
+          "The RBAC and ACL statement is a summary; the roles, their holders, and the resources they cover are not described."
+        ]
+      }
+    ],
+    "mappings": [
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-ADMIN-001",
+        "control_keys": [
+          "bastion-admin-path"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The first applicable condition holds directly: the Bastion is documented as the administrative access path into production and, in this threat, is one of the two paths from which the production model blob is writable (evd-002, evd-012). Neither non-applicable condition holds, because an administrative interface exists and its documented onward reach includes a production data store rather than infrastructure alone.",
+        "suppressed_conclusion": "That privileged administrative access is inadequately restricted because no per-operator permission model inside the administrative path is described.",
+        "suppressed_by": "req-ADMIN-001 common_false_positives entry: absent role-based permission matrix within the administrative interface.",
+        "satisfaction_status": "partially_satisfied",
+        "evidence_ids": [
+          "evd-002",
+          "evd-005",
+          "evd-007",
+          "evd-011",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AUTH-002",
+        "control_keys": [
+          "bastion-admin-path",
+          "boundary-authn-rbac"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The system exposes administrative access through the Bastion, which is reached over SSH from outside the production environment (evd-005, evd-009), so both applicable conditions are engaged for the administrative branch of this attack path. The non-applicable condition does not hold, because no external provider is documented as owning the factor policy for that access.",
+        "suppressed_conclusion": "That multi-factor authentication is absent for the administrative and experimental access paths used in this attack path.",
+        "suppressed_by": "req-AUTH-002 common_false_positives entries: absent application-managed enrolment or factor-registration flow, and absent application-side factor configuration setting.",
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-005",
+          "evd-007",
+          "evd-009"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AUTH-001",
+        "control_keys": [
+          "boundary-authn-rbac"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "The attack path begins at the password-authenticated public-to-experimental boundary and the SSO public-to-production boundary (evd-007, evd-009), so the requirement applies if that authentication is delegated to an external identity provider. It may instead fall under the non-applicable condition that the system maintains its own credential store, since administrative authentication is described against the Authorized Keys storage (evd-011).",
+        "suppressed_conclusion": "That credential controls for the engineer accounts in this attack path are absent because no password policy, lockout threshold, or credential storage scheme is described.",
+        "suppressed_by": "req-AUTH-001 common_false_positives entries: absent local password complexity policy, absent local password rotation policy, absent account lockout threshold, absent credential storage or hashing description.",
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-007",
+          "evd-009",
+          "evd-011"
+        ],
+        "assumptions": [
+          "Assumed that 'SSO' at the public-to-production boundary (evd-007) denotes delegated authentication, though no provider is named."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-CICD-001",
+        "control_keys": [
+          "boundary-authn-rbac",
+          "bastion-admin-path"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Both applicable conditions are engaged by this threat's path: the deployment service packages the trained model with source and configuration and deploys it into production through the Bastion (evd-010, evd-012), and that packaged release is the documented route by which the production artifact reaches the model blob. Deployment is not manual, so no non-applicable condition holds.",
+        "suppressed_conclusion": "That the deployment path is inadequately trusted because no artifact signing or build reproducibility is described, and because no dependency scanning cadence is stated.",
+        "suppressed_by": "req-CICD-001 common_false_positives entries: absent build reproducibility or artifact signing, which exceed this expectation; and absent dependency scanning schedule, which is an operational process rather than an architectural control.",
+        "satisfaction_status": "partially_satisfied",
+        "evidence_ids": [
+          "evd-007",
+          "evd-009",
+          "evd-010",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-NET-001",
+        "control_keys": [
+          "model-blob-write-restriction",
+          "boundary-authn-rbac"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The production model blob is a data store holding work on behalf of the system rather than a public interface, and this threat turns on which principals can reach it to write (evd-002, evd-011), which is the first applicable condition. No non-applicable condition holds, since the blob is not documented as a public interface by design nor as reached only over a documented private link.",
+        "suppressed_conclusion": "That the production model blob is broadly or publicly reachable because its network placement is not described.",
+        "suppressed_by": "req-NET-001 common_false_positives entry: absent description of network placement for an internal component, which is not evidence that the component is publicly reachable.",
+        "satisfaction_status": "partially_satisfied",
+        "evidence_ids": [
+          "evd-002",
+          "evd-007",
+          "evd-010",
+          "evd-011",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-LOG-002",
+        "control_keys": [
+          "bastion-ssh-logging"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Both applicable conditions hold for this threat: an administrative interface exists (the Bastion), and the documented onward access from it includes the production model blob, so an operator can alter the artifact that determines every classification (evd-012, evd-002). Operator actions therefore reach data and serving behaviour rather than being confined to infrastructure.",
+        "suppressed_conclusion": "That the administrative audit trail is inadequate because no tamper-evidence property is described for the Bastion Logs storage.",
+        "suppressed_by": "req-LOG-002 common_false_positives entry: absent tamper-evidence detail where records are sent to a separately managed platform.",
+        "satisfaction_status": "partially_satisfied",
+        "evidence_ids": [
+          "evd-005",
+          "evd-011",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-SECRET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "The requirement applies if the deployment service or the notebook environment holds a stored credential that authenticates it to the production storage account it writes the model artifact into (evd-002, evd-010); the documentation records RBAC and ACLs at boundaries and an API key store for the external image services (evd-007, evd-011) but does not say whether blob write access rests on a stored secret or on workload identity, which is the second non-applicable condition.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-002",
+          "evd-007",
+          "evd-010",
+          "evd-011"
+        ],
+        "assumptions": [],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AI-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "A substituted model controls the content of the classification returned through the API Gateway to end users (evd-012), so this requirement applies if that output is rendered into a user interface; the documentation describes only an API response, leaving open the non-applicable condition that output is consumed by machine processing that does not interpret markup.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-010",
+          "evd-012"
+        ],
+        "assumptions": [
+          "Assumed that the classification returned is a label consumed by the caller rather than markup rendered by a first-party interface; the documentation describes no rendering surface."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This threat is the substitution of the serialized model artifact before it is loaded, not the handling of untrusted content submitted to a model. The served component is an image classifier that evaluates uploaded images against a loaded convolutional neural network (evd-008, evd-010); there is no combined instruction-and-content channel for embedded instructions to redirect, so the requirement's concern is not engaged by this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-008",
+          "evd-010"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition that model output is shown only to the user who requested it holds: the web server evaluates the submitted image and returns the classification to the requesting caller through the API Gateway (evd-012). No publication of model output to a destination outside the system is documented.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AI-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition that the model runs within the system's own trust boundary holds: the Python web server in production loads the serialized model from the model blob and evaluates images locally (evd-010, evd-012). No customer content is sent to an external model provider on this threat's path.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-010",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AUTHZ-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition that the system serves a single tenant is the one that holds on the documented architecture: the service classifies images submitted by end users through a public API, with no customer or organization scoping described (evd-008, evd-013). The asset at risk in this threat is one shared model artifact serving all users, not tenant-scoped data in shared storage.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-008",
+          "evd-013"
+        ],
+        "assumptions": [
+          "Assumed single-tenancy: the documentation describes end users submitting images to a public API and records no per-organization data or tenant identifier."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AUTHZ-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition that the system holds no external delegated access holds for this threat: the only external platform relationships documented are outbound image collection from Azure Cognitive Services and third-party tools using the system's own API keys (evd-010, evd-011), not delegated access acting on a customer's resource. The write paths into the model blob are internal environment paths.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-010",
+          "evd-011"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-SECRET-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition that the system accesses no customer resources on external platforms holds: no customer-held resource is accessed on this threat's path, which runs from an internal principal into a production storage account the system owns (evd-002, evd-011). The credentials at issue are environment credentials, not tokens minted to reach a customer resource.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-011"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This threat is tampering with a stored artifact by a principal on a permitted write path, and confidentiality protection is not what stands between the write and the load. Neither applicable condition is engaged by the threat: no confidential data is disclosed and no data crosses an uncontrolled network in the attack path (evd-002, evd-017 not applicable; see evd-012 for the internal write and load flows).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-DATA-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Neither applicable condition is engaged: the model artifact in the production blob is retained deliberately so the web server can serve classifications (evd-010, evd-011), not as a working by-product of processing, and this threat concerns its integrity rather than how long a copy of customer data survives.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-010",
+          "evd-011"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-DATA-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition that the system serves a single tenant holds on the documented architecture (evd-008, evd-013), and the store at issue in this threat holds trained models in serialized form rather than per-customer artifacts (evd-011).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-008",
+          "evd-011",
+          "evd-013"
+        ],
+        "assumptions": [
+          "Assumed single-tenancy, as for req-AUTHZ-001; the documentation records no per-customer artifacts in the model blob."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-DATA-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This threat concerns unauthorised writing of a model artifact, not removal of customer data. The applicable conditions about customer data existing across primary and derived stores are not engaged: the affected stores hold the serialized model (evd-011), and uploaded user images are held in memory in the Redis cache for the duration of a request (evd-004).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-004",
+          "evd-011"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-LOG-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Nothing in this threat's path writes restricted content to a log or forwards logs outside the trust boundary; the only logging documented on the path is SSH access and activity records kept in the production Bastion Logs storage (evd-005, evd-011). The requirement's concern about restricted data changing classification by reaching a log is not engaged.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-005",
+          "evd-011"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-TPI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition that no customer data leaves the system's trust boundary holds for this threat: the external provider relationship documented is inbound collection of training images from Azure Cognitive Services and third-party tools (evd-010, evd-012), and the attack path involves no outbound transfer of customer data to a processor.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-010",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-TPI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This threat imposes no repeated consumption of a metered service: it is a single write to the model blob whose effect persists in every subsequent classification (evd-002, evd-012). The applicable conditions about event-triggered work, automatic retries, and metered consumption are not engaged by the substitution path.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-WEBHOOK-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No inbound event endpoint from an external platform appears on this threat's path: the writes into the model blob are credentialed storage writes from the experimental deployment path or the Bastion (evd-002, evd-012), and the only public entry point documented is the API Gateway receiving user image submissions (evd-010). The applicable conditions about accepting events from an external platform do not hold.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-010",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-WEBHOOK-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Replay of an inbound platform event is not a step in this attack path, which proceeds by writing the artifact and letting the web server load it (evd-012). With no inbound event ingestion documented, the applicable conditions about delivery uniqueness of such events do not hold.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-010",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Whether any integrity verification stands between writing and loading the production model artifact is not established",
+        "description": "The documentation describes the serialized model being written to the production model blob and loaded by the Python web server to evaluate uploaded images (evd-010, evd-012), and describes access restrictions on the blob (evd-002), but does not state whether the artifact is checksummed, signed, or otherwise verified at any point between the write and the load. This is a record that the material cannot settle the question; it is not a statement that verification is absent.",
+        "importance": "Whether a substituted artifact would be detected before it becomes the system's decision function depends entirely on this answer, and it determines whether the documented write restrictions are the only barrier on this path.",
+        "related_object_ids": [
+          "thr-001",
+          "cmp-010",
+          "cmp-002",
+          "cmp-006",
+          "ast-001"
+        ],
+        "requested_evidence": [
+          "A statement of whether the deployment service records a digest or signature for the packaged model and whether the web server checks it at load time",
+          "Model loading code or configuration in the Python web server showing any verification step",
+          "Any release process document describing artifact provenance for the model blob"
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-010",
+          "evd-012"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "The effective set of principals able to write the production model blob is contradicted between documents",
+        "description": "The security notes state that the production model blob is writable only from the experimental deployment path and the Bastion (evd-002), while the system overview describes the Jupyter Notebook environment writing the serialized model to the model storage blob and the training path writing the trained model to that blob (evd-010, evd-012). Which statement reflects the deployed configuration is a reviewer's decision, and the enforcing mechanism is not named in either passage.",
+        "importance": "The number and kind of principals holding write access sets how many credential-compromise routes lead to artifact substitution, and no assessment of the write restriction can be made while the two documents disagree.",
+        "related_object_ids": [
+          "thr-001",
+          "cmp-010",
+          "cmp-005",
+          "cmp-006",
+          "cmp-003",
+          "df-006",
+          "df-014"
+        ],
+        "requested_evidence": [
+          "Role assignments and ACLs configured on the production model blob storage account, listing which identities hold write permission",
+          "A statement of whether the Jupyter environment writes to the production model blob directly or to an experimental store from which the deployment service packages",
+          "Network or private-endpoint configuration for the production model blob"
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-010",
+          "evd-012"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Ownership and policy for multi-factor authentication on the administrative and experimental access paths are unstated",
+        "description": "The documentation records SSO at the public-to-production boundary, password authentication at the public-to-experimental boundary, public-key authentication between environments, and SSH public-key authentication against the Authorized Keys storage for the Bastion (evd-005, evd-007, evd-009), but does not identify any party enforcing a factor policy over the identities that hold those credentials.",
+        "importance": "Both branches of this attack path begin with a compromised engineer or administrator credential, so which party enforces additional factors \u2014 and over which boundary \u2014 changes the plausibility of the entry step and determines whether the control is inherited rather than absent.",
+        "related_object_ids": [
+          "thr-001",
+          "cmp-003",
+          "cmp-005",
+          "act-002",
+          "act-003"
+        ],
+        "requested_evidence": [
+          "The name of the identity provider behind the SSO and password boundaries and its factor policy",
+          "Any organization-level conditional access or factor policy applying to data engineers and platform engineers",
+          "A statement of whether SSH access through the Bastion requires a second factor in addition to the key"
+        ],
+        "evidence_ids": [
+          "evd-005",
+          "evd-007",
+          "evd-009"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "How third-party components entering the packaged release are identified and controlled is not described",
+        "description": "The deployment service is documented as packaging the trained model together with source code and configuration from the source storage and deploying the result into production through the Bastion (evd-010, evd-012), but the material does not describe how third-party components in that build are identified, pinned, or inventoried. The documentation is silent rather than describing an absence.",
+        "importance": "Components incorporated into the release reach production with the same privilege as the model artifact itself, so the same substitution impact can arrive through the build rather than through a direct blob write.",
+        "related_object_ids": [
+          "thr-001",
+          "cmp-006",
+          "cmp-003"
+        ],
+        "requested_evidence": [
+          "A dependency manifest or generated component inventory for the packaged release",
+          "Pipeline configuration for the deployment service showing how source and dependencies are resolved"
+        ],
+        "evidence_ids": [
+          "evd-010",
+          "evd-011",
+          "evd-012"
+        ],
+        "severity": "low"
+      },
+      {
+        "title": "Whether actions on the production model blob taken through the Bastion are individually recorded is not established",
+        "description": "All SSH access attempts through the Bastion are logged to the Bastion Logs storage, successful or not, and the administrative flow describes the session being logged (evd-005, evd-012). The documentation does not state whether an operator's onward actions on the model blob \u2014 for example writing or overwriting the serialized artifact \u2014 are recorded with the acting operator identity.",
+        "importance": "Where operator access reaches the artifact that determines every classification, the action record is the compensating control that establishes after the fact what was changed and by whom; session-level access records alone may not attribute a substitution.",
+        "related_object_ids": [
+          "thr-001",
+          "cmp-003",
+          "cmp-010",
+          "df-014"
+        ],
+        "requested_evidence": [
+          "A statement of whether storage-level diagnostic or audit logging is enabled on the production model blob and where those records are kept",
+          "A sample of the record written for an operator write to the model blob, showing the operator identity carried"
+        ],
+        "evidence_ids": [
+          "evd-005",
+          "evd-011",
+          "evd-012"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": [
+      {
+        "concern": "No requirement asks that a machine learning model artifact be verified for integrity between the point it is written to a store and the point a serving component loads and executes it. The catalog covers how the deployment path authenticates and how the store restricts writes, but not whether the loading component establishes that the artifact it loads is the one the release produced \u2014 which is the control that would detect substitution by any principal already on a permitted write path.",
+        "suggested_category": "model_integrity",
+        "nearest_requirements": [
+          {
+            "requirement_id": "req-CICD-001",
+            "why_not": "It covers pipeline authentication and dependency identification, and its own common_false_positives entry states that artifact signing exceeds this expectation, so it cannot be read to require verification at load time."
+          },
+          {
+            "requirement_id": "req-AI-002",
+            "why_not": "It governs validation of model output before external publication, not the integrity of the model artifact that produces the output."
+          },
+          {
+            "requirement_id": "req-SECRET-001",
+            "why_not": "It addresses custody of signing keys and provider credentials, not whether any signature or digest is produced for an artifact or checked when it is loaded."
+          },
+          {
+            "requirement_id": "req-NET-001",
+            "why_not": "It constrains who can reach the store, which does not help against a writer that legitimately reaches it; verification at load is a distinct control."
+          }
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-010",
+          "evd-012"
+        ]
+      }
+    ]
+  }
+}

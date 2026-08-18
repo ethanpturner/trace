@@ -1,0 +1,512 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "claude-opus-5",
+    "input_tokens": 2524,
+    "output_tokens": 17096,
+    "cache_read_tokens": 14267,
+    "cache_creation_tokens": 20079,
+    "estimated_cost": "0.57264725",
+    "duration_seconds": 193.21439275005832
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-012",
+        "requirement_id": "req-TPI-002",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-013",
+          "ctl-014"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The requirement's condition 'work is triggered by an event the system does not originate' holds directly: each classification is triggered by an image an external end user submits to the public API (evd-008, evd-012), and each unit of work is a CNN evaluation on the production web server (evd-010), i.e. capacity-limited compute. The threat is precisely repeated triggering of that work; neither non-applicable condition holds, since the work is not initiated only by an authenticated operator.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-006",
+          "evd-008",
+          "evd-010",
+          "evd-012"
+        ],
+        "assumptions": [
+          "Assumes CNN inference per submitted image constitutes capacity-limited compute in the sense of the requirement; the documentation does not describe the serving resources or any quota (evd-010)."
+        ],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-012",
+        "requirement_id": "req-AUTH-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-014",
+          "ctl-004"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The population able to use the classification endpoint as an oracle depends on the authentication at the boundary the actor crosses, and the documentation states that public-to-production access is authenticated with SSO (evd-007, evd-009), which is delegation of user authentication rather than a locally held credential store; the non-applicable condition 'the system maintains its own credential store' is not documented to hold.",
+        "suppressed_conclusion": "That authentication on the serving path is inadequate because no password policy, lockout threshold, or credential-storage description appears; those omissions are expected where authentication is delegated and were not treated as shortfalls. The partial status rests only on the two elements the statement names explicitly and the cited passages demonstrably lack: the provider is not named and the boundary of its responsibility is not stated (evd-007, evd-009).",
+        "suppressed_by": "absent local password complexity policy; absent credential storage or hashing description",
+        "satisfaction_status": "partially_satisfied",
+        "evidence_ids": [
+          "evd-007",
+          "evd-009",
+          "evd-010"
+        ],
+        "assumptions": [
+          "Assumes the 'SSO' recorded for the public-to-production boundary (evd-007, evd-009) denotes delegation to an external identity provider; the documentation names no provider."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-012",
+        "requirement_id": "req-AUTH-002",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-014"
+        ],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "The requirement's condition 'privileged access crosses an untrusted network' does not hold for end-user queries, but the classification endpoint is externally reachable and SSO is claimed for that boundary (evd-007, evd-009, evd-010); if that SSO gate is what limits who can query the classifier, which party enforces the factor policy behind it becomes material to this threat. Applicability turns on the unestablished fact of whether the image-submission endpoint carries an authenticated principal at all.",
+        "suppressed_conclusion": "That multi-factor enforcement is missing on the public boundary because no factor configuration is described in the application documentation; factor policy is commonly owned by an identity provider and its absence from these passages establishes nothing.",
+        "suppressed_by": "absent application-side factor configuration setting",
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-007",
+          "evd-009"
+        ],
+        "assumptions": [],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-012",
+        "requirement_id": "req-NET-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-003",
+          "ctl-013"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The threat's path runs through internal components that are not public interfaces \u2014 the Python web server holding the loaded model (cmp-002, df-015) and the model blob it reads (cmp-010, df-017) \u2014 so the condition 'the system uses a data store... that is not itself a public interface' holds, and whether the actor is confined to the gateway-mediated query interface or could reach these directly bears on the same assets (ast-001).",
+        "suppressed_conclusion": "That the web server and model blob are reachable from an untrusted network because the enforcing mechanism (network rules, private endpoints, or role assignments) is not named; the documentation states the placement \u2014 production is an internal Azure VPC containing the deployed model, the web server and the production storage accounts (evd-009), with the API Gateway as the external entry point (evd-010) and per-environment access control on the blob accounts (evd-002).",
+        "suppressed_by": "absent detail of the enforcing mechanism, where placement itself is stated",
+        "satisfaction_status": "satisfied",
+        "evidence_ids": [
+          "evd-002",
+          "evd-009",
+          "evd-010"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-012",
+        "requirement_id": "req-AI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The requirement addresses content passed to a model through a channel that carries instructions and content together, so that embedded text can redirect the model's task. The model here is a convolutional neural network returning a husky/non-husky classification for a submitted image (evd-008, evd-010); there is no instruction channel for submitted content to occupy, and this threat is adversarial perturbation of an input rather than instruction injection.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-008",
+          "evd-010"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-012",
+        "requirement_id": "req-AI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'model output is shown only to the user who requested it' holds: the web server returns the classification to the caller that submitted the image (evd-012), and no publication of model output to a destination outside the system is described.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-012",
+        "requirement_id": "req-AI-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'the model runs within the system's own trust boundary' holds: the Python web server loads the trained model from the production model blob and evaluates images locally (evd-010, evd-012); no customer content on this threat's path is sent to an external model provider.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-010",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-012",
+        "requirement_id": "req-AI-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The output on this threat's path is a husky/non-husky classification returned over the API (evd-008, evd-012), a constrained value rather than attacker-influenced text or markup; no rendering of model output into a user interface or another system's markup is described, so neither applicable condition holds.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-008",
+          "evd-012"
+        ],
+        "assumptions": [
+          "Assumes the classification returned is a label from the two-class output described in evd-008 rather than free-form model text; the response format is not documented."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-012",
+        "requirement_id": "req-ADMIN-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-001"
+        ],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "An administrative interface exists (the Bastion, evd-005, evd-010), but this threat's attack path is entirely end-user submission of images to the public classification API (df-015) and does not traverse or depend on the operator path; the requirement's conditions attach to operator access, which this threat does not engage.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-005",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-012",
+        "requirement_id": "req-LOG-002",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-002"
+        ],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The requirement records actions taken through a privileged interface. This threat is exercised by an ordinary caller of the public classification API (evd-008, evd-012) and involves no privileged action affecting customer data or security configuration, so the applicable conditions do not attach to it; monitoring of end-user classification traffic is a different concern and is raised as a catalog-gap candidate.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-008",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-012",
+        "requirement_id": "req-LOG-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The requirement concerns restricted data reaching application logs. This threat's mechanism is the labels the service legitimately returns to the caller (evd-008, evd-012); no log record or log destination is part of its attack path, and no logging of the serving path is described at all.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-012",
+        "requirement_id": "req-AUTHZ-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No multi-customer or multi-organization tenancy is described: the documented actors are end users submitting images to one shared public classifier (evd-008, evd-013), and this threat concerns behaviour disclosed through responses returned to the requesting caller rather than one tenant reaching another's data.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-008",
+          "evd-013"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-012",
+        "requirement_id": "req-AUTHZ-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The delegated external access the system holds is the image-service API keys used by the experimental Gather Images application (evd-010, evd-011), which is not on this threat's path; the serving path in this threat holds no delegated access to a customer resource on an external platform.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-010",
+          "evd-011"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-012",
+        "requirement_id": "req-CICD-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The deployment pipeline (deployment service delivering through the Bastion, evd-010, evd-012) is a build-and-release path this threat does not use; the actor operates entirely against the deployed public endpoint, so neither the pipeline's authentication nor third-party build components bear on this attack path.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-010",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-012",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-006"
+        ],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat does not involve interception of data in transit or at rest: the actor obtains labels the service returns to it legitimately over the documented HTTPS public API (evd-006, evd-012). Encryption of the model artifact or of the serving flows would not alter this path, so the requirement's conditions, though present elsewhere in the system, are not engaged by this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-006",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-012",
+        "requirement_id": "req-DATA-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'customer data is processed only in memory and never persisted' is documented for the serving path: uploaded images are held in the Redis in-memory cache while awaiting classification and are not written to disk (evd-004, evd-011). Retention of submitted images is in any case not the mechanism of this threat, which depends on the labels returned.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-004",
+          "evd-011"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-012",
+        "requirement_id": "req-DATA-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'the system serves a single tenant' is the documented picture \u2014 one shared classifier serving end users (evd-008, evd-013) \u2014 and no per-customer stored artifacts appear on this threat's path, uploaded images being held in memory only (evd-004).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-004",
+          "evd-008",
+          "evd-013"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-012",
+        "requirement_id": "req-DATA-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Deletion of retained customer data is not engaged by this threat, whose assets are the trained model's behaviour (ast-001) and the trustworthiness of the classification service (ast-008); the serving path is documented as holding uploaded images in memory rather than retaining them (evd-004).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-012",
+        "requirement_id": "req-SECRET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This threat requires no credential: the actor uses the classification endpoint as designed (evd-008, evd-012). Custody of the API keys held in the experimental key store (evd-011) is outside this attack path, so the requirement's conditions are not engaged here.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-011",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-012",
+        "requirement_id": "req-SECRET-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'the system accesses no customer resources on external platforms' holds for this threat's path: the serving components read the model from an internal blob and return a classification (evd-010, evd-012); no credential to a customer resource is derived or held.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-010",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-012",
+        "requirement_id": "req-TPI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The non-applicable condition 'no customer data leaves the system's trust boundary' holds for this threat: classification is performed in production against a locally loaded model (evd-010, evd-012). The external provider relationship in the documentation is Azure Cognitive Services supplying training images inbound (evd-010), which is not this threat's path.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-010",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-012",
+        "requirement_id": "req-WEBHOOK-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The requirement's condition requires an endpoint accepting events delivered by an external platform. The endpoint in this threat is a user-facing classification API to which end users submit images (evd-008, evd-012); no platform-delivered event path exists, so origin-signature verification is not the control in question.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-008",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-012",
+        "requirement_id": "req-WEBHOOK-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Replay of a previously valid platform event is not the mechanism here: there are no inbound platform events (evd-008, evd-012), and the repetition in this threat is the actor issuing fresh, legitimate classification requests, which the bounding requirement req-TPI-002 addresses instead.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-008",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "No documentation of rate limiting, per-caller quota, or traffic monitoring on the public classification endpoint",
+        "description": "The documentation describes the API Gateway as enforcing request validation and exposing the public APIs over HTTPS (evd-006, evd-010), and describes the serving path from submission to returned classification (evd-012), but says nothing about how many classification requests a caller may issue, whether any per-caller quota exists, or whether classification traffic is observed. It therefore cannot be determined whether bounding controls exist; this is a record of that inability, not a statement that they are absent.",
+        "importance": "The practical cost of using the endpoint as an oracle \u2014 both to replicate model behaviour and to search for evading inputs \u2014 is set almost entirely by whether query volume is bounded and whether unusual query patterns are visible. Without this fact, req-TPI-002 cannot be resolved beyond unverified and the threat's likelihood cannot be assessed.",
+        "related_object_ids": [
+          "thr-012",
+          "cmp-001",
+          "cmp-002",
+          "df-015",
+          "ast-001",
+          "ast-008"
+        ],
+        "requested_evidence": [
+          "Operations or gateway configuration documentation stating any request-rate or per-caller volume limit applied to the classification endpoint",
+          "A statement of whether classification request volume is monitored and what triggers investigation",
+          "Any capacity or quota ceiling configured for the production serving components"
+        ],
+        "evidence_ids": [
+          "evd-006",
+          "evd-008",
+          "evd-010",
+          "evd-012"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Whether the image-submission endpoint requires an authenticated principal, and which identity provider backs the stated SSO",
+        "description": "Authentication is recorded only at boundary level \u2014 'Public to production: SSO', with RBAC and ACLs at each boundary (evd-007, evd-009) \u2014 and the API Gateway is described as the entry point that ensures access control to internal services (evd-010). No passage states whether an individual image submission on the serving path carries an authenticated principal, and no identity provider is named. Whether authentication applies to this endpoint therefore cannot be determined from the material.",
+        "importance": "It determines the population able to query the classifier and whether any per-principal control could be attached to that population, which is the pivot for both this threat's likelihood and the resolution of req-AUTH-001 and req-AUTH-002.",
+        "related_object_ids": [
+          "thr-012",
+          "cmp-001",
+          "act-001",
+          "df-015"
+        ],
+        "requested_evidence": [
+          "Architecture or gateway documentation stating whether the classification endpoint requires an authenticated session",
+          "The name of the identity provider relied upon for the public-to-production SSO boundary and the boundary of its responsibility",
+          "Identity provider or organization policy documentation stating the factor policy enforced for that boundary"
+        ],
+        "evidence_ids": [
+          "evd-007",
+          "evd-009",
+          "evd-010",
+          "evd-012"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": [
+      {
+        "concern": "The catalog contains no requirement covering query-based attacks against a deployed machine learning model \u2014 extraction or replication of model behaviour by harvesting input/label pairs from a prediction interface, and the construction of adversarial inputs that obtain an attacker-chosen classification. The system's stated purpose is to return a classification for any image submitted to a public API (evd-008), served by the gateway and web server against the loaded model (evd-010, evd-012), which makes the prediction interface itself the disclosure and integrity surface. The controls this concern would ask for \u2014 bounding or observing query volume specifically as an extraction defence, limiting the granularity of returned output such as confidence scores, and detecting systematic probing \u2014 are not the same controls any existing requirement asks for.",
+        "suggested_category": "adversarial_ml",
+        "nearest_requirements": [
+          {
+            "requirement_id": "req-TPI-002",
+            "why_not": "It bounds consumption so that repeated triggering cannot impose unbounded cost or exhaust capacity. It is satisfied by a bound generous enough to leave extraction entirely feasible, and it says nothing about what the returned labels disclose or about detecting systematic probing."
+          },
+          {
+            "requirement_id": "req-AI-001",
+            "why_not": "It addresses instructions embedded in content passed to a model through a shared instruction/content channel. An image classifier has no instruction channel, and an adversarial perturbation redirects the model's decision through its learned function rather than by supplying instructions."
+          },
+          {
+            "requirement_id": "req-AI-002",
+            "why_not": "It governs validation of model output published to a destination outside the system without human review. Here output is returned to the requesting caller and is not published; the concern is that correct output, returned many times, functions as an oracle."
+          },
+          {
+            "requirement_id": "req-DATA-001",
+            "why_not": "It protects data in transit and at rest. The behaviour disclosed here leaks through responses the service returns legitimately over an encrypted channel, so no encryption control addresses it."
+          }
+        ],
+        "evidence_ids": [
+          "evd-008",
+          "evd-010",
+          "evd-012"
+        ]
+      }
+    ]
+  }
+}
