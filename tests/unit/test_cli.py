@@ -1461,6 +1461,23 @@ def test_the_pipeline_runs_end_to_end_from_the_command_line(
     verified = capsys.readouterr().out
     assert "1 manifest" in verified
 
+    # The same three answers, machine-shaped (#523): report, manifest, verification.
+    assert invoke(data_root, "report", "show", identifier, "--json") == 0
+    shown = _parsed_json(capsys.readouterr().out)
+    assert shown["kind"] == "report"
+    assert "fnd-001" in str(shown["report"])
+
+    assert invoke(data_root, "report", "show", identifier, "--manifest", "--json") == 0
+    manifest_document = _parsed_json(capsys.readouterr().out)
+    assert manifest_document["kind"] == "report-manifest"
+    manifest_payload = manifest_document["manifest"]
+    assert isinstance(manifest_payload, dict) and "manifest_version" in manifest_payload
+
+    assert invoke(data_root, "verify", identifier, "--json") == 0
+    verification = _parsed_json(capsys.readouterr().out)
+    assert verification["kind"] == "verification"
+    assert verification["manifest_checked"] is True
+
 
 def test_report_show_is_refused_while_no_report_exists(
     data_root: Path, capsys: pytest.CaptureFixture[str]
@@ -2192,6 +2209,34 @@ def test_context_show_json_keeps_the_refusal_exit_code(
     assert document["can_approve"] is False
     questions = document["questions"]
     assert isinstance(questions, list) and questions
+
+
+def test_verify_json_names_drift_and_keeps_the_refusal_exit_code(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """DEC-096's last residual (#523): `verify --json` speaks the envelope, and DEC-088 holds
+    either way — drift is exit 3, each drifted item named by identifier and hash, never by the
+    content that changed."""
+    identifier = created(data_root, capsys)
+    invoke(data_root, "source", "add", identifier, str(FORGEFLOW_INPUT))
+    capsys.readouterr()
+
+    assert invoke(data_root, "verify", identifier, "--json") == 0
+    document = _parsed_json(capsys.readouterr().out)
+    assert document["kind"] == "verification"
+    assert document["ok"] is True
+    assert document["manifest_checked"] is False
+
+    stored = data_root / "assessments" / identifier / "sources" / "product-overview.md"
+    stored.write_bytes(b"# Replaced\n")
+
+    assert invoke(data_root, "verify", identifier, "--json") == 3
+    output = capsys.readouterr().out
+    document = _parsed_json(output)
+    assert document["ok"] is False
+    drift = document["document_drift"]
+    assert isinstance(drift, list) and drift
+    assert "Replaced" not in output, "changed content must never be printed"
 
 
 def test_questions_and_catalog_read_commands_answer(
