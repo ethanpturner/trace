@@ -366,14 +366,17 @@ The orchestrator should treat each analysis activity as a workflow node with def
 
 The ingestion component converts source material into normalized document artifacts.
 
-### MVP inputs
+### Inputs
 
 - Markdown
 - Plain text
 - JSON
 - YAML
+- PDF, text layer only (DEC-123, post-MVP): the addressable text is the deterministic
+  extraction of the stored bytes, one unit per page; an image-only PDF is refused at
+  registration rather than ingested as an empty document, and OCR is out of scope.
 
-PDF, Microsoft Office, repository, and web-page ingestion are deferred unless implementation proves simple enough to include safely.
+Microsoft Office, repository, and web-page ingestion are deferred unless implementation proves simple enough to include safely.
 
 Post-MVP, machine-readable artifacts — compose manifests first, then OpenAPI, then IaC — may be
 parsed deterministically into documented claims with verifiable excerpt hashes (DEC-070). Parser

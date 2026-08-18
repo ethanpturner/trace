@@ -52,6 +52,8 @@ class Segment:
     """One addressable unit of a document, taken verbatim from the original.
 
     Line numbers are 1-based and inclusive, matching how a reviewer counts lines in an editor.
+    For a PDF they address the extraction (DEC-123), and `page_number` carries the page the
+    unit came from; both stay unset for every other format.
     """
 
     text: str
@@ -59,6 +61,7 @@ class Segment:
     end_line: int
     section_title: str | None = None
     json_pointer: str | None = None
+    page_number: int | None = None
 
 
 def segment(text: str, media_type: MediaType) -> list[Segment]:

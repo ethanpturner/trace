@@ -221,7 +221,7 @@ def test_origin_and_trust_level_are_required_and_never_inferred() -> None:
 # ------------------------------------------------------------------------------------------
 
 
-@pytest.mark.parametrize("name", ["report.pdf", "notes.docx", "README", "archive.tar.gz"])
+@pytest.mark.parametrize("name", ["slides.pptx", "notes.docx", "README", "archive.tar.gz"])
 def test_an_unsupported_format_is_refused_by_name(
     loader: DocumentLoader, tmp_path: Path, name: str
 ) -> None:
@@ -239,13 +239,13 @@ def test_an_unsupported_format_is_refused_by_name(
 
 
 def test_the_extension_allowlist_is_the_documented_set() -> None:
-    assert set(SUFFIXES) == {".md", ".markdown", ".txt", ".tf", ".json", ".yaml", ".yml"}
+    assert set(SUFFIXES) == {".md", ".markdown", ".txt", ".tf", ".json", ".yaml", ".yml", ".pdf"}
 
 
 def test_a_terraform_hcl_file_ingests_as_plain_text(loader: DocumentLoader, tmp_path: Path) -> None:
     """`.tf` arrives through the plain-text suffix (DEC-121), the way `.tf.json` arrives
-    through `.json`: the media-type set stays section 5.4's four, and recognizing the
-    declaration is the IaC parser's, downstream."""
+    through `.json`: HCL adds no media type, and recognizing the declaration is the IaC
+    parser's, downstream."""
     declaration = tmp_path / "main.tf"
     declaration.write_text('resource "aws_db_instance" "db" {\n}\n', encoding="utf-8")
     document = loader.load_document(
@@ -383,7 +383,7 @@ def test_load_directory_refuses_an_unsupported_file_rather_than_skipping_it(
     directory = tmp_path / "inputs"
     directory.mkdir()
     (directory / "overview.md").write_bytes(b"# Overview\n")
-    (directory / "diagram.pdf").write_bytes(b"%PDF-1.4\n")
+    (directory / "diagram.docx").write_bytes(b"content")
 
     with pytest.raises(UnsupportedFormatError):
         loader.load_directory(directory)

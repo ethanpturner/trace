@@ -700,7 +700,9 @@ For JSON and YAML the address is a JSON Pointer carried in `metadata` under the 
 still populated so a reviewer can find the passage, but a line range is not an address in a
 structured document — two sequence elements can be textually identical.
 
-`page_number` is unpopulated until PDF ingestion arrives.
+For a PDF the addressable unit is one page of the text-layer extraction (DEC-123): `page_number`
+carries the page, `section_title` reads `Page N`, and line numbers address the extraction of the
+stored bytes — the original is binary, so the extraction is the one text every reader shares.
 
 ## Example
 

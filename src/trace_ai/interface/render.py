@@ -36,7 +36,7 @@ from trace_ai.domain.execution import ExecutionRecord, WorkflowRun
 from trace_ai.domain.finding import Finding
 from trace_ai.domain.question import Question
 from trace_ai.domain.reviewer_decision import ReviewerDecision
-from trace_ai.domain.source_document import SourceDocument
+from trace_ai.domain.source_document import MediaType, SourceDocument
 from trace_ai.domain.threat import Threat
 from trace_ai.domain.trust_boundary import TrustBoundary
 from trace_ai.infrastructure.filesystem.artifact_store import ArtifactStoreError
@@ -693,9 +693,13 @@ def render_source_span(handle: AssessmentHandle, assessment: Assessment, evidenc
         )
     )
 
+    from trace_ai.services.ingestion.pdf import PdfExtractionError, addressable_text
+
     try:
-        raw: str | None = handle.artifacts.read("sources", document.filename).decode("utf-8")
-    except ArtifactStoreError, OSError, UnicodeDecodeError:
+        raw: str | None = addressable_text(
+            handle.artifacts.read("sources", document.filename), document.media_type
+        )[0]
+    except ArtifactStoreError, OSError, UnicodeDecodeError, PdfExtractionError:
         raw = None
     if raw is None:
         body = header + (
@@ -720,11 +724,15 @@ def render_source_span(handle: AssessmentHandle, assessment: Assessment, evidenc
         if reference.json_pointer and first is None
         else ""
     )
+    scope = (
+        f"the text extraction of {_e(document.filename)} (DEC-123); the stored original is binary"
+        if document.media_type is MediaType.PDF
+        else f"the whole of {_e(document.filename)}"
+    )
     body = (
         header
         + note
-        + f'<div class="excerpt"><div class="label">[{UNTRUSTED_LABEL} — the whole of '
-        + f"{_e(document.filename)}]</div></div>"
+        + f'<div class="excerpt"><div class="label">[{UNTRUSTED_LABEL} — {scope}]</div></div>'
         + '<div class="src"><pre>'
         + "".join(lines)
         + "</pre></div>"

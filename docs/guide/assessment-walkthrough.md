@@ -13,11 +13,14 @@ reset --force` returns the data root to the fresh-clone state and is destructive
 
 ## Preparing input documents
 
-Trace accepts Markdown (`.md`, `.markdown`), plain text (`.txt`), JSON (`.json`), and YAML
-(`.yaml`, `.yml`). Each file must be valid UTF-8 and at most 10 MB, and a JSON or YAML file must
-parse. A structured file must also parse to a mapping or a sequence at the top level — evidence
-cites structured documents by JSON Pointer, and a file that parses to a bare scalar has nothing to
-point at, so it is refused at registration rather than discovered to be uncitable later. PDF,
+Trace accepts Markdown (`.md`, `.markdown`), plain text (`.txt`, `.tf`), JSON (`.json`), YAML
+(`.yaml`, `.yml`), and PDF (`.pdf`). Each text file must be valid UTF-8 and at most 10 MB, and a
+JSON or YAML file must parse. A structured file must also parse to a mapping or a sequence at the
+top level — evidence cites structured documents by JSON Pointer, and a file that parses to a bare
+scalar has nothing to point at, so it is refused at registration rather than discovered to be
+uncitable later. A PDF is read text-layer only (DEC-123): evidence cites the extraction by page
+and line, and a PDF with no extractable text anywhere — a scan, an image export — is refused at
+registration with a named error rather than ingested as an empty document; OCR is out of scope.
 Office formats, repository ingestion, and web ingestion are deferred; supplying one produces a
 named error, not a conversion.
 

@@ -19,6 +19,10 @@ dependencies = [
     # one. It is used through `safe_load` only: the default loader constructs arbitrary Python
     # objects from document content, which is code execution chosen by an untrusted input file.
     "pyyaml>=6.0.3",
+    # PDF text-layer extraction (DEC-123). Pure Python, ships `py.typed`, and parses untrusted
+    # input behind the loader's size cap; the extraction is a pure function of the bytes and this
+    # pinned version, so an upgrade that changes output is caught by `trace verify`, not absorbed.
+    "pypdf>=6.0.0",
 ]
 
 # v0.1 is clone-only (DEC-090): the prompts, requirements catalog, report template, and benchmark
