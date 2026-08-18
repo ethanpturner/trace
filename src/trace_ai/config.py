@@ -94,7 +94,14 @@ class Settings(BaseSettings):
     anthropic_api_key: SecretStr | None = None
     openai_api_key: SecretStr | None = None
 
-    @field_validator("anthropic_api_key", "openai_api_key", mode="before")
+    # External tracing (#538, DEC-109). The destination for execution spans when an
+    # assessment's `enable_external_tracing` is on: `file://<path>` appends JSON lines,
+    # `http(s)://` posts the batch. Absent means tracing has nowhere to go and emits nothing.
+    # The spans carry the ledger's identifiers and numbers, never prompt or source content.
+    tracing_endpoint: str | None = None
+    tracing_api_key: SecretStr | None = None
+
+    @field_validator("anthropic_api_key", "openai_api_key", "tracing_api_key", mode="before")
     @classmethod
     def _blank_is_unset(cls, value: object) -> object:
         """Treat an empty variable as absent rather than as an empty secret.
