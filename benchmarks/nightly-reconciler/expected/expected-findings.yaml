@@ -1,0 +1,17 @@
+# Nightly Reconciler expected findings
+#
+# This scenario expects no findings. The two conclusions a generic review most often asserts
+# here — credentials held outside a managed store, billing data unencrypted at rest — rest on
+# organizational mechanisms the workspace assertion documents against org-controls catalog
+# 0.2, so both are suppressions, not findings (DEC-122). A successful assessment may produce
+# no findings (DEC-013); the negative cases in expected-rejections.yaml are the graded
+# content.
+#
+# Nothing in this directory is supplied to Trace during an assessment.
+
+benchmark_version: "1.0"
+scenario: nightly-reconciler
+catalog_version: "0.3"
+source: system-overview.md
+
+findings: []

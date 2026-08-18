@@ -1,0 +1,65 @@
+{
+  "schema": "EvidenceValidationProposal",
+  "response": {
+    "assessments": [
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-001",
+        "evidence_ids": [
+          "evd-003",
+          "evd-007"
+        ],
+        "evidence_strengths": {
+          "evd-003": "direct",
+          "evd-007": "direct"
+        },
+        "validation_status": "supported",
+        "rationale": "The credentials section affirmatively states the credential is provisioned through the standard workload deployment, and the asserted organizational control states that credentials provisioned that way live in the enterprise secrets service and rotate on a ninety-day schedule. The two passages together name the secret store, which is what the requirement asks the documentation to state.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": {}
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-002",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": {
+          "evd-002": "indirect"
+        },
+        "validation_status": "unsupported",
+        "rationale": "The cited passage states the reachability restriction as a fact of the deployment; no passage establishes what enforces it, so the restriction cannot be verified from what was supplied.",
+        "missing_evidence": [
+          "how the billing database is restricted to the reconciler job",
+          "whether the restriction is enforced by network policy or assumed by topology"
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "documentation_gap",
+        "quoted_text": {}
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-003",
+        "evidence_ids": [
+          "evd-002",
+          "evd-007"
+        ],
+        "evidence_strengths": {
+          "evd-002": "direct",
+          "evd-007": "direct"
+        },
+        "validation_status": "supported",
+        "rationale": "The overview states the billing database is a managed relational database provided by the cloud platform and that the reporting API is served over HTTPS; the asserted organizational control states managed databases encrypt at rest by default with a setting a workload team cannot disable. The party providing the inherited protection is identified, which is what the requirement asks.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": {}
+      }
+    ]
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "schema": "MappingProposal",
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-NET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The billing database is an internal data store used only by the reconciler, so restricted reachability applies; it is not a public interface and no private link is documented.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Billing records are confidential financial data stored in the billing database and pulled across the processor boundary, which is this requirement's applicable condition.",
+        "suppressed_conclusion": "Billing data is unencrypted at rest because the overview does not describe encryption.",
+        "suppressed_by": "managed-db-encryption (org-controls catalog 0.2): databases provisioned through the platform's managed database service encrypt data at rest by default, and the setting cannot be disabled by a workload team",
+        "satisfaction_status": "satisfied",
+        "evidence_ids": [
+          "evd-002",
+          "evd-007"
+        ],
+        "assumptions": [
+          "The overview states the billing database is a managed relational database provided by the cloud platform, which is the asserted organizational control's applies_when condition; transit to the processor is stated as HTTPS."
+        ],
+        "confidence": "high"
+      }
+    ],
+    "documentation_gaps": []
+  }
+}

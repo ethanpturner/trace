@@ -7429,6 +7429,70 @@ Tradeoffs:
   reports); the claim cites the assertion document. A future version can carry references, and
   the gap is stated here rather than papered over.
 
+## DEC-117: Checkpoint review time is measured from a recorded session start, and gates nothing
+
+Date: 2026-08-18
+
+Status: Accepted
+
+Decision:
+
+**A `ReviewSession` row records when a checkpoint's review material was rendered to a person.**
+`trace context review` and `trace findings review` write one on entry, whichever path the
+invocation takes — export, apply, or flags. The measurement is **wall clock** from the earliest
+session at a checkpoint to that checkpoint's conclusion (context approval's `approved_at`; the
+last finding decision's `created_at`), emitted as `context_review_seconds` and
+`finding_review_seconds` by the metrics pass. Data-model section 25a defines the object; the
+`rvs` prefix joins section 2.1.
+
+**Wall clock, stated as such.** A command line cannot observe attention, and an "active time"
+number derived from guesses about idleness would be fabricated precision. The honest measurement
+is the elapsed interval, with its known inflation — a reviewer who exports the file and returns
+after lunch measures the lunch — stated here rather than corrected invisibly.
+
+**Per-object timings are not synthesized.** A batch invocation records many decisions in one
+moment; per-object numbers computed from shared timestamps would be noise wearing precision. The
+per-decision timestamps are already the record; the session total is the honest unit.
+
+**A harness-decided checkpoint has no session.** The evaluation harness and the DEC-077
+stability protocol answer checkpoints programmatically without the review commands, so replayed
+and protocol-driven runs carry no timing metrics — absent, never zero, the DEC-092 dash
+discipline. This is also what keeps the committed evaluation pages byte-stable: no offline
+replay gains a timing row.
+
+**The numbers never gate anything.** No ceiling, no approval rule, and no workflow transition
+reads them. Measurement, not surveillance: the instrument exists to answer research question 10
+(can Trace reduce total review time without increasing reviewer fatigue) with data, following
+the DEC-110 and DEC-112 instrument-first precedents.
+
+Why:
+
+- The vision names reviewer time a primary success measure and research question 10 asks about
+  it; nothing in the pipeline measured it. Both checkpoints were the only phases whose duration
+  the execution ledger could not see, because their duration is a person's.
+
+Alternatives Considered:
+
+- Fields on `ReviewerDecision` (rejected: the decision records the end of a deliberation, and
+  denormalizing a session start onto every decision row would repeat one fact many times and
+  invite drift between copies).
+- Deriving the session start from the checkpoint pause timestamp (rejected: the interval from
+  pause to approval includes arbitrary time before anyone looked — a run paused overnight would
+  measure the night, and the number would be dominated by scheduling rather than review).
+- Recording sessions from `trace context show` and `trace findings show` as well (rejected for
+  now: `show` is also a spectator surface — demos, verification, screenshots — and a session it
+  writes would start clocks nobody is reviewing against. The review commands are the working
+  surface; the boundary is stated here and can move with evidence).
+
+Tradeoffs:
+
+- Wall clock over-measures interrupted reviews and the entry says so; the alternative
+  under-measures by inventing an idle rule. Over-measurement with a stated mechanism is the
+  conservative direction for a number that must never flatter the tool.
+- A reviewer who works entirely from a pre-exported file in a later session starts the clock at
+  the export, which may precede the real work by days. The metric is therefore a ceiling on
+  review effort, never an estimate of attention, and consumers read it with that label.
+
 ## DEC-118: Evidence age is capture age, the threshold is per-assessment configuration, and staleness is a flag that changes nothing
 
 Date: 2026-08-18
@@ -7694,3 +7758,71 @@ Tradeoffs:
   and a wide excerpt is verbose, not wrong.
 - `.tf` mapping to plain text means a non-Terraform file named `.tf` ingests as ordinary text
   and seeds nothing; the loader's allowlist gains a suffix whose media type it already served.
+
+## DEC-122: The operator fact set, control references, and the scenario that measures the suppression
+
+Date: 2026-08-18
+
+Status: Accepted
+
+Decision:
+
+**Org-controls catalog 0.2 is the operator fact set DEC-115's v0 was waiting for, and 0.1 is
+retained unchanged.** Five controls — the two 0.1 entries carried forward, plus the enterprise
+secrets service, managed-database encryption, and the approved CI/CD platform — stated by a
+coherent fictional operator (design-principles section 19). A catalog version's content never
+moves; growth is a new version file, exactly as the requirements catalog versions.
+
+**Every control carries `references`: pointers to the organizational documentation that
+evidences it, and pointers only.** A policy page name, an audit-report identifier — text a
+reviewer can go and check. The field lands on `OrganizationalControl` (data-model.md section
+30a) and rides in the seeded claim's *value*, appended after the mechanism sentence. A
+reference is never an `EvidenceReference`: an evidence object must quote a document the
+assessment holds, and organizational documentation is not in any assessment's store, so
+granting a pointer evidence identity would fabricate evidence. Visibility without authority is
+the whole design.
+
+**The fifteenth scenario, nightly-reconciler, measures roadmap section 10's claim.** An
+internal batch service whose overview is silent about credential custody and database
+encryption; the workspace assertion names `secrets-vault` and `managed-db-encryption` from
+catalog 0.2; and the two conclusions a generic review raises from those silences — unmanaged
+credentials, unencrypted billing data — are recorded as suppressions resting on asserted
+organizational facts. The `organizational_control` rejection mechanism joins the
+negative-expectation vocabulary beside the requirements-catalog mechanisms: a suppression's
+`entry` names the control by `(name, catalog version)`. Zero findings, one genuine gap
+(req-NET-001 reachability enforcement), category `organizational-control-inheritance`,
+recording authored offline against the deterministic model; the live capture and baselines
+await the keyed steps (DEC-100).
+
+Why:
+
+- DEC-115 shipped the mechanism and stated its own gaps — no operator facts, no evidence
+  links, one scenario asserting one control incidentally. The roadmap's central claim, that
+  approved organizational context prevents a false conclusion, had no measuring scenario, and
+  the vision document's founding example — encryption silence answered by a managed platform —
+  is exactly the suppression nightly-reconciler now scores.
+- The suppression mechanism is genuinely distinct from oidc-portal's: there the catalog's own
+  `common_false_positives` and `non_applicable_conditions` entries stop the wrong conclusion;
+  here an *asserted organizational fact*, verified against the central hash-checked catalog
+  and approved at checkpoint 1, does. Recording the third mechanism by name keeps the
+  regression material honest about what stopped what.
+
+Alternatives Considered:
+
+- Making references evidence objects (rejected: an `EvidenceReference` quotes a stored
+  document; the referenced policy pages are not in the store, and minting evidence for them
+  would launder unverifiable pointers into the evidence chain).
+- Growing 0.1 in place (rejected: oidc-portal's recording replays against 0.1's content; a
+  version whose content moves is provenance that means nothing — DEC-115's own words).
+- A central-logging suppression for the scenario's second negative (rejected in favour of
+  managed-db-encryption: req-LOG-001 asks for an exclusion statement the org control does not
+  supply, so the honest outcome there is unverified, not a suppression; the encryption case
+  is the vision document's founding example and resolves cleanly).
+
+Tradeoffs:
+
+- References point at fictional documents, so nothing verifies them; they are load-bearing
+  only as the *shape* an operator's real pointers take, and the claim's actual evidence stays
+  the assertion document. Deliberate: the fiction is stated where the catalog is defined.
+- The recording is authored, not captured, like every scenario since the flagship; the
+  scenario joins the sweep and the keyed capture queue (#484, DEC-100) with the rest.

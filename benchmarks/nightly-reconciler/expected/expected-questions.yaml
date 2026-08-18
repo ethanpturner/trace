@@ -1,0 +1,13 @@
+benchmark_version: "1.0"
+scenario: nightly-reconciler
+source: system-overview.md
+
+questions:
+  - key: Q-NR-01
+    subject: internal reachability enforcement
+    asks: How is the billing database restricted to the reconciler job — by network policy or by topology?
+    arises_from: system-overview.md section 1
+    requirement_id: req-NET-001
+    changes: whether GAP-NR-01 resolves to a satisfied requirement or a finding
+    priority: medium
+    blocking: false

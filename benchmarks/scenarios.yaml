@@ -177,6 +177,20 @@ scenarios:
     status: authored
     category: large-architecture-input
 
+  - slug: nightly-reconciler
+    name: Nightly Reconciler
+    path: benchmarks/nightly-reconciler
+    # The org-controls scenario (#568, DEC-122): an internal batch service whose documents
+    # are silent about credential custody and database encryption, both provided
+    # organizationally. The workspace assertion (org-controls catalog 0.2) turns the two
+    # false positives a generic review raises here — unmanaged credentials, unencrypted
+    # billing data — into suppressions resting on documented organizational mechanisms,
+    # while the one genuinely undetermined item (reachability enforcement) stays a gap.
+    # Zero findings; the negative cases are the graded content.
+    status: authored
+    catalog_version: "0.3"
+    category: organizational-control-inheritance
+
 # Roadmap Stage 5 calls for 8 to 12 scenarios across its ten coverage categories. Every
 # registered scenario is fully authored — outcome truth and recording — and replays under
 # `trace evaluate --all`; every category is covered, with prompt injection carried by the
