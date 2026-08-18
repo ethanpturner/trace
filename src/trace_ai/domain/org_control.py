@@ -57,6 +57,14 @@ class OrganizationalControl(DomainModel):
     mechanism: str = Field(min_length=1)
     applies_when: list[str] = Field(default_factory=list)
     catalog_version: str = Field(min_length=1)
+    references: list[str] = Field(default_factory=list)
+    """Pointers to the organizational documentation that evidences the control (DEC-122).
+
+    A policy page name, an audit-report identifier — text a reviewer can go and check. Pointers
+    only, never authority: the referenced documents are not in any assessment's store, so a
+    reference here can never become an `EvidenceReference`, which must quote a document the
+    assessment holds. The pointer rides in the seeded claim's value for the reviewer to see.
+    """
 
     @field_validator("name")
     @classmethod

@@ -1,0 +1,26 @@
+# Nightly Reconciler expected documentation gaps
+#
+# One gap: whether the internal-only reachability the billing database relies on is actually
+# enforced is not established by the documents. Nothing in this directory is supplied to
+# Trace.
+
+benchmark_version: "1.0"
+scenario: nightly-reconciler
+catalog_version: "0.3"
+source: system-overview.md
+
+documentation_gaps:
+  - key: GAP-NR-01
+    requirement_id: req-NET-001
+    subject: enforcement of the internal-only reachability of the billing database is not described
+    arises_from: system-overview.md section 1
+    missing:
+      - How the billing database is restricted to the reconciler job
+      - Whether the restriction is enforced by network policy or assumed by topology
+    supported_by:
+      - system-overview.md
+    paired_question: Q-NR-01
+    notes: >
+      The document states the billing database is reachable only from the reconciler job; how
+      that is enforced is not established, and concluding it is unenforced would be the
+      DEC-009 failure.

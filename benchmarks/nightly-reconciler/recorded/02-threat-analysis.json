@@ -1,0 +1,76 @@
+{
+  "schema": "ThreatAnalysisProposal",
+  "response": {
+    "threats": [
+      {
+        "title": "Theft or abuse of the processor reporting credential",
+        "description": "An attacker who obtains the service credential the reconciler uses against the payment processor's reporting API can read the organization's settlement reports from anywhere the API is reachable. The overview states the credential is provisioned through the standard workload deployment and says nothing further about where it is held or how it is rotated; the asserted organizational secrets service is the documented custody mechanism.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "information_disclosure",
+          "spoofing"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-001",
+          "cmp-003"
+        ],
+        "affected_asset_ids": [
+          "ast-001"
+        ],
+        "related_data_flow_ids": [
+          "df-001"
+        ],
+        "preconditions": [
+          "an attacker obtains the service credential issued by the processor for this integration"
+        ],
+        "attack_path": [
+          "obtain the reporting credential",
+          "call the processor's reporting API with it from an attacker-controlled host"
+        ],
+        "impact": "Settlement reports for the organization's payment activity are read outside the reconciler.",
+        "likelihood": null,
+        "confidence": "medium",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Direct access to the billing database bypassing the reconciler",
+        "description": "The billing database is stated to be reachable only from the reconciler job inside the application subnet, but how that restriction is enforced — network policy or assumed topology — is not described. A workload elsewhere on the network that can reach the database would read billing records and could alter discrepancy summaries without touching the reconciler.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "elevation_of_privilege",
+          "tampering"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-002"
+        ],
+        "affected_asset_ids": [
+          "ast-001"
+        ],
+        "related_data_flow_ids": [
+          "df-002"
+        ],
+        "preconditions": [
+          "the stated reachability restriction is not enforced by network policy"
+        ],
+        "attack_path": [
+          "reach the application subnet from elsewhere on the network",
+          "connect to the billing database directly"
+        ],
+        "impact": "Billing records are readable and discrepancy summaries alterable outside the reconciler's path.",
+        "likelihood": null,
+        "confidence": "medium",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      }
+    ]
+  }
+}

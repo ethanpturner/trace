@@ -7702,3 +7702,71 @@ Tradeoffs:
   and a wide excerpt is verbose, not wrong.
 - `.tf` mapping to plain text means a non-Terraform file named `.tf` ingests as ordinary text
   and seeds nothing; the loader's allowlist gains a suffix whose media type it already served.
+
+## DEC-122: The operator fact set, control references, and the scenario that measures the suppression
+
+Date: 2026-08-18
+
+Status: Accepted
+
+Decision:
+
+**Org-controls catalog 0.2 is the operator fact set DEC-115's v0 was waiting for, and 0.1 is
+retained unchanged.** Five controls — the two 0.1 entries carried forward, plus the enterprise
+secrets service, managed-database encryption, and the approved CI/CD platform — stated by a
+coherent fictional operator (design-principles section 19). A catalog version's content never
+moves; growth is a new version file, exactly as the requirements catalog versions.
+
+**Every control carries `references`: pointers to the organizational documentation that
+evidences it, and pointers only.** A policy page name, an audit-report identifier — text a
+reviewer can go and check. The field lands on `OrganizationalControl` (data-model.md section
+30a) and rides in the seeded claim's *value*, appended after the mechanism sentence. A
+reference is never an `EvidenceReference`: an evidence object must quote a document the
+assessment holds, and organizational documentation is not in any assessment's store, so
+granting a pointer evidence identity would fabricate evidence. Visibility without authority is
+the whole design.
+
+**The fifteenth scenario, nightly-reconciler, measures roadmap section 10's claim.** An
+internal batch service whose overview is silent about credential custody and database
+encryption; the workspace assertion names `secrets-vault` and `managed-db-encryption` from
+catalog 0.2; and the two conclusions a generic review raises from those silences — unmanaged
+credentials, unencrypted billing data — are recorded as suppressions resting on asserted
+organizational facts. The `organizational_control` rejection mechanism joins the
+negative-expectation vocabulary beside the requirements-catalog mechanisms: a suppression's
+`entry` names the control by `(name, catalog version)`. Zero findings, one genuine gap
+(req-NET-001 reachability enforcement), category `organizational-control-inheritance`,
+recording authored offline against the deterministic model; the live capture and baselines
+await the keyed steps (DEC-100).
+
+Why:
+
+- DEC-115 shipped the mechanism and stated its own gaps — no operator facts, no evidence
+  links, one scenario asserting one control incidentally. The roadmap's central claim, that
+  approved organizational context prevents a false conclusion, had no measuring scenario, and
+  the vision document's founding example — encryption silence answered by a managed platform —
+  is exactly the suppression nightly-reconciler now scores.
+- The suppression mechanism is genuinely distinct from oidc-portal's: there the catalog's own
+  `common_false_positives` and `non_applicable_conditions` entries stop the wrong conclusion;
+  here an *asserted organizational fact*, verified against the central hash-checked catalog
+  and approved at checkpoint 1, does. Recording the third mechanism by name keeps the
+  regression material honest about what stopped what.
+
+Alternatives Considered:
+
+- Making references evidence objects (rejected: an `EvidenceReference` quotes a stored
+  document; the referenced policy pages are not in the store, and minting evidence for them
+  would launder unverifiable pointers into the evidence chain).
+- Growing 0.1 in place (rejected: oidc-portal's recording replays against 0.1's content; a
+  version whose content moves is provenance that means nothing — DEC-115's own words).
+- A central-logging suppression for the scenario's second negative (rejected in favour of
+  managed-db-encryption: req-LOG-001 asks for an exclusion statement the org control does not
+  supply, so the honest outcome there is unverified, not a suppression; the encryption case
+  is the vision document's founding example and resolves cleanly).
+
+Tradeoffs:
+
+- References point at fictional documents, so nothing verifies them; they are load-bearing
+  only as the *shape* an operator's real pointers take, and the claim's actual evidence stays
+  the assertion document. Deliberate: the fiction is stated where the catalog is defined.
+- The recording is authored, not captured, like every scenario since the flagship; the
+  scenario joins the sweep and the keyed capture queue (#484, DEC-100) with the rest.
