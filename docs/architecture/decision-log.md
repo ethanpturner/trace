@@ -6259,6 +6259,19 @@ Tradeoffs:
   strict grammar would not, and the adapter's own validation plus the orchestrator's retry
   budget are the recovery, exactly as on the Anthropic path after its grammar fallback.
 
+Amendment (2026-08-17, #539): **The adapter's wire surface is the Responses API.** The
+deferral above is discharged: Chat Completions is the provider's legacy surface, and Responses
+is where its new capability lands — including the caching semantics any future mapping of the
+seam's cache hints would want. The move is exactly what the entry predicted, an
+adapter-internal change the seam never sees: `system` becomes `instructions`, the prompt is
+the one `input` message, creativity's effort rides `reasoning.effort`, the non-strict schema
+rides `text.format` with the same `json_object` fallback and the same visible
+`schema_grammar` degradation, truncation and filtering arrive as an `incomplete` status
+rather than a finish reason, and usage disjointing subtracts `input_tokens_details.cached_tokens`
+as before. Proven the way the adapter arrived: offline, the conformance suite unchanged in
+what it asserts, stub shapes updated to the provider's. The one live OpenAI pipeline run
+remains unmeasured and remains the keyed track's business.
+
 ## DEC-096: Read commands speak JSON, and the missing read commands exist
 
 Date: 2026-08-17
