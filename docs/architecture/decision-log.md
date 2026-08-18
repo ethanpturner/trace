@@ -8213,3 +8213,65 @@ Tradeoffs:
 - The posture leans on discipline about what a "table-layout change" is; the store's own comment
   and this entry are the record, and `tests/unit/test_store.py` pins the refusal and its
   recovery wording.
+
+## DEC-128: Kubernetes manifests close the parser family's sketch — a kind allowlist, multi-document streams, and the uniform-or-nothing container rule
+
+Date: 2026-08-18
+
+Status: Accepted
+
+Decision:
+
+**A Kubernetes parser joins the DEC-070 family** (`services/context/kubernetes.py`,
+`kubernetes-parser-v1`), the last member future-features 7.2 names. The kind allowlist is
+deliberate and small — Deployment, Service, Ingress, NetworkPolicy — and a kind outside it
+yields nothing: a CRD's semantics are its own, and reading one would be interpretation.
+Recognition is by suffix (`*.k8s.yaml`, `*.k8s.yml`, `*.k8s.json`); content is never sniffed.
+
+**Multi-document streams are in scope, and the ingestion loader admits them for YAML
+generally.** A manifest is conventionally several documents separated by `---`; that is valid
+YAML with the same safety properties, so the loader's format validation moves from
+`yaml.safe_load` to `yaml.safe_load_all` — the same safe constructors — holding every document
+in the stream to the same addressability bar a single one met. Anything templated (a Helm
+expression is not YAML) still fails the safe-parse rule and is refused at ingestion.
+
+**Admitted attributes are DEC-121's rule at Kubernetes' two levels.** Pod-level `hostNetwork`
+and `automountServiceAccountToken` read directly. Container-level `allowPrivilegeEscalation`
+and `readOnlyRootFilesystem` read **uniformly or not at all**: when every container that states
+the attribute states the same value, the manifest has stated one self-contained fact about the
+workload and the claim carries it; when containers disagree, no single fact was stated and the
+split yields nothing — DEC-121's self-contained-meaning bar applied to aggregation, silence
+over a chosen side.
+
+Why:
+
+- Closing 7.2's sketch was the family's remaining named work, and Kubernetes manifests carry
+  exactly the attribute class the rule admits — literal booleans with self-contained meaning
+  where both values are worth reporting.
+- The multi-document question had one honest answer at the boundary that already owns syntax:
+  the loader validates what YAML's safe loader parses, and a `---` stream is that.
+
+Alternatives Considered:
+
+- Admitting multi-document YAML only for `*.k8s.*` suffixes (rejected: the loader validates by
+  media type and never sniffs content or branches on downstream consumers; a suffix-conditional
+  parse rule would make ingestion behaviour depend on who might read the file later).
+- Reading per-container claims as separate subjects (rejected: the component is the workload,
+  and a per-container subject would mint components no reviewer asked for; the
+  uniform-or-nothing rule reports what the manifest states about the workload and stays silent
+  where it states two things).
+- A wider kind allowlist (rejected for v1: the four cover the workload and its network surface;
+  growth is a visible allowlist diff under this entry's reasoning, never accretion).
+
+Tradeoffs:
+
+- The suffix convention (`*.k8s.yaml`) asks operators to name manifests for ingestion; a bare
+  `deployment.yaml` is not recognized. Deliberate: a generic name states no format, the family
+  rule since DEC-113.
+- A split container statement disappears rather than surfacing as a contradiction object.
+  Stated here: the parser proposes context, and manufacturing a `SourceObservation` from
+  intra-document disagreement is a step the family has not taken for any member — if a real
+  corpus shows split statements mattering, that is a revisit with the evidence in hand.
+- The measurement is fixture-level (allowlist coverage, the split-statement negative, the
+  DEC-122 suppression shape, the loader-boundary stream tests), not a scenario re-record — the
+  #569 precedent.
