@@ -455,7 +455,9 @@ loader's own safe-parse rule — under the same table in CloudFormation's spelli
 closed the sketch with Kubernetes manifests: a deliberate kind allowlist, multi-document
 streams admitted at the loader, and container-level attributes read uniformly or not at all.
 The parsing-over-model-analysis instinct below held: technology-specific parsing is what was
-built. Widening the admission rule itself is #595's decision.
+built. DEC-130 widened the admission rule once, deliberately — closed-vocabulary strings join
+stated booleans — and closed cross-resource reading permanently: no IaC parser derives a claim
+from more than one resource declaration.
 
 The original sketch — analyze Terraform, CloudFormation, Kubernetes manifests, or similar artifacts for architecture and control evidence.
 

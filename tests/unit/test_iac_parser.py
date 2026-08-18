@@ -240,3 +240,50 @@ def test_a_resource_free_hcl_file_seeds_nothing_and_refuses_nothing(tmp_path: Pa
         seeded = seed_structured_documents(handle)
         assert seeded is None or seeded.components == ()
         assert handle.objects.list(Component) == []
+
+
+def test_a_closed_vocabulary_string_is_as_literal_as_a_stated_boolean() -> None:
+    """The widened admission rule (DEC-121 as amended): a stated enum member is read verbatim
+    in both syntaxes; an expression or an interpolated string is still not stated."""
+    from_hcl = parse_terraform_hcl(
+        """\
+resource "azurerm_storage_account" "artifacts" {
+  minimum_tls_version = "TLS1_2"
+}
+resource "azurerm_storage_account" "legacy" {
+  minimum_tls_version = var.tls_floor
+}
+resource "azurerm_storage_account" "templated" {
+  minimum_tls_version = "${var.tls_floor}"
+}
+"""
+    )
+    by_name = {resource.name: resource for resource in from_hcl.resources}
+    assert dict(by_name["artifacts"].stated) == {"minimum_tls_version": "TLS1_2"}
+    assert by_name["legacy"].stated == ()
+    assert by_name["templated"].stated == ()
+
+    from_json = parse_terraform(
+        '{"resource": {"azurerm_storage_account": {"artifacts": '
+        '{"minimum_tls_version": "TLS1_2"}}}}'
+    )
+    assert dict(from_json.resources[0].stated) == {"minimum_tls_version": "TLS1_2"}
+
+
+def test_a_security_group_rule_yields_no_reachability_conclusion() -> None:
+    """The must-not-conclude negative: cross-resource is closed, permanently (DEC-121 as
+    amended). A world-open ingress rule is a graph judgment away from a reachability claim,
+    and the parser makes no part of that judgment — the resource seeds as a component and
+    nothing more."""
+    parsed = parse_terraform_hcl(
+        """\
+resource "aws_security_group_rule" "world_open" {
+  type        = "ingress"
+  cidr_blocks = ["0.0.0.0/0"]
+  from_port   = 443
+  to_port     = 443
+}
+"""
+    )
+    (rule,) = parsed.resources
+    assert rule.stated == (), "no reachability, exposure, or any other claim"
