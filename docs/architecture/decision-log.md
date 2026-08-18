@@ -7031,6 +7031,22 @@ Tradeoffs:
   cell text and the template controls line starts today; the risk is accepted and the
   escape-first rule bounds it to formatting, never to markup injection.
 
+Amendment (2026-08-18, #600): **The derived HTML view carries a lineage appendix, and the
+amendment bounds what the view may embed.** The nine-hop walk — source document, evidence,
+context claim, threat, requirement, control, evidence assessment, critique, reviewer decision,
+finding — travels in the HTML page as one expandable section per approved finding
+(`services/report/lineage_html.py`), because the localhost walk (DEC-078, #533, #572) dies when
+`http.server` stops and the artifact a reviewer hands to someone is the report. The boundary
+this entry set holds: Markdown remains the deliverable and the appendix is not report content —
+it renders no section, rewrites no approved text, and is absent from the deliverable without
+that absence being drift. What the derived view may embed is exactly this: resolved persisted
+approved objects and the evidence leaf's re-verification verdict, computed as the page renders —
+state, not time, so the page still carries no clock and two renders over the same store are
+byte-identical. A static page cannot re-verify after it is written and says so, deferring the
+live property to `trace view`. Every embedded text node is escaped by the appendix builder under
+this entry's fence discipline; the injection fixture is the hostile test. Future-features 13.1's
+Candidate closes: the register's last Candidate flips to Built.
+
 ## DEC-109: The tracing integration exists, and a span structurally cannot carry content
 
 Date: 2026-08-17

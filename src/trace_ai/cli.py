@@ -2949,6 +2949,7 @@ def _report_render(args: argparse.Namespace, service: AssessmentService) -> int:
     the two cannot disagree. Refused while no report exists, like `report show`.
     """
     from trace_ai.services.report.html import render_report_html
+    from trace_ai.services.report.lineage_html import lineage_appendix
 
     assessment = service.get(args.assessment_id)
     if assessment.final_report_path is None:
@@ -2963,7 +2964,9 @@ def _report_render(args: argparse.Namespace, service: AssessmentService) -> int:
     markdown = handle.artifacts.read("outputs", filename).decode("utf-8")
     derived = filename.removesuffix(".md") + ".html"
     page = render_report_html(
-        markdown, title=f"Security Architecture Assessment: {assessment.name}"
+        markdown,
+        title=f"Security Architecture Assessment: {assessment.name}",
+        appendix=lineage_appendix(handle),
     )
     handle.artifacts.store_output(derived, page.encode("utf-8"))
     print(f"wrote {derived} to {args.assessment_id}'s outputs area")
