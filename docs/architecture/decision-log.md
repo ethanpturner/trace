@@ -7979,3 +7979,63 @@ Tradeoffs:
 - Extraction quality is `pypdf`'s: a PDF with an unusual text encoding may extract imperfectly.
   The extraction is what the reviewer sees and approves at checkpoint 1, so imperfection is
   visible there rather than hidden behind the original.
+
+## DEC-124: The Mermaid export dialect round-trips as input, scoped to what the exporter emits
+
+Date: 2026-08-18
+
+Status: Accepted
+
+Decision:
+
+**A `.mmd` file parses as the DEC-070 family's sixth member, and only the export dialect
+parses.** `trace export mermaid` emits a deterministic flowchart subset — quoted node labels,
+stadium-shaped actor nodes, three arrow forms, subgraph boundaries — and
+`services/context/mermaid.py` reads exactly that subset back: components, component-to-component
+flows with their stated directions, and one documented claim per subgraph recording the
+boundary's membership. Everything enters through the proposal path with `structured_input`
+provenance, candidate status, and line-span excerpt hashes, decided at checkpoint 1 (DEC-115's
+rule). `.mmd` ingests as plain text, the DEC-121 `.tf` shape; content is never sniffed. This is
+future-features 7.3's first slice, taken on the parsing-over-model-analysis instinct: a diagram
+whose grammar is known needs no vision model, and 7.3's own constraints hold by construction —
+a disagreement with prose surfaces as a cross-claim observation (DEC-070's consistency
+machinery), and a parser that only proposes cannot override anything.
+
+**What does not import, and why.** The dialect carries names, direction, and grouping — no
+protocols, no authentication, no encryption, no classifications — so everything unstated stays
+absent or `unknown`, never a stated negative: the DEC-120 boolean rule applied to a format with
+no booleans at all. The dotted, undirected arrow imports as direction `unknown`, the claim the
+diagram actually makes. Actor nodes are recognized and deliberately not seeded — the family's
+seeding contract carries components, flows, and claims, and widening it is its own change (the
+DEC-120 precedent) — and any line outside the subset yields nothing, so a hand-drawn diagram
+degrades to whatever subset lines it contains rather than being misread. Node names shaped like
+allocated identifiers (a Trace export's own `cmp-001`) become prefixed local keys (`mmd_cmp_001`),
+because the proposal schema refuses identifier-shaped keys (DEC-018).
+
+Why:
+
+- The exporter's dialect is the one diagram grammar the repository already owns end to end;
+  reading it back costs no new dependency, no new trust, and no vision model, and the round
+  trip is the measurement (a genuine export-then-reingest test pins names, direction, and
+  membership — everything the dialect carries).
+- Boundary membership travels as a claim rather than a seeded `TrustBoundary` because the
+  seeding contract does not carry boundaries; a claim states what the diagram states and
+  leaves the object for the extraction agent and the reviewer.
+
+Alternatives Considered:
+
+- Parsing general Mermaid, or other diagram formats (rejected: outside the export dialect the
+  grammar is open-ended, the misread risk is real, and 7.3 stays Research for exactly that).
+- Seeding actor nodes as actors (rejected: widening the seeding contract is its own change,
+  recorded the same way in DEC-120).
+- A distinct media type for `.mmd` (rejected: Mermaid source is plain text and DEC-121 already
+  decided this shape for `.tf`; the parser recognizes the suffix downstream).
+
+Tradeoffs:
+
+- The membership claim's predicate embeds the boundary name, so two sources disagreeing about
+  the same-named boundary conflict visibly, while a renamed boundary produces two claims that
+  never meet. Deliberate: a name-level disagreement is a reviewer question, not something a
+  parser should resolve by matching heuristics.
+- An unlabelled edge — legal Mermaid, never emitted by the exporter — yields nothing rather
+  than a nameless flow. The subset rule wins over completeness, and the line is stated here.
