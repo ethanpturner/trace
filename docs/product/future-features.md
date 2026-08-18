@@ -441,13 +441,14 @@ This feature should be narrow and evidence-oriented.
 
 ## 7.2 Infrastructure-as-Code Analysis
 
-**Status:** Built in part (DEC-113, issue #525)
+**Status:** Built in part (DEC-113 and DEC-121, issues #525 and #569)
 
-DEC-113 shipped the first member: a Terraform JSON parser, corpus-measured, reading two
-attributes (`storage_encrypted`, `publicly_accessible`) as documented claims. HCL syntax and a
-decided attribute-coverage rule are issue #569; CloudFormation and Kubernetes manifests remain
-from the sketch. The parsing-over-model-analysis instinct below held: technology-specific
-parsing is what was built.
+DEC-113 shipped the first member: a Terraform JSON parser, corpus-measured, reading stated
+booleans as documented claims. DEC-121 added HCL syntax through a deterministic subset scanner
+and put the attribute table under a coverage rule — literal boolean, self-contained meaning,
+both directions meaningful — which admitted `encrypted` and `deletion_protection` beside the
+first pair. CloudFormation and Kubernetes manifests remain from the sketch. The
+parsing-over-model-analysis instinct below held: technology-specific parsing is what was built.
 
 The original sketch — analyze Terraform, CloudFormation, Kubernetes manifests, or similar artifacts for architecture and control evidence.
 
@@ -1036,8 +1037,9 @@ report formats, and the family is delivered: TM-BOM (issue #383), SARIF (issue #
 standalone Mermaid DFD (issue #503) all ship as deterministic serializers over approved
 objects; CycloneDX for the catalog stays deferred until a consumer exists. No export contains
 prose or a model call. DEC-108 (issue #527) added HTML rendering as a derived view of the
-Markdown report — a rendering, not a second format. The family's one open question — whether
-TM-BOM round-trips as input — is issue #573.
+Markdown report — a rendering, not a second format. The family's last open question is closed:
+TM-BOM round-trips as input through the DEC-070 parser family (DEC-120, issue #573), with the
+schema's conservative booleans refused as negatives on the way back in.
 
 Still ideas, not decided: PDF, ticketing-system formats, audit packages, and any
 executive-report format.
