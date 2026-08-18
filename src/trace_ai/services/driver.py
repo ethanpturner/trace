@@ -32,7 +32,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, ClassVar, Final
 
-from trace_ai.domain.assessment import Assessment
+from trace_ai.domain.assessment import Assessment, AssessmentConfiguration
 from trace_ai.domain.component import Component
 from trace_ai.domain.context_claim import ContextClaim
 from trace_ai.domain.control import Control
@@ -1286,10 +1286,12 @@ def run_assessment(
         model=model,
         on_pause=_begin_review_on_pause(service, assessment_id),
     )
-    return orchestrator.run(
+    outcome = orchestrator.run(
         AssessmentState.begin(assessment_id=assessment_id, workflow_run_id=run.id),
         stop_before=stop_before,
     )
+    _emit_external_tracing(handle, assessment.configuration, run.id)
+    return outcome
 
 
 def resume_assessment(
@@ -1355,7 +1357,38 @@ def resume_assessment(
         model=model,
         on_pause=_begin_review_on_pause(service, assessment_id),
     )
-    return orchestrator.run(state, stop_before=stop_before)
+    outcome = orchestrator.run(state, stop_before=stop_before)
+    _emit_external_tracing(handle, assessment.configuration, run.id)
+    return outcome
+
+
+def _emit_external_tracing(
+    handle: AssessmentHandle, configuration: AssessmentConfiguration, workflow_run_id: str
+) -> None:
+    """Export the run's execution records as spans when the assessment opted in (#538).
+
+    Runs after the orchestrator returns, whatever the outcome — a paused, failed, or completed
+    run's records all export, because observability of a failure is the point. The flag is the
+    assessment's (`enable_external_tracing`, default off, DEC-012's limits-are-configuration
+    side); the destination is the operator's (`Settings.tracing_endpoint`). Emission failures
+    are logged and swallowed inside `emit_run`: the local ledger stays authoritative
+    (section 5.17), and no run fails because its observability endpoint did.
+    """
+    if not configuration.enable_external_tracing:
+        return
+    from trace_ai.config import get_settings
+    from trace_ai.infrastructure.tracing import emit_run, emitter_from_settings
+
+    emitter = emitter_from_settings(get_settings())
+    if emitter is None:
+        import logging
+
+        logging.getLogger(__name__).info(
+            "external tracing is enabled but no tracing endpoint is configured; nothing emitted",
+            extra={"workflow_run_id": workflow_run_id},
+        )
+        return
+    emit_run(handle, workflow_run_id, emitter)
 
 
 def _begin_review_on_pause(

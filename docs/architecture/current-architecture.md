@@ -1236,6 +1236,7 @@ src/
       database/
       filesystem/
       model/
+      tracing/
     interface/
     services/
       context/
