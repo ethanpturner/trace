@@ -1277,7 +1277,9 @@ triage/
 Beside the packages, `trace_ai` holds `cli.py` (the command surface), `config.py`, and
 `observability.py` (structured logging; named so because `logging.py` shadows the standard
 library from inside the package). The runtime data root `data/` — holding `assessments/` — is
-gitignored and absent from a fresh clone, as is the derived `benchmarks/results/`.
+gitignored and absent from a fresh clone, as are the derived `benchmarks/results/` and `site/`,
+the rendered documentation site `mkdocs build` writes and CI deploys without committing
+(DEC-104).
 
 The important boundary is that domain models, workflow logic, prompts, infrastructure, and
 user-interface code stay separated; `tests/unit/test_package_layout.py` asserts the dependency
