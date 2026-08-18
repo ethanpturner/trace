@@ -145,6 +145,7 @@ class AnthropicModel:
         settings: GenerationSettings | None = None,
         system: str | None = None,
         cache_prefix: str | None = None,
+        system_cache_prefix: str | None = None,
     ) -> ModelOutcome[T]:
         """One attempt at a validated instance of `schema`.
 
@@ -184,7 +185,7 @@ class AnthropicModel:
             "thinking": {"type": "adaptive"},
         }
         if system is not None:
-            request["system"] = system
+            request["system"] = _system_content(system, system_cache_prefix)
         schema_grammar = "enforced"
 
         try:
@@ -344,6 +345,26 @@ def _user_content(prompt: str, cache_prefix: str | None) -> str | list[dict[str,
     return [
         {"type": "text", "text": cache_prefix, "cache_control": ephemeral},
         {"type": "text", "text": prompt[len(cache_prefix) :]},
+    ]
+
+
+def _system_content(system: str, system_cache_prefix: str | None) -> str | list[dict[str, Any]]:
+    """The system region, split at `system_cache_prefix` so its stable span is marked (DEC-105).
+
+    The same degradation rules as `_user_content`: no hint, or a hint that is not a prefix, sends
+    the plain string. The split earns its keep exactly where the user-message marker cannot — a
+    system region that varies per call (mapping's per-threat content) sits before the user message
+    in the cacheable sequence, so marking only the user prefix never hits across calls; marking
+    the system region's own stable span (the catalog) does.
+    """
+    if not system_cache_prefix or not system.startswith(system_cache_prefix):
+        return system
+    ephemeral = {"type": "ephemeral"}
+    if system_cache_prefix == system:
+        return [{"type": "text", "text": system, "cache_control": ephemeral}]
+    return [
+        {"type": "text", "text": system_cache_prefix, "cache_control": ephemeral},
+        {"type": "text", "text": system[len(system_cache_prefix) :]},
     ]
 
 

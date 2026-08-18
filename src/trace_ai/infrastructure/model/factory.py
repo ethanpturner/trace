@@ -88,6 +88,7 @@ class OverlayRoutingModel:
         settings: GenerationSettings | None = None,
         system: str | None = None,
         cache_prefix: str | None = None,
+        system_cache_prefix: str | None = None,
     ) -> ModelOutcome[T]:
         agent = AGENT_BY_SCHEMA.get(schema.__name__)
         model = self.by_agent.get(agent, self.base) if agent is not None else self.base
@@ -97,6 +98,7 @@ class OverlayRoutingModel:
             settings=settings,
             system=system,
             cache_prefix=cache_prefix,
+            system_cache_prefix=system_cache_prefix,
         )
 
 

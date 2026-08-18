@@ -82,6 +82,7 @@ def call_model[T: BaseModel](
     execution: Execution,
     usages: list[ModelUsage],
     cache_prefix: str | None = None,
+    system_cache_prefix: str | None = None,
 ) -> T:
     """Make one model attempt and return the validated object, or raise `AttemptFailedError`.
 
@@ -114,6 +115,7 @@ def call_model[T: BaseModel](
         settings=profile.settings,
         system=system,
         cache_prefix=cache_prefix,
+        system_cache_prefix=system_cache_prefix,
     )
 
     if isinstance(outcome, ModelFailure):
