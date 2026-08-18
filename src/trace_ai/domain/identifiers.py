@@ -68,6 +68,7 @@ __all__ = [
     "ParsedIdentifier",
     "QuestionId",
     "RequirementId",
+    "ReviewSessionId",
     "ReviewerDecisionId",
     "SourceDocumentId",
     "SourceObservationId",
@@ -114,6 +115,7 @@ PREFIXES: Final[Mapping[str, str]] = {
     "eval": "EvaluationResult",
     "mrg": "FindingMergeRecord",
     "cgc": "CatalogGapCandidate",
+    "rvs": "ReviewSession",
 }
 
 
@@ -276,6 +278,7 @@ ExecutionRecordId = Annotated[str, _validator("exe")]
 EvaluationResultId = Annotated[str, _validator("eval")]
 FindingMergeRecordId = Annotated[str, _validator("mrg")]
 CatalogGapCandidateId = Annotated[str, _validator("cgc")]
+ReviewSessionId = Annotated[str, _validator("rvs")]
 
 
 class IdentifierAllocator(Protocol):

@@ -7429,6 +7429,70 @@ Tradeoffs:
   reports); the claim cites the assertion document. A future version can carry references, and
   the gap is stated here rather than papered over.
 
+## DEC-117: Checkpoint review time is measured from a recorded session start, and gates nothing
+
+Date: 2026-08-18
+
+Status: Accepted
+
+Decision:
+
+**A `ReviewSession` row records when a checkpoint's review material was rendered to a person.**
+`trace context review` and `trace findings review` write one on entry, whichever path the
+invocation takes — export, apply, or flags. The measurement is **wall clock** from the earliest
+session at a checkpoint to that checkpoint's conclusion (context approval's `approved_at`; the
+last finding decision's `created_at`), emitted as `context_review_seconds` and
+`finding_review_seconds` by the metrics pass. Data-model section 25a defines the object; the
+`rvs` prefix joins section 2.1.
+
+**Wall clock, stated as such.** A command line cannot observe attention, and an "active time"
+number derived from guesses about idleness would be fabricated precision. The honest measurement
+is the elapsed interval, with its known inflation — a reviewer who exports the file and returns
+after lunch measures the lunch — stated here rather than corrected invisibly.
+
+**Per-object timings are not synthesized.** A batch invocation records many decisions in one
+moment; per-object numbers computed from shared timestamps would be noise wearing precision. The
+per-decision timestamps are already the record; the session total is the honest unit.
+
+**A harness-decided checkpoint has no session.** The evaluation harness and the DEC-077
+stability protocol answer checkpoints programmatically without the review commands, so replayed
+and protocol-driven runs carry no timing metrics — absent, never zero, the DEC-092 dash
+discipline. This is also what keeps the committed evaluation pages byte-stable: no offline
+replay gains a timing row.
+
+**The numbers never gate anything.** No ceiling, no approval rule, and no workflow transition
+reads them. Measurement, not surveillance: the instrument exists to answer research question 10
+(can Trace reduce total review time without increasing reviewer fatigue) with data, following
+the DEC-110 and DEC-112 instrument-first precedents.
+
+Why:
+
+- The vision names reviewer time a primary success measure and research question 10 asks about
+  it; nothing in the pipeline measured it. Both checkpoints were the only phases whose duration
+  the execution ledger could not see, because their duration is a person's.
+
+Alternatives Considered:
+
+- Fields on `ReviewerDecision` (rejected: the decision records the end of a deliberation, and
+  denormalizing a session start onto every decision row would repeat one fact many times and
+  invite drift between copies).
+- Deriving the session start from the checkpoint pause timestamp (rejected: the interval from
+  pause to approval includes arbitrary time before anyone looked — a run paused overnight would
+  measure the night, and the number would be dominated by scheduling rather than review).
+- Recording sessions from `trace context show` and `trace findings show` as well (rejected for
+  now: `show` is also a spectator surface — demos, verification, screenshots — and a session it
+  writes would start clocks nobody is reviewing against. The review commands are the working
+  surface; the boundary is stated here and can move with evidence).
+
+Tradeoffs:
+
+- Wall clock over-measures interrupted reviews and the entry says so; the alternative
+  under-measures by inventing an idle rule. Over-measurement with a stated mechanism is the
+  conservative direction for a number that must never flatter the tool.
+- A reviewer who works entirely from a pre-exported file in a later session starts the clock at
+  the export, which may precede the real work by days. The metric is therefore a ceiling on
+  review effort, never an estimate of attention, and consumers read it with that label.
+
 ## DEC-119: The second-annotation protocol, and the adjudication rule behind the agreement number
 
 Date: 2026-08-18
