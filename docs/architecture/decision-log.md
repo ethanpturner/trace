@@ -7189,6 +7189,62 @@ Tradeoffs:
   intended — that disagreement is exactly what the truth set's owner should review, and the
   per-artifact counts keep the direction visible.
 
+## DEC-113: The IaC parser completes DEC-070's family, scoped to Terraform JSON syntax
+
+Date: 2026-08-17
+
+Status: Accepted
+
+Decision:
+
+**`services/context/iac.py` is DEC-070's third and last parser: one component per declared
+resource, one documented claim per security-relevant attribute the declaration states, through
+the proposal path like the other two (#525).** Scope is Terraform's JSON syntax (`*.tf.json`),
+deliberately: the JSON form is a first-class documented equivalent of HCL and parses with the
+standard library — no HCL dependency to vet under the supply-chain posture, determinism held
+trivially, and the ingestion loader's accepted formats already admit it. HCL stays future work
+with that stated reason, the same way the OpenAPI parser scoped to YAML. Resource types map to
+open-vocabulary component families (DEC-036; an unmatched type stays a generic
+`infrastructure_resource`), and the two attributes read are `storage_encrypted` and
+`publicly_accessible` — read only when *stated*, in either direction: a stated `false` is a
+documented negative with a line number, while a silent declaration yields nothing, which is
+DEC-009's line held by a parser. Excerpts quote the resource's own line span with a hash;
+output converts with `structured_input` provenance and candidate status for checkpoint 1.
+
+**The corpus exercises it from the first commit: `managed-db-service` gains a Terraform
+declaration of its managed database.** The declared `storage_encrypted: true` becomes
+machine-documented evidence beside the prose — the scenario's inherited-encryption point,
+restated by a declaration. Seeding before extraction shifts the component and claim
+allocation; the recorded references and the checkpoint decisions moved with it, the decisions
+file gained approvals for the parser's objects, provenance records exactly what changed, and
+the replay completes with the same expected outcomes.
+
+Why:
+
+- DEC-070's own argument lands hardest here: infrastructure code declares the largest surface
+  of verifiable ground, and every mechanically-derived claim shrinks the DocumentationGap
+  surface at zero model cost.
+- With three parsers emitting claims beside the agent's, the DEC-070 cross-claim observations
+  (#526) have the material they were built for: a declaration and a prose document disagreeing
+  about the same fact is now a detectable, stated conflict.
+
+Alternatives Considered:
+
+- An HCL parser dependency (deferred, stated: the vetted candidates are heavyweight for two
+  attributes and a resource list, and the JSON syntax covers the deterministic ground without
+  one. Revisit if a real corpus arrives HCL-only).
+- Deriving exposure from security-group and network declarations (rejected for v1: reachability
+  is a graph judgment across resources, not a stated attribute, and a parser that inferred it
+  would be doing analysis the agents own).
+
+Tradeoffs:
+
+- Terraform-JSON-only means most real repositories' `.tf` files pass through unparsed until
+  the HCL decision is taken; the parser's silence there is ordinary silence, not a wrong claim.
+- Two stated attributes is a narrow read of a rich surface. Narrow is the family's pattern —
+  the OpenAPI parser reads three declaration kinds — and each addition is a visible diff to a
+  small table rather than a schema excursion.
+
 ## DEC-114: The fine-tuning pack completes future-features 8.1, measured by the reply-tuner scenario
 
 Date: 2026-08-17

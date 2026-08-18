@@ -1,8 +1,8 @@
 """The DEC-070 parser family's one seeding entry point (#504).
 
 Each parser converts what one artifact kind declares; this module is where the family meets the
-driver. One call seeds every registered machine-readable artifact — compose manifests first,
-then OpenAPI specifications, matching DEC-070's order — and the idempotence marker is checked
+driver. One call seeds every registered machine-readable artifact — compose manifests, then OpenAPI
+specifications, then Terraform declarations, matching DEC-070's order — and the idempotence marker is checked
 once for the family: components carry no `generated_by`, so `source_origin ==
 structured_input` says *some* parser already seeded, and a re-extraction run (DEC-038) reuses
 what the first run produced instead of minting duplicates. Per-parser idempotence would need a
@@ -15,6 +15,7 @@ from typing import TYPE_CHECKING, Any
 
 from trace_ai.domain.enums import SourceOrigin
 from trace_ai.services.context.compose import looks_like_compose, seed_compose_context
+from trace_ai.services.context.iac import looks_like_terraform, seed_terraform_context
 from trace_ai.services.context.openapi import looks_like_openapi, seed_openapi_context
 
 if TYPE_CHECKING:
@@ -63,6 +64,8 @@ def seed_structured_documents(handle: AssessmentHandle) -> ConvertedContext | No
         seeded.append(seed_compose_context(handle, document))
     for document in sorted((d for d in documents if looks_like_openapi(d)), key=lambda d: d.id):
         seeded.append(seed_openapi_context(handle, document))
+    for document in sorted((d for d in documents if looks_like_terraform(d)), key=lambda d: d.id):
+        seeded.append(seed_terraform_context(handle, document))
     if not seeded:
         return None
 
