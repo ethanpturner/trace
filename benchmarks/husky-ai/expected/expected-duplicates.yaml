@@ -1,0 +1,24 @@
+# Expected duplicate pairs (#536, DEC-110): one weakness a run could plausibly state twice,
+# named by the two requirement lenses it splits across. This is the truth source for
+# `duplicate_miss_rate` — the instrument DEC-043's revisit trigger was missing. A pair scores
+# only when both identities match produced findings; a run that never splits the weakness is
+# unevaluable for the pair, not penalized.
+#
+# The pair below is the flagship live-capture failure mode made checkable: the experimental
+# environment's password-only reachability (FND-HA-01, req-AUTH-002 on the Jupyter Notebook)
+# is one weakness that a run can also state as an internal-reachability finding under
+# req-NET-001 on the same component. Two findings, one weakness, two lenses — the deterministic
+# exact-identity rule cannot merge them, and this file is what measures whether that miss
+# happens.
+
+duplicate_pairs:
+  - note: >
+      Password-only access to the experimental environment stated once as an authentication
+      weakness and once as an internal-reachability weakness on the same component is one
+      weakness under two requirement lenses.
+    first:
+      requirement_id: req-AUTH-002
+      affected_component: Jupyter Notebook
+    second:
+      requirement_id: req-NET-001
+      affected_component: Jupyter Notebook

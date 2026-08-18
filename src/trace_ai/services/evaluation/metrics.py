@@ -342,6 +342,83 @@ def compute_metrics(
     return results
 
 
+def _duplicate_miss_metrics(
+    handle: AssessmentHandle,
+    run: WorkflowRun,
+    expected_dir: Path,
+    *,
+    component_names: dict[str, str],
+) -> list[EvaluationResult]:
+    """DEC-043's revisit trigger, given its instrument (#536, DEC-110).
+
+    `duplicate_finding_rate` counts merges the deterministic rule *performed*, which structurally
+    cannot measure a miss. A miss is only measurable against authored truth:
+    `expected-duplicates.yaml` names pairs of finding identities — one weakness a run could
+    plausibly split across two requirement lenses — and this scores the produced set against
+    them. A pair is **evaluable** when both identities matched produced findings; a **miss**
+    when the two sides resolve to distinct canonical findings (two unmerged statements of one
+    weakness); **detected** when they share a canonical finding — consolidation or an explicit
+    merge. No file, or no evaluable pair, yields no metric: unmeasured, never zero.
+    """
+    from trace_ai.domain.finding import canonical_finding_id
+
+    path = expected_dir / "expected-duplicates.yaml"
+    if not path.is_file():
+        return []
+    parsed: Any = yaml.safe_load(path.read_text(encoding="utf-8"))
+    pairs: list[dict[str, Any]] = list((parsed or {}).get("duplicate_pairs", []))
+    if not pairs:
+        return []
+
+    produced = handle.objects.list(Finding)
+
+    def matching(identity: dict[str, Any]) -> list[Finding]:
+        wanted_requirement = str(identity["requirement_id"])
+        wanted_component = _normalized(str(identity["affected_component"]))
+        return [
+            finding
+            for finding in produced
+            if wanted_requirement in finding.requirement_ids
+            and any(
+                component_names.get(component_id) == wanted_component
+                for component_id in finding.affected_component_ids
+            )
+        ]
+
+    evaluable = 0
+    missed: list[str] = []
+    for pair in pairs:
+        first = matching(pair["first"])
+        second = matching(pair["second"])
+        if not first or not second:
+            continue
+        evaluable += 1
+        first_canonical = {canonical_finding_id(finding, produced) for finding in first}
+        second_canonical = {canonical_finding_id(finding, produced) for finding in second}
+        if not (first_canonical & second_canonical):
+            missed.append(f"{pair['first']['requirement_id']}+{pair['second']['requirement_id']}")
+    if not evaluable:
+        return []
+    return [
+        _metric(
+            handle,
+            run.id,
+            "duplicate_miss_rate",
+            _ratio(len(missed), evaluable),
+            unit="percentage",
+            evaluator=EvaluatorType.BENCHMARK,
+            method=(
+                "authored duplicate pairs whose two identities resolved to distinct canonical "
+                "findings, over pairs where both identities matched produced findings "
+                "(DEC-110). Detection is consolidation or an explicit duplicate_of_id merge; "
+                "a pair with an unmatched side is unevaluable and excluded"
+            ),
+            sample_size=evaluable,
+            notes=f"missed pairs: {', '.join(missed) or 'none'}",
+        )
+    ]
+
+
 def _benchmark_metrics(
     handle: AssessmentHandle,
     run: WorkflowRun,
@@ -408,6 +485,10 @@ def _benchmark_metrics(
                 ),
             )
         )
+
+    results.extend(
+        _duplicate_miss_metrics(handle, run, expected_dir, component_names=component_names)
+    )
 
     expected_gaps = _expected_entries(
         expected_dir, "expected-documentation-gaps.yaml", "documentation_gaps"
