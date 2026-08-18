@@ -7979,3 +7979,76 @@ Tradeoffs:
 - Extraction quality is `pypdf`'s: a PDF with an unusual text encoding may extract imperfectly.
   The extraction is what the reviewer sees and approves at checkpoint 1, so imperfection is
   visible there rather than hidden behind the original.
+
+## DEC-124: The single-pass baseline prices the agent-set structure, with one combined schema
+
+Date: 2026-08-18
+
+Status: Accepted
+
+Decision:
+
+**A third prompt baseline, `baseline-single-pass`, prices the pipeline's decomposition itself:
+the whole assessment in one model call.** The two DEC-074 baselines emit findings only and price
+the pipeline's discipline; this one is asked for the full conclusion set — components, threats,
+findings, documentation gaps, and questions — under the same rules, through the same seam, with
+the same catalog and documents, its prompt versioned and hashed like the others. It runs as a
+harness condition marked non-authoritative (DEC-031); it is not a pipeline mode a user can
+select, and the six-agent cap is untouched — nothing is added, the condition removes the agents.
+
+**DEC-074's open question is decided: one combined output schema, not per-stage schemas in
+sequence.** `BaselineAssessment` is the combined shape. The combined call is the purer
+"no pipeline" claim — DEC-074's own words for it — and it is the claim evaluation-plan
+section 14's single-agent-versus-multi-agent row names. The engineering fact points the same
+way: the seam is a stateless prompt-to-schema contract making exactly one attempt, and a
+per-stage sequence sharing conversation state would need a conversation capability built onto
+the seam for the benefit of a baseline. The per-stage variant — isolating decomposition from
+iteration — remains available as future work and would carry its own entry.
+
+**The combined shape is what makes the discipline measurable.** A finding-only baseline told
+"missing documentation is never a finding" can only express restraint as an empty list. The
+combined schema gives it the pipeline's own outlets — a gap or a question — and the harness
+scores them with parallel requirement-identifier matchers mirroring the pipeline's metrics
+(`documentation_gap_precision`, `question_usefulness`, with the paired-question denominator rule
+applied so the columns mean the same thing). Threats and components are counted, never matched:
+the finding, gap, and question layers are where the truth sets bind, and a parallel threat
+matcher would be a second `match_threats` waiting to drift.
+
+**The keyed half is deferred and named.** No `baseline-single-pass` recording is committed with
+this entry: recording authorship or live capture rides the keyed capture step (DEC-100's
+precedent), staged through `trace capture <scenario> baseline-single-pass`, and the offline
+sweep skips a baseline with no recording, so the committed evaluation pages do not move here.
+The issue's live pair — baseline and pipeline on the same scenario, so the cost delta is
+measured rather than modelled — is keyed spend sequenced with the #484 sweep. The issue also
+sequences the headline comparison after evidence-assessment coverage enforcement (#588) and the
+truth-set reconciliation (#589); scores recorded before those land carry that caveat where they
+are reported.
+
+Why:
+
+- Future-features 9.2 left exactly one thing as future work: ablations that restructure the
+  agent set rather than removing a stage. The stage-removal family is built (#270); the
+  structural question — does the decomposition itself earn its cost? — had no measuring
+  instrument. This is that instrument, built to DEC-074's conformance rules so the comparison
+  stays re-runnable from the repository.
+
+Alternatives Considered:
+
+- Per-stage schemas requested in sequence within a single conversation (rejected for this entry:
+  a two-variable condition needing seam conversation state; named as the follow-up that isolates
+  decomposition from iteration).
+- Scoring the single-pass threats against `expected-threats` through a parallel matcher
+  (rejected: `match_threats`' subset semantics duplicated outside `matching.py` is drift waiting
+  to happen, and the finding, gap, and question layers already carry the decision gate).
+- Extending `BaselineFindings` with optional gap and question lists rather than a new schema
+  (rejected: the two DEC-074 baselines' recordings replay against the finding-only shape, and
+  widening it re-opens their schema-validity history).
+
+Tradeoffs:
+
+- One combined call confounds decomposition with iteration — a single pass loses both the stage
+  boundaries and the validation loops, and this condition cannot say which absence costs what.
+  Stated, and the per-stage variant is the instrument that would separate them.
+- The gap and question parallel scorers match on requirement identifiers only, which is more
+  generous than the pipeline's gap matcher (which walks the produced gap's mapping); the
+  direction of error favours the baseline, which is DEC-074's chosen direction.

@@ -369,3 +369,47 @@ def test_a_zero_finding_run_completes_the_capture_inside_the_reason_stage(
             live=DeterministicModel([]),
             data_root=tmp_path / "capture-data",
         )
+
+
+def test_the_single_pass_baseline_stage_captures_its_own_schema(tmp_path: Path) -> None:
+    """`trace capture <s> baseline-single-pass` stages a BaselineAssessment (DEC-124), and a
+    finding-only response supplied for it is refused rather than silently rescored."""
+    from trace_ai.domain.proposals.baseline import BaselineAssessment, BaselineFindings
+    from trace_ai.services.evaluation.capture import stage_baseline
+
+    uw = PROJECT_ROOT / "benchmarks" / "unsigned-webhooks"
+    root = tmp_path / "scenario"
+    shutil.copytree(uw / "input", root / "input")
+    shutil.copytree(uw / "expected", root / "expected")
+    entry = Scenario(
+        slug="unsigned-webhooks",
+        name="Unsigned Webhooks",
+        path=root,
+        status="authored",
+    )
+
+    with pytest.raises(CaptureError, match="BaselineAssessment"):
+        stage_baseline(
+            entry,
+            baseline="single-pass",
+            profile_name=PROFILE,
+            response=BaselineFindings(),
+        )
+
+    stage_baseline(
+        entry,
+        baseline="single-pass",
+        profile_name=PROFILE,
+        response=BaselineAssessment(),
+    )
+    staged = root / "capture" / "baselines" / "baseline-single-pass.json"
+    assert staged.is_file()
+    assert json.loads(staged.read_text(encoding="utf-8"))["findings"] == []
+
+    with pytest.raises(CaptureRefusedError, match="re-spend"):
+        stage_baseline(
+            entry,
+            baseline="single-pass",
+            profile_name=PROFILE,
+            response=BaselineAssessment(),
+        )

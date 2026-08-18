@@ -96,3 +96,88 @@ def test_the_baseline_feed_is_marked_non_authoritative(tmp_path: Path) -> None:
 def test_an_unknown_baseline_is_refused(tmp_path: Path) -> None:
     with pytest.raises(BaselineError, match="not a baseline"):
         run_baseline("oidc-portal", "baseline-nonsense", label="test", results_root=tmp_path)
+
+
+def test_the_single_pass_baseline_scores_the_whole_conclusion_set(tmp_path: Path) -> None:
+    """The structural baseline (#592): one combined schema, and its restraint is measurable —
+    a gap and a question score where the finding-only shape could only stay silent."""
+    from trace_ai.domain.proposals.baseline import (
+        BaselineAssessment,
+        BaselineComponent,
+        BaselineFinding,
+        BaselineGap,
+        BaselineQuestion,
+        BaselineThreat,
+    )
+
+    response = BaselineAssessment(
+        components=[BaselineComponent(name="Event Receiver", component_type="service")],
+        threats=[
+            BaselineThreat(
+                title="Forged deployment deliveries",
+                affected_components=["Event Receiver"],
+                rationale="The receiver accepts any well-formed delivery without a signature.",
+            )
+        ],
+        findings=[
+            BaselineFinding(
+                requirement_id="req-WEBHOOK-001",
+                affected_component="Event Receiver",
+                title="Inbound deliveries are not authenticated",
+                rationale="The document states no signature is checked.",
+                evidence_quote=(
+                    "the receiver accepts and processes any well-formed delivery and does not "
+                    "check a signature"
+                ),
+            )
+        ],
+        documentation_gaps=[
+            BaselineGap(
+                requirement_id="req-WEBHOOK-002",
+                affected_component="Event Receiver",
+                what_cannot_be_determined="whether a replayed delivery would be reprocessed",
+            )
+        ],
+        questions=[
+            BaselineQuestion(
+                question="Would a replayed delivery be reprocessed?",
+                requirement_id="req-WEBHOOK-002",
+            )
+        ],
+    )
+    outcome = run_baseline(
+        "unsigned-webhooks",
+        "baseline-single-pass",
+        label="test",
+        response=response,
+        results_root=tmp_path / "results",
+    )
+    assert outcome.schema_valid
+    assert list(outcome.matched) == ["FND-UW-01"]
+    assert outcome.metrics["documentation_gap_precision"] == 1.0
+    assert outcome.metrics["component_count"] == 1.0
+    assert outcome.feed_path is not None
+    feed = json.loads(outcome.feed_path.read_text(encoding="utf-8"))
+    assert feed["condition"] == "baseline-single-pass"
+    assert feed["authoritative"] is False
+    assert feed["items"]["documentation_gaps"]["matched_requirements"] == ["req-WEBHOOK-002"]
+    # Q-UW-01 is GAP-UW-01's paired question, so the pipeline's denominator rule excludes it:
+    # zero scoreable expected questions, and the rate is an honest zero rather than credit.
+    assert feed["items"]["questions"]["matched_expected"] == []
+    assert outcome.metrics["question_usefulness"] == 0.0
+
+
+def test_an_empty_single_pass_assessment_is_valid_and_scores_the_misses(tmp_path: Path) -> None:
+    from trace_ai.domain.proposals.baseline import BaselineAssessment
+
+    outcome = run_baseline(
+        "unsigned-webhooks",
+        "baseline-single-pass",
+        label="test",
+        response=BaselineAssessment(),
+        results_root=tmp_path / "results",
+    )
+    assert outcome.schema_valid
+    assert outcome.missed == ["FND-UW-01"]
+    assert outcome.metrics["false_negative_rate"] == 1.0
+    assert outcome.metrics["documentation_gap_precision"] == 0.0

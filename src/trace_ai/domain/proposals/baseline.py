@@ -19,7 +19,15 @@ from pydantic import Field
 
 from trace_ai.domain.base import DomainModel
 
-__all__ = ["BaselineFinding", "BaselineFindings"]
+__all__ = [
+    "BaselineAssessment",
+    "BaselineComponent",
+    "BaselineFinding",
+    "BaselineFindings",
+    "BaselineGap",
+    "BaselineQuestion",
+    "BaselineThreat",
+]
 
 
 class BaselineFinding(DomainModel):
@@ -46,3 +54,50 @@ class BaselineFindings(DomainModel):
     """
 
     findings: list[BaselineFinding] = Field(default_factory=list)
+
+
+class BaselineComponent(DomainModel):
+    """One component the single-pass baseline identified, by the documents' own name."""
+
+    name: str = Field(min_length=1)
+    component_type: str = Field(min_length=1)
+
+
+class BaselineThreat(DomainModel):
+    """One threat the single-pass baseline proposes, named against document component names."""
+
+    title: str = Field(min_length=1)
+    affected_components: list[str] = Field(default_factory=list)
+    rationale: str = Field(min_length=1)
+
+
+class BaselineGap(DomainModel):
+    """One documentation gap: the requirement whose satisfaction the documents cannot settle."""
+
+    requirement_id: str = Field(min_length=1)
+    affected_component: str = Field(min_length=1)
+    what_cannot_be_determined: str = Field(min_length=1)
+
+
+class BaselineQuestion(DomainModel):
+    """One question the single-pass baseline would ask, tied to the requirement it would settle."""
+
+    question: str = Field(min_length=1)
+    requirement_id: str = Field(min_length=1)
+
+
+class BaselineAssessment(DomainModel):
+    """The single-pass baseline's whole assessment: every conclusion type, one model call.
+
+    This is the combined output schema the single-pass condition is forced to — the whole job the
+    fourteen phases decompose, asked for at once. Unlike `BaselineFindings`, the shape lets a
+    disciplined single pass *choose* a gap or a question over a finding, so DEC-009 restraint is
+    expressible rather than only an empty list. Every list may be empty; an assessment of nothing
+    but questions is a valid assessment.
+    """
+
+    components: list[BaselineComponent] = Field(default_factory=list)
+    threats: list[BaselineThreat] = Field(default_factory=list)
+    findings: list[BaselineFinding] = Field(default_factory=list)
+    documentation_gaps: list[BaselineGap] = Field(default_factory=list)
+    questions: list[BaselineQuestion] = Field(default_factory=list)
