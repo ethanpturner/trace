@@ -34,6 +34,7 @@ from trace_ai.domain.evidence import JSON_POINTER_KEY, EvidenceReference
 from trace_ai.domain.hashing import content_hash
 from trace_ai.domain.source_document import IngestionStatus, SourceDocument
 from trace_ai.services.ingestion.normalize import line_count, normalize
+from trace_ai.services.ingestion.pdf import addressable_text, pdf_segments
 from trace_ai.services.ingestion.segment import segment
 
 if TYPE_CHECKING:
@@ -81,7 +82,9 @@ def _index(handle: AssessmentHandle, document: SourceDocument) -> list[EvidenceR
             f"twice would mint a second set of evidence references for the same passages."
         )
 
-    original = handle.artifacts.read("sources", document.filename).decode("utf-8")
+    original, extraction = addressable_text(
+        handle.artifacts.read("sources", document.filename), document.media_type
+    )
     normalized = normalize(original)
 
     if line_count(normalized) != line_count(original):
@@ -98,7 +101,11 @@ def _index(handle: AssessmentHandle, document: SourceDocument) -> list[EvidenceR
     )
     normalized_lines = normalized.splitlines()
 
-    segments = segment(original, document.media_type)
+    segments = (
+        pdf_segments(extraction)
+        if extraction is not None
+        else segment(original, document.media_type)
+    )
     if not segments:
         raise IndexingError(f"{document.filename!r} produced no addressable content")
 
@@ -121,6 +128,7 @@ def _index(handle: AssessmentHandle, document: SourceDocument) -> list[EvidenceR
                     chunk_index=index,
                     start_line=unit.start_line,
                     end_line=unit.end_line,
+                    page_number=unit.page_number,
                     quoted_text=unit.text,
                     normalized_text="\n".join(
                         normalized_lines[unit.start_line - 1 : unit.end_line]

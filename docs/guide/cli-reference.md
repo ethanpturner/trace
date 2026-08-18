@@ -134,10 +134,11 @@ Register and inspect source documents.
 trace source add [--no-index] <assessment_id> <path>
 ```
 
-Registers a file or a directory of files. Accepted formats are `.md`, `.markdown`, `.txt`,
-`.json`, `.yaml`, and `.yml`, each at most 10 MB, valid UTF-8, and JSON/YAML must parse. PDF,
-Office, repository, and web ingestion are deferred and refused with a named error (exit 1).
-`--no-index` registers without normalizing and indexing. Exits 0 on success.
+Registers a file or a directory of files. Accepted formats are `.md`, `.markdown`, `.txt`, `.tf`,
+`.json`, `.yaml`, `.yml`, and `.pdf`, each at most 10 MB; text formats must be valid UTF-8 and
+JSON/YAML must parse. A PDF is read text-layer only (DEC-123) and an image-only PDF is refused
+with a named error. Office, repository, and web ingestion are deferred and refused with a named
+error (exit 1). `--no-index` registers without normalizing and indexing. Exits 0 on success.
 
 ```console
 $ uv run trace source add asm-001 demo/forgeflow/input

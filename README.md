@@ -300,12 +300,13 @@ remains open is the narrated demo video.
   the shallowest heading level that occurs more than once, JSON Pointer addressing for structured
   documents, and one `EvidenceReference` per addressable unit. The eight ForgeFlow inputs produce
   over a hundred references whose quoted text is verifiable against the original file.
-- **The document loader** — reads the four MVP input formats, decides the format from the
-  extension and never from content, refuses anything it has no branch for, and preserves the
-  original bytes. It forms no opinion about what a document says: the prompt-injection fixture
-  loads like any other file, because detecting it belongs to a step that knows it is reading
-  untrusted text.
-- **`SourceDocument`** — one original source, with the four MVP input formats enforced at the
+- **The document loader** — reads the five input formats (the MVP's four text formats, and PDF
+  text-layer extraction per DEC-123, where an image-only PDF is refused rather than ingested
+  empty), decides the format from the extension and never from content, refuses anything it has
+  no branch for, and preserves the original bytes. It forms no opinion about what a document
+  says: the prompt-injection fixture loads like any other file, because detecting it belongs to
+  a step that knows it is reading untrusted text.
+- **`SourceDocument`** — one original source, with the five input formats enforced at the
   schema and the trust level required rather than defaulted, so a call site that does not state one
   fails rather than inheriting `untrusted` quietly.
 - **`EvidenceReference`** — the object every conclusion is defended through. It can only cite text

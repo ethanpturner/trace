@@ -127,14 +127,18 @@ class EvidenceIndex:
         return self._document_cache[source_document_id]
 
     def _source_text(self, document: SourceDocument) -> str | None:
-        """The stored source file, read once per document. `verify_all` over K references into one
-        document read that file K times; memoizing makes it one read. `None` when the artifact is
-        gone or unreadable, which the caller reports as `ARTIFACT_MISSING`."""
+        """The addressable text of the stored source, read once per document. `verify_all` over K
+        references into one document read that file K times; memoizing makes it one read. For a
+        PDF this is the extraction of the stored bytes (DEC-123) — the same text indexing
+        addressed, so verification and citation share one definition of line *n*. `None` when
+        the artifact is gone or unreadable, which the caller reports as `ARTIFACT_MISSING`."""
+        from trace_ai.services.ingestion.pdf import PdfExtractionError, addressable_text
+
         if document.id not in self._source_text_cache:
             try:
                 raw = self.handle.artifacts.read("sources", document.filename)
-                text: str | None = raw.decode("utf-8")
-            except ArtifactStoreError, OSError, UnicodeDecodeError:
+                text: str | None = addressable_text(raw, document.media_type)[0]
+            except ArtifactStoreError, OSError, UnicodeDecodeError, PdfExtractionError:
                 text = None
             self._source_text_cache[document.id] = text
         return self._source_text_cache[document.id]

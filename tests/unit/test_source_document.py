@@ -117,23 +117,30 @@ def test_no_trust_level_grants_a_capability() -> None:
 
 
 @pytest.mark.parametrize(
-    "media_type", ["text/markdown", "text/plain", "application/json", "application/yaml"]
+    "media_type",
+    ["text/markdown", "text/plain", "application/json", "application/yaml", "application/pdf"],
 )
-def test_the_four_mvp_formats_are_accepted(media_type: str) -> None:
+def test_the_supported_formats_are_accepted(media_type: str) -> None:
     assert a_document(media_type=media_type).media_type == media_type
 
 
 def test_a_deferred_format_is_rejected_by_name() -> None:
-    """PDF and Office ingestion are deferred, so a document in one has no loader branch.
+    """Office ingestion is deferred, so a document in that format has no loader branch.
 
     The message names the supported set, because the caller's next question is what to use.
     """
     with pytest.raises(ValidationError) as caught:
-        a_document(media_type="application/pdf")
+        a_document(media_type="application/msword")
 
     message = str(caught.value)
-    assert "application/pdf" in message
-    for supported in ("text/markdown", "text/plain", "application/json", "application/yaml"):
+    assert "application/msword" in message
+    for supported in (
+        "text/markdown",
+        "text/plain",
+        "application/json",
+        "application/yaml",
+        "application/pdf",
+    ):
         assert supported in message
     assert "section 5.4" in message
 

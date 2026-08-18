@@ -54,10 +54,12 @@ __all__ = [
 
 
 class MediaType(StrEnum):
-    """The four MVP input formats (`current-architecture.md` section 5.4).
+    """The five input formats (`current-architecture.md` section 5.4).
 
-    PDF, Microsoft Office, repository, and web-page ingestion are deferred there and are absent
-    here, so a document in an unsupported format is refused at the schema rather than reaching a
+    Four are the MVP's text formats; PDF joined post-MVP as the one binary format (DEC-123),
+    text-layer only, with the deterministic extraction of the stored bytes as its addressable
+    text. Microsoft Office, repository, and web-page ingestion remain deferred and absent here,
+    so a document in an unsupported format is refused at the schema rather than reaching a
     loader that has no branch for it.
     """
 
@@ -65,6 +67,7 @@ class MediaType(StrEnum):
     PLAIN_TEXT = "text/plain"
     JSON = "application/json"
     YAML = "application/yaml"
+    PDF = "application/pdf"
 
 
 class TrustLevel(StrEnum):
@@ -148,8 +151,9 @@ class SourceDocument(DomainModel):
         if isinstance(value, str) and value not in set(MediaType):
             supported = ", ".join(sorted(member.value for member in MediaType))
             raise ValueError(
-                f"{value!r} is not one of the MVP input formats. Supported: {supported}. "
-                f"PDF and Office ingestion are deferred (current-architecture.md section 5.4)."
+                f"{value!r} is not one of the supported input formats. Supported: {supported}. "
+                f"Office, repository, and web-page ingestion are deferred "
+                f"(current-architecture.md section 5.4)."
             )
         return value
 

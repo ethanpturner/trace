@@ -63,6 +63,7 @@ __all__ = [
     "DocumentLoadError",
     "DocumentLoader",
     "MalformedDocumentError",
+    "NoTextLayerError",
     "NotUnicodeError",
     "TooLargeError",
     "UnaddressableDocumentError",
@@ -74,11 +75,11 @@ __all__ = [
 NODE_NAME: Final = "document_ingestion"
 NODE_VERSION: Final = "0.1"
 
-# Extension to format. Section 5.4's four MVP inputs, spelled the ways they are spelled on disk.
+# Extension to format. Section 5.4's five inputs, spelled the ways they are spelled on disk.
 # Extension only: content sniffing would let a document choose how it is parsed. `.tf` ingests as
-# plain text (DEC-121): HCL is a text format, the media-type set stays section 5.4's four, and the
-# IaC parser recognizes the suffix downstream — the same shape as `.tf.json` arriving through
-# `.json`.
+# plain text (DEC-121): HCL is a text format and the IaC parser recognizes the suffix downstream —
+# the same shape as `.tf.json` arriving through `.json`. `.pdf` is the one binary format
+# (DEC-123): its addressable text is the deterministic extraction of the stored bytes.
 SUFFIXES: Final[dict[str, MediaType]] = {
     ".md": MediaType.MARKDOWN,
     ".markdown": MediaType.MARKDOWN,
@@ -87,6 +88,7 @@ SUFFIXES: Final[dict[str, MediaType]] = {
     ".json": MediaType.JSON,
     ".yaml": MediaType.YAML,
     ".yml": MediaType.YAML,
+    ".pdf": MediaType.PDF,
 }
 
 # A guard against obvious mistakes -- a video, a database dump, a log archive -- rather than a
@@ -114,7 +116,7 @@ class UnsupportedFormatError(DocumentLoadError):
         super().__init__(
             path,
             f"its extension is not one this build ingests. Supported extensions: {supported} "
-            f"({formats}). PDF, Office, repository, and web-page ingestion are deferred "
+            f"({formats}). Office, repository, and web-page ingestion are deferred "
             f"(current-architecture.md section 5.4)",
         )
 
@@ -128,8 +130,19 @@ class NotUnicodeError(DocumentLoadError):
     def __init__(self, path: Path) -> None:
         super().__init__(
             path,
-            "it is not valid UTF-8. Source documents are text; a binary file reaching this point "
-            "is a supplied file that is not what its extension claims",
+            "it is not valid UTF-8. Text source documents are text; a binary file reaching this "
+            "point is a supplied file that is not what its extension claims",
+        )
+
+
+class NoTextLayerError(DocumentLoadError):
+    def __init__(self, path: Path, page_count: int) -> None:
+        super().__init__(
+            path,
+            f"none of its {page_count} page(s) carries extractable text. Extraction is text-layer "
+            f"only — OCR and diagram interpretation are out of scope (DEC-123) — and an image-only "
+            f"PDF ingested as an empty document would be silence presented as content (DEC-009). "
+            f"Supply a text export of the document instead",
         )
 
 
@@ -189,8 +202,12 @@ class DocumentLoader:
 
     def _load(self, path: Path, *, origin: SourceOrigin, trust_level: TrustLevel) -> SourceDocument:
         media_type = self._media_type(path)
-        content = self._read(path)
-        self._parse(path, media_type, content)
+        content = self._read(path, text=media_type is not MediaType.PDF)
+        if media_type is MediaType.PDF:
+            metadata = self._validate_pdf(path, content)
+        else:
+            self._parse(path, media_type, content)
+            metadata = describe(content, media_type)
 
         # Registration is idempotent per (filename, content): `source add` run twice must return
         # the document it already made, not mint a second one — every count downstream (documents,
@@ -226,7 +243,7 @@ class DocumentLoader:
                     created_at=now(),
                     ingestion_status=IngestionStatus.REGISTERED,
                     trust_level=trust_level,
-                    metadata=describe(content, media_type),
+                    metadata=metadata,
                 )
                 repository.save(document)
         except BaseException:
@@ -252,9 +269,9 @@ class DocumentLoader:
         directory produce the same sequence -- and therefore the same identifiers, which
         `evaluation-plan.md` section 3's repeatability requirement depends on.
 
-        Unsupported files are refused rather than skipped. A directory containing a PDF is a
-        reviewer expecting the PDF to be assessed, and silently ignoring it would produce an
-        assessment missing a document nobody was told about.
+        Unsupported files are refused rather than skipped. A directory containing an Office
+        document is a reviewer expecting that document to be assessed, and silently ignoring it
+        would produce an assessment missing a document nobody was told about.
         """
         if not path.is_dir():
             raise DocumentLoadError(path, "it is not a directory")
@@ -270,8 +287,13 @@ class DocumentLoader:
             raise UnsupportedFormatError(path)
         return media_type
 
-    def _read(self, path: Path) -> bytes:
-        """Read the file, refusing an oversized one before opening it."""
+    def _read(self, path: Path, *, text: bool = True) -> bytes:
+        """Read the file, refusing an oversized one before opening it.
+
+        `text` is False only for the PDF branch (DEC-123): a PDF is the one format whose original
+        is legitimately binary, and its readable content is established by `_validate_pdf` rather
+        than by a decode.
+        """
         if not path.is_file():
             raise DocumentLoadError(path, "it is not a file")
         size = path.stat().st_size
@@ -279,11 +301,38 @@ class DocumentLoader:
             raise TooLargeError(path, size, self._maximum_bytes)
 
         content = path.read_bytes()
-        try:
-            content.decode("utf-8")
-        except UnicodeDecodeError as error:
-            raise NotUnicodeError(path) from error
+        if text:
+            try:
+                content.decode("utf-8")
+            except UnicodeDecodeError as error:
+                raise NotUnicodeError(path) from error
         return content
+
+    def _validate_pdf(self, path: Path, content: bytes) -> dict[str, object]:
+        """Validate a PDF and derive its format facts. The extraction itself is not kept.
+
+        The same posture as `_parse`: this is format validation plus the DEC-123 refusal
+        decision, not extraction-for-keeps. The indexing node re-extracts when it needs the
+        addressable text — the extraction is a pure function of the stored bytes, so computing
+        it twice yields the same answer and stores nothing derived.
+        """
+        from trace_ai.services.ingestion.pdf import PdfExtractionError, extract_pdf
+
+        try:
+            extraction = extract_pdf(content)
+        except PdfExtractionError as error:
+            raise DocumentLoadError(path, str(error)) from error
+        if not extraction.has_text:
+            raise NoTextLayerError(path, extraction.page_count)
+
+        facts: dict[str, object] = {
+            "byte_length": len(content),
+            "line_count": len(extraction.text.splitlines()),
+            "page_count": extraction.page_count,
+        }
+        if extraction.pages_without_text:
+            facts["pages_without_text"] = list(extraction.pages_without_text)
+        return facts
 
     def _parse(self, path: Path, media_type: MediaType, content: bytes) -> None:
         """Confirm a structured document parses and can be addressed. Nothing is kept.

@@ -358,8 +358,8 @@ def test_an_unsupported_format_names_the_supported_set(
     data_root: Path, capsys: pytest.CaptureFixture[str], tmp_path: Path
 ) -> None:
     identifier = created(data_root, capsys)
-    unsupported = tmp_path / "diagram.pdf"
-    unsupported.write_bytes(b"%PDF-1.4\n")
+    unsupported = tmp_path / "diagram.docx"
+    unsupported.write_bytes(b"content")
 
     assert invoke(data_root, "source", "add", identifier, str(unsupported)) == 1
     message = capsys.readouterr().err
