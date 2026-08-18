@@ -444,16 +444,18 @@ This feature should be narrow and evidence-oriented.
 
 ## 7.2 Infrastructure-as-Code Analysis
 
-**Status:** Built in part (DEC-113, DEC-121, and DEC-124; issues #525, #569, and #593)
+**Status:** Built (DEC-113, DEC-121, DEC-124, and DEC-128; issues #525, #569, #593, and #594)
 
 DEC-113 shipped the first member: a Terraform JSON parser, corpus-measured, reading stated
 booleans as documented claims. DEC-121 added HCL syntax through a deterministic subset scanner
 and put the attribute table under a coverage rule — literal boolean, self-contained meaning,
 both directions meaningful — which admitted `encrypted` and `deletion_protection` beside the
 first pair. DEC-124 added CloudFormation — JSON plus tag-free YAML, the syntax boundary the
-loader's own safe-parse rule — under the same table in CloudFormation's spelling. Kubernetes
-manifests remain from the sketch. The parsing-over-model-analysis instinct below held:
-technology-specific parsing is what was built.
+loader's own safe-parse rule — under the same table in CloudFormation's spelling. DEC-128
+closed the sketch with Kubernetes manifests: a deliberate kind allowlist, multi-document
+streams admitted at the loader, and container-level attributes read uniformly or not at all.
+The parsing-over-model-analysis instinct below held: technology-specific parsing is what was
+built. Widening the admission rule itself is #595's decision.
 
 The original sketch — analyze Terraform, CloudFormation, Kubernetes manifests, or similar artifacts for architecture and control evidence.
 
@@ -472,7 +474,7 @@ This could strengthen context extraction, but technology-specific parsing may be
 
 ## 7.3 Architecture Diagram Analysis
 
-**Status:** Built in part (DEC-125, issue #599)
+**Status:** Built in part (DEC-129, issue #599)
 
 The first slice shipped without a vision model: the Mermaid DFD dialect `trace export mermaid`
 emits parses back deterministically as the DEC-070 family's sixth member — components, flows,
@@ -668,8 +670,10 @@ This should be added after the underlying metrics are reliable.
 The harness applies the section-14 ablations (evidence validation, critical review, context
 approval) harness-side per DEC-012, marks each ablated run non-authoritative (DEC-031), and
 `trace evaluate --ablation-set` reports what each removal changes at the finding level — the
-DEC-012 decision gate answered per scenario. Left as future work: ablations that restructure the
-agent set (single versus multi-agent) rather than removing a stage.
+DEC-012 decision gate answered per scenario. The restructuring ablation's first member is built:
+DEC-126's `baseline-single-pass` prices the whole agent set against one combined-schema call
+(issue #592; its recording and live pair ride the keyed capture step). Remaining from the
+sketch: the per-stage-schemas-in-sequence variant that isolates decomposition from iteration.
 
 Compare the full Trace workflow with individual stages removed.
 
@@ -969,11 +973,14 @@ The feature would need to avoid generating excessive or low-value requests.
 
 ## 13.1 Interactive Finding Lineage
 
-**Status:** Candidate
+**Status:** Built (DEC-078, DEC-108 amendment; issues #276, #572, #600)
 
-The read-only demonstration form of this view is built: milestone M9's localhost interface
-(issue #276, DEC-078) renders finding lineage from persisted objects over stdlib `http.server`,
-GET-only and read-only. The interactive product form described below remains a candidate.
+Delivered in three forms. The localhost view (issue #276, DEC-078) renders finding lineage from
+persisted objects over stdlib `http.server`, GET-only and read-only; #572 made the walk
+clickable hop by hop down to the highlighted source span, with live re-verification at the
+evidence leaf; and #600 made it portable — the nine-hop walk travels in the DEC-108 HTML report
+as an expandable appendix per approved finding, so the chain survives the server stopping. The
+walk ends at the same hash verification the CLI offers in every form.
 
 Provide a visual “Why was this generated?” view.
 

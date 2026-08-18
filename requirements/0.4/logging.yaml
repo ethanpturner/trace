@@ -1,0 +1,84 @@
+# Category: logging
+# Requirements about what the system records, what it must not record, and
+# whether privileged actions leave a trail.
+
+requirements:
+
+  - id: req-LOG-001
+    catalog_version: "0.4"
+    title: Sensitive data is kept out of application logs
+    statement: >
+      A system handling restricted data must state that such data is excluded
+      from application logs, and must identify where log data is sent when logs
+      leave the system's own trust boundary.
+    rationale: >
+      Logs are usually the least protected copy of any data a system holds:
+      they are widely readable, retained longer than the data they describe,
+      and frequently forwarded to a shared platform outside the team's control.
+      Restricted content that reaches a log has effectively changed
+      classification without changing owner.
+    category:
+      - logging
+      - data_protection
+    applicable_conditions:
+      - the system handles restricted or confidential data
+      - logs are forwarded to a platform managed by another team or provider
+    non_applicable_conditions:
+      - the system handles only public data
+      - no logs are produced
+    acceptable_implementations:
+      - a documented policy excluding restricted content from log records
+      - redaction or masking applied before records are emitted
+      - logging identifiers in place of content
+    evidence_expectations:
+      - operations documentation describing logging practice
+      - a statement of what is excluded from logs
+      - description of the log destination and its owner
+    common_false_positives:
+      - absent field-level redaction list where a policy of logging identifiers only is documented
+      - absent log retention period, which is a separate expectation
+    default_severity: medium
+    source_frameworks:
+      - "OWASP ASVS: v5.0.0-16.1.1"
+      - "NIST SP 800-53 5.2.0: AU-9"
+      - "NIST SP 800-53 5.2.0: SI-11"
+    status: active
+
+  - id: req-LOG-002
+    catalog_version: "0.4"
+    title: Security-relevant administrative actions are recorded
+    statement: >
+      Actions taken through a privileged interface that affect customer data or
+      security configuration must be recorded with the acting operator, and the
+      documentation must state where those records are kept.
+    rationale: >
+      Administrative actions are the ones least constrained by the product's
+      own authorization rules, so a record of them is often the only means of
+      establishing after the fact what was done and by whom. Where operator
+      access is broad, the record is the compensating control.
+    category:
+      - logging
+      - administrative_access
+    applicable_conditions:
+      - the system exposes an administrative or operator interface
+      - operators can act on customer data or security configuration
+    non_applicable_conditions:
+      - no administrative interface exists
+      - operator actions cannot affect customer data or security configuration
+    acceptable_implementations:
+      - an audit record written for each privileged action, attributed to an operator identity
+      - administrative actions logged to a platform the operator cannot modify
+      - access records produced by an identity-aware proxy in front of the interface
+    evidence_expectations:
+      - operations documentation describing administrative auditing
+      - description of the audit record destination
+      - description of the operator identity carried on each action
+    common_false_positives:
+      - absent tamper-evidence detail where records are sent to a separately managed platform
+      - absent audit trail for read-only operations
+    default_severity: medium
+    source_frameworks:
+      - "OWASP ASVS: v5.0.0-16.1.1"
+      - "NIST SP 800-53 5.2.0: AU-2"
+      - "NIST SP 800-53 5.2.0: AU-12"
+    status: active

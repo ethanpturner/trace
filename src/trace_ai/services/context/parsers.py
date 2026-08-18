@@ -3,7 +3,8 @@
 Each parser converts what one artifact kind declares; this module is where the family meets the
 driver. One call seeds every registered machine-readable artifact — compose manifests, then OpenAPI
 specifications, then Terraform declarations, then org-controls assertions (#528), then TM-BOM
-threat models (#573), then CloudFormation templates (#593), then Mermaid DFD diagrams (#599),
+threat models (#573), then CloudFormation templates (#593), then Kubernetes manifests (#594),
+then Mermaid DFD diagrams (#599),
 matching DEC-070's order — and the idempotence marker is checked
 once for the family: components carry no `generated_by`, so `source_origin ==
 structured_input` says *some* parser already seeded, and a re-extraction run (DEC-038) reuses
@@ -22,6 +23,10 @@ from trace_ai.services.context.cloudformation import (
 )
 from trace_ai.services.context.compose import looks_like_compose, seed_compose_context
 from trace_ai.services.context.iac import looks_like_terraform, seed_terraform_context
+from trace_ai.services.context.kubernetes import (
+    looks_like_kubernetes,
+    seed_kubernetes_context,
+)
 from trace_ai.services.context.mermaid import looks_like_mermaid, seed_mermaid_context
 from trace_ai.services.context.openapi import looks_like_openapi, seed_openapi_context
 from trace_ai.services.context.org_controls import (
@@ -88,6 +93,8 @@ def seed_structured_documents(handle: AssessmentHandle) -> ConvertedContext | No
         (d for d in documents if looks_like_cloudformation(d)), key=lambda d: d.id
     ):
         seeded.append(seed_cloudformation_context(handle, document))
+    for document in sorted((d for d in documents if looks_like_kubernetes(d)), key=lambda d: d.id):
+        seeded.append(seed_kubernetes_context(handle, document))
     for document in sorted((d for d in documents if looks_like_mermaid(d)), key=lambda d: d.id):
         seeded.append(seed_mermaid_context(handle, document))
     if not seeded:

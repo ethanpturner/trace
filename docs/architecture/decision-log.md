@@ -7031,6 +7031,22 @@ Tradeoffs:
   cell text and the template controls line starts today; the risk is accepted and the
   escape-first rule bounds it to formatting, never to markup injection.
 
+Amendment (2026-08-18, #600): **The derived HTML view carries a lineage appendix, and the
+amendment bounds what the view may embed.** The nine-hop walk — source document, evidence,
+context claim, threat, requirement, control, evidence assessment, critique, reviewer decision,
+finding — travels in the HTML page as one expandable section per approved finding
+(`services/report/lineage_html.py`), because the localhost walk (DEC-078, #533, #572) dies when
+`http.server` stops and the artifact a reviewer hands to someone is the report. The boundary
+this entry set holds: Markdown remains the deliverable and the appendix is not report content —
+it renders no section, rewrites no approved text, and is absent from the deliverable without
+that absence being drift. What the derived view may embed is exactly this: resolved persisted
+approved objects and the evidence leaf's re-verification verdict, computed as the page renders —
+state, not time, so the page still carries no clock and two renders over the same store are
+byte-identical. A static page cannot re-verify after it is written and says so, deferring the
+live property to `trace view`. Every embedded text node is escaped by the appendix builder under
+this entry's fence discipline; the injection fixture is the hostile test. Future-features 13.1's
+Candidate closes: the register's last Candidate flips to Built.
+
 ## DEC-109: The tracing integration exists, and a span structurally cannot carry content
 
 Date: 2026-08-17
@@ -8034,7 +8050,249 @@ Tradeoffs:
   parity, pinned intrinsic refusals), not a scenario re-record — the #569 precedent: extending
   a live scenario's inputs would invalidate its recorded decisions for no new measurement.
 
-## DEC-125: The Mermaid export dialect round-trips as input, scoped to what the exporter emits
+## DEC-125: The webhook pack completes its category as catalog 0.4, cut mid-sweep as draft with no pin moved
+
+Date: 2026-08-18
+
+Status: Accepted
+
+Decision:
+
+**Catalog 0.4 adds req-WEBHOOK-003 and req-WEBHOOK-004, completing the webhook-validation
+category** (future-features 5.4's promotion shape, #596). Origin verification and replay were
+0.1's `req-WEBHOOK-001` and `req-WEBHOOK-002`; the pack adds the two subjects the category
+lacked: source restriction — where the platform publishes stable source addresses or a
+restricted delivery channel, the documentation states whether the endpoint applies it, severity
+`low` because reachability is defence in depth behind the signature — and delivery-secret
+lifecycle — where authenticity rests on a shared secret, the documentation describes where it is
+held and how it rotates without dropping deliveries. Both are original requirements citing NIST
+only, for the reason the category file has recorded since 0.1: ASVS 5.0 carries no general
+inbound-event surface. Everything in 0.3 carries forward unchanged
+(`mappings/0.3-to-0.4.yaml`); 0.3 froze under DEC-111 and its hash is untouched.
+
+**0.4 registers `draft`, and no scenario pin moved with the cut.** DEC-099's release condition
+stands: the version flips `active` when the first committed recorded scenario pins it. The cut
+was authored while the #484 live sweep was capturing recordings, and a catalog pin is part of
+what an in-flight capture is assessed against — so the issue's named measurement, the
+unsigned-webhooks truth set engaging the pack through `expected-control-mappings.yaml`, is
+deferred to land with that scenario's post-sweep pin move rather than under it. Until then the
+measurement the pack carries is the loader's: 0.4 loads under both-direction manifest
+validation, the fate map is referentially complete, and the register test holds the new
+statements to the documentation register (silence resolves to `unverified`, never `unmet`).
+
+Why:
+
+- The promotion bar for a technology pack is a pre-existing measuring scenario, and webhooks
+  have two: unsigned-webhooks is the flagship's other half, and the forgeflow signature surface
+  is the original demo finding. A pack cut against scenarios already committed is the DEC-111
+  move at zero new-scenario cost.
+- The two new requirements exist to prevent conclusions, in the DEC-011 sense: an open endpoint
+  behind a documented signature is not a finding, and a documented managed secret store with an
+  unstated rotation cadence is not a static secret. Both `common_false_positives` fields say so.
+
+Alternatives Considered:
+
+- Landing the unsigned-webhooks truth-set engagement and the 0.4 pin in this change (rejected:
+  the live sweep was mid-capture on that scenario; a pin or truth-set move under an in-flight
+  keyed run alters what the spend is assessed against — the same reasoning `load_catalog`
+  takes a version for).
+- Citing ASVS chapter 13 for the source-restriction requirement (rejected: the resolver holds
+  citations to the vendored 5.0.0 export, and ASVS scopes itself to the application rather than
+  its network placement — the same reason req-NET-001 cites `SC-7` for the placement half).
+
+Tradeoffs:
+
+- A draft version is editable in place, so nothing yet pins 0.4's content; the freeze arrives
+  with the first recorded scenario that does. Deliberate, and the same posture 0.2 and 0.3 held
+  between cut and release.
+- `req-WEBHOOK-003`'s severity `low` understates the cases where source restriction is the only
+  control present; the mapping step's severity judgment, and ultimately the reviewer's
+  (DEC-030), owns that distinction — a default is a starting point, not a verdict.
+
+## DEC-126: The single-pass baseline prices the agent-set structure, with one combined schema
+
+Date: 2026-08-18
+
+Status: Accepted
+
+Decision:
+
+**A third prompt baseline, `baseline-single-pass`, prices the pipeline's decomposition itself:
+the whole assessment in one model call.** The two DEC-074 baselines emit findings only and price
+the pipeline's discipline; this one is asked for the full conclusion set — components, threats,
+findings, documentation gaps, and questions — under the same rules, through the same seam, with
+the same catalog and documents, its prompt versioned and hashed like the others. It runs as a
+harness condition marked non-authoritative (DEC-031); it is not a pipeline mode a user can
+select, and the six-agent cap is untouched — nothing is added, the condition removes the agents.
+
+**DEC-074's open question is decided: one combined output schema, not per-stage schemas in
+sequence.** `BaselineAssessment` is the combined shape. The combined call is the purer
+"no pipeline" claim — DEC-074's own words for it — and it is the claim evaluation-plan
+section 14's single-agent-versus-multi-agent row names. The engineering fact points the same
+way: the seam is a stateless prompt-to-schema contract making exactly one attempt, and a
+per-stage sequence sharing conversation state would need a conversation capability built onto
+the seam for the benefit of a baseline. The per-stage variant — isolating decomposition from
+iteration — remains available as future work and would carry its own entry.
+
+**The combined shape is what makes the discipline measurable.** A finding-only baseline told
+"missing documentation is never a finding" can only express restraint as an empty list. The
+combined schema gives it the pipeline's own outlets — a gap or a question — and the harness
+scores them with parallel requirement-identifier matchers mirroring the pipeline's metrics
+(`documentation_gap_precision`, `question_usefulness`, with the paired-question denominator rule
+applied so the columns mean the same thing). Threats and components are counted, never matched:
+the finding, gap, and question layers are where the truth sets bind, and a parallel threat
+matcher would be a second `match_threats` waiting to drift.
+
+**The keyed half is deferred and named.** No `baseline-single-pass` recording is committed with
+this entry: recording authorship or live capture rides the keyed capture step (DEC-100's
+precedent), staged through `trace capture <scenario> baseline-single-pass`, and the offline
+sweep skips a baseline with no recording, so the committed evaluation pages do not move here.
+The issue's live pair — baseline and pipeline on the same scenario, so the cost delta is
+measured rather than modelled — is keyed spend sequenced with the #484 sweep. The issue also
+sequences the headline comparison after evidence-assessment coverage enforcement (#588) and the
+truth-set reconciliation (#589); scores recorded before those land carry that caveat where they
+are reported.
+
+Why:
+
+- Future-features 9.2 left exactly one thing as future work: ablations that restructure the
+  agent set rather than removing a stage. The stage-removal family is built (#270); the
+  structural question — does the decomposition itself earn its cost? — had no measuring
+  instrument. This is that instrument, built to DEC-074's conformance rules so the comparison
+  stays re-runnable from the repository.
+
+Alternatives Considered:
+
+- Per-stage schemas requested in sequence within a single conversation (rejected for this entry:
+  a two-variable condition needing seam conversation state; named as the follow-up that isolates
+  decomposition from iteration).
+- Scoring the single-pass threats against `expected-threats` through a parallel matcher
+  (rejected: `match_threats`' subset semantics duplicated outside `matching.py` is drift waiting
+  to happen, and the finding, gap, and question layers already carry the decision gate).
+- Extending `BaselineFindings` with optional gap and question lists rather than a new schema
+  (rejected: the two DEC-074 baselines' recordings replay against the finding-only shape, and
+  widening it re-opens their schema-validity history).
+
+Tradeoffs:
+
+- One combined call confounds decomposition with iteration — a single pass loses both the stage
+  boundaries and the validation loops, and this condition cannot say which absence costs what.
+  Stated, and the per-stage variant is the instrument that would separate them.
+- The gap and question parallel scorers match on requirement identifiers only, which is more
+  generous than the pipeline's gap matcher (which walks the produced gap's mapping); the
+  direction of error favours the baseline, which is DEC-074's chosen direction.
+
+## DEC-127: The migration posture is refusal — the store's version stamp gates open, and re-running from sources is the upgrade path
+
+Date: 2026-08-18
+
+Status: Accepted
+
+Decision:
+
+**There is no migration framework, and none is planned.** The mechanism DEC-020 and DEC-089
+built is the whole posture, and this entry decides it rather than leaving it implied: the store
+records its schema version at creation, checks it before anything else on open, and refuses an
+incompatible database with a message naming the recovery — create a new database and re-run the
+assessment from its sources. `SCHEMA_VERSION` moves only for table-layout changes; a
+domain-object change is invisible to SQLite by design, which is why the JSON-payload store needs
+no migrations for the changes that actually happen. A layout change that would strand data
+someone cannot regenerate is the trigger to revisit this entry, not a reason to soften the
+refusal.
+
+Why:
+
+- The v0.1 release made DEC-020's open question — at what point does an assessment become worth
+  keeping — real. The answer the corpus already implies: the data root is gitignored and
+  regenerable, the sources and decisions are what carry value, and both survive a re-run. A
+  migration framework would preserve exactly the part that is cheapest to rebuild.
+- A refusal with a named recovery is honest at the moment it matters — the operator with an old
+  database learns what happened and what to do, rather than a best-effort migration silently
+  producing rows nobody validated (the DEC-020 objection, applied to upgrades).
+
+Alternatives Considered:
+
+- Adopting a migration tool (rejected: two table-layout changes in the project's whole history,
+  both absorbed by regeneration; a framework is standing complexity for a case that has not
+  occurred).
+- Auto-deleting an incompatible database and starting fresh (rejected: deletion is a person's
+  decision; `trace reset --force` and `trace assessment purge --force` exist and are explicit).
+- Versioning each object payload for in-place upgrade (rejected: DEC-006 makes domain objects
+  authoritative through Pydantic validation; a payload the current schema cannot read is a
+  defect to fix at the schema, not a datum to transform in the dark).
+
+Tradeoffs:
+
+- An operator with a long-lived local store loses accumulated runs on a layout change and must
+  re-run assessments to rebuild them. Accepted under DEC-004: local, single-user, regenerable —
+  and the refusal message says so at the moment it applies.
+- The posture leans on discipline about what a "table-layout change" is; the store's own comment
+  and this entry are the record, and `tests/unit/test_store.py` pins the refusal and its
+  recovery wording.
+
+## DEC-128: Kubernetes manifests close the parser family's sketch — a kind allowlist, multi-document streams, and the uniform-or-nothing container rule
+
+Date: 2026-08-18
+
+Status: Accepted
+
+Decision:
+
+**A Kubernetes parser joins the DEC-070 family** (`services/context/kubernetes.py`,
+`kubernetes-parser-v1`), the last member future-features 7.2 names. The kind allowlist is
+deliberate and small — Deployment, Service, Ingress, NetworkPolicy — and a kind outside it
+yields nothing: a CRD's semantics are its own, and reading one would be interpretation.
+Recognition is by suffix (`*.k8s.yaml`, `*.k8s.yml`, `*.k8s.json`); content is never sniffed.
+
+**Multi-document streams are in scope, and the ingestion loader admits them for YAML
+generally.** A manifest is conventionally several documents separated by `---`; that is valid
+YAML with the same safety properties, so the loader's format validation moves from
+`yaml.safe_load` to `yaml.safe_load_all` — the same safe constructors — holding every document
+in the stream to the same addressability bar a single one met. Anything templated (a Helm
+expression is not YAML) still fails the safe-parse rule and is refused at ingestion.
+
+**Admitted attributes are DEC-121's rule at Kubernetes' two levels.** Pod-level `hostNetwork`
+and `automountServiceAccountToken` read directly. Container-level `allowPrivilegeEscalation`
+and `readOnlyRootFilesystem` read **uniformly or not at all**: when every container that states
+the attribute states the same value, the manifest has stated one self-contained fact about the
+workload and the claim carries it; when containers disagree, no single fact was stated and the
+split yields nothing — DEC-121's self-contained-meaning bar applied to aggregation, silence
+over a chosen side.
+
+Why:
+
+- Closing 7.2's sketch was the family's remaining named work, and Kubernetes manifests carry
+  exactly the attribute class the rule admits — literal booleans with self-contained meaning
+  where both values are worth reporting.
+- The multi-document question had one honest answer at the boundary that already owns syntax:
+  the loader validates what YAML's safe loader parses, and a `---` stream is that.
+
+Alternatives Considered:
+
+- Admitting multi-document YAML only for `*.k8s.*` suffixes (rejected: the loader validates by
+  media type and never sniffs content or branches on downstream consumers; a suffix-conditional
+  parse rule would make ingestion behaviour depend on who might read the file later).
+- Reading per-container claims as separate subjects (rejected: the component is the workload,
+  and a per-container subject would mint components no reviewer asked for; the
+  uniform-or-nothing rule reports what the manifest states about the workload and stays silent
+  where it states two things).
+- A wider kind allowlist (rejected for v1: the four cover the workload and its network surface;
+  growth is a visible allowlist diff under this entry's reasoning, never accretion).
+
+Tradeoffs:
+
+- The suffix convention (`*.k8s.yaml`) asks operators to name manifests for ingestion; a bare
+  `deployment.yaml` is not recognized. Deliberate: a generic name states no format, the family
+  rule since DEC-113.
+- A split container statement disappears rather than surfacing as a contradiction object.
+  Stated here: the parser proposes context, and manufacturing a `SourceObservation` from
+  intra-document disagreement is a step the family has not taken for any member — if a real
+  corpus shows split statements mattering, that is a revisit with the evidence in hand.
+- The measurement is fixture-level (allowlist coverage, the split-statement negative, the
+  DEC-122 suppression shape, the loader-boundary stream tests), not a scenario re-record — the
+  #569 precedent.
+
+## DEC-129: The Mermaid export dialect round-trips as input, scoped to what the exporter emits
 
 Date: 2026-08-18
 

@@ -277,3 +277,19 @@ new categories:
 Version 0.2 also moves the LLM Top 10 citations to the 2026 identifiers under the GenAI Security
 Project publisher (`"GenAI Security Project LLM Top 10: LLM01:2026"`), per DEC-058. It is `draft`
 in `versions.yaml` and editable in place until released.
+
+## Version 0.4
+
+Forty-six requirements: everything in 0.3 carried under its identifier (all fates `unchanged` —
+see `mappings/0.3-to-0.4.yaml`), plus the webhook pack (#596) completing the
+`webhook-validation.yaml` category:
+
+| Requirement | Subject |
+|---|---|
+| `req-WEBHOOK-003` | Source restriction — where the platform publishes stable source addresses or a restricted delivery channel, the documentation states whether the endpoint applies it |
+| `req-WEBHOOK-004` | Delivery-secret lifecycle — where authenticity rests on a shared secret, the documentation describes where it is held and how it rotates without dropping deliveries |
+
+Both are original requirements citing NIST only, for the reason the category file's header
+records: ASVS 5.0 carries no general inbound-event surface. Version 0.4 is `draft` in
+`versions.yaml` and editable in place until a committed recorded scenario pins it (DEC-099's
+release condition).
