@@ -579,10 +579,10 @@ schema-validated objects that are the authoritative state; **services** operate 
 service or a store, and a test asserts that direction, because it is the one that erodes without
 anyone deciding to erode it.
 
-The layout is narrower than
-[`current-architecture.md`](docs/architecture/current-architecture.md) section 15 proposes. `api/`,
-`application/`, `reporting/`, and `evaluation/` are absent until something belongs in them; an empty
-package reads as a commitment that has not been made. `workflow/` arrived when the orchestrator did.
+[`current-architecture.md`](docs/architecture/current-architecture.md) section 15 records this
+layout, and a conformance test parses its tree against the filesystem in both directions. The
+original proposal's `api/`, `application/`, `reporting/`, and `evaluation/` packages are absent
+until something belongs in them; an empty package reads as a commitment that has not been made.
 
 ## Roadmap
 
