@@ -20,3 +20,4 @@
 {"issue": 258, "tier": 3, "model": "claude-fable-5", "classified_by": "hard-rule", "outcome": "clean", "escalated_to": null, "date": "2026-08-10", "note": "DEC-076 published scorecard"}
 {"issue": 259, "tier": 3, "model": "claude-fable-5", "classified_by": "hard-rule", "outcome": "clean", "escalated_to": null, "date": "2026-08-10", "note": "DEC-077 stability measurement"}
 {"issue": 575, "tier": 0, "model": "claude-fable-5", "classified_by": "claude-haiku-4-5", "outcome": "clean", "escalated_to": null, "date": "2026-08-18", "note": "docs-truth pass: future-features statuses, README surfaces, roadmap section 9, milestone closure"}
+{"issue": 573, "tier": 3, "model": "claude-fable-5", "classified_by": "hard-rule", "outcome": "clean", "escalated_to": null, "date": "2026-08-18", "note": "DEC-120 TM-BOM round-trip accepted; fifth parser"}
