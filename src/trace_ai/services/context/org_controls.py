@@ -35,6 +35,7 @@ from trace_ai.domain.source_document import MediaType
 from trace_ai.services.org_controls import load_org_controls
 
 if TYPE_CHECKING:
+    from trace_ai.domain.org_control import OrganizationalControl
     from trace_ai.domain.proposals.conversion import ConvertedContext
     from trace_ai.domain.source_document import SourceDocument
     from trace_ai.services.assessment import AssessmentHandle
@@ -44,6 +45,24 @@ __all__ = ["ORG_CONTROLS_PARSER", "looks_like_org_controls", "seed_org_controls_
 ORG_CONTROLS_PARSER: Final = "org-controls-parser-v1"
 
 _BASENAME: Final = "org-controls.yaml"
+
+
+def _claim_value(control: OrganizationalControl, catalog_version: str) -> str:
+    """The seeded claim's value: the catalog's own statement, and where to go check it.
+
+    References (DEC-122) are appended as text for the reviewer at checkpoint 1. They are
+    pointers into organizational documentation the assessment does not hold, so they can never
+    be evidence objects; putting them in the claim's value is what keeps them visible without
+    granting them authority.
+    """
+    value = (
+        f"{control.name} (org-controls catalog {catalog_version}): "
+        f"{control.title}. {' '.join(control.statement.split())} "
+        f"Mechanism: {control.mechanism}."
+    )
+    if control.references:
+        value = f"{value} References: {'; '.join(control.references)}."
+    return value
 
 
 def looks_like_org_controls(document: SourceDocument) -> bool:
@@ -112,11 +131,7 @@ def seed_org_controls_context(
                 "key": f"clm_org_{index}",
                 "subject_type": "system",
                 "predicate": "organizational_control",
-                "value": (
-                    f"{control.name} (org-controls catalog {catalog.version}): "
-                    f"{control.title}. {' '.join(control.statement.split())} "
-                    f"Mechanism: {control.mechanism}."
-                ),
+                "value": _claim_value(control, catalog.version),
                 "status": "documented",
                 "confidence": "high",
                 "evidence_ids": [reference.id],

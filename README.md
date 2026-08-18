@@ -360,7 +360,7 @@ remains open is the narrated demo video.
   Anthropic and OpenAI (DEC-095) — makes exactly one attempt and returns a structured failure
   carrying the raw output rather than raising; a test asserts each may import exactly its own
   provider SDK and nothing else in the tree imports one.
-- **Identifiers and content hashing** — the twenty-five prefixes of section 2.1 as a closed
+- **Identifiers and content hashing** — the twenty-six prefixes of section 2.1 as a closed
   registry, both identifier forms DEC-018 defines, a typed identifier per object so a threat
   identifier cannot be assigned to a finding's field, and the single SHA-256 utility DEC-019
   requires. The scheme governs objects an assessment produces (DEC-034); authored configuration —
@@ -443,11 +443,13 @@ remains open is the narrated demo video.
 - **The adversarial condition** — DEC-075's poisoned-document variant with all five payload
   classes, run as an ordinary scenario condition, with the two-axis attack metrics (detection,
   and injected-instruction compliance with a target of zero) reported per payload class.
-- **The fourteen benchmark scenarios** — every registered scenario carries a full outcome truth
+- **The fifteen benchmark scenarios** — every registered scenario carries a full outcome truth
   set and an offline recording, every roadmap Stage 5 coverage category has a scenario — the
-  thirteenth (rag-support-bot, DEC-098) exercises the 0.2 catalog's AI-system requirements, and
-  the fourteenth (reply-tuner, DEC-114) exercises the 0.3 catalog's fine-tuning pack — and
-  `trace evaluate --all` runs the register with nothing skipped.
+  thirteenth (rag-support-bot, DEC-098) exercises the 0.2 catalog's AI-system requirements, the
+  fourteenth (reply-tuner, DEC-114) exercises the 0.3 catalog's fine-tuning pack, and the
+  fifteenth (nightly-reconciler, DEC-122) exercises the org-controls assertion, its two
+  suppressions resting on asserted organizational facts — and `trace evaluate --all` runs the
+  register with nothing skipped.
 - **The M12 decision debt, closed** — DEC-057 through DEC-072 (risk treatment, episodic revisit,
   routing reasons, the STRIDE coverage baseline, the precedent feed, catalog-gap candidates,
   fingerprints, cache accounting, context extensions, profile overlays, parsers, the coverage

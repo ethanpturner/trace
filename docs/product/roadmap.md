@@ -1032,7 +1032,7 @@ agents — is delivered in full. The immediate sequence now:
    serializer families named here previously — DEC-070's OpenAPI parser and DEC-072's Mermaid
    serializer — are delivered (#504, #503), and the families since grew (DEC-113, DEC-115). What
    remains decided-but-open: the DEC-043 revisit gated on the sweep's measured duplicate-miss
-   rate (#566), and DEC-072's round-trip question (#573).
+   rate (#566). DEC-072's round-trip question closed as DEC-120 (#573).
 
 The standing non-instructions hold in their original form:
 

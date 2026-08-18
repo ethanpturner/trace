@@ -118,6 +118,16 @@ class AssessmentConfiguration(DomainModel):
     enable_external_tracing: bool
     evidence_threshold: EvidenceThreshold
 
+    evidence_age_threshold_days: int | None = Field(default=None, gt=0)
+    """Days after which a cited evidence capture is flagged as stale (DEC-118).
+
+    Unset means no staleness flags anywhere: absence of a policy is not a policy, and a default
+    number would be an opinion about every assessment nobody stated. The flag never suppresses,
+    expires, or downgrades anything — it marks a citation a reader should re-verify, and it
+    governs no checkpoint (DEC-012 is untouched; the checkpoints wait for decisions, not for
+    fresh evidence).
+    """
+
 
 class Assessment(DomainModel):
     """One complete security architecture analysis (section 5)."""

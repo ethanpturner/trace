@@ -1,0 +1,28 @@
+{
+  "schema": "MappingProposal",
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-SECRET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The reconciler holds a credential that authenticates it to an external platform, which is this requirement's applicable condition.",
+        "suppressed_conclusion": "The credential is held in configuration or source control, unrotated, outside a managed secret store.",
+        "suppressed_by": "secrets-vault (org-controls catalog 0.2): workload credentials are provisioned into the enterprise secrets service, injected at deploy time, and rotated on a ninety-day schedule",
+        "satisfaction_status": "satisfied",
+        "evidence_ids": [
+          "evd-003",
+          "evd-007"
+        ],
+        "assumptions": [
+          "The overview states the credential is provisioned through the standard workload deployment, which is the asserted organizational control's applies_when condition; custody and rotation rest on the organization's documented mechanism, not on this system's silence."
+        ],
+        "confidence": "high"
+      }
+    ],
+    "documentation_gaps": []
+  }
+}

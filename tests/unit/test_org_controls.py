@@ -77,6 +77,38 @@ def _handle_with(tmp_path: Path, assertion: str) -> tuple[Any, Any]:
     return store, handle
 
 
+def test_the_zero_two_catalog_carries_the_operator_fact_set_with_references() -> None:
+    """0.2 is the operator fact set DEC-115's v0 waited for (#568, DEC-122): the 0.1 entries
+    carried forward plus the wider set, each entry pointing at the organizational
+    documentation that evidences it. 0.1 stays untouched — a version's content never moves."""
+    catalog = load_org_controls("0.2")
+    names = set(catalog.by_name())
+    assert {"enterprise-idp-mfa", "central-logging", "secrets-vault"} <= names
+    for control in catalog.controls:
+        assert control.references, f"{control.name} carries no reference (DEC-122)"
+    # 0.1 predates the field and stays reference-free.
+    for control in load_org_controls("0.1").controls:
+        assert control.references == []
+
+
+def test_a_seeded_claim_carries_the_references_as_text(tmp_path: Path) -> None:
+    """References are pointers a reviewer can check, riding in the claim's value (DEC-122).
+    They never become evidence objects: the referenced documents are not in the store."""
+    store, handle = _handle_with(
+        tmp_path,
+        'org_controls_catalog:\n  version: "0.2"\n  asserted:\n    - secrets-vault\n',
+    )
+    try:
+        seed_structured_documents(handle)
+        (claim,) = handle.objects.list(ContextClaim)
+        assert "secrets-vault (org-controls catalog 0.2)" in str(claim.value)
+        assert "References: Platform Security Standard PS-4" in str(claim.value)
+        # The claim's only evidence is the assertion document itself.
+        assert len(claim.evidence_ids) == 1
+    finally:
+        store.__exit__(None, None, None)
+
+
 def test_a_verified_assertion_seeds_documented_claims_with_provenance(tmp_path: Path) -> None:
     store, handle = _handle_with(
         tmp_path,

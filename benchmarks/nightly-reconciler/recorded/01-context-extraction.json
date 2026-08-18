@@ -1,0 +1,225 @@
+{
+  "schema": "ContextExtractionProposal",
+  "response": {
+    "system": {
+      "system_name": "Nightly Reconciler",
+      "system_purpose": "compare the day's billing records against the payment processor's settlement reports and file a discrepancy summary for the finance team",
+      "business_criticality": null,
+      "environment": [],
+      "deployment_model": null,
+      "data_classifications": []
+    },
+    "claims": [
+      {
+        "key": "credential-provisioning",
+        "subject_type": "component",
+        "subject_key": "reconciler",
+        "predicate": "credential_provisioning",
+        "value": "the reconciler authenticates to the payment processor's reporting API with a service credential issued by the processor; the credential is provisioned through the standard workload deployment",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-003"
+        ]
+      },
+      {
+        "key": "workload-deployment",
+        "subject_type": "component",
+        "subject_key": "reconciler",
+        "predicate": "deployment_model",
+        "value": "the reconciler runs once per night on the platform's standard workload deployment",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-001"
+        ]
+      },
+      {
+        "key": "db-reachability",
+        "subject_type": "component",
+        "subject_key": "billing-db",
+        "predicate": "network_reachability",
+        "value": "the billing database is reachable only from the reconciler job inside the application subnet",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-002"
+        ]
+      },
+      {
+        "key": "managed-db",
+        "subject_type": "component",
+        "subject_key": "billing-db",
+        "predicate": "managed_platform",
+        "value": "the billing database is a managed relational database provided by the cloud platform",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-002"
+        ]
+      }
+    ],
+    "components": [
+      {
+        "key": "reconciler",
+        "name": "Reconciler Job",
+        "component_type": "batch_job",
+        "description": "scheduled batch workload that pulls the day's settlement report, reads the day's billing records, compares the two, and writes a discrepancy summary; it exposes no inbound interface",
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": null,
+        "internet_accessible": false,
+        "externally_managed": null,
+        "data_classifications": [],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ]
+      },
+      {
+        "key": "billing-db",
+        "name": "Billing Database",
+        "component_type": "database",
+        "description": "managed relational database provided by the cloud platform, holding billing records and discrepancy summaries; reachable only from the reconciler job inside the application subnet",
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": null,
+        "internet_accessible": false,
+        "externally_managed": true,
+        "data_classifications": [],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-002"
+        ]
+      },
+      {
+        "key": "payment-processor",
+        "name": "Payment Processor",
+        "component_type": "external_service",
+        "description": "the external payment platform that captures payments and publishes a daily settlement report over its reporting API, served over HTTPS",
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": null,
+        "internet_accessible": null,
+        "externally_managed": true,
+        "data_classifications": [],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-002"
+        ]
+      }
+    ],
+    "actors": [
+      {
+        "key": "finance-analyst",
+        "name": "Finance analyst",
+        "actor_type": "internal_user",
+        "trust_level": null,
+        "capabilities": [],
+        "authentication_method": null,
+        "evidence_ids": [
+          "evd-005"
+        ]
+      }
+    ],
+    "assets": [
+      {
+        "key": "billing-records",
+        "name": "Billing records",
+        "asset_type": "financial_data",
+        "description": "per-customer charge entries held in the billing database, with the discrepancy summaries derived from them",
+        "confidentiality_impact": null,
+        "integrity_impact": null,
+        "availability_impact": null,
+        "data_classification": null,
+        "owner": null,
+        "component_keys": [
+          "billing-db"
+        ],
+        "evidence_ids": [
+          "evd-004"
+        ]
+      }
+    ],
+    "data_flows": [
+      {
+        "key": "report-pull",
+        "name": "Settlement report pull",
+        "source_component_key": "reconciler",
+        "destination_component_key": "payment-processor",
+        "direction": "bidirectional",
+        "protocol": "https",
+        "data_types": [],
+        "authentication": "service_credential",
+        "encryption_in_transit": "tls",
+        "crosses_trust_boundary_keys": [
+          "processor-boundary"
+        ],
+        "internet_exposed": null,
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ]
+      },
+      {
+        "key": "billing-io",
+        "name": "Billing reads and discrepancy writes",
+        "source_component_key": "reconciler",
+        "destination_component_key": "billing-db",
+        "direction": "bidirectional",
+        "protocol": null,
+        "data_types": [],
+        "authentication": "unknown",
+        "encryption_in_transit": "unknown",
+        "crosses_trust_boundary_keys": [],
+        "internet_exposed": false,
+        "evidence_ids": [
+          "evd-002"
+        ]
+      }
+    ],
+    "trust_boundaries": [
+      {
+        "key": "application-subnet",
+        "name": "Application subnet",
+        "boundary_type": "network_perimeter",
+        "description": "the reconciler job and the billing database sit inside the application subnet; the database is reachable only from the job",
+        "inside_component_keys": [
+          "reconciler",
+          "billing-db"
+        ],
+        "outside_component_keys": [],
+        "controls": [],
+        "evidence_ids": [
+          "evd-002"
+        ]
+      },
+      {
+        "key": "processor-boundary",
+        "name": "Payment processor boundary",
+        "boundary_type": "application_to_external_service",
+        "description": null,
+        "inside_component_keys": [
+          "reconciler"
+        ],
+        "outside_component_keys": [
+          "payment-processor"
+        ],
+        "controls": [],
+        "evidence_ids": [
+          "evd-002"
+        ]
+      }
+    ],
+    "questions": [],
+    "observations": []
+  }
+}

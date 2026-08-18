@@ -48,7 +48,9 @@ from trace_ai.domain.evidence import EvidenceReference
 from trace_ai.domain.evidence_assessment import EvidenceAssessment
 from trace_ai.domain.execution import ExecutionRecord, ExecutionStatus
 from trace_ai.domain.finding import Finding
+from trace_ai.domain.review_session import ReviewCheckpoint
 from trace_ai.domain.reviewer_decision import ReviewerDecision
+from trace_ai.domain.system_context import SystemContext
 from trace_ai.domain.threat import Threat
 from trace_ai.services.evaluation.matching import (
     match_context,
@@ -60,6 +62,7 @@ from trace_ai.services.evaluation.matching import (
     normalized_name,
 )
 from trace_ai.services.execution_ledger import ExecutionLedger
+from trace_ai.services.review_timing import review_seconds
 
 if TYPE_CHECKING:
     from decimal import Decimal
@@ -245,6 +248,49 @@ def compute_metrics(
             ),
         )
     )
+    # --- checkpoint review timing (DEC-117): wall clock from the first review-command rendering
+    # to the checkpoint's conclusion. Emitted only when a session exists and a conclusion follows
+    # it — a harness-decided checkpoint writes no session, so a replayed or protocol-driven run
+    # carries no timing metric at all: absent, never a fabricated zero (the DEC-092 discipline).
+    approved_context_times = [
+        revision.approved_at
+        for revision in repository.list(SystemContext)
+        if revision.approved_at is not None
+    ]
+    if approved_context_times:
+        context_seconds = review_seconds(
+            handle, ReviewCheckpoint.CONTEXT_APPROVAL, max(approved_context_times)
+        )
+        if context_seconds is not None:
+            results.append(
+                _metric(
+                    handle,
+                    run.id,
+                    "context_review_seconds",
+                    context_seconds,
+                    unit="seconds",
+                    method="wall clock from the first `trace context review` invocation to "
+                    "context approval (DEC-117); never gates anything",
+                )
+            )
+    if decisions:
+        finding_seconds = review_seconds(
+            handle,
+            ReviewCheckpoint.FINDING_APPROVAL,
+            max(decision.created_at for decision in decisions),
+        )
+        if finding_seconds is not None:
+            results.append(
+                _metric(
+                    handle,
+                    run.id,
+                    "finding_review_seconds",
+                    finding_seconds,
+                    unit="seconds",
+                    method="wall clock from the first `trace findings review` invocation to the "
+                    "last finding decision (DEC-117); never gates anything",
+                )
+            )
 
     # --- reviewer rates, derived from decisions rather than status alone. A finding edited and
     # then approved counts in both rates: the subjects are per-disposition sets.

@@ -79,6 +79,7 @@ from trace_ai.domain.prompt_definition import PromptDefinition
 from trace_ai.domain.question import Question
 from trace_ai.domain.requirement import Requirement
 from trace_ai.domain.requirements_catalog import RequirementsCatalog
+from trace_ai.domain.review_session import ReviewSession
 from trace_ai.domain.reviewer_decision import ReviewerDecision
 from trace_ai.domain.source_document import SourceDocument
 from trace_ai.domain.source_observation import SourceObservation
@@ -270,6 +271,9 @@ REGISTRY: dict[str, Registration] = {
     # critic on whether it improves results, and the gate needs the object.
     "24": Registration("Critique", Status.IMPLEMENTED, Critique),
     "25": Registration("ReviewerDecision", Status.IMPLEMENTED, ReviewerDecision),
+    # Documented as `25a` for the same reason `10a`, `21a`, `23a`, and `30a` are: DEC-117
+    # added it after the rest were numbered. The checkpoint timing instrument's one object.
+    "25a": Registration("ReviewSession", Status.IMPLEMENTED, ReviewSession),
     "26": Registration("WorkflowRun", Status.IMPLEMENTED, WorkflowRun),
     "27": Registration("ExecutionRecord", Status.IMPLEMENTED, ExecutionRecord),
     # Was DEFERRED. DEC-056 promoted it: the M4 finding-quality metrics persist their results
@@ -301,7 +305,10 @@ OBJECT_SECTIONS = [
     "22",
     "23",
     "23a",
-    *(str(number) for number in range(24, 31)),
+    "24",
+    "25",
+    "25a",
+    *(str(number) for number in range(26, 31)),
     "30a",
     "31",
 ]
@@ -335,7 +342,7 @@ def test_the_first_four_tables_have_the_row_counts_the_document_shows() -> None:
     """
     tables = documented_fields()
     assert len(tables["5"]) == 16, "Assessment"
-    assert len(tables["6"]) == 8, "AssessmentConfiguration"
+    assert len(tables["6"]) == 9, "AssessmentConfiguration"
     assert len(tables["7"]) == 14, "SourceDocument"
     assert len(tables["8"]) == 14, "EvidenceReference"
 
@@ -366,7 +373,7 @@ def test_every_field_row_has_a_description() -> None:
 
 def test_section_forty_parses_into_two_lists() -> None:
     first, later = implementation_priority()
-    assert len(first) == 30, first
+    assert len(first) == 31, first
     assert later == []
 
 

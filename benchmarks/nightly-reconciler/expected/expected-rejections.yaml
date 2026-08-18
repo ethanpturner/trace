@@ -1,0 +1,43 @@
+# Nightly Reconciler expected rejections
+#
+# The claims a correct assessment does not make, each with the mechanism that stops it. This
+# scenario's whole point is the pair: the documents are silent about credential custody and
+# database encryption, both provided organizationally, and the workspace assertion
+# (org-controls catalog 0.2) is what turns each silence into a documented mechanism instead
+# of a finding. The `organizational_control` mechanism is DEC-122's: the suppression rests on
+# an asserted org-controls entry, verified against the central catalog, rather than on a
+# requirements-catalog entry.
+#
+# Nothing in this directory is supplied to Trace during an assessment.
+
+benchmark_version: "1.0"
+scenario: nightly-reconciler
+catalog_version: "0.3"
+source: system-overview.md
+
+rejections:
+  - key: REJ-NR-01
+    claim: The processor reporting credential is held in configuration or source control, unrotated, outside a managed secret store.
+    mechanism: organizational_control
+    requirement_id: req-SECRET-001
+    entry: secrets-vault (org-controls catalog 0.2)
+    why: >
+      The overview states the credential is provisioned through the standard workload
+      deployment, which is the asserted organizational control's applies_when condition; the
+      organization's documented mechanism provisions workload credentials into the enterprise
+      secrets service and rotates them on a ninety-day schedule. Concluding unmanaged custody
+      from the overview's silence would ignore the documented organizational mechanism —
+      DEC-009 run in the other direction.
+
+  - key: REJ-NR-02
+    claim: Billing data is unencrypted at rest because the overview does not describe encryption.
+    mechanism: organizational_control
+    requirement_id: req-DATA-001
+    entry: managed-db-encryption (org-controls catalog 0.2)
+    why: >
+      The overview states the billing database is a managed relational database provided by
+      the cloud platform, which is the asserted organizational control's applies_when
+      condition; the organization's documented mechanism encrypts managed databases at rest
+      by default with a setting a workload team cannot disable. This is the vision document's
+      founding example of silence read as absence, answered here by the org-controls
+      assertion rather than by a requirements-catalog entry.
