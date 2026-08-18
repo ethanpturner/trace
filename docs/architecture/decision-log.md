@@ -6420,6 +6420,18 @@ Tradeoffs:
   must follow the `_id`/`_ids`/`_at`/`_by` suffix conventions to be excluded — which the domain
   models already follow.
 
+Amendment (2026-08-17, #529): **Renames are declared as candidates, and finding↔gap shifts are
+reported with their direction.** The refusal to guess stands; what changed is that the diff now
+*states* what a rename alone would explain: when exactly one removed and one added object in a
+named family agree on every content field but the name, a `RenameCandidate` is reported beside
+— never instead of — the removed and added entries, and any ambiguity declares nothing. And the
+project's signature distinction is now diffed: when one side holds a DocumentationGap and the
+other a Finding over the same requirements and the same normalized ground (the gap's resolved
+through its related mappings, the DEC-066 identity unhashed), a `ResolutionShift` reports which
+way it moved — claimed only when the key is unique on both sides and its own kind is genuinely
+absent on the other, so a gap persisting beside a new finding is two statements, not a shift.
+Threats remain unpaired; the comparison report continues to narrate the diff it is given.
+
 ## DEC-098: The AI system threat-modeling pack grows catalog 0.2, and a scenario pins its catalog
 
 Date: 2026-08-17

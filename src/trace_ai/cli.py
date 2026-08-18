@@ -1604,9 +1604,16 @@ def _diff(args: argparse.Namespace, service: AssessmentService) -> int:
                         "added": _entries(family.added),
                         "removed": _entries(family.removed),
                         "changed": _entries(family.changed),
+                        "rename_candidates": [
+                            asdict(candidate) for candidate in family.rename_candidates
+                        ],
                     }
                     for name, family in outcome.families.items()
                 },
+                "resolution_shifts": [
+                    asdict(shift) | {"requirement_ids": list(shift.requirement_ids)}
+                    for shift in outcome.resolution_shifts
+                ],
             },
         )
 
@@ -1628,6 +1635,22 @@ def _diff(args: argparse.Namespace, service: AssessmentService) -> int:
             print(
                 f"  changed  {entry.identity}  [{entry.before_id or '-'} -> "
                 f"{entry.after_id or '-'}]  {fields}"
+            )
+        for candidate in family.rename_candidates:
+            print(
+                f"  rename?  {candidate.before_identity} -> {candidate.after_identity}  "
+                f"[{candidate.before_id or '-'} -> {candidate.after_id or '-'}]  "
+                f"(a candidate: same content, different name; the entries above stand)"
+            )
+    if outcome.resolution_shifts:
+        print()
+        print("resolution shifts  (the finding/gap distinction, moved)")
+        for shift in outcome.resolution_shifts:
+            arrow = "gap -> finding" if shift.direction == "gap_to_finding" else "finding -> gap"
+            requirements = ", ".join(shift.requirement_ids)
+            print(
+                f"  {arrow}  {requirements}  on {shift.ground}  "
+                f"[{shift.before_id or '-'} -> {shift.after_id or '-'}]"
             )
     return 0
 
