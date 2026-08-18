@@ -6965,3 +6965,54 @@ Tradeoffs:
   at any discount.
 - The mapping-variants check adds a second replay to the scorecard workflow's wall clock,
   accepted for evidence that regenerates rather than rots.
+
+## DEC-108: The report renders to HTML as a derived view; Markdown remains the deliverable
+
+Date: 2026-08-17
+
+Status: Accepted
+
+Decision:
+
+**`trace report render --format html` writes an HTML page to the assessment's outputs area,
+derived from the rendered Markdown report by a deterministic transform.** DEC-035 is not
+amended: Markdown remains the report format, the sixteen sections and their single owners are
+unchanged, and there is no second template and no second renderer — the HTML holds a section
+because the render holds it, with the same heading, the same anchors, and the same text. The
+transform (`services/report/html.py`) escapes every line as untrusted and turns only the
+constructs the Markdown renderer itself emits into markup: headings, tables, fenced evidence
+blocks, list lines, the exact `<a id="..."></a>` anchor form, bold, single-star emphasis, and
+fragment-only links. A `<script>` in a finding description renders as text; an external link
+stays literal. The page carries no clock, path, or environment value, and two conversions of
+the same render are byte-identical. The derived page is not added to the report manifest: it is
+regenerable from the deliverable by one command, and the manifest guards the deliverable.
+
+Why:
+
+- Stage 6's demo materials want a presentation-safe report artifact, and the read-only view
+  wants a page to serve; both are presentation needs, not report-format needs. Deriving from
+  the one render is what keeps DEC-035's one-owner-per-section rule structurally intact — a
+  second renderer over `ReportInput` could disagree with the first about what was approved.
+- Escaping-by-default is the fence discipline applied to output: the report body carries
+  source-derived text end to end, and a converter that trusted it would let a document under
+  review inject markup into the deliverable's presentation.
+
+Alternatives Considered:
+
+- Amending DEC-035 to add HTML as a second report format (rejected: a format has owners and a
+  template; this is a view of the existing format, and calling it a format would put two
+  renderers where the decision put one).
+- A Markdown library dependency (rejected for now: the renderer emits a small closed set of
+  constructs, a general parser interprets far more than that set — every extra construct is
+  markup a source document could reach for — and the supply-chain posture prefers no new
+  runtime dependency for a bounded transform).
+
+Tradeoffs:
+
+- The subset converter must track the renderer's emitted constructs; a new construct in the
+  Markdown renderer degrades to escaped text in the HTML until the converter learns it —
+  visible and safe, rather than silently wrong.
+- Prose lines that begin with Markdown-significant characters inside descriptions can be read
+  structurally (a description line starting `# ` becomes a heading). The renderer flattens
+  cell text and the template controls line starts today; the risk is accepted and the
+  escape-first rule bounds it to formatting, never to markup injection.
