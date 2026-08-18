@@ -480,6 +480,7 @@ def test_the_command_surface_is_the_one_dec_032_confirms() -> None:
         "capture",
         "export",
         "ledger",
+        "runs",
         "threats",
         "questions",
         "catalog",
@@ -1989,15 +1990,24 @@ def test_context_extract_accepts_a_directory_of_responses(
 
 
 def test_evaluate_cleans_up_its_temporary_work_root(
-    data_root: Path, capsys: pytest.CaptureFixture[str], tmp_path: Path
+    data_root: Path,
+    capsys: pytest.CaptureFixture[str],
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Without --work-root the harness store is a throwaway, cleaned up when the run finishes rather
-    than left in the system temp directory (one per scenario on --all)."""
-    import tempfile
-    from pathlib import Path as _Path
+    than left in the system temp directory (one per scenario on --all).
 
-    temp_root = _Path(tempfile.gettempdir())
-    before = set(temp_root.glob("trace-eval-*"))
+    The temp directory is this test's own, not the shared system one: a before/after glob over
+    shared temp raced every concurrent process that makes a `trace-eval-*` directory — a second
+    test run, a live capture — and flaked on their creations (#602). In a private directory,
+    "cleaned up" is simply "empty"."""
+    import tempfile
+
+    private_tmp = tmp_path / "tmp"
+    private_tmp.mkdir()
+    monkeypatch.setattr(tempfile, "tempdir", str(private_tmp))
+
     assert (
         invoke(
             data_root,
@@ -2010,8 +2020,9 @@ def test_evaluate_cleans_up_its_temporary_work_root(
         )
         == 0
     )
-    after = set(temp_root.glob("trace-eval-*"))
-    assert after == before, "the evaluate run left a temporary work root behind"
+    assert list(private_tmp.glob("trace-eval-*")) == [], (
+        "the evaluate run left a temporary work root behind"
+    )
 
 
 def test_evaluate_diff_against_a_missing_prior_is_a_message_not_a_traceback(
@@ -2325,3 +2336,45 @@ def test_evaluate_json_carries_the_envelope_and_the_pin_state(
     assert run_payload["report_hash_verified"] is True
     metrics = run_payload["metrics"]
     assert isinstance(metrics, dict) and "false_negative_rate" in metrics
+
+
+def _seed_abandoned_run(data_root: Path, identifier: str) -> None:
+    from trace_ai.infrastructure.database.store import AssessmentStore
+    from trace_ai.services.assessment import AssessmentService
+    from trace_ai.services.execution_ledger import ExecutionLedger, start_run
+
+    with AssessmentStore.at_root(data_root) as store:
+        service = AssessmentService(store, artifact_root=data_root)
+        handle = service.handle(identifier)
+        old = start_run(handle, workflow_version="0.1", model_profile="primary-development")
+        ExecutionLedger(handle, old).pause(current_node="human_context_review")
+        superseding = start_run(handle, workflow_version="0.1", model_profile="primary-development")
+        ExecutionLedger(handle, superseding).complete()
+
+
+def test_runs_prune_dry_run_refuses_and_removes_nothing(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Prune is destructive, so without --force it lists and refuses (DEC-088's exit 3)."""
+    identifier = created(data_root, capsys)
+    _seed_abandoned_run(data_root, identifier)
+
+    assert invoke(data_root, "runs", "prune") == 3
+    captured = capsys.readouterr()
+    assert "superseded" in captured.out
+    assert "pass --force" in captured.err
+    # Nothing was removed: the same dry run still finds it.
+    assert invoke(data_root, "runs", "prune") == 3
+
+
+def test_runs_prune_with_force_removes_the_abandoned_run(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    identifier = created(data_root, capsys)
+    _seed_abandoned_run(data_root, identifier)
+
+    assert invoke(data_root, "runs", "prune", "--force") == 0
+    assert "pruned 1 run(s)" in capsys.readouterr().out
+    # Zero abandoned runs after prune: the acceptance criterion from #602.
+    assert invoke(data_root, "runs", "prune") == 0
+    assert "no abandoned runs" in capsys.readouterr().out

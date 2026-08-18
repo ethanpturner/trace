@@ -167,3 +167,38 @@ def test_the_frozen_version_is_untouched() -> None:
         load_catalog("0.1").catalog.content_hash
         == "sha256:82feaf088d0d8a347dddca9fb4883931432c9411fc2cc6d6ec5f10c511cdf102"
     )
+
+
+def test_the_fourth_version_loads_and_carries_everything_forward() -> None:
+    """Catalog 0.4 (#596): 0.3 plus the webhook pack — source restriction and delivery-secret
+    lifecycle — fates complete in both directions, the new requirements phrased in the
+    documentation register, and 0.3's frozen hash untouched."""
+    fourth = load_catalog("0.4")
+    assert len(fourth) == 46
+    assert fourth.catalog.version == "0.4"
+
+    fate_map = yaml.safe_load(
+        (CATALOG_ROOT / "mappings" / "0.3-to-0.4.yaml").read_text(encoding="utf-8")
+    )
+    mapped = set(fate_map["fates"])
+    assert mapped == set(load_catalog("0.3").by_id())
+    assert all(
+        (entry if isinstance(entry, dict) else {"fate": entry})["fate"] in MINOR_FATES
+        for entry in fate_map["fates"].values()
+    )
+
+    new_ids = set(fourth.by_id()) - set(load_catalog("0.3").by_id())
+    assert new_ids == {"req-WEBHOOK-003", "req-WEBHOOK-004"}
+    register = re.compile(r"documentation must (describe|state|identify)")
+    for requirement in fourth.requirements:
+        if requirement.id not in new_ids:
+            continue
+        statement = " ".join(str(requirement.statement).split())
+        assert register.search(statement), requirement.id
+        assert "verify that" not in statement.lower(), requirement.id
+
+    assert registry_status("0.4") == "draft"
+    assert (
+        load_catalog("0.3").catalog.content_hash
+        == "sha256:57b7061501a86ddb87b4b7d7800554b9387f0a9c6052dee799a3566fbc4a4c3f"
+    )
