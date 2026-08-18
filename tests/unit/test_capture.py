@@ -319,3 +319,53 @@ def test_baseline_capture_refuses_the_fake_profile(tmp_path: Path) -> None:
     with pytest.raises(CaptureError, match="fake"):
         stage_baseline(entry, baseline="structured", profile_name="offline-fake")
     assert not (entry.path / "capture").exists()
+
+
+def test_a_zero_finding_run_completes_the_capture_inside_the_reason_stage(
+    tmp_path: Path,
+) -> None:
+    """Five authored scenarios end with zero findings by design; checkpoint 2 then has no
+    subjects, the run never pauses, and the reason stage accepts the completion rather than
+    calling the scenario's success an error (DEC-091 amendment, #484)."""
+    oidc = PROJECT_ROOT / "benchmarks" / "oidc-portal"
+    root = tmp_path / "scenario"
+    shutil.copytree(oidc / "input", root / "input")
+    scenario = Scenario(
+        slug="zero-finding-test",
+        name="OIDC Portal",
+        path=root,
+        status="authored",
+        catalog_version="0.3",
+    )
+    responses = sorted((oidc / "recorded").glob("[0-9]*.json"))
+
+    stage_extract(
+        scenario,
+        profile_name=PROFILE,
+        live=DeterministicModel(list(load_recorded_responses(responses[:1]))),
+        data_root=tmp_path / "capture-data",
+    )
+    shutil.copy(
+        oidc / "recorded" / "decisions-context.yaml",
+        capture_dir(scenario) / "decisions-context.yaml",
+    )
+    stage_reason(
+        scenario,
+        profile_name=PROFILE,
+        live=DeterministicModel(list(load_recorded_responses(responses[1:]))),
+        data_root=tmp_path / "capture-data",
+    )
+
+    staging = capture_dir(scenario)
+    assert (staging / "report-hash.txt").is_file()
+    export = staging / "findings-export.yaml"
+    assert export.is_file()
+    assert "findings: []" in export.read_text(encoding="utf-8")
+
+    with pytest.raises(CaptureRefusedError, match="already ran"):
+        stage_report(
+            scenario,
+            profile_name=PROFILE,
+            live=DeterministicModel([]),
+            data_root=tmp_path / "capture-data",
+        )

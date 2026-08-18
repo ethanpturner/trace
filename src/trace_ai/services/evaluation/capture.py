@@ -88,6 +88,7 @@ if TYPE_CHECKING:
 
     from trace_ai.infrastructure.model.profiles import ModelProfile
     from trace_ai.infrastructure.model.recorded import RecordedResponse
+    from trace_ai.services.assessment import AssessmentHandle
     from trace_ai.services.evaluation.registry import Scenario
 
 __all__ = [
@@ -516,36 +517,90 @@ def stage_reason(
             budget=_budget(),
         )
         if not outcome.paused:
-            raise CaptureError(f"expected a pause at checkpoint 2, got {outcome.stopped_because}")
+            # A run with no candidate findings never pauses at checkpoint 2: the checkpoint
+            # advances on an empty subject list (DEC-005's gate is vacuously satisfied), report
+            # generation runs, and the whole capture completes inside this stage. That is the
+            # scenario working — five of the fifteen authored scenarios end with zero findings
+            # by design — so the stage accepts it, writes the same completion artifacts the
+            # report stage would have, and says the report stage is not needed. Any other
+            # non-pause is still an error. Recorded as a DEC-091 amendment (#484).
+            handle = service.handle(assessment_id)
+            candidate_findings = [
+                finding
+                for finding in handle.objects.list(Finding)
+                if finding.duplicate_of_id is None
+            ]
+            if not outcome.completed or candidate_findings:
+                raise CaptureError(
+                    f"expected a pause at checkpoint 2, got {outcome.stopped_because}"
+                )
+            _write_findings_export(staging, handle, assessment_id)
+            _write_completion(staging, service, handle, assessment_id, rehearsal=rehearsal)
+            print(
+                "completed with no candidate findings; checkpoint 2 had no subjects and the "
+                "report stage is not needed"
+            )
+            return
 
         handle = service.handle(assessment_id)
-        findings = [
-            {
-                "id": finding.id,
-                "title": finding.title,
-                "description": finding.description,
-                "requirement_ids": list(finding.requirement_ids),
-                "affected_component_ids": list(finding.affected_component_ids),
-                "confidence": finding.confidence.value,
-                "evidence_ids": list(finding.evidence_ids),
-            }
-            for finding in handle.objects.list(Finding)
-        ]
-        questions = [
-            {"id": question.id, "question": question.question, "status": question.status.value}
-            for question in handle.objects.list(Question)
-        ]
-        (staging / "findings-export.yaml").write_text(
-            yaml.safe_dump(
-                {"assessment_id": assessment_id, "findings": findings, "questions": questions},
-                sort_keys=False,
-                allow_unicode=True,
-                width=100,
-            ),
-            encoding="utf-8",
-        )
+        _write_findings_export(staging, handle, assessment_id)
         print(f"paused at checkpoint 2; {_spent(service, assessment_id)}")
         print(f"author {staging / 'decisions-findings.yaml'}, then: report")
+
+
+def _write_findings_export(staging: Path, handle: AssessmentHandle, assessment_id: str) -> None:
+    """The reasoning stage's export: every finding and question, for decision authoring."""
+    findings = [
+        {
+            "id": finding.id,
+            "title": finding.title,
+            "description": finding.description,
+            "requirement_ids": list(finding.requirement_ids),
+            "affected_component_ids": list(finding.affected_component_ids),
+            "confidence": finding.confidence.value,
+            "evidence_ids": list(finding.evidence_ids),
+        }
+        for finding in handle.objects.list(Finding)
+    ]
+    questions = [
+        {"id": question.id, "question": question.question, "status": question.status.value}
+        for question in handle.objects.list(Question)
+    ]
+    (staging / "findings-export.yaml").write_text(
+        yaml.safe_dump(
+            {"assessment_id": assessment_id, "findings": findings, "questions": questions},
+            sort_keys=False,
+            allow_unicode=True,
+            width=100,
+        ),
+        encoding="utf-8",
+    )
+
+
+def _write_completion(
+    staging: Path,
+    service: AssessmentService,
+    handle: AssessmentHandle,
+    assessment_id: str,
+    *,
+    rehearsal: bool,
+) -> None:
+    """The completed capture's artifacts: the pinned report hash and the operator's next step."""
+    assessment = handle.objects.get(Assessment, assessment_id)
+    if assessment.final_report_path is None:
+        raise CaptureError("the run completed and no report path was recorded")
+    filename = assessment.final_report_path.rpartition("/")[2]
+    report_hash = handle.artifacts.hash_of("outputs", filename)
+    (staging / "report-hash.txt").write_text(report_hash + "\n", encoding="utf-8")
+    summary: dict[str, object] = {
+        "report_hash": report_hash,
+        "spent": _spent(service, assessment_id),
+    }
+    print(json.dumps(summary, indent=2))
+    if rehearsal:
+        print("rehearsal complete; nothing staged here may be promoted into recorded/")
+    else:
+        print(f"verify the round trip, then promote {staging.name}/ into recorded/")
 
 
 def stage_report(
@@ -561,10 +616,13 @@ def stage_report(
     if data_root is None:
         data_root = capture_data_root(scenario, rehearsal=rehearsal)
     decisions = staging / "decisions-findings.yaml"
+    if (staging / "report-hash.txt").exists():
+        # Checked before the decisions file: a zero-finding capture completes inside the reason
+        # stage with no decisions to author, and the honest answer to a report re-run is
+        # "already ran", not a demand for a file the capture never needed.
+        raise CaptureRefusedError("the report stage already ran; a re-run would re-spend its call")
     if not decisions.is_file():
         raise CaptureError(f"{decisions} does not exist; author it from findings-export.yaml first")
-    if (staging / "report-hash.txt").exists():
-        raise CaptureRefusedError("the report stage already ran; a re-run would re-spend its call")
 
     from trace_ai.infrastructure.model.profiles import resolve_profile
 
@@ -613,21 +671,7 @@ def stage_report(
             raise CaptureError(f"expected completion, got {outcome.stopped_because}")
 
         handle = service.handle(assessment_id)
-        assessment = handle.objects.get(Assessment, assessment_id)
-        if assessment.final_report_path is None:
-            raise CaptureError("the run completed and no report path was recorded")
-        filename = assessment.final_report_path.rpartition("/")[2]
-        report_hash = handle.artifacts.hash_of("outputs", filename)
-        (staging / "report-hash.txt").write_text(report_hash + "\n", encoding="utf-8")
-        summary: dict[str, object] = {
-            "report_hash": report_hash,
-            "spent": _spent(service, assessment_id),
-        }
-        print(json.dumps(summary, indent=2))
-        if rehearsal:
-            print("rehearsal complete; nothing staged here may be promoted into recorded/")
-        else:
-            print(f"verify the round trip, then promote {staging.name}/ into recorded/")
+        _write_completion(staging, service, handle, assessment_id, rehearsal=rehearsal)
 
 
 def stage_baseline(

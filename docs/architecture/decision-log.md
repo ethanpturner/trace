@@ -6011,6 +6011,18 @@ rehearsal's own resume. A zero-usage artifact still cannot land where a recordin
 what changed is that the mechanics-validation pass no longer costs a dollar. Baseline stages are
 excluded: one call has no mechanics to rehearse.
 
+Amendment (2026-08-18, #484): **A run with no candidate findings completes the capture inside
+the reasoning stage, and the stage accepts it.** Checkpoint 2 advances on an empty subject list
+— DEC-005's gate is vacuously satisfied — so a zero-finding run never pauses there: report
+generation runs and the whole capture completes in `reason`. The first full-corpus rehearsal
+(#534's `--rehearse`, run before the #484 sweep) surfaced this: five of the fifteen authored
+scenarios end with zero findings by design, and the stage called each one's success an error.
+The stage now verifies the completion is genuinely the zero-finding case, writes the same
+completion artifacts the report stage would have — the findings export, empty and on the record,
+and the pinned report hash — and says the report stage is not needed. A re-run of `report` after
+such a completion is refused as already-ran rather than failed for missing decisions nobody
+needed to author. Any other non-pause outcome is still an error.
+
 ## DEC-092: The measured cost supersedes the estimate, and `trace ledger` is how spend is read
 
 Date: 2026-08-17
