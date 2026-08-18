@@ -94,7 +94,7 @@ def _request_error() -> anthropic.APITimeoutError:
 # -- the OpenAI adapter, behind a stub client ----------------------------------------------------
 
 
-class _OpenAIStubCompletions:
+class _OpenAIStubResponses:
     def __init__(self, outcome: object) -> None:
         self._outcome = outcome
 
@@ -106,25 +106,25 @@ class _OpenAIStubCompletions:
 
 class _OpenAIStubClient:
     def __init__(self, outcome: object) -> None:
-        self.chat = SimpleNamespace(completions=_OpenAIStubCompletions(outcome))
+        self.responses = _OpenAIStubResponses(outcome)
 
     def with_options(self, *, timeout: float) -> _OpenAIStubClient:
         return self
 
 
-def _oa_response(text: str | None, *, finish_reason: str = "stop") -> SimpleNamespace:
+def _oa_response(text: str | None, *, incomplete_reason: str | None = None) -> SimpleNamespace:
+    content = [] if text is None else [SimpleNamespace(type="output_text", text=text)]
     return SimpleNamespace(
         model="gpt-5.1",
-        choices=[
-            SimpleNamespace(
-                finish_reason=finish_reason,
-                message=SimpleNamespace(content=text, refusal=None),
-            )
-        ],
+        status="completed" if incomplete_reason is None else "incomplete",
+        incomplete_details=(
+            SimpleNamespace(reason=incomplete_reason) if incomplete_reason is not None else None
+        ),
+        output=[SimpleNamespace(type="message", content=content)],
         usage=SimpleNamespace(
-            prompt_tokens=100,
-            completion_tokens=50,
-            prompt_tokens_details=SimpleNamespace(cached_tokens=0),
+            input_tokens=100,
+            output_tokens=50,
+            input_tokens_details=SimpleNamespace(cached_tokens=0),
         ),
     )
 
@@ -159,7 +159,10 @@ _PROVIDER_CONDITIONS = [
         "openai-connection",
         _openai(openai.APIConnectionError(request=httpx2.Request("POST", "https://x.test"))),
     ),
-    ("openai-truncated", _openai(_oa_response('{"name": "x"}', finish_reason="length"))),
+    (
+        "openai-truncated",
+        _openai(_oa_response('{"name": "x"}', incomplete_reason="max_output_tokens")),
+    ),
     ("openai-schema-miss", _openai(_oa_response('{"name": 5}'))),
     ("openai-no-text", _openai(_oa_response(None))),
 ]
@@ -231,7 +234,7 @@ def test_a_failure_message_contains_no_model_output(
         (
             "openai",
             _openai(_oa_request_error()),
-            _openai(_oa_response('{"name": "x"}', finish_reason="length")),
+            _openai(_oa_response('{"name": "x"}', incomplete_reason="max_output_tokens")),
         ),
     ],
 )

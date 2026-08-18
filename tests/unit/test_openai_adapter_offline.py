@@ -1,9 +1,9 @@
-"""The OpenAI adapter's provider-specific behaviour, behind a stub client (DEC-095).
+"""The OpenAI adapter's provider-specific behaviour, behind a stub client (DEC-095, #539).
 
 The cross-provider contract lives in `test_adapter_conformance.py`; this file holds what is
-this provider's alone: the creativity-to-`reasoning_effort` mapping, the non-strict schema
-request and its `json_object` fallback, the refusal field, and the disjointing of a
-`prompt_tokens` figure that includes the cached span (DEC-067).
+this provider's alone: the Responses API request shape, the creativity-to-`reasoning.effort`
+mapping, the non-strict schema format and its `json_object` fallback, the refusal part, and
+the disjointing of an `input_tokens` figure that includes the cached span (DEC-067).
 """
 
 from __future__ import annotations
@@ -36,7 +36,7 @@ class _Schema(BaseModel):
     name: str
 
 
-class _Completions:
+class _Responses:
     def __init__(self, outcomes: list[object]) -> None:
         self._outcomes = list(outcomes)
         self.requests: list[dict[str, Any]] = []
@@ -51,8 +51,7 @@ class _Completions:
 
 class _Client:
     def __init__(self, *outcomes: object) -> None:
-        self.completions = _Completions(list(outcomes))
-        self.chat = SimpleNamespace(completions=self.completions)
+        self.responses = _Responses(list(outcomes))
 
     def with_options(self, *, timeout: float) -> _Client:
         return self
@@ -61,24 +60,29 @@ class _Client:
 def _response(
     text: str | None,
     *,
-    finish_reason: str = "stop",
+    status: str = "completed",
+    incomplete_reason: str | None = None,
     refusal: str | None = None,
-    prompt_tokens: int = 100,
-    completion_tokens: int = 50,
+    input_tokens: int = 100,
+    output_tokens: int = 50,
     cached_tokens: int = 0,
 ) -> SimpleNamespace:
+    content: list[SimpleNamespace] = []
+    if refusal is not None:
+        content.append(SimpleNamespace(type="refusal", refusal=refusal))
+    if text is not None:
+        content.append(SimpleNamespace(type="output_text", text=text))
     return SimpleNamespace(
         model="gpt-5.1",
-        choices=[
-            SimpleNamespace(
-                finish_reason=finish_reason,
-                message=SimpleNamespace(content=text, refusal=refusal),
-            )
-        ],
+        status=status,
+        incomplete_details=(
+            SimpleNamespace(reason=incomplete_reason) if incomplete_reason is not None else None
+        ),
+        output=[SimpleNamespace(type="message", content=content)],
         usage=SimpleNamespace(
-            prompt_tokens=prompt_tokens,
-            completion_tokens=completion_tokens,
-            prompt_tokens_details=SimpleNamespace(cached_tokens=cached_tokens),
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+            input_tokens_details=SimpleNamespace(cached_tokens=cached_tokens),
         ),
     )
 
@@ -97,8 +101,8 @@ def test_the_request_carries_the_reasoning_effort_for_each_creativity(
         prompt="p", schema=_Schema, settings=GenerationSettings(creativity=creativity)
     )
     assert isinstance(outcome, ModelSuccess)
-    request = client.completions.requests[0]
-    assert request["reasoning_effort"] == REASONING_EFFORT_BY_CREATIVITY[creativity]
+    request = client.responses.requests[0]
+    assert request["reasoning"] == {"effort": REASONING_EFFORT_BY_CREATIVITY[creativity]}
     assert outcome.metadata["effort"] == REASONING_EFFORT_BY_CREATIVITY[creativity]
 
 
@@ -108,10 +112,10 @@ def test_the_schema_is_requested_non_strict() -> None:
     the adapter validates the text itself either way."""
     adapter, client = _adapter(_response('{"name": "ok"}'))
     adapter.generate(prompt="p", schema=_Schema, settings=GenerationSettings())
-    fmt = client.completions.requests[0]["response_format"]
+    fmt = client.responses.requests[0]["text"]["format"]
     assert fmt["type"] == "json_schema"
-    assert fmt["json_schema"]["strict"] is False
-    assert fmt["json_schema"]["schema"] == _Schema.model_json_schema()
+    assert fmt["strict"] is False
+    assert fmt["schema"] == _Schema.model_json_schema()
 
 
 def test_a_schema_format_rejection_resends_as_json_object() -> None:
@@ -129,7 +133,7 @@ def test_a_schema_format_rejection_resends_as_json_object() -> None:
 
     assert isinstance(outcome, ModelSuccess)
     assert outcome.metadata["schema_grammar"] == "unsupported_omitted"
-    assert client.completions.requests[1]["response_format"] == {"type": "json_object"}
+    assert client.responses.requests[1]["text"] == {"format": {"type": "json_object"}}
 
 
 def test_any_other_bad_request_stays_a_single_attempt() -> None:
@@ -144,7 +148,7 @@ def test_any_other_bad_request_stays_a_single_attempt() -> None:
     outcome = adapter.generate(prompt="p", schema=_Schema, settings=GenerationSettings())
     assert isinstance(outcome, ModelFailure)
     assert outcome.reason is FailureReason.INVALID_REQUEST
-    assert len(client.completions.requests) == 1
+    assert len(client.responses.requests) == 1
 
 
 def test_a_refusal_is_a_refused_failure_carrying_the_refusal_text() -> None:
@@ -160,7 +164,7 @@ def test_usage_subtracts_the_cached_span_to_stay_disjoint() -> None:
     """The provider's `prompt_tokens` includes the cached span; DEC-067 keeps the input spans
     disjoint, so the adapter subtracts and prices each span at its own rate."""
     adapter, _ = _adapter(
-        _response('{"name": "ok"}', prompt_tokens=1000, completion_tokens=10, cached_tokens=800)
+        _response('{"name": "ok"}', input_tokens=1000, output_tokens=10, cached_tokens=800)
     )
     outcome = adapter.generate(prompt="p", schema=_Schema, settings=GenerationSettings())
     assert isinstance(outcome, ModelSuccess)
@@ -191,8 +195,8 @@ def test_a_cache_prefix_is_accepted_and_the_message_stays_plain() -> None:
         settings=GenerationSettings(),
         cache_prefix="stable prefix. ",
     )
-    messages = client.completions.requests[0]["messages"]
-    assert messages[-1] == {"role": "user", "content": "stable prefix. variable tail"}
+    request = client.responses.requests[0]
+    assert request["input"] == [{"role": "user", "content": "stable prefix. variable tail"}]
 
 
 def test_a_system_cache_prefix_is_accepted_and_the_system_message_stays_plain() -> None:
@@ -205,8 +209,8 @@ def test_a_system_cache_prefix_is_accepted_and_the_system_message_stays_plain() 
         system="catalog span. per-threat tail",
         system_cache_prefix="catalog span. ",
     )
-    messages = client.completions.requests[0]["messages"]
-    assert messages[0] == {"role": "system", "content": "catalog span. per-threat tail"}
+    request = client.responses.requests[0]
+    assert request["instructions"] == "catalog span. per-threat tail"
 
 
 def test_the_system_region_is_its_own_message() -> None:
@@ -214,8 +218,8 @@ def test_the_system_region_is_its_own_message() -> None:
     adapter.generate(
         prompt="p", schema=_Schema, settings=GenerationSettings(), system="the system region"
     )
-    messages = client.completions.requests[0]["messages"]
-    assert messages[0] == {"role": "system", "content": "the system region"}
+    request = client.responses.requests[0]
+    assert request["instructions"] == "the system region"
 
 
 def test_a_profile_naming_another_provider_is_refused() -> None:
