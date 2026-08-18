@@ -444,14 +444,18 @@ This feature should be narrow and evidence-oriented.
 
 ## 7.2 Infrastructure-as-Code Analysis
 
-**Status:** Built in part (DEC-113 and DEC-121, issues #525 and #569)
+**Status:** Built (DEC-113, DEC-121, DEC-124, and DEC-128; issues #525, #569, #593, and #594)
 
 DEC-113 shipped the first member: a Terraform JSON parser, corpus-measured, reading stated
 booleans as documented claims. DEC-121 added HCL syntax through a deterministic subset scanner
 and put the attribute table under a coverage rule — literal boolean, self-contained meaning,
 both directions meaningful — which admitted `encrypted` and `deletion_protection` beside the
-first pair. CloudFormation and Kubernetes manifests remain from the sketch. The
-parsing-over-model-analysis instinct below held: technology-specific parsing is what was built.
+first pair. DEC-124 added CloudFormation — JSON plus tag-free YAML, the syntax boundary the
+loader's own safe-parse rule — under the same table in CloudFormation's spelling. DEC-128
+closed the sketch with Kubernetes manifests: a deliberate kind allowlist, multi-document
+streams admitted at the loader, and container-level attributes read uniformly or not at all.
+The parsing-over-model-analysis instinct below held: technology-specific parsing is what was
+built. Widening the admission rule itself is #595's decision.
 
 The original sketch — analyze Terraform, CloudFormation, Kubernetes manifests, or similar artifacts for architecture and control evidence.
 
@@ -659,8 +663,10 @@ This should be added after the underlying metrics are reliable.
 The harness applies the section-14 ablations (evidence validation, critical review, context
 approval) harness-side per DEC-012, marks each ablated run non-authoritative (DEC-031), and
 `trace evaluate --ablation-set` reports what each removal changes at the finding level — the
-DEC-012 decision gate answered per scenario. Left as future work: ablations that restructure the
-agent set (single versus multi-agent) rather than removing a stage.
+DEC-012 decision gate answered per scenario. The restructuring ablation's first member is built:
+DEC-126's `baseline-single-pass` prices the whole agent set against one combined-schema call
+(issue #592; its recording and live pair ride the keyed capture step). Remaining from the
+sketch: the per-stage-schemas-in-sequence variant that isolates decomposition from iteration.
 
 Compare the full Trace workflow with individual stages removed.
 

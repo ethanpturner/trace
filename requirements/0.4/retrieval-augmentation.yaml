@@ -1,0 +1,136 @@
+# Category: retrieval_augmentation
+# Requirements for systems that retrieve stored content -- documents, chunks,
+# embeddings -- and place it in a model's context at answer time. The recurring
+# shape is that the retrieval corpus is a second write path into the prompt:
+# whoever can write to the index can speak to the model later, wearing the
+# system's own voice. Grounded in the GenAI Security Project LLM Top 10 (2026)
+# and OWASP AISVS chapter C8 (#489, DEC-098); every statement is written in the
+# documentation register so that silence resolves to `unverified` (DEC-009).
+
+requirements:
+
+  - id: req-RAG-001
+    catalog_version: "0.4"
+    title: The retrieval corpus's write path is governed
+    statement: >
+      Where retrieved content is placed in a model's context, the documentation
+      must state who and what can add or modify content in the retrieval
+      corpus, and how additions enter it -- an authored pipeline, a review
+      step, an automated sync from a named source.
+    rationale: >
+      Retrieval moves the prompt-injection surface from the request to the
+      corpus: a passage indexed today is instructions delivered tomorrow, to a
+      different user, with the system's apparent authority. Who can write to
+      the corpus is an architectural fact a design document can state, and a
+      document that treats the index as simply existing has not decided whose
+      content the model reads.
+    category:
+      - retrieval_augmentation
+      - integrity
+    applicable_conditions:
+      - stored content is retrieved and placed in a model's context at answer time
+      - the retrieval corpus accepts content from more than one source or author
+    non_applicable_conditions:
+      - every prompt is composed entirely from the current request's own material
+      - the corpus is a fixed, versioned artifact shipped with the system and written by no runtime path
+    acceptable_implementations:
+      - an ingestion pipeline that indexes only named, versioned sources
+      - a review or approval step before content enters the corpus
+      - write access to the index restricted to a service identity with a stated owner
+      - provenance recorded per indexed item, so a retrieved passage names its source
+    evidence_expectations:
+      - documentation of the corpus's sources and its ingestion path
+      - description of who or what may write to the index and how that is enforced
+      - retrieval or indexing pipeline configuration
+    common_false_positives:
+      - absent content-level sanitization of indexed text where the write path itself is governed
+      - absent re-review of already-indexed content on every retrieval, which exceeds this expectation
+    default_severity: high
+    source_frameworks:
+      - "GenAI Security Project LLM Top 10: LLM01:2026"
+      - "GenAI Security Project LLM Top 10: LLM08:2026"
+      - "OWASP AISVS: v1.0-C8.2.1"
+    status: active
+
+  - id: req-RAG-002
+    catalog_version: "0.4"
+    title: Retrieval is filtered by the requester's authorization
+    statement: >
+      Where the retrieval corpus holds content that not every requester may
+      read, the documentation must describe how retrieval results are
+      restricted to what the requesting principal is entitled to -- and where
+      the corpus spans tenants, how one tenant's content is kept out of
+      another's retrievals.
+    rationale: >
+      An index flattens the access model of its sources unless something
+      rebuilds it: a document readable by one team, once embedded, is a
+      candidate answer for everyone the index serves. The model cannot enforce
+      entitlements it never sees, so the filter has to live in the retrieval
+      layer, and a design document can say whether it does. Answer-time
+      leakage through retrieval is indistinguishable from authorized use in
+      the model's own output.
+    category:
+      - retrieval_augmentation
+      - authorization
+    applicable_conditions:
+      - the corpus holds content with differing read entitlements
+      - retrievals are served to more than one principal, team, or tenant
+    non_applicable_conditions:
+      - every requester is entitled to read the entire corpus
+      - the corpus holds only public or uniformly-shared content
+    acceptable_implementations:
+      - entitlement metadata carried per indexed item and applied as a retrieval filter
+      - per-tenant indexes or namespaces with no cross-namespace query path
+      - post-retrieval filtering against the source system's access control before prompt assembly
+    evidence_expectations:
+      - documentation of how retrieval results are scoped to the requester
+      - index or namespace layout across tenants
+      - description of where the entitlement check runs relative to prompt assembly
+    common_false_positives:
+      - absent field-level redaction inside retrievable documents where document-level scoping is documented
+      - absent re-verification against the source system on every query where indexed entitlements are maintained
+    default_severity: critical
+    source_frameworks:
+      - "GenAI Security Project LLM Top 10: LLM02:2026"
+      - "OWASP ASVS: v5.0.0-4.2.1"
+    status: active
+
+  - id: req-RAG-003
+    catalog_version: "0.4"
+    title: The retrieval index follows its sources' lifecycle
+    statement: >
+      The documentation must describe how content removed or corrected at its
+      source is removed or updated in the retrieval index and any derived
+      embeddings, and within what period.
+    rationale: >
+      An index is a copy, and copies outlive their sources unless something
+      makes them follow. A deletion honored in the document store but not in
+      the index has not happened from the model's point of view: the passage
+      still retrieves, still enters prompts, and still shapes answers. The
+      propagation path and its lag are stateable facts; retention promises
+      made about the source are claims about the index too, whether or not
+      anyone wrote that down.
+    category:
+      - retrieval_augmentation
+      - data_protection
+    applicable_conditions:
+      - indexed content derives from sources that can be deleted or corrected
+      - retention or deletion commitments exist for the source content
+    non_applicable_conditions:
+      - the corpus is rebuilt from its sources on every use
+      - indexed content is immutable reference material with no deletion commitments
+    acceptable_implementations:
+      - deletion and update events propagated from the source to the index and embeddings
+      - periodic full re-indexing from the sources with a stated interval
+      - index entries carrying source references checked for existence at retrieval time
+    evidence_expectations:
+      - documentation of the propagation mechanism and its expected lag
+      - data retention statements that address the index and embeddings, not only the source store
+    common_false_positives:
+      - absent instantaneous propagation where a bounded, stated lag is documented
+      - absent deletion of model outputs already generated from since-removed content, which exceeds this expectation
+    default_severity: medium
+    source_frameworks:
+      - "GenAI Security Project LLM Top 10: LLM02:2026"
+      - "OWASP ASVS: v5.0.0-14.1.1"
+    status: active
