@@ -456,6 +456,19 @@ remains open is the narrated demo video.
   localhost, GET-only, including the finding-lineage walk from a finding back to its hashed
   evidence (DEC-078). The [demo script](docs/product/demo-script.md) stages the offline run as ten
   timed beats with a recovery plan whose every fallback is a committed artifact.
+- **The export family** — `trace export tm-bom`, `trace export sarif`, and `trace export mermaid`,
+  the DEC-072 serializer family: deterministic serializers over approved objects only, with no
+  prose and no model call. SARIF carries approved findings and reviewer-assigned severities only;
+  the Mermaid DFD renders the approved context. DEC-108 adds an HTML rendering of the Markdown
+  report as a derived view — a rendering, never a second format.
+- **Assessment diffing** — `trace diff` compares two assessments of the same system by content
+  fingerprint (DEC-097), pairing threats and documentation gaps across runs, and
+  `trace diff --report` writes the comparison as a Markdown report into the later assessment's
+  outputs (DEC-103), outside the DEC-035 report contract.
+- **The organizational control catalog** — `org-controls/`, a version-controlled catalog of
+  organization-wide controls read by its own loader (DEC-115). An organizational control enters
+  context as an existence-only documented claim, never as authority, and the oidc-portal
+  scenario asserts one from its first commit.
 - **Test discipline** — unit tests run by default; integration and evaluation tests sit behind
   pytest markers that are deselected, so CI never needs a provider API key.
 - **The design corpus** — vision, scope, roadmap, architecture, agent design, data model,

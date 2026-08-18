@@ -1023,11 +1023,16 @@ The original nine-step sequence this section carried — documents, scenario, fi
 repository, environment, the evidence slice, the extraction slice, evaluation before more
 agents — is delivered in full. The immediate sequence now:
 
-1. Record the keyed measurements: the eleven-scenario live sweep with live baselines (#484),
-   the prompt- and model-comparison protocols (#331, #332), and the usage backfill.
-2. Record the demo video (#353), the last Stage 6 asset.
-3. Execute the remaining decided items in their decided order (DEC-070's OpenAPI parser,
-   DEC-072's Mermaid serializer) before opening new decisions.
+1. Diagnose the live failures first (#564) — the flagship capture's zero-of-three match and the
+   three failed stability runs — so the sweep does not buy eleven repetitions of a known failure
+   mode. Then record the keyed measurements: the eleven-scenario live sweep with live baselines
+   (#484), the prompt- and model-comparison protocols (#331, #332), and the usage backfill.
+2. Record the demo video (#353), the last Stage 6 asset, narrating the measured results.
+3. Execute the remaining decided-family items before opening new decisions. The parser and
+   serializer families named here previously — DEC-070's OpenAPI parser and DEC-072's Mermaid
+   serializer — are delivered (#504, #503), and the families since grew (DEC-113, DEC-115). What
+   remains decided-but-open: the DEC-043 revisit gated on the sweep's measured duplicate-miss
+   rate (#566), and DEC-072's round-trip question (#573).
 
 The standing non-instructions hold in their original form:
 
