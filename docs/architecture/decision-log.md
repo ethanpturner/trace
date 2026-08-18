@@ -8419,3 +8419,72 @@ Tradeoffs:
 - The measurement is fixture-level (verbatim string reads in three spellings, expression and
   interpolation refusals, the pinned must-not-conclude negative), not a scenario re-record —
   the #569 precedent, third time.
+
+## DEC-131: Evaluation plan 0.2 — the review rubric is struck, and the file rule admits the instrument classes
+
+Date: 2026-08-18
+
+Status: Accepted
+
+Decision:
+
+**The section 9 human-review rubric is struck.** The 0.1 plan proposed seven reviewer-scored
+1-to-5 categories on every evaluation; nothing implemented it and no decision had deferred it —
+the one state the corpus does not tolerate. Five of the seven are measured deterministically
+against authored truth sets today, and a Likert re-score of a computed number is a weaker
+duplicate of it. The two genuinely subjective categories would be scored by the truth sets' own
+author, and DEC-112 already declined that shape: self-agreement is not a statistic. When an
+independent scorer exists, the judgment arrives item-anchored through DEC-119's annotation pass
+and adjudication record rather than as a seven-row average.
+
+**Section 5's derived-file rule widens by decision into three classes**: graded object classes
+(one `expected-*.yaml` per graded domain object type, plus the rejections negative set, present
+per what a scenario grades), instrument annotations (`expected-duplicates.yaml` per DEC-110;
+`annotations/second/` and its adjudication record per DEC-112 and DEC-119), and scenario
+apparatus (the contract, the reviewer notes, the README). DEC-110 flagged that its file fell
+outside the 0.1 rule rather than silently widening it; this is that widening, decided, and
+`tests/unit/test_evaluation_plan_conformance.py` holds the committed truth-set directories to
+the classes so the next widening cannot happen silently. A spent `.gitkeep` in the flagship's
+truth-set directory was the guard's first catch and is removed.
+
+**The document moves to 0.2, Accepted**, with tense reconciled to what runs (sections 6, 8, 16
+in the present indicative; the question-usefulness metric described as computed, not
+reviewer-rated) and section 19's answered questions struck with pointers: expected-finding
+establishment and independent scoring to DEC-112 and DEC-119, disagreement handling to
+DEC-119's adjudication rule, malicious documentation to DEC-075, commercial-tool benchmarking
+to DEC-074's in-repo baselines with the external comparable in the portfolio write-up, and
+release gating to the repeatedly-decided answer that evaluation reports and gates nothing
+(DEC-063, DEC-077, DEC-112, DEC-117). Scenario sufficiency, business context, trust-predicting
+metrics, and benchmark evolution stand open.
+
+Why:
+
+- The plan carried the corpus's largest plan-versus-reality gap while the system it describes
+  shipped, measured itself, and released under it; a Proposed 0.1 describing a running,
+  CI-checked harness fails the documentation-and-reality stop condition the roadmap names.
+- The rubric decision follows the instrument precedents rather than fighting them: DEC-110,
+  DEC-112, and DEC-117 each built a deterministic recorder with an honest population story,
+  and the rubric has none until a second human exists — at which point DEC-119 already carries
+  the judgment in a better shape.
+
+Alternatives Considered:
+
+- Implementing the rubric on DEC-117's `ReviewSession` rows, scores persisted beside the timing
+  record and gating nothing (rejected: the numbers would be the sole author's self-assessment
+  wearing an instrument's authority — the exact shape DEC-112 refused — and the independent
+  scorer who could redeem them is already served by DEC-119's item-anchored record).
+- Leaving the rubric standing as aspiration (rejected: unimplemented-and-undeferred is the state
+  this revision exists to eliminate).
+- Enumerating section 5's file list as a closed specification (rejected: DEC-027 made the list
+  derived, and a closed enumeration would re-create the drift DEC-110 flagged, one file at a
+  time).
+
+Tradeoffs:
+
+- Striking the rubric forfeits a cheap-looking qualitative signal; the entry bets that the
+  DEC-119 adjudication record carries the same judgment with provenance instead of arithmetic.
+  If a future evaluation genuinely needs scalar reviewer scores from an independent panel, the
+  decision is revisited with that panel named, not resurrected by default.
+- The conformance test admits `annotations/second/` as a directory rather than per file, so a
+  stray file inside it would pass; the adjudication reader, not the layout guard, is what
+  validates that content.
