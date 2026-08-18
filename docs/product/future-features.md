@@ -474,9 +474,16 @@ This could strengthen context extraction, but technology-specific parsing may be
 
 ## 7.3 Architecture Diagram Analysis
 
-**Status:** Research
+**Status:** Built in part (DEC-129, issue #599)
 
-Extract components, flows, and trust boundaries from architecture diagrams.
+The first slice shipped without a vision model: the Mermaid DFD dialect `trace export mermaid`
+emits parses back deterministically as the DEC-070 family's sixth member — components, flows,
+and trust-boundary membership entering as documented claims, decided at checkpoint 1. Both of
+the sketch's constraints held by construction: a diagram-versus-prose disagreement surfaces as
+a cross-claim observation, and a parser that only proposes cannot override anything. Hand-drawn
+diagrams in the wild — and any format needing vision — stay Research.
+
+The original sketch — extract components, flows, and trust boundaries from architecture diagrams.
 
 The feature would need to reconcile diagram content with written documentation and surface contradictions.
 

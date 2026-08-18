@@ -78,13 +78,15 @@ NODE_VERSION: Final = "0.1"
 # Extension to format. Section 5.4's five inputs, spelled the ways they are spelled on disk.
 # Extension only: content sniffing would let a document choose how it is parsed. `.tf` ingests as
 # plain text (DEC-121): HCL is a text format and the IaC parser recognizes the suffix downstream —
-# the same shape as `.tf.json` arriving through `.json`. `.pdf` is the one binary format
+# the same shape as `.tf.json` arriving through `.json`, and `.mmd` follows it (#599): Mermaid
+# source is plain text and the DFD parser recognizes the suffix. `.pdf` is the one binary format
 # (DEC-123): its addressable text is the deterministic extraction of the stored bytes.
 SUFFIXES: Final[dict[str, MediaType]] = {
     ".md": MediaType.MARKDOWN,
     ".markdown": MediaType.MARKDOWN,
     ".txt": MediaType.PLAIN_TEXT,
     ".tf": MediaType.PLAIN_TEXT,
+    ".mmd": MediaType.PLAIN_TEXT,
     ".json": MediaType.JSON,
     ".yaml": MediaType.YAML,
     ".yml": MediaType.YAML,
