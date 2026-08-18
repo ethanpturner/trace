@@ -33,3 +33,15 @@ mappings keeps map-001 and map-002 stable; the thr-002 mapping's allocated ident
 from map-003 to map-007, and the evidence-validation recording's subject reference moved
 with it. Zero findings remains the recorded outcome; the expected mappings live in
 `../expected/expected-control-mappings.yaml`.
+
+## Extended with the org-controls assertion (#528, DEC-115)
+
+The scenario gained `input/workspace-org-controls.yaml`, asserting the central catalog's
+`enterprise-idp-mfa` control for this system. The parser verifies the assertion against
+org-controls catalog 0.1 and seeds one documented claim with catalog provenance before the
+recorded extraction converts, which shifts the agent's claims from `ctx-001..004` to
+`ctx-002..005`; the decisions file moved with them and gained an approval for the parser's
+claim. Prose evidence identifiers are unchanged (the assertion document sorts after the
+overview), so no recorded response moved. The claim grounds the scenario's standing negative —
+that multi-factor authentication is not to be reported absent — in the organization's own
+documented mechanism rather than in the overview's one sentence alone.
