@@ -4,7 +4,7 @@ The talk, slide by slide: on-slide text first, speaker notes underneath. This is
 authoritative copy of the deck's content; the slide file is regenerated from it. The demo segment
 (slides 22–23) is resolved to the committed ForgeFlow walkthrough — the placeholders the draft
 carried are filled from [`docs/product/demo-script.md`](../product/demo-script.md) and
-[`demo/forgeflow/speaker-notes.md`](../../demo/forgeflow/speaker-notes.md). Claims are checked
+[`demo/forgeflow/speaker-notes.md`](https://github.com/ethanpturner/trace/blob/main/demo/forgeflow/speaker-notes.md). Claims are checked
 against the repository in [traceability.md](traceability.md).
 
 ## Slide 1 — Title
@@ -214,7 +214,7 @@ feature before showing the demo.
 Notes: Demo — target 7–9 minutes, the committed walkthrough runs about 8:30 with the closer.
 Every command replays offline from committed fixtures; no provider key on stage. The full
 runthrough is inlined below so this document carries the talk end to end; the sources remain
-authoritative — the eight steps are [`demo/forgeflow/speaker-notes.md`](../../demo/forgeflow/speaker-notes.md)
+authoritative — the eight steps are [`demo/forgeflow/speaker-notes.md`](https://github.com/ethanpturner/trace/blob/main/demo/forgeflow/speaker-notes.md)
 and the beat table, timings, and recovery plan are
 [`docs/product/demo-script.md`](../product/demo-script.md). If those files change, this section
 is regenerated from them.
