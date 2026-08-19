@@ -8823,3 +8823,61 @@ Tradeoffs:
 - Effort normalization means the effort that ran may differ from the effort recorded; accepted
   because the alternative — per-model effort tables in the adapter — re-creates the knob
   DEC-014 keeps out of the seam, for a divergence the gateway exists to absorb.
+
+## DEC-136: A scorecard row carries its model attribution, read from the recording, never from prose
+
+Date: 2026-08-19
+
+Status: Accepted
+
+Decision:
+
+**Every harness feed states which models produced its responses, and the scorecard renders the
+attribution as a first-class column.** DEC-135 committed to the sweep running on a cheap
+gateway profile and said the scorecard's profile attribution is what keeps a
+`google/gemini-3.7-flash` row from being conflated with a `claude-opus-5` one — but the
+attribution it leaned on existed only on the stability record. `ScorecardRow` had no model
+field, and the DEC-081 history key is deliberately git ref + prompt digest + catalog version,
+so rows measured on different models would have pooled as one population the moment the sweep
+landed. This entry closes that gap before any sweep result exists to conflate.
+
+**The source is the recording or the ledger, never a document.** A replayed row is attributed
+to the distinct `usage.model` values its recorded envelopes carry; a live row to the distinct
+`ExecutionRecord.model_name` values the execution ledger holds for the run — the ledger already
+snapshots the resolved model per call precisely so an overlaid profile (DEC-069) attributes
+each call to the model that answered it, and a row served by more than one model names them
+all. An authored recording carries no usage block, so it attributes to nothing and renders a
+dash under DEC-092's absent-is-a-dash rule. `demo/forgeflow`'s capture predates the
+usage-carrying envelope format, so its rows also show the dash: its provenance prose names the
+model, but prose is not data, and the fix is the usage backfill or a re-capture — never a
+hand-typed attribution the recording cannot verify.
+
+**The history key does not change.** DEC-081's refusal rule stays git ref + prompt digest +
+catalog version: a snapshot is one build of the whole corpus, and rows within it are now
+labelled, which is what prevents conflation — a keyed axis would instead refuse legitimate
+snapshots whenever any row's model moved.
+
+Why:
+
+- The sweep (#484) is about to replace authored recordings with live captures on the DEC-135
+  profile. Landing those rows into a page that cannot say which model produced which row would
+  manufacture exactly the misreading DEC-135 promised to prevent.
+- The envelope/ledger sourcing keeps the attribution unfakeable by the person committing the
+  recording: the value renders from what the provider reported, and absence stays visible.
+
+Alternatives Considered:
+
+- A `model` pin per scenario registry entry (rejected: a second copy of a fact the envelopes
+  already carry, free to drift; DEC-134's `workflow_version` pin is registry data because
+  replay *behaviour* needs it before any envelope is read — attribution is display, and the
+  envelope is present at render time).
+- Attributing forgeflow from its provenance prose (rejected: the one row whose data cannot
+  confirm its label would be the one row wearing it).
+- Adding the profile to the DEC-081 snapshot key (rejected above).
+
+Tradeoffs:
+
+- The feed gains a key (`models`) inside feed version 1 rather than a version bump: additive,
+  read with `.get`, and absent in every committed consumer's old files, which parse unchanged.
+- Rows attributed to a model list joined with ` + ` flatten the per-call breakdown; the ledger
+  keeps the full detail, and the scorecard stays metrics-and-identifiers-only.

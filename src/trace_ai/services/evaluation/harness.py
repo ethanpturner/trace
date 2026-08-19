@@ -43,7 +43,7 @@ from trace_ai.domain.component import Component
 from trace_ai.domain.enums import ObjectStatus, ReviewDisposition, SourceOrigin
 from trace_ai.domain.evaluation_result import EvaluationResult
 from trace_ai.domain.evidence import EvidenceReference
-from trace_ai.domain.execution import RunStatus, WorkflowRun
+from trace_ai.domain.execution import ExecutionRecord, RunStatus, WorkflowRun
 from trace_ai.domain.finding import Finding
 from trace_ai.domain.question import Question, QuestionStatus
 from trace_ai.domain.source_document import TrustLevel
@@ -190,6 +190,10 @@ def run_scenario(
             )
         recordings = _recordings_for(entry, ablations, condition=condition)
         model = build_model(profile, responses=load_recorded_responses(recordings))
+        # DEC-136: a replayed row is attributed to the model that produced its recording, read
+        # from the envelopes' recorded usage. An authored recording carries no usage and yields
+        # no attribution — absent, never invented.
+        models = _recorded_models(recordings)
 
     with AssessmentStore.at_root(data_root) as store:
         service = AssessmentService(store, artifact_root=data_root)
@@ -255,6 +259,10 @@ def run_scenario(
             )
 
         run = handle.objects.get(WorkflowRun, outcome.state.workflow_run_id)
+        if live:
+            # DEC-136: a live row is attributed from the execution ledger — the model that
+            # actually answered each call, which an overlaid profile may make more than one.
+            models = _live_models(handle, run.id)
         metrics = _metrics_for(handle, run, entry, condition=condition)
         items = _items_for(handle, entry, condition=condition)
         adversarial = _adversarial_for(handle, entry, condition)
@@ -270,6 +278,7 @@ def run_scenario(
             defaulted_decisions=defaulted_decisions,
             stopped_because=outcome.stopped_because,
             results_root=results_root if results_root is not None else RESULTS_ROOT,
+            models=models,
         )
         report_hash_verified = _verify_report_hash(handle, entry, condition=condition)
 
@@ -285,6 +294,37 @@ def run_scenario(
         metrics=metrics,
         feed_path=feed_path,
         report_hash_verified=report_hash_verified,
+    )
+
+
+def _recorded_models(recordings: Sequence[Path]) -> list[str]:
+    """The distinct models the recordings say produced them (DEC-136).
+
+    Captured envelopes carry the provider's reported model in their recorded usage; authored
+    envelopes carry no usage block at all, so an authored recording attributes to nothing and
+    the scorecard renders the absence as a dash rather than inventing a model no call reached.
+    """
+    models: set[str] = set()
+    for path in recordings:
+        try:
+            envelope = json.loads(path.read_text(encoding="utf-8"))
+        except OSError, json.JSONDecodeError:
+            continue
+        usage = envelope.get("usage") if isinstance(envelope, dict) else None
+        model = usage.get("model") if isinstance(usage, dict) else None
+        if isinstance(model, str) and model:
+            models.add(model)
+    return sorted(models)
+
+
+def _live_models(handle: AssessmentHandle, run_id: str) -> list[str]:
+    """The distinct models the execution ledger attributes this run's calls to (DEC-136)."""
+    return sorted(
+        {
+            record.model_name
+            for record in handle.objects.list(ExecutionRecord)
+            if record.workflow_run_id == run_id and record.model_name
+        }
     )
 
 
@@ -749,11 +789,13 @@ def _export_feed(
     stopped_because: str,
     results_root: Path,
     defaulted_decisions: int = 0,
+    models: Sequence[str] = (),
 ) -> Path:
     assessment = handle.objects.get(Assessment, handle.assessment_id)
     feed: dict[str, Any] = {
         "feed_version": FEED_VERSION,
         "scenario": entry.slug,
+        "models": list(models),
         "condition": condition,
         "label": label,
         "assessment_id": assessment.id,
