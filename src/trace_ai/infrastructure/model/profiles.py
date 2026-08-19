@@ -85,7 +85,8 @@ class ModelProfile:
 
     name: str
     provider: str
-    """Which adapter serves it: `anthropic`, `openai` (DEC-095), or `fake` (DEC-014)."""
+    """Which adapter serves it: `anthropic`, `openai` (DEC-095), `openrouter` (DEC-135, the
+    OpenAI-compatible gateway behind the same adapter), or `fake` (DEC-014)."""
 
     model: str
     settings: GenerationSettings
@@ -187,8 +188,10 @@ class ModelProfile:
         return replace(self, settings=replace(self.settings, creativity=creativity))
 
 
-# The profiles that exist. Three, deliberately: the one every real run uses, one for a cheaper pass,
-# and one that reaches no provider at all.
+# The profiles that exist, each for a reason rather than one per model: the one every real run
+# uses, a cheaper Anthropic pass, the DEC-069 overlay bundle the #332 comparison needs, the second
+# provider's bundle (DEC-095), the low-cost capture bundle (DEC-135), and one that reaches no
+# provider at all.
 PROFILES: Final[dict[str, ModelProfile]] = {
     "primary-development": ModelProfile(
         name="primary-development",
@@ -244,6 +247,25 @@ PROFILES: Final[dict[str, ModelProfile]] = {
         input_cost_per_million=Decimal("1.25"),
         output_cost_per_million=Decimal("10.00"),
         cache_read_cost_per_million=Decimal("0.125"),
+        cache_creation_cost_per_million=Decimal(0),
+    ),
+    "openrouter-economy": ModelProfile(
+        name="openrouter-economy",
+        provider="openrouter",
+        model="google/gemini-3.7-flash",
+        settings=GenerationSettings(creativity=Creativity.LOW),
+        # The low-cost live-capture bundle (DEC-135): 7.5% of the primary rates on both spans, so
+        # DEC-092's measured $6.92 +/- $3.28 `claude-opus-5` run projects to roughly fifty cents.
+        # The model is the cheapest that passed the DEC-135 adherence probe, not the cheapest
+        # listed — the floor-tier models failed a trivial structured copy task. Published
+        # OpenRouter rates at the time of writing, hand-maintained like every row — and
+        # staler-prone than most, because the gateway's rates follow its upstream providers.
+        # The provider publishes a small cache-write storage rate the Responses wire never
+        # reports a token count for, so the creation rate stays zero and `estimated_cost` may
+        # under-report by that increment.
+        input_cost_per_million=Decimal("0.375"),
+        output_cost_per_million=Decimal("1.875"),
+        cache_read_cost_per_million=Decimal("0.0375"),
         cache_creation_cost_per_million=Decimal(0),
     ),
     "offline-fake": ModelProfile(

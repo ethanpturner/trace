@@ -69,6 +69,16 @@ def test_build_model_preserves_a_modified_creativity() -> None:
     assert model.profile.settings.creativity is other
 
 
+def test_the_openrouter_profile_builds_the_openai_compatible_adapter() -> None:
+    """DEC-135: the gateway is a provider name in the profile and a branch condition here, not a
+    third adapter — the OpenAI adapter resolves its base URL and key from the provider."""
+    from trace_ai.infrastructure.model.openai_adapter import OpenAIModel
+
+    model = build_model(resolve_profile("openrouter-economy"))
+    assert isinstance(model, OpenAIModel)
+    assert model.profile.provider == "openrouter"
+
+
 def test_every_declared_profile_builds() -> None:
     """A profile naming a provider nothing implements would fail at the first model call, in a run
     that has already spent time on ingestion."""

@@ -8723,3 +8723,103 @@ Tradeoffs:
   step later than the single-call shape caught it. Accepted: the union check is the same
   non-blocking report it was, and per-batch enforcement would fail batches for records that are
   not theirs.
+
+## DEC-135: OpenRouter behind the OpenAI adapter — live capture priced in cents, no third SDK
+
+Date: 2026-08-19
+
+Status: Accepted
+
+Decision:
+
+**`provider="openrouter"` is a provider name the OpenAI adapter serves, not a third adapter.**
+OpenRouter exposes an OpenAI-compatible Responses API at its own base URL under its own key, so
+the adapter carries a small provider table — `openai` at the SDK's default endpoint reading
+`OPENAI_API_KEY`, `openrouter` at `https://openrouter.ai/api/v1` reading `OPENROUTER_API_KEY` —
+and builds its client from the profile's provider. `build_model`'s branch condition widens to
+both names; everything else about the branch is unchanged. The conformance suite gains the
+gateway's rows, so the contract is asserted per provider row rather than assumed from the
+shared class.
+
+**One profile ships: `openrouter-economy`**, `google/gemini-3.7-flash` at the gateway's
+published rates ($0.375 input / $1.875 output / $0.0375 cache read per million, hand-maintained
+like every row). Both spans price at 7.5% of `primary-development`'s, which is the point:
+DEC-092 measured one live pipeline run at $6.92 ± $3.28 on `claude-opus-5`, and the remaining
+live work — the eleven-scenario sweep (#484), the model comparison (#332), the prompt-version
+comparison (#331), live-coverage enforcement (#588) — is budget-parked largely because every
+measurement is priced at that rate. At this profile's rates the same run projects to roughly
+fifty cents, the capture-once-replay-forever architecture makes each capture a one-time cost,
+and the primary model becomes a thin confirmation layer instead of the default spend.
+
+**The model was chosen by probe, not by price floor.** A five-line structured copy task
+('the colour is "blue"; fill the schema') run live through the adapter: `deepseek/deepseek-v4-flash`
+(the cost floor with structured-output support, $0.0679/$0.168) returned key-name junk or
+invalid JSON on three samples of four; `qwen/qwen3.6-flash` failed validation on three of
+three; `google/gemini-3.7-flash` returned the correct object on three of three with the
+`json_schema` format honored (`schema_grammar: "requested"`). A capture model that cannot copy
+a quoted word into a one-field schema has no business proposing threat analyses; the probe
+cost under a cent and moved the choice from the cheapest listed to the cheapest that works.
+
+**Provider-specific decisions, stated:**
+
+- **The gateway normalizes reasoning effort; the recorded effort is what was requested.** The
+  creativity mapping is unchanged (`LOW → medium`, `MODERATE → high`); OpenRouter maps a
+  requested effort to the nearest level the routed model supports. Per-model divergence is the
+  gateway's to absorb, and the metadata field keeps meaning the same thing on every provider:
+  the deliberation the application asked for.
+- **The base URL lives in the adapter's provider table, not on the profile.** A base URL is
+  provider identity, not tuning: a profile that could point one provider's name at another host
+  would make the `ExecutionRecord`'s provenance lie.
+- **The key is the gateway's own.** `openrouter_api_key` joins `Settings` and `.env.example`;
+  the OpenAI key never stands in for it, and a missing key names the variable to set.
+- **Cache-write storage is priced by the provider and invisible to the wire.** The provider
+  publishes a small cache-write rate; the Responses usage shape carries no creation-token
+  figure, so the profile's creation rate is zero and `estimated_cost` may under-report by that
+  increment. Stated rather than approximated: a guessed creation count would be a number nobody
+  measured.
+
+**What this does not claim:** no live OpenRouter pipeline run has been measured, and the
+gateway's Responses endpoint is beta. The live evidence so far is call-sized: the adherence
+probe above and the key-gated integration round trip
+(`tests/integration/test_openrouter_adapter.py`, opt-in, skips without a key), which passed
+against the live gateway on the day of this entry. Sweep results captured on this profile
+characterize the routed model, not `claude-opus-5`; the scorecard's profile attribution
+(evaluation-plan section 3) is what keeps the two from being conflated.
+
+Why:
+
+- The open queue's live cluster is gated on spend, not on design: #484, #332, #331, and #588
+  all need full pipeline runs, and at DEC-092's measured rate the eleven-scenario sweep with
+  baselines projects into three figures. At this profile's rates it projects into single-digit
+  dollars, which converts "budget-parked" into "schedulable."
+- DEC-095 proved the seam holds a second adapter; this entry is the cheaper corollary — a
+  provider added with no new SDK, no new adapter, and no seam change, which is the strongest
+  evidence yet that the seam's "adding a provider means adding an adapter and a branch" ceiling
+  overstates the cost when the provider is OpenAI-compatible.
+
+Alternatives Considered:
+
+- A third adapter with its own module (rejected: OpenRouter has no SDK of its own — the
+  `openai` package is its documented client — so a third adapter would duplicate the Responses
+  handling line for line and give `test_model_boundary.py` a second module allowed to import
+  `openai`, weakening the boundary to prove nothing).
+- The Chat Completions surface for the gateway (rejected: #539 moved the adapter to Responses,
+  OpenRouter serves Responses, and a second wire surface inside one adapter is two request
+  builders held to one contract by hope).
+- A `base_url` field on `ModelProfile` (rejected: identity as configuration — see above; also
+  a profile is hand-written, and a typo'd host would fail as authentication noise rather than
+  as an unknown provider).
+- Naming the cost floor (`deepseek/deepseek-v4-flash`, ~18% of the shipped model's rate) for
+  the shipped profile (rejected by the adherence probe above: three bad samples of four on a
+  trivial copy task. The floor stays reachable — a second gateway profile is a config edit —
+  but the shipped bundle has to be one the pipeline can actually run on).
+
+Tradeoffs:
+
+- A beta wire surface: the gateway's Responses endpoint can move under the adapter, and the
+  key-gated round trip is the tripwire.
+- The rate row can go stale faster than most — the gateway's prices follow its upstream
+  providers — and `estimated_cost` inherits the staleness, as every hand-maintained row does.
+- Effort normalization means the effort that ran may differ from the effort recorded; accepted
+  because the alternative — per-model effort tables in the adapter — re-creates the knob
+  DEC-014 keeps out of the seam, for a divergence the gateway exists to absorb.

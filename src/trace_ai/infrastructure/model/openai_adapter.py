@@ -42,6 +42,14 @@ There is no cache-write premium on this provider; `cache_creation_tokens` is alw
 **Exactly one attempt, never raises, client on first use** — the same three obligations as the
 Anthropic adapter, for the same reasons: the retry budget is the orchestrator's, the ledger
 needs a cost and duration for every attempt, and `import trace_ai` must not require a key.
+
+**The adapter serves the OpenAI-compatible providers, not one provider** (DEC-135). OpenRouter
+speaks the same Responses API at its own base URL under its own key, so `provider="openrouter"`
+resolves here rather than to a third adapter: the SDK is the wire client, and a gateway with no
+SDK of its own is exactly the case DEC-014's "adding a provider means adding an adapter and a
+branch" was not meant to force. The gateway normalizes a requested reasoning effort to the
+nearest level the routed model supports, so the recorded `effort` metadata is what was
+*requested*; per-model divergence is the gateway's to absorb and the profile's rates to price.
 """
 
 from __future__ import annotations
@@ -98,6 +106,16 @@ _INCOMPLETE_FAILURES: Final[dict[str, FailureReason]] = {
     "content_filter": FailureReason.REFUSED,
 }
 
+# The OpenAI-compatible providers this adapter serves (DEC-135): each names the base URL the
+# client is built against — `None` is the SDK's default, the provider's own endpoint — and the
+# `Settings` field holding its key. The pairing lives here rather than on the profile because a
+# base URL is provider identity, not tuning: a profile that could point one provider's name at
+# another host would make `ExecutionRecord`'s provenance lie.
+_OPENAI_COMPATIBLE: Final[dict[str, tuple[str | None, str]]] = {
+    "openai": (None, "openai_api_key"),
+    "openrouter": ("https://openrouter.ai/api/v1", "openrouter_api_key"),
+}
+
 
 class OpenAIModel:
     """A `StructuredModel` backed by the OpenAI Responses API."""
@@ -110,10 +128,12 @@ class OpenAIModel:
         client: Any | None = None,
     ) -> None:
         self._profile = resolve_profile(profile) if isinstance(profile, str) else profile
-        if self._profile.provider != "openai":
+        if self._profile.provider not in _OPENAI_COMPATIBLE:
+            served = ", ".join(sorted(_OPENAI_COMPATIBLE))
             raise ValueError(
                 f"profile {self._profile.name!r} names provider "
-                f"{self._profile.provider!r}; this adapter serves 'openai'"
+                f"{self._profile.provider!r}; this adapter serves the OpenAI-compatible "
+                f"providers: {served}"
             )
         self._settings = settings
         self._client = client
@@ -134,8 +154,10 @@ class OpenAIModel:
         """The provider client, built on first use — `import trace_ai` needs no key."""
         if self._client is None:
             settings = self._settings if self._settings is not None else get_settings()
+            base_url, key_field = _OPENAI_COMPATIBLE[self._profile.provider]
             self._client = openai.OpenAI(
-                api_key=settings.require("openai_api_key"),
+                api_key=settings.require(key_field),
+                base_url=base_url,
                 max_retries=0,
             )
         return self._client

@@ -134,7 +134,9 @@ def build_model(
         # `with_creativity(...)`) to whatever the registry holds under that name -- or raises
         # `UnknownModelProfileError` if the name is not registered at all.
         return AnthropicModel(profile)
-    if profile.provider == "openai":
+    if profile.provider in ("openai", "openrouter"):
+        # One branch, two provider names (DEC-135): OpenRouter is OpenAI-compatible and the
+        # adapter resolves the base URL and key from the provider itself.
         from trace_ai.infrastructure.model.openai_adapter import OpenAIModel
 
         if profile.agent_overlays:
@@ -145,4 +147,4 @@ def build_model(
                 },
             )
         return OpenAIModel(profile)
-    raise UnknownProviderError(profile.provider, ("anthropic", "openai", "fake"))
+    raise UnknownProviderError(profile.provider, ("anthropic", "openai", "openrouter", "fake"))

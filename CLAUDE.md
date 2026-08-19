@@ -162,10 +162,12 @@ Two things are commonly assumed and are **not** decided:
 - **The model interface is provider-agnostic; Anthropic is the default** (DEC-014). The
   application talks to a seam and provider code lives in an adapter behind it. `claude-opus-5` is
   the primary model, and `model_profile` names a provider-model-settings bundle rather than a bare
-  model identifier. Behind the seam today: the Anthropic adapter, the OpenAI adapter (DEC-095),
-  the deterministic substitute, the recorded-response loader, the caching wrapper, and the
-  profile registry — two providers held to one contract by `tests/unit/test_adapter_conformance.py`,
-  so the seam is proven to hold a second adapter, though no live OpenAI pipeline run has been
+  model identifier. Behind the seam today: the Anthropic adapter, the OpenAI adapter (DEC-095) —
+  which also serves OpenRouter's OpenAI-compatible endpoint under its own key and rates
+  (DEC-135, the `openrouter-economy` profile for low-cost live capture), the deterministic
+  substitute, the recorded-response loader, the caching wrapper, and the profile registry — two
+  adapters held to one contract by `tests/unit/test_adapter_conformance.py`, so the seam is
+  proven to hold a second adapter, though no live OpenAI or OpenRouter pipeline run has been
   measured. `anthropic` and `openai` are the two provider SDKs declared, each importable only by
   its own adapter; DEC-016 removed the orchestration and model-framework dependencies.
 - **`agent-design.md` section 29's creativity column is provider-neutral intent, not a sampling
