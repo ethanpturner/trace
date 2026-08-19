@@ -1,0 +1,434 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 11465,
+    "output_tokens": 15378,
+    "cache_read_tokens": 10880,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.16947125",
+    "duration_seconds": 166.1428670840105
+  },
+  "response": {
+    "controls": [
+      {
+        "key": "tls-front-backend",
+        "name": "TLS for browser, website, and backend communication",
+        "description": "TLS is expected to terminate at the load balancer for user-facing traffic, with all front-end to backend communication over HTTPS, providing encryption in transit for exchanges between user browsers, the exchange website, and the exchange backend.",
+        "control_type": "implemented",
+        "provider_component_id": "cmp-014",
+        "protected_component_ids": [
+          "cmp-006",
+          "cmp-007"
+        ],
+        "protected_asset_ids": [
+          "ast-002"
+        ],
+        "implementation_status": "claimed",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "owner": null,
+        "limitations": [
+          "Documentation states that TLS is expected to terminate at the load balancer and that front-end to backend communication is over HTTPS, but also notes this has not been re-verified for the current deployment (evd-005).",
+          "The documentation does not describe certificate validation behaviour, downgrade prevention, or enforcement of HTTPS from user browsers to the load balancer."
+        ]
+      }
+    ],
+    "mappings": [
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-ADMIN-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This threat concerns man-in-the-middle attacks on ordinary end-user web traffic between browsers, the public exchange website, and the backend; it does not involve any administrative or operator interface, so the requirement about restricting and documenting privileged administrative access does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat scenario involves HTTPS traffic between user browsers, the exchange website, and the backend, with no model inference or AI components in the data flows (df-003, df-004), so the requirement about treating untrusted content passed to a model as data does not apply to this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No model output is published externally in the described browser\u2013website\u2013backend path (df-003, df-004); the threat is about TLS interception of web traffic, so the requirement on validating model output before external publication does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AI-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The system description for the components in this threat (web browser, exchange website, load balancer, backend) does not involve sending customer content to an external model provider; the threat concerns TLS misconfiguration on web traffic, so the requirement on minimizing data sent to an external model provider is not engaged.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AI-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "While the threat involves web requests and responses, there is no model whose output is rendered into a UI; it is a conventional web application path (evd-003, evd-005), so the requirement about encoding model output for rendering does not apply to this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AUTH-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat is specifically about interception or modification of HTTPS traffic between browsers, the exchange website, and the backend; whether user authentication is locally implemented or delegated to an external identity provider would not change the existence of this MITM risk, and the components and flows described for this threat do not mention delegated authentication, so this documentation requirement is not engaged by this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [
+          "The assessment for this threat treats the authentication mechanism (local vs delegated) as orthogonal to the TLS misconfiguration risk, since the traffic carrying credentials or tokens is vulnerable either way if HTTPS is not correctly enforced and validated."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AUTH-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This threat involves end-user access to the exchange website over the internet (df-003) rather than a privileged administrative interface, and the scenario does not describe operators performing administrative actions, so the requirement about documenting who enforces MFA for administrative or privileged external access does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AUTHZ-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Although the exchange likely serves many users, this threat focuses on a man-in-the-middle attacker intercepting or altering traffic for a victim\u2019s own session; it does not depend on or circumvent tenant-aware authorization in shared storage, so the requirement about enforcing and documenting tenant-scoped authorization is not engaged by this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [
+          "The attacker in this scenario is assumed to act within the context of a compromised user session, not by directly breaching cross-tenant storage boundaries."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AUTHZ-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The described components and flows for this threat do not involve delegated access to an external platform on behalf of customers; the attacker targets browser\u2013website\u2013backend traffic for the exchange itself, so the requirement about limiting integration privileges on external platforms does not apply here.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-CICD-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "While misconfiguration of TLS could originate from deployment choices, this threat is about the runtime risk from a misconfigured HTTPS path, not about how the deployment pipeline authenticates or manages dependencies; therefore the requirement on describing and trusting the deployment path does not directly bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [
+          "The analysis treats the presence or absence of CICD controls as outside the immediate scope of the man-in-the-middle attack path, which operates against the deployed system."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [
+          "tls-front-backend"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The threat explicitly involves disclosure and tampering of user account and configuration data (ast-002) in transit between browsers, the exchange website, and the backend over the internet and a trust boundary (df-003, df-004; evd-003, evd-005). The system therefore both stores confidential business and credential data and transmits it across a network boundary it does not control, so the requirement that sensitive data be encrypted in transit and at rest applies.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "partially_satisfied",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "assumptions": [
+          "Assume that \u2018TLS is expected to terminate at the load balancer\u2019 implies that the browser-to-load-balancer leg is intended to use HTTPS, even though this is not spelled out separately (evd-005).",
+          "Encryption at rest for MySQL and MongoDB holding user accounts and configuration (ast-002) is not described, so no assumption is made about its presence."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-DATA-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This threat concerns interception and modification of data in transit between browser, website, and backend; it does not involve retained working copies or retention periods, so the requirement about defining and enforcing retention of sensitive working data does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-DATA-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The impact of this threat is that an on-path attacker can access or alter a user\u2019s traffic and resulting database updates; it does not exploit or depend on how stored artifacts from different customers are separated in storage (e.g., MySQL or MongoDB layouts in evd-004), so the requirement about tenant separation of stored artifacts is not engaged by this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [
+          "Cross-tenant storage separation issues are treated as a distinct class of threat from interception of a single user\u2019s web session over TLS."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-DATA-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat scenario is about live manipulation of user account data in transit and the resulting unauthorized changes, not about whether customer data can be deleted on request from all stores; thus the requirement on documenting deletion paths for customer data does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-LOG-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Although logs may exist (MongoDB stores logs and operational metadata per evd-004), this threat concerns an attacker intercepting or modifying live HTTPS traffic, not accessing logs or log platforms; the requirement about excluding sensitive data from logs and documenting log destinations is therefore not engaged by this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [
+          "It is assumed that log exposure, while important, is a different attack path from the on-path network attacker considered here."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-LOG-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat path and impact focus on end-user account changes performed through the standard web interface, not on privileged administrative actions through an operator interface, so the requirement about recording security-relevant administrative actions is not relevant to this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-NET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The components directly involved in this threat include a public-facing website and load balancer (internet zone) and an application backend (exchange_internal) connected over HTTPS (df-004; evd-002, evd-003, evd-005). The threat is about TLS misconfiguration on these paths rather than about direct network reachability of internal data stores, queues, caches, or other internal-only services from an untrusted network, so this network-segmentation requirement is not the primary control for this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [
+          "Internal databases and other internal-only services are assumed to be protected by their own network placement controls, which would be assessed under other threats focusing on direct access rather than MITM on web traffic."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-SECRET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The attacker in this scenario gains leverage by intercepting or altering web traffic, not by stealing long-lived provider credentials or signing keys from storage; the requirement about storing such credentials in a managed secret store therefore does not directly bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [
+          "Any compromise of secrets at rest is treated as a separate threat from interception of data in transit."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-SECRET-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This threat is about interception of user web traffic to the exchange, not about how credentials for accessing customer resources on external platforms are minted or their lifetime; therefore the requirement that such credentials be short-lived is not engaged here.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-TPI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The components and flows in this threat do not describe customer data being sent to an external processor; the attacker stays on-path between the user and the exchange itself, so the requirement about documenting external processor data handling does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [
+          "Any external providers used by the exchange would introduce separate data-handling concerns outside the specific browser\u2013website\u2013backend path considered here."
+        ],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-TPI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat does not involve work triggered by external events or metered external services; it concerns interactive web sessions between users and the exchange, so the requirement on bounding work triggered by external events is not applicable to this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-WEBHOOK-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No webhook or inbound event endpoint from an external platform is involved in the described threat; the attacker intercepts direct browser traffic to the exchange website (df-003), so the requirement about verifying authenticity of inbound events before processing does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-WEBHOOK-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Because the threat does not involve webhook-style inbound events or deliveries that might be replayed, but instead concerns live browser\u2013website interaction, the requirement to prevent or make harmless the replay of inbound events is not engaged by this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Unverified TLS configuration and certificate validation on browser\u2013website\u2013backend paths",
+        "description": "The documentation for the browser-to-website and website-to-backend flows states that the user\u2019s browser reaches the exchange website and that TLS is expected to terminate at the load balancer, with all front-end to backend communication over HTTPS, but explicitly notes that this has not been re-verified for the current deployment (evd-005). There is no description of how HTTPS is enforced from browsers to the load balancer, what certificate validation behaviour clients and servers apply, or how protocol downgrade and HTTP fallback are prevented. As a result, it is not possible from the documentation to determine whether encryption in transit and correct TLS validation are actually in place for the paths this threat exploits.",
+        "importance": "Clarifying and confirming the current TLS configuration, enforcement, and certificate validation for df-003 and df-004 would determine how much this MITM threat is mitigated in practice and whether additional controls are required.",
+        "related_object_ids": [
+          "thr-004",
+          "df-003",
+          "df-004",
+          "cmp-004",
+          "cmp-006",
+          "cmp-007",
+          "cmp-014",
+          "ast-002"
+        ],
+        "requested_evidence": [
+          "Updated deployment or network documentation that confirms where TLS terminates for browser traffic, how HTTPS is enforced between browsers and the load balancer, and that front-end to backend communication is in fact over HTTPS in the current deployment.",
+          "Configuration snippets or security documentation describing certificate validation behaviour (including rejection of invalid or self-signed certificates), support for HSTS or equivalent HTTPS enforcement, and controls against protocol downgrade or HTTP fallback on these paths."
+        ],
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Undocumented encryption at rest for user accounts and configuration in MySQL and MongoDB",
+        "description": "The data stores section states that user accounts and configuration are stored in MySQL and that trading data, logs, and operational metadata are stored in MongoDB (evd-004), and the components section shows the exchange backend handling business logic and user data using these stores (evd-003). However, there is no documentation indicating whether these databases encrypt data at rest, whether encryption is inherited from a managed platform, or who is responsible for key management. This prevents determining whether the at-rest portion of the requirement to encrypt sensitive data is satisfied for ast-002.",
+        "importance": "Knowing whether and how user account and configuration data are encrypted at rest in MySQL and MongoDB is necessary to assess the overall protection of ast-002 and to evaluate the completeness of controls for threats involving data disclosure beyond interception in transit.",
+        "related_object_ids": [
+          "ast-002",
+          "cmp-007"
+        ],
+        "requested_evidence": [
+          "Architecture or platform documentation stating whether the MySQL and MongoDB instances used for user accounts, configuration, and related data are encrypted at rest, and if so whether this encryption is inherited from a managed service or configured by the team.",
+          "Configuration or operational documentation describing key management for any at-rest encryption protecting these databases, including which party (e.g., cloud provider vs application team) is responsible."
+        ],
+        "evidence_ids": [
+          "evd-003",
+          "evd-004"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": []
+  }
+}

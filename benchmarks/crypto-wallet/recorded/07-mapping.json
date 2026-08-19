@@ -1,0 +1,538 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 22624,
+    "output_tokens": 20395,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.23223",
+    "duration_seconds": 198.97388887498528
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-ADMIN-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This threat concerns an internal attacker intercepting or tampering with traffic between the exchange backend and the MySQL/MongoDB databases in the exchange_internal zone; no administrative or operator interface is involved in the described attack path, and only an end-user actor is documented, so the requirement about restricting and documenting privileged administrative interfaces does not bear on this threat (evd-003, evd-006).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-006"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-AI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat path and affected components (exchange backend, MySQL, MongoDB, and their data flows) involve conventional database reads/writes only and no model invocation or AI processing, so the requirement about treating untrusted content passed to a model does not bear on this threat (evd-003, evd-004, evd-005).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-AI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The described threat concerns backend-to-database communication and direct database access within the exchange_internal zone, with no model output being published externally; therefore the requirement about validating model output before external publication does not bear on this threat (evd-003, evd-004, evd-005).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-AI-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat involves customer data stored and processed entirely within the exchange\u2019s own backend and databases in the exchange_internal zone; no customer content is sent to an external model provider in the described components or data flows, so this requirement does not bear on the threat (evd-002, evd-003, evd-004, evd-005).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-AI-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat focuses on interception or tampering of backend-to-database traffic and direct database access; there is no model output being rendered into a user interface or submitted as markup to another system along this path, so this requirement does not bear on the threat (evd-003, evd-004, evd-005).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-AUTH-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat describes an attacker with internal network or host access intercepting or issuing database queries between the backend and internal MySQL/MongoDB, independent of how end users authenticate; the requirement about documenting delegated user authentication to an external identity provider does not affect this attack path (evd-002, evd-003, evd-004, evd-005).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-AUTH-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This threat does not involve administrative logins or externally reachable privileged interfaces; it assumes an attacker has already obtained internal network or host access and can intercept backend\u2013database communications, so documenting who enforces multi-factor authentication for administrative or external access would not mitigate the described scenario (evd-002, evd-003, evd-004).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-AUTHZ-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat model assumes an attacker with internal network or database-level access, able to observe or modify database traffic and issue unauthorized queries; at that point, per-request tenant-aware authorization in the application layer is bypassed, so this requirement does not directly bear on the threat even though the system likely serves multiple users (evd-003, evd-004).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-AUTHZ-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The described threat path is entirely internal, between the exchange backend and its own MySQL/MongoDB databases; it does not involve delegated access to an external platform on behalf of customers, so the requirement about limiting integration privileges does not bear on this threat (evd-003, evd-004, evd-005).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-CICD-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "While a compromised deployment pipeline could be one way to obtain internal host access, this threat is scoped to an attacker who already has such access and then intercepts or tampers with backend-to-database communication; the requirement about how the deployment pipeline authenticates and manages third-party build dependencies does not directly bear on this particular threat path (evd-002, evd-003, evd-004).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The exchange backend handles business and credential data (evd-001, evd-003) and reads/writes user accounts, configuration, trading data, and logs in MySQL and MongoDB over internal data flows df-005 and df-006 (evd-003, evd-004, evd-005). The threat is specifically about an internal attacker intercepting or tampering with those backend\u2013database connections and accessing stored data, so encryption in transit and at rest for these paths and stores directly bears on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001",
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "assumptions": [
+          "TLS is documented only for front-end\u2013to\u2013backend HTTPS (evd-005); the documentation is silent on encryption in transit and at rest for MySQL and MongoDB, so whether the requirement is actually satisfied for df-005 and df-006 remains unknown."
+        ],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-DATA-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat concerns real-time interception or tampering of backend-to-database communications and direct modification of primary records and logs in MySQL and MongoDB; it does not turn on how long working copies or intermediate artifacts are retained after processing, so the requirement about defining and enforcing a retention period for sensitive working data does not bear on this threat (evd-003, evd-004).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-DATA-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat targets interception and tampering of traffic between the backend and relational/document databases that hold primary user and trading records (MySQL and MongoDB) (evd-003, evd-004, evd-005). It does not involve addressable stored artifacts such as objects in a shared bucket with predictable paths, so the requirement about per-tenant separation of stored artifacts does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-DATA-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The impact described for this threat is unauthorized disclosure and tampering of user accounts, configuration, trading data, and logs due to internal interception or direct database access, not the ability to honor customer-initiated deletion or operator deletion procedures; therefore the requirement about documenting deletion paths across all stores does not bear on this threat (evd-003, evd-004).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-LOG-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The backend handles business and credential data (evd-001, evd-003), and MongoDB is documented as storing trading data, logs, and operational metadata (evd-004), which this threat explicitly includes in its potential disclosure and tampering impact on ast-003. Ensuring that restricted data is excluded from application logs and that log destinations are documented would affect the confidentiality impact if an internal attacker can read or manipulate those logs, so this requirement bears on the threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001",
+          "evd-003",
+          "evd-004"
+        ],
+        "assumptions": [
+          "The system overview does not state what fields are logged or whether logs are forwarded to another platform, so it is unknown whether sensitive data is excluded from logs or where log data is ultimately stored."
+        ],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-LOG-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The described attack path has the attacker intercepting backend\u2013database traffic or using database credentials to issue queries directly against MySQL/MongoDB; it does not involve actions taken through a documented privileged administrative interface, so the requirement to record security-relevant administrative actions with operator attribution does not directly bear on this threat (evd-003, evd-004, evd-005).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-NET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "MySQL and MongoDB are internal data stores in the exchange_internal zone (evd-002, evd-004) that are not themselves public interfaces and hold user and trading data for the exchange (evd-004). The threat assumes an attacker with internal network or host access in that zone who can intercept backend\u2013database connections or reach the databases directly (df-005, df-006), which is precisely the situation the network-segmentation requirement is meant to address: internal components should be reachable only from the workloads that use them.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "assumptions": [
+          "The documentation states only that these components are in the exchange_internal zone (evd-002, evd-004) and that the backend reads and writes the databases (evd-003, evd-005); it does not describe network-level access controls or which other workloads, if any, can reach the databases."
+        ],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-SECRET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat involves backend credentials or connectivity to internal MySQL and MongoDB databases within the same trust zone (evd-002, evd-003, evd-004); it does not involve long-lived signing keys or provider API keys used to authenticate the system to external platforms, which is the focus of this requirement.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-SECRET-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The described threat path does not involve accessing customer resources on an external platform using tokens or installation-scoped credentials; it is limited to internal database access between the backend and MySQL/MongoDB, so the requirement about using short-lived credentials for external customer resources does not bear on this threat (evd-003, evd-004, evd-005).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-TPI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Although the system as a whole may interact with external services, this specific threat concerns only the exchange backend and its internal MySQL/MongoDB databases within the exchange_internal zone (evd-002, evd-003, evd-004, evd-005). No customer data is sent to an external processor in the attack path, so documenting external processor data handling does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-TPI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat path does not involve processing that consumes a metered external service or significant external compute triggered by inbound events; it is limited to internal database operations, so the requirement about bounding work triggered by external events does not bear on this threat (evd-003, evd-004, evd-005).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-WEBHOOK-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The components and data flows involved in this threat are the exchange backend and its internal MySQL and MongoDB databases (evd-003, evd-004, evd-005); there is no endpoint receiving signed events or webhooks from an external platform in the described attack path, so the requirement about cryptographic verification of inbound events does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-WEBHOOK-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat is not about replay or duplication of inbound events from an external platform; it is about interception and tampering of backend\u2013database communications and direct database access, so the requirement to prevent or make harmless replay of inbound events does not bear on this threat (evd-003, evd-004, evd-005).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Encryption of backend traffic to MySQL and MongoDB is not documented",
+        "description": "The system overview states that TLS is expected to terminate at the load balancer and that front-end to backend communication is over HTTPS (evd-005), but it does not state whether connections from the exchange backend to the internal MySQL and MongoDB databases (df-005, df-006) are encrypted in transit or whether data at rest in those databases is encrypted (evd-003, evd-004). Because threat thr-005 specifically involves interception and tampering of backend\u2013database traffic and access to stored user accounts, configuration, trading data, and logs, this missing detail prevents verification of whether req-DATA-001 is satisfied for these components and flows.",
+        "importance": "Without explicit documentation of encryption in transit between the backend and MySQL/MongoDB and of encryption at rest for these databases, it is not possible to determine whether interception of internal traffic or compromise of database storage would expose data in cleartext, which is central to the impact of thr-005 and to assessing req-DATA-001.",
+        "related_object_ids": [
+          "thr-005",
+          "cmp-007",
+          "cmp-011",
+          "cmp-012",
+          "df-005",
+          "df-006",
+          "ast-002",
+          "ast-003",
+          "tb-002"
+        ],
+        "requested_evidence": [
+          "Architecture or operations documentation stating whether connections from the exchange backend to MySQL and MongoDB use TLS or another form of encryption in transit, including how certificate validation is handled.",
+          "Documentation or configuration references indicating whether MySQL and MongoDB storage is encrypted at rest (for example, platform-managed disk/database encryption) and who provides that protection."
+        ],
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "severity": "high"
+      },
+      {
+        "title": "Network placement and access controls for MySQL and MongoDB are not described",
+        "description": "The documentation places the exchange backend, MySQL, and MongoDB in the exchange_internal zone (evd-002, evd-003, evd-004) and notes that the backend reads and writes both databases (evd-003, evd-005), but it does not describe how network access to these databases is restricted (for example, private subnets, security groups, or firewall rules) or which other workloads, if any, can reach them. For threat thr-005, which assumes an attacker with internal network or host access who can intercept or directly access database traffic, this missing information prevents verification of req-NET-001 for these components.",
+        "importance": "Knowing the precise network placement and allowed callers for MySQL and MongoDB is essential to assessing how difficult it is for an internal attacker to reach these databases from elsewhere in the environment and to determine whether they are reachable only from the workloads that need them, as req-NET-001 expects.",
+        "related_object_ids": [
+          "thr-005",
+          "cmp-007",
+          "cmp-011",
+          "cmp-012",
+          "df-005",
+          "df-006",
+          "tb-002"
+        ],
+        "requested_evidence": [
+          "Network or deployment diagrams showing the subnets, security groups, firewall rules, or service-mesh policies governing access to MySQL and MongoDB.",
+          "A statement of which components are permitted to connect to each database and how that restriction is enforced (for example, IP allowlists, service identities, or mesh authorization)."
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "severity": "high"
+      },
+      {
+        "title": "Logging content and destinations for MongoDB operational logs are not documented",
+        "description": "MongoDB is documented as storing trading data, logs, and operational metadata used by the exchange API (evd-004), and threat thr-005 includes disclosure and tampering of these logs and metadata as part of its impact on ast-003. However, the documentation does not state what categories of data are logged (for example, whether credentials or other restricted data are excluded) or whether these logs are forwarded from MongoDB to a separate logging platform and, if so, who owns that platform and where it resides. This prevents verification of req-LOG-001 for the logging aspects of this threat.",
+        "importance": "Without documentation of what is written into logs and where log data ultimately resides, it is not possible to assess whether interception or compromise of MongoDB logs meaningfully increases exposure of restricted data or crosses additional trust boundaries beyond the exchange_internal zone, which is relevant to the confidentiality and repudiation aspects of thr-005.",
+        "related_object_ids": [
+          "thr-005",
+          "cmp-012",
+          "cmp-007",
+          "ast-003",
+          "df-006"
+        ],
+        "requested_evidence": [
+          "Operations or logging documentation describing the fields recorded in application and operational logs stored in MongoDB, including any policy of excluding restricted or confidential data.",
+          "Documentation of any log forwarding from MongoDB or the backend to centralized logging or monitoring platforms, including the destination, owner, and retention characteristics."
+        ],
+        "evidence_ids": [
+          "evd-003",
+          "evd-004"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": [
+      {
+        "concern": "The documentation does not describe how the exchange backend authenticates to MySQL and MongoDB or how database accounts and privileges are scoped, even though threat thr-005 explicitly considers an attacker using stolen database credentials to issue unauthorized queries. There is no catalog requirement that directly covers authentication strength, credential storage, and least-privilege access for internal database accounts used by application backends, distinct from external provider credentials or application-layer tenant authorization.",
+        "suggested_category": "database_authentication",
+        "nearest_requirements": [
+          {
+            "requirement_id": "req-SECRET-001",
+            "why_not": "req-SECRET-001 is limited to credentials that authenticate the system to external platforms, including signing keys and provider API keys held in a managed secret store. The MySQL and MongoDB credentials used by the exchange backend are internal to the system\u2019s own data stores and are not covered by this requirement\u2019s scope (evd-003, evd-004, evd-005)."
+          },
+          {
+            "requirement_id": "req-AUTHZ-001",
+            "why_not": "req-AUTHZ-001 addresses tenant-aware authorization at the application layer, ensuring each request is constrained to its tenant based on server-side state. It does not speak to how database-level accounts and privileges are defined or limited for the backend\u2019s connections to MySQL and MongoDB (evd-003, evd-004)."
+          },
+          {
+            "requirement_id": "req-NET-001",
+            "why_not": "req-NET-001 focuses on network reachability of internal components such as data stores, ensuring they are reachable only from required workloads. It does not address the separate question of how those components authenticate callers or how database credentials are managed and scoped once a connection is allowed (evd-002, evd-003, evd-004)."
+          }
+        ],
+        "evidence_ids": [
+          "evd-001",
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ]
+      }
+    ]
+  }
+}

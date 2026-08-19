@@ -1,0 +1,1088 @@
+{
+  "schema": "EvidenceValidationProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 14504,
+    "output_tokens": 28873,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.30686",
+    "duration_seconds": 293.68685758300126
+  },
+  "response": {
+    "assessments": [
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-016",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "The conclusion asserts that req-DATA-002 is not applicable to threat thr-004, but none of the provided evidence mentions thr-004, req-DATA-002, or any requirements-to-threat mapping. With only a high-level system overview and no threat or requirement documentation, the documents do not establish this not-applicable mapping.",
+        "missing_evidence": [
+          "Documentation describing threat thr-004 and its attack path.",
+          "The text of req-DATA-002 and any project documentation explicitly mapping it as applicable or not applicable to thr-004."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-017",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "The claim that req-DATA-003 is not applicable to thr-004 is not supported by the available material. The evidence set contains only a system overview; it does not describe thr-004, req-DATA-003, or any rationale tying them together, so the not-applicable mapping is undocumented.",
+        "missing_evidence": [
+          "Threat definition and scenario description for thr-004.",
+          "Requirements documentation for req-DATA-003 and an explicit statement of its applicability or non-applicability to thr-004 (for example in a traceability or threat\u2013control matrix)."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-018",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "No provided passage mentions thr-004, req-DATA-004, or any discussion of data-deletion requirements in relation to this threat. The assertion that req-DATA-004 is not applicable to thr-004 is therefore not established by the documents.",
+        "missing_evidence": [
+          "Documentation of req-DATA-004 and the system\u2019s data-deletion paths.",
+          "Threat-model or requirements-mapping documentation that explains why req-DATA-004 is out of scope for thr-004."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-019",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "The mapping that req-LOG-001 is not applicable to thr-004 is based on reasoning in the conclusion text, but the supplied evidence does not describe thr-004, req-LOG-001, or any analysis connecting them. The documentation does not establish this not-applicable classification.",
+        "missing_evidence": [
+          "Definition of req-LOG-001 and any logging architecture or policy relevant to thr-004.",
+          "Threat-model documentation for thr-004 explaining whether and why logging controls are or are not considered relevant."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-020",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "There is no source passage tying req-LOG-002 to thr-004 or stating that it is not applicable. The system overview does not mention thr-004, this requirement, or administrative logging in connection with this threat, so the mapping remains undocumented.",
+        "missing_evidence": [
+          "Threat description for thr-004, including which actors and interfaces are involved.",
+          "Requirements or design documentation explaining whether req-LOG-002 is intended to mitigate thr-004."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-021",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "Although the overview mentions trust zones and HTTPS between front-end and backend, nothing in the evidence mentions thr-004, req-NET-001, or a statement that network-segmentation controls are not applicable to this specific threat. The asserted not-applicability is therefore not established by the documentation.",
+        "missing_evidence": [
+          "A definition of thr-004\u2019s scenario and entry points.",
+          "Documentation of req-NET-001 and an explicit rationale for excluding it as a primary control for thr-004."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-022",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "The claim that req-SECRET-001 is not applicable to thr-004 is not grounded in any cited passage. The evidence set does not describe thr-004, this requirement, or how long-lived provider credentials factor into the threat, so the mapping is not supported by documentation.",
+        "missing_evidence": [
+          "Text of req-SECRET-001 and any architectural description of provider credentials relevant to thr-004.",
+          "Threat-model documentation explaining whether compromise of long-lived provider secrets is considered in thr-004 or in a separate threat."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-023",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "No provided evidence addresses req-SECRET-002, short-lived credentials, or their relationship to thr-004. The assertion that this requirement is not applicable to thr-004 therefore has no documentary support in the current evidence set.",
+        "missing_evidence": [
+          "Definition of req-SECRET-002 and where such credentials are used in the system.",
+          "Threat-model discussion of thr-004 clarifying whether misuse of short-lived external credentials is in scope."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-024",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "The mapping that req-TPI-001 is not applicable to thr-004 relies on the threat description in the conclusion, but the underlying documents do not mention thr-004, req-TPI-001, or any external processor handling, so the not-applicable classification is not documented.",
+        "missing_evidence": [
+          "Definition of req-TPI-001, including what counts as an external processor.",
+          "Threat documentation for thr-004 and a mapping or rationale explaining why external processor data handling is out of scope."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-025",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "Nothing in the system overview addresses work triggered by external events or metered services in the context of thr-004, nor is req-TPI-002 mentioned. As a result, the statement that req-TPI-002 is not applicable to thr-004 is not established by the evidence.",
+        "missing_evidence": [
+          "Description of thr-004 and whether it involves triggering external services.",
+          "Documentation of req-TPI-002 and any explicit applicability analysis for thr-004."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-026",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "The conclusion that webhook authenticity requirements (req-WEBHOOK-001) are not applicable to thr-004 is not backed by any cited passage. The available documents do not reference thr-004, this requirement, or whether webhook endpoints exist, so the mapping is undocumented.",
+        "missing_evidence": [
+          "Architectural documentation stating whether the system exposes any webhook or inbound event endpoints.",
+          "Threat-model material for thr-004 indicating whether such endpoints are in or out of scope and how that affects req-WEBHOOK-001."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-027",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "There is no evidence describing thr-004, req-WEBHOOK-002, or replay of inbound events. The assertion that the replay-handling requirement is not applicable to thr-004 is therefore not established by the provided documentation.",
+        "missing_evidence": [
+          "Definition of req-WEBHOOK-002 and any components capable of receiving replayable inbound events.",
+          "Threat-model analysis of thr-004 clarifying whether event replay is considered and how req-WEBHOOK-002 is treated."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-028",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The overview establishes that the Exchange Backend and internal MySQL/MongoDB databases exist and communicate on the exchange-internal network (evd-003, evd-004, evd-005). It does not describe any privileged administrative interface or how thr-005 is defined. Without a threat description for thr-005 or documentation of administrative channels, the claim that req-ADMIN-001 is not applicable to thr-005 cannot be validated from the evidence alone and requires human confirmation.",
+        "missing_evidence": [
+          "Architecture documentation describing any administrative or operator interfaces (if any) and how they are accessed.",
+          "Threat description for thr-005 clarifying whether privileged administrative actions are part of the threat path.",
+          "An explicit mapping or rationale explaining why req-ADMIN-001 is considered out of scope for thr-005."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-029",
+        "evidence_ids": [
+          "evd-001",
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The system overview lists the major components as a desktop wallet, an exchange with web and API access, databases, and a blockchain integration module (evd-001, evd-003, evd-004, evd-005). No AI or model-serving component is mentioned. This supports an inference that AI-input-handling requirements such as req-AI-001 may not be relevant to threats focused on backend\u2013database communications like thr-005. However, the documents do not explicitly state that no ML/AI models are used anywhere, nor do they define thr-005 or req-AI-001. The non-applicability mapping is therefore only partially supported and should be confirmed.",
+        "missing_evidence": [
+          "An explicit statement that the system does not incorporate any ML/AI model components or model providers.",
+          "Definitions of thr-005 and req-AI-001 and a documented rationale that req-AI-001 is out of scope for thr-005."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-030",
+        "evidence_ids": [
+          "evd-001",
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The architecture describes only wallet, exchange, databases, and blockchain-integration components, with no mention of models or model outputs being published (evd-001, evd-003, evd-004, evd-005). This supports the idea that requirements about publishing model outputs (req-AI-002) are likely irrelevant and thus not applicable to thr-005. However, the documentation does not explicitly rule out any model components, nor does it define thr-005 or req-AI-002, so the not-applicable mapping is only partially supported and should be confirmed.",
+        "missing_evidence": [
+          "Explicit confirmation that the platform does not use ML/AI models whose outputs are published to users or external systems.",
+          "Project documentation mapping req-AI-002 to threats, including a clear statement that thr-005 is out of scope."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-031",
+        "evidence_ids": [
+          "evd-001",
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The overview\u2019s components and data flows describe interaction with ElectrumX servers and the blockchain network but do not mention sending customer content to any external model provider (evd-001, evd-003, evd-004, evd-005). This supports the inference that external-model data-minimisation requirements like req-AI-003 are likely not relevant to thr-005. However, the absence of an explicit \u201cno external AI provider\u201d statement and the lack of thr-005/req-AI-003 definitions mean the non-applicability mapping is only partially supported.",
+        "missing_evidence": [
+          "Documentation explicitly stating that no external AI/model provider receives customer data.",
+          "Threat\u2013requirement mapping or design documentation explaining that req-AI-003 does not apply to thr-005."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-032",
+        "evidence_ids": [
+          "evd-001",
+          "evd-003",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The component and data-store descriptions list only conventional wallet, exchange, and database elements, with no model component whose output is rendered into a UI or markup (evd-001, evd-003, evd-004). That makes it plausible that encoding of model output (req-AI-004) is irrelevant to thr-005. Nonetheless, the documents do not definitively state that no model output is rendered anywhere, and they do not define thr-005 or req-AI-004, so the not-applicable mapping is only partially supported.",
+        "missing_evidence": [
+          "An explicit statement that no model-generated content is rendered into any user-facing interface.",
+          "Threat and requirement documentation confirming that req-AI-004 is out of scope for thr-005."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-033",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The data-store description states that MySQL holds \"user accounts and configuration\" (evd-004), and no external identity provider is mentioned anywhere in the overview. This supports the inference that authentication is managed internally rather than delegated, so a requirement about documenting authentication delegation (req-AUTH-001) may be irrelevant to thr-005. However, the documents do not explicitly say that no external IdP is used, nor do they tie req-AUTH-001 to thr-005, so the non-applicability mapping is only partially supported.",
+        "missing_evidence": [
+          "Explicit documentation of the authentication architecture, including whether any external identity provider is used.",
+          "Mapping or rationale describing why req-AUTH-001 does or does not apply to thr-005."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-034",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The trust-zone and component descriptions distinguish user-device, internet, and exchange-internal zones and show that internal services communicate over HTTPS/WebSockets (evd-002, evd-003, evd-005). They do not mention multi-factor authentication or describe thr-005. The assertion that req-AUTH-002 (multi-factor authentication for privileged or external interfaces) is not applicable to thr-005 therefore cannot be validated purely from the overview and requires confirmation against the actual threat definition and authentication design.",
+        "missing_evidence": [
+          "Threat description for thr-005, including which interfaces and actors are involved.",
+          "Authentication design documentation describing where multi-factor authentication is used.",
+          "An explicit analysis explaining why req-AUTH-002 is not considered relevant to thr-005."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-035",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The overview shows that MySQL and MongoDB store data for many users (user accounts, trading data, logs) and are accessed by the backend and exchange API (evd-003, evd-004, evd-005). It does not describe any tenant-aware authorization mechanisms or define thr-005. The conclusion that documenting tenant-aware authorization (req-AUTHZ-001) does not meaningfully mitigate thr-005 is a threat-model judgment not established by the evidence and should be confirmed.",
+        "missing_evidence": [
+          "Design documentation for tenant-aware authorization in the application layer.",
+          "Threat description for thr-005 clarifying how an internal attacker would bypass or interact with authorization controls.",
+          "A recorded rationale explaining why req-AUTHZ-001 is considered out of scope for thr-005."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-036",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The component list mentions interactions with ElectrumX servers and a blockchain integration module but does not describe any delegated access to customer resources on external SaaS platforms (evd-003). This supports the inference that a requirement about limiting scopes for delegated integrations on external platforms (req-AUTHZ-002) may not be relevant to thr-005. However, the documents do not categorically exclude such integrations, nor do they define thr-005 or req-AUTHZ-002, so the mapping is only partially supported.",
+        "missing_evidence": [
+          "An integration inventory stating whether any delegated integrations to customer-owned external platforms exist.",
+          "Threat/requirements mapping that explicitly addresses whether req-AUTHZ-002 applies to thr-005."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-037",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The system overview covers runtime components and data flows (wallet, exchange, databases, blockchain integration) but does not discuss the CI/CD pipeline or how third-party components are introduced (evd-003, evd-004, evd-005). Without any description of req-CICD-001 or thr-005, the statement that CI/CD trust requirements are not applicable to thr-005 cannot be validated and should be confirmed with additional documentation.",
+        "missing_evidence": [
+          "Documentation of the CI/CD pipeline and any controls that implement req-CICD-001.",
+          "Threat documentation for thr-005 clarifying whether supply-chain or build-time compromise is in scope.",
+          "A written rationale mapping req-CICD-001 to threats, including whether thr-005 is excluded."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-038",
+        "evidence_ids": [
+          "evd-001",
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The overview states that the platform is business-critical, externally exposed, and handles business and credential data (evd-001). It shows that the Exchange Backend reads and writes MySQL and MongoDB, which store user accounts, configuration, trading data, logs, and operational metadata (evd-003, evd-004), and that backend communications occur over the internal network (evd-005). These passages support the inference that encryption of sensitive data in transit and at rest (req-DATA-001) is relevant to backend\u2013database interactions and thus to thr-005. However, the documents do not define thr-005 or req-DATA-001, nor do they confirm that this requirement has been assessed as \"unverified\" for these flows. The mapping is therefore only partially supported and requires further confirmation.",
+        "missing_evidence": [
+          "Definition of req-DATA-001 and which assets and data flows it covers, especially internal backend\u2013database traffic.",
+          "Threat description for thr-005 showing that it specifically targets disclosure or tampering of backend\u2013database data.",
+          "Evidence (configuration or design documentation) showing whether encryption in transit and at rest is implemented for these flows, to justify the \"unverified\" satisfaction status."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-039",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The documentation shows that the system retains customer and trading data in MySQL and MongoDB (evd-003, evd-004), but it does not describe thr-005, req-DATA-002, or any data-retention policy. The conclusion that defining and enforcing retention of sensitive working data (req-DATA-002) is not applicable to thr-005 is therefore a threat-model judgment not established by the evidence and needs confirmation.",
+        "missing_evidence": [
+          "Definition of req-DATA-002 and its intent.",
+          "Threat description and analysis for thr-005 that considers whether data-retention controls would affect the likelihood or impact of the threat.",
+          "Any data-retention documentation for the MySQL and MongoDB stores."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-040",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The MySQL and MongoDB data stores hold user accounts, configuration, trading data, logs, and metadata (evd-004), but the overview does not define thr-005 or req-DATA-003. The claim that a requirement about tenant separation of stored artifacts (req-DATA-003) is not applicable to a database-focused threat cannot be validated from this information alone and requires confirmation against the requirement and threat definitions.",
+        "missing_evidence": [
+          "Formal definition of req-DATA-003 and what types of storage artifacts it covers (e.g., object stores, databases).",
+          "Threat description for thr-005 clarifying how multi-tenant storage is involved.",
+          "A written rationale explaining why req-DATA-003 is considered out of scope for thr-005."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-041",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The overview confirms that customer and trading data are stored in internal databases (evd-003, evd-004), but it does not define thr-005 or req-DATA-004, nor does it discuss data-deletion procedures. The assertion that deletion-path documentation (req-DATA-004) does not bear on thr-005 thus cannot be derived from the evidence and must be confirmed.",
+        "missing_evidence": [
+          "Definition of req-DATA-004 and existing documentation of deletion paths for customer data.",
+          "Threat description for thr-005 and analysis of whether data-deletion capabilities would mitigate its impact or likelihood.",
+          "An explicit statement explaining why req-DATA-004 is excluded from thr-005\u2019s control set."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-042",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "MongoDB stores trading data, logs, and operational metadata used by the exchange API (evd-004), which indicates that logs contain sensitive information. The documentation does not define thr-005 or req-LOG-001, nor does it say whether logs are forwarded to other platforms or what sanitisation is applied. The conclusion that logging-data controls (req-LOG-001) are not applicable to thr-005 cannot be validated from the overview alone and requires confirmation.",
+        "missing_evidence": [
+          "Definition of req-LOG-001 and documentation of log content, destinations, and sanitisation.",
+          "Threat description for thr-005 clarifying whether log exposure or manipulation is in scope.",
+          "A rationale mapping req-LOG-001 to threats and explaining its exclusion from thr-005."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-043",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The overview describes internal databases accessed by the backend and exchange API and holding trading data and logs (evd-003, evd-004, evd-005), but it does not define thr-005 or req-LOG-002, nor does it document any privileged administrative interface. Without that information, the claim that administrative-action logging requirements (req-LOG-002) are not applicable to thr-005 cannot be verified and needs confirmation.",
+        "missing_evidence": [
+          "Architecture documentation for any administrative or operator interfaces and how actions through them are logged.",
+          "Threat description for thr-005 identifying whether privileged administrative actions play a role.",
+          "An explicit explanation of why req-LOG-002 is out of scope for thr-005."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-044",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The trust zones define an \"exchange internal\" zone containing the backend, exchange API, blockchain integration module, and exchange databases (evd-002). The components and data stores show that MySQL and MongoDB hold data for many users (user accounts, trading data, logs) and are accessed by the backend and API (evd-003, evd-004, evd-005). This supports the idea that internal multi-tenant data stores should be reachable only from the workloads that use them\u2014i.e., that network-segmentation requirements like req-NET-001 are applicable to threats involving internal access such as thr-005. However, thr-005 and req-NET-001 are not defined in the evidence, and there is no explicit mapping. The conclusion that req-NET-001 is applicable to thr-005 and currently unverified is therefore only partially supported.",
+        "missing_evidence": [
+          "Definition of req-NET-001 and the intended segmentation controls for the MySQL and MongoDB instances.",
+          "Threat description for thr-005 confirming that it assumes broader-than-intended reachability of these databases.",
+          "Network design or firewall configuration evidence showing whether the databases are restricted to the intended workloads (to justify the \"unverified\" status)."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-045",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The overview identifies internal MySQL and MongoDB databases used by the backend and exchange API (evd-003, evd-004) but does not discuss how database or external-provider credentials are stored, nor does it define thr-005 or req-SECRET-001. The statement that req-SECRET-001 (managed storage of long-lived provider credentials) is not applicable to thr-005 is therefore not established by the evidence and requires confirmation.",
+        "missing_evidence": [
+          "Definition of req-SECRET-001 and a list of long-lived provider credentials in the system.",
+          "Threat description for thr-005 clarifying whether compromise of provider credentials is in scope.",
+          "Design or configuration documentation for secret-storage mechanisms, to justify treating this requirement as out of scope for thr-005."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-046",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The overview notes that internal services use database credentials to access MySQL and MongoDB (evd-003, evd-004), but it does not describe any credentials for accessing external customer resources or define req-SECRET-002 or thr-005. The conclusion that short-lived delegated credentials (req-SECRET-002) are not applicable to thr-005 cannot be fully validated from this information and should be confirmed.",
+        "missing_evidence": [
+          "An inventory of credentials used to access external customer resources, if any.",
+          "Definition of req-SECRET-002 and how it applies to those integrations.",
+          "Threat description for thr-005 and a written rationale explaining why req-SECRET-002 is excluded."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-047",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The system interacts with external services such as ElectrumX servers and the blockchain network (evd-001, evd-002, evd-003). The data stores hold customer and trading data (evd-004), but the documentation does not define which of these services qualify as external processors under req-TPI-001, nor does it define thr-005. Consequently, the statement that external-processor data-handling requirements (req-TPI-001) are not applicable to thr-005 is not established by the available evidence and needs confirmation.",
+        "missing_evidence": [
+          "Definition of \"external processor\" used for req-TPI-001 and identification of any such processors in this architecture.",
+          "Threat description for thr-005 clarifying whether any external processor is part of the threat path.",
+          "A recorded mapping explaining why req-TPI-001 is considered out of scope for thr-005."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-048",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The architecture shows that the backend calls a blockchain integration module and may therefore consume external blockchain services (evd-003, evd-005). However, the documents do not define req-TPI-002, do not describe any bounding of work triggered by external events, and do not define thr-005. The assertion that req-TPI-002 is not applicable to thr-005 cannot be confirmed from the evidence alone.",
+        "missing_evidence": [
+          "Formal definition of req-TPI-002 and any existing rate limits or work-bounding mechanisms for external services.",
+          "Threat description for thr-005 clarifying whether abuse of externally metered services is part of the scenario.",
+          "Threat\u2013requirement mapping documenting why req-TPI-002 is excluded for thr-005."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-049",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The component and data-flow descriptions list the APIs and web interfaces exposed by the exchange but do not mention any webhook or inbound event endpoints from external platforms (evd-003, evd-005). This supports the inference that webhook-authenticity requirements (req-WEBHOOK-001) may not be applicable to thr-005. However, the absence of an explicit statement that no webhook endpoints exist, and the lack of definitions for thr-005 and req-WEBHOOK-001, mean the non-applicability mapping is only partially supported and should be confirmed.",
+        "missing_evidence": [
+          "Explicit confirmation of whether the system exposes any webhook or inbound event endpoints.",
+          "Definition of req-WEBHOOK-001 and threat documentation for thr-005.",
+          "A rationale explaining why any existing webhook endpoints (if they exist) are not in scope for thr-005."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-050",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The system overview does not describe any webhook or inbound event receiver whose processing could be replayed; it focuses on direct interactions such as browser\u2013website\u2013backend and trading-bot\u2013API flows (evd-003, evd-005). This makes it plausible that webhook replay-handling requirements (req-WEBHOOK-002) are not relevant to thr-005. Nonetheless, because the documents do not explicitly state that there are no such endpoints and do not define thr-005 or req-WEBHOOK-002, the mapping is only partially supported.",
+        "missing_evidence": [
+          "Documentation confirming whether any webhook or inbound event endpoints exist and how replay is handled.",
+          "Definitions of thr-005 and req-WEBHOOK-002 and a documented rationale linking or excluding them."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-051",
+        "evidence_ids": [
+          "evd-001",
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "indirect"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The overview states that the platform is business-critical, externally exposed, and handles business and credential data (evd-001). It explains that user-run trading bots connect to the Exchange API over a \"secure WebSocket\" using API keys (evd-003, evd-005), and that front-end to backend communication is expected to use HTTPS with TLS terminating at a load balancer, although this has not been re-verified (evd-005). These passages support the applicability of an encryption-in-transit/at-rest requirement like req-DATA-001 to threats involving the exchange API (thr-006), and they provide some evidence of encryption in transit. However, the evidence does not describe encryption at rest for MySQL or MongoDB, nor does it prove that TLS is currently configured as expected, and thr-006 and req-DATA-001 are not defined. The conclusion that req-DATA-001 is applicable and only partially satisfied is therefore partially supported but requires further documentation and verification.",
+        "missing_evidence": [
+          "Definition of req-DATA-001, including its specific expectations for encryption in transit and at rest.",
+          "Threat description for thr-006 confirming that it targets the trading-bot\u2013Exchange API flow carrying business and credential data.",
+          "Configuration or design evidence that TLS is actually enforced for the Exchange API and front-end\u2013backend traffic in the current deployment.",
+          "Documentation or configuration showing whether data at rest in MySQL and MongoDB is encrypted, to justify the \"partially_satisfied\" status."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-052",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "indirect"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The components and data stores show that the exchange backend and API handle credential and business data and that MongoDB stores \"trading data, logs, and operational metadata used by the exchange API\" (evd-003, evd-004). This directly supports the applicability of a requirement like req-LOG-001, which concerns excluding sensitive data from logs and documenting log destinations, to threats involving misuse of API keys and logged trading activity (thr-006). The documentation provides no detail about what is or is not written to logs or whether logs are forwarded to other platforms, so the satisfaction of req-LOG-001 cannot be determined from the evidence, consistent with the \"unverified\" status in the conclusion. Thus, the claim that req-LOG-001 is applicable to thr-006 and currently unverified is supported by the available documentation.",
+        "missing_evidence": [
+          "Logging design or configuration describing what fields are logged (especially API keys and other restricted data).",
+          "Documentation of log destinations (local only vs forwarded to external platforms) and access controls.",
+          "Any tests or reviews verifying compliance with req-LOG-001."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-053",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "indirect"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The overview describes a Blockchain Integration Module that \"interfaces with the blockchain network to read and write blockchain state on behalf of the backend\" and notes that user-run trading bots send commands to the Exchange API over a secure WebSocket (evd-003, evd-005). This supports the idea that external, potentially metered blockchain operations can be triggered by external clients, which aligns with the intent of a work-bounding requirement like req-TPI-002 and makes its applicability to thr-006 plausible. However, the documentation does not state that blockchain interactions are in fact metered or costed, does not describe any rate limits or bounding mechanisms, and does not define thr-006 or req-TPI-002. The conclusion that req-TPI-002 is applicable and its satisfaction unverified is thus only partially supported.",
+        "missing_evidence": [
+          "Definition of req-TPI-002 and clarification of what counts as a metered or capacity-constrained external service.",
+          "Details of how the blockchain integration module is used (e.g., frequency, costs, provider limits).",
+          "Any rate-limiting, quota, or retry/bounding controls on blockchain or other externally metered operations.",
+          "Threat description for thr-006 confirming that abuse of such operations is in scope."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-054",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "The assertion that req-ADMIN-001 is not applicable to thr-007 rests entirely on the threat description in the conclusion. The provided evidence does not mention thr-007, req-ADMIN-001, or any administrative/operator interfaces, so the not-applicable mapping is not established by the documentation.",
+        "missing_evidence": [
+          "Architecture documentation of any administrative or operator interfaces and associated controls.",
+          "Threat description for thr-007 detailing which interfaces and actors are involved.",
+          "A mapping or rationale explicitly explaining why req-ADMIN-001 is considered out of scope for thr-007."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-055",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The components and data flows show that threat thr-007 concerns user-run trading bots calling a conventional Node.js Exchange API over secure WebSockets (evd-003, evd-005), and the architecture lists no model or AI component. This supports the inference that AI-input-handling requirements such as req-AI-001 are not applicable to this threat. However, the documentation does not explicitly state that there are no model components anywhere, nor does it define thr-007 or req-AI-001, so the non-applicability mapping is only partially supported and should be confirmed.",
+        "missing_evidence": [
+          "Explicit confirmation that the system does not pass untrusted content to any ML/AI model.",
+          "Definitions of thr-007 and req-AI-001.",
+          "Threat\u2013requirement mapping or rationale documenting that req-AI-001 is out of scope for thr-007."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      }
+    ]
+  }
+}

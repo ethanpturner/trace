@@ -1,0 +1,1346 @@
+{
+  "schema": "EvidenceValidationProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 13013,
+    "output_tokens": 24073,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.25699625",
+    "duration_seconds": 245.78304729203228
+  },
+  "response": {
+    "assessments": [
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-001",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The purpose statement exactly matches the system overview, which describes \"a cryptocurrency wallet and exchange integration: a desktop wallet, an exchange with web and API access, and the blockchain integration behind them\" (evd-001).",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "This document describes a cryptocurrency wallet and exchange integration: a desktop\nwallet, an exchange with web and API access, and the blockchain integration behind them."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-002",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The overview explicitly states that \"The platform is business-critical\" (evd-001), matching the claim that its business_criticality is business_critical.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "The platform is business-critical and externally exposed, and handles business\nand credential data."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-003",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The same sentence in the overview states that the platform is \"externally exposed\" (evd-001), directly supporting the claim that it is externally_exposed.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "The platform is business-critical and externally exposed, and handles business\nand credential data."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-004",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The overview says the platform \"handles business and credential data\" (evd-001), directly matching the listed data_classifications of business_data and credential_data.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "The platform is business-critical and externally exposed, and handles business\nand credential data."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-005",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The overview explicitly marks the user's operating system, hardware, and unspecified third-party dependencies as out of scope (evd-001), matching the listed out_of_scope_environment elements.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "The user's operating system, hardware, and third-party dependencies not shown here are out\nof scope."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-006",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The Electrum Wallet Daemon is described as a \"Local wallet backend process exposing HTTP JSON-RPC on localhost\" (evd-003), directly supporting the interface value http_json_rpc_localhost for this component.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "### Electrum Wallet Daemon (user device)\n\nLocal wallet backend process exposing HTTP JSON-RPC on localhost. The GUI talks to the\ndaemon; the daemon connects out to ElectrumX servers for blockchain data."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-007",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The ElectrumX Server is described as \"Operated by third parties, not by the exchange\" (evd-003), which directly supports classifying the component as externally managed.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "### ElectrumX Server (internet)\n\nThird-party SPV server that wallets connect to for blockchain data \u2014 balances, headers,\nand transaction broadcast. Operated by third parties, not by the exchange."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-008",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The Exchange Website \"interacts with the exchange backend over HTTPS\" (evd-003), and the data-flow section reiterates that \"all front-end to backend communication\" is over HTTPS (evd-005). Together these directly support that this component connects to the backend over HTTPS.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "### Exchange Website (internet)\n\nThe front-end served to users. It interacts with the exchange backend over HTTPS."
+          },
+          {
+            "evidence_id": "evd-005",
+            "text": "The user's browser reaches the exchange website,\nwhich talks to the backend; the backend reads and writes both databases and calls the\nblockchain integration module. A user-run trading bot holds exchange API keys and trades\nagainst the exchange API over a secure WebSocket.\n\nTLS is expected to terminate at the load balancer, with all front-end to backend\ncommunication over HTTPS. This has not been re-verified for the current deployment."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-009",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The Exchange Backend \"reads and writes the MySQL and MongoDB stores\" (evd-003), and the data-flow section repeats that \"the backend reads and writes both databases\" (evd-005). This directly supports that it uses both the MySQL and MongoDB datastores.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "### Exchange Backend (exchange internal)\n\nHandles business logic, configuration, and user data. It reads and writes the MySQL and\nMongoDB stores and calls the blockchain integration module."
+          },
+          {
+            "evidence_id": "evd-005",
+            "text": "The user's browser reaches the exchange website,\nwhich talks to the backend; the backend reads and writes both databases and calls the\nblockchain integration module. A user-run trading bot holds exchange API keys and trades\nagainst the exchange API over a secure WebSocket."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-010",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The Exchange Backend description states that it \"calls the blockchain integration module\" (evd-003), and the data-flow section again notes that \"the backend ... calls the blockchain integration module\" (evd-005). This directly supports the claim that the backend calls the blockchain module component.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "### Exchange Backend (exchange internal)\n\nHandles business logic, configuration, and user data. It reads and writes the MySQL and\nMongoDB stores and calls the blockchain integration module."
+          },
+          {
+            "evidence_id": "evd-005",
+            "text": "The user's browser reaches the exchange website,\nwhich talks to the backend; the backend reads and writes both databases and calls the\nblockchain integration module. A user-run trading bot holds exchange API keys and trades\nagainst the exchange API over a secure WebSocket."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-011",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The wallet file data-store description says \"It should be encrypted at rest; encryption is a wallet option\" (evd-004), which directly supports that an encryption option is available for the wallet file.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-004",
+            "text": "- **Wallet file** (user device) \u2014 the local wallet at rest, holding the wallet data and\n  keys. It should be encrypted at rest; encryption is a wallet option."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-012",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The documentation for the wallet file states that it \"should be encrypted at rest\" and that \"encryption is a wallet option\" (evd-004), but it does not say that encryption is enforced or enabled by default. That supports treating the encrypted_at_rest status as unknown (\"None\" in the model) rather than asserting that all wallet files are or are not encrypted at rest.",
+        "missing_evidence": [
+          "Explicit documentation stating whether wallet file encryption is enabled by default and/or enforced for all wallets."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-004",
+            "text": "- **Wallet file** (user device) \u2014 the local wallet at rest, holding the wallet data and\n  keys. It should be encrypted at rest; encryption is a wallet option."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-013",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The MySQL data store is described as holding \"user accounts and configuration\" (evd-004), directly supporting the listed stored_data values.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-004",
+            "text": "- **MySQL** (exchange internal) \u2014 user accounts and configuration."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-014",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The MongoDB data store is described as \"trading data, logs, and operational metadata used by the exchange API\" (evd-004), directly matching the listed stored_data elements.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-004",
+            "text": "- **MongoDB** (exchange internal) \u2014 trading data, logs, and operational metadata used by\n  the exchange API."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-015",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The Exchange API is described as a Node.js server that trading bots \"connect to ... over a secure WebSocket using API keys\" (evd-003), and the data-flow section repeats that a trading bot \"trades against the exchange API over a secure WebSocket\" while holding exchange API keys (evd-005). This directly supports that API keys are the authentication mechanism for this component.",
+        "missing_evidence": [
+          "Documentation describing how API keys are validated on requests (e.g., header or parameter usage) and any additional authentication factors, if present."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "### Exchange API (exchange internal)\n\nA Node.js API server providing programmatic access to exchange functions such as trading\nand account data. User-run trading bots connect to it over a secure WebSocket using API\nkeys."
+          },
+          {
+            "evidence_id": "evd-005",
+            "text": "A user-run trading bot holds exchange API keys and trades\nagainst the exchange API over a secure WebSocket."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-016",
+        "evidence_ids": [
+          "evd-005",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The data-flow description says \"A user-run trading bot holds exchange API keys\" (evd-005), and the actor definition notes that the end user \"may also run a trading bot with API keys they generate\" (evd-006). Together these directly support that the trading bot client holds the API key asset.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-005",
+            "text": "A user-run trading bot holds exchange API keys and trades\nagainst the exchange API over a secure WebSocket."
+          },
+          {
+            "evidence_id": "evd-006",
+            "text": "- **End user** \u2014 a legitimate user interacting via the wallet GUI, the browser, or the\n  mobile app; may also run a trading bot with API keys they generate."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-017",
+        "evidence_ids": [
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The data-flow section explicitly states that \"TLS is expected to terminate at the load balancer\" (evd-005), directly supporting the claim that TLS termination at the load balancer is expected for the relevant component.",
+        "missing_evidence": [
+          "Documentation or configuration evidence confirming that TLS currently terminates at the load balancer in the deployed environment."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-005",
+            "text": "TLS is expected to terminate at the load balancer, with all front-end to backend\ncommunication over HTTPS. This has not been re-verified for the current deployment."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-018",
+        "evidence_ids": [
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The same passage states that \"all front-end to backend communication\" is over HTTPS (evd-005). This directly supports the claim that front-end to backend HTTPS use is expected, while also noting it has not been re-verified.",
+        "missing_evidence": [
+          "Updated deployment documentation or configuration confirming that all front-end to backend communication is currently enforced over HTTPS."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-005",
+            "text": "TLS is expected to terminate at the load balancer, with all front-end to backend\ncommunication over HTTPS. This has not been re-verified for the current deployment."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-019",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The Blockchain Integration Module is defined as interfacing \"with the blockchain network to read and write blockchain state\" (evd-003), directly supporting that it interfaces with the blockchain_network component.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "### Blockchain Integration Module (exchange internal)\n\nInterfaces with the blockchain network to read and write blockchain state on behalf of the\nbackend."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-020",
+        "evidence_ids": [
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-006",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The actor definition for the end user says they \"may also run a trading bot with API keys they generate\" (evd-006), directly supporting the claim that the actor may run a trading bot.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-006",
+            "text": "- **End user** \u2014 a legitimate user interacting via the wallet GUI, the browser, or the\n  mobile app; may also run a trading bot with API keys they generate."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-021",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The component list states that \"The mobile app is the mobile variant for wallet and exchange interaction\" (evd-003), directly supporting the role assigned to this component.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "### Web Browser and Mobile App (user device)\n\nThe browser reaches the exchange website and the local wallet UI. The mobile app is the\nmobile variant for wallet and exchange interaction."
+          }
+        ]
+      },
+      {
+        "subject_type": "control",
+        "subject_id": "ctl-001",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The wallet file is described as \"holding the wallet data and keys\" and that \"It should be encrypted at rest; encryption is a wallet option\" (evd-004). This directly supports that the wallet file can be encrypted at rest via a wallet option, which by definition provides at-rest protection for the stored keys and wallet data when enabled. The control\u2019s noted limitation (optional, not enforced) is consistent with the wording.",
+        "missing_evidence": [
+          "Documentation or configuration confirming whether wallet encryption is enabled by default or enforced in typical deployments."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-004",
+            "text": "- **Wallet file** (user device) \u2014 the local wallet at rest, holding the wallet data and\n  keys. It should be encrypted at rest; encryption is a wallet option."
+          }
+        ]
+      },
+      {
+        "subject_type": "control",
+        "subject_id": "ctl-002",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The architecture states that the Exchange Website \"interacts with the exchange backend over HTTPS\" (evd-003) and that \"TLS is expected to terminate at the load balancer, with all front-end to backend communication over HTTPS\" (evd-005). This directly supports an intended TLS setup between the website and backend, and implies TLS between browsers and the load balancer. However, the phrase \"expected\" and the note that this \"has not been re-verified for the current deployment\" (evd-005) mean the implementation status is not fully confirmed, and the documentation does not detail certificate validation, downgrade protections, or enforcement of HTTPS from browsers. Therefore, the existence of an intended TLS control is supported, but the stronger claim about end-to-end behavior and robustness is only partially supported by the available documentation.",
+        "missing_evidence": [
+          "Current deployment configuration or runbooks confirming that TLS actually terminates at the load balancer for user-facing traffic.",
+          "Documentation of how HTTPS is enforced from user browsers to the load balancer (e.g., HSTS, redirects).",
+          "Details of certificate validation behavior and downgrade/misconfiguration protections on the website and backend."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "### Exchange Website (internet)\n\nThe front-end served to users. It interacts with the exchange backend over HTTPS."
+          },
+          {
+            "evidence_id": "evd-005",
+            "text": "TLS is expected to terminate at the load balancer, with all front-end to backend\ncommunication over HTTPS. This has not been re-verified for the current deployment."
+          }
+        ]
+      },
+      {
+        "subject_type": "control",
+        "subject_id": "ctl-003",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The Exchange API is described as a Node.js API server to which \"User-run trading bots connect ... over a secure WebSocket using API keys\" (evd-003), and the data-flow section reiterates that a trading bot \"trades against the exchange API over a secure WebSocket\" (evd-005). \"Secure WebSocket\" (wss) normally implies TLS, so the existence of a TLS-secured WebSocket between trading bots and the exchange API is directly supported, and it reasonably follows that this provides encrypted transport for trading and account data and the API keys in transit.",
+        "missing_evidence": [
+          "Documentation of the TLS configuration for the secure WebSocket (protocol versions, ciphers, certificate validation, downgrade protections)."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "### Exchange API (exchange internal)\n\nA Node.js API server providing programmatic access to exchange functions such as trading\nand account data. User-run trading bots connect to it over a secure WebSocket using API\nkeys."
+          },
+          {
+            "evidence_id": "evd-005",
+            "text": "A user-run trading bot holds exchange API keys and trades\nagainst the exchange API over a secure WebSocket."
+          }
+        ]
+      },
+      {
+        "subject_type": "control",
+        "subject_id": "ctl-004",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The Exchange API is defined as a Node.js server providing programmatic access to trading and account data, and the documentation twice states that user-run trading bots \"connect to it over a secure WebSocket using API keys\" (evd-003, evd-005). This directly supports that API keys are required for programmatic API access and therefore that the application implements some API key\u2013based authentication mechanism. The documentation does not, however, describe how keys are generated, scoped, stored, rotated, or revoked, which justifies the limitations recorded on this control.",
+        "missing_evidence": [
+          "Design or implementation documentation describing how API keys are generated, associated with user accounts, and validated on requests.",
+          "Operational procedures for API key rotation and revocation and any scoping/permission model."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "### Exchange API (exchange internal)\n\nA Node.js API server providing programmatic access to exchange functions such as trading\nand account data. User-run trading bots connect to it over a secure WebSocket using API\nkeys."
+          },
+          {
+            "evidence_id": "evd-005",
+            "text": "A user-run trading bot holds exchange API keys and trades\nagainst the exchange API over a secure WebSocket."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-001",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The wallet components are part of the described system (evd-003), and the wallet file is defined as \"the local wallet at rest, holding the wallet data and keys\" with the note \"It should be encrypted at rest; encryption is a wallet option\" (evd-004). This directly supports that the system stores credential-like data at rest and that encryption at rest is available but optional. Given a requirement req-DATA-001 about encryption of sensitive data at rest, it is reasonable and documented to treat it as applicable to a threat about compromise of that stored wallet data, and to classify it as partially_satisfied because the documentation only confirms an optional encryption feature rather than enforced encryption for all wallets.",
+        "missing_evidence": [
+          "Requirement text for req-DATA-001 to confirm that optional, user-controlled encryption is correctly classified as only partially satisfying the requirement."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "### Electrum Wallet GUI (user device)\n\nDesktop wallet graphical user interface.\n\n### Electrum Wallet Daemon (user device)\n\nLocal wallet backend process exposing HTTP JSON-RPC on localhost. The GUI talks to the\ndaemon; the daemon connects out to ElectrumX servers for blockchain data."
+          },
+          {
+            "evidence_id": "evd-004",
+            "text": "- **Wallet file** (user device) \u2014 the local wallet at rest, holding the wallet data and\n  keys. It should be encrypted at rest; encryption is a wallet option."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-002",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The wallet file is documented as holding \"wallet data and keys\" (evd-004), which in the context of a cryptocurrency wallet implies long-lived private keys used to sign blockchain transactions. The Electrum components connect to external ElectrumX servers for blockchain data (evd-003), so compromise of the wallet file would compromise keys that authenticate transactions on an external blockchain network. The documentation does not mention any managed secret store or equivalent mechanism for protecting these keys beyond the optional wallet encryption (evd-004). It is therefore well supported that a requirement on managed protection of signing keys (req-SECRET-001) is applicable to a threat about compromise of keys from the wallet file, and that its satisfaction is unverified given the absence of any described managed secret store.",
+        "missing_evidence": [
+          "The full text of req-SECRET-001 to confirm its exact applicability conditions.",
+          "Any documentation describing whether wallet private keys are stored or wrapped using a managed secret store or hardware-backed key protection."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "### Electrum Wallet Daemon (user device)\n\nLocal wallet backend process exposing HTTP JSON-RPC on localhost. The GUI talks to the\ndaemon; the daemon connects out to ElectrumX servers for blockchain data."
+          },
+          {
+            "evidence_id": "evd-004",
+            "text": "- **Wallet file** (user device) \u2014 the local wallet at rest, holding the wallet data and\n  keys. It should be encrypted at rest; encryption is a wallet option."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-003",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The platform is described as handling business and credential data (evd-001). The trust zones define a \"User device\" zone and an \"Internet\" zone (evd-002). The wallet GUI and daemon run on the user device, and the daemon \"connects out to ElectrumX servers\" for blockchain data such as balances and transaction broadcast (evd-003). The wallet file on the user device holds wallet data and keys (evd-004). The data-flow section reiterates that the daemon connects to ElectrumX servers for blockchain state (evd-005). Together, these passages directly support that confidential wallet-related data is stored locally and transmitted across a network boundary not controlled by the system, making a data-protection requirement such as req-DATA-001 applicable to a threat about that data in transit (thr-003). Since the documentation does not describe any encryption or integrity protection for the daemon\u2013ElectrumX connection, it also supports classifying req-DATA-001 as unverified for this threat.",
+        "missing_evidence": [
+          "Explicit description of whether the wallet daemon\u2013ElectrumX connection uses TLS or any other encryption/authentication mechanism.",
+          "The full text of req-DATA-001 to confirm that transmission of wallet metadata to third-party servers falls within its defined scope."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "The platform is business-critical and externally exposed, and handles business\nand credential data."
+          },
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Trust zones\n\n- **User device** \u2014 the wallet GUI and daemon, the browser, the mobile app, and any\n  user-run trading bot.\n- **Internet** \u2014 the public network, the ElectrumX servers, and the exchange website\n  front-end.\n- **Exchange internal** \u2014 the exchange backend, the exchange API, the blockchain\n  integration module, and the exchange databases."
+          },
+          {
+            "evidence_id": "evd-003",
+            "text": "### Electrum Wallet Daemon (user device)\n\nLocal wallet backend process exposing HTTP JSON-RPC on localhost. The GUI talks to the\ndaemon; the daemon connects out to ElectrumX servers for blockchain data.\n\n### ElectrumX Server (internet)\n\nThird-party SPV server that wallets connect to for blockchain data \u2014 balances, headers,\nand transaction broadcast. Operated by third parties, not by the exchange."
+          },
+          {
+            "evidence_id": "evd-004",
+            "text": "- **Wallet file** (user device) \u2014 the local wallet at rest, holding the wallet data and\n  keys. It should be encrypted at rest; encryption is a wallet option."
+          },
+          {
+            "evidence_id": "evd-005",
+            "text": "The user operates the wallet GUI, which drives the local daemon; the daemon connects to\nElectrumX servers for blockchain state."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-004",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The trust zones distinguish the user device and the Internet (evd-002). The ElectrumX server is explicitly a \"Third-party SPV server\" \"Operated by third parties, not by the exchange\" (evd-003). The wallet daemon on the user device connects out to these ElectrumX servers for blockchain data including balances and transaction broadcasts (evd-003, evd-005). The platform overall handles business and credential data (evd-001). These passages directly support that customer-related wallet data is sent to and processed by an external provider (ElectrumX), making a third-party integration requirement like req-TPI-001 applicable to a threat involving those flows (thr-003). Because the documentation does not state what controls or contractual assurances exist for these third-party providers, the classification of the requirement as unverified is consistent with the available evidence.",
+        "missing_evidence": [
+          "Text of req-TPI-001 to confirm its conditions for applicability.",
+          "Any documentation (contracts, DPAs, security requirements) governing the use of third-party ElectrumX servers."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Trust zones\n\n- **User device** \u2014 the wallet GUI and daemon, the browser, the mobile app, and any\n  user-run trading bot.\n- **Internet** \u2014 the public network, the ElectrumX servers, and the exchange website\n  front-end.\n- **Exchange internal** \u2014 the exchange backend, the exchange API, the blockchain\n  integration module, and the exchange databases."
+          },
+          {
+            "evidence_id": "evd-003",
+            "text": "### ElectrumX Server (internet)\n\nThird-party SPV server that wallets connect to for blockchain data \u2014 balances, headers,\nand transaction broadcast. Operated by third parties, not by the exchange."
+          },
+          {
+            "evidence_id": "evd-005",
+            "text": "The user operates the wallet GUI, which drives the local daemon; the daemon connects to\nElectrumX servers for blockchain state."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-005",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The documentation describes end-user web access via a browser to the exchange website and backend (evd-003, evd-005) but does not define threat thr-004 or discuss administrative interfaces or req-ADMIN-001. The claim that req-ADMIN-001 is not applicable to thr-004 therefore rests on reasoning about the threat model and requirement scope rather than on explicit source passages. The available documents neither confirm nor contradict that this administrative-access documentation requirement is irrelevant to the threat, so the mapping as \"not_applicable\" is not established by the cited material.",
+        "missing_evidence": [
+          "A definition of threat thr-004 describing the actors and interfaces involved.",
+          "The text of req-ADMIN-001 to determine precisely when it applies.",
+          "Architecture or operational documentation describing any administrative or operator interfaces for the website/backend."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "### Web Browser and Mobile App (user device)\n\nThe browser reaches the exchange website and the local wallet UI."
+          },
+          {
+            "evidence_id": "evd-005",
+            "text": "The user's browser reaches the exchange website,\nwhich talks to the backend; the backend reads and writes both databases and calls the\nblockchain integration module."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-006",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The component and data-flow descriptions list browsers, the exchange website, the backend, databases, blockchain integration, and ElectrumX servers (evd-003, evd-005) but do not mention any model inference or AI components, nor do they describe threat thr-004 or requirement req-AI-001. While the absence of AI components in this excerpt suggests the main web path is a conventional web application, the conclusion that req-AI-001 is definitively not applicable to thr-004 cannot be established from these passages alone, given the evidence policy that silence is not proof of absence.",
+        "missing_evidence": [
+          "Definition of threat thr-004, including any model or AI components if present.",
+          "Full text of req-AI-001 specifying its applicability criteria.",
+          "Architecture documentation confirming whether any AI/model inference components participate in the browser\u2013website\u2013backend path."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "### Web Browser and Mobile App (user device)\n\nThe browser reaches the exchange website and the local wallet UI."
+          },
+          {
+            "evidence_id": "evd-005",
+            "text": "The user's browser reaches the exchange website,\nwhich talks to the backend; the backend reads and writes both databases and calls the\nblockchain integration module."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-007",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The available documentation describes conventional web components and data flows (browser, website, backend, databases) but does not discuss any model outputs or external publication of model-generated content, nor does it define threat thr-004 or req-AI-002. As such, the statement that req-AI-002 is not applicable to thr-004 is not grounded in explicit evidence; the documents neither confirm nor deny that model output validation is irrelevant to this threat.",
+        "missing_evidence": [
+          "Explicit description of thr-004, including whether any model outputs are rendered to users.",
+          "Text of req-AI-002 to determine when model output validation must be applied.",
+          "Architecture documentation indicating whether any model-generated content is part of the browser\u2013website\u2013backend path."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "### Exchange Website (internet)\n\nThe front-end served to users. It interacts with the exchange backend over HTTPS."
+          },
+          {
+            "evidence_id": "evd-005",
+            "text": "The user's browser reaches the exchange website,\nwhich talks to the backend; the backend reads and writes both databases and calls the\nblockchain integration module."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-008",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The system overview lists only on-premise components (browser, website, backend, API, databases, blockchain integration, ElectrumX servers) and does not mention any external model provider or data sent to such a provider (evd-003, evd-005). However, there is no explicit statement tying threat thr-004 to an absence of external model usage, nor any text of req-AI-003. Therefore, the conclusion that req-AI-003 is not applicable to thr-004 cannot be fully supported from the current documentation.",
+        "missing_evidence": [
+          "Threat definition for thr-004 clarifying whether any external model providers are in scope.",
+          "Text of req-AI-003 specifying its scope.",
+          "Architecture or design documents confirming whether any data from the browser\u2013website\u2013backend path is sent to external model providers."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "## 2. Components\n\n### Web Browser and Mobile App (user device)\n\nThe browser reaches the exchange website and the local wallet UI."
+          },
+          {
+            "evidence_id": "evd-005",
+            "text": "The user's browser reaches the exchange website,\nwhich talks to the backend; the backend reads and writes both databases and calls the\nblockchain integration module."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-009",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The documentation shows a conventional web application path with a browser, exchange website, and backend, but does not mention any model output being rendered in the UI or any AI components (evd-003, evd-005). Without explicit evidence about threat thr-004 and requirement req-AI-004, the assertion that UI encoding of model output is not applicable to this threat is not established by the source material.",
+        "missing_evidence": [
+          "Definition of thr-004 clarifying whether any model output is rendered in the user interface.",
+          "Text of req-AI-004 specifying when model output requires special encoding.",
+          "Any documentation of model or AI components in the system, if present."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "### Exchange Website (internet)\n\nThe front-end served to users. It interacts with the exchange backend over HTTPS."
+          },
+          {
+            "evidence_id": "evd-005",
+            "text": "The user's browser reaches the exchange website,\nwhich talks to the backend; the backend reads and writes both databases and calls the\nblockchain integration module."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-010",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The system overview and data flows describe end-user access to the exchange website over HTTPS but do not describe the authentication mechanism (local vs delegated) or define threat thr-004 or requirement req-AUTH-001 (evd-003, evd-005). The claim that delegated authentication documentation is not applicable to thr-004 is therefore not something the current documents can confirm or deny; it is based on higher-level threat-model reasoning rather than explicit evidence.",
+        "missing_evidence": [
+          "Definition of thr-004, including how users authenticate in that scenario.",
+          "Text of req-AUTH-001 specifying which authentication patterns it covers.",
+          "Architecture documentation describing whether authentication for the exchange website is local or delegated."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "### Exchange Website (internet)\n\nThe front-end served to users. It interacts with the exchange backend over HTTPS."
+          },
+          {
+            "evidence_id": "evd-005",
+            "text": "The user's browser reaches the exchange website,\nwhich talks to the backend; the backend reads and writes both databases and calls the\nblockchain integration module.\n\nTLS is expected to terminate at the load balancer, with all front-end to backend\ncommunication over HTTPS. This has not been re-verified for the current deployment."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-011",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The documentation presents a user-facing website accessed over HTTPS (evd-003, evd-005) and defines end users as normal users or trading-bot operators (evd-006), but it does not describe any administrative interfaces, multi-factor authentication for admins, or the exact content of thr-004 and req-AUTH-002. As a result, the conclusion that req-AUTH-002 is not applicable to thr-004 is not established by the source text.",
+        "missing_evidence": [
+          "Threat definition for thr-004, clarifying whether any administrative or privileged access paths are in scope.",
+          "Text of req-AUTH-002 describing its MFA/administrative access criteria.",
+          "Documentation of any administrative access mechanisms for the exchange website or backend."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "### Web Browser and Mobile App (user device)\n\nThe browser reaches the exchange website and the local wallet UI."
+          },
+          {
+            "evidence_id": "evd-005",
+            "text": "The user's browser reaches the exchange website,\nwhich talks to the backend; the backend reads and writes both databases and calls the\nblockchain integration module."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-012",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The architecture description indicates that many users likely share the exchange backend and databases, but it does not describe how tenant or account-level authorization is enforced, nor does it define thr-004 or req-AUTHZ-001 (evd-003, evd-005). Consequently, the assertion that tenant-scoped authorization requirements are not applicable to thr-004 is not established by the provided documentation.",
+        "missing_evidence": [
+          "Formal definition of thr-004, including whether cross-tenant data access is in scope.",
+          "Text of req-AUTHZ-001 specifying when tenant-aware authorization must be documented.",
+          "Documentation of the authorization model for data stored in MySQL and MongoDB."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "### Exchange Backend (exchange internal)\n\nHandles business logic, configuration, and user data. It reads and writes the MySQL and\nMongoDB stores and calls the blockchain integration module."
+          },
+          {
+            "evidence_id": "evd-005",
+            "text": "The user's browser reaches the exchange website,\nwhich talks to the backend; the backend reads and writes both databases and calls the\nblockchain integration module."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-013",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The description of components and data flows for the browser\u2013website\u2013backend path (evd-003, evd-005) does not mention any delegated access to an external platform on behalf of customers, nor does it define thr-004 or requirement req-AUTHZ-002. While it appears plausible that this particular threat focuses only on HTTPS traffic to the exchange itself, the documents do not explicitly state that integration privileges on external platforms are irrelevant here, so the \"not_applicable\" mapping is not established by direct evidence.",
+        "missing_evidence": [
+          "Definition of thr-004 to understand whether delegated access to external platforms is involved.",
+          "Text of req-AUTHZ-002 specifying its scope.",
+          "Any design documentation of integrations where the exchange acts on external platforms on behalf of customers."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "### Exchange Website (internet)\n\nThe front-end served to users. It interacts with the exchange backend over HTTPS."
+          },
+          {
+            "evidence_id": "evd-005",
+            "text": "The user's browser reaches the exchange website,\nwhich talks to the backend; the backend reads and writes both databases and calls the\nblockchain integration module."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-014",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The system overview and data flows (evd-003, evd-005) describe a deployed web application with TLS expectations but do not discuss the deployment pipeline, CICD authentication, or dependency management, nor do they define thr-004 or req-CICD-001. As a result, the assertion that deployment-path documentation requirements are not applicable to thr-004 is not directly supported by the provided evidence.",
+        "missing_evidence": [
+          "Definition of thr-004 to clarify whether deployment misconfiguration is in scope.",
+          "Text of req-CICD-001 specifying its applicability.",
+          "Documentation of the deployment pipeline and its relation to TLS configuration for the website and backend."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "### Exchange Website (internet)\n\nThe front-end served to users. It interacts with the exchange backend over HTTPS."
+          },
+          {
+            "evidence_id": "evd-005",
+            "text": "TLS is expected to terminate at the load balancer, with all front-end to backend\ncommunication over HTTPS. This has not been re-verified for the current deployment."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-015",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The Exchange Website and Backend are described as handling user data, accounts, configuration, and trading data (evd-003, evd-004). The data-flow section states that \"The user's browser reaches the exchange website, which talks to the backend\" and that TLS is \"expected to terminate at the load balancer, with all front-end to backend communication over HTTPS\" (evd-005). These passages directly support that confidential business and credential data is transmitted over the internet and across a trust boundary, making a data-protection requirement like req-DATA-001 applicable to thr-004, which concerns HTTPS interception. The presence of documented (though not re-verified) TLS for the browser\u2013website\u2013backend path supports that encryption in transit is at least partially addressed, while the absence of any description of encryption at rest for MySQL and MongoDB (evd-004) means the requirement cannot be confirmed as fully satisfied. Classifying req-DATA-001 as applicable and partially_satisfied is therefore consistent with the documentation.",
+        "missing_evidence": [
+          "Updated deployment documentation or configuration confirming current TLS enforcement between browsers, the load balancer, and the backend.",
+          "Documentation describing whether data in MySQL and MongoDB is encrypted at rest and, if so, how."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "### Exchange Backend (exchange internal)\n\nHandles business logic, configuration, and user data. It reads and writes the MySQL and\nMongoDB stores and calls the blockchain integration module."
+          },
+          {
+            "evidence_id": "evd-004",
+            "text": "- **MySQL** (exchange internal) \u2014 user accounts and configuration.\n- **MongoDB** (exchange internal) \u2014 trading data, logs, and operational metadata used by\n  the exchange API."
+          },
+          {
+            "evidence_id": "evd-005",
+            "text": "The user's browser reaches the exchange website,\nwhich talks to the backend; the backend reads and writes both databases and calls the\nblockchain integration module.\n\nTLS is expected to terminate at the load balancer, with all front-end to backend\ncommunication over HTTPS. This has not been re-verified for the current deployment."
+          }
+        ]
+      }
+    ]
+  }
+}

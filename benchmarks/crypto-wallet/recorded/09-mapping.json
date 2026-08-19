@@ -1,0 +1,512 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 11796,
+    "output_tokens": 20802,
+    "cache_read_tokens": 10880,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.224125",
+    "duration_seconds": 212.3241798330564
+  },
+  "response": {
+    "controls": [
+      {
+        "key": "c-api-key-auth",
+        "name": "API key authentication for exchange API",
+        "description": "The exchange API requires user-run trading bots to present an API key over the WebSocket connection to authenticate access to trading and account operations.",
+        "control_type": "implemented",
+        "provider_component_id": "cmp-008",
+        "protected_component_ids": [
+          "cmp-008",
+          "cmp-007"
+        ],
+        "protected_asset_ids": [
+          "ast-002",
+          "ast-003"
+        ],
+        "implementation_status": "implemented",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005",
+          "evd-006"
+        ],
+        "owner": null,
+        "limitations": [
+          "Documentation describes API key use for trading bots but does not state how keys are scoped, rotated, revoked, or otherwise managed."
+        ]
+      },
+      {
+        "key": "c-websocket-tls",
+        "name": "TLS for trading bot WebSocket connections to the exchange API",
+        "description": "User-run trading bots connect to the exchange API over a secure WebSocket, and TLS is expected to terminate at the load balancer, providing encryption in transit between user devices, the exchange API, and backend services.",
+        "control_type": "implemented",
+        "provider_component_id": "cmp-014",
+        "protected_component_ids": [
+          "cmp-008",
+          "cmp-007"
+        ],
+        "protected_asset_ids": [
+          "ast-002",
+          "ast-003",
+          "ast-004"
+        ],
+        "implementation_status": "claimed",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "owner": null,
+        "limitations": [
+          "TLS termination at the load balancer is described as an expectation that has not been re-verified for the current deployment (evd-005).",
+          "The documentation does not describe certificate validation behavior, downgrade prevention, or enforcement of HTTPS/TLS from trading bots to the load balancer."
+        ]
+      }
+    ],
+    "mappings": [
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-ADMIN-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "thr-006 concerns end-user access via the exchange API using user-owned API keys. The documented interfaces in scope are the exchange website and the exchange API used by end users and trading bots (evd-003, evd-005); no privileged administrative or operator interface is described in the attack path, so this requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-AI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The system overview and component descriptions (evd-001, evd-003) do not describe any use of AI or model inference; trading bots talk directly to the exchange API using API keys, not to a model. Therefore, there is no case where untrusted content is passed to a model.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-AI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The documented architecture (evd-001, evd-003) contains no model whose output is published externally; the exchange API directly processes trading and account operations instead of generating model output.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-AI-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No external model provider is described for handling customer content; trading and account operations are handled by the exchange backend and API (evd-003, evd-004), so there is no customer content sent to an external model provider.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-AI-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The system description does not mention any model output being rendered into a UI or external markup (evd-001, evd-003); the exchange API directly returns structured trading/account data, so this AI-specific rendering requirement does not bear on thr-006.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-AUTH-001",
+        "control_keys": [
+          "c-api-key-auth"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Authentication for the exchange is described in terms of locally managed user accounts in MySQL and API keys used by trading bots (evd-003, evd-004, evd-005), with no delegation to an external identity provider. The applicable condition \"user authentication is delegated to an external identity provider\" does not hold, and the non-applicable condition \"the system maintains its own credential store\" matches the described MySQL-based user accounts.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-AUTH-002",
+        "control_keys": [
+          "c-api-key-auth"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "thr-006 involves non-interactive access to the exchange API by trading bots using API keys (evd-003, evd-005). The threat path does not describe any use of multi-factor authentication for this API access, nor any administrative interface; the requirement targets cases where MFA is relied upon for administrative or externally reachable access, which is not the case for these bot-initiated API calls.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005",
+          "evd-006"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-AUTHZ-001",
+        "control_keys": [
+          "c-api-key-auth"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "While the exchange clearly serves multiple users and stores their data in shared databases (evd-004), thr-006 concerns an attacker spoofing a single legitimate user by stealing that user's API key. The attack does not depend on crossing tenant boundaries; it abuses whatever permissions the compromised key legitimately has. Tenant-aware authorization is therefore not the control this threat turns on.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-AUTHZ-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "thr-006 involves direct access by user-run trading bots to the exchange API, not delegated access from the system to an external platform on behalf of customers. The applicable condition \"the system holds delegated access to an external platform\" is not met by this threat scenario (evd-003, evd-004).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-CICD-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The attack path for thr-006 assumes a compromised or exposed API key used from an attacker-controlled host; it does not involve the build or deployment pipeline. No CI/CD components are described in the provided evidence (evd-001\u2013evd-005), so the deployment path and its dependencies are not part of this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [
+          "c-websocket-tls"
+        ],
+        "existing_control_ids": [
+          "ctl-002"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "thr-006 involves credential_data (exchange API keys) and business_data (user accounts and trading data) transmitted between user-run trading bots and the exchange API over the public internet and stored in exchange databases (ast-002, ast-003, ast-004). The data flow from the trading bot to the exchange API is described as a secure WebSocket using API keys (evd-003, evd-005), so the requirement for encryption in transit and at rest directly bears on how exposed these assets are along this path.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "partially_satisfied",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-DATA-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "User accounts and configuration are stored in MySQL, and trading data, logs, and operational metadata are stored in MongoDB (evd-004). These stores retain customer-related data beyond the immediate processing step and include operational artifacts such as logs, so the conditions about retaining copies or intermediate artifacts are met for the assets impacted by thr-006.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-DATA-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The data stores described for thr-006 are relational and document databases (MySQL and MongoDB) holding user accounts, trading data, logs, and operational metadata (evd-004). There is no description of path-addressable stored artifacts (such as objects in a shared object store) whose separation must be enforced on access, so the requirement about per-tenant artifact separation does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-DATA-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The system stores customer data in both MySQL and MongoDB (evd-004), so customer data exists in more than one store. thr-006 results in unauthorized modifications to user accounts and trading data in these stores, making the ability to remove or correct customer data across all stores relevant to the eventual response to such compromise.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-LOG-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "The system handles credential_data and business_data, including API keys and trading information (evd-003, evd-004, evd-005), meeting the first applicable condition. Logs are stored in MongoDB (evd-004), but the documentation does not state whether logs are forwarded to a platform managed by another team or provider. The requirement applies if such forwarding occurs.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-LOG-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No administrative or operator interface is described in the components list or data flows (evd-003, evd-005); thr-006 concerns end-user API keys used by trading bots. Without a privileged interface for operators to act on customer data or security configuration, this requirement does not bear on the threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-NET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "The MySQL and MongoDB data stores that hold user accounts, trading data, and logs (evd-004) are internal components in the \"exchange internal\" zone (evd-002) and are not themselves public interfaces, and they hold data for multiple users. However, the documentation does not state whether these components authenticate callers weakly or rely on network position, so the third applicable condition is uncertain. The requirement applies if they do rely on network placement for trust.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-SECRET-001",
+        "control_keys": [
+          "c-api-key-auth"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "thr-006 is about API keys issued by the exchange to its users for inbound access to the exchange API (evd-003, evd-005, evd-006), not about credentials the system holds to authenticate itself to external platforms or signing keys under its custody. Those system-held credentials, if any, do not appear in the described attack path.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005",
+          "evd-006"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-SECRET-002",
+        "control_keys": [
+          "c-api-key-auth"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The credentials central to thr-006 are exchange API keys used by customer-operated trading bots to access the exchange, not tokens the system obtains to access customer resources on an external platform. The applicable conditions for outbound, short-lived credentials to external platforms are not met in this threat scenario (evd-003, evd-005).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-TPI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "thr-006 involves direct communication between user devices (trading bots) and the exchange API over the internet (evd-002, evd-003, evd-005). Although ElectrumX servers are third-party SPV servers (evd-003), they are used by the wallet daemon for blockchain data and are not part of the described API-key-based attack path, so no customer data sent to an external processor is implicated in this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-TPI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat describes unauthorized trading operations performed via the exchange API using a stolen API key (evd-003, evd-005, evd-006). It does not involve processing that consumes a metered external service or is triggered by external platform events; work is initiated directly by authenticated API clients, so the bounding of metered external work is not the control this threat turns on.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005",
+          "evd-006"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-WEBHOOK-001",
+        "control_keys": [
+          "c-api-key-auth"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The exchange API is a general-purpose API server that clients (including trading bots) connect to over a secure WebSocket using API keys (evd-003, evd-005). It is not described as a webhook endpoint that accepts events from a named external platform, so the webhook authenticity requirement does not bear on thr-006.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-WEBHOOK-002",
+        "control_keys": [
+          "c-api-key-auth"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "thr-006 concerns active trading and account operations issued over an authenticated WebSocket session from a trading bot using a stolen API key (evd-003, evd-005, evd-006), not discrete webhook-style events from an external platform. Replay handling for platform-originated events is therefore outside the scope of this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005",
+          "evd-006"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Properties and lifecycle management of exchange API keys are undocumented",
+        "description": "The documentation establishes that user-run trading bots hold exchange API keys and connect to the exchange API over a secure WebSocket to perform trading and account operations (evd-003, evd-005, evd-006). However, it does not describe how these API keys are generated, scoped (e.g., read-only vs trading vs withdrawal), stored and protected on the server side, rotated, revoked, or optionally constrained (such as by IP, rate limits, or per-operation approvals). Because thr-006 is entirely about misuse of these long-lived API keys, this absence prevents determining what architectural controls, if any, limit the impact of a stolen key.",
+        "importance": "Without documentation of API key scope, lifetime, revocation, and optional restrictions, it is not possible to assess how easily a stolen key can be abused or what mitigations exist for thr-006, so this gap directly affects the ability to evaluate and mitigate the described threat.",
+        "related_object_ids": [
+          "thr-006",
+          "cmp-008",
+          "cmp-013",
+          "ast-004",
+          "df-008"
+        ],
+        "requested_evidence": [
+          "Architecture or operations documentation describing how exchange API keys are generated, stored, scoped, rotated, and revoked.",
+          "Documentation of any constraints applied to API keys (such as IP allowlists, per-key permissions, rate limits, or withdrawal-specific protections)."
+        ],
+        "evidence_ids": [
+          "evd-003",
+          "evd-005",
+          "evd-006"
+        ],
+        "severity": "high"
+      }
+    ],
+    "catalog_gap_candidates": [
+      {
+        "concern": "The catalog does not appear to contain a requirement that directly addresses the security design and lifecycle management of API credentials issued to customers for inbound access (such as API keys used by trading bots), including their scope, lifetime, revocation mechanisms, and optional binding to contexts like IP address or operation type, which are central to limiting the impact of stolen or misused keys in thr-006.",
+        "suggested_category": "authentication",
+        "nearest_requirements": [
+          {
+            "requirement_id": "req-AUTH-002",
+            "why_not": "req-AUTH-002 focuses on documenting which party enforces multi-factor authentication for administrative or externally reachable access. It does not cover non-interactive API credentials issued to customers (such as API keys for trading bots) or their scope, lifetime, or revocation."
+          },
+          {
+            "requirement_id": "req-SECRET-001",
+            "why_not": "req-SECRET-001 concerns how the system stores credentials that authenticate it to external platforms, including signing keys and provider API keys. Exchange API keys in thr-006 are credentials issued by the system to its customers for inbound access, not system-held outbound credentials."
+          },
+          {
+            "requirement_id": "req-SECRET-002",
+            "why_not": "req-SECRET-002 addresses whether credentials the system uses to reach customer resources on external platforms are short-lived. It does not cover long-lived inbound API keys that customers use to authenticate to this system, or how those keys are scoped, rotated, or revoked."
+          }
+        ],
+        "evidence_ids": [
+          "evd-003",
+          "evd-005",
+          "evd-006"
+        ]
+      }
+    ]
+  }
+}

@@ -1,84 +1,104 @@
 {
   "schema": "ThreatAnalysisProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 14113,
+    "output_tokens": 18225,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.19989125",
+    "duration_seconds": 247.9923671670258
+  },
   "response": {
     "threats": [
       {
-        "title": "Wallet file exfiltrated from a compromised device",
-        "description": "Malware or a local attacker steals the wallet file from the user's device and recovers the private keys it holds. The document states the file should be encrypted at rest and that encryption is a wallet option; whether it is enabled is not stated.",
+        "title": "Local process abuses wallet daemon JSON-RPC on localhost to steal keys or sign unauthorized transactions",
+        "description": "The Electrum wallet daemon exposes an HTTP JSON-RPC interface on localhost for use by the wallet GUI. If a malicious or compromised process on the user device can send requests to this localhost interface and the daemon does not enforce strong authentication beyond binding to localhost, the process can invoke sensitive RPC methods (such as exporting keys or signing transactions) without user intent, leading to disclosure of wallet data or signing of unauthorized transactions.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "spoofing",
+          "elevation_of_privilege",
+          "information_disclosure"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-002",
+          "cmp-010"
+        ],
+        "affected_asset_ids": [
+          "ast-001"
+        ],
+        "related_data_flow_ids": [
+          "df-001"
+        ],
+        "preconditions": [
+          "The wallet daemon listens on localhost using an HTTP JSON-RPC interface for commands from the wallet GUI (ctx-006, df-001).",
+          "An attacker-controlled process on the same user device can send HTTP requests to localhost where the wallet daemon listens.",
+          "The daemon's JSON-RPC interface accepts sensitive commands (e.g., signing transactions or exporting wallet data) without additional strong authentication beyond originating from localhost."
+        ],
+        "attack_path": [
+          "Attacker gains ability to execute code or otherwise send HTTP requests on the user device inside the user-device trust zone (tb-001).",
+          "Malicious code discovers the wallet daemon's JSON-RPC endpoint on localhost (cmp-002) and the available RPC methods.",
+          "The malicious process sends crafted JSON-RPC requests that instruct the daemon to export wallet data or sign a transaction to an attacker-controlled address.",
+          "The daemon, treating the requests as if they came from the legitimate GUI, complies and returns wallet data or signed transactions.",
+          "Attacker uses the disclosed keys or signed transactions to transfer the user\u2019s cryptocurrency holdings out of the wallet."
+        ],
+        "impact": "Unauthorized JSON-RPC access to the wallet daemon can disclose wallet data or trigger signing of unauthorized transactions, compromising the confidentiality of wallet keys and data (ast-001) and enabling theft of associated cryptocurrency holdings.",
+        "likelihood": null,
+        "confidence": "medium",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-002"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Offline compromise of wallet file when encryption at rest is not enabled or is weak",
+        "description": "The wallet file on the user device holds wallet data and keys and has encryption at rest as an option rather than a clearly enforced default. If encryption at rest is disabled or uses a weak passphrase or key-derivation configuration, an attacker who obtains a copy of the wallet file from the device or from backups can extract private keys offline and later spend the user\u2019s funds without further interaction with the system.",
         "methodology": "stride-scenario-based",
         "category": [
           "information_disclosure"
         ],
         "threat_actor_ids": [],
         "affected_component_ids": [
-          "cmp-002"
+          "cmp-010"
         ],
         "affected_asset_ids": [
           "ast-001"
         ],
         "related_data_flow_ids": [],
         "preconditions": [
-          "the user device is compromised",
-          "the wallet file is unencrypted, or its encryption is defeated"
+          "The wallet file stores wallet data and keys on the user device and encryption at rest is a configurable option rather than an always-on property (evd-004, ctx-011).",
+          "For a given user, encryption at rest is disabled or configured with a weak passphrase or weak key-derivation settings (ctx-012 is unknown).",
+          "An attacker gains access to a copy of the wallet file, for example via malware on the user device, theft of a device or disk, or compromise of backups that contain the file."
         ],
         "attack_path": [
-          "compromise the user device",
-          "copy the wallet file",
-          "recover the keys it holds"
+          "Attacker obtains a copy of the wallet file from the user device or from a backup where it is stored.",
+          "Because encryption at rest is disabled or weak, the attacker can read or efficiently brute-force the wallet file offline.",
+          "The attacker recovers the wallet\u2019s private keys and associated metadata from the file.",
+          "Using the recovered keys, the attacker constructs and broadcasts transactions on the blockchain network to transfer the user\u2019s cryptocurrency holdings to attacker-controlled addresses."
         ],
-        "impact": "Private key confidentiality is lost, and with it the funds the keys control.",
+        "impact": "Compromise of an unencrypted or weakly encrypted wallet file exposes the private keys and wallet data (ast-001), allowing irreversible theft of cryptocurrency and loss of confidentiality of wallet holdings and metadata.",
         "likelihood": null,
         "confidence": "medium",
         "evidence_ids": [
-          "evd-004"
+          "evd-004",
+          "evd-002"
         ],
-        "assumption_ids": [],
+        "assumption_ids": [
+          "ctx-012"
+        ],
         "open_question_ids": []
       },
       {
-        "title": "Trading-bot API keys stolen and abused",
-        "description": "An attacker obtains the trading bot's exchange API keys \u2014 through interception or leakage into logs \u2014 and issues unauthorized trades or reads account data.",
+        "title": "Malicious or compromised ElectrumX SPV server misleads wallet or harvests wallet metadata",
+        "description": "The wallet daemon connects to third-party ElectrumX SPV servers over the internet for balances, headers, and transaction broadcast. Because these servers are operated by third parties and provide the wallet\u2019s view of the blockchain, a malicious or compromised ElectrumX server, or an attacker intercepting this connection, can misreport balances and transaction status or selectively withhold or inject data, misleading the user and exposing detailed wallet activity.",
         "methodology": "stride-scenario-based",
         "category": [
-          "spoofing",
-          "elevation_of_privilege"
-        ],
-        "threat_actor_ids": [],
-        "affected_component_ids": [
-          "cmp-008",
-          "cmp-006"
-        ],
-        "affected_asset_ids": [
-          "ast-002"
-        ],
-        "related_data_flow_ids": [
-          "df-006"
-        ],
-        "preconditions": [
-          "API keys are exposed in transit or at rest",
-          "the stolen keys carry more privilege than the bot's task requires"
-        ],
-        "attack_path": [
-          "obtain the bot's API keys from transit or a log store",
-          "trade or read account data against the exchange API with them"
-        ],
-        "impact": "Unauthorized trading and account data exposure under the user's identity.",
-        "likelihood": null,
-        "confidence": "medium",
-        "evidence_ids": [
-          "evd-003",
-          "evd-005"
-        ],
-        "assumption_ids": [],
-        "open_question_ids": []
-      },
-      {
-        "title": "Malicious ElectrumX server feeds false blockchain state",
-        "description": "A rogue or spoofed ElectrumX server returns incorrect balances or headers, leading the wallet to display or act on false blockchain state. ElectrumX servers are operated by third parties the user does not control.",
-        "methodology": "stride-scenario-based",
-        "category": [
-          "spoofing",
-          "tampering"
+          "tampering",
+          "information_disclosure"
         ],
         "threat_actor_ids": [],
         "affected_component_ids": [
@@ -86,27 +106,308 @@
           "cmp-003"
         ],
         "affected_asset_ids": [
-          "ast-003"
+          "ast-001"
         ],
         "related_data_flow_ids": [
           "df-002"
         ],
         "preconditions": [
-          "the wallet daemon accepts blockchain data from a server the user does not control without cross-validation"
+          "The wallet daemon connects over the internet from the user device to third-party ElectrumX servers for blockchain data and transaction broadcast (evd-003, evd-005).",
+          "At least one ElectrumX server the wallet uses is malicious, compromised, misconfigured, or connected via an interceptable/manipulable network path.",
+          "The wallet daemon relies on ElectrumX responses for displaying balances and history and for deciding what transactions to broadcast or consider confirmed."
         ],
         "attack_path": [
-          "operate or spoof an ElectrumX server the wallet connects to",
-          "return altered balances or headers"
+          "Attacker operates or compromises an ElectrumX server (cmp-003) that the wallet daemon (cmp-002) connects to, or intercepts df-002 traffic.",
+          "The malicious server tampers with blockchain data returned to the wallet, such as showing a fabricated receiving address, incorrect balance, or altered transaction history.",
+          "Based on the misreported data, the user is induced to sign and broadcast transactions that route funds to attacker-controlled addresses or to believe funds are confirmed when they are not.",
+          "The attacker may also log wallet queries and addresses, building a detailed profile of the user\u2019s holdings and transaction patterns."
         ],
-        "impact": "The wallet displays or acts on false blockchain state.",
+        "impact": "A malicious or compromised SPV server can tamper with the wallet\u2019s view of the blockchain and observe wallet queries, leading to misdirected payments, potential loss of funds associated with wallet keys and data (ast-001), and loss of privacy over wallet balances and transaction history.",
         "likelihood": null,
         "confidence": "medium",
         "evidence_ids": [
-          "evd-003"
+          "evd-003",
+          "evd-005",
+          "evd-002"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "MITM or TLS misconfiguration on user-to-exchange website path exposes or alters user account data",
+        "description": "End users reach the exchange website over the internet, which in turn talks to the backend over HTTPS, with TLS expected to terminate at a load balancer. If browser-to-website connections are not consistently protected with correctly validated HTTPS, or if termination and backend links are misconfigured (e.g., HTTP between the load balancer and backend or weak certificate handling), an on-path attacker can intercept or modify traffic, capturing account-related data or altering account operations in transit.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "spoofing",
+          "tampering",
+          "information_disclosure"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-004",
+          "cmp-006",
+          "cmp-014",
+          "cmp-007"
+        ],
+        "affected_asset_ids": [
+          "ast-002"
+        ],
+        "related_data_flow_ids": [
+          "df-003",
+          "df-004"
+        ],
+        "preconditions": [
+          "End users access the exchange website from their browsers over the internet, and the website talks to the backend via HTTPS with TLS expected to terminate at a load balancer (evd-003, evd-005; ctx-017, ctx-018).",
+          "There exists at least one misconfiguration or weakness in TLS usage (e.g., acceptance of invalid certificates, HTTP fallback, plaintext or weakly protected links between the load balancer and backend).",
+          "An attacker can observe or manipulate network traffic between the user device and the load balancer, or between the load balancer and the exchange backend within the internet zone."
+        ],
+        "attack_path": [
+          "Attacker positions themselves on-path between the user\u2019s browser (cmp-004) and the exchange website/load balancer (cmp-006/cmp-014), for example on an untrusted network.",
+          "Due to TLS misconfiguration, protocol downgrade, or weak certificate validation, the attacker can intercept or terminate the connection without detection.",
+          "The attacker reads or modifies HTTP requests and responses, capturing session cookies, account identifiers, and configuration changes related to user accounts and configuration stored in the backend and MySQL (ast-002).",
+          "The attacker injects or alters requests (e.g., changing deposit addresses, enabling new API keys, or modifying configuration) before forwarding them to the backend (cmp-007), causing unauthorized account changes."
+        ],
+        "impact": "A successful man-in-the-middle on the user-to-exchange website path can disclose or alter user account and configuration data (ast-002), potentially enabling account takeover, manipulation of deposit/withdrawal settings, and exposure of sensitive account information.",
+        "likelihood": null,
+        "confidence": "low",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005",
+          "evd-002"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Internal attacker intercepts or tampers exchange backend traffic to MySQL and MongoDB",
+        "description": "The exchange backend in the exchange-internal zone reads and writes user accounts and configuration in MySQL and trading data and operational metadata in MongoDB. If an attacker gains a foothold in the exchange internal network or on infrastructure hosting these components, and database connections are not strongly protected, they can observe or modify database traffic or issue unauthorized queries, leading to disclosure or tampering of accounts, configuration, trading data, and logs.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "tampering",
+          "information_disclosure",
+          "repudiation"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-007",
+          "cmp-011",
+          "cmp-012"
+        ],
+        "affected_asset_ids": [
+          "ast-002",
+          "ast-003"
+        ],
+        "related_data_flow_ids": [
+          "df-005",
+          "df-006"
+        ],
+        "preconditions": [
+          "The exchange backend (cmp-007) connects to MySQL (cmp-011) for user accounts and configuration and to MongoDB (cmp-012) for trading data, logs, and operational metadata over the exchange internal network (evd-003, evd-004, evd-005; tb-002).",
+          "An attacker obtains network access within the exchange internal zone or compromises a host on the path between the backend and the databases.",
+          "Database traffic is readable or modifiable by that attacker (e.g., connections are unencrypted, or endpoint hosts themselves are compromised), or the attacker can use stolen database credentials to issue unauthorized queries."
+        ],
+        "attack_path": [
+          "Attacker compromises an internal host or network segment within the exchange internal zone (tb-002).",
+          "The attacker passively captures or actively intercepts database connections on df-005 and/or df-006 between the backend and MySQL/MongoDB.",
+          "Through interception or use of stolen credentials, the attacker reads sensitive user account data, configuration, trading activity, and operational logs (ast-002, ast-003).",
+          "The attacker modifies database responses or writes directly to the databases, altering balances, configuration, or trading records, and may adjust or delete logs to hinder detection or repudiation analysis."
+        ],
+        "impact": "Compromise or tampering with backend-to-database communications or direct database access can lead to unauthorized disclosure and modification of user accounts and configuration (ast-002) and trading data and operational logs (ast-003), undermining data integrity and auditability within the exchange.",
+        "likelihood": null,
+        "confidence": "medium",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-005",
+          "evd-002"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Stolen or maliciously used exchange API keys enable unauthorized trading via the exchange API",
+        "description": "User-run trading bots hold long-lived API keys and connect over secure WebSockets to the exchange API, which provides programmatic access to trading and account data. If these API keys are stolen from the trading bot client or otherwise exposed, an attacker can use them from anywhere on the internet to authenticate to the exchange API and perform any actions allowed by those keys without further user interaction.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "spoofing",
+          "elevation_of_privilege"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-013",
+          "cmp-008",
+          "cmp-007"
+        ],
+        "affected_asset_ids": [
+          "ast-004",
+          "ast-002",
+          "ast-003"
+        ],
+        "related_data_flow_ids": [
+          "df-008"
+        ],
+        "preconditions": [
+          "End users generate exchange API keys and store them in user-run trading bots, which connect to the exchange API over secure WebSockets using those keys (evd-003, evd-005, evd-006; ctx-015, ctx-016).",
+          "An attacker is able to obtain or copy an API key (ast-004), for example via compromise of the trading bot client, logging, key sharing, or other exfiltration from the user device.",
+          "The exchange API (cmp-008) accepts API-key-authenticated requests from the internet without requiring interactive user presence for each trading or account operation."
+        ],
+        "attack_path": [
+          "Attacker gains access to a valid API key associated with a user account.",
+          "From an attacker-controlled host on the internet, the attacker establishes a secure WebSocket connection to the exchange API (df-008) and authenticates using the stolen API key.",
+          "The attacker issues trading commands and account-related requests (e.g., placing or canceling orders, adjusting positions, or, if supported, initiating withdrawals) that the backend (cmp-007) processes as if from the legitimate user.",
+          "These actions alter user account state and trading data in the MySQL and MongoDB databases (ast-002, ast-003), potentially causing financial loss or unwanted exposure of account information."
+        ],
+        "impact": "Compromise of exchange API keys (ast-004) allows an attacker to spoof the legitimate user to the exchange API, enabling unauthorized trading and account operations that modify user accounts and configuration (ast-002) and trading data and operational logs (ast-003).",
+        "likelihood": null,
+        "confidence": "high",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005",
+          "evd-006"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Misbehaving or malicious trading bots overload the exchange API, degrading service availability",
+        "description": "User-run trading bots connect over secure WebSockets to the exchange API to trade programmatically. Because these bots are under user control and may be poorly implemented or malicious, they can send requests at very high rates or maintain large numbers of concurrent connections. If the exchange API and backend lack sufficient rate limiting, resource isolation, or back-pressure, a small number of bots can exhaust API or backend resources, causing degradation or loss of service for other users.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "denial_of_service"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-013",
+          "cmp-008",
+          "cmp-007",
+          "cmp-014"
+        ],
+        "affected_asset_ids": [
+          "ast-002",
+          "ast-003"
+        ],
+        "related_data_flow_ids": [
+          "df-008"
+        ],
+        "preconditions": [
+          "User-run trading bots connect from user devices over the internet to the exchange API via secure WebSockets, sending trading commands and accessing account data (evd-003, evd-005, evd-002).",
+          "One or more trading bots are misconfigured, buggy, or malicious and can generate very high request rates or many concurrent connections.",
+          "The exchange API and backend do not sufficiently constrain per-client resource usage (e.g., limited rate limiting or connection caps) to prevent individual bots from consuming disproportionate capacity."
+        ],
+        "attack_path": [
+          "A misbehaving or malicious trading bot (cmp-013) opens one or many WebSocket connections to the exchange API (cmp-008) and begins sending trading commands at an aggressive rate over df-008.",
+          "The Node.js-based API server and underlying backend (cmp-007) expend significant CPU, memory, and I/O resources processing the flood of requests.",
+          "The load balancer (cmp-014), API, or backend becomes saturated, causing slow responses, timeouts, or connection failures for other clients.",
+          "Legitimate users experience inability to access or update user accounts and configuration or to submit and monitor trades, affecting the availability of assets ast-002 and ast-003."
+        ],
+        "impact": "High-rate or excessive connections from misbehaving or malicious trading bots can exhaust capacity on the exchange API and backend, reducing or denying availability of account management and trading functions tied to user accounts and configuration (ast-002) and trading data and operational logs (ast-003).",
+        "likelihood": null,
+        "confidence": "medium",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005",
+          "evd-002"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Incorrect or malicious blockchain network data causes inconsistent balances and transaction records",
+        "description": "The blockchain integration module interfaces with the external blockchain network on behalf of the backend, which uses this data to manage user balances and transaction state recorded in the internal databases. If the blockchain integration module is connected to malicious, compromised, or partitioned blockchain nodes that provide incorrect or inconsistent chain data, and the backend logic credits or debits user accounts based solely on this view, the exchange can record incorrect balances and transaction histories.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "tampering",
+          "repudiation"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-009",
+          "cmp-007",
+          "cmp-015",
+          "cmp-011",
+          "cmp-012"
+        ],
+        "affected_asset_ids": [
+          "ast-002",
+          "ast-003"
+        ],
+        "related_data_flow_ids": [
+          "df-007",
+          "df-009"
+        ],
+        "preconditions": [
+          "The blockchain integration module (cmp-009) communicates with the external blockchain network (cmp-015) to read and write blockchain state for the backend (evd-003, evd-005; ctx-019).",
+          "The nodes or network paths the integration module uses are malicious, compromised, or experiencing anomalies such as network partitions or eclipse attacks, causing them to present incorrect or inconsistent chain data.",
+          "Exchange backend logic uses the blockchain data returned by the integration module to update user balances and transaction states in MySQL and MongoDB (ast-002, ast-003) without sufficient cross-checking or delayed finality."
+        ],
+        "attack_path": [
+          "Attacker controls or manipulates the blockchain nodes or network segment that the integration module (cmp-009) talks to, influencing the view of the blockchain presented over df-009.",
+          "The integration module forwards this incorrect or inconsistent transaction and balance information to the exchange backend over df-007.",
+          "The backend (cmp-007) updates user accounts and configuration in MySQL (cmp-011) and trading/operational records in MongoDB (cmp-012) based on the misleading data.",
+          "Later, when the true blockchain state becomes apparent, internal records in ast-002 and ast-003 conflict with on-chain reality, reflecting incorrect balances or missing/extra transactions."
+        ],
+        "impact": "Reliance on maliciously influenced or inconsistent blockchain data can cause the exchange to mis-credit or mis-debit user accounts and record incorrect transaction and trading histories, compromising the integrity and reliability of user accounts and configuration (ast-002) and trading data and operational logs (ast-003) and complicating dispute resolution.",
+        "likelihood": null,
+        "confidence": "medium",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005",
+          "evd-004"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Remote client exploits web or API vulnerabilities to access or modify other users\u2019 account and trading data",
+        "description": "The exchange website and API are internet-accessible entry points that interact with the exchange backend, which reads and writes user accounts and configuration in MySQL and trading data and logs in MongoDB. If any web or API endpoints have insufficient input validation, authentication, or authorization controls (such as injection flaws or insecure direct object references), a remote attacker can exploit these vulnerabilities to read or tamper with data for accounts other than their own.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "tampering",
+          "information_disclosure",
+          "elevation_of_privilege"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-006",
+          "cmp-008",
+          "cmp-007",
+          "cmp-011",
+          "cmp-012"
+        ],
+        "affected_asset_ids": [
+          "ast-002",
+          "ast-003"
+        ],
+        "related_data_flow_ids": [
+          "df-003",
+          "df-004",
+          "df-005",
+          "df-006",
+          "df-008"
+        ],
+        "preconditions": [
+          "The exchange website (cmp-006) and exchange API (cmp-008) are reachable from the internet and process user-supplied input that drives backend logic and database operations (evd-003, evd-005).",
+          "At least one endpoint in the website or API has a vulnerability such as injection, broken access control, or insecure direct object references that allows a caller to influence backend queries or resource identifiers beyond their intended scope.",
+          "An attacker can send crafted HTTP or WebSocket requests to these endpoints from the internet."
+        ],
+        "attack_path": [
+          "Attacker enumerates and tests web or API endpoints exposed by the exchange website (df-003/df-004) or API (df-008).",
+          "The attacker discovers an input-handling or authorization flaw that allows them to craft requests targeting data or operations for other users\u2019 accounts.",
+          "By exploiting this flaw, the attacker retrieves or modifies records in the MySQL and MongoDB databases via the backend (df-005, df-006), such as viewing other users\u2019 account details, changing configuration (e.g., deposit addresses or settings), or altering trading data and logs.",
+          "The attacker may repeatedly exploit the vulnerability to exfiltrate large amounts of account information or to systematically tamper with trading and operational records."
+        ],
+        "impact": "Exploitation of vulnerabilities in the exchange website or API can allow a remote attacker to read or modify user accounts and configuration (ast-002) and trading data and operational logs (ast-003) belonging to other users, resulting in data breaches, unauthorized configuration changes, and compromised trading records.",
+        "likelihood": null,
+        "confidence": "low",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-005"
         ],
         "assumption_ids": [],
         "open_question_ids": []
       }
-    ]
+    ],
+    "catalog_gap_candidates": []
   }
 }

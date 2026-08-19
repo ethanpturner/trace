@@ -1,24 +1,106 @@
 {
   "schema": "ContextExtractionProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 240,
+    "output_tokens": 19383,
+    "cache_read_tokens": 13056,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.195762",
+    "duration_seconds": 165.59362416598015
+  },
   "response": {
     "system": {
       "system_name": "Wallet and Exchange Platform",
-      "system_purpose": "a desktop cryptocurrency wallet, an exchange with web and API access, and the blockchain integration behind them",
-      "business_criticality": "business-critical",
+      "system_purpose": "Cryptocurrency wallet and exchange integration with a desktop wallet, web and API access, and blockchain integration.",
+      "business_criticality": "business_critical",
       "environment": [],
       "deployment_model": null,
       "data_classifications": [
         "business_data",
         "credential_data"
-      ]
+      ],
+      "access_model": "unknown"
     },
     "claims": [
       {
-        "key": "daemon-localhost",
+        "key": "claim_system_purpose",
+        "subject_type": "system",
+        "subject_key": null,
+        "predicate": "purpose",
+        "value": "Cryptocurrency wallet and exchange integration with a desktop wallet, web and API access, and blockchain integration.",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-001"
+        ]
+      },
+      {
+        "key": "claim_system_business_critical",
+        "subject_type": "system",
+        "subject_key": null,
+        "predicate": "business_criticality",
+        "value": "business_critical",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-001"
+        ]
+      },
+      {
+        "key": "claim_system_externally_exposed",
+        "subject_type": "system",
+        "subject_key": null,
+        "predicate": "externally_exposed",
+        "value": true,
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-001"
+        ]
+      },
+      {
+        "key": "claim_system_data_classifications",
+        "subject_type": "system",
+        "subject_key": null,
+        "predicate": "data_classifications",
+        "value": [
+          "business_data",
+          "credential_data"
+        ],
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-001"
+        ]
+      },
+      {
+        "key": "claim_out_of_scope_env",
+        "subject_type": "system",
+        "subject_key": null,
+        "predicate": "out_of_scope_environment",
+        "value": [
+          "user_operating_system",
+          "user_hardware",
+          "third_party_dependencies_not_shown"
+        ],
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-001"
+        ]
+      },
+      {
+        "key": "claim_wallet_daemon_local_rpc",
         "subject_type": "component",
-        "subject_key": "daemon",
-        "predicate": "network_exposure",
-        "value": "the wallet daemon exposes HTTP JSON-RPC on localhost; the GUI talks to the daemon, and the daemon connects out to ElectrumX servers",
+        "subject_key": "wallet_daemon",
+        "predicate": "interface",
+        "value": "http_json_rpc_localhost",
         "status": "documented",
         "confidence": "high",
         "rationale": null,
@@ -27,37 +109,24 @@
         ]
       },
       {
-        "key": "wallet-encryption-option",
+        "key": "claim_electrumx_third_party",
         "subject_type": "component",
-        "subject_key": "daemon",
-        "predicate": "encryption_at_rest",
-        "value": "the wallet file should be encrypted at rest and encryption is a wallet option; whether it is enabled is not stated",
+        "subject_key": "electrumx_server",
+        "predicate": "externally_managed",
+        "value": true,
         "status": "documented",
-        "confidence": "medium",
-        "rationale": "the document hedges the statement rather than asserting the encryption state",
+        "confidence": "high",
+        "rationale": null,
         "evidence_ids": [
-          "evd-004"
+          "evd-003"
         ]
       },
       {
-        "key": "tls-unverified",
+        "key": "claim_exchange_website_https_backend",
         "subject_type": "component",
-        "subject_key": "website",
-        "predicate": "encryption_in_transit",
-        "value": "TLS is expected to terminate at the load balancer with all front-end to backend communication over HTTPS; this has not been re-verified for the current deployment",
-        "status": "documented",
-        "confidence": "medium",
-        "rationale": "the document marks the claim as not re-verified",
-        "evidence_ids": [
-          "evd-005"
-        ]
-      },
-      {
-        "key": "bot-api-keys",
-        "subject_type": "component",
-        "subject_key": "exchange-api",
-        "predicate": "api_authentication",
-        "value": "user-run trading bots connect to the exchange API over a secure WebSocket using API keys the user generates",
+        "subject_key": "exchange_website",
+        "predicate": "connects_to_backend_over_https",
+        "value": true,
         "status": "documented",
         "confidence": "high",
         "rationale": null,
@@ -67,24 +136,189 @@
         ]
       },
       {
-        "key": "criticality",
+        "key": "claim_exchange_backend_uses_datastores",
         "subject_type": "component",
-        "subject_key": "backend",
-        "predicate": "data_sensitivity",
-        "value": "the platform is business-critical and externally exposed, and handles business and credential data",
+        "subject_key": "exchange_backend",
+        "predicate": "uses_datastores",
+        "value": [
+          "mysql_db",
+          "mongodb_db"
+        ],
         "status": "documented",
         "confidence": "high",
         "rationale": null,
         "evidence_ids": [
-          "evd-001"
+          "evd-003",
+          "evd-005"
         ]
       },
       {
-        "key": "electrumx-third-party",
+        "key": "claim_exchange_backend_calls_blockchain_module",
         "subject_type": "component",
-        "subject_key": "electrumx",
-        "predicate": "operational_ownership",
-        "value": "ElectrumX servers are operated by third parties, not by the exchange",
+        "subject_key": "exchange_backend",
+        "predicate": "calls_component",
+        "value": [
+          "blockchain_module"
+        ],
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ]
+      },
+      {
+        "key": "claim_wallet_file_encryption_option",
+        "subject_type": "component",
+        "subject_key": "wallet_file",
+        "predicate": "encryption_option_available",
+        "value": true,
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-004"
+        ]
+      },
+      {
+        "key": "claim_wallet_file_encrypted_unknown",
+        "subject_type": "component",
+        "subject_key": "wallet_file",
+        "predicate": "encrypted_at_rest",
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "rationale": "Documentation states the wallet file should be encrypted at rest and that encryption is a wallet option, but does not state that encryption is enforced or enabled by default.",
+        "evidence_ids": [
+          "evd-004"
+        ]
+      },
+      {
+        "key": "claim_mysql_stores_accounts_config",
+        "subject_type": "component",
+        "subject_key": "mysql_db",
+        "predicate": "stores_data",
+        "value": [
+          "user_accounts",
+          "configuration"
+        ],
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-004"
+        ]
+      },
+      {
+        "key": "claim_mongodb_stores_trading_logs",
+        "subject_type": "component",
+        "subject_key": "mongodb_db",
+        "predicate": "stores_data",
+        "value": [
+          "trading_data",
+          "logs",
+          "operational_metadata"
+        ],
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-004"
+        ]
+      },
+      {
+        "key": "claim_exchange_api_auth_api_keys",
+        "subject_type": "component",
+        "subject_key": "exchange_api",
+        "predicate": "authentication_mechanism",
+        "value": [
+          "api_keys"
+        ],
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ]
+      },
+      {
+        "key": "claim_trading_bot_holds_api_keys",
+        "subject_type": "asset",
+        "subject_key": "api_keys",
+        "predicate": "held_by",
+        "value": [
+          "trading_bot_client"
+        ],
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-005",
+          "evd-006"
+        ]
+      },
+      {
+        "key": "claim_tls_expected_load_balancer",
+        "subject_type": "component",
+        "subject_key": "load_balancer",
+        "predicate": "tls_termination_expected",
+        "value": true,
+        "status": "documented",
+        "confidence": "medium",
+        "rationale": "The document states that TLS is expected to terminate at the load balancer, but notes this has not been re-verified for the current deployment.",
+        "evidence_ids": [
+          "evd-005"
+        ]
+      },
+      {
+        "key": "claim_frontend_backend_https_expected",
+        "subject_type": "system",
+        "subject_key": null,
+        "predicate": "frontend_backend_https_expected",
+        "value": true,
+        "status": "documented",
+        "confidence": "medium",
+        "rationale": "The document states that all front-end to backend communication is expected to use HTTPS, but this has not been re-verified for the current deployment.",
+        "evidence_ids": [
+          "evd-005"
+        ]
+      },
+      {
+        "key": "claim_blockchain_module_interfaces_network",
+        "subject_type": "component",
+        "subject_key": "blockchain_module",
+        "predicate": "interfaces_with",
+        "value": [
+          "blockchain_network"
+        ],
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-003"
+        ]
+      },
+      {
+        "key": "claim_end_user_may_run_trading_bot",
+        "subject_type": "actor",
+        "subject_key": "end_user",
+        "predicate": "may_run_trading_bot",
+        "value": true,
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-006"
+        ]
+      },
+      {
+        "key": "claim_mobile_app_role",
+        "subject_type": "component",
+        "subject_key": "mobile_app",
+        "predicate": "role",
+        "value": "mobile_variant_for_wallet_and_exchange_interaction",
         "status": "documented",
         "confidence": "high",
         "rationale": null,
@@ -95,423 +329,671 @@
     ],
     "components": [
       {
-        "key": "gui",
+        "key": "wallet_gui",
         "name": "Electrum Wallet GUI",
-        "component_type": "desktop_application",
-        "description": "desktop wallet graphical user interface",
+        "component_type": "client_application",
+        "description": "Desktop wallet graphical user interface.",
         "technology": [],
         "ownership": null,
         "deployment_zone": "user_device",
         "internet_accessible": null,
         "externally_managed": null,
+        "entry_point_types": [
+          "gui"
+        ],
         "data_classifications": [],
         "authentication_mechanisms": [],
         "authorization_mechanisms": [],
         "evidence_ids": [
-          "evd-003"
+          "evd-003",
+          "evd-002"
         ]
       },
       {
-        "key": "daemon",
+        "key": "wallet_daemon",
         "name": "Electrum Wallet Daemon",
-        "component_type": "service",
-        "description": "local wallet backend exposing HTTP JSON-RPC on localhost; connects out to ElectrumX servers for blockchain data",
-        "technology": [],
+        "component_type": "wallet_daemon",
+        "description": "Local wallet backend process exposing HTTP JSON-RPC on localhost and connecting to ElectrumX servers for blockchain data.",
+        "technology": [
+          "http",
+          "json_rpc"
+        ],
         "ownership": null,
         "deployment_zone": "user_device",
-        "internet_accessible": false,
+        "internet_accessible": null,
         "externally_managed": null,
-        "data_classifications": [],
+        "entry_point_types": [
+          "api"
+        ],
+        "data_classifications": [
+          "credential_data"
+        ],
         "authentication_mechanisms": [],
         "authorization_mechanisms": [],
         "evidence_ids": [
-          "evd-003"
+          "evd-003",
+          "evd-004",
+          "evd-002"
         ]
       },
       {
-        "key": "electrumx",
+        "key": "electrumx_server",
         "name": "ElectrumX Server",
-        "component_type": "external_service",
-        "description": "third-party SPV server supplying balances, headers, and transaction broadcast; operated by third parties",
+        "component_type": "spv_server",
+        "description": "Third-party SPV server that wallets connect to for blockchain data such as balances, headers, and transaction broadcast.",
         "technology": [],
-        "ownership": null,
+        "ownership": "third_party",
         "deployment_zone": "internet",
         "internet_accessible": true,
         "externally_managed": true,
-        "data_classifications": [],
-        "authentication_mechanisms": [],
-        "authorization_mechanisms": [],
-        "evidence_ids": [
-          "evd-003"
-        ]
-      },
-      {
-        "key": "website",
-        "name": "Exchange Website",
-        "component_type": "web_application",
-        "description": "the front-end served to users; interacts with the exchange backend over HTTPS",
-        "technology": [],
-        "ownership": null,
-        "deployment_zone": "internet",
-        "internet_accessible": true,
-        "externally_managed": null,
-        "data_classifications": [],
-        "authentication_mechanisms": [],
-        "authorization_mechanisms": [],
-        "evidence_ids": [
-          "evd-003"
-        ]
-      },
-      {
-        "key": "backend",
-        "name": "Exchange Backend",
-        "component_type": "service",
-        "description": "business logic, configuration, and user data; reads and writes the MySQL and MongoDB stores and calls the blockchain integration module",
-        "technology": [],
-        "ownership": null,
-        "deployment_zone": "exchange_internal",
-        "internet_accessible": false,
-        "externally_managed": null,
-        "data_classifications": [],
-        "authentication_mechanisms": [],
-        "authorization_mechanisms": [],
-        "evidence_ids": [
-          "evd-003"
-        ]
-      },
-      {
-        "key": "exchange-api",
-        "name": "Exchange API",
-        "component_type": "service",
-        "description": "Node.js API server for programmatic trading and account access over a secure WebSocket with API keys",
-        "technology": [],
-        "ownership": null,
-        "deployment_zone": "exchange_internal",
-        "internet_accessible": true,
-        "externally_managed": null,
-        "data_classifications": [],
-        "authentication_mechanisms": [
-          "api_key"
+        "entry_point_types": [
+          "api"
         ],
-        "authorization_mechanisms": [],
-        "evidence_ids": [
-          "evd-003"
-        ]
-      },
-      {
-        "key": "blockchain-module",
-        "name": "Blockchain Integration Module",
-        "component_type": "service",
-        "description": "reads and writes blockchain state on behalf of the backend",
-        "technology": [],
-        "ownership": null,
-        "deployment_zone": "exchange_internal",
-        "internet_accessible": null,
-        "externally_managed": null,
         "data_classifications": [],
         "authentication_mechanisms": [],
         "authorization_mechanisms": [],
         "evidence_ids": [
-          "evd-003"
+          "evd-003",
+          "evd-002"
         ]
       },
       {
-        "key": "trading-bot",
-        "name": "Trading Bot",
+        "key": "web_browser",
+        "name": "Web Browser",
         "component_type": "user_agent",
-        "description": "user-run bot holding exchange API keys and trading against the exchange API",
+        "description": "User's web browser used to reach the exchange website and the local wallet UI.",
         "technology": [],
         "ownership": null,
         "deployment_zone": "user_device",
         "internet_accessible": null,
         "externally_managed": null,
+        "entry_point_types": [
+          "web"
+        ],
         "data_classifications": [],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-003",
+          "evd-002"
+        ]
+      },
+      {
+        "key": "mobile_app",
+        "name": "Mobile App",
+        "component_type": "mobile_app",
+        "description": "Mobile variant for wallet and exchange interaction.",
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": "user_device",
+        "internet_accessible": null,
+        "externally_managed": null,
+        "entry_point_types": [
+          "mobile_app"
+        ],
+        "data_classifications": [],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-003",
+          "evd-002"
+        ]
+      },
+      {
+        "key": "exchange_website",
+        "name": "Exchange Website",
+        "component_type": "web_frontend",
+        "description": "Front-end website served to users, interacting with the exchange backend over HTTPS.",
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": "internet",
+        "internet_accessible": true,
+        "externally_managed": null,
+        "entry_point_types": [
+          "web"
+        ],
+        "data_classifications": [
+          "business_data",
+          "credential_data"
+        ],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-003",
+          "evd-002"
+        ]
+      },
+      {
+        "key": "exchange_backend",
+        "name": "Exchange Backend",
+        "component_type": "application_backend",
+        "description": "Backend service handling business logic, configuration, and user data, reading and writing MySQL and MongoDB and calling the blockchain integration module.",
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": "exchange_internal",
+        "internet_accessible": null,
+        "externally_managed": null,
+        "entry_point_types": [],
+        "data_classifications": [
+          "business_data",
+          "credential_data"
+        ],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-002"
+        ]
+      },
+      {
+        "key": "exchange_api",
+        "name": "Exchange API",
+        "component_type": "api_server",
+        "description": "Node.js API server providing programmatic access to exchange functions such as trading and account data. User-run trading bots connect over a secure WebSocket using API keys.",
+        "technology": [
+          "nodejs"
+        ],
+        "ownership": null,
+        "deployment_zone": "exchange_internal",
+        "internet_accessible": true,
+        "externally_managed": null,
+        "entry_point_types": [
+          "api"
+        ],
+        "data_classifications": [
+          "business_data",
+          "credential_data"
+        ],
         "authentication_mechanisms": [
           "api_key"
         ],
         "authorization_mechanisms": [],
         "evidence_ids": [
+          "evd-003",
+          "evd-005",
+          "evd-002"
+        ]
+      },
+      {
+        "key": "blockchain_module",
+        "name": "Blockchain Integration Module",
+        "component_type": "blockchain_module",
+        "description": "Module that interfaces with the blockchain network to read and write blockchain state on behalf of the backend.",
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": "exchange_internal",
+        "internet_accessible": null,
+        "externally_managed": null,
+        "entry_point_types": [
+          "api"
+        ],
+        "data_classifications": [],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-003",
+          "evd-002"
+        ]
+      },
+      {
+        "key": "wallet_file",
+        "name": "Wallet file",
+        "component_type": "data_store",
+        "description": "Local wallet at rest holding wallet data and keys; encryption at rest is available as a wallet option.",
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": "user_device",
+        "internet_accessible": null,
+        "externally_managed": null,
+        "entry_point_types": [],
+        "data_classifications": [
+          "credential_data"
+        ],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-004",
+          "evd-002"
+        ]
+      },
+      {
+        "key": "mysql_db",
+        "name": "MySQL database",
+        "component_type": "database",
+        "description": "Exchange-internal MySQL database storing user accounts and configuration.",
+        "technology": [
+          "mysql"
+        ],
+        "ownership": null,
+        "deployment_zone": "exchange_internal",
+        "internet_accessible": null,
+        "externally_managed": null,
+        "entry_point_types": [],
+        "data_classifications": [
+          "business_data"
+        ],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-004",
+          "evd-002"
+        ]
+      },
+      {
+        "key": "mongodb_db",
+        "name": "MongoDB database",
+        "component_type": "database",
+        "description": "Exchange-internal MongoDB database storing trading data, logs, and operational metadata used by the exchange API.",
+        "technology": [
+          "mongodb"
+        ],
+        "ownership": null,
+        "deployment_zone": "exchange_internal",
+        "internet_accessible": null,
+        "externally_managed": null,
+        "entry_point_types": [],
+        "data_classifications": [
+          "business_data"
+        ],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-004",
+          "evd-002"
+        ]
+      },
+      {
+        "key": "trading_bot_client",
+        "name": "Trading bot client",
+        "component_type": "client_application",
+        "description": "User-run trading bot that holds exchange API keys and trades against the exchange API over a secure WebSocket.",
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": "user_device",
+        "internet_accessible": null,
+        "externally_managed": null,
+        "entry_point_types": [
+          "api_client"
+        ],
+        "data_classifications": [
+          "credential_data",
+          "business_data"
+        ],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
           "evd-002",
+          "evd-005",
+          "evd-006"
+        ]
+      },
+      {
+        "key": "load_balancer",
+        "name": "Load balancer",
+        "component_type": "load_balancer",
+        "description": "Load balancer where TLS is expected to terminate for front-end traffic, with front-end to backend communication over HTTPS (not re-verified for the current deployment).",
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": "internet",
+        "internet_accessible": true,
+        "externally_managed": null,
+        "entry_point_types": [],
+        "data_classifications": [],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
           "evd-005"
         ]
       },
       {
-        "key": "mysql",
-        "name": "MySQL",
-        "component_type": "data_store",
-        "description": "user accounts and configuration",
+        "key": "blockchain_network",
+        "name": "Blockchain network",
+        "component_type": "network",
+        "description": "External blockchain network whose state is read and written via the blockchain integration module.",
         "technology": [],
-        "ownership": null,
-        "deployment_zone": "exchange_internal",
-        "internet_accessible": false,
-        "externally_managed": null,
+        "ownership": "third_party",
+        "deployment_zone": "internet",
+        "internet_accessible": true,
+        "externally_managed": true,
+        "entry_point_types": [],
         "data_classifications": [],
         "authentication_mechanisms": [],
         "authorization_mechanisms": [],
         "evidence_ids": [
-          "evd-004"
-        ]
-      },
-      {
-        "key": "mongodb",
-        "name": "MongoDB",
-        "component_type": "data_store",
-        "description": "trading data, logs, and operational metadata used by the exchange API",
-        "technology": [],
-        "ownership": null,
-        "deployment_zone": "exchange_internal",
-        "internet_accessible": false,
-        "externally_managed": null,
-        "data_classifications": [],
-        "authentication_mechanisms": [],
-        "authorization_mechanisms": [],
-        "evidence_ids": [
-          "evd-004"
+          "evd-003"
         ]
       }
     ],
     "actors": [
       {
-        "key": "end-user",
+        "key": "end_user",
         "name": "End user",
-        "actor_type": "external_user",
+        "actor_type": "human_user",
         "trust_level": null,
-        "capabilities": [],
+        "skill_level": null,
+        "access_level": null,
+        "capabilities": [
+          "use_wallet_gui",
+          "use_browser",
+          "use_mobile_app",
+          "run_trading_bot"
+        ],
         "authentication_method": null,
         "evidence_ids": [
-          "evd-006"
+          "evd-006",
+          "evd-003",
+          "evd-005"
         ]
       }
     ],
     "assets": [
       {
-        "key": "wallet-file",
-        "name": "Wallet file",
-        "asset_type": "key_material",
-        "description": "the local wallet at rest, holding the wallet data and keys",
-        "confidentiality_impact": null,
+        "key": "wallet_keys",
+        "name": "Wallet keys and data",
+        "asset_type": "credential",
+        "description": "Private keys and wallet data stored in the local wallet file on the user device.",
+        "confidentiality_impact": "Compromise could expose users' cryptocurrency holdings and wallet metadata.",
         "integrity_impact": null,
         "availability_impact": null,
-        "data_classification": null,
+        "data_classification": "credential_data",
         "owner": null,
         "component_keys": [
-          "daemon"
+          "wallet_file",
+          "wallet_daemon",
+          "wallet_gui"
+        ],
+        "stored_in_component_keys": [
+          "wallet_file"
         ],
         "evidence_ids": [
-          "evd-004"
-        ]
-      },
-      {
-        "key": "api-keys",
-        "name": "Exchange API keys",
-        "asset_type": "credentials",
-        "description": "API keys the user generates for the trading bot",
-        "confidentiality_impact": null,
-        "integrity_impact": null,
-        "availability_impact": null,
-        "data_classification": null,
-        "owner": null,
-        "component_keys": [
-          "trading-bot",
-          "exchange-api"
-        ],
-        "evidence_ids": [
-          "evd-005"
-        ]
-      },
-      {
-        "key": "blockchain-state",
-        "name": "Blockchain state",
-        "asset_type": "operational_data",
-        "description": "balances, headers, and transaction broadcast data supplied by ElectrumX servers",
-        "confidentiality_impact": null,
-        "integrity_impact": null,
-        "availability_impact": null,
-        "data_classification": null,
-        "owner": null,
-        "component_keys": [
-          "daemon",
-          "electrumx"
-        ],
-        "evidence_ids": [
+          "evd-004",
           "evd-003"
         ]
       },
       {
-        "key": "accounts",
+        "key": "user_account_data",
         "name": "User accounts and configuration",
-        "asset_type": "credential_data",
-        "description": null,
-        "confidentiality_impact": null,
-        "integrity_impact": null,
+        "asset_type": "user_data",
+        "description": "Exchange user accounts and configuration data stored in the MySQL database and used by the exchange backend.",
+        "confidentiality_impact": "Compromise could expose user account details and configuration.",
+        "integrity_impact": "Tampering could misconfigure user accounts or platform behavior.",
         "availability_impact": null,
-        "data_classification": null,
+        "data_classification": "business_data",
         "owner": null,
         "component_keys": [
-          "mysql",
-          "backend"
+          "mysql_db",
+          "exchange_backend"
+        ],
+        "stored_in_component_keys": [
+          "mysql_db"
         ],
         "evidence_ids": [
-          "evd-004"
+          "evd-004",
+          "evd-003"
         ]
       },
       {
-        "key": "trading-data",
-        "name": "Trading data and logs",
-        "asset_type": "business_data",
-        "description": null,
-        "confidentiality_impact": null,
-        "integrity_impact": null,
+        "key": "trading_and_log_data",
+        "name": "Trading data and operational logs",
+        "asset_type": "operational_data",
+        "description": "Trading data, logs, and operational metadata stored in MongoDB and used by the exchange API and backend.",
+        "confidentiality_impact": "Exposure could reveal trading behavior and internal operational details.",
+        "integrity_impact": "Tampering could affect trading logic, monitoring, or auditability.",
         "availability_impact": null,
-        "data_classification": null,
+        "data_classification": "business_data",
         "owner": null,
         "component_keys": [
-          "mongodb",
-          "exchange-api"
+          "mongodb_db",
+          "exchange_api",
+          "exchange_backend"
+        ],
+        "stored_in_component_keys": [
+          "mongodb_db"
         ],
         "evidence_ids": [
-          "evd-004"
+          "evd-004",
+          "evd-003"
+        ]
+      },
+      {
+        "key": "api_keys",
+        "name": "Exchange API keys",
+        "asset_type": "credential",
+        "description": "API keys used by user-run trading bots to authenticate to the exchange API over secure WebSockets.",
+        "confidentiality_impact": "Leakage could allow unauthorized trading and access to user accounts via the API.",
+        "integrity_impact": null,
+        "availability_impact": null,
+        "data_classification": "credential_data",
+        "owner": null,
+        "component_keys": [
+          "trading_bot_client",
+          "exchange_api"
+        ],
+        "stored_in_component_keys": [],
+        "evidence_ids": [
+          "evd-005",
+          "evd-006"
         ]
       }
     ],
     "data_flows": [
       {
-        "key": "gui-daemon",
-        "name": "Wallet GUI to daemon",
-        "source_component_key": "gui",
-        "destination_component_key": "daemon",
+        "key": "gui_to_daemon",
+        "name": "Wallet GUI to wallet daemon",
+        "source_component_key": "wallet_gui",
+        "destination_component_key": "wallet_daemon",
         "direction": "bidirectional",
-        "protocol": "http_jsonrpc",
-        "data_types": [],
+        "protocol": null,
+        "data_types": [
+          "wallet_commands",
+          "wallet_state"
+        ],
         "authentication": "unknown",
-        "encryption_in_transit": "localhost_only",
+        "encryption_in_transit": "unknown",
         "crosses_trust_boundary_keys": [],
+        "internet_exposed": false,
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ]
+      },
+      {
+        "key": "daemon_to_electrumx",
+        "name": "Wallet daemon to ElectrumX servers",
+        "source_component_key": "wallet_daemon",
+        "destination_component_key": "electrumx_server",
+        "direction": "bidirectional",
+        "protocol": null,
+        "data_types": [
+          "blockchain_queries",
+          "transaction_broadcasts"
+        ],
+        "authentication": "unknown",
+        "encryption_in_transit": "unknown",
+        "crosses_trust_boundary_keys": [
+          "user_device_internet_boundary"
+        ],
+        "internet_exposed": false,
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ]
+      },
+      {
+        "key": "browser_to_website",
+        "name": "Web browser to exchange website",
+        "source_component_key": "web_browser",
+        "destination_component_key": "exchange_website",
+        "direction": "bidirectional",
+        "protocol": null,
+        "data_types": [
+          "web_requests",
+          "web_responses"
+        ],
+        "authentication": "unknown",
+        "encryption_in_transit": "unknown",
+        "crosses_trust_boundary_keys": [
+          "user_device_internet_boundary"
+        ],
+        "internet_exposed": true,
+        "evidence_ids": [
+          "evd-003",
+          "evd-005",
+          "evd-001"
+        ]
+      },
+      {
+        "key": "website_to_backend",
+        "name": "Exchange website to exchange backend",
+        "source_component_key": "exchange_website",
+        "destination_component_key": "exchange_backend",
+        "direction": "bidirectional",
+        "protocol": "https",
+        "data_types": [
+          "web_requests",
+          "user_data",
+          "configuration"
+        ],
+        "authentication": "unknown",
+        "encryption_in_transit": "tls",
+        "crosses_trust_boundary_keys": [
+          "internet_exchange_internal_boundary"
+        ],
+        "internet_exposed": false,
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ]
+      },
+      {
+        "key": "backend_to_mysql",
+        "name": "Exchange backend to MySQL",
+        "source_component_key": "exchange_backend",
+        "destination_component_key": "mysql_db",
+        "direction": "bidirectional",
+        "protocol": null,
+        "data_types": [
+          "user_accounts",
+          "configuration"
+        ],
+        "authentication": "unknown",
+        "encryption_in_transit": "unknown",
+        "crosses_trust_boundary_keys": [],
+        "internet_exposed": false,
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ]
+      },
+      {
+        "key": "backend_to_mongodb",
+        "name": "Exchange backend to MongoDB",
+        "source_component_key": "exchange_backend",
+        "destination_component_key": "mongodb_db",
+        "direction": "bidirectional",
+        "protocol": null,
+        "data_types": [
+          "trading_data",
+          "logs",
+          "operational_metadata"
+        ],
+        "authentication": "unknown",
+        "encryption_in_transit": "unknown",
+        "crosses_trust_boundary_keys": [],
+        "internet_exposed": false,
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ]
+      },
+      {
+        "key": "backend_to_blockchain_module",
+        "name": "Exchange backend to blockchain integration module",
+        "source_component_key": "exchange_backend",
+        "destination_component_key": "blockchain_module",
+        "direction": "bidirectional",
+        "protocol": null,
+        "data_types": [
+          "blockchain_commands",
+          "transaction_data"
+        ],
+        "authentication": "unknown",
+        "encryption_in_transit": "unknown",
+        "crosses_trust_boundary_keys": [],
+        "internet_exposed": false,
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ]
+      },
+      {
+        "key": "trading_bot_to_exchange_api",
+        "name": "Trading bot to exchange API",
+        "source_component_key": "trading_bot_client",
+        "destination_component_key": "exchange_api",
+        "direction": "bidirectional",
+        "protocol": "secure_websocket",
+        "data_types": [
+          "trading_commands",
+          "account_data"
+        ],
+        "authentication": "api_key",
+        "encryption_in_transit": "tls",
+        "crosses_trust_boundary_keys": [
+          "user_device_internet_boundary",
+          "internet_exchange_internal_boundary"
+        ],
+        "internet_exposed": true,
+        "evidence_ids": [
+          "evd-003",
+          "evd-005",
+          "evd-006"
+        ]
+      },
+      {
+        "key": "blockchain_module_to_blockchain_network",
+        "name": "Blockchain integration module to blockchain network",
+        "source_component_key": "blockchain_module",
+        "destination_component_key": "blockchain_network",
+        "direction": "bidirectional",
+        "protocol": null,
+        "data_types": [
+          "blockchain_state",
+          "transactions"
+        ],
+        "authentication": "unknown",
+        "encryption_in_transit": "unknown",
+        "crosses_trust_boundary_keys": [
+          "internet_exchange_internal_boundary"
+        ],
         "internet_exposed": false,
         "evidence_ids": [
           "evd-003"
-        ]
-      },
-      {
-        "key": "daemon-electrumx",
-        "name": "Daemon to ElectrumX",
-        "source_component_key": "daemon",
-        "destination_component_key": "electrumx",
-        "direction": "bidirectional",
-        "protocol": null,
-        "data_types": [],
-        "authentication": "unknown",
-        "encryption_in_transit": "unknown",
-        "crosses_trust_boundary_keys": [
-          "device-internet"
-        ],
-        "internet_exposed": true,
-        "evidence_ids": [
-          "evd-003",
-          "evd-005"
-        ]
-      },
-      {
-        "key": "website-backend",
-        "name": "Website to backend",
-        "source_component_key": "website",
-        "destination_component_key": "backend",
-        "direction": "bidirectional",
-        "protocol": "https",
-        "data_types": [],
-        "authentication": "unknown",
-        "encryption_in_transit": "https_expected_unverified",
-        "crosses_trust_boundary_keys": [
-          "internet-exchange"
-        ],
-        "internet_exposed": true,
-        "evidence_ids": [
-          "evd-003",
-          "evd-005"
-        ]
-      },
-      {
-        "key": "backend-mysql",
-        "name": "Backend to MySQL",
-        "source_component_key": "backend",
-        "destination_component_key": "mysql",
-        "direction": "bidirectional",
-        "protocol": null,
-        "data_types": [],
-        "authentication": "unknown",
-        "encryption_in_transit": "unknown",
-        "crosses_trust_boundary_keys": [],
-        "internet_exposed": false,
-        "evidence_ids": [
-          "evd-005"
-        ]
-      },
-      {
-        "key": "backend-mongodb",
-        "name": "Backend to MongoDB",
-        "source_component_key": "backend",
-        "destination_component_key": "mongodb",
-        "direction": "bidirectional",
-        "protocol": null,
-        "data_types": [],
-        "authentication": "unknown",
-        "encryption_in_transit": "unknown",
-        "crosses_trust_boundary_keys": [],
-        "internet_exposed": false,
-        "evidence_ids": [
-          "evd-005"
-        ]
-      },
-      {
-        "key": "bot-api",
-        "name": "Trading bot to exchange API",
-        "source_component_key": "trading-bot",
-        "destination_component_key": "exchange-api",
-        "direction": "bidirectional",
-        "protocol": "websocket",
-        "data_types": [],
-        "authentication": "api_key",
-        "encryption_in_transit": "secure_websocket",
-        "crosses_trust_boundary_keys": [
-          "device-internet",
-          "internet-exchange"
-        ],
-        "internet_exposed": true,
-        "evidence_ids": [
-          "evd-003",
-          "evd-005"
-        ]
-      },
-      {
-        "key": "backend-blockchain",
-        "name": "Backend to blockchain integration",
-        "source_component_key": "backend",
-        "destination_component_key": "blockchain-module",
-        "direction": "bidirectional",
-        "protocol": null,
-        "data_types": [],
-        "authentication": "unknown",
-        "encryption_in_transit": "unknown",
-        "crosses_trust_boundary_keys": [],
-        "internet_exposed": false,
-        "evidence_ids": [
-          "evd-005"
         ]
       }
     ],
     "trust_boundaries": [
       {
-        "key": "device-internet",
+        "key": "user_device_internet_boundary",
         "name": "User device to internet boundary",
-        "boundary_type": "device_to_network",
-        "description": null,
+        "boundary_type": "network",
+        "description": "Boundary between user-operated devices and the public internet, including ElectrumX servers and the exchange website front-end.",
         "inside_component_keys": [
-          "gui",
-          "daemon",
-          "trading-bot"
+          "wallet_gui",
+          "wallet_daemon",
+          "web_browser",
+          "mobile_app",
+          "wallet_file",
+          "trading_bot_client"
         ],
         "outside_component_keys": [
-          "electrumx",
-          "website"
+          "electrumx_server",
+          "exchange_website",
+          "load_balancer",
+          "blockchain_network"
         ],
         "controls": [],
         "evidence_ids": [
@@ -519,20 +1001,22 @@
         ]
       },
       {
-        "key": "internet-exchange",
-        "name": "Internet to exchange-internal boundary",
-        "boundary_type": "internet_to_application",
-        "description": null,
+        "key": "internet_exchange_internal_boundary",
+        "name": "Internet to exchange internal boundary",
+        "boundary_type": "network",
+        "description": "Boundary between the internet zone (public network and front-ends) and the exchange internal backend, APIs, blockchain integration, and databases.",
         "inside_component_keys": [
-          "backend",
-          "exchange-api",
-          "blockchain-module",
-          "mysql",
-          "mongodb"
+          "exchange_backend",
+          "exchange_api",
+          "blockchain_module",
+          "mysql_db",
+          "mongodb_db"
         ],
         "outside_component_keys": [
-          "website",
-          "electrumx"
+          "exchange_website",
+          "electrumx_server",
+          "load_balancer",
+          "blockchain_network"
         ],
         "controls": [],
         "evidence_ids": [
@@ -540,7 +1024,40 @@
         ]
       }
     ],
-    "questions": [],
+    "questions": [
+      {
+        "key": "q_tls_configuration",
+        "question": "Is TLS currently configured as described, with client connections terminating at the load balancer and all front-end to backend communication using HTTPS (including the exchange API)?",
+        "rationale": "The documentation states that TLS is expected to terminate at the load balancer and that front-end to backend communication should use HTTPS, but notes that this has not been re-verified for the current deployment. The actual TLS termination points and protocols affect how data-in-transit protections are modelled and where trust boundaries enforce encryption.",
+        "related_object_key": "load_balancer",
+        "priority": "high",
+        "blocking": true
+      },
+      {
+        "key": "q_wallet_file_encryption",
+        "question": "Is encryption at rest for the local wallet file enforced or optional per user, and is it enabled by default?",
+        "rationale": "The documentation states that the wallet file should be encrypted at rest and that encryption is a wallet option, but does not specify whether encryption is mandatory or enabled by default. This directly affects how the confidentiality of wallet keys and funds is assessed.",
+        "related_object_key": "wallet_file",
+        "priority": "high",
+        "blocking": true
+      },
+      {
+        "key": "q_exchange_authentication",
+        "question": "What authentication and session management mechanisms protect user access to the exchange website and mobile app (e.g., password-based login, multi-factor authentication, session lifetime and renewal)?",
+        "rationale": "The documents describe exchange user interactions via the website and mobile app but do not specify how users authenticate or how sessions are managed. These details are necessary to understand how access to user accounts and trading functions is controlled.",
+        "related_object_key": "exchange_website",
+        "priority": "medium",
+        "blocking": false
+      },
+      {
+        "key": "q_electrumx_trust",
+        "question": "Which ElectrumX servers are used by the wallet daemon in production, and are there any controls (e.g., pinning, TLS, or whitelisting) to manage trust in these third-party servers?",
+        "rationale": "The documentation states that wallets connect to third-party ElectrumX servers for blockchain data, but does not describe how those servers are selected or secured. This affects the trust placed in external infrastructure and potential exposure to malicious or compromised ElectrumX servers.",
+        "related_object_key": "electrumx_server",
+        "priority": "medium",
+        "blocking": false
+      }
+    ],
     "observations": []
   }
 }

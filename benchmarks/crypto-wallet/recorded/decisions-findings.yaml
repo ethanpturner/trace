@@ -1,3 +1,21 @@
 assessment_id: asm-001
-reviewer: recorded-reviewer
-findings: []
+findings:
+- id: fnd-001
+  decision: approve
+  severity: medium
+  rationale: 'Evidence-supported weakness, not silence: the documentation positively states the wallet
+    file should be encrypted at rest and that encryption is only a wallet option [evd-004], so the control
+    exists but is not enforced. Medium rather than high: exploitation requires prior access to the user
+    device, and the checkpoint-1 answer records enforcement and default state as undetermined.'
+- id: fnd-002
+  decision: reject
+  rationale: 'DEC-009: the finding is premised on TLS misconfiguration, but the documentation states an
+    expected posture (TLS at the load balancer, HTTPS front-to-back) that has not been re-verified, and
+    no evidence shows a misconfiguration. Unverified is not unmet; the verification gap is qst-001''s,
+    which the run itself asked and the reviewer answered as undetermined.'
+- id: fnd-003
+  decision: reject
+  rationale: 'The description establishes the requirement''s applicability (confidential data crosses
+    a boundary), not a deficiency: the documented control on df-008 is API-key authentication over a TLS
+    WebSocket, and no evidence shows a weakness in it. Key lifecycle and logging posture are the open
+    questions (qst-009), not findings (DEC-009).'

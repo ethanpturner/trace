@@ -1,0 +1,135 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 11144,
+    "output_tokens": 10587,
+    "cache_read_tokens": 10880,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.12116",
+    "duration_seconds": 115.53453791700304
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-001"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The wallet daemon handles credential_data in the local wallet file (ast-001) [evd-004] and sends blockchain queries and transaction broadcasts over the internet to third-party ElectrumX servers via df-002, which crosses from the user device to the internet trust zone [evd-002, evd-003, evd-005]. This meets the conditions that the system stores or transmits confidential or restricted data and that data crosses a network boundary it does not control.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "assumptions": [
+          "Assume wallet addresses, balances, and transaction history derived from ast-001 and sent over df-002 are treated as confidential wallet metadata for the purpose of this requirement, since compromise would expose users\u2019 holdings and activity."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-TPI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The wallet daemon connects from the user device to third-party ElectrumX SPV servers on the internet [evd-002, evd-003, evd-005], sending wallet-derived blockchain queries and transaction broadcasts so those external providers can process data on the system\u2019s behalf. This matches the conditions that customer data is sent to an external provider and that an external provider processes data for the system.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [
+          "Assume wallet queries and transaction broadcasts can reveal wallet balances and transaction history attributable to a user, so they qualify as customer data when sent to ElectrumX servers."
+        ],
+        "confidence": "high"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Protection of wallet-daemon to ElectrumX network connection is undocumented",
+        "description": "The architecture describes the Electrum Wallet Daemon connecting over the internet to third-party ElectrumX servers for blockchain data and transaction broadcast [evd-003, evd-005], but does not state whether this df-002 connection uses TLS or any other encryption in transit, nor whether the ElectrumX servers are authenticated (for example, via certificate validation or pinning). Because thr-003 includes an attacker intercepting or tampering with this traffic, documentation of how confidentiality and integrity are protected on df-002 is required to assess req-DATA-001 and the effectiveness of controls against this threat.",
+        "importance": "Without clear documentation of the protocol, encryption, and server authentication used on df-002, it is not possible to determine whether an on-path attacker can passively harvest wallet metadata or actively tamper with blockchain data returned to the wallet, which is central to threat thr-003.",
+        "related_object_ids": [
+          "thr-003",
+          "cmp-002",
+          "cmp-003",
+          "df-002",
+          "ast-001"
+        ],
+        "requested_evidence": [
+          "Network or protocol documentation for df-002 specifying whether the wallet daemon uses TLS (or another encrypted transport) to reach ElectrumX servers, including handshake details, certificate validation behavior, and any certificate or endpoint pinning.",
+          "Configuration or code references that show how the Electrum Wallet Daemon establishes connections to ElectrumX servers, including any fallback from encrypted to unencrypted modes.",
+          "Any documentation describing additional integrity checks the wallet performs on data returned by ElectrumX beyond transport-level protections."
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-005"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "ElectrumX external provider data handling and retention are undocumented",
+        "description": "The system overview identifies ElectrumX as a third-party SPV server on the internet, operated by third parties and used by the wallet daemon for balances, headers, and transaction broadcast [evd-002, evd-003, evd-005]. However, the documentation does not state what specific wallet-derived data is sent (for example, addresses, transaction IDs, or xpubs), whether ElectrumX providers retain this data, for how long, or whether it is used beyond serving the requested blockchain queries. This prevents verification of req-TPI-001 in the context of thr-003, where a malicious or compromised ElectrumX server could log and profile wallet activity.",
+        "importance": "Understanding exactly what wallet information is sent to ElectrumX servers and how those third-party operators retain and use it is necessary to assess privacy impact and alignment with req-TPI-001, especially given the threat of a malicious or compromised SPV server harvesting wallet metadata (thr-003).",
+        "related_object_ids": [
+          "thr-003",
+          "cmp-002",
+          "cmp-003",
+          "df-002",
+          "ast-001"
+        ],
+        "requested_evidence": [
+          "Architecture or data-flow documentation that enumerates the fields and identifiers the wallet daemon sends to ElectrumX servers (for example, specific addresses, transaction IDs, extended public keys, or other metadata).",
+          "A summary of ElectrumX provider data handling terms, including whether they retain request or response data, for how long, and for what purposes (such as logging, analytics, or service improvement).",
+          "Any contractual data processing agreements or configuration settings that constrain ElectrumX providers\u2019 retention or secondary use of wallet-derived data."
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-005"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": [
+      {
+        "concern": "No catalog requirement directly addresses verification of the integrity and authenticity of data retrieved from third-party SPV servers that the system queries as a client, such as cross-checking or cryptographic validation of blockchain data returned by ElectrumX, even though the wallet relies on this data for balances and transaction status in thr-003.",
+        "suggested_category": "third_party_integration",
+        "nearest_requirements": [
+          {
+            "requirement_id": "req-TPI-001",
+            "why_not": "req-TPI-001 covers documenting what customer data is sent to an external provider and the provider\u2019s retention and usage terms, but it does not address the correctness, integrity, or authenticity of the data returned by that provider, nor require mechanisms to detect or mitigate tampering by a malicious provider."
+          },
+          {
+            "requirement_id": "req-DATA-001",
+            "why_not": "req-DATA-001 focuses on encrypting sensitive data in transit and at rest and naming the provider of that encryption, but it does not cover trusting or validating the semantic correctness of data originating from an external provider that may itself be malicious."
+          },
+          {
+            "requirement_id": "req-WEBHOOK-001",
+            "why_not": "req-WEBHOOK-001 requires cryptographic verification of inbound events delivered to an exposed endpoint, while the Electrum wallet daemon actively queries SPV servers as a client; the requirement does not extend to authenticity or integrity guarantees for responses to client-initiated queries."
+          }
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-005"
+        ]
+      }
+    ]
+  }
+}
