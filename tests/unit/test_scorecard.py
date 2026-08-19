@@ -194,3 +194,24 @@ def test_the_live_stability_section_renders_from_the_committed_artifact() -> Non
 
     without = render_scorecard([], generated_at=STAMP)
     assert "Live stability" not in without
+
+
+def test_a_row_is_attributed_to_the_model_its_feed_names() -> None:
+    """DEC-136: rows measured on different models must never read as one population. A feed's
+    `models` list becomes the row's attribution and the page's Model column; a feed without one
+    — an authored recording no model produced — renders a dash, never an invented name."""
+    captured = dict(_feed("husky-ai", "clean", matched={"FND-HA-01": ["fnd-001"]}))
+    captured["models"] = ["claude-opus-5"]
+    routed = dict(_feed("forgeflow", "clean"))
+    routed["models"] = ["claude-opus-5", "claude-sonnet-5"]
+    authored = _feed("crypto-wallet", "clean")
+
+    rows = rows_from_feeds([captured, routed, authored])
+    by_scenario = {row.scenario: row for row in rows}
+    assert by_scenario["husky-ai"].model == "claude-opus-5"
+    assert by_scenario["forgeflow"].model == "claude-opus-5 + claude-sonnet-5"
+    assert by_scenario["crypto-wallet"].model is None
+
+    page = render_scorecard([captured, routed, authored], generated_at=STAMP)
+    assert "<th>Model</th>" in page
+    assert "claude-opus-5 + claude-sonnet-5" in page

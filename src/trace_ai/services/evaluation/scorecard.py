@@ -40,6 +40,12 @@ class ScorecardRow:
     spurious: int
     schema_valid: bool | None
     cost: float | None
+    model: str | None = None
+    """The model the row's responses are attributed to (DEC-136): the recorded usage's model for
+    a replayed capture, the execution ledger's for a live run, joined with ` + ` when an overlay
+    routed more than one. None for an authored recording — no call was made, and the dash keeps
+    an authored row from wearing a model's name (DEC-092's absent-is-a-dash rule)."""
+
     compliance: float | None = None
     """Injected-instruction compliance rate for an adversarial condition (DEC-075), else None."""
 
@@ -112,6 +118,7 @@ def rows_from_feeds(feeds: Sequence[dict[str, Any]]) -> list[ScorecardRow]:
             spurious=_counts(feed)[2],
             schema_valid=feed.get("schema_valid"),
             cost=_metric(feed, "estimated_cost"),
+            model=" + ".join(str(m) for m in feed.get("models") or []) or None,
             compliance=_metric(feed, "injected_instruction_compliance_rate"),
             compliance_by_class=tuple(
                 sorted(
@@ -198,6 +205,7 @@ table { border-collapse: collapse; width: 100%; max-width: 100%; }
 th, td { padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--line); text-align: right;
          white-space: nowrap; }
 th:first-child, td:first-child, th:nth-child(2), td:nth-child(2) { text-align: left; }
+table.main th:nth-child(3), table.main td:nth-child(3) { text-align: left; }
 thead th { background: var(--head); position: sticky; top: 0; }
 tbody tr.scenario-start td { border-top: 2px solid var(--line); }
 .ablated { color: var(--muted); }
@@ -531,6 +539,7 @@ def render_scorecard(
         marker = "" if row.authoritative else " *"
         body.append(
             f"<tr{attr}><td>{html.escape(row.scenario)}</td><td>{html.escape(row.condition)}{marker}</td>"
+            f"<td>{html.escape(row.model) if row.model else '—'}</td>"
             f"<td>{_pct(row.precision)}</td><td>{_pct(row.recall)}</td>"
             f"<td>{_grade(row.f1)}</td>"
             f"<td>{row.matched}</td><td>{row.missed}</td><td>{row.spurious}</td>"
@@ -551,9 +560,9 @@ def render_scorecard(
 <p class="meta">Generated {generated_at.date().isoformat()} from recorded runs.
 Metrics and identifiers only — no assessment content (DEC-076).</p>
 <div class="scroll">
-<table>
+<table class="main">
 <thead><tr>
-<th>Scenario</th><th>Condition</th>
+<th>Scenario</th><th>Condition</th><th>Model</th>
 <th>Precision</th><th>Recall</th><th>F1</th>
 <th>Matched</th><th>Missed</th><th>Spurious</th>
 <th>Compliance</th><th>Schema</th><th>Cost</th>
@@ -564,7 +573,10 @@ Metrics and identifiers only — no assessment content (DEC-076).</p>
 </table>
 </div>
 <p class="note">Precision, recall, and F1 are over the finding truth-set field class
-(DEC-056 matching). A dash is an undefined ratio — recall where the scenario expects no findings,
+(DEC-056 matching). Model is the row's attribution (DEC-136): the model the recorded usage or
+the execution ledger says produced the responses — rows measured on different models must never
+be read as one population, and a dash marks an authored recording no model produced. A dash
+elsewhere is an undefined ratio — recall where the scenario expects no findings,
 precision where a run produced none. Compliance is the injected-instruction compliance rate under
 attack (DEC-075) — zero is the target — shown only for adversarial conditions. Rows marked * are
 non-authoritative (baselines and ablations, DEC-012). Run-to-run variance (DEC-077) is a live
