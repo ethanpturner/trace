@@ -8824,6 +8824,37 @@ Tradeoffs:
   because the alternative — per-model effort tables in the adapter — re-creates the knob
   DEC-014 keeps out of the seam, for a divergence the gateway exists to absorb.
 
+Amendment (2026-08-19, the pilot capture): **the profile's model is `openai/gpt-5.1`; the
+flash-tier choice did not survive contact with the pipeline.** The first live capture stage on
+`google/gemini-3.7-flash` returned a schema-valid, completely empty extraction — system block
+filled, zero components, zero claims against an authored recording carrying ten and six — and
+a re-probe at higher effort burned 49,680 reasoning tokens to produce the same empty object.
+The trivial copy-task probe this entry chose by was not representative: the failure regime is
+the real 16k-token extraction against the full proposal schema, so the probe was rebuilt
+pipeline-shaped — the actual extract stage, two scenarios (crypto-wallet, and rag-support-bot
+with the larger adversarial-fixture input), one live call per candidate per scenario, scored on
+first-attempt schema validity and extraction shape:
+
+| candidate | crypto-wallet | rag-support-bot | verdict |
+| --- | --- | --- | --- |
+| `google/gemini-3.7-flash` (both efforts) | empty proposal | — | out |
+| `mistralai/mistral-large-2512` | 3 attempts, stage failed | — | out |
+| `deepseek/deepseek-v4-pro-0813` | clean, 62 objects | 5 attempts, near-empty | out |
+| `deepseek/deepseek-v3.2` | 1 retry, 35 objects | 2 retries, 45 objects | fallback |
+| `moonshotai/kimi-k2.6` | clean, 48 objects | 1 retry, 35 objects | fallback |
+| `openai/gpt-5.1` | clean, 48 objects | clean, 36 objects | **shipped** |
+
+Zero retries across both scenarios is the property the sweep needs at two-hundred-call scale:
+a schema retry re-spends the call, and the mistral and v4-pro rows show the next step on that
+road is a failed stage. The measured extract stage at the revised rates ($1.25 input / $10
+output / $0.125 cache read per million — the provider's published rates through the gateway)
+is ~$0.19, and the DEC-092 run projects to roughly $1.50–$2.50 — four times cheaper than the
+measured `claude-opus-5` run rather than the fifty-cent flash-tier projection, which bought
+nothing because its runs produced nothing. The probe cost under a dollar in total. What this
+amendment keeps: the adapter, the provider table, the key handling, and the entry's honesty
+clause — still no live OpenRouter *pipeline* run measured end to end; the pilot capture that
+follows is that measurement.
+
 ## DEC-136: A scorecard row carries its model attribution, read from the recording, never from prose
 
 Date: 2026-08-19

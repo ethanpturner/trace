@@ -61,7 +61,7 @@ def test_a_live_gateway_call_returns_a_validated_object() -> None:
     assert outcome.value.name.strip().lower() == "blue"
 
     usage = outcome.usage
-    assert usage.model == "google/gemini-3.7-flash", "the gateway must route the named model"
+    assert usage.model == "openai/gpt-5.1", "the gateway must route the named model"
     assert usage.input_tokens > 0
     assert usage.output_tokens > 0
     assert usage.estimated_cost > 0
