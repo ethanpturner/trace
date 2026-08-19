@@ -138,9 +138,12 @@ def test_forgeflow_replays_through_the_harness_offline(
     assert feed["metrics"]["false_negative_rate"]["evaluator_type"] == "benchmark"
 
     items = feed["items"]["findings"]
-    assert set(items) == {"matched", "missed", "spurious", "fingerprints"}
-    classified = len(items["matched"]) + len(items["missed"])
+    assert set(items) == {"matched", "missed", "spurious", "conditional_unreached", "fingerprints"}
+    classified = len(items["matched"]) + len(items["missed"]) + len(items["conditional_unreached"])
     assert classified > 0, "every expected finding is classified, not merely counted"
+    # The flagship live capture resolves neither contradiction, so the two conditional
+    # expectations report as unreached rather than missed (DEC-133).
+    assert items["conditional_unreached"] == ["FND-002", "FND-003"]
     for prints in items["fingerprints"].values():
         assert all(fingerprint.startswith("sha256:") for fingerprint in prints)
 

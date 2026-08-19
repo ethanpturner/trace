@@ -124,3 +124,14 @@ five-run protocol — and the next full protocol rides the #484 sweep.
 - **Cost $9.29 ± 0.01 per run, ~54 minutes per run, 16 model calls** — above the recorded
   $6.92 ± $3.28 mean and inside nothing: two runs bound no distribution, and the sweep's
   per-scenario figures supersede both.
+
+## 6. Postscript (2026-08-19, DEC-133)
+
+Section 1's stage-two tension is decided. The truth set's finding expectations FND-002 and
+FND-003 now declare the contradiction resolution they depend on (`requires_resolution`), and a
+run whose reviewer supplies no resolution reports them as conditional-unreached rather than
+missed — the run's paired questions carry the grade, which is what this document's own analysis
+said the pipeline was right to produce. The flagship row's headline therefore reads 0 of 1
+reachable with two unreached, not 0 of 3; the number reads better and nothing about the funnel
+is fixed — FND-004 still dies unassessed, and #585 is still what moves it. The counts quoted
+above are the scores as recorded at diagnosis time and stand as history.

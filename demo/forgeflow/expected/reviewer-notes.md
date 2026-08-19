@@ -24,6 +24,22 @@ deleted after analysis — and GAP-004 rests on a statement that a topic is undo
 and a positive statement fall on opposite sides of the DEC-009 line, and having both in one
 scenario is deliberate: a matcher that cannot tell them apart fails the scenario's point.
 
+## FND-002 and FND-003 are conditional, and the condition is now declared (DEC-133)
+
+The truth set disagreed with itself for its first year: `expected-findings.yaml` expected
+FND-002 and FND-003 as findings while GW-13.2 and GW-13.3 recorded the same ground as
+`expected_outcome: question` until the scenario's contradictions are resolved — and the
+pipeline's own rules side with the mapping file, which is why the flagship live capture asked
+Q-07 and Q-08 instead of finding them and scored the misses (DEC-116 recorded the tension;
+DEC-133 resolved it). Both files were right about different stages. The finding expectations
+stand — deleting them would reward a pipeline that never surfaces the weakness even with an
+engaged reviewer, and would destroy the FND-003/GAP-004 contrast that is this scenario's
+point — but each now names its paired question in `requires_resolution`, and the matcher
+grades it only in a run whose reviewer resolved a contradiction. In any other run the entry
+reports as conditional-unreached and the question carries the grade. A baseline never reaches
+a conditional entry: a baseline that names the pair chose a side of an unresolved
+contradiction silently, section 16's stated failure, and it scores spurious.
+
 ## FND-002 and FND-004 stay separate, and merging them is not an error
 
 Section 19's consolidation test is whether the remediation and impact are substantially related.

@@ -206,9 +206,16 @@ def _score(entry: Scenario, produced: Sequence[Any]) -> dict[str, Any]:
     A baseline finding carries the component *name*, so the match is a direct comparison against
     the expected `affected_component` — no context model, no identifiers to resolve.
     """
-    expected = yaml.safe_load(
+    expected_all = yaml.safe_load(
         (entry.expected_dir / "expected-findings.yaml").read_text(encoding="utf-8")
     )["findings"]
+    # A baseline has no reviewer and can never resolve a contradiction, so an expectation
+    # conditioned on resolution (DEC-133) is never reachable here: it leaves the denominator,
+    # and a baseline finding naming the pair chose a side of an unresolved contradiction
+    # silently — scenario section 16's stated failure — so it falls through to spurious.
+    from trace_ai.services.evaluation.matching import partition_conditional
+
+    expected, conditional_unreached = partition_conditional(expected_all, resolution_supplied=False)
 
     produced_keys = [
         (finding.requirement_id, normalized_name(finding.affected_component))
@@ -241,7 +248,13 @@ def _score(entry: Scenario, produced: Sequence[Any]) -> dict[str, Any]:
         "false_negative_rate": (len(missed) / denominator) if denominator else 0.0,
         "spurious_finding_count": float(len(spurious)),
     }
-    return {"matched": matched, "missed": missed, "spurious": spurious, "metrics": metrics}
+    return {
+        "matched": matched,
+        "missed": missed,
+        "spurious": spurious,
+        "conditional_unreached": conditional_unreached,
+        "metrics": metrics,
+    }
 
 
 def _score_assessment_extras(
@@ -331,6 +344,7 @@ def _export_feed(
             "matched": scored["matched"],
             "missed": scored["missed"],
             "spurious": [entry_["title"] for entry_ in scored["spurious"]],
+            "conditional_unreached": scored.get("conditional_unreached") or [],
         }
     }
     items.update(scored.get("extra_items") or {})

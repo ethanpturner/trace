@@ -270,7 +270,9 @@ genuine_weaknesses:
     reachable_at: unverified
     evidence_condition: >
       The contradiction at scenario 16.2 has to be resolved first. Until it is, neither
-      "reviewed" nor "not reviewed" is established.
+      "reviewed" nor "not reviewed" is established. FND-002 records the post-resolution
+      expectation and names Q-07 as the condition (DEC-133); this row and that entry describe
+      the same ground at different stages of the assessment.
     expected_outcome: question
 
   - key: GW-13.3
@@ -281,7 +283,9 @@ genuine_weaknesses:
     evidence_condition: >
       The contradiction at scenario 16.1 has to be resolved first. The gap between the
       retention period and the product promise is the weakness, and both halves are in
-      dispute.
+      dispute. FND-003 records the post-resolution expectation and names Q-08 as the
+      condition (DEC-133); this row and that entry describe the same ground at different
+      stages of the assessment.
     expected_outcome: question
 
   - key: GW-13.4

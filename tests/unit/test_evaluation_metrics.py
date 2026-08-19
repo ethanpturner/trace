@@ -42,6 +42,7 @@ from trace_ai.domain.evidence_assessment import (
 )
 from trace_ai.domain.finding import Finding
 from trace_ai.domain.hashing import content_hash
+from trace_ai.domain.source_observation import ObservationKind, SourceObservation
 from trace_ai.infrastructure.database.store import AssessmentStore
 from trace_ai.services.assessment import AssessmentHandle, AssessmentService
 from trace_ai.services.evaluation.metrics import compute_metrics, persist_metrics
@@ -106,6 +107,27 @@ def a_component(handle: AssessmentHandle, component_id: str, name: str) -> Compo
                 "internet_accessible": False,
                 "source_origin": SourceOrigin.UPLOADED_DOCUMENT,
                 "status": ObjectStatus.APPROVED,
+            }
+        ),
+    )
+
+
+def a_resolved_contradiction(handle: AssessmentHandle) -> SourceObservation:
+    """A contradiction the reviewer resolved: the DEC-133 signal that makes conditional
+    expectations reachable. Two evidence references, per the contradiction minimum."""
+    an_evidence(handle, "evd-002")
+    return save(
+        handle,
+        SourceObservation.model_validate(
+            {
+                "id": "obs-001",
+                "assessment_id": handle.assessment_id,
+                "kind": ObservationKind.CONTRADICTION,
+                "summary": "Two documents disagree, and the reviewer settled it.",
+                "evidence_ids": ["evd-001", "evd-002"],
+                "reviewer_notes": "Resolved: the posting behaviour is authoritative.",
+                "status": ObjectStatus.APPROVED,
+                "created_at": now(),
             }
         ),
     )
@@ -300,6 +322,7 @@ def test_false_negative_rate_matches_on_requirement_and_component(
     handle = prepared["handle"]
     an_evidence(handle)
     a_component(handle, "cmp-001", "GitHub Comment Service")
+    a_resolved_contradiction(handle)
     approve_finding(handle, a_finding(handle), reviewer_id=REVIEWER)
 
     named = metrics_by_name(compute_metrics(handle, prepared["run"], expected_dir=EXPECTED))
@@ -316,6 +339,7 @@ def test_a_consolidated_finding_scores_full_credit_per_matched_expectation(
     """DEC-056: FND-002 and FND-004 matched by one finding is two matches and no penalty."""
     handle = prepared["handle"]
     an_evidence(handle)
+    a_resolved_contradiction(handle)
     a_component(handle, "cmp-001", "GitHub Comment Service")
     a_component(handle, "cmp-002", "Analysis Worker")
     consolidated = a_finding(
@@ -330,6 +354,31 @@ def test_a_consolidated_finding_scores_full_credit_per_matched_expectation(
     assert rate.metric_value == pytest.approx(1 / 3), "only FND-003 is unmatched"
     assert rate.notes is not None
     assert "more than one expectation: 1" in rate.notes
+
+
+def test_a_conditional_expectation_is_unreached_without_a_resolution(
+    prepared: dict[str, Any],
+) -> None:
+    """DEC-133: without a resolved contradiction, FND-002 and FND-003 leave the denominator
+    and a finding on their identity scores spurious, not matched — the run's correct output
+    was their paired questions, and the notes say which entries were unreached."""
+    handle = prepared["handle"]
+    an_evidence(handle)
+    a_component(handle, "cmp-001", "GitHub Comment Service")
+    approve_finding(handle, a_finding(handle), reviewer_id=REVIEWER)
+
+    named = metrics_by_name(compute_metrics(handle, prepared["run"]))
+    # No benchmark dir on this call: the run-derived metrics are unaffected. The benchmark
+    # pass below is the assertion that matters.
+    assert "false_negative_rate" not in named
+
+    named = metrics_by_name(compute_metrics(handle, prepared["run"], expected_dir=EXPECTED))
+    rate = named["false_negative_rate"]
+    assert rate.sample_size == 1, "only FND-004 is reachable"
+    assert rate.metric_value == pytest.approx(1.0), "FND-004 is missed; nothing else is graded"
+    assert rate.notes is not None
+    assert "FND-002" in rate.notes and "FND-003" in rate.notes
+    assert "conditional" in rate.notes
 
 
 def test_documentation_gap_precision_matches_through_the_requirement(
@@ -543,6 +592,7 @@ def test_severity_concordance_is_one_when_the_reviewer_matches_the_guidance(
     """FND-003's guidance is `medium`; a finding approved at medium agrees exactly."""
     handle = prepared["handle"]
     an_evidence(handle)
+    a_resolved_contradiction(handle)
     a_component(handle, "cmp-001", "Managed Object Storage")
     approve_finding(
         handle,
@@ -569,6 +619,7 @@ def test_severity_concordance_falls_when_the_reviewer_differs_from_the_guidance(
     """Approved at informational against `medium` guidance: not exact, and not within one level."""
     handle = prepared["handle"]
     an_evidence(handle)
+    a_resolved_contradiction(handle)
     a_component(handle, "cmp-001", "Managed Object Storage")
     approve_finding(
         handle,

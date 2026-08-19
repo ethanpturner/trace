@@ -169,6 +169,56 @@ def match_findings(
     return outcome
 
 
+def partition_conditional(
+    expected_findings: Sequence[Mapping[str, Any]],
+    *,
+    resolution_supplied: bool,
+) -> tuple[list[Mapping[str, Any]], list[str]]:
+    """Split expected findings into the reachable and the conditional-unreached (DEC-133).
+
+    An entry carrying `requires_resolution` names the question whose answer its evidence depends
+    on: the truth set's mapping layer records the same ground as `expected_outcome: question`
+    until the contradiction is resolved, and the pipeline's own rules produce a question there,
+    never a finding. Such an entry is *reachable* only in a run whose reviewer resolved a
+    contradiction (`resolve_contradiction`, the only act that unblocks the mapping); in any
+    other run its correct outcome is its paired question, already graded by the question
+    metrics, and scoring it as missed would grade the pipeline's DEC-009 discipline as a
+    failure. The signal is per-run, not per-entry — a reviewer who resolves one contradiction
+    and not another marks both reachable — and the entry's `evidence_condition` prose carries
+    the finer statement; the current corpus pairs each conditional entry with its own
+    contradiction, and both resolve together or not at all in every recorded run.
+
+    Returns the reachable entries (graded by `match_findings`) and the unreached keys (reported
+    beside the score, never inside it). A baseline run has no reviewer, so a baseline caller
+    passes `resolution_supplied=False` always: a baseline that names a conditional pair chose a
+    side of an unresolved contradiction silently, which is the failure scenario section 16 names,
+    and it scores spurious rather than matched.
+    """
+    reachable: list[Mapping[str, Any]] = []
+    unreached: list[str] = []
+    for entry in expected_findings:
+        if entry.get("requires_resolution") is None or resolution_supplied:
+            reachable.append(entry)
+        else:
+            unreached.append(str(entry["key"]))
+    return reachable, unreached
+
+
+def contradiction_resolved(observations: Sequence[Any]) -> bool:
+    """Whether any contradiction observation carries a resolution.
+
+    `resolve_contradiction` writes the rationale to `reviewer_notes` and that is the marker the
+    review package itself uses to exclude a settled observation; this reads the same signal.
+    """
+    from trace_ai.domain.source_observation import ObservationKind
+
+    return any(
+        getattr(observation, "kind", None) is ObservationKind.CONTRADICTION
+        and getattr(observation, "reviewer_notes", None)
+        for observation in observations
+    )
+
+
 @dataclass(slots=True)
 class GapMatchOutcome:
     """Produced documentation gaps, classified against the expected requirement set."""

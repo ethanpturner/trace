@@ -24,6 +24,17 @@
 # must rest on, and the documents that supply it. `evidence_establishes` lists what the cited
 # passages must affirmatively state -- every entry is a positive statement in a document, never
 # an absence, which is what keeps this file on the right side of the DEC-009 line.
+#
+# ## Conditional findings name the resolution they depend on (DEC-133)
+#
+# An entry carrying `requires_resolution` rests on evidence one of the scenario's recorded
+# contradictions holds in dispute: until a reviewer resolves the contradiction, the pipeline's
+# own rules produce the paired question, never the finding, and the mapping truth records that
+# stage as `expected_outcome: question` (GW-13.2, GW-13.3). The entry is graded only in a run
+# whose reviewer resolved a contradiction; in any other run it is reported as
+# conditional-unreached -- not missed -- and its paired question is what the run is graded on.
+# Both files were always right about different stages of the same assessment; this field is
+# what says so to the matcher.
 
 benchmark_version: "1.0"
 scenario: forgeflow
@@ -37,6 +48,7 @@ findings:
     requirement_id: req-AI-002
     affected_component: GitHub Comment Service
     arises_from: scenario 13.2
+    requires_resolution: Q-07
     evidence_establishes:
       - Repository content supplied to the model is untrusted third-party material.
       - Model output may be manipulated by repository content.
@@ -47,9 +59,12 @@ findings:
       - security-overview.md
     notes: >
       The security overview's "reviewed before publication" statement contradicts the
-      automatic-posting behaviour (scenario 16.2, OBS-02), and the contradiction resolves to
-      automatic posting. The finding rests on the affirmative posting behaviour, not on the
-      absence of a review step.
+      automatic-posting behaviour (scenario 16.2, OBS-02), and the complete scenario truth
+      resolves it to automatic posting -- a resolution only a reviewer can supply, which is why
+      this entry names Q-07 (DEC-133). The finding rests on the affirmative posting behaviour,
+      not on the absence of a review step, and it is reachable only once the reviewer settles
+      which statement is authoritative; until then GW-13.2 records the correct outcome as the
+      question itself.
 
   - key: FND-003
     subject: repository content retention exceeds the documented temporary-processing need
@@ -57,6 +72,7 @@ findings:
     requirement_id: req-DATA-002
     affected_component: Managed Object Storage
     arises_from: scenario 13.3
+    requires_resolution: Q-08
     evidence_establishes:
       - Analysis artifacts are retained in object storage for 30 days.
       - Product documentation describes source files as temporary data deleted after analysis.
@@ -68,7 +84,11 @@ findings:
       The subject also appears in architecture-overview.md section 26, but this finding rests
       on an affirmative statement of a 30-day retention target -- the deliberate contrast with
       GAP-004, where the only available statement is that the topic is undocumented. Silence
-      and a positive statement fall on opposite sides of the DEC-009 line.
+      and a positive statement fall on opposite sides of the DEC-009 line. The 30-day statement
+      is itself one side of the scenario 16.1 contradiction, so the entry names Q-08
+      (DEC-133): until the reviewer settles which retention statement is authoritative, the
+      pipeline's correct output is the question GW-13.3 expects, and choosing the 30-day side
+      silently is the failure section 16.1 names.
 
   - key: FND-004
     subject: model input handling is insufficiently resistant to repository prompt injection
