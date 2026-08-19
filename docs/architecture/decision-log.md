@@ -8556,3 +8556,77 @@ Tradeoffs:
   pinning claim-equivalence against local ingestion — waits for #574 to exist; the fixture
   suite carries the properties (pin holds, selection decided, provenance survives flattening,
   token never surfaces) until then, and the gap is stated.
+
+## DEC-133: A conditional finding names the resolution it depends on, and unreached is not missed
+
+Date: 2026-08-19
+
+Status: Accepted
+
+Decision:
+
+**The truth set's two files were both right, about different stages, and the finding entries
+now say so.** The forgeflow truth set expected FND-002 and FND-003 as findings while its own
+mapping layer recorded the same ground as `expected_outcome: question` until the scenario's
+contradictions resolve (GW-13.2, GW-13.3) — and the pipeline's rules side with the mapping
+layer: a recorded contradiction yields a question, never a silently chosen side, until
+`resolve_contradiction` settles it. The finding expectations stand — deleting them would
+reward a pipeline that never surfaces the weakness even with an engaged reviewer, and would
+destroy the FND-003/GAP-004 contrast that is the scenario's point — but each now carries
+`requires_resolution: <question key>`, and the matcher grades a conditional entry only in a
+run whose reviewer resolved a contradiction. In any other run the entry reports as
+**conditional-unreached** — outside the false-negative denominator, named beside the score,
+never inside it — and its paired question carries the grade. A baseline has no reviewer and
+never reaches a conditional entry; a baseline finding naming the pair chose a side of an
+unresolved contradiction silently, scenario section 16's stated failure, and it scores
+spurious.
+
+**The disagreement class cannot silently recur.** A conformance test over every registered
+scenario and condition refuses a requirement identifier shared between `expected-findings.yaml`
+and `expected-questions.yaml` unless the finding declares the pairing, the named question
+exists, and the pair agrees on the requirement. The corpus holds exactly two such pairs, both
+in forgeflow, both the recorded tension.
+
+**The reachability signal is per-run, and the entry says so.** A run supplies the resolution
+iff any contradiction observation carries `reviewer_notes` — the marker `resolve_contradiction`
+writes and the review package reads. A reviewer who resolves one contradiction and not another
+marks both conditional entries reachable; the current corpus pairs each entry with its own
+contradiction and every recorded run resolves neither, so the coarseness costs nothing today,
+and the `requires_resolution` key is the hook if per-entry precision is ever needed.
+
+Why:
+
+- The flagship live capture followed the pipeline's own discipline — flagged both
+  contradictions, asked Q-07 and Q-08, question usefulness 1.0 — and was scored as missing two
+  findings for it. A truth set that grades the system's stated correct behaviour as failure is
+  measuring its own inconsistency.
+- Answering a question is not resolving a contradiction: `answer_question` records a response,
+  while `resolve_contradiction` confirms the claims and is the only act that unblocks the
+  mapping. The signal follows the mechanism, not the vocabulary.
+- The issue body proposed deciding on the #565 second-annotation evidence; no second set exists
+  yet, and the tension blocked honest scoring of every live run now. The decision rests on the
+  corpus's own recorded reasoning — scenario section 16's expected treatment, DEC-009, and the
+  vision's founding claims — and the annotation instrument will measure the reconciled set when
+  its data arrives (DEC-119's adjudication record is the mechanism, and this edit is an
+  ordinary separately-committed truth-set change under it).
+
+Alternatives Considered:
+
+- Moving FND-002 and FND-003 to questions outright (rejected: it erases the post-resolution
+  truth — the complete scenario resolves both contradictions to real weaknesses — and a
+  pipeline that can never produce them under any reviewer would score perfectly).
+- Scoring conditional entries as half-weight or partial credit (rejected: a blended number
+  answers no question anyone asked; unreached and missed are different facts and the feed
+  reports them as different facts).
+- Detecting reachability from the answered question rather than the resolved contradiction
+  (rejected: an answered question does not confirm the claims, the mapping stays contradicted,
+  and a finding emerging from it would still be the silent choice section 16 refuses).
+
+Tradeoffs:
+
+- Forgeflow's headline row shrinks to a one-entry denominator, which reads better than 0-of-3
+  and must not be mistaken for the funnel being fixed: FND-004 is still missed for DEC-116's
+  reasons, the two unreached entries are named on the feed, and the batching fix (#585) is
+  still what moves the number.
+- The per-run reachability signal is coarser than the per-entry declaration; stated above, and
+  the conformance test keeps the declared pairs explicit so a finer signal has its hook.

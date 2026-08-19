@@ -643,8 +643,18 @@ def _items_for(
     expected_findings = yaml.safe_load(
         (expected_dir / "expected-findings.yaml").read_text(encoding="utf-8")
     )["findings"]
+    from trace_ai.domain.source_observation import SourceObservation
+    from trace_ai.services.evaluation.matching import (
+        contradiction_resolved,
+        partition_conditional,
+    )
+
+    reachable, conditional_unreached = partition_conditional(
+        expected_findings,
+        resolution_supplied=contradiction_resolved(handle.objects.list(SourceObservation)),
+    )
     finding_matches: FindingMatchOutcome = match_findings(
-        approved_findings(handle), expected_findings, component_names=component_names
+        approved_findings(handle), reachable, component_names=component_names
     )
 
     expected_gaps = yaml.safe_load(
@@ -667,6 +677,7 @@ def _items_for(
             "matched": finding_matches.matched,
             "missed": finding_matches.missed,
             "spurious": finding_matches.spurious,
+            "conditional_unreached": conditional_unreached,
             "fingerprints": finding_matches.fingerprints,
         },
         "documentation_gaps": {

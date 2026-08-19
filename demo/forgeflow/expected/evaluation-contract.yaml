@@ -34,3 +34,12 @@ matching:
   # combines them is defensible rather than wrong (DEC-029). The matcher has to express
   # that; how it scores a partial consolidation is an open question on that entry.
   allow_consolidation: true
+
+  # A finding entry may carry `requires_resolution: <question key>` (DEC-133): its evidence
+  # is one side of a recorded contradiction, and the entry is graded only in a run whose
+  # reviewer resolved a contradiction. In any other run the entry reports as
+  # conditional-unreached rather than missed, its paired question carries the grade, and a
+  # baseline -- which has no reviewer -- never reaches it: a baseline finding naming the
+  # pair chose a side silently, which scenario section 16 names as the failure, and it
+  # scores spurious.
+  conditional_findings: requires_resolution

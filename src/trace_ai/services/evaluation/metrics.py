@@ -517,7 +517,17 @@ def _benchmark_metrics(
     }
 
     expected_findings = _expected_entries(expected_dir, "expected-findings.yaml", "findings")
-    finding_matches = match_findings(approved, expected_findings, component_names=component_names)
+    from trace_ai.domain.source_observation import SourceObservation
+    from trace_ai.services.evaluation.matching import (
+        contradiction_resolved,
+        partition_conditional,
+    )
+
+    reachable, conditional_unreached = partition_conditional(
+        expected_findings,
+        resolution_supplied=contradiction_resolved(repository.list(SourceObservation)),
+    )
+    finding_matches = match_findings(approved, reachable, component_names=component_names)
     unmatched_expected = finding_matches.missed
     consolidated = finding_matches.consolidated_count
     results = [
@@ -525,18 +535,26 @@ def _benchmark_metrics(
             handle,
             run.id,
             "false_negative_rate",
-            _ratio(len(unmatched_expected), len(expected_findings)),
+            _ratio(len(unmatched_expected), len(reachable)),
             unit="percentage",
             evaluator=EvaluatorType.BENCHMARK,
             method=(
-                "expected findings unmatched over expected findings; a finding matches on the "
-                "expected requirement_id and an affected component whose name matches "
-                "(DEC-056); a consolidated finding scores full credit per matched expectation"
+                "expected findings unmatched over reachable expected findings; a finding "
+                "matches on the expected requirement_id and an affected component whose name "
+                "matches (DEC-056); a consolidated finding scores full credit per matched "
+                "expectation; an entry conditioned on contradiction resolution the run's "
+                "reviewer did not supply is unreached, not missed (DEC-133)"
             ),
-            sample_size=len(expected_findings),
+            sample_size=len(reachable),
             notes=(
                 f"unmatched: {unmatched_expected or 'none'}; consolidated findings matching "
                 f"more than one expectation: {consolidated}"
+                + (
+                    f"; conditional expectations unreached without a resolved contradiction: "
+                    f"{conditional_unreached}"
+                    if conditional_unreached
+                    else ""
+                )
             ),
         )
     ]

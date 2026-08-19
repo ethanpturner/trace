@@ -41,6 +41,8 @@ findings matched none of the truth set's three expected findings. Diagnosed afte
 (#564, DEC-116): the expected requirement lenses were produced as mappings and lost in the
 evidence-validation funnel — see `docs/eval/live-diagnosis.md`; the release-time reading
 ("wrong requirement lens", `demo/forgeflow/recorded/provenance.md`) understated the mechanism.
+DEC-133 later re-classed two of the three as conditional on a contradiction resolution the
+run's protocol never supplied; the release-time score stands as recorded.
 
 ### Outstanding issues
 
