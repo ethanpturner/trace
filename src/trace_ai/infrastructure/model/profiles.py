@@ -252,20 +252,21 @@ PROFILES: Final[dict[str, ModelProfile]] = {
     "openrouter-economy": ModelProfile(
         name="openrouter-economy",
         provider="openrouter",
-        model="google/gemini-3.7-flash",
+        model="openai/gpt-5.1",
         settings=GenerationSettings(creativity=Creativity.LOW),
-        # The low-cost live-capture bundle (DEC-135): 7.5% of the primary rates on both spans, so
-        # DEC-092's measured $6.92 +/- $3.28 `claude-opus-5` run projects to roughly fifty cents.
-        # The model is the cheapest that passed the DEC-135 adherence probe, not the cheapest
-        # listed — the floor-tier models failed a trivial structured copy task. Published
-        # OpenRouter rates at the time of writing, hand-maintained like every row — and
-        # staler-prone than most, because the gateway's rates follow its upstream providers.
-        # The provider publishes a small cache-write storage rate the Responses wire never
-        # reports a token count for, so the creation rate stays zero and `estimated_cost` may
-        # under-report by that increment.
-        input_cost_per_million=Decimal("0.375"),
-        output_cost_per_million=Decimal("1.875"),
-        cache_read_cost_per_million=Decimal("0.0375"),
+        # The low-cost live-capture bundle (DEC-135, amended): the cheapest model that passed the
+        # pipeline-shaped adherence probe with zero schema retries across two scenarios — not the
+        # cheapest listed. The flash-tier models cleared a trivial copy task and then failed the
+        # real 16k-token extraction (gemini-3.7-flash returned schema-valid empty proposals at
+        # every effort; the probe table is in the amendment). At a quarter of the primary input
+        # rate and 40% of its output rate, DEC-092's measured $6.92 +/- $3.28 `claude-opus-5`
+        # run projects to roughly $1.40. Published OpenRouter rates at the time of writing,
+        # hand-maintained like every row — and staler-prone than most, because the gateway's
+        # rates follow its upstream providers. Caching is the upstream provider's automatic
+        # prefix cache; no write premium, so the creation rate is zero.
+        input_cost_per_million=Decimal("1.25"),
+        output_cost_per_million=Decimal("10.00"),
+        cache_read_cost_per_million=Decimal("0.125"),
         cache_creation_cost_per_million=Decimal(0),
     ),
     "offline-fake": ModelProfile(
