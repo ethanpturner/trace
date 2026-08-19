@@ -93,6 +93,9 @@ class Settings(BaseSettings):
     # `langsmith` settings were removed with the unwired dependency (DEC-090).
     anthropic_api_key: SecretStr | None = None
     openai_api_key: SecretStr | None = None
+    # OpenRouter (DEC-135): the OpenAI-compatible gateway the low-cost capture profile reaches
+    # through the OpenAI adapter, under its own key and base URL.
+    openrouter_api_key: SecretStr | None = None
 
     # External tracing (#538, DEC-109). The destination for execution spans when an
     # assessment's `enable_external_tracing` is on: `file://<path>` appends JSON lines,
@@ -106,7 +109,12 @@ class Settings(BaseSettings):
     github_token: SecretStr | None = None
 
     @field_validator(
-        "anthropic_api_key", "openai_api_key", "tracing_api_key", "github_token", mode="before"
+        "anthropic_api_key",
+        "openai_api_key",
+        "openrouter_api_key",
+        "tracing_api_key",
+        "github_token",
+        mode="before",
     )
     @classmethod
     def _blank_is_unset(cls, value: object) -> object:

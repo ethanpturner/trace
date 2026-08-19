@@ -50,3 +50,6 @@ scripts/.staged/
 # The Pages deploy consumes it as a workflow artifact, so the rendering never enters history;
 # the Markdown sources under docs/ are the authoritative copies.
 /site/
+
+# Claude Code agent worktrees (session-local)
+.claude/worktrees/

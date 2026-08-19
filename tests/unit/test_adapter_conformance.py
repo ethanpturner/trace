@@ -139,6 +139,19 @@ def _openai(outcome: object) -> Callable[[], ModelOutcome[_Schema]]:
     return run
 
 
+def _openrouter(outcome: object) -> Callable[[], ModelOutcome[_Schema]]:
+    """The same adapter class serving the gateway profile (DEC-135): the contract is asserted per
+    provider row, not per adapter class, so the profile path is held to it explicitly."""
+
+    def run() -> ModelOutcome[_Schema]:
+        adapter: StructuredModel = OpenAIModel(
+            "openrouter-economy", client=_OpenAIStubClient(outcome)
+        )
+        return adapter.generate(prompt="the prompt", schema=_Schema, settings=GenerationSettings())
+
+    return run
+
+
 def _oa_request_error() -> openai.APITimeoutError:
     return openai.APITimeoutError(request=httpx2.Request("POST", "https://example.test"))
 
@@ -165,16 +178,25 @@ _PROVIDER_CONDITIONS = [
     ),
     ("openai-schema-miss", _openai(_oa_response('{"name": 5}'))),
     ("openai-no-text", _openai(_oa_response(None))),
+    ("openrouter-timeout", _openrouter(_oa_request_error())),
+    (
+        "openrouter-truncated",
+        _openrouter(_oa_response('{"name": "x"}', incomplete_reason="max_output_tokens")),
+    ),
+    ("openrouter-schema-miss", _openrouter(_oa_response('{"name": 5}'))),
+    ("openrouter-no-text", _openrouter(_oa_response(None))),
 ]
 
 _SUCCESSES = [
     ("anthropic-ok", _anthropic(_response('{"name": "ok"}'))),
     ("openai-ok", _openai(_oa_response('{"name": "ok"}'))),
+    ("openrouter-ok", _openrouter(_oa_response('{"name": "ok"}'))),
 ]
 
 _SCHEMA_MISSES = [
     ("anthropic", _anthropic(_response('{"name": 5}'))),
     ("openai", _openai(_oa_response('{"name": 5}'))),
+    ("openrouter", _openrouter(_oa_response('{"name": 5}'))),
 ]
 
 

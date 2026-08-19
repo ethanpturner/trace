@@ -719,6 +719,7 @@ def fake_settings() -> Settings:
         _env_file=None,
         anthropic_api_key=SecretStr("sk-ant-fake-0123456789abcdef-anthropic"),
         openai_api_key=SecretStr("sk-fake-0123456789abcdef-openai"),
+        openrouter_api_key=SecretStr("sk-or-fake-0123456789abcdef-openrouter"),
     )
 
 
@@ -742,7 +743,7 @@ def test_no_settings_value_reaches_the_prompt_or_the_produced_objects(prepared: 
     handle, ledger = prepared
     settings = fake_settings()
     secrets = secret_values(settings)
-    assert len(secrets) == 2, "the fake settings object carries no secrets to look for"
+    assert len(secrets) == 3, "the fake settings object carries no secrets to look for"
 
     cited = all_evidence_ids(handle)[0]
     model = Usable([ContextExtractionProposal.model_validate(minimal_proposal(cited))])

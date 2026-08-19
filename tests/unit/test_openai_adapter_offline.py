@@ -14,7 +14,7 @@ from typing import Any
 import httpx2
 import openai
 import pytest
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, SecretStr
 
 from trace_ai.infrastructure.model.openai_adapter import (
     REASONING_EFFORT_BY_CREATIVITY,
@@ -223,5 +223,67 @@ def test_the_system_region_is_its_own_message() -> None:
 
 
 def test_a_profile_naming_another_provider_is_refused() -> None:
-    with pytest.raises(ValueError, match="this adapter serves 'openai'"):
+    with pytest.raises(ValueError, match="OpenAI-compatible providers: openai, openrouter"):
         OpenAIModel(resolve_profile("primary-development"))
+
+
+# -- the OpenRouter face of the same adapter (DEC-135) --------------------------------------------
+
+
+def test_an_openrouter_profile_is_served_and_priced_at_its_own_rates() -> None:
+    """The gateway is OpenAI-compatible, so the profile resolves to this adapter — and the usage
+    must price at the gateway's rates, not the OpenAI row's."""
+    client = _Client(_response('{"name": "ok"}', input_tokens=1000, output_tokens=10))
+    adapter = OpenAIModel("openrouter-economy", client=client)
+    outcome = adapter.generate(prompt="p", schema=_Schema, settings=GenerationSettings())
+
+    assert isinstance(outcome, ModelSuccess)
+    profile = resolve_profile("openrouter-economy")
+    assert client.responses.requests[0]["model"] == profile.model
+    assert outcome.usage.estimated_cost == profile.cost_of(
+        input_tokens=1000, output_tokens=10, cache_read_tokens=0, cache_creation_tokens=0
+    )
+
+
+def test_the_openrouter_client_is_built_against_the_gateway_under_its_own_key(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Base URL and key follow the provider, not the adapter: an OpenRouter profile must never
+    spend the OpenAI key, and vice versa."""
+    import openai as openai_sdk
+
+    from trace_ai.config import Settings
+
+    built: dict[str, Any] = {}
+
+    def record(**kwargs: Any) -> Any:
+        built.update(kwargs)
+        return _Client(_response('{"name": "ok"}'))
+
+    monkeypatch.setattr(openai_sdk, "OpenAI", record)
+    settings = Settings(
+        _env_file=None,
+        openrouter_api_key=SecretStr("or-key"),
+        openai_api_key=SecretStr("oa-key"),
+    )
+    adapter = OpenAIModel("openrouter-economy", settings=settings)
+    outcome = adapter.generate(prompt="p", schema=_Schema, settings=GenerationSettings())
+
+    assert isinstance(outcome, ModelSuccess)
+    assert built["base_url"] == "https://openrouter.ai/api/v1"
+    assert built["api_key"] == "or-key"
+
+
+def test_a_missing_openrouter_key_names_the_variable_to_set(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The OpenAI key must not stand in for the gateway's: a developer with one configured and
+    not the other is told which one is missing. The ambient variable is cleared so the test does
+    not depend on whose machine it runs on."""
+    from trace_ai.config import MissingSettingError, Settings
+
+    monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
+    settings = Settings(_env_file=None, openai_api_key=SecretStr("oa-key"))
+    adapter = OpenAIModel("openrouter-economy", settings=settings)
+    with pytest.raises(MissingSettingError, match="OPENROUTER_API_KEY"):
+        adapter.generate(prompt="p", schema=_Schema, settings=GenerationSettings())
