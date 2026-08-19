@@ -45,6 +45,10 @@ from trace_ai.domain.evidence_assessment import EvidenceAssessment
 from trace_ai.domain.execution import ExecutionType, WorkflowRun
 from trace_ai.domain.finding import Finding
 from trace_ai.domain.identifiers import parse_id
+from trace_ai.domain.proposals.evidence_validation import (
+    EVIDENCE_VALIDATION_AGENT,
+    EvidenceValidationProposal,
+)
 from trace_ai.domain.reviewer_decision import ReviewerDecision
 from trace_ai.domain.source_document import IngestionStatus, SourceDocument
 from trace_ai.domain.source_observation import ObservationKind, SourceObservation
@@ -125,11 +129,38 @@ if TYPE_CHECKING:
 
 __all__ = ["KNOWN_ABLATIONS", "build_nodes", "resume_assessment", "run_assessment"]
 
-WORKFLOW_VERSION = "0.1"
-
 KNOWN_ABLATIONS: Final = frozenset(
     {"no-evidence-validation", "no-critical-review", "no-context-approval"}
 )
+
+# The workflow version that introduced the batched evidence-validation shape (DEC-134). An
+# assessment pinned below it replays the recorded single-call shape; at or above it, the
+# evidence phase runs one call per subject batch. The pin lives on the assessment row —
+# stamped at creation from `WORKFLOW_VERSION`, or passed explicitly by a replay of a recording
+# that predates batching — so what a run consumes is decided by what it was created as, never
+# by the code that happens to be running it.
+BATCHED_EVIDENCE_SINCE: Final = (0, 2)
+
+# Subjects per evidence-validation call under the batched shape (DEC-134). Sized from the
+# husky-ai live capture: ~310 output tokens per assessment puts a full batch near 12,500
+# output tokens, five-fold headroom under the 64,000-token ceiling — room for verbose
+# subjects without room for the silent truncation the single-call shape invited.
+EVIDENCE_BATCH_SIZE: Final = 40
+
+
+def _batched_evidence(workflow_version: str) -> bool:
+    """Whether this assessment's pinned workflow version carries the batched evidence shape.
+
+    An unparseable version is treated as current: only recordings pinned to a real pre-batching
+    version replay the single-call shape, and a version nobody can parse is not one of those.
+    """
+    try:
+        parsed = tuple(int(part) for part in workflow_version.split("."))
+    except ValueError:
+        return True
+    return parsed >= BATCHED_EVIDENCE_SINCE
+
+
 """DEC-074's ablation family, closed. An unknown name is refused rather than ignored.
 
 Ablations are the evaluation harness's (DEC-012, DEC-073): they arrive as an argument from the
@@ -572,13 +603,15 @@ class MappingValidationAdapter:
 
 @dataclass(slots=True)
 class _EvidenceHandoff:
-    """The proposal the model node produced, on its way to the node that validates it.
+    """The proposals the model node produced, on their way to the node that validates them.
 
     A proposal has no identifier and is never persisted (DEC-006), so the handoff is in memory.
-    It never needs to survive a process exit: no pause phase sits between the two nodes.
+    It never needs to survive a process exit: no pause phase sits between the two nodes. Under
+    the single-call shape the list holds one outcome; under the batched shape (DEC-134), one
+    per batch.
     """
 
-    outcome: EvidenceValidationOutcome | None = None
+    outcomes: list[EvidenceValidationOutcome] = field(default_factory=list)
     subjects: list[DomainModel] = field(default_factory=list)
     subject_ids: list[str] = field(default_factory=list)
     observations: list[SourceObservation] = field(default_factory=list)
@@ -586,7 +619,15 @@ class _EvidenceHandoff:
 
 @dataclass(slots=True)
 class EvidenceValidationAdapter:
-    """Phase 8, first node: the evidence agent, over every assessable subject."""
+    """Phase 8, first node: the evidence agent, over every assessable subject.
+
+    The call shape is the assessment's pinned workflow version's (DEC-134): below 0.2, the
+    recorded single-call shape, so every committed recording keeps replaying; at 0.2 and
+    above, one call per `EVIDENCE_BATCH_SIZE` subjects — the RequirementControlMappingAdapter's
+    loop, applied to the phase whose single call demonstrably could not carry the whole subject
+    list (DEC-116). Every batch sees every contradiction; addressing them is checked over the
+    union by the deterministic node behind this one.
+    """
 
     ledger: ExecutionLedger
     profile: ModelProfile
@@ -602,6 +643,7 @@ class EvidenceValidationAdapter:
 
     def run(self, context: NodeContext) -> NodeResult:
         handle = context.handle
+        assessment = handle.objects.get(Assessment, handle.assessment_id)
         assessable = [
             *_sorted_by_id(handle.objects.list(ContextClaim)),
             *_sorted_by_id(handle.objects.list(Control)),
@@ -614,21 +656,58 @@ class EvidenceValidationAdapter:
             for observation in _sorted_by_id(handle.objects.list(SourceObservation))
             if observation.kind is ObservationKind.CONTRADICTION
         ]
-        node = EvidenceValidationNode(
-            ledger=self.ledger,
-            index=EvidenceIndex(handle),
-            profile=self.profile,
-            registry=self.registry,
-            subjects=subjects,
-            observations=observations,
-            budget=self.budget,
+        batched = _batched_evidence(assessment.workflow_version)
+        batches: list[list[DomainModel]] = (
+            [
+                subjects[start : start + EVIDENCE_BATCH_SIZE]
+                for start in range(0, len(subjects), EVIDENCE_BATCH_SIZE)
+            ]
+            if batched
+            else [subjects]
         )
-        outcome = node.propose(context)
-        self.handoff.outcome = outcome
+
+        index = EvidenceIndex(handle)
+        outcomes: list[EvidenceValidationOutcome] = []
+        usages: list[Any] = []
+        attempts = 0
+        for batch in batches:
+            node = EvidenceValidationNode(
+                ledger=self.ledger,
+                index=index,
+                profile=self.profile,
+                registry=self.registry,
+                subjects=batch,
+                observations=observations,
+                budget=self.budget,
+                batched=batched,
+            )
+            outcome = node.propose(context)
+            outcomes.append(outcome)
+            usages.extend(outcome.result.model_usages)
+            batch_attempts = outcome.result.metadata.get("attempts")
+            attempts += batch_attempts if isinstance(batch_attempts, int) else 0
+
+        self.handoff.outcomes = outcomes
         self.handoff.subjects = subjects
         self.handoff.subject_ids = [subject.id for subject in assessable]
         self.handoff.observations = observations
-        return outcome.result
+        last = outcomes[-1] if outcomes else None
+        return NodeResult(
+            produced_object_ids=[],
+            consumed_object_ids=[subject.id for subject in assessable],
+            state_changes={},
+            model_usages=usages,
+            prompt_version=last.result.prompt_version if last else None,
+            model_name=last.result.model_name if last else None,
+            metadata={
+                "attempts": attempts,
+                "subjects": len(assessable),
+                "assessments": sum(len(o.proposal.assessments) for o in outcomes),
+                "contradictions": len(observations),
+                "agent": EVIDENCE_VALIDATION_AGENT,
+            }
+            | ({"batches": len(batches)} if batched else {}),
+        )
 
 
 @dataclass(slots=True)
@@ -644,22 +723,42 @@ class EvidenceAssessmentValidationAdapter:
 
     def run(self, context: NodeContext) -> NodeResult:
         handle = context.handle
-        outcome = self.handoff.outcome
-        if outcome is None:  # pragma: no cover - the table orders the two nodes
+        outcomes = self.handoff.outcomes
+        if not outcomes:  # pragma: no cover - the table orders the two nodes
             raise WorkflowError(
                 ErrorClass.UNEXPECTED_APPLICATION_FAILURE,
                 "evidence-assessment-validation ran before evidence-validation proposed anything",
             )
+        # One proposal or several batches (DEC-134): validated and persisted as one set, because
+        # the batch boundary is a call-shape fact, not an analytical one. Contradiction coverage
+        # is judged over the union — every batch saw every contradiction, and one batch
+        # addressing a record answers for the phase.
+        proposal = EvidenceValidationProposal.model_validate(
+            {
+                "assessments": [
+                    assessed.model_dump()
+                    for outcome in outcomes
+                    for assessed in outcome.proposal.assessments
+                ]
+            }
+        )
+        supplied_contradiction_ids = sorted(
+            {
+                contradiction
+                for outcome in outcomes
+                for contradiction in outcome.package.contradiction_ids
+            }
+        )
         result = validate_assessments(
-            outcome.proposal,
+            proposal,
             subjects=self.handoff.subjects,
             references=handle.objects.list(EvidenceReference),
             observations=self.handoff.observations,
-            supplied_contradiction_ids=outcome.package.contradiction_ids,
+            supplied_contradiction_ids=supplied_contradiction_ids,
         )
         if not result.valid:
             raise _blocking_stop("evidence assessment validation", result.blocking_errors)
-        written, updated = persist_assessments(handle, outcome.proposal, result)
+        written, updated = persist_assessments(handle, proposal, result)
         return NodeResult(
             produced_object_ids=[assessment.id for assessment in written],
             consumed_object_ids=list(self.handoff.subject_ids),
@@ -1266,7 +1365,9 @@ def run_assessment(
     spend = budget if budget is not None else Budget.from_configuration(assessment.configuration)
     run = start_run(
         handle,
-        workflow_version=WORKFLOW_VERSION,
+        # The assessment's pin, not the module's constant: a replayed recording created at 0.1
+        # runs — and records its run row — as 0.1, whatever build replays it (DEC-134).
+        workflow_version=assessment.workflow_version,
         model_profile=profile.name,
         ablations=ablations,
     )

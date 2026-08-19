@@ -182,7 +182,11 @@ def replay(data_root: Path, *, profile_name: str = "primary-development") -> str
     with AssessmentStore.at_root(data_root) as store:
         service = AssessmentService(store, artifact_root=data_root)
         created = service.create(
-            "ForgeFlow", default_configuration(profile_name, "stride-scenario-based")
+            "ForgeFlow",
+            default_configuration(profile_name, "stride-scenario-based"),
+            # The committed recording was captured under the single-call evidence shape; the
+            # replay pins it so the responses are consumed as they were produced (DEC-134).
+            workflow_version="0.1",
         )
         assessment_id = created.id
         loader = DocumentLoader(service.handle(assessment_id))

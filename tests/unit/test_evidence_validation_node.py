@@ -755,3 +755,54 @@ def test_no_test_here_makes_a_live_model_call(prepared: Any) -> None:
     node(prepared).propose(node_context(handle, ledger, model))
 
     assert isinstance(model, DeterministicModel)
+
+
+# The batched shape (DEC-134)
+
+
+def test_a_batched_call_omitting_a_subject_is_retried_with_the_omissions_named(
+    prepared: Any,
+) -> None:
+    """DEC-134's coverage contract: at batch scale the output-length excuse behind DEC-116's
+    silent omissions is gone, so an omitted subject is a retryable attempt failure, and the
+    feedback names it."""
+    _, _, claim, _ = prepared
+    empty = EvidenceValidationProposal.model_validate({"assessments": []})
+    model = Usable([empty, proposal(prepared)])
+
+    outcome = run(prepared, model, batched=True)
+
+    assert outcome.result.metadata["attempts"] == 2
+    assert len(outcome.proposal.assessments) == 1
+    second_prompt = model.calls[1].prompt
+    assert claim.id in second_prompt, "the retry names the omitted subject"
+
+
+def test_a_batched_call_does_not_retry_an_unaddressed_contradiction(prepared: Any) -> None:
+    """Every batch sees every contradiction, but a record may bear on another batch's subjects;
+    addressing it is checked over the union by the deterministic node, not retried per batch."""
+    unaddressed = proposal(
+        prepared,
+        an_assessment(
+            prepared,
+            validation_status=ValidationStatus.SUPPORTED,
+            contradictions=[],
+            recommendation=Recommendation.CONTINUE,
+        ),
+    )
+    model = Usable([unaddressed])
+
+    outcome = run(prepared, model, batched=True)
+
+    assert outcome.result.metadata["attempts"] == 1
+    assert len(outcome.proposal.assessments) == 1
+
+
+def test_the_batched_call_composes_the_v2_prompt(prepared: Any) -> None:
+    single = run(prepared, Usable([proposal(prepared)]))
+    batched = run(prepared, Usable([proposal(prepared)]), batched=True)
+
+    assert single.result.prompt_version is not None
+    assert "v1" in single.result.prompt_version
+    assert batched.result.prompt_version is not None
+    assert "v2" in batched.result.prompt_version

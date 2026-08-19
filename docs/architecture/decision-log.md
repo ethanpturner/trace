@@ -8630,3 +8630,96 @@ Tradeoffs:
   still what moves the number.
 - The per-run reachability signal is coarser than the per-entry declaration; stated above, and
   the conformance test keeps the declared pairs explicit so a finer signal has its hook.
+
+## DEC-134: The evidence-validation call batches per subject group, and the shape rides the workflow version
+
+Date: 2026-08-19
+
+Status: Accepted
+
+Decision:
+
+**The evidence phase makes one call per forty assessable subjects, and which shape a run gets is
+its assessment's pinned `workflow_version`.** DEC-116 diagnosed the single call's silent
+truncation — 25 of 185 mappings assessed on the flagship live capture, coverage 0.275 on the
+husky-ai pilot — and deferred the behavioural fix to this entry. The driver's evidence adapter
+now mirrors the mapping adapter's DEC-024 loop: the sorted subject list (claims, controls,
+mappings, threats) splits into fixed batches of `EVIDENCE_BATCH_SIZE = 40`, one
+`EvidenceValidationNode` per batch, and the deterministic validation node merges the batch
+proposals into one set before validating and persisting — the batch boundary is a call-shape
+fact, never an analytical one. Fixed-size batches were chosen over per-threat clusters because
+the evidence judgment is per subject: claims and orphan controls have no threat to cluster
+under, and a uniform split keeps every batch's coverage mechanically checkable.
+
+**Coverage is enforced per batch, and only there.** Under the batched shape, a supplied subject
+with no assessment fails the attempt with the omissions named — retryable, because at forty
+subjects the output-length physics that excused DEC-116's silent omission is gone, and a stated
+`not_evaluated` remains the honest decline. The single-call shape keeps DEC-116's
+report-never-block behaviour unchanged, and the `evidence_assessment_coverage` metric and
+`unassessed_subject_ids` reporting stay as the cross-shape instrument. This lands what #588
+asked for on every run the batched shape covers. The per-batch contradiction retry is lifted to
+the union: every batch is shown every contradiction so nothing is classified blind to one, and
+the deterministic node checks that the union addresses each record, because a contradiction's
+subjects may sit in another batch and no single batch is wrong for leaving it to them.
+
+**`workflow_version` moves to 0.2, and every replay pins the version its recording carries.**
+The version was already stamped on every assessment and run row; it now also selects behaviour,
+which is what makes replay compatibility structural rather than lucky: the scenario registry
+gains a per-entry `workflow_version` pin defaulting to `0.1` — the single-call shape every
+committed recording carries — the harness, `replay_forgeflow.py`, and the capture round-trip
+pass the pin through `AssessmentService.create`, and a live run pins nothing, measuring the
+current pipeline. A promotion of a newer capture updates the registry pin beside the recording.
+An `AssessmentConfiguration` knob was rejected: a setting could silently change what a replay
+measures, and the version of the workflow that produced a recording is a fact about the
+recording, not a preference.
+
+**The prompt pair is #331's comparison subject.** The batched shape composes a new
+`validate-evidence-v2` prompt stating the full-coverage contract; `v1` is untouched, because
+recordings pin composed hashes. Pre-batching versus post-batching — v1 single-call against v2
+batched — is the recorded comparison #331 runs when the keyed budget returns.
+
+**The projected cost model, stated the DEC-107 way, offline.** From the husky-ai live capture:
+the single evidence call spent ~23,000 output tokens for 74 assessments (~310 per assessment)
+and left 224 subjects unassessed. Batched at forty, the same 298 subjects make eight calls of
+roughly 12,500 output tokens each — five-fold headroom under the 64,000-token ceiling — and the
+shared prefix (evidence policy, schema, instructions) caches across the run's batches under
+DEC-105's split, so the marginal input per additional batch is its subject excerpts, not the
+prompt. The projection prices full coverage at roughly three to four times the single call's
+output spend for scenarios of corpus scale; the measured figure rides #484's sweep or a
+forgeflow re-capture, per the promotion rule. The capture budget's call ceiling is re-derived
+from 60 to 90 for the added batch calls; the orchestrator's node-execution ceiling is untouched
+because the batch loop lives inside one orchestrator step, exactly as mapping's does.
+
+Why:
+
+- Two live captures measured the same funnel: the expected requirement lenses were produced and
+  died unassessed. Making omission visible (DEC-116) was the instrument; making coverage
+  achievable is the fix, and per-batch enforcement makes it checkable without inviting the
+  fabrication that retrying an analytical conclusion would.
+- The recorded corpus is fifteen scenarios, two of them live captures, all carrying exactly one
+  evidence response. A shape selection that lived anywhere but the assessment's own pinned
+  version would either break every replay or silently re-measure them under a shape that never
+  produced them.
+
+Alternatives Considered:
+
+- Per-threat batches, DEC-024's literal shape (rejected: evidence subjects include claims and
+  controls no threat clusters, the mapping package's per-threat assembly buys nothing here, and
+  fixed batches keep the coverage check uniform).
+- A configuration field selecting the shape (rejected: DEC-012's reasoning — a knob that changes
+  what a replay measures is a second authority over a recorded fact).
+- Retrying coverage under the single-call shape too (rejected: DEC-116 already established the
+  single response cannot carry three hundred subjects; retrying an impossibility invites
+  truncation-shaped fabrication, and the recorded corpus would fail replay).
+
+Tradeoffs:
+
+- Batch size forty is a constant, not a measurement; the sweep may move it, and the entry says
+  so rather than tuning in advance.
+- More calls per run: roughly seven added calls at corpus scale, priced above, unmeasured until
+  a keyed run. The cache split bounds the input cost; the output cost is the coverage being
+  bought.
+- A contradiction addressed by no batch surfaces only at the deterministic union check, one
+  step later than the single-call shape caught it. Accepted: the union check is the same
+  non-blocking report it was, and per-batch enforcement would fail batches for records that are
+  not theirs.

@@ -1279,7 +1279,14 @@ def _recorded_file(path: Path, payload: object) -> str:
 
 def _pipeline_recordings(tmp_path: Path) -> dict[str, str]:
     """The five agents' recorded responses, borrowed from the driver's end-to-end test."""
-    from test_driver import ASSESSMENT, EXTRACTION, MAPPING, THREAT
+    from test_driver import (
+        ASSESSMENT,
+        CLAIM_ASSESSMENT,
+        EXTRACTION,
+        MAPPING,
+        THREAT,
+        THREAT_ASSESSMENT,
+    )
 
     from trace_ai.domain.proposals import ContextExtractionProposal
     from trace_ai.domain.proposals.critical_review import CriticalReviewProposal
@@ -1299,7 +1306,10 @@ def _pipeline_recordings(tmp_path: Path) -> dict[str, str]:
         ),
         "evidence": _recorded_file(
             tmp_path / "evidence.json",
-            EvidenceValidationProposal.model_validate({"assessments": [ASSESSMENT]}),
+            # The batched shape (DEC-134) assesses every supplied subject: claim, mapping, threat.
+            EvidenceValidationProposal.model_validate(
+                {"assessments": [CLAIM_ASSESSMENT, ASSESSMENT, THREAT_ASSESSMENT]}
+            ),
         ),
         "critique": _recorded_file(
             tmp_path / "critique.json", CriticalReviewProposal.model_validate({"critiques": []})

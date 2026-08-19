@@ -90,12 +90,14 @@ it on every future run.
 
 ## 4. What deliberately did not change
 
-- **No blocking coverage check and no retry on omission.** A retry would consume recorded
-  responses replays do not have, and live it would demand a single response assess every
-  subject — the output-length physics that produced the truncation in the first place. The
-  behavioural fix is batching the evidence-validation call per subject group, the same shape
-  DEC-024 gave mapping (one call per threat); that is a design change with a cost profile, so
-  it is DEC-116's named follow-up, to be measured by the #484 sweep rather than assumed.
+- **No blocking coverage check and no retry on omission** — at the time of the diagnosis. A
+  retry would consume recorded responses replays do not have, and live it would demand a single
+  response assess every subject — the output-length physics that produced the truncation in the
+  first place. The behavioural fix has since landed as **DEC-134** (#585): the evidence phase
+  batches per subject group under workflow version 0.2, coverage is enforced per batch where
+  the length excuse is gone, and every recording pinned to 0.1 keeps replaying the single-call
+  shape it carries. The measured effect on the flagship 0-of-3 still rides the #484 sweep or a
+  forgeflow re-capture.
 - **No prompt edit.** The prompt already asks for full coverage and offers the honest decline;
   the truncation is a capacity behaviour, not an instruction gap. A prompt-version pair worth
   comparing under #331 should carry a real change, and the batching follow-up is that change.

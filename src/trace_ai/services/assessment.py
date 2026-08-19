@@ -195,8 +195,14 @@ class AssessmentService:
         tags: list[str] | None = None,
         created_by: str | None = None,
         requirements_catalog_version: str | None = None,
+        workflow_version: str | None = None,
     ) -> Assessment:
-        """Allocate an identifier, write the directory and the row, or leave neither behind."""
+        """Allocate an identifier, write the directory and the row, or leave neither behind.
+
+        `workflow_version` defaults to this build's — the only reason to pass one is a replay of
+        a recording that predates the current workflow shape, which must run as the version it
+        was captured under (DEC-134). The pin decides the evidence phase's call shape.
+        """
         assessment_id = self._store.allocate_assessment_id()
         repository = self._store.repository(assessment_id)
 
@@ -215,6 +221,7 @@ class AssessmentService:
             tags=tags or [],
             created_by=created_by,
             requirements_catalog_version=requirements_catalog_version,
+            **({"workflow_version": workflow_version} if workflow_version is not None else {}),
         )
         try:
             with repository.transaction():

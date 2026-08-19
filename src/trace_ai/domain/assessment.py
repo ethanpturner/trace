@@ -49,7 +49,7 @@ __all__ = [
 # and this is the field that refusal reads.
 ARCHITECTURE_VERSION: Final = "0.1"
 DATA_MODEL_VERSION: Final = "0.1"
-WORKFLOW_VERSION: Final = "0.1"
+WORKFLOW_VERSION: Final = "0.2"
 
 # agent-design.md section 26. Two retries, not zero and not unbounded.
 DEFAULT_MAXIMUM_RETRIES_PER_NODE: Final = 2
