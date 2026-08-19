@@ -70,6 +70,7 @@ __all__ = [
     "NODE_VERSION",
     "PROMPT_ID",
     "PROMPT_VERSION",
+    "PROMPT_VERSION_BATCHED",
     "EvidenceValidationNode",
     "EvidenceValidationOutcome",
     "unaddressed_contradictions",
@@ -79,6 +80,7 @@ NODE_NAME: Final = "evidence-validation"
 NODE_VERSION: Final = "0.1"
 PROMPT_ID: Final = "validate-evidence"
 PROMPT_VERSION: Final = "v1"
+PROMPT_VERSION_BATCHED: Final = "v2"
 
 _SCHEMA_MARKER: Final = "schema.evidence_validation_proposal"
 
@@ -136,6 +138,18 @@ class EvidenceValidationNode:
     budget's `retry_policy()`, so the configuration's `maximum_retries_per_node` is the
     operative ceiling (#397); the built-in default applies only when there is neither."""
 
+    batched: bool = False
+    """The DEC-134 shape: this call is one batch of a run whose evidence phase makes several.
+
+    Three things change together, or none do. The prompt composes as `v2`, which states the
+    full-coverage contract. Coverage is enforced per attempt — a supplied subject with no
+    assessment is a retryable failure, because at batch scale the output-length excuse behind
+    DEC-116's silent omissions is gone; a stated `not_evaluated` remains the honest decline.
+    And the per-call contradiction check is lifted to the phase: every batch is shown every
+    contradiction so nothing is decided blind to one, but a contradiction's subjects may sit in
+    another batch, so addressing it is checked over the union by the deterministic node behind
+    this one, not retried per batch."""
+
     version: str = NODE_VERSION
     execution_type: ExecutionType = field(default=ExecutionType.MODEL, init=False)
 
@@ -178,7 +192,7 @@ class EvidenceValidationNode:
         )
         composed = self.registry.compose(
             PROMPT_ID,
-            PROMPT_VERSION,
+            PROMPT_VERSION_BATCHED if self.batched else PROMPT_VERSION,
             {_SCHEMA_MARKER: _schema_text(), **package.substitutions()},
         )
         available = package.referenceable_ids()
@@ -235,19 +249,43 @@ class EvidenceValidationNode:
                     feedback=str(misquoted),
                 ) from None
 
-            ignored = unaddressed_contradictions(proposal, package.contradiction_ids)
-            if ignored:
-                message = (
-                    f"these contradictions were supplied and no assessment addresses them: "
-                    f"{list(ignored)}. Contradictory evidence may not be passed over "
-                    f"(agent-design.md section 14). Name the record on the assessment it bears on."
+            if self.batched:
+                # The DEC-134 coverage contract: every supplied subject comes back assessed, or
+                # explicitly declined as `not_evaluated` with a reason — which is an assessment.
+                # Omission was the single-call shape's silent failure (DEC-116); at batch scale
+                # the output ceiling no longer excuses it, so it is an attempt failure the retry
+                # can correct by name.
+                omitted = sorted(
+                    set(package.subject_ids)
+                    - {assessed.subject_id for assessed in proposal.assessments}
                 )
-                raise AttemptFailedError(
-                    error_class=ErrorClass.MISSING_REQUIRED_RELATIONSHIP,
-                    message=message,
-                    raw_output=proposal.model_dump_json(indent=2),
-                    feedback=message,
-                )
+                if omitted:
+                    message = (
+                        f"these supplied subjects received no assessment: {omitted}. Every "
+                        f"subject in the batch is assessed, or declined as `not_evaluated` with "
+                        f"a stated reason; omission is not a decision (DEC-134)."
+                    )
+                    raise AttemptFailedError(
+                        error_class=ErrorClass.SCHEMA_VALIDATION_FAILURE,
+                        message=message,
+                        raw_output=proposal.model_dump_json(indent=2),
+                        feedback=message,
+                    )
+            else:
+                ignored = unaddressed_contradictions(proposal, package.contradiction_ids)
+                if ignored:
+                    message = (
+                        f"these contradictions were supplied and no assessment addresses them: "
+                        f"{list(ignored)}. Contradictory evidence may not be passed over "
+                        f"(agent-design.md section 14). Name the record on the assessment it "
+                        f"bears on."
+                    )
+                    raise AttemptFailedError(
+                        error_class=ErrorClass.MISSING_REQUIRED_RELATIONSHIP,
+                        message=message,
+                        raw_output=proposal.model_dump_json(indent=2),
+                        feedback=message,
+                    )
 
             return proposal
 
@@ -275,6 +313,8 @@ class EvidenceValidationNode:
             execution.metadata["subjects"] = len(package.subject_ids)
             execution.metadata["assessments"] = len(proposal.assessments)
             execution.metadata["contradictions"] = len(package.contradiction_ids)
+            if self.batched:
+                execution.metadata["batched"] = True
 
         return EvidenceValidationOutcome(
             package=package,

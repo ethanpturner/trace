@@ -186,6 +186,33 @@ ASSESSMENT: dict[str, Any] = {
     "recommendation": Recommendation.CONTINUE,
 }
 
+# The batched evidence shape (DEC-134) assesses every supplied subject, so the fixture covers
+# the claim and the threat beside the mapping — three subjects, one batch, full coverage.
+CLAIM_ASSESSMENT: dict[str, Any] = {
+    "subject_type": SubjectType.CONTEXT_CLAIM,
+    "subject_id": "ctx-001",
+    "evidence_ids": ["evd-001"],
+    "evidence_strengths": {"evd-001": EvidenceStrength.DIRECT},
+    "validation_status": ValidationStatus.SUPPORTED,
+    "rationale": "The cited passage states the receiver validates request structure.",
+    "confidence": ConfidenceLevel.MEDIUM,
+    "recommendation": Recommendation.CONTINUE,
+}
+
+THREAT_ASSESSMENT: dict[str, Any] = {
+    "subject_type": SubjectType.THREAT,
+    "subject_id": "thr-001",
+    "evidence_ids": ["evd-001"],
+    "evidence_strengths": {"evd-001": EvidenceStrength.INDIRECT},
+    "validation_status": ValidationStatus.PARTIALLY_SUPPORTED,
+    "rationale": (
+        "The passage establishes the exposed receiver; the forgery precondition rests on the "
+        "absence of any documented signature verification."
+    ),
+    "confidence": ConfidenceLevel.MEDIUM,
+    "recommendation": Recommendation.CONTINUE,
+}
+
 
 def _extraction_model() -> DeterministicModel:
     return DeterministicModel([ContextExtractionProposal.model_validate(EXTRACTION)])
@@ -196,7 +223,9 @@ def _reasoning_model() -> DeterministicModel:
         [
             ThreatAnalysisProposal.model_validate({"threats": [THREAT]}),
             MappingProposal.model_validate({"mappings": [MAPPING]}),
-            EvidenceValidationProposal.model_validate({"assessments": [ASSESSMENT]}),
+            EvidenceValidationProposal.model_validate(
+                {"assessments": [CLAIM_ASSESSMENT, ASSESSMENT, THREAT_ASSESSMENT]}
+            ),
             CriticalReviewProposal.model_validate({"critiques": []}),
         ]
     )

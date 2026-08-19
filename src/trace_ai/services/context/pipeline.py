@@ -31,6 +31,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 from trace_ai.domain.actor import Actor
+from trace_ai.domain.assessment import Assessment
 from trace_ai.domain.asset import Asset
 from trace_ai.domain.component import Component
 from trace_ai.domain.context_claim import ContextClaim
@@ -65,8 +66,6 @@ if TYPE_CHECKING:
     from trace_ai.workflow.limits import Budget
 
 __all__ = ["ContextSliceOutcome", "context_objects", "run_context_slice"]
-
-WORKFLOW_VERSION = "0.1"
 
 
 @dataclass(frozen=True, slots=True)
@@ -128,7 +127,12 @@ def run_context_slice(
             "from. Register and index source documents first."
         )
 
-    run = start_run(handle, workflow_version=WORKFLOW_VERSION, model_profile=profile.name)
+    # The assessment's pin, not a module constant, so a replayed pre-batching assessment's run
+    # rows record the shape they actually ran (DEC-134).
+    assessment = handle.objects.get(Assessment, handle.assessment_id)
+    run = start_run(
+        handle, workflow_version=assessment.workflow_version, model_profile=profile.name
+    )
     ledger = ExecutionLedger(handle, run)
     state = (
         AssessmentState.begin(assessment_id=handle.assessment_id, workflow_run_id=run.id)

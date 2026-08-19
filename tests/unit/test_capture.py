@@ -53,6 +53,8 @@ def _run_extract(scenario: Scenario, tmp_path: Path) -> None:
         profile_name=PROFILE,
         live=_recorded("extraction"),
         data_root=tmp_path / "capture-data",
+        # The committed recording carries the single-call evidence shape (DEC-134).
+        workflow_version="0.1",
     )
 
 
@@ -158,6 +160,8 @@ def _run_rehearsal_stage(scenario: Scenario, tmp_path: Path, stage: str) -> None
             live=_recorded("extraction"),
             data_root=tmp_path / "rehearsal-data",
             rehearsal=True,
+            # The committed recording carries the single-call evidence shape (DEC-134).
+            workflow_version="0.1",
         )
     elif stage == "reason":
         shutil.copy(
@@ -229,6 +233,7 @@ def test_a_rehearsal_without_a_model_is_refused_before_any_side_effect(tmp_path:
             profile_name=PROFILE,
             data_root=tmp_path / "rehearsal-data",
             rehearsal=True,
+            workflow_version="0.1",
         )
     assert not capture_dir(scenario, rehearsal=True).exists()
     assert not (tmp_path / "rehearsal-data").exists()
@@ -252,6 +257,7 @@ def test_a_scenario_catalog_pin_reaches_the_assessment(tmp_path: Path) -> None:
         profile_name=PROFILE,
         live=_recorded("extraction"),
         data_root=tmp_path / "capture-data",
+        workflow_version="0.1",
     )
     from trace_ai.infrastructure.database.store import AssessmentStore
     from trace_ai.services.assessment import AssessmentService
@@ -344,6 +350,8 @@ def test_a_zero_finding_run_completes_the_capture_inside_the_reason_stage(
         profile_name=PROFILE,
         live=DeterministicModel(list(load_recorded_responses(responses[:1]))),
         data_root=tmp_path / "capture-data",
+        # The committed recording carries the single-call evidence shape (DEC-134).
+        workflow_version="0.1",
     )
     shutil.copy(
         oidc / "recorded" / "decisions-context.yaml",

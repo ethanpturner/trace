@@ -110,9 +110,11 @@ REVIEWER = "recorded-reviewer"
 # carry the same value when a capture is promoted.
 GENERATED_AT = DETERMINISTIC_STAMP
 
-# A hard stop well above the ~28-call, single-digit-dollar shape of a scenario run: a runaway
-# costs one order of magnitude, never an open-ended bill.
-BUDGET_CALLS = 60
+# A hard stop well above the shape of a scenario run: a runaway costs one order of magnitude,
+# never an open-ended bill. Re-derived for the batched evidence shape (DEC-134): the largest
+# corpus scenario adds roughly a dozen evidence batches to the ~28-call single-shape run, so the
+# ceiling moves from 60 to 90 and stays a runaway stop rather than a working limit.
+BUDGET_CALLS = 90
 BUDGET_COST = Decimal("30")
 """The cost ceiling is checked against a projection of max_output_tokens per call, and the
 64,000-token ceiling makes that projection ~4x any plausible actual spend -- so the guard sits
@@ -380,6 +382,7 @@ def stage_extract(
     live: StructuredModel | None = None,
     data_root: Path | None = None,
     rehearsal: bool = False,
+    workflow_version: str | None = None,
 ) -> None:
     """Create the assessment, load the scenario's inputs, and run to checkpoint 1.
 
@@ -388,6 +391,11 @@ def stage_extract(
     for tests, which must not write under the repository's `data/`. With `rehearsal`, the whole
     stage runs against a supplied deterministic model into the rehearsal staging directory,
     spending nothing (#534) — the mechanics-validation pass DEC-091 traded away.
+
+    `workflow_version` pins the capture's shape. A live capture leaves it `None` and records the
+    current workflow; a round trip or rehearsal replaying a recording that predates the current
+    shape passes the version the recording carries (DEC-134), because responses are consumed
+    under the shape that produced them.
     """
     staging = capture_dir(scenario, rehearsal=rehearsal)
     if data_root is None:
@@ -419,6 +427,7 @@ def stage_extract(
             scenario.name,
             default_configuration(profile_name, "stride-scenario-based"),
             requirements_catalog_version=scenario.catalog_version,
+            workflow_version=workflow_version,
         )
         (staging / "assessment-id.txt").write_text(created.id + "\n", encoding="utf-8")
         loader = DocumentLoader(service.handle(created.id))

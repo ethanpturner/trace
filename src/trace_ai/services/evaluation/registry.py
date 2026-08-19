@@ -73,6 +73,11 @@ class _ScenarioEntry(BaseModel):
     narrative: str | None = None
     """Informative: a pointer to a scenario's written narrative (ForgeFlow's feeds Stage 6). The
     registry loader accepts it so the field is not an unknown key, but nothing routes on it."""
+    workflow_version: str = "0.1"
+    """The workflow version the scenario's recording was captured or authored under (DEC-134).
+    The replay pins its assessment to this, so the recording is consumed under the call shape
+    that produced it. The default is `0.1` — the single-call evidence shape every recording
+    committed before batching carries — and a promotion of a newer capture updates the pin."""
 
 
 class _RegistryFile(BaseModel):
@@ -114,6 +119,9 @@ class Scenario:
     """The roadmap Stage 5 coverage category this scenario exercises (issue #328). Informative:
     nothing routes on it, and scenarios may share one — the registry states which categories are
     covered rather than the filesystem implying it."""
+    workflow_version: str = "0.1"
+    """The workflow version this scenario's recording carries (DEC-134); the replay pins its
+    assessment to it so the recording is consumed under the call shape that produced it."""
 
     @property
     def input_dir(self) -> Path:
@@ -204,6 +212,7 @@ def load_registry(registry_path: Path | None = None) -> list[Scenario]:
             conditions=tuple(entry.conditions),
             category=entry.category,
             catalog_version=entry.catalog_version,
+            workflow_version=entry.workflow_version,
         )
         for entry in parsed.scenarios
     ]

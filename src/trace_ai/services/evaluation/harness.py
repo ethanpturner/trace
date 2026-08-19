@@ -197,6 +197,10 @@ def run_scenario(
             entry.name,
             default_configuration(profile_name, "stride-scenario-based"),
             requirements_catalog_version=entry.catalog_version,
+            # A replay pins the registry's workflow version so the recording is consumed under
+            # the call shape that produced it (DEC-134). A live run pins nothing: it measures
+            # the current pipeline, and what it records carries the current version.
+            workflow_version=None if live else entry.workflow_version,
         )
         assessment_id = created.id
         handle = service.handle(assessment_id)
