@@ -1,0 +1,98 @@
+assessment_id: asm-001
+findings:
+- id: fnd-001
+  title: Bulk compromise of stored export files via managed object store or credential breach (req-DATA-001)
+  description: Export files consist of customer records (ast-001, ast-002) written to a managed object
+    store and later downloaded by customers (evd-001, evd-003, evd-006). These are sensitive customer
+    data that are both stored and transmitted, and the Export API is a public HTTPS service used to deliver
+    them to customers (evd-002), so the system stores and transmits confidential or restricted data and
+    data crosses a network boundary it does not control, satisfying the requirement’s applicable conditions.
+  requirement_ids:
+  - req-DATA-001
+  affected_component_ids:
+  - cmp-003
+  confidence: medium
+  evidence_ids:
+  - evd-001
+  - evd-002
+  - evd-003
+  - evd-006
+questions:
+- id: qst-001
+  question: What is the authoritative retention and deletion policy for completed export files in the
+    managed object store (for example, immediate deletion after customer download, 30-day lifecycle retention,
+    or another policy)?
+  status: answered
+- id: qst-002
+  question: What security controls (such as encryption at rest and access control configuration) are applied
+    to export files stored in the managed object store?
+  status: open
+- id: qst-003
+  question: What authentication and authorization mechanisms protect the public Export API for requesting
+    and downloading exports, and how is access constrained to each customer’s own exports?
+  status: answered
+- id: qst-004
+  question: No actor in the context is anonymous or external. If the system is reachable from outside,
+    who reaches it? If it is not, what establishes that?
+  status: open
+- id: qst-005
+  question: No actor in the context is administrative or privileged. Who operates and configures the system,
+    and through what?
+  status: open
+- id: qst-006
+  question: Can you confirm explicit statement that the export service is multi-tenant and that multiple
+    customers share the same managed object store or bucket; documentation of any existing tenant-isolation
+    mechanisms on export-file access or download links?
+  status: open
+- id: qst-007
+  question: Which statement is authoritative for req-DATA-001?
+  status: open
+- id: qst-008
+  question: Which statement is authoritative for req-DATA-002?
+  status: open
+- id: qst-009
+  question: Can you confirm network and security architecture documentation confirming that the managed
+    object store is not directly exposed to untrusted networks and is reachable only via service workloads?
+  status: open
+- id: qst-010
+  question: Can you confirm details of how the Export Worker authenticates to the managed object store
+    (for example, use of long-lived access keys vs. short-lived workload identities) to determine definitively
+    whether req-SECRET-001 applies?
+  status: open
+- id: qst-011
+  question: Can you confirm documentation clarifying whether the managed object store is an external,
+    provider-operated service and, if so, which provider and what data-processing and retention terms
+    apply?
+  status: open
+- id: qst-012
+  question: Can you confirm documentation of how operators authenticate to the export retrieval mechanism,
+    including whether access originates from outside a trusted network boundary and what (if any) multi-factor
+    authentication is enforced?
+  status: open
+- id: qst-013
+  question: Can you confirm logging design or configuration showing whether operator-initiated export
+    retrievals are recorded, including who performed the action, what was accessed, and when?
+  status: open
+- id: qst-014
+  question: Which statement is authoritative for req-DATA-002?
+  status: open
+- id: qst-015
+  question: Can you confirm documentation of encryption controls for internal service-to-service and service-to-storage
+    traffic, and for data at rest in the managed object store?
+  status: open
+- id: qst-016
+  question: Can you confirm authoritative text of req-NET-001 and its stated scope (especially coverage
+    of internal service-to-service and storage access); documentation of how req-NET-001 is mapped to
+    the Export API, Export Worker, and managed object store in the project’s requirements-to-architecture
+    mapping; any design or configuration documentation describing network segmentation or access controls
+    for the Export Worker and managed object store?
+  status: open
+- id: qst-017
+  question: Can you confirm authoritative specification of req-TPI-002 and examples of the workloads it
+    is intended to bound; requirements-to-architecture mapping showing that the Export API and Worker
+    are in scope for req-TPI-002; documentation of any existing rate limits, quotas, or similar controls
+    on export requests, and how they satisfy or relate to req-TPI-002?
+  status: open
+- id: qst-018
+  question: Which statement is authoritative for req-DATA-002?
+  status: open

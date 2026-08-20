@@ -1,0 +1,94 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 11880,
+    "output_tokens": 7955,
+    "cache_read_tokens": 10880,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.09576",
+    "duration_seconds": 95.52417716698255
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-AUTHZ-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The export service produces exports \"for customers\" (plural) on request (evd-001), and export requests name a customer whose records are assembled (evd-003), so the system serves more than one customer. Those customers' records are assembled by the Export Worker and written as export files to a single managed object store (evd-002, evd-003, evd-006), so data for distinct organizations shares storage. This threat explicitly concerns a customer manipulating the customer identifier to obtain another customer's export, so the requirement that every request be constrained to its tenant and that tenant context come from server-side state is engaged.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-DATA-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The Export Worker assembles exports for customers and writes the resulting export files to a managed object store (evd-002, evd-003). The operations guide describes completed export files written to the same managed object store and retained there for 30 days (evd-006). This implies that artifacts (export files) from multiple customers share a storage system. The threat\u2019s impact is that an attacker retrieves another customer's export file after it is written to this shared store, so the requirement about documenting how stored artifacts for different customers are separated and how that separation is enforced on access is engaged.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Tenant scoping of export requests is undocumented",
+        "description": "The architecture overview and data-handling sections describe that a customer requests an export, the service assembles it from the customer's records, and the customer downloads the result (evd-001). Export requests name a customer and a date range, and the assembled export contains that customer's records for the range and is written to a managed object store (evd-003). Actors describe the Customer as the authenticated requester and downloader of an export (evd-004). However, the documentation does not state how the Export API and Export Worker enforce that the authenticated customer can request exports only for its own tenant, nor whether tenant context is derived from server-side state (e.g., the authenticated identity) rather than from the request-supplied customer identifier. Without this, it is not possible to determine whether tenant-aware authorization required by req-AUTHZ-001 is implemented or how it mitigates this threat.",
+        "importance": "Clarifying how tenant context is derived and enforced for export requests is critical to assessing whether cross-tenant exports described in threat thr-002 are realistically preventable, and to determining satisfaction of req-AUTHZ-001 for the Export API and Export Worker.",
+        "related_object_ids": [
+          "thr-002",
+          "req-AUTHZ-001",
+          "cmp-001",
+          "cmp-002",
+          "ast-001",
+          "ast-002"
+        ],
+        "requested_evidence": [
+          "Architecture or design documentation describing the authorization model for the Export API and Export Worker, including how tenant context is derived from the authenticated customer identity and how requests are constrained to that tenant regardless of any customer identifier supplied in the request.",
+          "A description of any server-side tenant lookup or mapping from authenticated user to customer/tenant identifier, and where in the request path this check is enforced."
+        ],
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-004"
+        ],
+        "severity": "high"
+      },
+      {
+        "title": "Separation and access enforcement for export files in the managed object store are undocumented",
+        "description": "The data-handling section states that the assembled export is written to a managed object store (evd-003), and the operations guide states that completed export files are written to the managed object store and retained there under a 30-day lifecycle policy (evd-006). The documentation does not describe how export files for different customers are laid out in the store (for example, per-tenant prefixes, buckets, or keys), nor how access to those objects is enforced so that only the correct customer can download its own exports. Without this, it is not possible to determine whether tenant-based separation of stored artifacts required by req-DATA-003 is implemented or how it affects the confidentiality impact of threat thr-002 once exports are in storage.",
+        "importance": "Understanding how export files are separated and protected in the managed object store is important to evaluate whether cross-tenant disclosure could occur via storage access (for example, misconfigured paths or object permissions) and to assess satisfaction of req-DATA-003 for the Export Worker and object store.",
+        "related_object_ids": [
+          "thr-002",
+          "req-DATA-003",
+          "cmp-002",
+          "cmp-003",
+          "ast-002"
+        ],
+        "requested_evidence": [
+          "Architecture or storage documentation describing the naming scheme and layout of export files in the managed object store, including any per-tenant prefixes, buckets, or encryption keys.",
+          "Documentation or configuration describing access-control policies on the managed object store that limit which principals can read or list export objects for each customer.",
+          "A description of how download links map to stored objects and what authorization checks are performed when a link is redeemed."
+        ],
+        "evidence_ids": [
+          "evd-003",
+          "evd-006"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": []
+  }
+}
