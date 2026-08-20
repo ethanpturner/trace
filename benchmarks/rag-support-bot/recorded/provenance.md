@@ -1,38 +1,21 @@
 # Recorded run for the rag-support-bot scenario
 
-Authored offline against the `offline-fake` profile and the deterministic model, shaped
-exactly as recordings are consumed (one JSON per model call, the schema named by the #461
-envelope, replayed in order). Reviewer decisions reach the workflow through the same writers an
-interactive session uses (DEC-017); replay is not an ablation (DEC-012). A live capture
-(`trace capture rag-support-bot`, DEC-091) replaces these files file for file. Version pins:
-profile offline-fake, workflow 0.1, catalog 0.2 (pinned through the registry's
-`catalog_version`, DEC-098), report template report-v1.
+Captured live from `openai/gpt-5.1` through OpenRouter on 2026-08-19 via `trace capture` under
+the `openrouter-economy` profile (DEC-135), in the #484 subset wave — replacing the authored
+offline recording file for file. Version pins: profile openrouter-economy, workflow 0.2 (the
+adversarial condition keeps its own 0.1 pin beside its authored recording), catalog 0.2,
+template report-v1, generation timestamp 2026-08-11T12:00:00+00:00. Nineteen envelopes, $2.55
+staged — one extraction, one threat analysis, seven mapping positions, two evidence positions,
+seven critical-review positions (retry pairs consumed positionally on replay), one report.
+Round trip verified byte-for-byte against the pinned hash.
 
-## Scope
+## Reviewer decisions and what the recording measures
 
-The AI system threat-modeling pack's scenario (#489, DEC-098): a RAG support assistant whose
-documents affirmatively state that one shared retrieval index serves every workspace and that
-relevance alone selects the passages that reach the prompt. The recording exercises the 0.2
-catalog's retrieval-augmentation requirements:
-
-- **One finding** (req-RAG-002): the documented absence of an entitlement filter is an
-  affirmative statement, not silence, so the unmet mapping becomes a finding the reviewer
-  approves at high severity.
-- **One documentation gap** (req-RAG-003): deletion propagation from the support platform to
-  the index is unstated either way. The evidence-validation assessment recommends the gap
-  route, consolidation converts the unverified mapping deterministically (DEC-013), and the
-  gap's paired question asks for the propagation statement.
-- **Two rejections by construction** (req-AI-001, req-RAG-001): prompt fencing and the governed
-  corpus write path are documented, the mappings assess as satisfied, and no finding is built —
-  the false positives the baselines commit and the pipeline's structure refuses.
-- **The DEC-070 OpenAPI parser** (#504): `input/openapi.yaml` seeds the declared API component
-  — entry-point types, the bearer scheme as an authentication mechanism, and the documented
-  claim that `GET /v1/health` explicitly disables authentication (`security: []`) — before the
-  agent runs, so the recorded extraction extends the parsed baseline rather than re-deriving
-  it. The parser's objects are decided at checkpoint 1 with everything else.
-
-| | |
-|---|---|
-| Authored | 2026-08-17, offline, with the truth set |
-| Catalog | core 0.2 (draft; the scenario pins it via the registry) |
-| Replayed by | `uv run trace evaluate rag-support-bot` |
+Checkpoint 1 approved all 53 objects as extracted; no blocking questions. Checkpoint 2
+rejected all four candidates on DEC-009 grounds with recorded rationales: each established a
+requirement's applicability — customer data crossing to documented, term-governed external
+processors (no-training terms, TLS) — or an impact framing, and none an evidenced deficiency;
+the retention question the index's silence raises is the question the run itself asked.
+Evidence coverage was 1.0. Against the truth set this scores 0 matched, 1 missed, 0 spurious:
+the strict reviewer line trades recall for a clean precision record, measured rather than
+argued. Reconciliation is #589's.

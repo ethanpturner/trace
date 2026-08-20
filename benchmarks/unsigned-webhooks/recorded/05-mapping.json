@@ -1,0 +1,52 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 245,
+    "output_tokens": 8040,
+    "cache_read_tokens": 21760,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.08342625",
+    "duration_seconds": 93.97636862494983
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-WEBHOOK-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The Event Receiver exposes an HTTPS endpoint that accepts deployment events from an external CI platform and triggers processing (chat notifications) when events are received, which matches the requirement\u2019s conditions that the system exposes an endpoint accepting events from an external platform and that inbound events trigger processing or state change (evd-002, evd-003).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unmet",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-WEBHOOK-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This requirement assumes event authenticity is already verified and then addresses replay or duplicate delivery. In this system, the documentation explicitly states that the Event Receiver accepts any well-formed delivery and does not verify signatures from the CI platform (evd-003), so the applicable condition that authenticity is verified does not hold, and replay-specific controls do not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      }
+    ],
+    "documentation_gaps": [],
+    "catalog_gap_candidates": []
+  }
+}

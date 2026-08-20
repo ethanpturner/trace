@@ -3,16 +3,16 @@
     {
       "requirement_id": "req-WEBHOOK-001",
       "affected_component": "Event Receiver",
-      "title": "Inbound events are processed without signature verification",
-      "rationale": "The receiver processes any well-formed delivery and checks no signature.",
-      "evidence_quote": "the receiver accepts and processes any well-formed delivery and does not check a signature"
+      "title": "Inbound deployment events are not authenticated",
+      "rationale": "The CI platform supports signing webhook deliveries so receivers can verify authenticity, but this receiver explicitly does not verify any signature and instead processes any well‑formed request. This allows an attacker to forge deployment events and post arbitrary messages to the internal chat channel.",
+      "evidence_quote": "\"The CI platform supports signing deliveries with a shared secret so a receiver can verify that an event came from the platform; the receiver accepts and processes any well-formed delivery and does not check a signature.\""
     },
     {
       "requirement_id": "req-WEBHOOK-002",
       "affected_component": "Event Receiver",
-      "title": "No replay protection is present",
-      "rationale": "The receiver does not prevent replays.",
-      "evidence_quote": "the receiver accepts and processes any well-formed delivery"
+      "title": "No mechanism to prevent or limit replay of deployment events",
+      "rationale": "The receiver processes any well‑formed delivery without reference to unique identifiers, timestamps, or other replay controls. Replayed events would therefore be accepted and trigger repeated chat notifications, enabling spamming or flooding of the channel via replayed requests.",
+      "evidence_quote": "\"The CI platform delivers each deployment event as a JSON body to the receiver's public URL. The receiver parses the JSON and acts on the event... the receiver accepts and processes any well-formed delivery and does not check a signature.\""
     }
   ]
 }

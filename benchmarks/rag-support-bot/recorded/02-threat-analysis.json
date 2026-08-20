@@ -1,52 +1,350 @@
 {
   "schema": "ThreatAnalysisProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 14218,
+    "output_tokens": 20724,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.2250125",
+    "duration_seconds": 205.9680972910719
+  },
   "response": {
     "threats": [
       {
-        "title": "Cross-workspace disclosure through shared-index retrieval",
-        "description": "The architecture overview states that all workspaces are served from one shared retrieval index and that relevance alone selects the passages that reach the prompt. A workspace user's question that is semantically close to another workspace's resolved tickets retrieves those tickets' text, and the operations notes state ticket text sometimes includes configuration snippets customers pasted, with only email addresses masked. The retrieved passages reach the prompt and can surface in the cited answer.",
+        "title": "Cross-workspace support ticket leakage via shared retrieval index",
+        "description": "A signed-in user in one Relay workspace, or an attacker who has obtained that workspace's session token, crafts questions in the help panel so that the answer service's similarity search returns passages from other workspaces' resolved support tickets. If the shared retrieval index does not strictly scope queries to the caller's workspace and instead selects passages solely by embedding similarity, the model can generate answers that reveal other workspaces' support history.",
         "methodology": "stride-scenario-based",
-        "category": ["information_disclosure"],
-        "threat_actor_ids": ["act-001"],
-        "affected_component_ids": ["cmp-003", "cmp-004"],
-        "affected_asset_ids": ["ast-001"],
-        "related_data_flow_ids": ["df-002"],
+        "category": [
+          "information_disclosure",
+          "multi_tenancy"
+        ],
+        "threat_actor_ids": [
+          "act-001"
+        ],
+        "affected_component_ids": [
+          "cmp-002",
+          "cmp-001",
+          "cmp-003",
+          "cmp-005"
+        ],
+        "affected_asset_ids": [
+          "ast-002",
+          "ast-003"
+        ],
+        "related_data_flow_ids": [],
         "preconditions": [
-          "the asking user belongs to a different workspace than the ticket's",
-          "a question embeds close to another workspace's ticket text"
+          "The retrieval index's query mechanism is not effectively constrained to the caller's workspace and relies primarily on embedding similarity to select passages, despite the index serving all workspaces from a single shared store.",
+          "The attacker has a valid workspace-scoped session token for at least one Relay workspace.",
+          "Resolved support tickets from multiple workspaces are present in the shared retrieval index."
         ],
         "attack_path": [
-          "ask the assistant a question shaped toward another tenant's subject matter",
-          "the shared index returns that tenant's ticket passages by similarity",
-          "the answer cites or paraphrases the other tenant's ticket content"
+          "An attacker obtains or controls an account in one workspace and signs in to Relay, acquiring a workspace-scoped session token used by the help panel to call the Relay Answers API.",
+          "From the help panel, the attacker issues carefully crafted questions designed to be semantically similar to known or guessed error messages and configurations that may also appear in other workspaces' resolved tickets.",
+          "The Relay Answers API uses the token to identify the caller's workspace and issues a similarity search against the shared retrieval index; under the precondition of missing or bypassed workspace scoping, top-ranked passages include tickets from other workspaces.",
+          "The answer service assembles a prompt that includes these cross-workspace passages and sends the prompt and user question to the external model provider.",
+          "The model generates an answer that incorporates or summarizes details from other workspaces' tickets and returns it to the help panel, potentially with citations that reveal those other workspaces' support history."
         ],
-        "impact": "One workspace's support-ticket content, including pasted configuration, is disclosed to users of another workspace.",
+        "impact": "Potential cross-tenant disclosure of other customers' resolved support tickets and their derived embeddings to an unauthorized workspace user and to the external model provider.",
         "likelihood": null,
-        "confidence": "high",
-        "evidence_ids": ["evd-002", "evd-013"]
+        "confidence": "low",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-006",
+          "evd-012",
+          "evd-013",
+          "evd-016"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
       },
       {
-        "title": "Indexed ticket text steers answers for other workspaces",
-        "description": "Resolved tickets are authored by support customers and indexed nightly. Text a customer writes into a ticket becomes retrievable content that later enters other users' prompts through the shared index. The prompt places retrieved passages in a delimited context block described as reference material, and the panel renders answers as plain text, but a crafted ticket remains a write path into future prompts.",
+        "title": "Assistant broadens internal access to sensitive workspace support history",
+        "description": "Within a workspace, a lower-privileged signed-in user uses the help panel to ask questions that cause the assistant to retrieve and summarize content from that workspace's resolved support tickets, including configuration snippets or other potentially sensitive details. If the assistant does not enforce per-user authorization aligned with the support platform's visibility rules and instead treats the workspace-scoped token as sufficient, it can broaden access to support history beyond the users who could see those tickets directly.",
         "methodology": "stride-scenario-based",
-        "category": ["tampering"],
-        "threat_actor_ids": ["act-002"],
-        "affected_component_ids": ["cmp-004", "cmp-005"],
-        "affected_asset_ids": ["ast-001"],
-        "related_data_flow_ids": ["df-004", "df-002"],
+        "category": [
+          "information_disclosure",
+          "elevation_of_privilege"
+        ],
+        "threat_actor_ids": [
+          "act-001"
+        ],
+        "affected_component_ids": [
+          "cmp-002",
+          "cmp-001",
+          "cmp-003",
+          "cmp-006"
+        ],
+        "affected_asset_ids": [
+          "ast-002",
+          "ast-003",
+          "ast-004"
+        ],
+        "related_data_flow_ids": [],
         "preconditions": [
-          "the attacker can author ticket text that reaches the resolved-tickets export"
+          "Some resolved support tickets in the support platform are intended to be visible only to a subset of workspace users (for example, administrators or owners).",
+          "The assistant uses the workspace-scoped token to identify the workspace but does not enforce finer-grained, per-user authorization for which tickets may influence answers.",
+          "Workspace support tickets contain configuration snippets or other sensitive operational details that would not otherwise be broadly visible within the workspace."
         ],
         "attack_path": [
-          "file a support ticket carrying instruction-shaped text",
-          "the nightly ingestion embeds it into the shared index",
-          "similar questions retrieve it into other users' prompts"
+          "A lower-privileged user in a workspace signs in to Relay and opens the help panel, which is available to every signed-in user on any plan.",
+          "The user asks broad or exploratory questions such as asking for previous troubleshooting steps or configuration advice related to their environment.",
+          "The Relay Answers API uses the workspace-scoped token to select retrieval data and queries the retrieval index, which returns passages from the workspace's resolved support tickets.",
+          "The model provider generates an answer summarizing these ticket passages, and the help panel displays the answer and citations to the user.",
+          "The user thereby learns details from support tickets that may have been intended only for more privileged workspace members, including configuration snippets or other sensitive information."
         ],
-        "impact": "Attacker-authored text is placed in other workspaces' prompts wearing the system's citation authority.",
+        "impact": "Potential expansion of access to sensitive support-ticket content (including configuration snippets and possibly secrets) from a limited set of authorized users to all signed-in users in the workspace, using the assistant as a side channel.",
+        "likelihood": null,
+        "confidence": "low",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-006",
+          "evd-012",
+          "evd-013",
+          "evd-016"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Prompt-injection content in support tickets steers assistant output",
+        "description": "A malicious or careless user submits a support ticket whose body contains adversarial instructions aimed at the assistant. After the ticket is resolved, the ingestion pipeline indexes it into the retrieval index along with other support history. When another user later asks a related question, the retrieval step surfaces this passage into the prompt's context block; despite the system prompt labelling the block as reference material, the model may follow the adversarial text and produce harmful instructions or disclose information that the user would not otherwise receive.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "prompt_injection",
+          "tampering",
+          "information_disclosure"
+        ],
+        "threat_actor_ids": [
+          "act-001"
+        ],
+        "affected_component_ids": [
+          "cmp-006",
+          "cmp-004",
+          "cmp-003",
+          "cmp-005",
+          "cmp-001",
+          "cmp-002"
+        ],
+        "affected_asset_ids": [
+          "ast-002",
+          "ast-003",
+          "ast-004"
+        ],
+        "related_data_flow_ids": [
+          "df-002",
+          "df-003"
+        ],
+        "preconditions": [
+          "Support ticket bodies beyond email addresses are not systematically scrubbed or reviewed for prompt-injection content before being exported and ingested into the retrieval index.",
+          "The model is not perfectly robust against malicious instructions embedded within retrieved context passages, even when the prompt design marks the context block as reference material.",
+          "Workspace users tend to trust assistant responses and may follow instructions presented as authoritative guidance in the help panel."
+        ],
+        "attack_path": [
+          "A user or attacker submits a support ticket whose text includes adversarial instructions intended to influence future model behaviour once the ticket is used as context.",
+          "The ticket is resolved and appears in the support platform's resolved-tickets export; the ingestion pipeline runs nightly, chunks and embeds the ticket content, and writes it with source metadata into the managed retrieval index.",
+          "Later, another user in the same workspace (or, under other threats, another workspace) asks a question whose embedding is close to the adversarial ticket, causing the retrieval index to return that passage among the top results.",
+          "The answer service assembles a prompt that inserts the retrieved ticket text into a delimited context block and sends it, along with the user's question and system instructions, to the external model provider.",
+          "The model interprets the adversarial content as instructions despite the prompt's guidance, generating an answer that includes harmful advice or requests for sensitive information.",
+          "The user follows the model's instructions, potentially revealing credentials such as workspace session tokens or making unsafe configuration changes based on the poisoned answer."
+        ],
+        "impact": "Compromise of answer integrity and potential exfiltration of workspace secrets or credentials (including workspace session tokens) if users act on harmful or deceptive instructions produced by the assistant based on adversarial ticket content.",
         "likelihood": null,
         "confidence": "medium",
-        "evidence_ids": ["evd-002", "evd-003", "evd-012"]
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-012",
+          "evd-013"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Compromised model provider exposes questions and retrieved support history",
+        "description": "For each answer, the answer service sends the user's question and retrieved passages, including workspace support history and documentation, to an externally operated large-language-model API over TLS under terms that exclude training on submitted content. If the model provider is compromised or disregards its contractual restrictions, attackers with access to its logs, storage, or backups can read or reuse those questions and passages, disclosing customer support history and other internal content.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "information_disclosure",
+          "dependency_risk"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-005",
+          "cmp-001",
+          "cmp-003",
+          "cmp-002"
+        ],
+        "affected_asset_ids": [
+          "ast-002",
+          "ast-003",
+          "ast-001"
+        ],
+        "related_data_flow_ids": [],
+        "preconditions": [
+          "The hosted model provider stores or logs request payloads (questions and retrieved passages) in a way that can be accessed by its operators or by an attacker who compromises the service.",
+          "The model provider experiences a breach, insider misuse, or policy failure that exposes stored request data despite contractual terms excluding training on submitted content."
+        ],
+        "attack_path": [
+          "A signed-in workspace user asks a question in the help panel; the answer service retrieves relevant passages from the shared index, including workspace support history and documentation.",
+          "The answer service assembles a prompt with the user's question and retrieved passages and sends it over TLS to the hosted large-language-model API operated by the external provider.",
+          "The model provider processes the request and, as part of its normal operation, retains request data in logs or storage.",
+          "An attacker compromises the model provider's environment or an insider misuses access to those logs or storage, extracting stored requests that include support-ticket text and internal documentation excerpts.",
+          "The attacker uses this data to learn sensitive details about customer workspaces, including historical issues, configurations, and operational patterns."
+        ],
+        "impact": "Disclosure of workspaces' resolved support tickets, their derived embeddings, and internal documentation to unauthorized parties via compromise or misuse of the external model provider's infrastructure.",
+        "likelihood": null,
+        "confidence": "medium",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-004"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Compromise of managed retrieval index exposes embeddings of support history",
+        "description": "The retrieval index is a managed vector database (standard tier) that holds embeddings of help-center articles and resolved support tickets and is the only copy of those embeddings. Because it is a third-party managed offering reachable from the answer service's network segment, if the managed service or its underlying storage is compromised, an attacker can obtain the embeddings and associated metadata and potentially infer sensitive information about workspaces' support history and operational context.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "information_disclosure",
+          "dependency_risk"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-003",
+          "cmp-004",
+          "cmp-006",
+          "cmp-007"
+        ],
+        "affected_asset_ids": [
+          "ast-003",
+          "ast-002",
+          "ast-001"
+        ],
+        "related_data_flow_ids": [
+          "df-002",
+          "df-003"
+        ],
+        "preconditions": [
+          "The managed vector-database service or its underlying storage, backups, or administrative interfaces are compromised or misused, allowing an attacker to access stored embeddings and metadata.",
+          "The stored embeddings and metadata contain enough signal to infer sensitive aspects of the underlying support tickets and documentation when subjected to offline analysis."
+        ],
+        "attack_path": [
+          "The nightly ingestion pipeline reads help-center documentation and resolved support tickets, chunks and embeds their content, and writes embeddings plus source metadata into the managed vector database, which is the only copy of the embeddings.",
+          "Over time, the retrieval index accumulates embeddings and metadata for many workspaces' support history and documentation.",
+          "An attacker compromises the managed vector-database platform, gains elevated access to its storage, or abuses administrative access to export the embeddings and metadata.",
+          "The attacker performs offline analysis or model-inversion techniques on the embeddings and metadata to infer details about workspaces' historical issues, configurations, and other sensitive content contained in the support tickets.",
+          "The inferred information is used or sold, resulting in disclosure of customer support history and internal operational details outside the intended audience."
+        ],
+        "impact": "Exposure of embeddings and associated metadata for all workspaces, enabling inference or partial reconstruction of sensitive support-ticket content and internal documentation, and revealing which workspaces experienced which issues.",
+        "likelihood": null,
+        "confidence": "medium",
+        "evidence_ids": [
+          "evd-002",
+          "evd-012"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Interception or tampering of ingestion traffic to the retrieval index",
+        "description": "The ingestion pipeline sends embeddings and source metadata over the network to the managed retrieval index using the provider's standard tier, and the documentation does not state whether this connection is encrypted or mutually authenticated. If an attacker gains access to the answer service's network segment and the ingestion connection lacks strong transport protection, they could intercept ingestion traffic to learn embeddings and metadata or tamper with it to poison the index contents.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "information_disclosure",
+          "tampering"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-004",
+          "cmp-003"
+        ],
+        "affected_asset_ids": [
+          "ast-003",
+          "ast-002",
+          "ast-001"
+        ],
+        "related_data_flow_ids": [
+          "df-003"
+        ],
+        "preconditions": [
+          "The network path between the ingestion pipeline and the managed retrieval index is not fully protected by strong encryption and integrity checks (for example, TLS with proper certificate validation), or such protections are bypassable on the answer service's network segment.",
+          "An attacker is able to gain a foothold on the network segment from which the retrieval index is reachable, such as by compromising a host or network device in that segment."
+        ],
+        "attack_path": [
+          "The ingestion pipeline, running on Relay-controlled infrastructure, performs its nightly job to read help-center documentation and the resolved-tickets export and compute embeddings.",
+          "The pipeline transmits embeddings and associated source metadata over the network to the managed vector database using the provider's standard-tier offering and the connectivity available from the answer service's network segment.",
+          "An attacker with access to this network segment passively captures ingestion traffic; if transport encryption or authentication is missing or misconfigured, the attacker records embeddings and metadata for later analysis.",
+          "Alternatively, the attacker performs a man-in-the-middle attack on the ingestion connection, modifying or injecting embeddings or metadata as they flow to the retrieval index.",
+          "The retrieval index stores the observed or modified embeddings, and subsequent assistant queries operate over data that has been exposed to the attacker or corrupted by them, affecting both confidentiality and answer integrity."
+        ],
+        "impact": "Potential disclosure of embeddings and source metadata for help-center documentation and support tickets to a network attacker, and the ability to corrupt or poison the retrieval index so that future answers are based on attacker-controlled content.",
+        "likelihood": null,
+        "confidence": "low",
+        "evidence_ids": [
+          "evd-002",
+          "evd-012",
+          "evd-002",
+          "evd-012"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Stolen workspace session token used to query assistant from outside the workspace",
+        "description": "The Relay Answers API exposes a POST /v1/answers operation secured by a workspace-scoped HTTP bearer token that the help panel uses to identify the caller's workspace. If an attacker steals a workspace session token (for example, from a compromised client, logging system, or other channel), they can call the /v1/answers endpoint directly or via the application to issue arbitrary questions as that workspace, gaining access to its support history via the assistant and consuming its daily answer quota.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "spoofing",
+          "information_disclosure",
+          "denial_of_service"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-001",
+          "cmp-003",
+          "cmp-005"
+        ],
+        "affected_asset_ids": [
+          "ast-004",
+          "ast-002",
+          "ast-003"
+        ],
+        "related_data_flow_ids": [],
+        "preconditions": [
+          "An attacker is able to obtain a valid workspace-scoped session token outside the control of its legitimate user, for example via endpoint compromise, token leakage, or reuse from logs.",
+          "There is no additional binding of the workspace token to a particular client or network context that would prevent its reuse by an attacker, beyond what is described in the API specification."
+        ],
+        "attack_path": [
+          "A workspace user signs in to Relay and obtains a workspace-scoped session token that the help panel uses as a bearer token when calling the Relay Answers API.",
+          "Through some external compromise or leakage channel, an attacker gains access to this workspace session token.",
+          "The attacker, from their own infrastructure, sends POST requests to the /v1/answers endpoint of the Relay Answers API, presenting the stolen token in the Authorization header.",
+          "The answer service accepts the token, treats the attacker as a caller from the victim workspace, and performs retrieval over that workspace's embeddings, then calls the external model provider to generate answers.",
+          "The attacker receives answers that summarize the workspace's support history and documentation and can script a high volume of queries to exhaust the workspace's daily answer quota, limiting availability of the assistant to legitimate users."
+        ],
+        "impact": "Unauthorized access to a workspace's assistant-derived view of its support history and documentation by an external attacker, along with exhaustion of the per-workspace daily answer quota, reducing availability of the assistant to legitimate users.",
+        "likelihood": null,
+        "confidence": "medium",
+        "evidence_ids": [
+          "evd-006",
+          "evd-007",
+          "evd-008",
+          "evd-009",
+          "evd-011",
+          "evd-014",
+          "evd-015",
+          "evd-016",
+          "evd-017"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
       }
-    ]
+    ],
+    "catalog_gap_candidates": []
   }
 }

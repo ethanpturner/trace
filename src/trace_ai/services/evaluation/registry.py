@@ -7,7 +7,7 @@ which is a stated fact rather than a silent omission.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Final
 
 import yaml
@@ -17,6 +17,7 @@ from pydantic import ValidationError as PydanticValidationError
 from trace_ai.config import PROJECT_ROOT
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
     from pathlib import Path
 
 __all__ = [
@@ -79,6 +80,12 @@ class _ScenarioEntry(BaseModel):
     that produced it. The default is `0.1` — the single-call evidence shape every recording
     committed before batching carries — and a promotion of a newer capture updates the pin."""
 
+    condition_workflow_versions: dict[str, str] = Field(default_factory=dict)
+    """Per-condition overrides of `workflow_version` (DEC-134, amended). The pin belongs to the
+    recording, and a condition carries its own recording: promoting a newer clean capture must
+    not silently re-shape the replay of a condition recording it did not touch. A condition
+    absent here replays under the entry's `workflow_version`."""
+
 
 class _RegistryFile(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -122,6 +129,15 @@ class Scenario:
     workflow_version: str = "0.1"
     """The workflow version this scenario's recording carries (DEC-134); the replay pins its
     assessment to it so the recording is consumed under the call shape that produced it."""
+
+    condition_workflow_versions: Mapping[str, str] = field(default_factory=dict)
+    """Per-condition pin overrides (DEC-134, amended): a condition's own recording replays under
+    its own shape, independent of the clean recording's pin."""
+
+    def workflow_version_for(self, condition: str = CLEAN_CONDITION) -> str:
+        """The pin a replay of this condition's recording uses: the condition's own where one is
+        declared, the entry's otherwise."""
+        return self.condition_workflow_versions.get(condition, self.workflow_version)
 
     @property
     def input_dir(self) -> Path:
@@ -213,6 +229,7 @@ def load_registry(registry_path: Path | None = None) -> list[Scenario]:
             category=entry.category,
             catalog_version=entry.catalog_version,
             workflow_version=entry.workflow_version,
+            condition_workflow_versions=dict(entry.condition_workflow_versions),
         )
         for entry in parsed.scenarios
     ]

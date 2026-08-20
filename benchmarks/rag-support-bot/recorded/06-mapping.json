@@ -1,0 +1,146 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 14036,
+    "output_tokens": 8257,
+    "cache_read_tokens": 17152,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.102259",
+    "duration_seconds": 79.73912949999794
+  },
+  "response": {
+    "controls": [
+      {
+        "key": "ctrl_strip_ids_to_model",
+        "name": "Workspace and user identifiers stripped from model requests",
+        "description": "Before calling the hosted large-language-model API, the answer service strips workspace identifiers and user identifiers from the request so that only the user\u2019s question and the retrieved passages are sent to the external provider.",
+        "control_type": "implemented",
+        "provider_component_id": "cmp-001",
+        "protected_component_ids": [],
+        "protected_asset_ids": [
+          "ast-002",
+          "ast-003"
+        ],
+        "implementation_status": "implemented",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "owner": null,
+        "limitations": [
+          "Stripping workspace and user identifiers reduces direct identifiers in provider logs but does not remove potentially identifying information present in support-ticket text or configuration snippets included in retrieved passages."
+        ]
+      }
+    ],
+    "mappings": [
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AI-003",
+        "control_keys": [
+          "ctrl_strip_ids_to_model"
+        ],
+        "existing_control_ids": [
+          "ctl-003",
+          "ctl-005"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The system sends customer content (workspace support history and internal documentation passages) to an external hosted large-language-model provider as part of answering questions, so customer content crosses an external model-provider boundary and may include restricted data drawn from support tickets, matching both applicable_conditions for req-AI-003.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "satisfied",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-004",
+          "evd-012",
+          "evd-013"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-TPI-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-005"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "Customer support history and documentation text are sent to an external hosted model provider that processes this data to generate answers on the system\u2019s behalf, so customer data crosses a trust boundary to an external processor, matching the applicable_conditions for req-TPI-001.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "partially_satisfied",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-005"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "Workspace support history and derived embeddings are non-public customer data sent over the network to an external model provider, so the system both transmits confidential data and crosses a network boundary it does not control, matching the applicable_conditions for req-DATA-001.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "partially_satisfied",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "assumptions": [
+          "Support-ticket text and derived embeddings are treated as confidential or restricted data even though a formal classification label is not stated in the documentation."
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Model provider retention and usage of assistant traffic are not documented",
+        "description": "The architecture describes sending user questions and retrieved support-history and documentation passages to a hosted large-language-model provider and notes that the provider\u2019s terms for this traffic exclude training on submitted content, but it does not state whether the provider retains these requests, for how long, or for what operational purposes beyond serving the request. Without documented retention and usage terms, the exposure of customer support history and documentation in a provider compromise scenario (thr-004) cannot be fully assessed or compared with internal data-handling expectations.",
+        "importance": "Understanding how long the external model provider keeps assistant traffic and for what purposes is necessary to evaluate the blast radius of a provider compromise and to determine whether provider-side handling aligns with the system\u2019s own retention and usage commitments for customer support data.",
+        "related_object_ids": [
+          "thr-004",
+          "cmp-005",
+          "ast-002",
+          "ast-003"
+        ],
+        "requested_evidence": [
+          "Provider-specific data handling or DPA terms that state retention duration and allowed uses for assistant traffic sent to the model API.",
+          "Any configuration or documentation for provider features that disable or constrain retention of request payloads (for example, log-retention settings or no-retention modes) as applied to this integration."
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Encryption at rest responsibilities for assistant-related data are not documented",
+        "description": "Documentation states that requests to the hosted model provider are sent over TLS but does not describe how data at rest is protected for assistant-related content, either in the external provider\u2019s logs and storage or in the managed vector database holding embeddings. It also does not identify which platform or service is responsible for that at-rest protection. As a result, compliance with the expectation that sensitive data is encrypted at rest (for data crossing the provider boundary in thr-004 and for stored embeddings) cannot be verified from the available material.",
+        "importance": "Clarifying which parties provide encryption at rest for assistant-related data, and where, is needed to determine whether the system meets baseline data-protection expectations and to understand how much protection remains in the event of partial compromise of storage at the model provider or vector-database platform.",
+        "related_object_ids": [
+          "thr-004",
+          "cmp-003",
+          "cmp-005",
+          "ast-002",
+          "ast-003"
+        ],
+        "requested_evidence": [
+          "Platform or provider documentation or configuration demonstrating encryption at rest for the managed vector database used as the retrieval index and identifying who manages the keys.",
+          "Model provider documentation or configuration describing encryption at rest for stored or logged requests, including assistant traffic, and stating which party manages keys and what storage is covered."
+        ],
+        "evidence_ids": [
+          "evd-004",
+          "evd-012"
+        ],
+        "severity": "low"
+      }
+    ],
+    "catalog_gap_candidates": []
+  }
+}

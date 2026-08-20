@@ -1,47 +1,21 @@
 # Recorded run for the oidc-portal scenario
 
-Authored offline against the `offline-fake` profile and the deterministic model, shaped
-exactly as recordings are consumed (one JSON per model call, schema inferred structurally,
-replayed in order). Reviewer decisions reach the workflow through the same writers an
-interactive session uses (DEC-017); replay is not an ablation (DEC-012). A live capture
-replaces these files file for file. Version pins: profile offline-fake, workflow 0.1, catalog
-0.1, report template report-v1, generation timestamp 2026-08-11T12:00:00+00:00.
+Captured live from `openai/gpt-5.1` through OpenRouter on 2026-08-19 via `trace capture` under
+the `openrouter-economy` profile (DEC-135), in the #484 subset wave — replacing the authored
+offline recording file for file. Version pins: profile openrouter-economy, workflow 0.2,
+catalog 0.3 (the registry entry's), template report-v1, generation timestamp
+2026-08-11T12:00:00+00:00. Fourteen envelopes, $1.84 staged: one extraction, one threat
+analysis, five mappings, one evidence batch, five critical reviews, one report.
+`report-hash.txt` is pinned from the deterministic double replay (the zero-finding stamp
+defect; see the unsigned-webhooks provenance and the DEC-134 amendment).
 
-## Scope
+## Reviewer decisions and what the recording measures
 
-This recording exercises the zero-finding path the scenario exists for: a successful
-assessment that approves no findings (DEC-013). The delegated-authentication conclusions a
-generic review most often asserts here — the local-password-policy false-positive class in
-`../expected/expected-rejections.yaml` — are recorded as suppressed on the mappings: the
-req-AUTH-001 mapping is satisfied by the documented delegation with the password-policy
-conclusion suppressed by the catalog's `common_false_positives` entry, and the req-AUTH-002
-mapping is not applicable under the requirement's own `non_applicable_conditions` entry. The
-one expected documentation gap (req-NET-001) comes from an unverified mapping whose evidence
-assessment recommends a gap: the reachability restriction is stated, its enforcement is not.
-The finding review concludes over an empty candidate set, and the report carries the
-`lim-empty-findings` limitation the assembler requires of a zero-finding run.
-
-## Re-authored for the delegated-authentication pack (#537, DEC-111)
-
-The scenario pins catalog 0.3 from this change, and the recorded mapping response for
-thr-001 was re-authored to engage the new `req-OIDC-*` requirements: four mappings appended,
-each `applicable` on the documented delegation and `unverified` where the overview states
-the flow without the mechanism detail. The req-OIDC-002 mapping records the pack's own
-suppression — the overview says the portal validates the ID token, mechanism unstated, and
-the suppressed conclusion is that validation is absent. Appending after the existing
-mappings keeps map-001 and map-002 stable; the thr-002 mapping's allocated identifier moved
-from map-003 to map-007, and the evidence-validation recording's subject reference moved
-with it. Zero findings remains the recorded outcome; the expected mappings live in
-`../expected/expected-control-mappings.yaml`.
-
-## Extended with the org-controls assertion (#528, DEC-115)
-
-The scenario gained `input/workspace-org-controls.yaml`, asserting the central catalog's
-`enterprise-idp-mfa` control for this system. The parser verifies the assertion against
-org-controls catalog 0.1 and seeds one documented claim with catalog provenance before the
-recorded extraction converts, which shifts the agent's claims from `ctx-001..004` to
-`ctx-002..005`; the decisions file moved with them and gained an approval for the parser's
-claim. Prose evidence identifiers are unchanged (the assertion document sorts after the
-overview), so no recorded response moved. The claim grounds the scenario's standing negative —
-that multi-factor authentication is not to be reported absent — in the organization's own
-documented mechanism rather than in the overview's one sentence alone.
+Checkpoint 1 approved all 34 objects — every one traceable — and answered the blocking
+question honestly: authentication is thoroughly documented (OIDC, no local accounts, IdP
+factor policy) and per-ticket authorization is not documented at all; undetermined, analysis
+input. The run completed with zero candidate findings at full evidence coverage
+(`evidence_assessment_coverage` 1.0), and against the truth set scores 0 matched, 0 missed,
+0 spurious — the zero-finding path met exactly. The five threats' critiques and the
+authorization question the run raised are the assessment's real output, which is DEC-013
+working as designed.

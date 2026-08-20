@@ -1,0 +1,936 @@
+{
+  "schema": "EvidenceValidationProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 300,
+    "output_tokens": 23414,
+    "cache_read_tokens": 12928,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.236131",
+    "duration_seconds": 238.3920508750016
+  },
+  "response": {
+    "assessments": [
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-030",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-001 describes the Kiosk Sync Service receiving and storing customer order records and being called by kiosks and the fulfillment system. It does not mention any AI models, model-generated output, or rendering contexts, nor does it describe threat thr-003. On this basis the non-applicability of req-AI-004 to thr-003 is not established.",
+        "missing_evidence": [
+          "Documentation of threat thr-003 describing all components and whether any AI model output is rendered in user interfaces or markup in that attack path.",
+          "Architecture or design documents stating whether any part of this system produces or renders model-generated content."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-031",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-001 only establishes that kiosks send order records to the Kiosk Sync Service and that the fulfillment system polls it. It does not describe any end-user authentication flows, identity providers, or the details of threat thr-003. Therefore the claim that req-AUTH-001 (documenting delegated user authentication) is not applicable to thr-003 is not established.",
+        "missing_evidence": [
+          "Threat documentation for thr-003 describing whether end users authenticate and whether authentication is delegated to an external identity provider.",
+          "Authentication design documents for kiosks and the fulfillment system, including any use of external IdPs in the thr-003 path."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-032",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The provided evidence describes data flow between kiosks, the Kiosk Sync Service, and the fulfillment system, but says nothing about multi-factor authentication, administrative access paths, or how the fulfillment system authenticates. It also does not define thr-003. The assertion that req-AUTH-002 is not applicable to thr-003 is therefore not established.",
+        "missing_evidence": [
+          "Documentation of threat thr-003 explaining how the fulfillment system or its integration credentials are compromised.",
+          "Access-control and MFA design for administrative and user access to the fulfillment system and Kiosk Sync Service."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-033",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-001 notes that the sync service receives customer orders from field kiosks and is polled by a fulfillment system, but it does not state whether the environment is single-tenant or multi-tenant, nor does it describe any tenant-aware authorization. As a result, the claim that req-AUTHZ-001 (multi-tenant tenant-aware authorization) is not applicable to thr-003 is not established.",
+        "missing_evidence": [
+          "Architecture or product documentation describing the tenancy model (single-tenant vs multi-tenant) for kiosks, the Kiosk Sync Service, and the fulfillment system.",
+          "Threat documentation for thr-003 mapping which tenants or organizations are in scope."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-034",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The only documented components in evd-001 are kiosks, the Kiosk Sync Service, and the fulfillment system, with no description of any third-party external platforms the system holds delegated access to. However, the absence of such description is not evidence that no such integrations exist, and thr-003 is not defined in the evidence. The non-applicability of req-AUTHZ-002 to thr-003 is therefore not established.",
+        "missing_evidence": [
+          "Integration architecture listing all external platforms and delegated accesses used by the system, particularly in the thr-003 attack path.",
+          "Threat documentation for thr-003 describing whether external delegated access plays a role."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-035",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 establishes that there is a Kiosk Sync Service VM used by kiosks and a fulfillment system but provides no information about how either component is built or deployed, or whether a CI/CD pipeline with third-party dependencies exists. Given this lack of deployment information, treating req-CICD-001 as conditionally applicable to thr-003 (depending on whether such a pipeline is present) accurately reflects what the documentation does and does not establish.",
+        "missing_evidence": [
+          "Build and deployment documentation for the fulfillment system and Kiosk Sync Service, including any CI/CD pipelines and third-party dependency management.",
+          "Threat documentation for thr-003 clarifying whether compromise via build/deployment tooling is in scope."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-036",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-001 directly states that order records contain customer names, delivery addresses, and order contents, that the sync service receives them from kiosks, and that it stores them for the fulfillment system to read over the network. This supports that confidential customer data is stored and transmitted, making an encryption-in-transit/at-rest requirement like req-DATA-001 relevant in general. However, the evidence does not describe thr-003 itself or explicitly link that requirement to the specific attack path, so the mapping of req-DATA-001 as applicable to thr-003 is only partially established.",
+        "missing_evidence": [
+          "Formal definition of req-DATA-001 and its applicability conditions.",
+          "Threat documentation for thr-003 explaining how compromise of data in transit or at rest contributes to the scenario."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-037",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "According to evd-001, the Kiosk Sync Service persists customer order records so that the fulfillment system can read them later, which shows that customer data is retained as working data. This supports the idea that a retention requirement such as req-DATA-002 is relevant to security risks involving these records. However, thr-003 is not described in the evidence, so the specific claim that req-DATA-002 is applicable to thr-003 is only partially supported.",
+        "missing_evidence": [
+          "Retention and data-lifecycle policies for order records across kiosks, the Kiosk Sync Service, and the fulfillment system.",
+          "Threat documentation for thr-003 explaining how record retention duration affects the volume of data at risk."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-038",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "While evd-001 shows that order records flow between kiosks, the Kiosk Sync Service, and a fulfillment system, it does not indicate whether the system is single-tenant or multi-tenant, nor whether stored artifacts are shared across distinct tenants. Therefore, treating req-DATA-003 (tenant separation in shared storage) as not applicable to thr-003 is not established by the evidence.",
+        "missing_evidence": [
+          "Documentation of the tenancy model and any shared storage used by multiple customer organizations.",
+          "Threat documentation for thr-003 indicating whether cross-tenant data exposure is or is not in scope."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-039",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-001 states that kiosks send customer order records to the Kiosk Sync Service, which stores them for the fulfillment system to read, indicating that at least these three components handle the same customer data. This supports that customer data exists in multiple components and that a deletion/erasure requirement such as req-DATA-004 is relevant in general. However, the evidence does not describe all data stores involved or the details of thr-003, so the claim that req-DATA-004 is applicable specifically to thr-003 is only partially established.",
+        "missing_evidence": [
+          "An inventory of all primary and derived stores holding customer order records and the mechanisms for propagating deletions across them.",
+          "Threat documentation for thr-003 clarifying how unrecoverable deletion across stores would change the impact of the threat."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-040",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The evidence describes only data flow and deployment (kiosks, Kiosk Sync Service VM, fulfillment system) and does not mention logging behavior, log contents, log destinations, or the detailed steps of thr-003. Consequently, the statement that req-LOG-001 (handling of restricted data in logs and log destinations) does not bear on thr-003 is not established.",
+        "missing_evidence": [
+          "Logging design for the kiosks, Kiosk Sync Service, and fulfillment system, including whether customer data appears in logs and where logs are stored or forwarded.",
+          "Threat documentation for thr-003 clarifying whether log leakage forms part of the risk."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-041",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-001 does not describe any privileged administrative interfaces or operator consoles, nor does it describe thr-003. It only mentions kiosks calling the service and the fulfillment system polling it. Thus, the conclusion that req-LOG-002 (logging security-relevant administrative actions) is not applicable to thr-003 is not established.",
+        "missing_evidence": [
+          "Documentation of any administrative or operator interfaces for the Kiosk Sync Service and fulfillment system and how privileged actions are logged.",
+          "Threat documentation for thr-003 indicating whether privileged operations are part of the attack path."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-042",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-001 directly states that the Kiosk Sync Service runs on a VM in an operations subnet and that it is called by kiosks over the store network and polled by the fulfillment system. This shows that the service is an internal networked component handling customer data, which supports the relevance of a network-segmentation requirement like req-NET-001 in general. However, thr-003 is not described in the evidence, so the specific mapping of req-NET-001 as applicable to thr-003 is only partially established.",
+        "missing_evidence": [
+          "Network architecture and firewall rules showing which networks and workloads can reach the Kiosk Sync Service VM.",
+          "Threat documentation for thr-003 linking uncontrolled network reachability of this VM to the described attack."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-043",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The evidence does not mention any long-lived provider credentials, signing keys, or outbound integrations to external platforms. It also does not describe thr-003. The assertion that req-SECRET-001 is not applicable to thr-003 is therefore not established by the available documentation.",
+        "missing_evidence": [
+          "Configuration or design documentation listing any provider credentials or signing keys stored on the fulfillment system or Kiosk Sync Service.",
+          "Threat documentation for thr-003 clarifying whether theft or misuse of such secrets is in scope."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-044",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-001 is silent on any access to customer resources on external platforms, API tokens, or installation-scoped credentials. Without evidence about such integrations or a description of thr-003, the conclusion that req-SECRET-002 is not applicable to thr-003 is not established.",
+        "missing_evidence": [
+          "Integration inventory describing any access to customer resources on external platforms and how that access is authenticated.",
+          "Threat documentation for thr-003 indicating whether compromise of those external accesses is relevant."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-045",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The only data flows described in evd-001 are between kiosks, the Kiosk Sync Service, and the fulfillment system. There is no explicit statement that no external data processors are involved, and there is no description of thr-003. Therefore, the claim that req-TPI-001 (documentation of external processor data handling) does not bear on thr-003 is not established.",
+        "missing_evidence": [
+          "Data-flow diagrams or contracts identifying any third-party processors that handle customer order data, if any.",
+          "Threat documentation for thr-003 clarifying whether external processors are out of scope."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-046",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-001 does not mention any metered external services or third-party compute providers; it only describes internal interactions between kiosks, the Kiosk Sync Service, and the fulfillment system. The absence of mention is not evidence that such services are never used, and thr-003 itself is not described. Thus, the non-applicability of req-TPI-002 to thr-003 is not established.",
+        "missing_evidence": [
+          "Architecture or billing documentation listing any metered external services used when processing customer orders.",
+          "Threat documentation for thr-003 clarifying whether consumption of metered external services is relevant to the scenario."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-047",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-001 shows that kiosks call the Kiosk Sync Service over the store network and that the fulfillment system polls it hourly, which supports that the documented interactions are client-initiated polling rather than asynchronously delivered external webhooks. However, the evidence does not state that there are no webhook-style endpoints at all, nor does it define thr-003. Therefore, the reasoning that req-WEBHOOK-001 is not applicable to thr-003 is only partially established.",
+        "missing_evidence": [
+          "API documentation for the Kiosk Sync Service confirming whether it exposes any externally delivered webhook or event endpoints.",
+          "Threat documentation for thr-003 specifying which endpoints are involved in the attack path."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-048",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The evidence indicates that the Kiosk Sync Service is polled by the fulfillment system and called by kiosks, which supports that its described interactions are synchronous and internally initiated rather than externally delivered events. This is relevant to replay concerns governed by req-WEBHOOK-002. However, evd-001 does not confirm that no replayable inbound event mechanisms exist and does not describe thr-003, so the conclusion that req-WEBHOOK-002 does not bear on that threat is only partially supported.",
+        "missing_evidence": [
+          "Comprehensive interface specification for the Kiosk Sync Service identifying any event-driven or webhook-style endpoints and their replay protections.",
+          "Threat documentation for thr-003 detailing whether replay of inbound events is a plausible attack step."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-049",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 confirms the existence of a Kiosk Sync Service running on a VM that stores customer order records but is silent on any administrative or operator interfaces. Given this, treating req-ADMIN-001 as conditionally applicable to thr-004\u2014depending on whether such an administrative interface exists\u2014is consistent with the documentation, which neither confirms nor rules out such an interface.",
+        "missing_evidence": [
+          "Documentation of any administrative or operator-facing interfaces for the Kiosk Sync Service, including their capabilities and exposure.",
+          "Threat documentation for thr-004 explaining whether privileged actions via such an interface are part of the attack path."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-050",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The evidence describes the Kiosk Sync Service as receiving and storing customer order records for the fulfillment system but does not mention any AI models, model invocations, or content being passed to a model. Silence on these points does not prove that no such processing occurs. The claim that req-AI-001 is not applicable to thr-004 because no content is sent to a model is therefore not established.",
+        "missing_evidence": [
+          "Architecture or design documentation explicitly stating whether any AI models are used in processing customer orders and which components invoke them, if any.",
+          "Threat documentation for thr-004 clarifying whether any AI-related processing is in scope."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-051",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-001 mentions only storage and retrieval of structured order records between kiosks, the Kiosk Sync Service, and the fulfillment system. It does not describe any model-generated output being published externally. However, the absence of mention is not sufficient evidence that such output never exists, and thr-004 is not defined. Thus the conclusion that req-AI-002 is not applicable to thr-004 is not established.",
+        "missing_evidence": [
+          "Documentation of any model-generated outputs and whether they are published to external parties or channels.",
+          "Threat documentation for thr-004 indicating whether publication of model outputs is in scope."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-052",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The architecture note in evd-001 does not mention sending any content from the Kiosk Sync Service or fulfillment system to an external model provider. While that makes such usage less likely, the evidence does not explicitly confirm that no content is ever sent to a model. Consequently, the non-applicability of req-AI-003 to thr-004 is not established.",
+        "missing_evidence": [
+          "Integration and data-flow documentation listing any calls from system components to external model providers and the data passed, if any.",
+          "Threat documentation for thr-004 clarifying whether external model providers are in scope."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-053",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-001 characterizes the Kiosk Sync Service as storing structured order data but does not state whether any model outputs are produced or rendered in UIs or markup. On that basis, the claim that req-AI-004 (safe encoding of model output) is not applicable to thr-004 is not established.",
+        "missing_evidence": [
+          "Component design describing any UIs or rendering paths that present model-generated content, if they exist.",
+          "Threat documentation for thr-004 indicating whether such rendering paths contribute to the risk."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-054",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-001 states that kiosks call the Kiosk Sync Service over the store network and that the fulfillment system polls it, which supports that its primary clients are internal components rather than end users directly. However, the evidence does not explicitly rule out any direct end-user access paths, nor does it define thr-004. Therefore, the conclusion that req-AUTH-001 (about end-user delegated authentication) is not applicable to thr-004 is only partially supported.",
+        "missing_evidence": [
+          "Network and API exposure documentation confirming whether the Kiosk Sync Service is accessible directly from end-user networks or only via kiosks and backend systems.",
+          "Authentication design specifying which components handle end-user authentication and whether the sync service is ever directly involved."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-055",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 confirms that the Kiosk Sync Service runs on a VM but does not describe how administrators reach that VM or whether access crosses untrusted networks or uses MFA. Given this lack of information about privileged access paths, treating req-AUTH-002 as conditionally applicable to thr-004\u2014depending on how administrative access is obtained\u2014is consistent with what the documentation does and does not say.",
+        "missing_evidence": [
+          "Operational access documentation describing how administrators connect to the Kiosk Sync Service VM (e.g., SSH, RDP, console, platform tools) and whether MFA is enforced.",
+          "Threat documentation for thr-004 clarifying which privileged access paths the attacker is assumed to use."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-056",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "While evd-001 mentions kiosks, a Kiosk Sync Service, and a fulfillment system, it does not state whether these serve a single retailer or multiple independent customer organizations. The assumption of single tenancy is not documented, so the assertion that req-AUTHZ-001 is not applicable to thr-004 because the system is single-tenant is not established.",
+        "missing_evidence": [
+          "Product or deployment documentation describing whether the system is operated for one organization or shared among multiple tenants.",
+          "Storage and authorization design indicating whether tenant segregation is required for stored artifacts."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-057",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The architecture note in evd-001 shows internal interactions among kiosks, the Kiosk Sync Service, and the fulfillment system but does not discuss any external platforms that the system holds delegated access to. Without explicit evidence, the conclusion that req-AUTHZ-002 is not applicable to thr-004 is not established.",
+        "missing_evidence": [
+          "Integration diagrams or configuration listing all external platforms and forms of delegated access used by this system.",
+          "Threat documentation for thr-004 indicating whether such delegated access is present or out of scope."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-058",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 establishes that the Kiosk Sync Service is a VM-based component that stores customer order data but provides no details about how it is built or deployed, or whether a CI/CD pipeline and third-party dependencies are used. Given this absence, classifying req-CICD-001 as conditionally applicable to thr-004\u2014pending information about the deployment pipeline\u2014is consistent with the documentation.",
+        "missing_evidence": [
+          "Build and deployment pipeline documentation for the Kiosk Sync Service, including any third-party dependency management.",
+          "Threat documentation for thr-004 connecting compromise of build or deployment tooling to compromise of the VM."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-059",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-001 clearly states that the Kiosk Sync Service VM stores customer order records containing names, delivery addresses, and order contents, so it holds confidential customer data at rest. This directly supports that an encryption-in-transit/at-rest requirement like req-DATA-001 is relevant to risks involving compromise of this VM. However, thr-004 itself is not described in the evidence, so the mapping of req-DATA-001 as applicable specifically to thr-004 is only partially supported.",
+        "missing_evidence": [
+          "Formal definition of req-DATA-001 and any threat types it is intended to mitigate.",
+          "Threat documentation for thr-004 confirming that compromise of confidentiality or integrity of these stored records is central to the scenario."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-060",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "According to evd-001, the Kiosk Sync Service persists customer order records received from kiosks so that the fulfillment system can read them later, which shows that customer data is retained as part of processing. This supports the general relevance of a working-data retention requirement such as req-DATA-002. However, because thr-004 is not described in the evidence, the specific assertion that req-DATA-002 is applicable to thr-004 is only partially established.",
+        "missing_evidence": [
+          "Retention policies and technical mechanisms for expiring or deleting order records on the Kiosk Sync Service VM.",
+          "Threat documentation for thr-004 describing how record retention duration affects the impact of a compromise."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-061",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-001 does not state whether order records belong to a single organization or multiple tenants sharing storage. Thus, the assumption that all records belong to one organization and that req-DATA-003 (tenant separation in shared storage) is not applicable to thr-004 is not supported by the documentation.",
+        "missing_evidence": [
+          "Documentation of the tenant model and any shared storage infrastructure used by multiple customer organizations.",
+          "Data storage design indicating whether tenant-level segregation of stored artifacts is required."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-062",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-001 shows that customer order records originate at kiosks, are stored on the Kiosk Sync Service, and are read by the fulfillment system, indicating that multiple components handle the data. This supports that a requirement like req-DATA-004, concerning deletion of customer data across all stores, is relevant in general. However, the evidence does not enumerate all stores or describe thr-004, so the applicability of req-DATA-004 specifically to thr-004 is only partially supported.",
+        "missing_evidence": [
+          "A complete inventory of data stores (including logs, backups, and derived datasets) that hold customer order records and the mechanisms for propagating deletions.",
+          "Threat documentation for thr-004 clarifying how effective deletion across stores would change the threat impact."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-063",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 confirms that the system handles confidential customer order data on the Kiosk Sync Service VM and the fulfillment system but does not describe how logs are produced or where they are sent. Given that logging behavior and destinations are undocumented, classifying req-LOG-001 as conditionally applicable to thr-004\u2014depending on whether logs containing restricted data are forwarded outside the service\u2019s trust boundary\u2014is consistent with the available evidence.",
+        "missing_evidence": [
+          "Logging configuration and architecture for the Kiosk Sync Service and fulfillment system, including any central log platforms and whether customer data appears in logs.",
+          "Threat documentation for thr-004 describing whether exposure of logs is part of the risk."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-064",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The evidence establishes that the Kiosk Sync Service VM holds customer order data but is silent on whether privileged operations on those records occur via an application interface, and whether such actions are audited. Given this lack of information, treating req-LOG-002 as conditionally applicable to thr-004\u2014depending on the existence and design of any privileged interface and its audit logging\u2014is appropriate and consistent with the documentation.",
+        "missing_evidence": [
+          "Documentation of any privileged or administrative interfaces that can read, modify, or delete stored orders, and their audit logging behavior.",
+          "Threat documentation for thr-004 indicating whether such privileged operations form part of the attack path."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-065",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-001 states that the Kiosk Sync Service runs on a VM in an operations subnet, that kiosks call it over the store network, and that the fulfillment system polls it, demonstrating that it is an internal network service holding customer data. This directly supports the general relevance of a requirement like req-NET-001, which constrains reachability of internal components. However, thr-004 is not described in the evidence, so the assertion that req-NET-001 is applicable specifically to thr-004 is only partially supported.",
+        "missing_evidence": [
+          "Network topology and access-control rules showing which networks and workloads can connect to the Kiosk Sync Service VM.",
+          "Threat documentation for thr-004 explaining how network exposure of this VM contributes to the compromise scenario."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-066",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 shows that the Kiosk Sync Service runs on a VM but does not indicate whether it uses long-lived provider credentials or signing keys to reach external platforms, nor where such secrets would be stored. This absence of detail supports treating req-SECRET-001 as conditionally applicable to thr-004, contingent on whether such long-lived secrets exist on the VM.",
+        "missing_evidence": [
+          "Configuration and secret-management documentation for the Kiosk Sync Service, listing any long-lived provider credentials or signing keys and their storage locations.",
+          "Threat documentation for thr-004 clarifying whether compromise of such secrets is in scope."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-067",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-001 describes interactions among kiosks, the Kiosk Sync Service, and the fulfillment system, but it does not state whether the system accesses customer resources on external platforms using tokens or installation-scoped credentials. Therefore, the assertion that req-SECRET-002 is not applicable to thr-004 because no such external access exists is not established.",
+        "missing_evidence": [
+          "Integration inventory documenting any access this system has to customer resources on external platforms and how that access is authenticated.",
+          "Threat documentation for thr-004 indicating whether such external resource access is in scope."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-068",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The evidence states that customer order data flows between kiosks, the Kiosk Sync Service, and the fulfillment system, but it does not address whether any external provider processes this data on the system\u2019s behalf. On this basis, the claim that req-TPI-001 is not applicable to thr-004 because no data leaves the system\u2019s trust boundary is not established.",
+        "missing_evidence": [
+          "Data-processing inventory identifying any external service providers that process customer order data and the associated data flows.",
+          "Threat documentation for thr-004 clarifying whether external processors are present or explicitly out of scope."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-069",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-001 describes only internal components (kiosks, Kiosk Sync Service VM, fulfillment system) and does not mention any metered external services or third-party compute. The absence of such mention does not prove they are never used, and thr-004 is not described. Thus, the conclusion that req-TPI-002 is not applicable to thr-004 is not established.",
+        "missing_evidence": [
+          "Architecture or billing documentation listing any metered external services consumed as part of order processing.",
+          "Threat documentation for thr-004 clarifying whether consumption of metered external services is relevant to the scenario."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      }
+    ]
+  }
+}

@@ -1,0 +1,174 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 31333,
+    "output_tokens": 12143,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.16059625",
+    "duration_seconds": 133.88472245901357
+  },
+  "response": {
+    "controls": [
+      {
+        "key": "c1-auth-delegated-oidc",
+        "name": "Delegated employee authentication via enterprise OIDC identity provider",
+        "description": "All access to the support portal is authenticated through the company's enterprise identity provider using OpenID Connect. The portal redirects users to the identity provider, validates the returned ID token, and maintains no local password store or credentials of its own, delegating identity management to the provider.",
+        "control_type": "inherited",
+        "provider_component_id": null,
+        "protected_component_ids": [
+          "cmp-001"
+        ],
+        "protected_asset_ids": [
+          "ast-001"
+        ],
+        "implementation_status": "implemented",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "owner": null,
+        "limitations": [
+          "Relies on the correctness and availability of the enterprise identity provider and its configuration, rather than an application-owned authentication mechanism."
+        ]
+      },
+      {
+        "key": "c2-mfa-enterprise-idp",
+        "name": "Enterprise identity provider multi-factor authentication policy",
+        "description": "Multi-factor enrolment and factor policy for employees authenticating to the support portal are enforced at the enterprise identity provider organization level, and the organizational controls catalog asserts an enterprise-idp-mfa control.",
+        "control_type": "inherited",
+        "provider_component_id": null,
+        "protected_component_ids": [
+          "cmp-001"
+        ],
+        "protected_asset_ids": [
+          "ast-001"
+        ],
+        "implementation_status": "implemented",
+        "evidence_ids": [
+          "evd-003",
+          "evd-006",
+          "evd-007"
+        ],
+        "owner": null,
+        "limitations": [
+          "Assumes the asserted organizational control enterprise-idp-mfa accurately reflects the identity provider's current configuration for all portal users."
+        ]
+      },
+      {
+        "key": "c3-internal-network-restriction",
+        "name": "Internal-only network access to the support portal and ticket service",
+        "description": "The support portal is served over HTTPS and is reachable only from the corporate network and company VPN, and the internal ticket service is reachable only from the portal web application inside the application subnet.",
+        "control_type": "implemented",
+        "provider_component_id": null,
+        "protected_component_ids": [
+          "cmp-001",
+          "cmp-002"
+        ],
+        "protected_asset_ids": [
+          "ast-001"
+        ],
+        "implementation_status": "implemented",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "owner": null,
+        "limitations": [
+          "This control restricts where requests may originate but does not limit how many tickets an authenticated employee can view or export once connected."
+        ]
+      }
+    ],
+    "mappings": [
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AUTH-001",
+        "control_keys": [
+          "c1-auth-delegated-oidc"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The support portal delegates user authentication to the company\u2019s enterprise identity provider using OpenID Connect, with no local credential store (evd-003). This matches req-AUTH-001\u2019s conditions where user authentication is delegated to an external identity provider and federated identity is relied upon. The threat\u2019s attack path explicitly begins with this delegated sign-in.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "satisfied",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AUTHZ-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The system persists customer support tickets in a single managed relational database provided by the cloud platform (evd-004), so data for multiple customers is held in shared storage. Under the threat description, a single employee account can browse or search across many customers\u2019 tickets, directly engaging req-AUTHZ-001\u2019s concern about how requests are constrained to the tenant or customer they belong to and how that authorization model is documented.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [],
+        "assumptions": [
+          "It is assumed that the support portal serves tickets for more than one customer organization, based on the reference to \u201ccustomer support tickets\u201d (evd-001, evd-004). The documentation does not describe any tenant or customer-level authorization model for employee access to tickets."
+        ],
+        "confidence": "low"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Authorization model for employee access to support tickets is not documented",
+        "description": "The documentation describes the components, data store, internal network placement, and delegated authentication via the enterprise identity provider (evd-001, evd-002, evd-003, evd-004, evd-005), but it does not state how authorization is enforced on ticket views and searches for employees. Specifically, it is unclear whether an employee\u2019s requests are constrained to particular customers, teams, or ticket subsets, or whether they can browse or search across all tickets in the shared database. Without a documented authorization model, it is not possible to determine whether a single employee account can legitimately read the large volume of customer support correspondence assumed in threat thr-001, nor whether req-AUTHZ-001 is satisfied.",
+        "importance": "Needed to assess whether the breadth of employee access to customer support tickets is intentionally designed and constrained, and whether tenant-aware or customer-aware authorization mitigates large-scale exfiltration by a single employee account.",
+        "related_object_ids": [
+          "thr-001",
+          "ast-001",
+          "cmp-001",
+          "cmp-002",
+          "cmp-003",
+          "req-AUTHZ-001"
+        ],
+        "requested_evidence": [
+          "Architecture or authorization design documentation describing roles and permissions for the support portal, including which tickets an employee can view or search (per customer, team, or other scope).",
+          "A description of how the tenant or customer context for each ticket-view or search request is derived (for example, from server-side session attributes) and enforced in the ticket service or data access layer.",
+          "Any documented limits on bulk access, export, or automated retrieval of tickets through the portal interface."
+        ],
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "severity": "high"
+      }
+    ],
+    "catalog_gap_candidates": [
+      {
+        "concern": "The system allows internal employees, once authenticated, to browse and search across large volumes of multi-customer support tickets, and the catalog does not contain a requirement that internal user access to sensitive multi-customer data be least-privilege and monitored for bulk read or export. Existing requirements address tenant separation between customers (req-AUTHZ-001) and administrative access, but they do not cover scoping and monitoring of ordinary employee read access that can exfiltrate data at scale without crossing tenant boundaries.",
+        "suggested_category": "authorization",
+        "nearest_requirements": [
+          {
+            "requirement_id": "req-AUTHZ-001",
+            "why_not": "req-AUTHZ-001 focuses on ensuring that each request is constrained to the tenant it belongs to and that tenant context is derived from server-side state, preventing cross-tenant access by clients. It does not address how broadly internal employees may be authorized across tenants or customers, nor whether their read access is limited or monitored to prevent bulk retrieval across many tenants when that broad access is intentional."
+          },
+          {
+            "requirement_id": "req-ADMIN-001",
+            "why_not": "req-ADMIN-001 concerns privileged administrative interfaces and their restricted operator population, plus documentation of what customer data those interfaces can reach. The support portal is a business-facing employee interface rather than an administrative console, and the requirement does not speak to least-privilege scoping or bulk-read limits for ordinary employee access to customer tickets."
+          },
+          {
+            "requirement_id": "req-LOG-002",
+            "why_not": "req-LOG-002 requires audit logging for actions taken through privileged administrative interfaces that affect customer data or security configuration. It does not cover high-volume read activity by non-administrative employees, nor require detection or logging tuned to bulk data access as opposed to configuration changes."
+          }
+        ],
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ]
+      }
+    ]
+  }
+}

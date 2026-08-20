@@ -53,10 +53,10 @@ content (DEC-076). Generated 2026-08-14 over 15 scenarios (registry 1.0, catalog
 |  | no evidence validation * | 100% (+100) | 100% | 0% | 0% |
 |  | no critical review * | 0% | 100% | 0% | 0% |
 |  | no context approval * | 0% | 100% | 0% | 0% |
-| rag-support-bot | authoritative | 0% | 100% | 0% | 0% |
-|  | no evidence validation * | 100% (+100) | 100% | 0% | 0% |
-|  | no critical review * | 0% | 100% | 0% | 0% |
-|  | no context approval * | 0% | 100% | 0% | 0% |
+| rag-support-bot | authoritative | 100% | 100% | 100% | 0% |
+|  | no evidence validation * | 100% | 100% | 0% (-100) | 0% |
+|  | no critical review * | 100% | 100% | 100% | 0% |
+|  | no context approval * | 100% | 100% | 100% | 0% |
 | reply-tuner | authoritative | 0% | 100% | 0% | 0% |
 |  | no evidence validation * | 100% (+100) | 100% | 0% | 0% |
 |  | no critical review * | 0% | 100% | 0% | 0% |
@@ -65,10 +65,10 @@ content (DEC-076). Generated 2026-08-14 over 15 scenarios (registry 1.0, catalog
 |  | no evidence validation * | 100% (+100) | 100% | 0% | 0% |
 |  | no critical review * | 0% | 100% | 0% | 0% |
 |  | no context approval * | 0% | 100% | 0% | 0% |
-| unsigned-webhooks | authoritative | 0% | 100% | 0% | 0% |
-|  | no evidence validation * | 100% (+100) | 100% | 0% | 0% |
-|  | no critical review * | 0% | 100% | 0% | 0% |
-|  | no context approval * | 0% | 100% | 0% | 0% |
+| unsigned-webhooks | authoritative | 100% | 100% | 0% | 0% |
+|  | no evidence validation * | 100% | 100% | 0% | 0% |
+|  | no critical review * | 100% | 100% | 0% | 0% |
+|  | no context approval * | 100% | 100% | 0% | 0% |
 
 Lower is better for every column except evidence coverage. The one component whose removal moves a
 metric here is evidence validation: without it the pipeline misses the finding it otherwise reports,

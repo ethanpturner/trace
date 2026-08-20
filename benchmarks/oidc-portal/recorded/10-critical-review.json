@@ -1,0 +1,58 @@
+{
+  "schema": "CriticalReviewProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 10733,
+    "output_tokens": 7179,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.08520625",
+    "duration_seconds": 63.43039833300281
+  },
+  "response": {
+    "critiques": [
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-003",
+        "critique_type": "unsupported_claim",
+        "description": "The mapping for req-ADMIN-001 concludes the requirement is satisfied with high confidence based on delegated authentication and internal-only network access, but the cited evidence does not document any operator- or administrator-specific safeguards, so satisfaction is not established.",
+        "rationale": "map-003 marks req-ADMIN-001 as satisfied with high confidence via controls ctl-001 and ctl-003 and cites evd-001, evd-002, evd-003, evd-004, and evd-005. These passages describe the portal as an internal web application for employees viewing and commenting on tickets (evd-001, evd-002), the data it handles (evd-004), and its delegated authentication via the enterprise IdP (evd-003, evd-005). None of them describe administrative/operator controls such as role separation, approval workflows, constrained capabilities, or other safeguards that an \"ADMIN\"-scoped requirement would typically cover. Evidence assessment eas-020 already notes that applicability is well supported but that satisfaction of req-ADMIN-001 lacks direct mapping or documentation of such controls. Treating the requirement as fully satisfied is therefore an unsupported claim; the mapping should be revised (for example, downgraded to a question or supplemented with specific evidence).",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "recommended_action": "revise",
+        "confidence": "high"
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-004",
+        "critique_type": "unsupported_claim",
+        "description": "The mapping for req-AUTH-001 asserts the delegated-authentication requirement is satisfied with high confidence, but the evidence only establishes that authentication is delegated to an IdP, not that all conditions of req-AUTH-001 are met.",
+        "rationale": "map-004 marks req-AUTH-001 as satisfied with high confidence, citing evd-003 and control ctl-001. evd-003 directly documents that all access to the portal is authenticated via the enterprise IdP using OpenID Connect and that the portal validates an ID token and stores no passwords. This strongly supports applicability of a delegated-authentication requirement, but the assessment (eas-021) explicitly notes missing evidence: the text of req-AUTH-001 and any detailed mapping from the implementation (e.g., token validation parameters, error handling, trust configuration) to that requirement. Without requirement text or additional implementation detail, the claim that req-AUTH-001 is fully satisfied is only partially supported. Keeping the mapping as \"satisfied\" with high confidence is therefore an unsupported claim and should be revised or downgraded to reflect the documented uncertainty.",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "recommended_action": "revise",
+        "confidence": "high"
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-005",
+        "critique_type": "unsupported_claim",
+        "description": "The mapping for req-AUTH-002 concludes that strong/MFA authentication for privileged access over untrusted networks is satisfied, but the evidence only shows an organizational MFA policy at the IdP, not that MFA is enforced for all portal access in scope of the requirement.",
+        "rationale": "map-005 treats req-AUTH-002 as satisfied via inherited control ctl-002 and cites evd-003, evd-006, and evd-007. evd-003 states that multi-factor enrolment and factor policy are set at the IdP organization level, and evd-006\u2013evd-007 show an asserted organizational control enterprise-idp-mfa. This supports the existence of an MFA capability and a high-level policy, but it does not document that MFA is actually enforced for all employee sign-ins to the support portal, particularly for privileged access over VPN or other untrusted networks. Evidence assessment eas-022 calls out this missing configuration detail and concludes the mapping is only partially supported, recommending downgrade to a question. Maintaining a \"satisfied\" status for req-AUTH-002 in map-005 therefore overstates what the documentation supports and constitutes an unsupported claim that should be revised or downgraded until enforcement details are documented.",
+        "evidence_ids": [
+          "evd-003",
+          "evd-006",
+          "evd-007"
+        ],
+        "recommended_action": "revise",
+        "confidence": "high"
+      }
+    ]
+  }
+}

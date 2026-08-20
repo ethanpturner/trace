@@ -1,0 +1,76 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 11244,
+    "output_tokens": 6827,
+    "cache_read_tokens": 20096,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.084837",
+    "duration_seconds": 78.21834862499963
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Support tickets contain customer support correspondence, which is sensitive data, and the ticket service persists them in a managed relational database provided by the cloud platform, with a network data flow between the service and the database. This matches the conditions \"the system stores or transmits confidential or restricted data\" and \"data crosses a network boundary the system does not control.\"",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-NET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "The ticket database is a managed relational database used as an internal data store rather than a public interface, and it holds support tickets that likely belong to multiple customers. The requirement would apply if the database holds data for more than one customer tenant and its trust model relies in part on network placement or weak authentication, but the documentation does not describe tenanting or how callers are constrained, so applicability is conditional on those unstated facts.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "assumptions": [
+          "Assume for applicability that support tickets span multiple customers and that the managed database\u2019s access model may rely partly on network placement; these points are not established in the documentation."
+        ],
+        "confidence": "low"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Database encryption in transit and at rest is not documented",
+        "description": "The documentation states that the ticket service persists customer support tickets in a managed relational database provided by the cloud platform, but does not describe whether the connection between the ticket service and the database uses TLS or mutual authentication, nor whether encryption at rest for ticket data is enabled and which party provides it. Without this, it is not possible to determine whether sensitive ticket content is protected against interception or tampering on the service\u2013database link, or how at-rest protection is inherited from the platform.",
+        "importance": "This information is required to assess req-DATA-001 for this threat, which concerns interception and tampering of traffic between the ticket service and the managed database. Knowing whether transport and at-rest encryption are enabled, and who provides them, would determine whether the threat is mitigated by design or remains a live risk.",
+        "related_object_ids": [
+          "thr-004",
+          "req-DATA-001",
+          "cmp-002",
+          "cmp-003",
+          "df-003",
+          "ast-001"
+        ],
+        "requested_evidence": [
+          "Documentation or configuration describing the ticket service\u2013database connection, including whether TLS is enforced, whether mutual authentication is used, and any relevant database connection security settings.",
+          "Cloud platform or managed database configuration showing whether ticket data at rest is encrypted, whether this is enabled by default or explicitly configured, and which party (application team or platform) is responsible for this protection."
+        ],
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": []
+  }
+}

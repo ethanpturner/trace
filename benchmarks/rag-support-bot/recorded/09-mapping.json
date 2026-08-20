@@ -1,0 +1,96 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 14213,
+    "output_tokens": 6908,
+    "cache_read_tokens": 17152,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.08899025",
+    "duration_seconds": 70.62484308402054
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-TPI-002",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-004"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "This threat describes an attacker scripting many /v1/answers requests that cause the system to call a hosted large-language-model API (evd-002); each call consumes external compute, so repeated malicious triggers could drive unbounded use of a metered external service unless bounded, which is exactly the situation req-TPI-002 addresses.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "satisfied",
+        "evidence_ids": [
+          "evd-002",
+          "evd-011"
+        ],
+        "assumptions": [
+          "Treats calls from the answer service to the hosted large-language-model API (evd-002) as consumption of a metered external service or significant compute for the purposes of req-TPI-002."
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Workspace session token protections against theft are undocumented",
+        "description": "The documentation describes the workspaceToken bearer credential used to authenticate /v1/answers requests (evd-006, evd-008, evd-009, evd-014, evd-016, evd-017) and a per-workspace daily answer quota that bounds usage (evd-011), but does not state whether workspace session tokens are bound to a particular client context (such as device, IP range, or browser), how long they remain valid, how they can be revoked, or whether there is per-token rate limiting or anomaly detection. As a result, it is unknown what mitigations exist against reuse of a stolen workspace session token from an attacker-controlled client as described in threat thr-007.",
+        "importance": "Clarifying the lifecycle, binding, and abuse-detection properties of workspace session tokens is important to understand how the system limits or detects unauthorized use of stolen tokens in scenarios like thr-007, beyond the coarse per-workspace daily quota.",
+        "related_object_ids": [
+          "thr-007",
+          "ast-004",
+          "cmp-001"
+        ],
+        "requested_evidence": [
+          "Documentation describing workspace session token lifecycle (issuance, expiry, rotation, revocation), any binding of tokens to client or network context, and any per-token or per-origin rate limiting or anomaly detection applied to /v1/answers requests."
+        ],
+        "evidence_ids": [
+          "evd-006",
+          "evd-008",
+          "evd-009",
+          "evd-011",
+          "evd-014",
+          "evd-016",
+          "evd-017"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": [
+      {
+        "concern": "The catalog has no requirement that covers the security properties and binding of end-user session tokens like the workspaceToken used by the Relay Answers API. The documentation describes a bearer workspace session token used to authenticate /v1/answers requests (evd-006, evd-008, evd-009, evd-014, evd-016, evd-017) and a per-workspace daily quota that bounds usage (evd-011), but no requirement asks that such tokens be bound to client context, have explicitly documented lifetimes, or be monitored for anomalous use. In threat thr-007, an attacker who steals a workspace session token can reuse it from arbitrary infrastructure to query the assistant and exhaust the quota, and the catalog offers no explicit requirement focused on mitigating or constraining this kind of stolen-session-token reuse.",
+        "suggested_category": "authentication",
+        "nearest_requirements": [
+          {
+            "requirement_id": "req-AUTH-001",
+            "why_not": "req-AUTH-001 concerns documenting delegation of user authentication to an external identity provider, including naming the provider and its responsibility boundary; it does not address the design or protection of the application\u2019s own session tokens after authentication, such as binding them to client context or detecting anomalous reuse."
+          },
+          {
+            "requirement_id": "req-SECRET-001",
+            "why_not": "req-SECRET-001 governs custody of long-lived signing keys and provider credentials held by the system in a managed secret store; it does not apply to end-user session tokens issued by the application and presented by clients on each request."
+          },
+          {
+            "requirement_id": "req-SECRET-002",
+            "why_not": "req-SECRET-002 covers using short-lived credentials when accessing customer resources on external platforms; it does not cover the properties or misuse resistance of the inbound session tokens that authenticate users to this system itself."
+          },
+          {
+            "requirement_id": "req-TPI-002",
+            "why_not": "req-TPI-002 requires bounding work that consumes a metered external service so repeated triggers cannot drive unbounded consumption; it is satisfied here by the per-workspace daily answer quota (evd-011) but does not speak to whether a bearer session token can be reused from arbitrary clients without additional binding or anomaly detection."
+          }
+        ],
+        "evidence_ids": [
+          "evd-006",
+          "evd-008",
+          "evd-009",
+          "evd-011",
+          "evd-014",
+          "evd-016",
+          "evd-017"
+        ]
+      }
+    ]
+  }
+}

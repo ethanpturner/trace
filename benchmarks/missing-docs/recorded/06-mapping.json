@@ -1,0 +1,487 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 9879,
+    "output_tokens": 21942,
+    "cache_read_tokens": 10880,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.23312875",
+    "duration_seconds": 222.01648054108955
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-ADMIN-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "Would apply if the Kiosk Sync Service exposed an administrative or operator interface allowing privileged users to act on stored customer order records; the documentation (evd-001) and this threat instead describe OS/VM-level access to the service\u2019s storage, so the existence of such an interface is unknown and the threat path bypasses any described interface.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [],
+        "assumptions": [
+          "It is unknown whether the Kiosk Sync Service has an administrative/operator interface distinct from OS-level or platform access."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The Kiosk Sync Service simply receives and stores customer order records for the fulfillment system to read; no AI model or model invocation is described, so the system is treated as passing no content to a model, matching the non_applicable_condition that no content is sent to a model (evd-001).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The architecture describes only storage and retrieval of customer order records between kiosks, the Kiosk Sync Service, and the fulfillment system, with no model inference or model-generated output; therefore there is no model output being published externally and this requirement does not bear on this threat (evd-001).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AI-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Customer order records are stored on the Kiosk Sync Service VM and read by the fulfillment system, with no indication that they are sent to any external model provider; the system is therefore treated as sending no content to a model, satisfying the non_applicable_condition (evd-001).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AI-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No model output is produced or rendered in this architecture; the Kiosk Sync Service stores structured order data for the fulfillment system, so there is no model output to encode for a UI or external markup context (evd-001).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AUTH-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The Kiosk Sync Service is an internal service called by kiosks over the store network and polled by the fulfillment system; end users do not authenticate directly to this component, so the non_applicable_condition that the component is not reachable by end users holds (evd-001).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AUTH-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "The threat assumes administrative or OS-level access to the Kiosk Sync Service VM or storage, which is a form of privileged access, but the documentation (evd-001) does not describe how that access is obtained or whether it crosses an untrusted network; the requirement would apply if such privileged access relied on MFA across an untrusted network, which is unknown here.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [],
+        "assumptions": [
+          "The normal administrative access path to the VM (remote console, SSH/RDP, or platform tooling) and whether it crosses an untrusted network are not documented."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AUTHZ-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The kiosk and fulfillment setup appears to support a single retail environment, with no indication of multiple customer organizations or tenants sharing the same service or storage; the system is therefore treated as single-tenant, matching the non_applicable_condition that the system serves a single tenant (evd-001).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [
+          "Assume the kiosk deployment and fulfillment system are operated for a single retailer rather than multiple independent customer organizations."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AUTHZ-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The documentation and data flows describe only kiosks, the Kiosk Sync Service, and the fulfillment system, with no external platform that the system holds delegated access to; the non_applicable_condition that the system holds no external delegated access therefore holds (evd-001).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-CICD-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "The threat concerns a running VM instance of the Kiosk Sync Service whose compromise would expose or corrupt stored orders; this requirement would apply if that service is deployed by an automated pipeline that authenticates to environments and pulls third-party components, but the provided documentation does not describe any build or deployment pipeline (evd-001).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [
+          "Deployment of the Kiosk Sync Service (manual versus automated pipeline) and how dependencies are managed are not described."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The Kiosk Sync Service stores customer order records containing names, delivery addresses, and order contents for later retrieval by the fulfillment system (evd-001), so it holds confidential customer data at rest, and this threat is specifically about an attacker reading or tampering with that stored data on the VM or attached storage.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-DATA-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The sync service persists customer order records from kiosks so that the fulfillment system can read them later (evd-001), meaning it retains customer data as part of processing; the threat targets those retained records, so defined and enforced retention for this working data is relevant.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-DATA-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The architecture describes kiosk order capture and fulfillment for a single retail environment, with no indication that artifacts for distinct customer organizations or tenants share a storage system; the system is therefore treated as single-tenant, matching the non_applicable_condition that the system serves a single tenant (evd-001).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [
+          "Assume all customer order records belong to one organization operating the kiosks, rather than multiple external tenant organizations."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-DATA-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Customer order records are handled by multiple components (field kiosks, the Kiosk Sync Service, and the fulfillment system) and are stored on the sync service VM for later polling (evd-001; asset ast-001), so customer data exists in more than one store; the threat focuses on compromise of one of these stores, making documented deletion paths across stores relevant.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-LOG-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "The system handles confidential customer order data (evd-001). This requirement would bear on the threat if application or platform logs containing such data are produced on the Kiosk Sync Service VM and forwarded to a log platform outside the service\u2019s own trust boundary, because an attacker with OS-level access could access those logs as well; the existence and destination of logs are not described.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [
+          "Logging behavior and log destinations for the Kiosk Sync Service and fulfillment system are not documented."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-LOG-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "The threat assumes privileged access capable of reading, modifying, or deleting customer orders on the Kiosk Sync Service VM, which could include actions by operators; this requirement would apply if those actions occur through a privileged interface whose operations can be audited, but the documentation (evd-001) does not describe any administrative interface or audit logging for such actions.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [
+          "It is unknown whether privileged operations affecting stored orders are exposed via an application interface and whether such actions are audited."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-NET-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-001"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The Kiosk Sync Service is an internal service running on a VM in the operations subnet, holding customer order data on behalf of the system and reached over the store network by kiosks and by the fulfillment system polling it (evd-001); the threat concerns compromise of this internal component, so ensuring it is reachable only from the workloads that need it is directly relevant.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-SECRET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "An attacker with OS-level access to the Kiosk Sync Service VM or storage would also gain access to any long-lived provider credentials or signing keys stored there; this requirement would apply if the service uses such credentials to authenticate to external platforms, but the provided documentation (evd-001) does not describe any outbound integrations or signing operations.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [
+          "It is unknown whether the Kiosk Sync Service uses long-lived credentials or signing keys to reach external platforms, and if so where they are stored."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-SECRET-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The architecture and data flows show the Kiosk Sync Service and fulfillment system interacting only with each other and kiosks, with no access to customer resources on external platforms; thus the non_applicable_condition that the system accesses no customer resources on external platforms holds.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-TPI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Customer order data flows only between kiosks, the Kiosk Sync Service, and the fulfillment system within the described environment (evd-001), and there is no external provider processing this data on the system\u2019s behalf; the non_applicable_condition that no customer data leaves the system\u2019s trust boundary therefore holds.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-TPI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No metered external service or external provider is involved in processing customer orders in the described architecture; work is internal to the kiosks, Kiosk Sync Service, and fulfillment system (evd-001), so processing does not consume a metered external resource and this requirement does not apply.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-WEBHOOK-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The fulfillment system polls the Kiosk Sync Service hourly to read stored order records (evd-001; df-002); there is no endpoint that accepts events pushed from an external platform, and inbound events are polled rather than delivered, matching the non_applicable_condition.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-WEBHOOK-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No webhook-style inbound event processing from an external platform is described; instead, the fulfillment system polls the Kiosk Sync Service for orders (evd-001; df-002), so there are no signed external events whose replay must be handled, and the requirement does not apply.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Network reachability of the Kiosk Sync Service VM and operations subnet",
+        "description": "The service-note and existing control (ctl-001) state that the Kiosk Sync Service runs on a VM in an \"operations subnet\" and that kiosks call it over the store network while the fulfillment system polls it (evd-001). They do not document which other networks or hosts can reach this subnet, whether it is isolated from the internet or broader corporate networks, or how access is restricted to only the required workloads. This prevents verification of req-NET-001 for thr-004 and obscures how difficult it is for an attacker to obtain the OS-level access assumed in the threat.",
+        "importance": "Clarifying which networks and components can reach the operations subnet is necessary to assess network segmentation as a mitigation for compromise of the Kiosk Sync Service VM and its stored customer orders.",
+        "related_object_ids": [
+          "cmp-001",
+          "cmp-003",
+          "ast-001",
+          "df-002",
+          "thr-004",
+          "ctl-001"
+        ],
+        "requested_evidence": [
+          "A network or deployment diagram showing which networks and components can reach the operations subnet hosting the Kiosk Sync Service VM.",
+          "Firewall or security group rules controlling inbound access to that VM, including any internet or VPN exposure.",
+          "A statement of whether only kiosks and the fulfillment system can reach the service, or whether other hosts or admin networks also have access."
+        ],
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Storage location, protection, and lifecycle for customer order records",
+        "description": "The documentation states that the Kiosk Sync Service receives customer order records from field kiosks and stores them for the fulfillment system to read (evd-001), but it does not describe where and how those records are stored (e.g., database, files, managed service), whether storage is encrypted at rest and by whom, how long the records are retained, how deletion on request or after fulfillment is handled, or whether additional replicas or backups exist. This prevents verification of requirements about encryption (req-DATA-001), retention (req-DATA-002), and deletion across stores (req-DATA-004) for the data targeted by thr-004.",
+        "importance": "Understanding the exact storage mechanism, protections, and lifecycle for customer order records is central to assessing confidentiality, integrity, and availability controls for thr-004.",
+        "related_object_ids": [
+          "ast-001",
+          "cmp-001",
+          "cmp-003",
+          "df-002",
+          "thr-004"
+        ],
+        "requested_evidence": [
+          "Documentation of the storage mechanism used for customer order records on or behind the Kiosk Sync Service VM (database type, file store, managed service, etc.).",
+          "A statement of whether that storage is encrypted at rest, who provides the encryption (application, platform, or storage service), and how keys are managed or referenced.",
+          "Defined retention periods for stored orders (including any intermediate copies) and how those periods are enforced in practice.",
+          "Documentation of the process for deleting customer order data on request and after fulfillment, including how secondary or derived stores (such as backups or caches) are handled."
+        ],
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "severity": "high"
+      },
+      {
+        "title": "Operator and platform access to the Kiosk Sync Service VM and storage",
+        "description": "Threat thr-004 assumes that an attacker can obtain administrative or code-execution access on the Kiosk Sync Service VM or its attached storage, but the documentation (evd-001) does not describe how legitimate operators or platform teams access that VM or storage (e.g., hypervisor consoles, SSH/RDP, storage-management consoles), what authentication and MFA controls apply, or what audit logging exists for such privileged access. Without this information, it is not possible to assess controls on the precondition of the threat or how operator actions affecting stored orders are constrained and recorded.",
+        "importance": "Details of normal operator and platform-level access to the VM and storage are needed to evaluate how likely the OS-level compromise assumed in thr-004 is, and whether privileged actions on stored orders are attributable and reviewable.",
+        "related_object_ids": [
+          "cmp-001",
+          "ast-001",
+          "thr-004"
+        ],
+        "requested_evidence": [
+          "Documentation of the standard administrative access paths to the Kiosk Sync Service VM and its storage (e.g., SSH/RDP endpoints, hypervisor or cloud consoles, storage management interfaces).",
+          "Information on which identity providers and authentication mechanisms (including MFA) are required for those access paths and who is permitted to use them.",
+          "Documentation of audit logging for administrative and platform-level access to the VM and storage, including where those logs are kept and how they are protected."
+        ],
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": [
+      {
+        "concern": "Infrastructure-level administrators or platform operators with VM or storage-admin access effectively have full read/write/delete capability over customer order records, but the catalog has no requirement that explicitly requires documenting and constraining OS/VM-level or storage-platform access to data-bearing components (who holds that access, through which management planes, under what policies, and how it is audited), distinct from application-level administrative interfaces or general network segmentation.",
+        "suggested_category": "administrative_access",
+        "nearest_requirements": [
+          {
+            "requirement_id": "req-ADMIN-001",
+            "why_not": "req-ADMIN-001 focuses on application-level administrative interfaces, requiring a stronger access path and documentation of what those interfaces can reach. Threat thr-004 is about OS/VM-level or storage-platform access that bypasses any application interface, and current wording does not clearly cover documentation and restriction of that class of privileged infrastructure access."
+          },
+          {
+            "requirement_id": "req-NET-001",
+            "why_not": "req-NET-001 addresses network reachability of internal components, ensuring they are reachable only from workloads that use them. It does not address who can administer the underlying VM or storage via management planes (such as hypervisor or storage consoles), or how that administrative access is authenticated and audited."
+          },
+          {
+            "requirement_id": "req-AUTH-002",
+            "why_not": "req-AUTH-002 focuses on who enforces MFA for administrative or externally reachable access but assumes a defined interface. It does not directly require documenting which parties (e.g., cloud operators, internal platform teams) hold OS- or storage-admin rights over specific data-bearing VMs or volumes and how that responsibility is bounded."
+          }
+        ],
+        "evidence_ids": [
+          "evd-001"
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,438 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 10765,
+    "output_tokens": 19738,
+    "cache_read_tokens": 10880,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.21219625",
+    "duration_seconds": 205.85356208402663
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-ADMIN-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "thr-002 concerns flooding a public deployment-event webhook and the downstream chat notifier (cmp-001, cmp-002). No administrative or operator interface is present in this attack path, and no customer data is handled (evd-004), so the requirement about privileged administrative interfaces does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-AI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The components in scope (Event Receiver and Chat Notifier) parse JSON deployment events and format chat messages (evd-001, evd-002, evd-003). No model inference or AI processing is described, so the requirement about treating untrusted content passed to a model does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-AI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The system under threat receives deployment events and posts human-written formatted messages to an internal chat channel (evd-001, evd-002, evd-003). There is no model producing output for external publication, so the requirement about validating model output before external publication does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-AI-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Deployment events are sent from the CI platform directly to the Event Receiver and then to the Chat Notifier (evd-002, evd-003). No external model provider is involved, so the requirement about minimizing customer content sent to an external model provider does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-AI-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat involves flooding a webhook that parses JSON and then formats plain chat messages (evd-002, evd-003). No model output is rendered into a UI or markup; the messages are constructed directly from event fields, so the requirement about encoding model output for its rendering context does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-AUTH-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "In thr-002 the only externally reachable interface is the Event Receiver webhook, which accepts deployment events from a CI platform (evd-002, evd-003). There is no end-user authentication path or delegated user identity involved in this threat, so the requirement about documenting delegated user authentication does not bear on it.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-AUTH-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "thr-002 targets an unauthenticated public webhook and the downstream notifier (evd-002, evd-003). No privileged administrative interface is involved in this attack path, so the requirement about establishing responsibility for multi-factor authentication on privileged access does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-AUTHZ-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The system is described as an internal deploy notifier for engineers (evd-001, evd-004), with no indication of serving multiple external customers or organizations. thr-002 is about availability of notifications for this single organization, not cross-tenant access, so the tenant-aware authorization requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-AUTHZ-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "While the Chat Notifier calls a chat platform API (evd-002), thr-002 concerns denial of service of deployment notifications, not over-broad delegated privileges on customer resources. The chat workspace is internal rather than a customer-owned resource, so the requirement about limiting integration privileges on customer resources does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-CICD-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "thr-002 assumes a CI platform exists but focuses on flooding the runtime Event Receiver endpoint with deployment-event requests (evd-002, evd-003). How the deploy notifier itself is built and deployed by CI/CD does not affect this denial-of-service path, so the requirement about trusting the deployment pipeline and its dependencies does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Deployment events and notifications contain repository names, environments, and commit identifiers, and explicitly no customer data (evd-004). thr-002 concerns the availability of these notifications when the webhook is flooded, not confidentiality or protection of sensitive data in transit or at rest, so the encryption-focused requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-DATA-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "thr-002 is about resource exhaustion while processing live deployment events and posting chat notifications (evd-002, evd-003). It does not involve retention of customer data or working copies after processing, so the requirement about defining and enforcing retention for sensitive working data does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-DATA-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The components in scope handle transient deployment events and chat notifications (evd-002, evd-003, evd-004). thr-002 does not involve stored artifacts from multiple customers sharing a storage system, so the requirement about tenant separation for stored artifacts does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-DATA-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No customer data passes through the notifier (evd-004), and thr-002 concerns transient event handling and notification delivery during a flood. It does not involve customer-initiated deletion requests or operator deletion procedures, so the requirement about deleting customer data on request does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-LOG-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "thr-002 addresses denial of service from excessive or malformed deployment events against the webhook (evd-002, evd-003). It does not concern whether restricted or confidential data appears in logs or where logs are sent, so the requirement about keeping sensitive data out of application logs does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-LOG-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat path involves only automated delivery of deployment events and posting notifications (evd-002, evd-003). No privileged administrative interface or operator actions on customer data or security configuration are involved, so the requirement about auditing security-relevant administrative actions does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-NET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The component under attack, the Event Receiver, is explicitly a public HTTPS endpoint (evd-002) and is intended as an external interface. req-NET-001 concerns keeping internal data stores, queues, caches, or internal services off untrusted networks, and its non-applicable condition covers components that are public interfaces by design, so it does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-SECRET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "While the Chat Notifier calls a chat platform API (evd-002), thr-002 concerns an attacker flooding the Event Receiver webhook to exhaust resources, not theft or misuse of long-lived credentials or signing keys. Whether such credentials are stored in a managed secret store does not change the described denial-of-service risk, so this requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-SECRET-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "req-SECRET-002 is about using short-lived credentials when accessing customer resources on external platforms. thr-002 addresses flooding of the webhook and resulting resource exhaustion; the lifetime of any tokens used to call the chat platform API does not materially affect this attack path, so the requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-TPI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Deployment events and notifications explicitly contain no customer data (evd-004), and the threat concerns availability of notifications, not retention or secondary use of customer data by an external processor. Therefore the requirement about documenting external processors\u2019 data handling does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-TPI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Deployment events from an external CI platform are delivered over the internet to a public Event Receiver endpoint (df-001, evd-002, evd-003). Each inbound event triggers processing in the Event Receiver and Chat Notifier, including outbound API calls to the chat platform (evd-002, evd-003). thr-002 explicitly describes an attacker repeatedly triggering this processing to exhaust resources, so the requirement to bound work triggered by external events bears directly on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-WEBHOOK-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The Event Receiver exposes a public HTTPS endpoint that accepts deployment events from an external CI platform (df-001, evd-002, evd-003), and each event causes the system to post a deployment notification to chat (evd-003), which is externally visible to engineers. This matches a webhook-style endpoint that performs privileged or externally visible work in response to inbound events from an external platform, so the requirement to verify inbound event authenticity before processing applies.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unmet",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-WEBHOOK-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "req-WEBHOOK-002 addresses replay of previously authentic events where authenticity is already verified but delivery uniqueness is not. The documentation states that although the CI platform supports signing deliveries, the receiver \"accepts and processes any well-formed delivery and does not check a signature\" (evd-003), so authenticity is not verified at all. thr-002 focuses on generic flooding rather than replay of authenticated events, so this replay-specific requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Bounding of work triggered by external deployment events is undocumented",
+        "description": "The Event Receiver is a public HTTPS endpoint that accepts deployment events from an external CI platform and forwards them to the Chat Notifier for posting to chat (evd-002, evd-003). thr-002 assumes an attacker can send deployment-event requests at a rate or size that stresses these components, but the documentation does not state whether there are any rate limits, request-size limits, queue depth limits, or other bounds on processing work triggered by inbound events. Without this information, it is not possible to determine whether repeated or malicious triggers are effectively bounded.",
+        "importance": "Determining whether work triggered by external deployment events is bounded would clarify if thr-002 is mitigated by rate limiting, throttling, or other controls, or if additional safeguards are needed to protect availability of deployment notifications relied on by engineers.",
+        "related_object_ids": [
+          "thr-002",
+          "cmp-001",
+          "cmp-002",
+          "ast-001",
+          "ast-002",
+          "df-001",
+          "df-002"
+        ],
+        "requested_evidence": [
+          "Operations or architecture documentation describing any rate limits, throttling, or maximum request sizes applied to the Event Receiver public endpoint.",
+          "Configuration or design documentation for any queues, workers, or autoscaling mechanisms that bound processing of deployment events within the Event Receiver and Chat Notifier.",
+          "Documentation of any provider- or platform-level quotas or spending limits that constrain calls from the Chat Notifier to the chat platform API."
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": []
+  }
+}

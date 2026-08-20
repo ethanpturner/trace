@@ -334,49 +334,56 @@ def test_a_zero_finding_run_completes_the_capture_inside_the_reason_stage(
     subjects, the run never pauses, and the reason stage accepts the completion rather than
     calling the scenario's success an error (DEC-091 amendment, #484)."""
     oidc = PROJECT_ROOT / "benchmarks" / "oidc-portal"
-    root = tmp_path / "scenario"
-    shutil.copytree(oidc / "input", root / "input")
-    scenario = Scenario(
-        slug="zero-finding-test",
-        name="OIDC Portal",
-        path=root,
-        status="authored",
-        catalog_version="0.3",
-    )
     responses = sorted((oidc / "recorded").glob("[0-9]*.json"))
 
-    stage_extract(
-        scenario,
-        profile_name=PROFILE,
-        live=DeterministicModel(list(load_recorded_responses(responses[:1]))),
-        data_root=tmp_path / "capture-data",
-        # The committed recording carries the single-call evidence shape (DEC-134).
-        workflow_version="0.1",
-    )
-    shutil.copy(
-        oidc / "recorded" / "decisions-context.yaml",
-        capture_dir(scenario) / "decisions-context.yaml",
-    )
-    stage_reason(
-        scenario,
-        profile_name=PROFILE,
-        live=DeterministicModel(list(load_recorded_responses(responses[1:]))),
-        data_root=tmp_path / "capture-data",
-    )
-
-    staging = capture_dir(scenario)
-    assert (staging / "report-hash.txt").is_file()
-    export = staging / "findings-export.yaml"
-    assert export.is_file()
-    assert "findings: []" in export.read_text(encoding="utf-8")
-
-    with pytest.raises(CaptureRefusedError, match="already ran"):
-        stage_report(
+    def run_once(label: str) -> Path:
+        root = tmp_path / label / "scenario"
+        shutil.copytree(oidc / "input", root / "input")
+        scenario = Scenario(
+            slug=f"zero-finding-{label}",
+            name="OIDC Portal",
+            path=root,
+            status="authored",
+            catalog_version="0.3",
+        )
+        stage_extract(
             scenario,
             profile_name=PROFILE,
-            live=DeterministicModel([]),
-            data_root=tmp_path / "capture-data",
+            live=DeterministicModel(list(load_recorded_responses(responses[:1]))),
+            data_root=tmp_path / label / "capture-data",
+            # The committed recording carries the batched evidence shape (DEC-134): the live
+            # capture that replaced the authored recording ran the current workflow.
+            workflow_version="0.2",
         )
+        shutil.copy(
+            oidc / "recorded" / "decisions-context.yaml",
+            capture_dir(scenario) / "decisions-context.yaml",
+        )
+        stage_reason(
+            scenario,
+            profile_name=PROFILE,
+            live=DeterministicModel(list(load_recorded_responses(responses[1:]))),
+            data_root=tmp_path / label / "capture-data",
+        )
+        staging = capture_dir(scenario)
+        assert (staging / "report-hash.txt").is_file()
+        export = staging / "findings-export.yaml"
+        assert export.is_file()
+        assert "findings: []" in export.read_text(encoding="utf-8")
+        if label == "a":
+            with pytest.raises(CaptureRefusedError, match="already ran"):
+                stage_report(
+                    scenario,
+                    profile_name=PROFILE,
+                    live=DeterministicModel([]),
+                    data_root=tmp_path / label / "capture-data",
+                )
+        return staging / "report-hash.txt"
+
+    # The completion renders the report inside this stage, so the stamp must be the pinned one:
+    # an unpinned wall-clock stamp made the first zero-finding captures unreproducible (#484,
+    # DEC-134 amendment). Two runs from the same recording must hash identically.
+    assert run_once("a").read_text() == run_once("b").read_text()
 
 
 def test_the_single_pass_baseline_stage_captures_its_own_schema(tmp_path: Path) -> None:

@@ -1,0 +1,382 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 20841,
+    "output_tokens": 16725,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.19330125",
+    "duration_seconds": 168.95821154105943
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-ADMIN-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "thr-001 concerns fraudulent order submissions over the kiosk submission interface between field kiosks (cmp-002) and the Kiosk Sync Service (cmp-001); no privileged administrative or operator interface is described for these components, so the requirement about restricting administrative interfaces does not bear on this threat path.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The components involved in thr-001 (field kiosks, Kiosk Sync Service, fulfillment system) do not use an AI or ML model, and no untrusted content is passed to a model, so the requirement about treating such content as untrusted model input does not apply.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No model output is published externally in the kiosk\u2013sync\u2013fulfillment flow described for thr-001, so the requirement about validating model output before external publication does not apply.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AI-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat scenario and evidence describe only local kiosk-to-service and service-to-fulfillment interactions; no customer content is sent to an external model provider, so the requirement about minimizing data sent to such a provider does not apply.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AI-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "thr-001 does not involve any model output being rendered into a UI or markup; it concerns order records exchanged between internal components, so the requirement about encoding model output is not engaged.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AUTH-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat path involves machine-to-machine communication between kiosks (cmp-002), the Kiosk Sync Service (cmp-001), and the fulfillment system (cmp-003); there is no end-user authentication surface or delegated identity provider described for these components, so the requirement about documenting delegated user authentication does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AUTH-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "thr-001 does not involve privileged administrative access or externally reachable operator logins; it describes kiosk devices submitting orders over an internal store network, so the requirement about documenting multi-factor authentication responsibility for administrative or external access does not apply here.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AUTHZ-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The context for thr-001 describes a retail environment with field kiosks submitting orders for a single organization; it does not describe a multi-tenant service separating data for distinct customer organizations, so the tenant-aware authorization requirement is not engaged by this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AUTHZ-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The kiosk\u2013sync\u2013fulfillment flow in thr-001 does not involve delegated access to an external platform on customers\u2019 behalf; it is internal order capture and fulfillment, so the requirement about limiting integration privileges for external platforms does not apply.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-CICD-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "thr-001 concerns runtime order submission from kiosks to the Kiosk Sync Service, not how the system is built or deployed, and no CI/CD pipeline or dependency management is described for the components in scope, so the deployment-path trust requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Although customer order records contain personal data [evd-001], thr-001 focuses on spoofing and tampering with orders sent from kiosks, not on eavesdropping or exposure across an untrusted network boundary; encryption in transit or at rest would not directly address the forged-order scenario described, so this requirement is not applied to this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-DATA-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "thr-001 is about the integrity of orders as they are created and consumed for fulfillment, not about how long working copies or intermediate artifacts are retained; no retention behavior is relevant in the described attack path, so this requirement does not bear on the threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-DATA-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat scenario does not describe shared artifact storage across multiple customer organizations; it focuses on order records for a single retailer, so the requirement about separating stored artifacts by tenant is not engaged.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-DATA-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "thr-001 concerns the creation of fraudulent orders and their immediate use by the fulfillment system, not customer-initiated or operator-initiated deletion of stored data across multiple stores, so the deletion-on-request requirement does not apply to this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-LOG-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat focuses on injected fraudulent orders affecting fulfillment; logging behavior and exclusion of sensitive data from logs are not part of the described attack path, so this logging requirement does not bear directly on thr-001.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-LOG-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "thr-001 does not involve a privileged administrative interface or operator actions; it concerns kiosk-originated order submissions, so the requirement to audit security-relevant administrative actions is not applicable here.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-NET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The Kiosk Sync Service (cmp-001) is an internal service that stores customer order records for the fulfillment system [evd-001] and is reached over the store network by field kiosks (cmp-002), matching the requirement\u2019s concern for internal components that hold data or work on behalf of the system and may rely on network position; thr-001 explicitly models an attacker placing a rogue device on the kiosk network to reach this service, so the question of whether the service is reachable only from intended workloads is directly engaged.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-SECRET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat scenario and available documentation do not describe any long-lived credentials or signing keys held by the kiosk, sync service, or fulfillment system; thr-001 is about accepting fraudulent orders over a network interface rather than mishandling stored secrets, so this requirement is not applied to this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-SECRET-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "thr-001 does not involve the system accessing customer resources on external platforms using tokens; it describes internal order capture and fulfillment, so the requirement about using short-lived credentials for external customer resources does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-TPI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No external data processor or provider relationship is described in the kiosk\u2013sync\u2013fulfillment flow; customer data remains within the retailer\u2019s own environment in thr-001, so the requirement about documenting external processor data handling does not apply.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-TPI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "While orders are triggered by kiosk activity, thr-001 does not describe consumption of a metered external API or capacity-limited third-party service by the Kiosk Sync Service; the requirement about bounding work that consumes such external resources is therefore not applied to this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-WEBHOOK-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The Kiosk Sync Service receives requests from field kiosks on the organization\u2019s own store network [evd-001], not webhook-style events from an external SaaS platform; the requirement about cryptographic verification of inbound events from external platforms does not strictly match this device-on-internal-network scenario.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-WEBHOOK-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "thr-001 models fraudulent but unique kiosk-submitted orders rather than replay of signed events from an external platform; there is no webhook or platform delivery identifier in scope, so the requirement about preventing or making harmless replays of inbound platform events does not apply.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Kiosk Sync Service access control and network restrictions are undocumented",
+        "description": "The available documentation for the Kiosk Sync Service [evd-001] states that field kiosks send customer order records over the store network to a VM in the operations subnet, but does not describe how kiosk submissions are authenticated, how unauthorized devices on the store network are prevented from reaching the submission endpoint, or what network-level restrictions (if any) constrain access to the service. Without this, it is not possible to determine whether only intended kiosk workloads can submit orders, which is central to assessing thr-001 and to req-NET-001.",
+        "importance": "Clarifying how kiosks are authenticated and how network access to the Kiosk Sync Service is restricted is necessary to determine whether internal components are reachable only from workloads that should access them, and whether a rogue device on the store network could submit orders as assumed in thr-001.",
+        "related_object_ids": [
+          "thr-001",
+          "cmp-001",
+          "cmp-002",
+          "cmp-003",
+          "df-001",
+          "ast-001"
+        ],
+        "requested_evidence": [
+          "Architecture or operations documentation that describes how kiosk devices authenticate to the Kiosk Sync Service and what credentials or identifiers they present.",
+          "Network or firewall/security-group diagrams and configuration showing which source networks, IP ranges, or identities are allowed to reach the kiosk submission endpoint on the Kiosk Sync Service.",
+          "Any documented controls (such as mutual TLS, device certificates, NAC, or VPN restrictions) that limit which devices on the store network can submit orders."
+        ],
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "severity": "high"
+      }
+    ],
+    "catalog_gap_candidates": [
+      {
+        "concern": "The catalog lacks an explicit requirement for authenticating and authorizing device-originated requests over a semi-trusted internal network (for example, field kiosks on a store network submitting orders to a central service), including ensuring that only legitimate devices can use the interface and that network location alone is not sufficient to submit work.",
+        "suggested_category": "endpoint_authentication",
+        "nearest_requirements": [
+          {
+            "requirement_id": "req-NET-001",
+            "why_not": "req-NET-001 focuses on restricting reachability of internal components from untrusted networks and is framed around internal data stores, queues, caches, or services that often rely on network position; it does not explicitly cover authenticating individual edge devices on a semi-trusted internal network where the business requirement is that the component remain reachable from that network (e.g., store kiosks), so it only partially addresses the kiosk-spoofing concern in thr-001."
+          },
+          {
+            "requirement_id": "req-WEBHOOK-001",
+            "why_not": "req-WEBHOOK-001 addresses cryptographic verification of inbound events from named external platforms (such as SaaS providers) delivered as webhooks; kiosk submissions in thr-001 are device-originated requests from within the organization\u2019s own store network rather than platform-delivered webhooks, so the applicability conditions do not strictly hold and the requirement does not clearly cover device-level authentication for this scenario."
+          }
+        ],
+        "evidence_ids": [
+          "evd-001"
+        ]
+      }
+    ]
+  }
+}

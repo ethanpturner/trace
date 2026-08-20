@@ -8724,6 +8724,21 @@ Tradeoffs:
   non-blocking report it was, and per-batch enforcement would fail batches for records that are
   not theirs.
 
+Amendment (2026-08-19, the #484 subset wave): **the pin is per recording, so a condition's
+recording carries its own.** Promoting the first 0.2-shape captures exposed the per-entry pin's
+blind spot: `unsigned-webhooks` and `rag-support-bot` each carry an authored adversarial-condition
+recording in the single-call shape, and one `workflow_version` per entry would have re-shaped
+those replays the moment the clean capture's pin moved to 0.2. The registry gains an optional
+`condition_workflow_versions` map — a condition absent from it replays under the entry's pin —
+and the harness pins `workflow_version_for(condition)`. Both adversarial replays verified under
+their own 0.1 pins beside promoted 0.2 clean recordings. Two capture-flow defects the wave
+surfaced are also fixed and recorded: the zero-finding completion path rendered its report with
+an unpinned wall-clock stamp (`stage_reason`'s resume now pins `GENERATED_AT` exactly as the
+report stage does — three of the wave's four captures completed zero-finding and none could
+round-trip until the fix; their promoted hashes are pinned from the deterministic double replay
+and each provenance says so), and the wave measured the enforcement working: every one of the
+four captures replays at `evidence_assessment_coverage` 1.0.
+
 ## DEC-135: OpenRouter behind the OpenAI adapter — live capture priced in cents, no third SDK
 
 Date: 2026-08-19

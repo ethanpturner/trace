@@ -1,0 +1,153 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 14553,
+    "output_tokens": 10290,
+    "cache_read_tokens": 17152,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.12323525",
+    "duration_seconds": 99.82457758300006
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-RAG-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-003"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The retrieval index stores content that is later retrieved and placed into model context at answer time, and the corpus is populated from more than one source (the help-center repository and the support platform's resolved-tickets export) [evd-002, evd-012], so the requirement governing the retrieval corpus's write path applies to compromise of the managed index.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "satisfied",
+        "evidence_ids": [
+          "evd-002",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-RAG-003",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-003"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "Resolved support tickets have a documented two-year retention schedule on the support platform [evd-004] and are embedded into the retrieval index via the ingestion pipeline [evd-002, evd-012], so this threat engages the requirement that the retrieval index follow its sources' lifecycle.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "partially_satisfied",
+        "evidence_ids": [
+          "evd-004",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The retrieval index is a managed vector database that stores embeddings derived from workspace support tickets and other non-public content [evd-002, evd-012], and it is reached over a network boundary the team does not control, so encryption in transit and at rest for this data is in scope for this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-002",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-TPI-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-003"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "Customer support-ticket content is embedded and stored in a managed vector-database offering that the team did not build [evd-002, evd-012], so customer data crosses to an external provider whose retention and usage terms affect the impact of a compromise of that service.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "partially_satisfied",
+        "evidence_ids": [
+          "evd-002",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-NET-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-002"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The retrieval index is an internal data store, not itself a public interface, and it holds embeddings for many workspaces in a shared index [evd-002]; it is described as reachable only from the answer service's network segment [evd-012], so the requirement that such internal components be reachable only from the workloads that use them applies to this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "satisfied",
+        "evidence_ids": [
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Encryption for retrieval index embeddings at rest and in transit is not documented",
+        "description": "The retrieval index is a managed vector database holding embeddings of help-center articles and resolved support tickets for all workspaces in a shared index [evd-002], and it is described as the only copy of the embeddings and as reachable only from the answer service's network segment [evd-012]. The documentation does not state whether connections to this managed service use transport encryption or whether data at rest (including any provider-managed backups) is encrypted and by whom, so it is not possible to determine from the current material whether req-DATA-001 is satisfied for the embeddings stored in the index.",
+        "importance": "Clarifying how embeddings in the retrieval index are protected in transit and at rest is necessary to assess how much a compromise of the managed vector-database platform or its storage deviates from the system's baseline expectations for protecting customer support history.",
+        "related_object_ids": [
+          "thr-005",
+          "cmp-003",
+          "ast-003"
+        ],
+        "requested_evidence": [
+          "Managed vector-database configuration or provider documentation stating encryption-at-rest guarantees for the standard tier and who manages the keys.",
+          "Documentation or configuration showing whether connections from the answer service to the managed vector database are protected by TLS or an equivalent transport-encryption mechanism."
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-012"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Provider retention and usage terms for retrieval index embeddings are not documented",
+        "description": "Architecture and operations documentation describe what content is embedded and stored in the managed vector database [evd-002, evd-012] and note that resolved support tickets are retained on the support platform for two years and then deleted under an agreed retention schedule [evd-004]. However, the material does not state the managed vector-database provider's data-retention period for embeddings and metadata, whether provider-managed backups persist beyond application-side deletion, or whether the provider may use embeddings for purposes beyond serving Relay Answers. This prevents determining whether external-processor data-handling expectations in req-TPI-001 and lifecycle expectations in req-RAG-003 are met for the retrieval index.",
+        "importance": "Understanding how long the managed vector-database provider retains embeddings and whether it uses them beyond serving Relay Answers is directly relevant to the impact of a compromise of the retrieval index and to whether derived embeddings respect the two-year retention commitment for support tickets.",
+        "related_object_ids": [
+          "thr-005",
+          "cmp-003",
+          "ast-002",
+          "ast-003"
+        ],
+        "requested_evidence": [
+          "A summary of the managed vector-database provider's data-retention and usage terms for the standard tier, including any training or analytics use of stored embeddings.",
+          "Documentation stating how long embeddings and their backups are retained in the retrieval index and how that period relates to the two-year retention of resolved support tickets on the support platform.",
+          "Any configuration or operational procedure that removes or anonymizes embeddings when their source tickets age out or are deleted."
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-004",
+          "evd-012"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": []
+  }
+}

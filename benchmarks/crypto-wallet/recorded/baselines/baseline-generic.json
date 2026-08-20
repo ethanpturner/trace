@@ -1,0 +1,25 @@
+{
+  "findings": [
+    {
+      "requirement_id": "req-DATA-001",
+      "affected_component": "Wallet file (user device)",
+      "title": "Wallet private keys at rest may be left unencrypted",
+      "rationale": "The wallet file holds sensitive key material, but encryption at rest is only an optional setting rather than enforced. This means the system cannot ensure that sensitive data is always encrypted at rest, which does not meet the requirement that sensitive data be encrypted in storage.",
+      "evidence_quote": "\"Wallet file (user device) — the local wallet at rest, holding the wallet data and\n  keys. It should be encrypted at rest; encryption is a wallet option.\""
+    },
+    {
+      "requirement_id": "req-DATA-001",
+      "affected_component": "Exchange Website / Exchange Backend",
+      "title": "Encryption in transit between load balancer and backend is not verified for current deployment",
+      "rationale": "The design assumes TLS termination at the load balancer and HTTPS between front-end and backend, but the documentation states this has not been re-verified for the current deployment. Without verification, there is no assurance that sensitive data is in fact encrypted in transit within the exchange environment.",
+      "evidence_quote": "\"TLS is expected to terminate at the load balancer, with all front-end to backend\ncommunication over HTTPS. This has not been re-verified for the current deployment.\""
+    },
+    {
+      "requirement_id": "req-TPI-001",
+      "affected_component": "ElectrumX Server (internet)",
+      "title": "Data handling by third-party ElectrumX servers is not documented",
+      "rationale": "The system relies on third-party ElectrumX servers for balances, headers, and transaction broadcast, but the documentation does not describe how these external processors handle, store, or protect the data they receive. This leaves external processor data handling undocumented.",
+      "evidence_quote": "\"ElectrumX Server (internet)\n\nThird-party SPV server that wallets connect to for blockchain data — balances, headers,\nand transaction broadcast. Operated by third parties, not by the exchange.\""
+    }
+  ]
+}

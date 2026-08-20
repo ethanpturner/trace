@@ -1,0 +1,136 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 12068,
+    "output_tokens": 11116,
+    "cache_read_tokens": 20096,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.128757",
+    "duration_seconds": 131.5416407500161
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-ADMIN-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-001",
+          "ctl-003"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The Portal Web Application is an internal operator interface used by employees to view and modify customer support tickets (customer data), so the system exposes an administrative/operator interface and operators can act on data belonging to customers (evd-001, evd-002, evd-005).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "satisfied",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-AUTH-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-001"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "All access to the support portal is delegated to an external enterprise OpenID Connect identity provider, so the system relies on federated identity for its users (evd-003), which matches the requirement\u2019s delegated-authentication conditions.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "satisfied",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-AUTH-002",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-002"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The portal is an internal interface through which authenticated employees can view and modify customer support tickets (privileged access) (evd-001, evd-002, evd-005), and employees may reach it over HTTPS from the corporate network or VPN (evd-001), so privileged access can cross an untrusted network and the requirement applies.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "satisfied",
+        "evidence_ids": [
+          "evd-003",
+          "evd-006",
+          "evd-007"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-LOG-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The system exposes an internal operator interface (the support portal) through which employees can act on customer support tickets and their contents (evd-001, evd-002, evd-005), so there is a privileged interface that can affect customer data and the requirement\u2019s conditions hold for this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Administrative and ticket actions logging for the support portal is not described",
+        "description": "The system overview establishes that employees use the internal support portal to view and modify customer support tickets (evd-001, evd-002, evd-005), but it does not describe whether actions taken through this privileged interface\u2014such as creating or editing ticket comments, changing ticket state, or viewing sensitive tickets\u2014are recorded with the acting operator identity or where such audit records are stored. Because of this omission, it is not possible to determine from the documentation whether security-relevant actions, including those performed via a malicious script running in an employee\u2019s browser, would be auditable.",
+        "importance": "Without documentation of administrative and ticket-action auditing, the assessment cannot verify whether misuse of employee sessions (for example via stored XSS in ticket comments) would leave a trace that can be investigated or used for incident response.",
+        "related_object_ids": [
+          "req-LOG-002",
+          "cmp-001",
+          "ast-001"
+        ],
+        "requested_evidence": [
+          "Operations or monitoring documentation describing what administrative or ticket-related actions are logged for the support portal.",
+          "A description of the destination for these audit records (e.g., logging platform or database) and who administers it.",
+          "Documentation stating how the acting operator identity is associated with each recorded action."
+        ],
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-005"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": [
+      {
+        "concern": "The threat scenario depends on employee-submitted ticket comments being rendered back to other employees\u2019 browsers without neutralizing embedded HTML or script, enabling stored cross-site scripting in the support portal. The catalog contains a requirement for encoding model-generated output before rendering (req-AI-004), but there is no parallel requirement covering output encoding or sanitization for non-model, user-supplied content in traditional web applications, even though this is a common and well-understood class of attack relevant here.",
+        "suggested_category": "input_validation",
+        "nearest_requirements": [
+          {
+            "requirement_id": "req-AI-004",
+            "why_not": "req-AI-004 requires that model output rendered into a user interface be encoded for its destination context, but in this system the content that can carry injected script is employee-authored ticket comments rendered by a conventional web application; no model is involved, so the requirement does not directly cover this XSS risk."
+          },
+          {
+            "requirement_id": "req-AI-001",
+            "why_not": "req-AI-001 addresses treating external content as untrusted when it is passed into a model and preventing prompt injection from that content. In this threat, the untrusted content (ticket comments) is rendered directly into a browser page without involving any model, so the requirement\u2019s scope does not cover this scenario."
+          }
+        ],
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-005"
+        ]
+      }
+    ]
+  }
+}

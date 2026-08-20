@@ -531,6 +531,11 @@ def stage_reason(
             ),
             profile=profile,
             budget=_budget(),
+            # The zero-finding path renders the report inside this resume (the DEC-091
+            # amendment below), so the stamp must be pinned here exactly as the report stage
+            # pins it — an unpinned wall-clock stamp makes the completion hash unreproducible
+            # and the round trip unverifiable (found by the first zero-finding capture, #484).
+            generated_at=GENERATED_AT,
         )
         if not outcome.paused:
             # A run with no candidate findings never pauses at checkpoint 2: the checkpoint

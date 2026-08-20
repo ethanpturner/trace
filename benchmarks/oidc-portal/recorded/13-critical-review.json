@@ -1,0 +1,55 @@
+{
+  "schema": "CriticalReviewProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 12825,
+    "output_tokens": 18820,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.20423125",
+    "duration_seconds": 294.24196070898324
+  },
+  "response": {
+    "critiques": [
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-010",
+        "critique_type": "unsupported_claim",
+        "description": "The mapping for req-AUTH-001 is marked as satisfied based on ctl-001, but the only cited documentation shows that authentication is delegated to the enterprise IdP and does not demonstrate that all of req-AUTH-001\u2019s conditions are actually met.",
+        "rationale": "map-010 concludes that req-AUTH-001 is satisfied using ctl-001, supported only by evd-003. evd-003 documents that the portal delegates authentication to the enterprise OpenID Connect identity provider, redirects users there, validates the returned ID token, and keeps no local password store, but it does not describe any of the additional trust-configuration or hardening behaviours that req-AUTH-001 is said to require when using an external IdP as a critical trust anchor. Evidence assessment eas-027 explicitly notes missing evidence such as a detailed mapping of the portal\u2019s OIDC integration and trust configuration to the requirement\u2019s clauses. Given that no further evidence is cited, treating req-AUTH-001 as satisfied for this threat is stronger than what the available documentation supports; at most, applicability is documented and satisfaction should remain a question until more evidence is provided.",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "recommended_action": "revise",
+        "confidence": "medium"
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-011",
+        "critique_type": "unsupported_claim",
+        "description": "The mapping for req-AUTH-002 treats the requirement as satisfied via the enterprise IdP MFA policy, but the cited documentation does not show that MFA is enforced for all privileged portal access paths over untrusted networks or that all clauses of the requirement are met.",
+        "rationale": "map-011 marks req-AUTH-002 as satisfied and relies on ctl-002, citing evd-003, evd-005, evd-006, and evd-007. These sources establish that employees authenticate to the portal via the enterprise IdP (evd-003, evd-005), that the IdP enforces an organisation-level factor policy (evd-003, evd-005), and that an organisational control enterprise-idp-mfa is asserted (evd-006, evd-007). They do not, however, document that MFA is enforced on every employee access path to the support portal that crosses untrusted networks, nor do they map the IdP\u2019s configuration to each clause of req-AUTH-002. Evidence assessment eas-028 calls out this missing evidence explicitly in its `missing_evidence` field. In the absence of configuration detail or a requirement-by-requirement mapping, the conclusion that req-AUTH-002 is fully satisfied is not adequately documented; the mapping should instead treat satisfaction as a question pending additional evidence or explicit assumptions.",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005",
+          "evd-006",
+          "evd-007"
+        ],
+        "recommended_action": "revise",
+        "confidence": "medium"
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-013",
+        "critique_type": "unsupported_claim",
+        "description": "The mapping for req-OIDC-002 asserts satisfaction based on a generic statement that the portal validates ID tokens, without documented detail of which validation checks are performed.",
+        "rationale": "map-013 concludes that req-OIDC-002 is satisfied using ctl-001 and evd-003, with an assumption that the portal performs \u201cstandard token validation.\u201d evd-003 states that a user returns from the IdP with an ID token that the portal validates, but it does not specify which validation steps are implemented (e.g., signature verification, issuer and audience checks, expiry handling, nonce use, or key-management details). The mapping\u2019s own text acknowledges this by treating full validation behaviour as an assumption rather than citing implementation or configuration evidence. Evidence assessment eas-030 identifies this lack of detail and lists concrete missing evidence about ID token validation. On the available documentation, applicability of req-OIDC-002 is well supported, but treating it as satisfied is not: the claim goes beyond what evd-003 establishes. The mapping should be revised to treat satisfaction as unverified or in question until specific validation behaviours are documented.",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "recommended_action": "revise",
+        "confidence": "medium"
+      }
+    ]
+  }
+}

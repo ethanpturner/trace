@@ -1,0 +1,475 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 9634,
+    "output_tokens": 25535,
+    "cache_read_tokens": 10880,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.2687525",
+    "duration_seconds": 264.68488099996466
+  },
+  "response": {
+    "controls": [
+      {
+        "key": "ctrl-net-ops-subnet",
+        "name": "Kiosk Sync Service runs in an operations subnet",
+        "description": "The Kiosk Sync Service runs on a virtual machine in an operations subnet and is accessed by kiosks over the store network and polled by the Fulfillment system.",
+        "control_type": "implemented",
+        "provider_component_id": null,
+        "protected_component_ids": [
+          "cmp-001"
+        ],
+        "protected_asset_ids": [
+          "ast-001"
+        ],
+        "implementation_status": "implemented",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "owner": null,
+        "limitations": [
+          "The documentation (evd-001) does not describe which networks can reach the operations subnet or whether it is isolated from untrusted networks, so the strength of this segmentation is unclear."
+        ]
+      }
+    ],
+    "mappings": [
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-ADMIN-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This threat involves a compromised Fulfillment system using an automated polling interface to the Kiosk Sync Service to read stored order records (evd-001, df-002). No administrative or operator interface participates in the described attack path, so the requirement about restricting privileged administrative access and documenting its reach does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-AI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat concerns straightforward syncing and retrieval of customer order records between kiosks, the Kiosk Sync Service, and the Fulfillment system (evd-001) and does not involve sending untrusted content to an AI or ML model. Controls on prompt injection or treating model input as untrusted data therefore do not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-AI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No model output is described as being published externally in this threat scenario; the data flow is the Fulfillment system polling the Kiosk Sync Service for stored order records (evd-001, df-002). Requirements about validating model-generated content before external publication do not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-AI-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat path stays within the organization\u2019s own components (kiosks, Kiosk Sync Service, Fulfillment system) and does not involve sending customer content to an external model provider (evd-001). Therefore the requirement to document and minimize data sent to an external model provider does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-AI-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The described components exchange and store order records; there is no description of model-generated output being rendered into user interfaces or external markup in this attack path (evd-001). Encoding of model output for rendering contexts therefore does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-AUTH-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat deals with compromise of the Fulfillment system or the credentials it uses to call the Kiosk Sync Service and then reading order records over that internal interface (evd-001, df-002). It does not involve end-user authentication or delegation to an external identity provider, so the requirement about documenting delegated user authentication does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-AUTH-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The attack assumes the Fulfillment system or its integration credentials are already compromised and then used to poll the Kiosk Sync Service (evd-001). Multi-factor authentication for administrative or externally reachable user access, and documentation of who enforces it, would not change the ability of a compromised system or stored integration credential to call the sync interface, so this requirement does not bear directly on the described mass-exfiltration threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-AUTHZ-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The documentation and threat context describe a single retailer\u2019s kiosks sending order records to a Kiosk Sync Service which are then read by a Fulfillment system (evd-001, ast-001). There is no indication of multiple organizational tenants whose data must be segregated; the threat is bulk access to all records for this one environment. The requirement about tenant-aware authorization for multi-tenant systems therefore does not apply to this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-AUTHZ-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat concerns an internal integration where the Fulfillment system polls the Kiosk Sync Service for order records (evd-001, df-002). It does not describe the system holding delegated access to a third-party external platform on a customer\u2019s behalf, so the requirement about limiting and documenting external integration privileges does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-CICD-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "A precondition of the threat is that the attacker compromises the Fulfillment system or the account/configuration it uses to call the Kiosk Sync Service. If these components are deployed by an automated pipeline that incorporates third-party dependencies, then how the pipeline authenticates and how dependencies are controlled would materially affect that compromise likelihood. The available documentation (evd-001) does not describe build or deployment, so applicability depends on whether such a pipeline exists for these components.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Customer order records (ast-001) contain customer names, delivery addresses, and order contents, which are confidential data, and they are transmitted between kiosks, the Kiosk Sync Service, and the Fulfillment system over networks (evd-001, df-002). Since the threat\u2019s impact is large-scale compromise of the confidentiality of these records, the requirement that such data be encrypted in transit and at rest, with any inherited protections documented, bears on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-DATA-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The Kiosk Sync Service stores customer order records so the Fulfillment system can read them (evd-001), and ast-001 shows the same data associated with multiple components. The volume of data an attacker can exfiltrate via the Fulfillment integration depends on how long these records are retained after processing and whether working copies are expired. Therefore the requirement to define and enforce retention for sensitive working data, consistent with what customers are told, bears on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-DATA-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Order records from field kiosks appear to belong to a single retailer\u2019s environment rather than multiple organizational tenants (evd-001, ast-001). The threat is that a compromised Fulfillment system can read all of these records, not that one tenant\u2019s artifacts might be accessed by another tenant. The requirement about separating stored artifacts by tenant in shared storage therefore does not apply to this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-DATA-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Customer order records are stored in multiple components, including kiosks, the Kiosk Sync Service, and the Fulfillment system (ast-001, evd-001). The amount of customer data exposed if the Fulfillment integration is compromised depends in part on whether there is a documented way to remove that data from all primary and derived stores when required. The requirement that customer data be deletable across all stores therefore bears on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-LOG-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The specific threat is that a compromised Fulfillment system can use its legitimate interface to retrieve large volumes of order records directly from the Kiosk Sync Service (evd-001, df-002). Whether restricted data is excluded from application logs and where those logs are sent affects a different risk path (log leakage), not the bulk read over the sync interface described here, so this requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-LOG-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The attack path uses an automated polling integration from the Fulfillment system to read stored order records from the Kiosk Sync Service (evd-001); no privileged administrative or operator-facing interface is described as part of this threat. The requirement to log security-relevant actions taken through a privileged administrative interface therefore does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-NET-001",
+        "control_keys": [
+          "ctrl-net-ops-subnet"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The Kiosk Sync Service is an internal service running on a virtual machine in an operations subnet and holds customer order data on behalf of multiple kiosks and the Fulfillment system (evd-001). If this internal component or any backing store were reachable from untrusted networks, an attacker could bypass the Fulfillment integration and access or inject work directly. Ensuring such internal components are reachable only from workloads that need them therefore bears on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-SECRET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat scenario assumes the attacker already controls the Fulfillment system or the credentials it uses to call the Kiosk Sync Service and then uses that access to read order records (df-002, evd-001). Long-lived credentials that authenticate the system to external platforms or signing keys, which this requirement governs, are not part of this described attack path, so the requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-SECRET-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This threat concerns access by the Fulfillment system to customer order records held by the Kiosk Sync Service within the same environment (evd-001, df-002). It does not involve the system accessing customer resources on an external platform using tokens or installation-scoped credentials, so the requirement about using short-lived credentials for such external access does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-TPI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The documented data flow shows kiosks sending order records to the Kiosk Sync Service, which stores them for the Fulfillment system to read (evd-001, df-002). No external provider processes this customer data on the system\u2019s behalf in this threat scenario, so the requirement to document external processor data handling does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-TPI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "While the attacker in this threat issues repeated queries from the compromised Fulfillment integration, the work triggered is reading order records from the Kiosk Sync Service within the same environment (evd-001, df-002), not consuming a metered external service or significant third-party compute. The requirement about bounding work that consumes metered external services therefore does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-WEBHOOK-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat describes the Fulfillment system polling the Kiosk Sync Service for stored order records (evd-001, df-002); there is no endpoint described that accepts asynchronously delivered events from an external platform. The requirement to cryptographically verify inbound webhook or event authenticity therefore does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-WEBHOOK-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Because the Kiosk Sync Service is polled by the Fulfillment system rather than receiving externally delivered events that might be replayed (evd-001, df-002), the requirement to prevent or make harmless replay of inbound events does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Access control and scoping for Fulfillment reads from the Kiosk Sync Service",
+        "description": "The documentation states that the Kiosk Sync Service stores customer order records and that the Fulfillment system polls it hourly to read those records (evd-001), but it does not describe how the Fulfillment system is authenticated, what authorization model is applied, what subset of data each request may retrieve, or whether unusual or bulk read patterns are constrained or reviewed. Without this information, it is not possible to determine what limits, if any, exist on mass retrieval of customer order records if the Fulfillment system or its integration credentials are compromised, which is central to assessing threat thr-003.",
+        "importance": "Needed to assess how much the existing design limits or detects bulk data access via the Fulfillment integration if that integration is compromised.",
+        "related_object_ids": [
+          "thr-003",
+          "cmp-001",
+          "cmp-003",
+          "df-002",
+          "ast-001"
+        ],
+        "requested_evidence": [
+          "Architecture or API documentation for the Kiosk Sync Service endpoint used by the Fulfillment system, including its authentication mechanism and how the Fulfillment caller is identified.",
+          "Documentation of any authorization checks, query scoping (for example per-time-range or per-location), or pagination limits applied to Fulfillment requests.",
+          "Operations or monitoring documentation describing detection or alerting on unusual or bulk read activity by the Fulfillment integration."
+        ],
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "severity": "high"
+      },
+      {
+        "title": "Retention and deletion of customer order records across kiosks, Kiosk Sync Service, and Fulfillment",
+        "description": "Customer order records containing names, delivery addresses, and order contents are stored so the Fulfillment system can read them (evd-001), and ast-001 associates these records with multiple components. The documentation does not state how long these records are kept in each store, whether there is a defined and enforced retention period for working copies, or how deletion requests are propagated across kiosks, the Kiosk Sync Service, and the Fulfillment system. Without this, the amount of historical data exposed if the Fulfillment integration is compromised, and the system\u2019s ability to remove data on request, cannot be evaluated.",
+        "importance": "Needed to understand how much historical order data is available to an attacker in this threat and whether customer data can be removed consistently from all stores.",
+        "related_object_ids": [
+          "thr-003",
+          "ast-001",
+          "cmp-001",
+          "cmp-003"
+        ],
+        "requested_evidence": [
+          "Data retention policies or configuration for customer order records in each component that stores ast-001 (kiosks, Kiosk Sync Service, Fulfillment system).",
+          "Documentation of any automated lifecycle expiry or scheduled deletion jobs for these records.",
+          "Operational or customer-facing documentation describing how customer order data can be deleted and how that deletion is applied across all relevant stores."
+        ],
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": [
+      {
+        "concern": "There is no requirement ensuring that internal consumer integrations, such as the Fulfillment system reading from the Kiosk Sync Service, are granted least-privilege and scoped access to customer data (for example by limiting query breadth, requiring approval for bulk export, or applying anomaly controls) so that compromise of an internal consumer cannot trivially result in mass exfiltration of all stored records.",
+        "suggested_category": "authorization",
+        "nearest_requirements": [
+          {
+            "requirement_id": "req-AUTHZ-002",
+            "why_not": "req-AUTHZ-002 governs limiting and documenting delegated permissions to an external platform acting on customer resources, whereas this concern is about least-privilege and bulk-access constraints for internal system-to-system integrations between components like the Kiosk Sync Service and the Fulfillment system."
+          },
+          {
+            "requirement_id": "req-ADMIN-001",
+            "why_not": "req-ADMIN-001 focuses on restricting and documenting privileged administrative interfaces used by human operators; it does not address automated, non-administrative integrations that can nonetheless read large volumes of customer data."
+          },
+          {
+            "requirement_id": "req-LOG-002",
+            "why_not": "req-LOG-002 requires recording actions taken through privileged interfaces but does not require that bulk data access via internal integrations be subject to additional scoping, approval, or anomaly detection controls that would limit mass exfiltration if a consumer component is compromised."
+          }
+        ],
+        "evidence_ids": [
+          "evd-001"
+        ]
+      }
+    ]
+  }
+}

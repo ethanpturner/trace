@@ -1,7 +1,24 @@
 assessment_id: asm-001
-reviewer: recorded-reviewer
 findings:
 - id: fnd-001
-  severity: high
-  decision: approve
-  rationale: The architecture overview affirmatively states one shared index serves all workspaces with relevance alone selecting passages, and the operations notes establish the ticket text includes pasted configuration with only email addresses masked. Documented absence of an entitlement filter, not silence.
+  decision: reject
+  rationale: 'DEC-009: the description establishes req-TPI-001''s applicability — customer data crosses
+    to an external processor — and names no deficiency in the documented controls: the provider''s terms
+    exclude training on submitted content and transport is TLS [architecture-overview, Data handling].
+    Exposure-on-compromise of a documented, term-governed processor is the requirement''s subject, not
+    evidence it is unmet.'
+- id: fnd-002
+  decision: reject
+  rationale: 'Same shape as fnd-001 under req-DATA-001: transmission across an uncontrolled boundary is
+    the applicable condition, and the documented posture (TLS, no-training terms) shows no evidenced weakness.
+    Duplicate lens on the same provider path besides.'
+- id: fnd-003
+  decision: reject
+  rationale: The source lifecycle is documented (two-year deletion agreed with customers) and the index's
+    adherence to it is silent — under DEC-009 that is a documentation gap and the question the run itself
+    raised, not an evidenced violation of req-RAG-003. Nothing states embeddings outlive their sources.
+- id: fnd-004
+  decision: reject
+  rationale: Applicability and impact framing — a managed vector store 'whose retention and usage terms
+    affect the impact of a compromise' — with no documented deficiency; the unknown terms are question
+    material (the run asked), not a finding (DEC-009).

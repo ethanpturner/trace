@@ -1,0 +1,29 @@
+{
+  "schema": "CriticalReviewProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 11213,
+    "output_tokens": 5896,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.07297625",
+    "duration_seconds": 72.54243562498596
+  },
+  "response": {
+    "critiques": [
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-015",
+        "critique_type": "unsupported_claim",
+        "description": "The mapping asserts that req-TPI-001 is \"partially_satisfied\" for the managed vector database, but the cited evidence only establishes that a third-party service is used and that an internal ingestion pipeline governs what is written, not that any third-party retention, usage, or security commitments are in place.",
+        "rationale": "map-015 links req-TPI-001 to thr-005 and classifies it as applicable and \"partially_satisfied,\" citing evd-002 and evd-012 and control ctl-003. evd-002 and evd-012 document that embeddings of resolved support tickets are stored in a managed vector database operated by an external provider and that this index is the only copy of the embeddings, reachable from the answer service's network segment, with a nightly ingestion pipeline as the sole writer from named sources. None of these passages describe the managed provider's retention period, backup handling, or data-usage terms for the embeddings, nor any contractual or platform guarantees about how the provider processes customer data. ctl-003 governs the ingestion pipeline and the sources of data, not the third-party provider's handling of stored embeddings. In parallel, gap-009 explicitly notes that the absence of provider retention/usage documentation prevents determining whether external-processor expectations in req-TPI-001 are met for this index. Taken together, the available evidence supports applicability of req-TPI-001 but does not support a conclusion that it is already partially satisfied for this threat; that status appears inferred without documented provider commitments.",
+        "evidence_ids": [
+          "evd-002",
+          "evd-012"
+        ],
+        "recommended_action": "revise",
+        "confidence": "medium"
+      }
+    ]
+  }
+}

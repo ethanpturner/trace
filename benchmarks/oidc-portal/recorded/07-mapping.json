@@ -1,0 +1,195 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 12449,
+    "output_tokens": 10566,
+    "cache_read_tokens": 20096,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.12373325",
+    "duration_seconds": 115.75934274995234
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-AUTH-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-001"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "Authentication for the support portal is delegated to the enterprise OpenID Connect identity provider for all employee access (evd-003), matching the requirement\u2019s condition that user authentication is delegated to an external identity provider; this delegation is central to the threat, which assumes the provider can mint ID tokens for arbitrary employees.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "satisfied",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-AUTH-002",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-002"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "Employees access an internal portal over HTTPS from the corporate network and VPN to view and modify customer support tickets (evd-001, evd-002), so the portal functions as privileged administrative access to customer data, and that access can cross untrusted networks via the VPN, matching the requirement\u2019s conditions.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "satisfied",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005",
+          "evd-006",
+          "evd-007"
+        ],
+        "assumptions": [
+          "Assume that reaching the corporate network via the company VPN involves traversing an untrusted network, so multi-factor authentication at the identity provider is relied on for protecting this privileged access."
+        ],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-OIDC-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The portal uses an OpenID Connect browser redirect flow: users reaching the portal are redirected to the enterprise identity provider, authenticate there, and return with an ID token (evd-003), so user authentication is delegated to an external provider through a redirect, matching the requirement\u2019s applicable condition.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-OIDC-002",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-001"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The portal accepts OpenID Connect ID tokens issued by the enterprise identity provider and relies on them to establish employee identity for access to support tickets (evd-003, ast-002), so it consumes externally issued tokens, matching the requirement\u2019s condition.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "satisfied",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "assumptions": [
+          "Treat the statement that \u201cthe portal \u2026 returns with an ID token the portal validates\u201d (evd-003) as indicating that standard token validation is performed before relying on the asserted identity, even though individual claims and libraries are not enumerated."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-OIDC-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "A successful delegated sign-in results in the portal treating the user as authenticated for subsequent ticket operations; the threat scenario explicitly involves the portal establishing authenticated sessions for impersonated employees, so the requirement about how the relying party bounds its own session applies to this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [],
+        "assumptions": [
+          "Assume that the portal establishes a local session or equivalent after validating the ID token, as described in the threat scenario, but note that the system documentation does not describe this session or its lifetime."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-OIDC-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "The portal uses an OpenID Connect redirect-based authentication flow (evd-003), which commonly uses an authorization-code grant, but the documentation does not state whether a code is exchanged for tokens. The requirement applies if the flow uses an authorization code exchange, and not if tokens are delivered without such an exchange.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-ADMIN-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The support portal is an internal interface through which employees view and modify customer support tickets (evd-001, evd-002), so it acts as an operator interface that allows actions on customer data, matching the requirement\u2019s applicable conditions for an administrative or operator interface reaching customer data.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [],
+        "assumptions": [
+          "Interpret the employee-facing support portal as an operator/administrative interface for customer data, since only internal employees, not customers, can access it."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-LOG-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The portal is a privileged interface where employees can view and change customer support tickets (evd-001, evd-002), so it meets the condition that an administrative or operator interface can affect customer data, making audit logging of such actions relevant to detecting misuse by a compromised identity provider.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Session lifetime and termination for the support portal are not documented",
+        "description": "The system documentation describes delegation of authentication to the enterprise OpenID Connect identity provider (evd-003) but does not state how the support portal\u2019s own session or cookie is managed: how long sessions last, how they are refreshed, and how logout or revocation is handled. Because the threat involves an attacker obtaining valid ID tokens and establishing sessions as arbitrary employees, the absence of documented session lifetime and termination behaviour prevents verifying whether the relying party\u2019s session is appropriately bounded relative to the identity provider\u2019s authentication and MFA policies.",
+        "importance": "Without clear documentation of session lifetime and termination, reviewers cannot determine how long a compromised or mis-issued token continues to grant access to support tickets, or whether cutting off access at the identity provider will promptly end existing sessions in the portal.",
+        "related_object_ids": [
+          "thr-005",
+          "cmp-001",
+          "ast-001",
+          "ast-002"
+        ],
+        "requested_evidence": [
+          "Documentation describing how the support portal establishes and manages user sessions after OpenID Connect sign-in, including session lifetime, renewal behaviour, and idle or absolute timeouts.",
+          "Documentation of logout behaviour and how session termination in the portal relates to revocation or logout events at the enterprise identity provider."
+        ],
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Audit logging of support ticket actions is not described",
+        "description": "The system overview describes the support portal and ticket service and the customer support tickets they handle (evd-001, evd-002, evd-004), but it does not state whether actions such as viewing, modifying, or commenting on tickets through the portal are recorded with the acting employee identity, nor where such records are stored. For a threat where an attacker can impersonate employees via compromised identity provider tokens, the presence or absence of an audit trail for these privileged actions cannot be determined from the available documentation.",
+        "importance": "Audit records of which employee identity performed which ticket operations are important for detecting and investigating misuse when identities or tokens are compromised; without documentation, reviewers cannot verify whether such visibility exists for support ticket access and changes.",
+        "related_object_ids": [
+          "thr-005",
+          "cmp-001",
+          "cmp-002",
+          "ast-001"
+        ],
+        "requested_evidence": [
+          "Operations or monitoring documentation describing audit logging for the support portal and ticket service, including which actions are logged, how the acting user identity is captured, and where the logs are stored.",
+          "Any configuration or platform description showing that administrative or support actions on tickets are logged to a destination the operators themselves cannot modify."
+        ],
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-004"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": []
+  }
+}

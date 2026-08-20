@@ -1,0 +1,77 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 9708,
+    "output_tokens": 6531,
+    "cache_read_tokens": 10880,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.078805",
+    "duration_seconds": 71.1986216250807
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Field kiosks send customer order records containing names, delivery addresses, and order contents over a network link to the Kiosk Sync Service (evd-001). This is transmission of customer personal data, so req-DATA-001\u2019s condition that the system transmit confidential or restricted data is met, and the threat specifically concerns confidentiality and integrity of that data in transit.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [
+          "Customer names, delivery addresses, and order contents are treated as confidential or restricted data for the purposes of req-DATA-001.",
+          "No additional documentation beyond evd-001 describes encryption or integrity protection for traffic between kiosks and the Kiosk Sync Service."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-NET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "req-NET-001 concerns internal data stores, queues, caches, or internal services that are not themselves public interfaces. In this threat path, the only described component on the attacked link is the Kiosk Sync Service, which is documented as a service that receives order records directly from field kiosks over the store network (evd-001). This makes it a public-facing interface by design for those clients, so the non-applicable condition \"the component is a public interface by design and is documented as such\" holds and req-NET-001 does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [
+          "\"Public interface\" is interpreted to include the Kiosk Sync Service endpoint that field kiosks call over the store network, even though it is not internet-exposed."
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Protection of order submissions between kiosks and Kiosk Sync Service is undocumented",
+        "description": "The documentation states that field kiosks send customer order records (including names, delivery addresses, and order contents) over the store network to the Kiosk Sync Service (evd-001), but does not describe whether this traffic is protected in transit (e.g., via TLS, VPN, or application-layer integrity checks) or who provides that protection. Without this, it is not possible to determine whether a network attacker on the kiosk-to-service path can read or tamper with orders, as described in threat thr-002.",
+        "importance": "Determining whether and how order submission traffic is encrypted and integrity-protected is necessary to assess if threat thr-002 is mitigated or remains plausible, and to evaluate satisfaction of req-DATA-001 for this data flow.",
+        "related_object_ids": [
+          "thr-002",
+          "df-001",
+          "cmp-001",
+          "cmp-002",
+          "ast-001"
+        ],
+        "requested_evidence": [
+          "Architecture or operations documentation specifying whether traffic between field kiosks and the Kiosk Sync Service is encrypted in transit (e.g., TLS configuration, VPN, or similar), including where termination occurs and which platform or component provides it.",
+          "Documentation describing any application-layer integrity or authentication mechanism (such as message signing or MACs) applied to kiosk order submissions before they are accepted by the Kiosk Sync Service."
+        ],
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "severity": "high"
+      }
+    ],
+    "catalog_gap_candidates": []
+  }
+}

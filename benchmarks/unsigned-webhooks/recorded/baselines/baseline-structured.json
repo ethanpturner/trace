@@ -3,9 +3,9 @@
     {
       "requirement_id": "req-WEBHOOK-001",
       "affected_component": "Event Receiver",
-      "title": "Inbound events are processed without signature verification",
-      "rationale": "The receiver processes any well-formed delivery and checks no signature.",
-      "evidence_quote": "the receiver accepts and processes any well-formed delivery and does not check a signature"
+      "title": "Deployment webhook authenticity is not verified",
+      "rationale": "The CI platform supports signing webhook deliveries so receivers can verify authenticity, but the Event Receiver explicitly does not check these signatures and instead accepts any well‑formed request. This means an attacker can forge deployment events and have them processed as if they were legitimate, violating the requirement to verify inbound event authenticity before processing.",
+      "evidence_quote": "\"The CI platform supports signing deliveries with a shared secret so a receiver can verify that an event came from the platform; the receiver accepts and processes any well-formed delivery and does not check a signature.\""
     }
   ]
 }

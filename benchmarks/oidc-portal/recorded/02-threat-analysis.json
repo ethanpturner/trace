@@ -1,73 +1,243 @@
 {
   "schema": "ThreatAnalysisProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 10639,
+    "output_tokens": 13513,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.14842875",
+    "duration_seconds": 110.82763150008395
+  },
   "response": {
     "threats": [
       {
-        "title": "Ticket access under a stolen or forged employee identity",
-        "description": "An attacker who defeats employee authentication reads and comments on customer support correspondence. Authentication is documented as delegated entirely to the enterprise OpenID Connect provider, which also owns the factor policy; the portal itself holds no accounts or credentials to attack locally.",
+        "title": "Broad portal access enables large-scale exfiltration of support tickets by a single employee",
+        "description": "The support portal lets authenticated employees view customer support tickets and associated correspondence through an internal web application. If an employee account (or its device/VPN session) is malicious or compromised and the portal\u2019s authorization model allows that account to browse or search across many tickets, the actor can systematically retrieve and export a large volume of tickets via the portal interface.",
         "methodology": "stride-scenario-based",
         "category": [
-          "spoofing"
+          "information_disclosure"
         ],
-        "threat_actor_ids": [],
+        "threat_actor_ids": [
+          "act-001"
+        ],
         "affected_component_ids": [
-          "cmp-001"
+          "cmp-001",
+          "cmp-002",
+          "cmp-003"
         ],
         "affected_asset_ids": [
           "ast-001"
         ],
         "related_data_flow_ids": [
-          "df-002"
+          "df-001",
+          "df-002",
+          "df-003"
         ],
         "preconditions": [
-          "an attacker holds or forges an employee identity accepted by the identity provider"
+          "The employee has a valid enterprise identity and can authenticate to the support portal via the enterprise identity provider from the corporate network or VPN.",
+          "The portal\u2019s authorization model gives the employee\u2019s account read access to a broad set of tickets (for example, tickets across many customers or teams); the access model is not described in the documentation and this breadth of access is an explicit assumption.",
+          "The employee\u2019s endpoint or credentials are maliciously used or compromised (for example, by the employee themselves or by an external attacker who obtained their VPN and identity provider credentials)."
         ],
         "attack_path": [
-          "obtain an employee identity at the identity provider",
-          "authenticate to the portal with it"
+          "The employee (or an attacker using their account) connects from the corporate network or VPN and authenticates to the enterprise identity provider using OpenID Connect, then accesses the portal over HTTPS.",
+          "Using the portal\u2019s ticket viewing and search functionality, they iteratively retrieve a large number of tickets and associated correspondence that their account is permitted to access.",
+          "They export the retrieved ticket content out of the corporate environment (for example, by copying, downloading, or scripting against the portal) to an external location under their control."
         ],
-        "impact": "Customer support correspondence is read or altered under a false identity.",
+        "impact": "Confidentiality of customer support correspondence is compromised at scale, as a single employee account can extract far more ticket data than intended for their role.",
         "likelihood": null,
-        "confidence": "medium",
+        "confidence": "low",
         "evidence_ids": [
-          "evd-003"
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-004"
         ],
         "assumption_ids": [],
         "open_question_ids": []
       },
       {
-        "title": "Direct access to the ticket service bypassing the portal",
-        "description": "The ticket service is stated to be reachable only from the portal inside the application subnet, but how that restriction is enforced \u2014 network policy or assumed topology \u2014 is not described. A workload elsewhere on the network that can reach the service would bypass the portal's authenticated path entirely.",
+        "title": "Ticket comments used to execute malicious scripts in other employees\u2019 browsers",
+        "description": "Employees can enter free-form text comments on support tickets, which the portal web application stores via the ticket service and later renders back to other employees in their browsers. If the portal does not adequately sanitize or encode this user-supplied content before rendering, a malicious or compromised employee can inject script content that executes in other employees\u2019 browsers under the portal\u2019s origin, allowing unauthorized actions on their behalf or exfiltration of ticket data.",
         "methodology": "stride-scenario-based",
         "category": [
+          "tampering",
+          "information_disclosure",
           "elevation_of_privilege"
         ],
-        "threat_actor_ids": [],
+        "threat_actor_ids": [
+          "act-001"
+        ],
         "affected_component_ids": [
-          "cmp-002"
+          "cmp-001",
+          "cmp-002",
+          "cmp-003",
+          "cmp-005"
         ],
         "affected_asset_ids": [
           "ast-001"
         ],
         "related_data_flow_ids": [
-          "df-001"
+          "df-001",
+          "df-002",
+          "df-003"
         ],
         "preconditions": [
-          "the stated reachability restriction is not enforced by network policy"
+          "Employees can submit ticket comments that are stored by the ticket service and later displayed to other employees via the portal.",
+          "The portal renders ticket and comment content into HTML pages viewed in employee web browsers.",
+          "Input validation, sanitization, or output encoding for ticket and comment content is insufficient to prevent script execution in the browser (explicit precondition)."
         ],
         "attack_path": [
-          "reach the application subnet from elsewhere on the corporate network",
-          "call the ticket service directly"
+          "A malicious or compromised employee uses the portal to create or edit a ticket comment containing HTML or JavaScript intended to execute in a viewer\u2019s browser.",
+          "The portal sends this comment to the ticket service, which stores it in the ticket database along with other ticket content.",
+          "Another employee later loads the affected ticket in their browser via the portal; the portal retrieves the stored content and renders the comment without neutralizing the injected script.",
+          "The employee\u2019s browser executes the malicious script in the security context of the portal, allowing the script to invoke portal functionality with the victim\u2019s authenticated session and to read ticket content displayed in the page.",
+          "The script may exfiltrate ticket data to an external endpoint or perform unauthorized actions such as posting further comments or viewing additional tickets accessible to the victim."
         ],
-        "impact": "Ticket data is reachable without the portal's authenticated path.",
+        "impact": "Unauthorized reading and modification of support tickets via other employees\u2019 authenticated sessions, as well as potential exfiltration of customer correspondence outside the system.",
         "likelihood": null,
         "confidence": "medium",
         "evidence_ids": [
+          "evd-001",
           "evd-002"
         ],
         "assumption_ids": [],
         "open_question_ids": []
+      },
+      {
+        "title": "Untrusted internal code impersonates the portal to the ticket service",
+        "description": "The ticket service is an internal HTTP service that stores and retrieves tickets and is described as reachable only from the portal web application inside the application subnet. If the ticket service relies primarily on network location and does not enforce strong application-level authentication or authorization for its caller, compromised or unauthorized code running in the same network environment could send crafted HTTP requests directly to the ticket service, impersonating the portal and gaining unauthorized read or write access to tickets.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "spoofing",
+          "tampering",
+          "information_disclosure"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-002",
+          "cmp-003"
+        ],
+        "affected_asset_ids": [
+          "ast-001"
+        ],
+        "related_data_flow_ids": [
+          "df-002",
+          "df-003"
+        ],
+        "preconditions": [
+          "The ticket service is reachable over HTTP from the portal web application within the application subnet.",
+          "The ticket service either does not authenticate its callers at the application layer or relies only on network-based controls such as source IP or subnet membership to trust requests (explicit precondition).",
+          "An attacker is able to run code on a host that can reach the ticket service endpoint (for example, by compromising the portal host or another host within the same network segment)."
+        ],
+        "attack_path": [
+          "The attacker gains the ability to execute code from a host with network connectivity to the ticket service.",
+          "From that host, the attacker crafts HTTP requests that match the expected format of calls from the portal web application to the ticket service.",
+          "Because the ticket service does not strongly authenticate or distinguish the true portal from other callers, it accepts these requests and performs operations against the ticket database.",
+          "The attacker uses these operations to read sensitive ticket content and/or modify or delete tickets."
+        ],
+        "impact": "Unauthorized reading, modification, or deletion of customer support tickets via direct calls to the ticket service that bypass the portal\u2019s intended access controls.",
+        "likelihood": null,
+        "confidence": "low",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Interception or tampering of traffic between ticket service and managed database",
+        "description": "The ticket service persists tickets in a managed relational database provided by the cloud platform, with a network data flow between them whose transport security is not specified. If the connection between the ticket service and the database is not strongly encrypted and mutually authenticated, an attacker who gains network-level access within the cloud environment or underlying infrastructure could intercept database traffic to read ticket data in transit or inject malicious responses that alter stored tickets.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "information_disclosure",
+          "tampering"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-002",
+          "cmp-003"
+        ],
+        "affected_asset_ids": [
+          "ast-001"
+        ],
+        "related_data_flow_ids": [
+          "df-003"
+        ],
+        "preconditions": [
+          "The ticket service communicates with the managed relational database over a network connection within the cloud platform.",
+          "Transport security and mutual authentication for this connection are not guaranteed by the documentation; this scenario assumes they are absent or insufficient (explicit precondition).",
+          "An attacker gains a vantage point on the network path between the ticket service and the database (for example, via compromise of infrastructure or cloud-network components)."
+        ],
+        "attack_path": [
+          "The attacker positions themselves on the network path between the ticket service and the managed database within the cloud platform.",
+          "They passively capture traffic on this connection if it is unencrypted or weakly protected, reconstructing SQL queries and responses that contain ticket content and comments.",
+          "Optionally, they modify or inject packets to alter query results or write operations, leading to unauthorized changes in stored ticket data.",
+          "The ticket service and portal subsequently operate on tampered or exposed ticket data without detecting the manipulation."
+        ],
+        "impact": "Exposure of customer support correspondence in transit and potential silent corruption of ticket data stored in the managed database.",
+        "likelihood": null,
+        "confidence": "low",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Compromised identity provider issues valid tokens for unauthorized access to the portal",
+        "description": "All access to the portal is authenticated via the enterprise identity provider using OpenID Connect, and the portal delegates identity verification entirely to this provider. If the identity provider, its administrative accounts, or its configuration are compromised, an attacker could obtain or mint valid ID tokens for arbitrary employee identities and present them to the portal, which will accept them as proof of authentication. This enables the attacker to access and manipulate support tickets as those employees.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "spoofing",
+          "elevation_of_privilege",
+          "information_disclosure",
+          "tampering"
+        ],
+        "threat_actor_ids": [
+          "act-002"
+        ],
+        "affected_component_ids": [
+          "cmp-001",
+          "cmp-002",
+          "cmp-003",
+          "cmp-004"
+        ],
+        "affected_asset_ids": [
+          "ast-001",
+          "ast-002"
+        ],
+        "related_data_flow_ids": [
+          "df-001",
+          "df-004",
+          "df-005",
+          "df-002",
+          "df-003"
+        ],
+        "preconditions": [
+          "The portal fully trusts ID tokens issued by the enterprise identity provider for user authentication and does not independently verify user identity beyond token validation.",
+          "The enterprise identity provider or its administrative interfaces are compromised or misconfigured in a way that allows an attacker to obtain valid ID tokens for accounts they do not legitimately control (explicit precondition).",
+          "The attacker can reach the portal over the same corporate network or VPN path that employees use (for example, by also compromising VPN access or an internal host)."
+        ],
+        "attack_path": [
+          "The attacker compromises the enterprise identity provider or gains administrative access that allows them to issue or intercept ID tokens for arbitrary employee identities.",
+          "Using these ID tokens, the attacker initiates OpenID Connect authentication flows or directly presents tokens to the portal web application.",
+          "The portal validates the tokens as usual, establishes authenticated sessions for the impersonated employees, and grants access to support ticket functionality.",
+          "Acting under these identities, the attacker views, modifies, or comments on support tickets and associated correspondence through the portal and ticket service."
+        ],
+        "impact": "Unauthorized reading and modification of support tickets by an attacker impersonating legitimate employees, and compromise of the integrity and confidentiality of issued OpenID Connect ID tokens.",
+        "likelihood": null,
+        "confidence": "medium",
+        "evidence_ids": [
+          "evd-001",
+          "evd-003",
+          "evd-007"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
       }
-    ]
+    ],
+    "catalog_gap_candidates": []
   }
 }

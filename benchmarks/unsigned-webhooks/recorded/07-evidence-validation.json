@@ -1,0 +1,1036 @@
+{
+  "schema": "EvidenceValidationProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 257,
+    "output_tokens": 22557,
+    "cache_read_tokens": 12928,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.22750725",
+    "duration_seconds": 206.92179512500297
+  },
+  "response": {
+    "assessments": [
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-001",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 titles the document \"Deploy Notifier \u2014 System Overview\" and describes \"the deploy notifier\" as the service under discussion, which directly supports the name Deploy Notifier for the system.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-002",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 states that the deploy notifier \"receives deployment events from an external continuous-integration platform and posts them to an internal chat channel\" and that it \"exists so engineers see deploys without watching the CI dashboard,\" which directly matches the stated purpose.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-003",
+        "evidence_ids": [
+          "evd-001",
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 describes the service as receiving deployment events \"from an external continuous-integration platform\". evd-003 says \"The CI platform delivers each deployment event as a JSON body to the receiver's public URL.\" evd-005 defines the CI platform as \"the external continuous-integration service that sends deployment events.\" Together these directly support that the deployment_event_source is an external CI platform.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-004",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 says the service \"posts them to an internal chat channel.\" evd-002 describes the Chat Notifier, which \"posts it to the internal chat channel over the chat platform's API.\" This directly supports the notification_target being an internal chat channel.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-005",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-004 states \"No customer data passes through the notifier.\" This is direct evidence that the system does not process customer data, supporting customer_data_processed: False.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-006",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-003 describes that the receiver \"reads the repository name, the environment, and the commit, and posts a message naming them.\" evd-004 says deployment events \"name repositories, environments, and commit identifiers.\" Together these directly support that the deployment-event asset fields are repository_name, environment, and commit_identifier.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-007",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-004 explains that deployment events \"name repositories, environments, and commit identifiers\" and explicitly that \"No customer data passes through the notifier.\" This directly supports the claim that the deployment-event asset does not contain customer data.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-008",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-002 describes the Event Receiver as \"A public HTTPS endpoint that the external CI platform calls with a deployment event.\" Being a public endpoint called by an external platform directly supports that cmp-001 is internet-exposed.",
+        "missing_evidence": [
+          "Network or deployment documentation confirming whether the Event Receiver is restricted by IP allowlists or other network controls."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-009",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-002 calls the Event Receiver \"A public HTTPS endpoint\". This directly supports the protocol being HTTPS.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-010",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-003 notes that the CI platform supports signing deliveries but that \"the receiver accepts and processes any well-formed delivery and does not check a signature.\" This is direct evidence that the receiver does not verify CI signatures, supporting ci_signature_verification: False for cmp-001.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-011",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-002 calls the Event Receiver \"A public HTTPS endpoint\". By definition, HTTPS is HTTP carried over TLS, so this is strong indirect evidence that encryption in transit is provided by TLS for dataflow df-001.",
+        "missing_evidence": [
+          "Documentation or configuration confirming the specific TLS versions and cipher suites used on the Event Receiver HTTPS endpoint."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-012",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "The available documentation (evd-001 through evd-005) describes receiving, parsing, and forwarding deployment events but says nothing about whether those events or derived notifications are stored or logged persistently. Because no passage addresses storage or retention, the claim about ast-001 storage status is not established by the evidence.",
+        "missing_evidence": [
+          "Architecture or operations documentation that states whether deployment events or notifications are stored (e.g., in logs, databases, or queues) and, if so, for how long."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-001",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-002 describes the Event Receiver as a public HTTPS endpoint called by an external CI platform, and evd-003 explains that each CI deployment event is delivered as JSON to this public URL and triggers message posting. This matches the conditions for a webhook-style endpoint handling external events. evd-003 further states that the platform supports signing deliveries but that the receiver \"does not check a signature,\" showing that authenticity-verification controls are not implemented. This evidence directly supports treating req-WEBHOOK-001 (authenticating inbound webhook events) as applicable to thr-001 and currently unverified/unsatisfied.",
+        "missing_evidence": [
+          "Design or implementation documentation describing any current or planned webhook signature verification or equivalent authenticity checks on the Event Receiver."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-002",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "req-WEBHOOK-002 is described as addressing replay of events whose authenticity is already verified. evd-003 states that while the CI platform supports signing deliveries, \"the receiver accepts and processes any well-formed delivery and does not check a signature.\" Since authenticity is not verified at all, the precondition for a replay-specific requirement does not hold, and thr-001 instead arises from the lack of any authenticity check. This directly supports classifying req-WEBHOOK-002 as not applicable to thr-001.",
+        "missing_evidence": [
+          "Authoritative requirement text for req-WEBHOOK-002 confirming that it is scoped to replay/duplicate handling of already-authenticated webhook events."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-003",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "indirect"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "req-ADMIN-001 concerns privileged administrative interfaces. evd-002 describes only two components in scope\u2014the Event Receiver and Chat Notifier\u2014both acting automatically on CI events and posting to chat. evd-004 states that deployment events consist of repository, environment, and commit identifiers and that \"No customer data passes through the notifier.\" This supports that thr-002, as described, involves automated processing of deployment events rather than a human-facing administrative interface. However, the documentation does not explicitly state that there is no administrative or operator interface to this system, so the non-applicability of req-ADMIN-001 to thr-002 is only partially established.",
+        "missing_evidence": [
+          "Documentation stating whether the Deploy Notifier exposes any administrative or operator interfaces and, if so, clarifying whether they are involved in thr-002's attack path."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-004",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "indirect"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "req-AI-001 concerns untrusted content passed to a model. evd-002 and evd-003 describe the Event Receiver and Chat Notifier as parsing JSON deployment events, extracting repository, environment, and commit fields, and posting formatted messages. evd-001 characterizes the service as a small notifier for engineers. Nowhere do the documents mention any ML or AI model usage; the processing is simple parsing and formatting. This directly supports that thr-002, which concerns flooding this webhook and notifier, does not involve content passed to a model, so req-AI-001 is not applicable to this threat.",
+        "missing_evidence": [
+          "Any architecture description that would introduce AI/ML or model-inference components into the Deploy Notifier data path, if they exist."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-005",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "indirect"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "req-AI-002 concerns validating model output before external publication. evd-002 and evd-003 show that messages are constructed directly from deployment event fields and posted to an internal chat channel; evd-001 frames this as a simple deploy notifier for engineers. No model outputs are described, and the messages are explicitly derived from repository, environment, and commit metadata. This supports treating req-AI-002 as not applicable to thr-002.",
+        "missing_evidence": [
+          "Documentation confirming that no model-generated content is included in deploy notifications."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-006",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "req-AI-003 concerns minimizing customer content sent to an external model provider. evd-002 and evd-003 show that deployment events flow from an external CI platform to the Event Receiver and then to the Chat Notifier, which in turn calls a chat platform API. There is no external model provider in this dataflow, and evd-004 (though not cited here) states there is no customer data. This supports classifying req-AI-003 as not applicable to thr-002.",
+        "missing_evidence": [
+          "Any documentation indicating use of external ML/model services in this system, if present."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-007",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "req-AI-004 addresses encoding model output appropriately for its rendering context. evd-002 and evd-003 describe that messages are formatted directly from deployment event fields and posted to chat; no model is involved and therefore no model output is being rendered. This supports the conclusion that req-AI-004 does not bear on thr-002.",
+        "missing_evidence": [
+          "If any model outputs are ever included in chat notifications, documentation of how they are encoded for rendering."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-008",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "req-AUTH-001 concerns delegated end-user authentication. evd-002 and evd-003 show that the only externally reachable interface in thr-002's path is a public HTTPS endpoint called by an external CI platform; there is no user login flow. evd-005 lists the actors as \"CI platform\" and \"Engineer\" (reader of the chat channel), reinforcing that the CI platform, not an end user, calls the webhook. This supports treating delegated end-user authentication requirements as not applicable to thr-002.",
+        "missing_evidence": [
+          "Documentation of any separate end-user or delegated authentication flows, if they exist outside the deploy notifier path."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-009",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "req-AUTH-002 concerns multi-factor authentication on privileged access. evd-002 and evd-003 describe thr-002 as involving only an unauthenticated public webhook and automated JSON parsing plus message posting. No privileged administrative interface or authenticated user path is mentioned in this attack path, supporting the conclusion that req-AUTH-002 is not applicable to thr-002.",
+        "missing_evidence": [
+          "Statement of whether any privileged administrative interfaces exist for the Deploy Notifier and confirmation that they are out of scope for thr-002."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-010",
+        "evidence_ids": [
+          "evd-001",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "indirect"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "req-AUTHZ-001 relates to tenant-aware authorization in multi-tenant systems. evd-001 presents the Deploy Notifier as an internal service for engineers, and evd-004 notes that no customer data passes through it, with deployment events only naming repositories, environments, and commit identifiers. There is no indication of multiple external customers or tenants; the described use case is internal visibility. This supports treating tenant-aware authorization as not applicable to thr-002.",
+        "missing_evidence": [
+          "Any documentation that would indicate whether the notifier ever serves multiple external customer organizations or is strictly single-tenant/internal."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-011",
+        "evidence_ids": [
+          "evd-002",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "req-AUTHZ-002 concerns limiting privileges on customer resources accessed via integrations. evd-002 shows the Chat Notifier calling \"the internal chat channel over the chat platform's API,\" and evd-005 identifies the \"Engineer\" as an internal reader. This indicates that the chat workspace is part of the internal environment rather than a customer-owned resource, and thr-002 concerns availability of notifications, not privilege boundaries on customer tenants. This supports marking req-AUTHZ-002 not applicable to thr-002.",
+        "missing_evidence": [
+          "Clarification of whether the chat platform and workspace are operated by the same organization that owns the Deploy Notifier or by external customers."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-012",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "req-CICD-001 concerns trust in the deployment pipeline. evd-002 and evd-003 show thr-002 acting against the runtime Event Receiver webhook and downstream Chat Notifier, while evd-001 characterizes the system as a small service receiving events from an external CI platform. The described denial-of-service path is about flooding the live webhook endpoint, not about compromising or trusting the pipeline that builds/deploys the notifier itself. This supports classifying req-CICD-001 as not applicable to thr-002.",
+        "missing_evidence": [
+          "Threat modeling or architecture notes confirming that CICD pipeline trust is treated separately from runtime webhook flooding threats."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-013",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "req-DATA-001 focuses on protection of sensitive data in transit or at rest. evd-003 and evd-004 explain that deployment events and notifications contain repository names, environments, and commit identifiers, and that \"No customer data passes through the notifier.\" thr-002 is explicitly about availability of these notifications during a flood, not confidentiality of sensitive data. This directly supports treating req-DATA-001 as not applicable to thr-002.",
+        "missing_evidence": [
+          "If any sensitive (non-customer) data were ever added to deployment events, documentation of its protection in transit and at rest."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-014",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "req-DATA-002 concerns retention of sensitive working data. evd-002 and evd-003 describe processing of live deployment events\u2014parsing JSON and posting chat messages\u2014while evd-004 specifies that events contain only repositories, environments, and commit identifiers and that no customer data flows through the notifier. thr-002 focuses on resource exhaustion during live processing, not on retention of sensitive customer working data. This supports classifying req-DATA-002 as not applicable to thr-002.",
+        "missing_evidence": [
+          "Any retention policy documentation, if non-customer but still sensitive operational data were to be stored."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-015",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "req-DATA-003 concerns tenant separation for stored artifacts in multi-tenant storage. evd-002 and evd-003 show transient handling of deployment events and chat notifications; evd-004 emphasizes that no customer data is involved and only repository/environment/commit identifiers are processed. thr-002 addresses flooding of a webhook and notifier, not storage of artifacts for multiple customers. This supports treating req-DATA-003 as not applicable to thr-002.",
+        "missing_evidence": [
+          "Documentation describing any persistent storage used by the notifier and whether it is single-tenant or multi-tenant, if such storage exists."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-016",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "req-DATA-004 is about deleting customer data on request. evd-004 states that \"No customer data passes through the notifier.\" If no customer data is processed, customer-initiated deletion is not in scope for this system, so this directly supports treating req-DATA-004 as not applicable to thr-002.",
+        "missing_evidence": [
+          "If the notifier were ever extended to handle customer data, documentation of deletion procedures for that data."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-017",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "req-LOG-001 concerns keeping sensitive data out of logs. thr-002 is about denial of service from excessive or malformed deployment events. evd-004 states that deployment events and notifications contain only repositories, environments, and commit identifiers and that no customer data is involved, so there is no indication of sensitive customer data being present to leak into logs. evd-002 and evd-003 further show that the threat revolves around processing overhead, not log confidentiality. This supports considering req-LOG-001 not applicable to thr-002.",
+        "missing_evidence": [
+          "Logging design documentation indicating what fields, if any, are written to logs and whether any are considered sensitive."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-018",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "req-LOG-002 covers auditing security-relevant administrative actions. evd-002 and evd-003 describe automatic processing of deployment events by the Event Receiver and Chat Notifier; there is no mention of administrative actions altering security configuration or customer data in this path. evd-004 notes the absence of customer data. Since thr-002 involves only automated webhook traffic and notification posting, not privileged admin operations, this supports marking req-LOG-002 as not applicable to thr-002.",
+        "missing_evidence": [
+          "Documentation of any administrative actions available in the system and whether they are audited, to confirm they are out of scope for thr-002."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-019",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "req-NET-001 is about keeping internal components off untrusted networks. evd-002 describes the Event Receiver as \"A public HTTPS endpoint that the external CI platform calls,\" making it an intentionally external-facing interface. For thr-002, this public webhook is the component under attack, not an internal store or service accidentally exposed. This supports treating req-NET-001 as not applicable to this threat, because the component is public by design rather than an internal dependency on an untrusted network.",
+        "missing_evidence": [
+          "Network architecture documentation confirming which components are intended to be internal-only versus public-facing."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-020",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "req-SECRET-001 concerns storing long-lived credentials or keys in a managed secret store. evd-002 and evd-003 show that thr-002 involves an attacker flooding the Event Receiver webhook, causing processing and chat API calls. While the Chat Notifier likely uses some credential to call the chat platform API, the described denial-of-service path does not depend on whether those credentials are stored in a secret store. Thus, for this specific threat, the requirement about secret storage does not bear directly, supporting its classification as not applicable to thr-002.",
+        "missing_evidence": [
+          "Documentation of how chat API credentials are stored, for assessment under other threats focused on credential theft or misuse."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-021",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "req-SECRET-002 addresses using short-lived credentials when accessing customer resources on external platforms. evd-002 and evd-003 show that the notifier posts to an internal chat channel via a chat platform API and that thr-002 involves resource exhaustion from excessive webhook traffic. The lifetime of any tokens used for the chat API does not affect this flooding scenario, and the resources involved are internal rather than customer-owned. This supports treating req-SECRET-002 as not applicable to thr-002.",
+        "missing_evidence": [
+          "Description of any external customer-owned resources, if present, and the credentials used to access them."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-022",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "req-TPI-001 concerns documenting how external processors handle customer data. evd-004 states that deployment events and notifications involve only repositories, environments, and commit identifiers and that \"No customer data passes through the notifier.\" If no customer data is processed, requirements about external processors' handling of customer data do not apply to thr-002, which focuses on availability. This directly supports the mapping that req-TPI-001 is not applicable.",
+        "missing_evidence": [
+          "If customer data were ever introduced into this flow, documentation of any external processors and their handling of that data."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-023",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "req-TPI-002 is about bounding work triggered by external events. evd-002 and evd-003 show that the Event Receiver exposes a public HTTPS endpoint that accepts deployment events from an external CI platform and that each event leads to JSON parsing and a chat notification. thr-002 describes an attacker repeatedly sending such events to exhaust resources. This directly matches the requirement's concern: unbounded work triggered by untrusted external events, so applicability is well supported. The same passages show no mention of rate limiting, queueing, or other bounding mechanisms, which is consistent with the mapping's \"unverified\" status for this requirement.",
+        "missing_evidence": [
+          "Design or implementation evidence of any rate limiting, quotas, or other controls that bound processing per inbound deployment event."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-024",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "For thr-002, the Event Receiver is again a public HTTPS endpoint accepting events from an external CI platform (evd-002), and each event results in a message being posted to an internal chat channel (evd-003), which is externally visible to engineers. This matches a webhook endpoint that performs externally visible work in response to external events. evd-003 also notes that the CI platform supports signing deliveries but that the receiver \"does not check a signature,\" showing that authenticity is not currently verified. This directly supports the conclusion that req-WEBHOOK-001 applies to thr-002 and is currently unverified/unsatisfied.",
+        "missing_evidence": [
+          "Documentation or configuration showing whether any authenticity checks (such as shared-secret signatures or IP allowlists) are applied to inbound events."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-025",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "req-WEBHOOK-002 handles replay of events where authenticity is already verified. evd-003 clearly states that although the platform supports signing deliveries, the receiver \"does not check a signature.\" thr-002 focuses on generic flooding by any party that can reach the public URL. Without any authenticity verification, replay-specific controls do not meaningfully apply, so the evidence supports marking req-WEBHOOK-002 as not applicable to thr-002.",
+        "missing_evidence": [
+          "Definitive requirement documentation for req-WEBHOOK-002 confirming its focus on replay/duplicate delivery after authenticity verification."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-001",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-002 and evd-003 together establish that the Event Receiver is a public HTTPS endpoint that accepts deployment events from an external CI platform, parses JSON bodies, and posts chat messages naming the repository, environment, and commit. evd-003 further states that while the CI platform supports signing deliveries, \"the receiver accepts and processes any well-formed delivery and does not check a signature,\" so it cannot distinguish signed CI events from arbitrary well-formed JSON. This directly supports the impact portion of thr-001: if an attacker can send arbitrary JSON requests to the receiver, those payloads will be parsed and result in misleading deployment notifications. However, the documents do not explicitly state that arbitrary Internet clients (beyond the CI platform) can reach the receiver; they describe it as \"public\" but do not detail any network allowlists or firewall restrictions. Thus, the mechanics and impact of forged events are well supported, but the precondition that an Internet-based attacker can send requests is not fully established by the documentation.",
+        "missing_evidence": [
+          "Network access control documentation for the Event Receiver, including any IP allowlists, VPN requirements, or firewall rules that would constrain who can send requests to the public URL.",
+          "Any additional description clarifying whether only the CI platform can reach the Event Receiver or whether it is generally accessible from the Internet."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-002",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-002 describes the Event Receiver as a public HTTPS endpoint called by an external CI platform, and evd-003 explains that each deployment event is delivered as a JSON body to this public URL, parsed, and turned into a chat message. These passages directly support that each inbound request triggers parsing work and downstream notification activity. It is reasonable to infer that a sufficiently high rate or size of such requests could consume CPU, memory, or outbound API capacity and degrade availability of legitimate notifications, matching the impact described in thr-002. However, as with thr-001, the documentation does not state explicitly that arbitrary attackers can send requests at will; it does not detail any rate limiting, authentication, or network-level restrictions. Therefore the resource-exhaustion mechanics are well supported, but the precondition that an attacker can drive traffic at a rate or size that exceeds service capacity is not fully established.",
+        "missing_evidence": [
+          "Network and access-control documentation for the Event Receiver, including any IP restrictions or authentication that would limit who can send events.",
+          "Operational or design documentation describing any rate limiting, size limits, or other protections that bound the work done per inbound deployment event."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      }
+    ]
+  }
+}
