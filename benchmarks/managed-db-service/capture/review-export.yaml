@@ -1,0 +1,368 @@
+# ForgeFlow context review
+#
+# Fill in `decision:` with `approve` or `reject`, edit any field listed under `editable:`, answer a
+# question by writing under `answer:`, and set `confirm: true` on a claim you can vouch for. Leave
+# anything you have no view on exactly as it is: an unchanged entry applies nothing.
+#
+# List evidence identifiers under an entry's `attach_evidence:` to link existing references to it.
+# Settle a contradiction by filling both `resolution:` and `rationale:` under `contradictions:`.
+# Add an object the extractor missed under `additions:`, as
+#   - type: components            # or actors, assets, data_flows, trust_boundaries
+#     fields: {name: ..., ...}    # the object's own fields; the identifier is allocated for you
+#
+# Identifiers, statuses, and timestamps are the application's and are shown for reference.
+# Changing one here has no effect.
+
+assessment_id: asm-001
+system_context_version: 1
+reviewer: null
+components:
+- id: cmp-001
+  decision: null
+  attach_evidence: []
+  editable:
+    name: metrics db
+    description: Declared in terraform-db.tf.json as aws_db_instance.
+    component_type: managed_database
+    technology: []
+    ownership: null
+    deployment_zone: null
+    internet_accessible: null
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+- id: cmp-002
+  decision: null
+  attach_evidence: []
+  editable:
+    name: Metrics API
+    description: Internal HTTP service that accepts metric writes from product services and answers metric
+      queries from the dashboard. It is not reachable from the internet.
+    component_type: service
+    technology:
+    - http
+    ownership: null
+    deployment_zone: null
+    internet_accessible: false
+    externally_managed: null
+    data_classifications:
+    - confidential_business_data
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+- id: cmp-003
+  decision: null
+  attach_evidence: []
+  editable:
+    name: Product service
+    description: Internal service that writes metrics to the Metrics API.
+    component_type: service
+    technology: []
+    ownership: null
+    deployment_zone: null
+    internet_accessible: null
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+- id: cmp-004
+  decision: null
+  attach_evidence: []
+  editable:
+    name: Dashboard
+    description: Internal reader of metrics that queries the Metrics API.
+    component_type: service
+    technology: []
+    ownership: null
+    deployment_zone: null
+    internet_accessible: null
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+actors:
+- id: act-001
+  decision: null
+  attach_evidence: []
+  editable:
+    name: Product service
+    actor_type: service
+    trust_level: null
+    capabilities: []
+    authentication_method: null
+- id: act-002
+  decision: null
+  attach_evidence: []
+  editable:
+    name: Dashboard
+    actor_type: service
+    trust_level: null
+    capabilities: []
+    authentication_method: null
+assets:
+- id: ast-001
+  decision: null
+  attach_evidence: []
+  editable:
+    name: Metrics records
+    asset_type: data
+    description: Records that associate a product account with usage counters, containing account identifiers
+      and usage numbers.
+    confidentiality_impact: Disclosure could expose confidential business information about product account
+      usage.
+    integrity_impact: null
+    availability_impact: null
+    data_classification: confidential_business_data
+    owner: null
+data_flows:
+- id: df-001
+  decision: null
+  attach_evidence: []
+  editable:
+    name: Product service to Metrics API
+    direction: one_way
+    protocol: http
+    data_types:
+    - metrics_records
+    authentication: unknown
+    encryption_in_transit: unknown
+    internet_exposed: null
+    source_component_id: cmp-003
+    destination_component_id: cmp-002
+- id: df-002
+  decision: null
+  attach_evidence: []
+  editable:
+    name: Dashboard to Metrics API
+    direction: one_way
+    protocol: http
+    data_types:
+    - metrics_records
+    authentication: unknown
+    encryption_in_transit: unknown
+    internet_exposed: null
+    source_component_id: cmp-004
+    destination_component_id: cmp-002
+trust_boundaries:
+- id: tb-001
+  decision: null
+  attach_evidence: []
+  editable:
+    name: Internal application subnet boundary
+    boundary_type: network
+    description: Boundary between the internal application subnet hosting the Metrics Store components
+      and external networks; the Metrics Store is reachable only from inside this subnet and is not directly
+      reachable from the internet.
+    controls:
+    - network_restriction_internal_subnet_only
+claims:
+- id: ctx-001
+  status: documented
+  confidence: high
+  decision: null
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-006
+  editable:
+    predicate: storage_encrypted
+    value: true
+    rationale: null
+- id: ctx-002
+  status: documented
+  confidence: high
+  decision: null
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-006
+  editable:
+    predicate: publicly_accessible
+    value: false
+    rationale: null
+- id: ctx-003
+  status: documented
+  confidence: high
+  decision: null
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-001
+  editable:
+    predicate: purpose
+    value: Records product usage metrics and serves them to an internal dashboard.
+    rationale: null
+- id: ctx-004
+  status: documented
+  confidence: high
+  decision: null
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-001
+  editable:
+    predicate: network_exposure
+    value: reachable_only_from_application_subnet
+    rationale: null
+- id: ctx-005
+  status: documented
+  confidence: high
+  decision: null
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-002
+  editable:
+    predicate: role
+    value: internal_http_service_for_metrics_read_write
+    rationale: null
+- id: ctx-006
+  status: documented
+  confidence: high
+  decision: null
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-002
+  editable:
+    predicate: internet_accessibility
+    value: not_internet_reachable
+    rationale: null
+- id: ctx-007
+  status: documented
+  confidence: high
+  decision: null
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-003
+  editable:
+    predicate: contains_fields
+    value:
+    - account_identifiers
+    - usage_numbers
+    rationale: null
+- id: ctx-008
+  status: documented
+  confidence: high
+  decision: null
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-003
+  editable:
+    predicate: data_classification
+    value: confidential_business_data
+    rationale: null
+- id: ctx-009
+  status: documented
+  confidence: high
+  decision: null
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-004
+  editable:
+    predicate: role
+    value: internal_service_writing_metrics
+    rationale: null
+- id: ctx-010
+  status: documented
+  confidence: high
+  decision: null
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-004
+  editable:
+    predicate: role
+    value: internal_reader_of_metrics
+    rationale: null
+- id: ctx-011
+  status: documented
+  confidence: high
+  decision: null
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-002
+  - evd-005
+  editable:
+    predicate: database_management
+    value: managed_relational_database_provided_by_cloud_platform
+    rationale: null
+- id: ctx-012
+  status: documented
+  confidence: high
+  decision: null
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-002
+  editable:
+    predicate: at_rest_encryption_key_management
+    value: cloud_platform_kms
+    rationale: null
+- id: ctx-013
+  status: documented
+  confidence: high
+  decision: null
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-002
+  editable:
+    predicate: db_connection_encryption
+    value: platform_transport_encryption_terminated_at_managed_endpoint
+    rationale: null
+- id: ctx-014
+  status: unknown
+  confidence: low
+  decision: null
+  confirm: false
+  attach_evidence: []
+  evidence: []
+  editable:
+    predicate: authentication_mechanism
+    value: unknown
+    rationale: Documentation does not describe how calls to the Metrics API are authenticated for writes
+      or reads.
+- id: ctx-015
+  status: unknown
+  confidence: low
+  decision: null
+  confirm: false
+  attach_evidence: []
+  evidence: []
+  editable:
+    predicate: retention_policy
+    value: null
+    rationale: Documentation does not state how long metrics records are retained or where they are stored
+      at rest beyond being in a managed database.
+contradictions: []
+additions: []
+questions:
+- id: qst-001
+  question: What authentication and authorization mechanisms protect access to the Metrics API for both
+    metric writes and metric queries?
+  priority: high
+  blocking: true
+  answer: null
+- id: qst-002
+  question: Where are metrics records stored at rest and what is their retention policy (e.g., duration
+    and deletion behavior)?
+  priority: medium
+  blocking: false
+  answer: null
+- id: qst-003
+  question: No actor in the context is anonymous or external. If the system is reachable from outside,
+    who reaches it? If it is not, what establishes that?
+  priority: medium
+  blocking: false
+  answer: null
+- id: qst-004
+  question: No actor in the context is administrative or privileged. Who operates and configures the system,
+    and through what?
+  priority: medium
+  blocking: false
+  answer: null
