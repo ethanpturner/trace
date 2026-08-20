@@ -1,0 +1,59 @@
+{
+  "schema": "CriticalReviewProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 22533,
+    "output_tokens": 16962,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.19778625",
+    "duration_seconds": 250.92105987493414
+  },
+  "response": {
+    "critiques": [
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-013",
+        "critique_type": "unsupported_claim",
+        "description": "Req-DATA-001 (encryption in transit and at rest) is marked not applicable to thr-002 even though the documented data and architecture clearly meet the usual conditions for an encryption requirement, and an inherited encryption control (ctl-001) is already established for this path.",
+        "rationale": "The applicability_reason for map-013 argues that because thr-002 models an attacker issuing read queries via the Metrics API and receiving decrypted metrics, encryption in transit and at rest \"does not change whether those authorized reads return data,\" so req-DATA-001 is treated as out of scope. However, the cited evidence shows that:\n\n- Metrics records contain account identifiers and usage numbers treated as confidential business data [evd-003].\n- These metrics are stored in a managed relational database, which the platform encrypts at rest, and the connection from the Metrics API to the database uses the platform's transport encryption [evd-002].\n- Terraform configures the metrics_db instance with storage_encrypted set to true [evd-005][evd-006].\n\nFrom this, it is documented (not inferred) that confidential customer-related data is stored and transmitted along this path [evd-002][evd-003], and that an encryption control (ctl-001) is in place [evd-002][evd-005][evd-006]. That is exactly the kind of situation in which an encryption-in-transit/at-rest requirement such as req-DATA-001 is normally considered applicable. The mapping\u2019s conclusion that the requirement is \"not_applicable\" rests on a modelling choice about whether encryption mitigates this particular unauthorized-read scenario, not on any documented inapplicability of the requirement to this data path.\n\nGiven the evidence, it is more accurate to say that req-DATA-001 is applicable to thr-002\u2019s components and data, and that it is satisfied (or inherited) via ctl-001, even if it does not by itself prevent API-level misuse. Treating the requirement as out of scope for the threat is therefore an unsupported scoping decision rather than a conclusion grounded in the cited documentation.",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-005",
+          "evd-006"
+        ],
+        "recommended_action": "revise",
+        "confidence": "medium"
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-016",
+        "critique_type": "contradictory_analysis",
+        "description": "The rationale for marking req-DATA-004 (customer deletion) not applicable to thr-002 is inconsistent with the rationale used to make req-DATA-002 (retention) applicable, even though both controls affect how much metrics data is available for an attacker to enumerate.",
+        "rationale": "Map-014 treats req-DATA-002 (retention) as applicable because the system \"records product usage metrics and serves them to an internal dashboard\" [evd-001][evd-002], metrics records are confidential business data keyed by product account [evd-003], and the retention period therefore \"affects how much data could be exposed if an attacker enumerates metrics via the Metrics API.\" In other words, retention is considered relevant because it changes how much data exists to be stolen at the time of the attack.\n\nBy contrast, map-016 acknowledges that metrics records are customer-related data [evd-003] but concludes that req-DATA-004 (deletion on request) is not applied to this unauthorized-read threat because deletion \"affects long-term data handling but does not change an attacker\u2019s ability to query existing metrics during the window before deletion.\" This treats deletion as irrelevant to the threat, even though, like retention, it governs how long customer data remains in the metrics store [evd-001][evd-003] and therefore how much data might be present when a compromise occurs.\n\nGiven the documented facts that metrics are persisted customer-related data [evd-001][evd-003], both retention and deletion controls can influence the volume and duration of exposure in an enumeration attack. The analysis therefore applies one standard to req-DATA-002 (change in available data makes the requirement applicable) and a different, stricter standard to req-DATA-004 (similar change in available data is deemed irrelevant), without any documented basis for that distinction. This is an internal inconsistency in the applicability reasoning rather than a conclusion grounded solely in the evidence.",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003"
+        ],
+        "recommended_action": "revise",
+        "confidence": "medium"
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-017",
+        "critique_type": "unsupported_claim",
+        "description": "Req-LOG-001 is marked not applicable to thr-002 on the basis that logs are not part of the described attack path, even though the documentation establishes that confidential customer-related metrics are handled and says nothing about logging behaviour. This treats absence of logging documentation as evidence that log-related controls are irrelevant.",
+        "rationale": "The applicability_reason for map-017 states that the threat involves direct querying of metrics via the Metrics API and that \"logs are not part of the data path the attacker relies on,\" concluding that controls under req-LOG-001 therefore \"do not bear directly on this threat.\" However, the cited evidence establishes only that:\n\n- The metrics store records product usage metrics and serves them to an internal dashboard [evd-001].\n- The Metrics API is an internal HTTP service reading and writing a managed metrics database [evd-002].\n- Metrics records contain account identifiers and usage numbers treated as confidential business data [evd-003].\n\nNone of these passages describe whether requests, responses, or metrics content are logged, what fields are included in logs, or where those logs are sent [evd-001][evd-002][evd-003]. In this context, concluding that req-LOG-001 is \"not_applicable\" because logs are allegedly not part of the threat path rests on an assumption about logging behaviour that is not documented. Given that the system clearly handles confidential customer-related data [evd-003], log-content controls are plausibly relevant to limiting additional leakage or secondary exposure, even if the primary attack path does not depend on logs.\n\nUnder the evidence policy, the mapping\u2019s claim that req-LOG-001 does not bear on this threat is therefore unsupported by the cited documentation. At minimum, this should be treated as an open question or conditional on documented logging design, rather than a firm not-applicable determination.",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003"
+        ],
+        "recommended_action": "revise",
+        "confidence": "medium"
+      }
+    ]
+  }
+}

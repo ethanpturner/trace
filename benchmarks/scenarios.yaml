@@ -110,9 +110,11 @@ scenarios:
     name: Metrics Store
     path: benchmarks/managed-db-service
     # Inherited managed-platform encryption: the encryption-detail false-positive class.
-    # Expects zero findings; the recording (#326) replays the inherited-control path.
+    # Expects zero findings; the recording (#484) is a live gateway capture of the
+    # inherited-control path, replacing the authored #326 recording file for file.
     status: authored
     category: managed-platform-controls
+    workflow_version: "0.2"
 
   # Scenarios ten through thirteen close the roadmap Stage 5 coverage list (issue #328):
   # the categories that had no scenario. Each is an original small architecture in the

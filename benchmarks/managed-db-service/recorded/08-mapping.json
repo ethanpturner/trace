@@ -1,0 +1,98 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 11118,
+    "output_tokens": 16470,
+    "cache_read_tokens": 11008,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.1799735",
+    "duration_seconds": 179.07511049997993
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-001"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The applicable condition \"the system stores or transmits confidential or restricted data\" holds because metrics records (ast-001) are described as confidential business data and are stored in the managed metrics database (cmp-001) that is part of this threat scenario [evd-003].",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "satisfied",
+        "evidence_ids": [
+          "evd-002",
+          "evd-005",
+          "evd-006"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-NET-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-002"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The requirement applies because the threat involves a managed data store (the metrics database, cmp-001) that is not itself a public interface and holds metrics data on behalf of the system, so it must be protected from untrusted networks per the applicable conditions.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "satisfied",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-005",
+          "evd-006"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Unclear whether Metrics API defends against SQL injection into the metrics database",
+        "description": "The system overview describes the Metrics API (cmp-002) and the managed metrics database (cmp-001), and the threat thr-005 assumes that the Metrics API may construct SQL statements using untrusted metric fields such as account identifiers. However, the available documentation does not describe how the Metrics API builds SQL queries or whether it uses parameterized queries or input validation for these untrusted fields. Without this information, we cannot determine from documentation whether controls against SQL injection exist for writes to metrics records (ast-001).",
+        "importance": "Understanding how the Metrics API constructs and validates database queries is necessary to assess whether threat thr-005 (database tampering via crafted metrics fields) is realistically mitigated by application-layer controls.",
+        "related_object_ids": [
+          "cmp-001",
+          "cmp-002",
+          "ast-001"
+        ],
+        "requested_evidence": [
+          "Design or implementation documentation describing how the Metrics API constructs SQL queries to the managed metrics database, including whether it uses parameterized queries or an ORM, and what validation is applied to untrusted fields such as account identifiers before they are incorporated into queries."
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "severity": "high"
+      }
+    ],
+    "catalog_gap_candidates": [
+      {
+        "concern": "The catalog does not currently include a requirement that addresses injection risks (such as SQL injection) for traditional application database queries, including expectations that untrusted fields used in SQL statements between internal services and data stores be validated or parameterized and that this be documented. Threat thr-005 describes tampering of metrics data via unparameterized SQL in the Metrics API, but no existing requirement squarely covers this class of control.",
+        "suggested_category": "input_validation",
+        "nearest_requirements": [
+          {
+            "requirement_id": "req-AI-001",
+            "why_not": "req-AI-001 focuses on treating untrusted content as data when constructing prompts for AI models and on preventing prompt injection, not on validation or parameterization of SQL queries sent to a relational database by an application service."
+          },
+          {
+            "requirement_id": "req-NET-001",
+            "why_not": "req-NET-001 governs network reachability of internal components such as data stores, ensuring they are not exposed to untrusted networks, but it does not address the correctness or safety of application-layer queries (e.g., SQL construction) sent over those internal network paths."
+          }
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ]
+      }
+    ]
+  }
+}

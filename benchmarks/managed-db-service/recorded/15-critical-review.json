@@ -1,0 +1,31 @@
+{
+  "schema": "CriticalReviewProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 9910,
+    "output_tokens": 12941,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.1417975",
+    "duration_seconds": 152.335704915924
+  },
+  "response": {
+    "critiques": [
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-051",
+        "critique_type": "unsupported_claim",
+        "description": "The mapping for req-NET-001 concludes the requirement is fully satisfied for thr-005, but the cited evidence only shows that the Metrics API and metrics database are not internet-accessible and that the database is not publicly accessible; it does not establish protection from all untrusted networks or restriction to only the intended internal workloads.",
+        "rationale": "Map-051 sets req-NET-001 to `applicable` and `satisfied`, arguing that the managed metrics database must be protected from untrusted networks. The evidence it cites shows:\n- The metrics store is \"reachable only from inside the application subnet\" [evd-001].\n- The Metrics API is an internal HTTP service \"not reachable from the internet\" [evd-002].\n- The metrics database instance has `publicly_accessible: false` [evd-005][evd-006].\n\nThese passages directly support that the metrics components are not exposed on a public interface and are not reachable from the internet. They do **not** document which internal workloads or subnets can reach the Metrics API or database, nor how \"untrusted network\" is defined or excluded. As a result, the stronger claim that req-NET-001 is fully satisfied for thr-005 (i.e., that the managed data store is protected from all untrusted networks and reachable only by the intended workloads) is not established by the cited evidence; at best, partial satisfaction is documented.\n\nThe evidence assessment for this mapping (eas-068) already characterises the mapping as only partially supported and recommends revision on the same grounds. This critique agrees with that assessment and recommends revising the mapping\u2019s satisfaction conclusion or explicitly documenting the additional network controls and definitions needed to justify full satisfaction.",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-005",
+          "evd-006"
+        ],
+        "recommended_action": "revise",
+        "confidence": "high"
+      }
+    ]
+  }
+}
