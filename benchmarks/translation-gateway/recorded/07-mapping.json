@@ -1,0 +1,423 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 11260,
+    "output_tokens": 15958,
+    "cache_read_tokens": 10880,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.175015",
+    "duration_seconds": 158.25642975000665
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-ADMIN-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "thr-005 involves a standard support-agent ticket workflow where an agent triggers translation and views internal notes in the helpdesk UI [evd-001, evd-002]; no distinct privileged administrative or operator interface is described in the attack path, so this requirement about restricting and documenting privileged administrative access does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-AI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Although untrusted customer-authored ticket content is sent to the translation provider over HTTPS [evd-002], thr-005\u2019s impact arises from malicious translation text being rendered in the helpdesk UI without safe handling, not from instructions embedded in that content altering the provider\u2019s task. This prompt-injection-focused requirement therefore does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-AI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The connector automatically writes the translation provider\u2019s returned text back onto the ticket as an internal note in the external helpdesk platform without human review [evd-002], and thr-005 concerns the risk that such unvalidated output contains malicious payloads that are later viewed, matching this requirement\u2019s focus on validation of model output before external publication.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [
+          "Treat the translation SaaS\u2019s responses as \u2018model output\u2019 for the purpose of applying AI-002."
+        ],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-AI-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Customer ticket content is sent to an external translation provider over HTTPS [evd-002], but thr-005 concerns malicious content in the provider\u2019s response compromising agents when rendered, rather than the volume or sensitivity of data leaving the system. Minimizing outbound content would not directly address the described code-execution and tampering threat, so this data-minimization requirement does not bear on it.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-AI-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "thr-005 describes translated text returned by the external provider being written as an internal note and later rendered in the helpdesk UI, where lack of safe handling allows active content (for example, script tags) to execute. This is exactly the case of attacker-influenceable output rendered into a user interface that this requirement addresses [evd-002].",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [
+          "Treat the translation SaaS\u2019s responses as \u2018model output\u2019 for the purpose of applying AI-004."
+        ],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-AUTH-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "thr-005 involves an already-authenticated support agent using the helpdesk UI and the connector authenticating to the helpdesk with a workspace API token [evd-003]; there is no user-facing authentication delegation boundary or identity provider described in the attack path, so this requirement about documenting delegated end-user authentication does not bear on the threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-AUTH-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat scenario does not involve how administrative or privileged access is authenticated or whether multi-factor authentication is enforced; it focuses on malicious translation content executing in an agent\u2019s browser when viewing a ticket [evd-002]. This requirement about documenting MFA responsibility for privileged or externally reachable access therefore does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-AUTHZ-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "thr-005 concerns code execution in an individual agent\u2019s browser when viewing a translated internal note. The documentation does not describe the connector or helpdesk integration as enforcing or violating a tenant boundary, and no cross-tenant data access is in the attack path [evd-001, evd-002], so this tenant-separation requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-AUTHZ-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The connector authenticates to the helpdesk using a workspace API token with full access [evd-003], which is relevant to integration privilege scope, but thr-005\u2019s scenario executes attacker-controlled script in an agent\u2019s context via the helpdesk UI and does not involve misuse of the connector\u2019s delegated API privileges. This requirement about limiting delegated integration privileges therefore does not bear on this specific threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-CICD-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "thr-005 is an at-runtime attack involving malicious translation content flowing through the connector to the helpdesk UI [evd-002]; it does not involve the build or deployment pipeline or introduction of third-party components at build time, so this CI/CD trust requirement does not bear on the threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-001"
+        ],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Although ticket content is sent over HTTPS to an external translation provider [evd-002], and TLS encryption in transit is implemented between the connector and the provider [ctl-001], thr-005\u2019s impact stems from active content in the translated text being rendered without sanitisation, not from lack of encryption in transit or at rest. Encryption would not meaningfully affect the described code-execution and tampering threat, so this confidentiality-focused requirement does not bear on it.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-DATA-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "thr-005 concerns immediate storage and rendering of translated internal notes that may contain active content; it does not hinge on how long customer data or working copies are retained after processing. The requirement to define and enforce retention periods therefore does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-DATA-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat scenario does not describe any shared artifact storage system or per-tenant addressing; it focuses on translated text written directly into ticket internal notes [evd-002]. As no shared artifact store is in the attack path, the requirement about separation of stored artifacts by tenant does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-DATA-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "While deleting a malicious internal note could mitigate ongoing exposure after detection, thr-005\u2019s core risk arises from unsafe rendering of untrusted translation content, not from the existence or documentation of a customer data deletion procedure. This deletion requirement therefore does not directly bear on the threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-LOG-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "thr-005 describes compromise via active content executed when agents view translated internal notes; it does not involve what is written to application logs or where logs are sent. The requirement to exclude sensitive data from logs and document log destinations therefore does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-LOG-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The attack path does not involve actions taken through a privileged administrative interface or the presence or absence of an audit trail; it centers on untrusted translation content being rendered in an agent UI [evd-002]. This requirement about recording security-relevant administrative actions therefore does not bear on the threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-NET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "thr-005 involves traffic between the connector, an external translation SaaS, and the helpdesk API [evd-002, evd-003]; the compromise arises from content returned by a legitimately reached external provider, not from internal data stores, queues, or caches being directly reachable from untrusted networks. This internal-network-segmentation requirement does not bear on the threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-SECRET-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-002"
+        ],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The connector uses a workspace API token to authenticate to the helpdesk [evd-003, ctl-002], but thr-005\u2019s scenario does not involve exposure, misuse, or storage location of this credential; the threat is realized entirely through malicious translation content rendered in the agent\u2019s browser. The requirement about storing long-lived signing keys and provider credentials in a managed secret store therefore does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-SECRET-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Although the connector relies on an API token for the helpdesk [evd-003], thr-005 does not involve abuse of long-lived credentials, token replay, or credential lifetime; it is about unsafe handling of translation content. The requirement for using short-lived credentials to reach customer resources does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-TPI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Ticket content is sent to an external translation SaaS [evd-002], and the lack of reviewed retention and usage terms is documented [evd-004], which is a separate concern about provider data handling and retention. thr-005 instead focuses on the integrity risk of malicious content in the provider\u2019s response being rendered without encoding, so this requirement about documenting external processor data handling does not bear on this particular threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-TPI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The workflow translates tickets on demand when a support agent selects translate [evd-002]; the threat scenario does not involve unbounded work triggered by external events, retries, or metered external services being driven to excessive consumption. This requirement about bounding work triggered by external events therefore does not bear on the threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-WEBHOOK-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The connector sends HTTPS requests to the translation SaaS and receives synchronous responses as part of a request/response workflow [evd-002]; there is no inbound webhook or event receiver endpoint that accepts unsolicited events from an external platform in the attack path. This inbound-event authenticity verification requirement therefore does not bear on the threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-WEBHOOK-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "thr-005 concerns a single translation response containing malicious content executed when first rendered; it does not involve replay or duplicate delivery of external events causing repeated costly or state-changing work. The webhook replay-handling requirement therefore does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Translation response validation and rendering controls are undocumented",
+        "description": "The workflow states that the connector sends the full ticket body to the translation provider over HTTPS and writes the returned translation back onto the ticket as an internal note [evd-002]. The documentation does not describe any validation, sanitisation, or output encoding applied to the provider\u2019s responses before they are stored or rendered in the helpdesk UI. Without this information, it is not possible to determine whether controls exist that would mitigate thr-005 or satisfy req-AI-002 and req-AI-004.",
+        "importance": "Clarifying how translation responses are validated and how internal notes are encoded or sanitised at render time would determine whether untrusted content from the translation SaaS can introduce executable markup into the helpdesk UI, directly affecting the assessment of thr-005.",
+        "related_object_ids": [
+          "thr-005",
+          "req-AI-002",
+          "req-AI-004",
+          "cmp-001",
+          "cmp-002",
+          "df-002",
+          "df-003",
+          "ast-002"
+        ],
+        "requested_evidence": [
+          "Architecture or integration documentation describing any validation or sanitisation performed on translation responses before they are written back as internal notes in the helpdesk platform.",
+          "Documentation of how internal notes are rendered in the helpdesk UI, including what output encoding or HTML sanitisation is applied and where it occurs."
+        ],
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": []
+  }
+}

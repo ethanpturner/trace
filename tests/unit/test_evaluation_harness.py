@@ -480,13 +480,19 @@ def test_a_pinned_scenario_verifies_its_replayed_report_hash(tmp_path: Path) -> 
     assert outcome.report_hash_verified is True
 
 
-def test_a_scenario_without_a_pin_reports_none_not_a_pass(tmp_path: Path) -> None:
+def test_a_scenario_without_a_pin_reports_none_not_a_pass(
+    tmp_path: Path, authored_scenario_registry: Path
+) -> None:
+    """Probed against the frozen authored fixture, which carries no offline pin by
+    construction — every registered scenario now does, and a re-capture must not turn this
+    test's `None` into a pass or a drift."""
     from trace_ai.services.evaluation.harness import run_scenario
 
     outcome = run_scenario(
-        "translation-gateway",
+        "authored-fixture",
         data_root=tmp_path / "work",
         label="pin-test",
+        registry_path=authored_scenario_registry,
         results_root=tmp_path / "feeds",
     )
     assert outcome.completed

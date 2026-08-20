@@ -1,37 +1,55 @@
 {
   "schema": "ThreatAnalysisProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 10470,
+    "output_tokens": 15099,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.1640775",
+    "duration_seconds": 202.02745699998923
+  },
   "response": {
     "threats": [
       {
-        "title": "Customer ticket content held or reused by the translation provider",
-        "description": "Full ticket bodies, including customer-written text and attachment text, are sent to the external provider, and the documents state that no agreement covers the provider's retention or its use of the text beyond returning the translation \u2014 the standard terms apply and have not been reviewed.",
+        "title": "Unbounded retention and secondary use of customer ticket content by translation provider",
+        "description": "Because the connector sends full ticket bodies, including customer-written text and extracted attachment text, to an external translation SaaS, and no specific agreement governs the provider\u2019s retention or secondary use of that text, it is plausible that the provider\u2019s standard (unreviewed) terms allow them to retain and reuse submitted ticket content beyond returning the translation (for example, for model training, analytics, or sharing with affiliates). In that case, customer ticket content and translated internal notes become long-lived assets under the provider\u2019s control, beyond the helpdesk\u2019s visibility or intended use.",
         "methodology": "stride-scenario-based",
         "category": [
-          "information_disclosure"
+          "information_disclosure",
+          "third_party_misuse",
+          "privacy"
         ],
         "threat_actor_ids": [],
         "affected_component_ids": [
           "cmp-001",
+          "cmp-002",
           "cmp-003"
         ],
         "affected_asset_ids": [
-          "ast-001"
+          "ast-001",
+          "ast-002"
         ],
         "related_data_flow_ids": [
-          "df-001"
+          "df-001",
+          "df-002"
         ],
         "preconditions": [
-          "the provider retains or reuses submitted text under its unreviewed standard terms"
+          "The Helpdesk Translate connector continues to send full ticket bodies, including any customer-written text and extracted attachment text, to the external translation SaaS for translation.",
+          "No specific agreement is in place limiting the translation provider\u2019s retention or use of submitted text beyond its standard terms for this integration.",
+          "The translation provider\u2019s standard terms permit retention or reuse of submitted ticket content beyond what the organisation considers acceptable (for example, for analytics or model training)."
         ],
         "attack_path": [
-          "an agent translates a ticket",
-          "the full body reaches the provider",
-          "the provider holds or reuses it under terms nobody reviewed"
+          "A support agent opens a ticket in the helpdesk and selects the translate option.",
+          "The connector service reads the ticket content and extracted attachment text from the helpdesk and prepares it for translation.",
+          "The connector sends the full ticket body and extracted attachment text to the external translation SaaS over HTTPS.",
+          "The translation provider processes the request and, under its own standard (unreviewed) terms, retains submitted ticket content and translations in its systems and reuses them (for example, for product improvement, analytics, or training), beyond simply returning the translation for this ticket."
         ],
-        "impact": "Customer ticket content is governed by terms the operator has not reviewed.",
+        "impact": "Customer ticket content and translated ticket notes are retained and potentially reused by the external translation provider beyond the immediate translation request, expanding who effectively has access to the data and for how long, and creating confidentiality and privacy exposure outside the helpdesk\u2019s control.",
         "likelihood": null,
         "confidence": "high",
         "evidence_ids": [
+          "evd-001",
           "evd-002",
           "evd-004"
         ],
@@ -39,70 +57,182 @@
         "open_question_ids": []
       },
       {
-        "title": "Stolen connector token reaches the whole workspace",
-        "description": "The connector's workspace token grants full workspace access, scoped for convenience, while the integration only reads tickets and writes notes. An attacker holding the token holds the whole workspace, not the integration's slice.",
+        "title": "Breach of translation provider exposes submitted ticket content and translations",
+        "description": "Full customer ticket content, including extracted attachment text, is sent to an external translation SaaS whose specific data retention and permitted uses of submitted text are not contractually defined for this integration and whose standard terms have not been reviewed. If the provider stores submitted text or translations in its backend systems and an external attacker compromises those systems or an insider abuses access, large volumes of customer ticket content and translated internal notes could be exfiltrated.",
         "methodology": "stride-scenario-based",
         "category": [
-          "elevation_of_privilege"
+          "information_disclosure",
+          "third_party_compromise"
         ],
         "threat_actor_ids": [],
         "affected_component_ids": [
-          "cmp-001"
+          "cmp-001",
+          "cmp-002",
+          "cmp-003"
         ],
         "affected_asset_ids": [
-          "ast-002",
-          "ast-001"
+          "ast-001",
+          "ast-002"
         ],
         "related_data_flow_ids": [
+          "df-001",
           "df-002"
         ],
         "preconditions": [
-          "an attacker obtains the connector's token"
+          "The translation provider stores customer-submitted ticket text and/or translations in persistent storage (for example, logs, databases, or backups) accessible from its production environment.",
+          "An external attacker compromises the translation provider\u2019s infrastructure or an insider at the provider abuses privileged access to stored customer-submitted text.",
+          "Monitoring, breach detection, or contractual notification obligations at the provider are insufficient to prevent or rapidly detect and contain such an exfiltration event."
         ],
         "attack_path": [
-          "obtain the workspace token from the connector",
-          "use the full workspace access it grants"
+          "A support agent triggers translation of a customer ticket in the helpdesk.",
+          "The connector sends the full ticket body and extracted attachment text to the external translation SaaS over HTTPS.",
+          "The translation provider stores the submitted text and resulting translations in backend systems as part of its service operation.",
+          "An attacker compromises the translation provider\u2019s infrastructure or an insider misuses their access, retrieves stored submitted text and translations in bulk, and exfiltrates them.",
+          "The exfiltrated data set includes customer ticket content and translated notes originating from the Helpdesk Translate integration."
         ],
-        "impact": "The blast radius of a token theft is the workspace, not the integration.",
+        "impact": "Customer ticket content and translated internal notes for many tickets can be disclosed in bulk via a breach at the translation provider, impacting the confidentiality of ast-001 and ast-002 even if the helpdesk platform itself is not directly compromised.",
         "likelihood": null,
-        "confidence": "high",
+        "confidence": "medium",
         "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-004"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Compromise of helpdesk workspace API token enables broad ticket access and tampering",
+        "description": "The connector authenticates to the helpdesk using a workspace API token that grants full workspace access, even though the integration itself only reads tickets and writes notes. If an attacker obtains this token (for example, by compromising the connector environment or associated configuration storage), they can call the helpdesk API directly and exercise the token\u2019s full privileges to read and modify tickets and internal notes across the workspace.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "elevation_of_privilege",
+          "information_disclosure",
+          "tampering",
+          "credential_compromise"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-001",
+          "cmp-002"
+        ],
+        "affected_asset_ids": [
+          "ast-003",
+          "ast-001",
+          "ast-002"
+        ],
+        "related_data_flow_ids": [
+          "df-003"
+        ],
+        "preconditions": [
+          "The workspace API token used by the connector is accessible in the connector\u2019s runtime environment, configuration, or supporting systems in a form that an attacker who compromises those systems could extract.",
+          "The helpdesk API accepts the workspace API token as presented by any client that can reach the API endpoint, without additional binding (for example, to a specific IP range or client identity), so that an attacker can reuse the token once obtained.",
+          "Standard operational or monitoring controls do not immediately detect and revoke unexpected use of the workspace API token."
+        ],
+        "attack_path": [
+          "The workspace API token with full workspace access is configured for use by the connector so it can read tickets and write notes via the helpdesk API.",
+          "An attacker compromises the connector service environment or related infrastructure (such as configuration storage or deployment pipeline) and extracts the workspace API token.",
+          "Using the stolen token, the attacker connects directly to the helpdesk API, authenticating as the workspace integration (or equivalent high-privilege identity).",
+          "The attacker reads arbitrary tickets and internal notes and can create, modify, or delete notes and potentially perform other privileged operations allowed by the token\u2019s full workspace access."
+        ],
+        "impact": "Compromise of the workspace API token allows an attacker to bypass normal helpdesk user interfaces and use the API to read all customer ticket content and translated notes and to tamper with ticket histories, directly impacting the confidentiality and integrity of ast-001 and ast-002 and exposing ast-003 itself.",
+        "likelihood": null,
+        "confidence": "medium",
+        "evidence_ids": [
+          "evd-003",
+          "evd-002"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Network interception of connector\u2013helpdesk API traffic exposes or alters ticket data",
+        "description": "The connector uses the helpdesk API, authenticated with the workspace API token, to read tickets and write internal notes, but the documentation does not establish whether this traffic is protected with strong transport encryption. If traffic between the connector and helpdesk API is unencrypted or otherwise interceptable, an attacker with access to the network path could eavesdrop on or tamper with ticket content, translated notes, and possibly the workspace API token itself.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "information_disclosure",
+          "tampering"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-001",
+          "cmp-002"
+        ],
+        "affected_asset_ids": [
+          "ast-001",
+          "ast-002",
+          "ast-003"
+        ],
+        "related_data_flow_ids": [
+          "df-003"
+        ],
+        "preconditions": [
+          "Traffic between the connector service and the helpdesk API is not adequately protected by strong transport encryption and verification (for example, TLS is not used, is misconfigured, or certificate validation can be bypassed).",
+          "An attacker can observe or modify network traffic on the path between the connector and the helpdesk platform (for example, through a compromised network device, shared infrastructure, or an insider position)."
+        ],
+        "attack_path": [
+          "The connector uses the helpdesk API to read ticket content and to write translated text back as internal notes, authenticating with the workspace API token.",
+          "Because transport-layer protection between the connector and helpdesk API is absent or weak, requests and responses can be observed or modified on the network.",
+          "An attacker on the network path captures API requests and responses, learning customer ticket content, internal notes, and the workspace API token if it is transmitted in headers or parameters.",
+          "The attacker may also modify in-transit requests or responses to alter ticket content or translated notes without detection."
+        ],
+        "impact": "If the connector\u2013helpdesk API traffic is interceptable, an attacker on the network path can gain access to customer ticket content and translated notes in transit and may capture the workspace API token for later abuse, compromising the confidentiality and integrity of ast-001, ast-002, and ast-003.",
+        "likelihood": null,
+        "confidence": "low",
+        "evidence_ids": [
+          "evd-002",
           "evd-003"
         ],
         "assumption_ids": [],
         "open_question_ids": []
       },
       {
-        "title": "Connector token taken from wherever it is held",
-        "description": "The connector authenticates with a workspace API token; where that token is stored, and whether it is scoped or rotated, is not described.",
+        "title": "Malicious translation output written as internal notes compromises helpdesk data or agent sessions",
+        "description": "The connector writes the translation provider\u2019s returned text directly back onto the ticket as an internal note. If the translation provider (or an attacker influencing it) returns content containing malicious payloads (for example, HTML or JavaScript) and the helpdesk UI renders internal notes without sufficient sanitisation or output encoding, viewing a translated note could execute attacker-controlled code in the agent\u2019s browser or otherwise corrupt ticket history.",
         "methodology": "stride-scenario-based",
         "category": [
-          "information_disclosure"
+          "tampering",
+          "elevation_of_privilege",
+          "injection"
         ],
         "threat_actor_ids": [],
         "affected_component_ids": [
-          "cmp-001"
+          "cmp-001",
+          "cmp-002",
+          "cmp-003"
         ],
         "affected_asset_ids": [
-          "ast-002"
+          "ast-002",
+          "ast-001"
         ],
-        "related_data_flow_ids": [],
+        "related_data_flow_ids": [
+          "df-001",
+          "df-002",
+          "df-003"
+        ],
         "preconditions": [
-          "an attacker reaches the connector's configuration or runtime"
+          "The translation provider can return arbitrary text, including sequences that may be interpreted as markup or script by the helpdesk UI.",
+          "The connector and helpdesk platform do not fully neutralise or appropriately encode active content from translated text before storing or rendering it as an internal note.",
+          "Helpdesk agents view tickets in a client (for example, a web browser) that will render internal notes in a way that could execute or act on embedded active content.",
+          "An attacker is able either to compromise the translation provider or to influence its behaviour (for example, by exploiting its service or supply chain) so that it returns maliciously crafted translations for targeted tickets."
         ],
         "attack_path": [
-          "reach the connector's runtime or configuration",
-          "read the token"
+          "A support agent requests translation of a ticket; the connector sends the full ticket content to the external translation SaaS and receives a translation in response.",
+          "The translation provider, under attacker control or influence, returns a translation that includes malicious payloads (for example, script tags or specially crafted markup) instead of or in addition to a benign translation.",
+          "The connector writes the returned translation directly as an internal note on the ticket in the helpdesk platform.",
+          "When another agent views the ticket, the helpdesk UI renders the internal note; because the content is not safely handled, the malicious payload runs in the agent\u2019s context, allowing the attacker to read or modify ticket content, act as the agent within the helpdesk, or otherwise tamper with ticket history."
         ],
-        "impact": "The workspace token is exposed to whoever reaches its storage.",
+        "impact": "Malicious translation output that is stored and rendered as an internal note can compromise the integrity of translated ticket notes and underlying ticket data and may allow an attacker to execute code in agents\u2019 sessions, leading to further unauthorised access to ast-001 and ast-002.",
         "likelihood": null,
         "confidence": "low",
         "evidence_ids": [
-          "evd-003"
+          "evd-001",
+          "evd-002"
         ],
         "assumption_ids": [],
         "open_question_ids": []
       }
-    ]
+    ],
+    "catalog_gap_candidates": []
   }
 }

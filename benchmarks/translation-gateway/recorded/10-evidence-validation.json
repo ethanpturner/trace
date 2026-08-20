@@ -1,0 +1,635 @@
+{
+  "schema": "EvidenceValidationProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 10789,
+    "output_tokens": 25151,
+    "cache_read_tokens": 1024,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.26512425",
+    "duration_seconds": 293.6093564169714
+  },
+  "response": {
+    "assessments": [
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-057",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-001 and evd-002 document that Helpdesk Translate is a connector used by support agents to translate tickets, and that the connector sends ticket content to an external translation provider and writes the returned translation as an internal note. evd-003 documents that the connector authenticates to the helpdesk with a workspace API token. None of these passages describe how end-users or agents are authenticated, whether authentication is delegated to an external identity provider, or what req-AUTH-001 formally requires. The claim that req-AUTH-001 (described in the mapping narrative as a delegated end-user authentication documentation requirement) is not applicable to thr-005 therefore rests on analytic judgment about the requirement\u2019s scope rather than on statements in the documentation. A human reviewer needs to compare the formal text of req-AUTH-001 with the documented thr-005 attack path to decide whether it truly does not bear on this threat.",
+        "missing_evidence": [
+          "Authoritative specification of req-AUTH-001, including its exact scope and intent.",
+          "Architecture or design documentation describing how agent/end-user authentication and any identity-provider delegation are implemented and how they relate (if at all) to the thr-005 attack path."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-058",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The documentation in evd-001 and evd-002 shows that thr-005\u2019s scenario involves a support agent translating a ticket via the connector, which sends ticket content to an external translation provider and writes the translation back as an internal note. evd-003 shows that the connector uses a workspace API token with full access to call the helpdesk API. None of these passages discuss multi-factor authentication, which roles are considered privileged, what interfaces are externally reachable, or what req-AUTH-002 specifically requires. Concluding that a requirement about MFA for privileged or externally reachable access is not applicable to thr-005 is therefore based on interpretation of the requirement and the threat model, not on explicit statements in the system documentation. This mapping needs human confirmation against the full text of req-AUTH-002 and the intended threat\u2013control relationships.",
+        "missing_evidence": [
+          "Formal definition and scope of req-AUTH-002, including what counts as privileged or externally reachable access.",
+          "Security design documentation explaining MFA expectations for agents and administrative users, and analysis of whether compromise of such access is relevant to the thr-005 scenario."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-059",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-001 and evd-002 describe Helpdesk Translate as a connector between a helpdesk and an external translation SaaS and outline the workflow of sending ticket content for translation and writing the result back as an internal note. They do not describe the helpdesk\u2019s tenancy model, any tenant boundaries, or how tenant separation is enforced, nor do they specify what req-AUTHZ-001 covers. The mapping asserts that no cross-tenant data access is in thr-005\u2019s attack path and that a tenant-separation requirement therefore does not bear on the threat, but those statements are not established by the available documentation. Determining whether a tenant-boundary/authorisation requirement is irrelevant to thr-005 requires additional information about both the requirement and the system\u2019s tenancy design.",
+        "missing_evidence": [
+          "Architecture documentation describing whether the helpdesk and connector operate in a multi-tenant model and how tenant boundaries are enforced.",
+          "Specification of req-AUTHZ-001, including its objectives and the kinds of cross-tenant risks it is intended to address.",
+          "Threat-modelling or design notes that explicitly analyse whether thr-005 can lead to cross-tenant data access or depends on tenant-boundary controls."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-060",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-003 directly documents that the connector authenticates to the helpdesk with a workspace API token that grants full workspace access, while the integration only reads tickets and writes notes. evd-002 shows that the connector uses the API to send translations back as internal notes. These passages establish that delegated integration privileges are broad, but they do not themselves analyse how those privileges relate to thr-005\u2019s XSS-like scenario, nor do they define what req-AUTHZ-002 demands for limiting delegated privileges. The mapping\u2019s conclusion that privilege scoping \"does not bear\" on thr-005 is therefore an analytic judgment about risk mitigation, not something the documentation explicitly states. A reviewer needs to confirm, based on the full text of req-AUTHZ-002 and the threat model, whether limiting the connector\u2019s API privileges would or would not materially affect this threat.",
+        "missing_evidence": [
+          "Formal definition of req-AUTHZ-002, including what constitutes acceptable scoping of delegated integration privileges.",
+          "Analysis or design documentation explaining whether and how the connector\u2019s workspace API token privileges could influence exploitation or impact of thr-005."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-061",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-002 describes an at-runtime workflow: an agent opens a ticket, selects translate, the connector sends ticket content to the translation provider over HTTPS, and writes the translation back as an internal note. It does not mention the build or deployment pipeline, third-party components used at build time, or what req-CICD-001 requires for CI/CD trust. The claim that a CI/CD trust requirement is not applicable to thr-005 relies on reasoning that this threat concerns only runtime data flow and not build-time compromise, which is not explicitly drawn in the documentation. Whether CI/CD trust controls are considered relevant to this threat (for example, by preventing injection of unsafe rendering logic) must be decided by a reviewer with access to the full requirement and threat model.",
+        "missing_evidence": [
+          "Specification of req-CICD-001 and the kinds of build/deployment risks it is intended to mitigate.",
+          "CI/CD design documentation for the connector, including any analysis of how CI/CD risks could or could not contribute to thr-005."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-062",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-002 states that the connector sends the full ticket body, including customer text and extracted attachment text, to the translation provider over HTTPS and writes the returned translation as an internal note. This is direct evidence of encryption in transit between the connector and the provider, but the documentation does not describe encryption between the connector and the helpdesk, encryption at rest, or the full scope of req-DATA-001. The mapping argues that because thr-005\u2019s impact stems from unsafe rendering of active content, not from lack of encryption, this confidentiality-focused requirement does not bear on the threat. That is a risk-judgment about the relationship between encryption controls and this threat, not something explicitly asserted in the documentation. A reviewer should confirm, using the formal definition of req-DATA-001, whether it is indeed out of scope for thr-005.",
+        "missing_evidence": [
+          "Complete description of req-DATA-001, including whether it covers only confidentiality or also integrity aspects.",
+          "Documentation of encryption controls on all legs of the connector\u2013helpdesk\u2013provider data path and analysis of whether any encryption gaps contribute to thr-005."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-063",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-002 shows that translated content is written back onto the ticket as an internal note when an agent requests translation, but it does not mention data retention periods, deletion schedules, or what req-DATA-002 requires. The mapping claims that because thr-005 is about immediate storage and rendering of translated notes, retention periods do not bear on this threat. That is a judgment about the relevance of retention controls, not a documented statement. Additional information on retention policies and the exact scope of req-DATA-002 is required to confirm that this requirement is correctly marked not applicable.",
+        "missing_evidence": [
+          "Specification of req-DATA-002, including expected retention and deletion requirements.",
+          "Documented data retention and deletion policies for tickets and internal notes, and analysis of whether retention could affect exposure or impact related to thr-005."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-064",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-002 directly states that the connector writes the returned translation back onto the ticket as an internal note. It does not mention any shared artifact storage system, per-tenant addressing of artifacts, or a requirement named req-DATA-003. The mapping infers that, because the threat path involves writing directly into ticket notes rather than into a shared artifact store, a requirement about separation of stored artifacts by tenant does not bear on thr-005. This is plausible reasoning but not something the documentation itself states, and it depends on the unverified assumption that there is no shared artifact mechanism involved in internal notes. Clarification of the requirement and the storage architecture is needed.",
+        "missing_evidence": [
+          "Definition and scope of req-DATA-003, particularly what constitutes an \"artifact\" and what separation controls it expects.",
+          "Storage design documentation for tickets and internal notes, including whether any shared artifact stores or multi-tenant storage mechanisms are used."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-065",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-002 confirms that translated content is stored as internal notes on tickets. It does not describe any procedures for deleting ticket content or internal notes, nor does it define what req-DATA-004 requires regarding customer data deletion. The mapping asserts that data deletion procedures do not directly bear on thr-005 because the core risk is unsafe rendering of untrusted content. Whether deletion capabilities are considered part of the mitigation strategy for such threats (for example, to remove malicious notes after detection) is a design decision that is not documented here. Human review against the formal requirement and incident-response expectations is needed.",
+        "missing_evidence": [
+          "Formal requirements text for req-DATA-004 describing expected customer data deletion capabilities and scope.",
+          "Operational or incident-response documentation describing how malicious ticket content or notes would be removed and whether this is considered part of the control set for thr-005."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-066",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-002 describes the functional workflow for translation but does not mention logging behaviour, what is or is not written to logs, or where logs are stored or forwarded. req-LOG-001 is described in the mapping narrative as a requirement about excluding sensitive data from logs and documenting log destinations, but no supporting documentation for that requirement or for logging design is provided here. The conclusion that this requirement does not bear on thr-005 is therefore an analytic assessment of control relevance rather than something evidenced by the documents. Additional logging design details and the full requirement text are needed to confirm this mapping.",
+        "missing_evidence": [
+          "Complete specification of req-LOG-001, including its objectives and scope.",
+          "Logging architecture and configuration for the connector and helpdesk, including what ticket and translation data (if any) appear in logs and how that might relate to thr-005."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-067",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-001 and evd-002 describe that support agents use the connector to translate tickets, but they do not mention any privileged administrative interface, audit-logging of administrative actions, or the precise content of req-LOG-002. The mapping concludes that because thr-005 centres on untrusted translation content in an agent UI, a requirement about recording security-relevant administrative actions does not bear on this threat. That conclusion depends on an interpretation of both the requirement and the threat model that is not spelled out in the documentation. Confirmation requires the full requirement text and clarity on which actions are considered administrative in this system.",
+        "missing_evidence": [
+          "Definition of req-LOG-002, including what actions must be audited and why.",
+          "Role and permission model documentation distinguishing standard agents from administrators and describing audit logging for administrative operations."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-068",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-002 and evd-003 together show that the connector sends ticket content to an external translation provider over HTTPS, receives translated text, and accesses the helpdesk API using a workspace API token. They do not describe any internal data stores, queues, or caches, or how those are segmented from untrusted networks, nor do they define req-NET-001. The mapping argues that because thr-005\u2019s compromise arises from content returned by a legitimately reached external provider rather than from direct exposure of internal stores, an internal-segmentation requirement does not bear on the threat. That is a reasonable design judgment but is not directly documented. A reviewer must compare the actual network segmentation design and the formal scope of req-NET-001 to confirm this mapping.",
+        "missing_evidence": [
+          "Specification of req-NET-001, including which components must be segmented from untrusted networks.",
+          "Network architecture or dataflow diagrams showing internal stores, queues, and caches, and how they are segmented relative to the connector and external translation provider."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-069",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-003 directly states that the connector authenticates to the helpdesk with a workspace API token that grants full workspace access. evd-002 provides context on the operations performed with that token (reading tickets and writing internal notes). The documentation does not explain where or how the token is stored, what secret-management mechanisms exist, or what req-SECRET-001 demands regarding managed secret stores. The mapping concludes that because thr-005 is realised through malicious translation content in the agent\u2019s browser rather than through misuse of the token, secret-storage requirements do not bear on this threat. That conclusion depends on architectural reasoning about which controls affect which threats, and is not explicitly supported or refuted by the documentation. Additional evidence on secret management and the requirement\u2019s scope is needed.",
+        "missing_evidence": [
+          "Formal definition of req-SECRET-001, especially its expectations for storage of API tokens and other long-lived credentials.",
+          "Documentation of where the workspace API token is stored (for example, environment variables, secret manager) and analysis of how its exposure would or would not intersect with thr-005."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-070",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-003 documents that a workspace API token with full workspace access is used, but does not state how long-lived it is or what lifetime requirements exist. evd-002 gives context on the connector\u2019s usage patterns. The mapping claims that because thr-005 concerns unsafe handling of translation content rather than token replay or credential lifetime, a requirement to use short-lived credentials (req-SECRET-002) does not bear on this threat. That is a control\u2013threat relevance judgment and is not something the existing documentation explicitly demonstrates. Confirmation requires a clear definition of req-SECRET-002 and an analysis of whether token lifetime could plausibly influence thr-005\u2019s risk profile.",
+        "missing_evidence": [
+          "Specification of req-SECRET-002, including acceptable credential lifetimes and use cases.",
+          "Design or operational documentation describing the actual lifetime and rotation practices for the workspace API token and assessment of any interaction with thr-005."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-071",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-002 directly states that full ticket bodies (including customer-written text and extracted attachment text) are sent to an external translation provider. evd-004 directly states that no agreement has been established covering the provider\u2019s retention or use of submitted text beyond returning the translation, and that the provider\u2019s standard, unreviewed terms apply. These passages support the existence of a separate data-handling and retention concern with the provider, but they do not define req-TPI-001 or analyse whether that requirement is intended to address confidentiality threats like thr-001/thr-002 or integrity threats like thr-005. The mapping\u2019s statement that req-TPI-001, described as an external-processor data-handling documentation requirement, does not bear on thr-005 is therefore a modelling decision rather than a documented fact. It should be confirmed against the formal requirement and the overall threat taxonomy.",
+        "missing_evidence": [
+          "Formal text of req-TPI-001 describing required documentation of external processor data handling and retention.",
+          "Threat-modelling documentation clarifying which threats req-TPI-001 is meant to mitigate and whether thr-005 is in or out of that scope."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-072",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-002 clearly describes that translation occurs when \"an agent opens a ticket and selects translate,\" after which the connector sends the ticket body to the translation provider and writes the translated note back. This shows that work is triggered by an explicit agent action, not by unsolicited external events, but it does not define req-TPI-002 or its expectations for bounding work triggered by external events. The mapping\u2019s claim that this requirement does not bear on thr-005 assumes that req-TPI-002 is only concerned with externally triggered workloads and that agent-initiated translations fall outside its scope. That assumption is not documented and should be confirmed against the formal requirement.",
+        "missing_evidence": [
+          "Specification of req-TPI-002, including what constitutes an \"external event\" and what bounding mechanisms are required.",
+          "Any design or capacity-planning analysis that considers whether external services or retries could cause unbounded work in the translation workflow."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-073",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-002 directly describes the integration pattern: when an agent selects translate, \"the connector sends the full ticket body ... to the translation provider over HTTPS, and writes the returned translation back onto the ticket as an internal note.\" This is a synchronous request/response flow initiated by the connector; there is no mention of the connector exposing an inbound webhook or event-receiver endpoint that accepts unsolicited events from the external platform. Given this documented interaction model, and taking the mapping narrative\u2019s characterisation of req-WEBHOOK-001 as an inbound-event authenticity verification requirement, it is well-supported that such a webhook-authenticity control does not bear on thr-005\u2019s attack path, which uses only outbound requests and their immediate responses.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-074",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-002 shows that each translation is initiated by an agent action and processed via a single HTTPS request from the connector to the translation provider with a corresponding response that is written as an internal note. The documentation does not describe any webhook endpoints, asynchronous event deliveries, or mechanisms that would cause replay or duplicate delivery of external events. In that documented model, there is no event replay surface analogous to webhook re-delivery; the threat thr-005 arises from the content of a single translation response. On that basis, and given that req-WEBHOOK-002 is described in the mapping narrative as a webhook replay-handling requirement, the conclusion that it is not applicable to thr-005 is supported by the evidence.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-001",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-002 directly states that the connector sends \"the full ticket body \u2014 including any customer-written text and the extracted text of customer attachments \u2014 to the translation provider over HTTPS\" and writes the translation back as an internal note. evd-004 directly states that \"No agreement covering the translation provider's retention of submitted text, or its use of submitted text for any purpose beyond returning the translation, has been established. The provider's standard terms apply; they have not been reviewed for this integration.\" Together with the system context in evd-001 (connector between helpdesk and external translation SaaS), these passages establish that large amounts of customer ticket content are sent to an external provider whose retention and secondary-use terms are unknown. The threat description\u2014that under plausible standard terms the provider may retain and reuse submitted content, causing ticket data to become long-lived assets outside the helpdesk\u2019s control\u2014is an inferred but reasonable risk scenario based on this data flow and the lack of a tailored agreement. The documentation does not say that the provider actually performs such retention or reuse, but it does support treating unbounded retention and secondary use as a plausible threat conditional on the provider\u2019s terms.",
+        "missing_evidence": [
+          "The translation provider\u2019s actual standard terms and any data-processing agreements, specifically covering retention durations and permitted secondary uses of submitted text.",
+          "Any internal risk assessment or legal review that interprets those terms relative to acceptable use and retention for customer ticket data."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-002",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-002 directly documents that full customer ticket bodies, including extracted attachment text, are sent to an external translation provider and that the returned translations are written back as internal notes. evd-004 states that there is no specific agreement governing the provider\u2019s retention or use of submitted text and that only unreviewed standard terms apply. These passages establish that sensitive customer ticket data is transmitted to and processed by an external SaaS provider, and that the organisation lacks detailed contractual control or visibility over how that data is stored. From this, the threat that stored ticket content and translations at the provider could be exposed in bulk if the provider\u2019s infrastructure is compromised or a privileged insider abuses access is a reasonable inferred scenario. The documentation does not confirm how or where the provider stores data, but given typical SaaS architectures and the absence of restrictive terms, treating provider-side storage and breach as a confidentiality threat is supported by the evidence.",
+        "missing_evidence": [
+          "Documentation from the translation provider about whether and how submitted text and translations are stored (for example, logs, databases, backups) and for how long.",
+          "Information about the provider\u2019s security controls, monitoring, and breach-notification commitments relevant to stored customer data."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-003",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-003 directly states that \"The connector authenticates to the helpdesk with a workspace API token. The token grants full workspace access; it was scoped that way during setup because it was convenient, and the integration only reads tickets and writes notes.\" This establishes that a single token with full workspace privileges is used by the connector. evd-002 provides context that the connector reads ticket content and writes internal notes via the helpdesk API. Given the documented token scope, it is a straightforward inference that if an attacker obtains this token (for example, by compromising the connector environment), they can call the helpdesk API directly and exercise its full privileges to read and modify tickets and notes across the workspace, bypassing normal UI constraints. The specific preconditions listed in the threat (how the token might be obtained or reused and detection gaps) are not detailed in the documentation but are reasonable assumptions about typical API-token usage. The core threat\u2014that compromise of the workspace API token would enable broad ticket access and tampering\u2014is strongly supported by evd-003.",
+        "missing_evidence": [
+          "Documentation of how and where the workspace API token is stored and protected at runtime (for example, secret manager, environment variables).",
+          "Any additional controls binding the token to particular clients, IP ranges, or usage patterns, and monitoring or alerting on anomalous token use."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-004",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-003 directly documents that the connector authenticates to the helpdesk using a workspace API token, implying ongoing API traffic between the connector service and the helpdesk. evd-002 provides context that this traffic includes reading tickets and writing internal notes as part of the translation workflow. The documentation does not state whether this connector\u2013helpdesk API traffic uses TLS or other strong transport protections; it is silent on that point. On the basis of the documented existence of sensitive API traffic carrying ticket content and a powerful token, it is a reasonable inferred threat that, if this traffic were unencrypted or otherwise interceptable, an attacker on the network path could eavesdrop on or tamper with ticket data and capture the token. The threat statement is explicitly conditional on inadequate transport security (\"If traffic ... is unencrypted or otherwise interceptable\"), so it does not assume that such a weakness exists; it identifies a plausible risk given the architecture and an unresolved question about transport protections.",
+        "missing_evidence": [
+          "Documentation or configuration evidence showing whether the connector\u2013helpdesk API connection uses TLS with proper certificate validation and what cipher suites and protocols are enforced.",
+          "Network architecture documentation indicating potential adversary positions on the path between the connector and the helpdesk (for example, shared infrastructure, cross-region links)."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-005",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-002 directly states that when an agent selects translate, \"The connector sends the full ticket body ... to the translation provider over HTTPS, and writes the returned translation back onto the ticket as an internal note.\" evd-001 provides context that Helpdesk Translate is a connector service between the helpdesk and an external translation SaaS used by support agents. These passages establish that untrusted text from an external provider is written into internal notes that will later be rendered in agents\u2019 browsers. From this architecture, it is a standard security inference that if the translation provider (or an attacker influencing it) returns text containing active content (for example, HTML or JavaScript) and the helpdesk UI does not adequately sanitise or encode internal notes before rendering, viewing such a note could execute attacker-controlled code or corrupt ticket history. The documentation does not describe the helpdesk UI\u2019s sanitisation or encoding behaviour, so that aspect of the threat remains an assumption, but the data flow that makes such an XSS-like threat plausible is directly documented.",
+        "missing_evidence": [
+          "Documentation of how internal notes are stored and rendered in the helpdesk UI, including any HTML sanitisation or output encoding applied.",
+          "Any filtering, validation, or encoding the connector applies to translation responses before writing them as internal notes."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      }
+    ]
+  }
+}
