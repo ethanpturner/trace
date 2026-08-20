@@ -1,0 +1,42 @@
+{
+  "schema": "CriticalReviewProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 10422,
+    "output_tokens": 17349,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.1865175",
+    "duration_seconds": 230.81805599993095
+  },
+  "response": {
+    "critiques": [
+      {
+        "subject_type": "evidence_assessment",
+        "subject_id": "eas-093",
+        "critique_type": "contradictory_analysis",
+        "description": "The assessment classifies threat thr-004 as contradicted based on the retention inconsistency between evd-003 and evd-006, but that inconsistency affects the exposure window, not the existence of the operator export-retrieval capability that the threat models.",
+        "rationale": "eas-093 concludes that, because evd-003 describes immediate deletion of export files once the customer has downloaded them and evd-006 describes a 30\u2011day lifecycle with operator retrieval, \"the existence and scope of the operator export-retrieval capability cannot be validated\" and therefore treats thr-004 as contradicted. However, evd-006 directly documents that completed export files are retained under a 30\u2011day lifecycle policy and that \"Operators can retrieve a recent export from the store if a customer reports a failed download within that window\". This directly supports thr-004\u2019s precondition that such an operator capability exists. evd-003 describes export files as temporary working data deleted once the customer has downloaded them, but it says nothing about operator retrieval or about the fate of exports where the download fails. For the scenario that thr-004 explicitly references (operator misuse of the failed-download retrieval capability), evd-003 does not contradict evd-006. At most, the two documents leave the retention period for successfully downloaded exports unclear, which changes how long the threat window might be but not whether the operator retrieval capability exists. Under the evidence policy, this is better treated as a documentation inconsistency already captured in gaps such as gap-012/gap-015, not as a contradiction of the threat itself. The assessment should be revised so that thr-004 remains supported by evd-006, with the retention ambiguity driving questions about impact and window rather than about the threat\u2019s validity.",
+        "evidence_ids": [
+          "evd-006",
+          "evd-003"
+        ],
+        "recommended_action": "revise",
+        "confidence": "high"
+      },
+      {
+        "subject_type": "evidence_assessment",
+        "subject_id": "eas-026",
+        "critique_type": "contradictory_analysis",
+        "description": "The assessment treats control ctl-002 as contradicted on the basis that evd-003 and evd-006 \"cannot both hold\", but the cited passages do not actually rule out a configuration where a 30\u2011day lifecycle policy exists alongside earlier deletion after download; the main issue is unclear interaction, not disproof of the lifecycle control itself.",
+        "rationale": "ctl-002 asserts that completed export files are subject to a storage lifecycle policy that retains them for 30 days and then expires them, which is directly supported by evd-006: \"A storage lifecycle policy retains export objects for 30 days and expires them after that.\" evd-003 adds that the export file is temporary working data and \"is deleted immediately once the customer has downloaded it.\" eas-026 states that these descriptions of retention \"cannot both hold for the same export files\" and therefore that the control is contradicted. That conclusion goes beyond what the texts establish. evd-006 does not say that objects are never deleted earlier than 30 days; it describes a lifecycle policy that enforces an upper bound on retention. evd-003 describes an application-level deletion on successful download but does not mention the absence of a lifecycle policy or address exports that are never successfully downloaded. A system where objects are deleted immediately on successful download and otherwise aged out by a 30\u2011day lifecycle policy is compatible with both passages. What the evidence does show is that the documentation is unclear about how these behaviours interact in practice and what customers are told, which is already captured as a documentation gap (gap-012/gap-015). It does not justify treating the existence of the lifecycle policy itself as contradicted. The assessment for ctl-002 should be revised to characterise this as uncertain or questioned implementation details driven by conflicting documentation, rather than as a contradicted control.",
+        "evidence_ids": [
+          "evd-006",
+          "evd-003"
+        ],
+        "recommended_action": "revise",
+        "confidence": "medium"
+      }
+    ]
+  }
+}

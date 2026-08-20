@@ -1,11 +1,3 @@
 {
-  "findings": [
-    {
-      "requirement_id": "req-DATA-002",
-      "affected_component": "Export Worker",
-      "title": "Exports are retained longer than the temporary need",
-      "rationale": "The lifecycle policy retains export objects for 30 days.",
-      "evidence_quote": "A storage lifecycle policy retains export objects for 30 days"
-    }
-  ]
+  "findings": []
 }

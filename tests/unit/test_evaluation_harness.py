@@ -152,7 +152,10 @@ def test_forgeflow_replays_through_the_harness_offline(
     ("slug", "expected_key", "expected_requirement"),
     [
         ("order-notifier", "FND-ON-01", "req-WEBHOOK-001"),
-        ("contradictory-docs", "FND-CD-01", "req-DATA-002"),
+        # contradictory-docs held this slot until its live capture (#484) recorded the missed
+        # retention finding as the measurement; the test pins harness behaviour, not one
+        # recording's outcome, so it targets an untouched authored scenario.
+        ("reply-tuner", "FND-RT-01", "req-TRAIN-002"),
     ],
 )
 def test_a_second_scenario_replays_and_scores_its_finding(
@@ -481,7 +484,7 @@ def test_a_scenario_without_a_pin_reports_none_not_a_pass(tmp_path: Path) -> Non
     from trace_ai.services.evaluation.harness import run_scenario
 
     outcome = run_scenario(
-        "invoice-agent",
+        "translation-gateway",
         data_root=tmp_path / "work",
         label="pin-test",
         results_root=tmp_path / "feeds",

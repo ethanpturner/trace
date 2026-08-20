@@ -1,0 +1,66 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 12018,
+    "output_tokens": 5429,
+    "cache_read_tokens": 10880,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.0706725",
+    "duration_seconds": 62.82815162499901
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-TPI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "req-TPI-002 applies because each invoice submission by an unauthenticated external user triggers processing that the system does not originate (invoice upload workflow) and drives work through an external hosted model provider over df-002. The workflow describes end users submitting invoices that the Invoice Agent processes (evd-002), and the overview and deployment sections state that the agent is backed by a hosted model provider (evd-001) with credentials for that provider (evd-006), so bounding work triggered by these external events is directly relevant to this threat of resource exhaustion.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-006"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Bounding of invoice-triggered model processing is not established",
+        "description": "The documentation shows that external users submit invoices which the Invoice Agent processes using a hosted model provider, with each request also emitting detailed traces, but it does not establish whether there are any rate limits, quotas, or other bounds on this work. The workflow describes users submitting invoices that the agent reads and processes (evd-002); the overview and deployment sections state that the agent is backed by a hosted model provider and holds credentials for it (evd-001, evd-006); data handling and deployment also note that request and tool-call traces, including HTTP request and response bodies, are captured for debugging (evd-005, evd-006). None of these passages state whether invoice submissions are rate-limited, whether calls to the hosted model provider are bounded per user or globally, whether retries are bounded, or whether provider-side quotas or cost ceilings are configured. Because this threat is specifically about high-volume external submissions exhausting agent and model capacity, the presence or absence of such bounds materially affects the assessment, and the current documentation does not let us determine it.",
+        "importance": "Bounding and rate limiting on invoice submissions and the associated model and tracing calls would directly mitigate the described denial-of-service and cost-exhaustion threat. Without documentation of any such bounds, we cannot tell whether controls exist that limit work triggered by unauthenticated external users, so the effectiveness of mitigations for this threat remains unclear.",
+        "related_object_ids": [
+          "thr-005",
+          "cmp-001",
+          "cmp-003",
+          "cmp-004",
+          "df-001",
+          "df-002",
+          "df-003",
+          "ast-001"
+        ],
+        "requested_evidence": [
+          "Operations or architecture documentation describing any rate limits, quotas, or admission controls on invoice submissions from external users, including whether submissions require authentication.",
+          "Configuration or design documentation describing any per-tenant or global limits on calls from the Invoice Agent to the hosted model provider, including retry behavior and backoff settings.",
+          "Documentation or configuration showing any provider-enforced quotas, spending limits, or other bounding mechanisms for the hosted model provider used by the Invoice Agent, and how those bounds are set.",
+          "Any queue or worker configuration, if present, that limits concurrency, queue depth, or overall throughput for invoice processing and model invocations."
+        ],
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-005",
+          "evd-006"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": []
+  }
+}

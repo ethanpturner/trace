@@ -1,0 +1,444 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 22133,
+    "output_tokens": 15381,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.18147625",
+    "duration_seconds": 172.7569162499858
+  },
+  "response": {
+    "controls": [
+      {
+        "key": "ctrl_process_invoice_validation",
+        "name": "process_invoice schema and value validation",
+        "description": "The process_invoice tool reads an uploaded invoice file, parses it as JSON, and returns a validated invoice object containing amount, submitter, category, and due date. Validation enforces that the submitter and category fields are drawn from the approved lists, and validation failures stop processing and report which fields failed.",
+        "control_type": "implemented",
+        "provider_component_id": "cmp-001",
+        "protected_component_ids": [
+          "cmp-001",
+          "cmp-002"
+        ],
+        "protected_asset_ids": [
+          "ast-001"
+        ],
+        "implementation_status": "implemented",
+        "evidence_ids": [
+          "evd-004",
+          "evd-005"
+        ],
+        "owner": null,
+        "limitations": [
+          "Validation limits the submitter field to one of the approved names but does not authenticate the human submitter, so an unauthenticated external user can choose any approved submitter name in the JSON document."
+        ]
+      },
+      {
+        "key": "ctrl_invoice_decision_policy",
+        "name": "Invoice approval decision policy",
+        "description": "The Invoice Agent applies business rules that deny an invoice when the amount is over $20,000, when the category is not one of the four approved categories, or when the submitter is not one of the three approved submitters, and may approve invoices when the due date is within the next week using its discretion between deny and approve rules.",
+        "control_type": "implemented",
+        "provider_component_id": "cmp-001",
+        "protected_component_ids": [
+          "cmp-001"
+        ],
+        "protected_asset_ids": [
+          "ast-001"
+        ],
+        "implementation_status": "implemented",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "owner": null,
+        "limitations": [
+          "The decision policy treats the submitter field from the uploaded invoice content as authoritative for determining whether a submitter is approved, without separately authenticating the submitter identity."
+        ]
+      }
+    ],
+    "mappings": [
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-ADMIN-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The requirement\u2019s applicable conditions assume an administrative or operator interface that operators use to act on customer data. The described threat path involves unauthenticated external invoice submitters using the ordinary invoice submission workflow, not a privileged administrative or operator interface, so this requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This requirement addresses prompt-injection risks where instructions embedded in untrusted content attempt to redirect the model\u2019s task. In this threat, the attacker abuses the submitter business field in invoice JSON, and the agent follows its existing rules; the attack does not rely on embedded instructions changing the task, so the requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The Invoice Agent automatically produces approve/deny decisions for invoices based on model-assisted processing, and the threat describes downstream processes treating those decisions as legitimate, so model output (the decision and invoice details) is effectively published to destinations outside the agent without a described human review step, matching the requirement\u2019s applicable conditions.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AI-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The requirement concerns documenting and minimizing customer content sent to an external model provider. While invoice details are sent to a hosted model provider, the threat involves spoofing the submitter field and incorrect approval decisions within the workflow, which would occur regardless of how much invoice data is sent to the model, so this requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AI-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The requirement applies when model output is rendered into a user interface or markup where output encoding matters. The threat concerns misuse of the submitter field in invoice approval logic, not active content or markup rendering, so encoding of model output is not relevant to this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AUTH-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This requirement applies when user authentication is delegated to an external identity provider. The documentation states that invoice submitters are not otherwise authenticated to the workflow (evd-005), so there is no delegated user authentication to document, and the threat arises from the absence of authentication rather than from undocumented delegation.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AUTH-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The requirement concerns multi-factor authentication for privileged or administrative access. The threat scenario involves unauthenticated external invoice submitters using a non-privileged invoice submission path, not administrative access, so the requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AUTHZ-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This requirement addresses tenant-aware authorization in multi-tenant systems. The threat describes an internal invoice approval workflow with three approved submitter names and does not involve separation between multiple customer organizations, so cross-tenant access is not part of the threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [
+          "Assume the invoice workflow is used within a single organization rather than as a multi-tenant SaaS platform; if that assumption were wrong, tenant-separation threats would need separate analysis."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AUTHZ-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The requirement applies where the system holds delegated access to an external platform and acts on customer resources on their behalf. The threat involves decisions about internally held invoice records based on a locally provided submitter field, not delegated access to external customer resources, so this requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-CICD-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The requirement concerns how the deployment pipeline authenticates to environments and manages third-party build dependencies. The threat is about runtime spoofing of the invoice submitter field in an operational workflow, not about compromise of the deployment path or build chain, so the requirement is not engaged by this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This requirement addresses encryption of sensitive data in transit and at rest. The described threat concerns integrity of invoice data and approval decisions due to an unauthenticated submitter field; encrypting the data would not prevent or materially affect the spoofing of an approved submitter name, so the requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-DATA-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The requirement concerns defining and enforcing retention periods for working copies of customer data. The threat focuses on fraudulent approval of invoices at the time they are processed, not on how long invoice data or artifacts are retained afterward, so this requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-DATA-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This requirement addresses separation of stored artifacts by tenant in shared storage. The threat concerns spoofing of an approved submitter within a single invoice-processing workflow, not cross-tenant access to stored artifacts, so the requirement is not engaged by this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [
+          "Assume the invoices processed by the agent all belong to a single organization rather than multiple tenants; if that assumption were wrong, tenant-focused storage concerns would be assessed separately."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-DATA-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The requirement is about documenting how customer data can be deleted, including from derived or secondary stores. The threat scenario is about unauthorized approval and recording of invoices due to spoofed submitter identity, not about the ability to delete customer data on request, so this requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-LOG-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This requirement concerns excluding restricted or confidential data from application logs and documenting log destinations. The threat focuses on integrity of invoice approval decisions when submitter identity is spoofed; log content classification does not materially influence the attacker\u2019s ability to spoof an approved submitter name, so the requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-LOG-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The requirement applies to security-relevant actions taken through a privileged administrative or operator interface. The threat involves ordinary invoice submission by unauthenticated external users, not actions through a privileged administrative interface, so this requirement is not engaged.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-NET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This requirement addresses network placement of internal components such as data stores, queues, or caches so they are reachable only from authorized workloads. The threat concerns logical misuse of the submitter field in the invoice-processing logic; it would exist even if all internal components were perfectly segmented from untrusted networks, so network placement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-SECRET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The requirement concerns custody of long-lived signing keys and provider credentials in a managed secret store. While the agent runs with credentials for the model provider and observability service (evd-006), the spoofing threat arises from unauthenticated submitter identity in invoice content and would exist regardless of how those credentials are stored, so this requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-006"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-SECRET-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This requirement applies where the system accesses customer resources on an external platform and can choose between short-lived and long-lived credentials. The threat concerns fraudulent approval of invoices based on a spoofed submitter field and does not involve access to external customer resources, so the requirement is not engaged.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-TPI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The requirement addresses documenting how external providers handle customer data that crosses the system boundary. The threat centers on internal business logic and lack of authenticated submitter identity leading to fraudulent approvals; external provider retention or usage terms do not affect the attacker\u2019s ability to spoof an approved submitter, so this requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-TPI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This requirement concerns bounding work that consumes metered external services or significant compute when triggered by external events or retries. Although processing invoices may incur model-provider costs, the described threat is specifically about unauthorized approval of invoices via spoofed submitter identity, not unbounded cost or capacity exhaustion, so the requirement is not engaged by this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-WEBHOOK-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The requirement applies to endpoints that accept events from external platforms (webhooks) and trigger processing. The threat actor here is an external user submitting invoice files directly into the workflow, and the documentation does not describe webhook-style delivery from an external platform, so this requirement does not bear on the threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-WEBHOOK-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This requirement addresses replay or duplicate delivery of inbound events. The threat scenario involves freshly submitted invoice files with spoofed submitter fields, not replay of previously valid events, so this requirement is not engaged by this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Unclear validation and publication path for invoice approval decisions",
+        "description": "The documentation describes how the Invoice Agent reads invoice files, applies decision rules, and returns an approve/deny decision along with invoice details (evd-001, evd-002, evd-003, evd-005), but does not describe where that decision is sent, whether downstream processes treat it as authoritative, or what validation or human review (if any) occurs before external systems act on it. This prevents determining whether model output published outside the agent is subject to content validation as expected by req-AI-002.",
+        "importance": "Understanding how and where the agent\u2019s approve/deny decisions are consumed, and whether any additional validation or human review occurs, is necessary to assess how a spoofed submitter invoice could propagate into downstream financial systems and whether compensating controls exist outside the agent.",
+        "related_object_ids": [
+          "cmp-001",
+          "ast-001",
+          "df-002"
+        ],
+        "requested_evidence": [
+          "Architecture or operations documentation that describes where invoice approval decisions are delivered (e.g., downstream finance systems or workflows), whether a human reviews or approves them before they take effect, and what structural or content validation is applied prior to any external publication."
+        ],
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-005"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": [
+      {
+        "concern": "The invoice-approval workflow treats a document field (`submitter`) from untrusted invoice content as the sole indicator of an approved submitter, with no separate authentication of the human submitter. Validation only checks that the value is on an approved list, so any unauthenticated external user can choose an approved submitter name in the JSON and have invoices evaluated under that identity. The catalog lacks a requirement that business-critical identity or authorization decisions must be derived from an authenticated principal or trusted context rather than from attacker-controlled content fields.",
+        "suggested_category": "authorization",
+        "nearest_requirements": [
+          {
+            "requirement_id": "req-AI-001",
+            "why_not": "req-AI-001 addresses treating untrusted content as data and preventing instructions embedded in that content from altering the model\u2019s task. In this threat, the model follows its intended task; the problem is that business identity (the submitter) is derived from untrusted content rather than from an authenticated principal, which req-AI-001 does not cover."
+          },
+          {
+            "requirement_id": "req-AI-002",
+            "why_not": "req-AI-002 concerns validation of model output before external publication (e.g., content checks or human review). The spoofing issue arises earlier, from how the submitter identity is established from input, and would exist even if the model output were structurally and content-validated; the missing requirement is about the source of identity, not about validating the generated decision before publication."
+          },
+          {
+            "requirement_id": "req-AUTH-001",
+            "why_not": "req-AUTH-001 applies only when user authentication is delegated to an external identity provider and focuses on documenting that delegation. In this system, invoice submitters are explicitly not authenticated to the workflow (evd-005), so there is no delegated authentication to describe; the gap is the absence of any requirement that such business-critical workflows authenticate submitters or otherwise bind decisions to a verified principal."
+          }
+        ],
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ]
+      }
+    ]
+  }
+}

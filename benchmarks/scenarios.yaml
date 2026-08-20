@@ -59,8 +59,10 @@ scenarios:
     # GenAI Agent Security Initiative insecure invoice-agent sample (license unasserted;
     # everything authored originally, source cited by URL). The first scenario whose
     # subject is itself an LLM agent. Outcome-side truth (findings, gaps, questions,
-    # rejections) authored in #268; recording authored in #326.
+    # rejections) authored in #268; recording authored in #326, replaced by the live
+    # gateway capture in #484's final wave.
     status: authored
+    workflow_version: "0.2"
     category: ai-service-risks
 
   # Scenarios five through eight are original small architectures authored for this project
@@ -93,6 +95,7 @@ scenarios:
     # finding, one observation, one gap.
     status: authored
     category: contradictory-documentation
+    workflow_version: "0.2"
 
   - slug: oidc-portal
     name: Support Portal
@@ -110,9 +113,11 @@ scenarios:
     name: Metrics Store
     path: benchmarks/managed-db-service
     # Inherited managed-platform encryption: the encryption-detail false-positive class.
-    # Expects zero findings; the recording (#326) replays the inherited-control path.
+    # Expects zero findings; the recording (#484) is a live gateway capture of the
+    # inherited-control path, replacing the authored #326 recording file for file.
     status: authored
     category: managed-platform-controls
+    workflow_version: "0.2"
 
   # Scenarios ten through thirteen close the roadmap Stage 5 coverage list (issue #328):
   # the categories that had no scenario. Each is an original small architecture in the

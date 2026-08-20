@@ -1,0 +1,152 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 21408,
+    "output_tokens": 9518,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.12194",
+    "duration_seconds": 112.26192158297636
+  },
+  "response": {
+    "controls": [
+      {
+        "key": "ctrl-metrics-api-internal-only",
+        "name": "Metrics API restricted to internal application subnet",
+        "description": "The Metrics API is described as an internal HTTP service that accepts metric writes from product services and is not reachable from the internet, with the metrics store reachable only from inside the application subnet, limiting exposure of metrics write endpoints to internal network locations.",
+        "control_type": "implemented",
+        "provider_component_id": null,
+        "protected_component_ids": [
+          "cmp-002"
+        ],
+        "protected_asset_ids": [
+          "ast-001"
+        ],
+        "implementation_status": "claimed",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "owner": null,
+        "limitations": [
+          "Relies on network position rather than authenticating individual internal callers, so a compromised internal service or other process on the application subnet can still send forged write requests."
+        ]
+      },
+      {
+        "key": "ctrl-metrics-db-private-encrypted",
+        "name": "Metrics database is private and encrypted by managed platform",
+        "description": "The managed metrics database is provided by the cloud platform, configured with storage_encrypted set to true and publicly_accessible set to false, and documentation states that the platform encrypts the database at rest by default and uses the platform's transport encryption for connections, with key management handled by the platform's key management service.",
+        "control_type": "inherited",
+        "provider_component_id": "cmp-001",
+        "protected_component_ids": [
+          "cmp-001"
+        ],
+        "protected_asset_ids": [
+          "ast-001"
+        ],
+        "implementation_status": "implemented",
+        "evidence_ids": [
+          "evd-002",
+          "evd-005",
+          "evd-006"
+        ],
+        "owner": null,
+        "limitations": [
+          "Protects confidentiality and network exposure of metrics records but does not control which internal callers can write or modify those records."
+        ]
+      }
+    ],
+    "mappings": [
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-NET-001",
+        "control_keys": [
+          "ctrl-metrics-api-internal-only",
+          "ctrl-metrics-db-private-encrypted"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "This threat targets an internal service (Metrics API) and a managed data store (metrics database) that hold metrics data on behalf of the system. The Metrics API and database are not public interfaces and rely on internal network placement for trust (evd-001, evd-002, evd-005, evd-006), matching the requirement conditions for internal components that should not be reachable from an untrusted network and that rely on network position.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "satisfied",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-005",
+          "evd-006"
+        ],
+        "assumptions": [
+          "The application subnet and non-public database placement constitute a trusted network boundary distinct from the public internet."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AUTHZ-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "Metrics records associate a product account with usage counters and are treated as confidential business data (evd-003). If product accounts correspond to distinct customer organizations and those records are stored together, then the system would satisfy the requirement's conditions of serving more than one customer and holding tenant-scoped data in shared storage, making tenant-aware authorization relevant to preventing forged metrics writes.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [],
+        "assumptions": [
+          "Product account identifiers represent different customer organizations, so metrics records are tenant-scoped data in shared storage."
+        ],
+        "confidence": "low"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Metrics API write authentication and authorization are undocumented",
+        "description": "The system overview describes the Metrics API as an internal HTTP service that accepts metric writes from product services and is reachable only from inside the application subnet (evd-001, evd-002), but provides no documentation of how write requests are authenticated or authorized, or how a caller\u2019s identity is bound to the account identifiers and usage numbers written. Because threat thr-001 depends on whether forged or unauthorized metrics writes are possible from internal callers, the absence of documented authentication and authorization behaviour for the Metrics API write path means we cannot determine whether this threat is mitigated.",
+        "importance": "Without documentation of authentication and authorization on Metrics API write endpoints, it is impossible to assess whether an attacker controlling an internal service or other process on the application subnet can forge or tamper with metrics records, so the core integrity question for this threat remains unresolved.",
+        "related_object_ids": [
+          "thr-001",
+          "cmp-002",
+          "cmp-003",
+          "cmp-001",
+          "ast-001",
+          "df-001"
+        ],
+        "requested_evidence": [
+          "Architecture or API documentation describing how the Product service authenticates to the Metrics API for write operations, including any credentials or identity mechanism used.",
+          "Documentation of authorization checks applied by the Metrics API to write requests, including how the caller\u2019s identity is mapped to the accounts whose metrics it may write or update.",
+          "Any service-to-service authentication configuration (e.g., mTLS, signed tokens, or network policies) that constrains which internal workloads can send write requests to the Metrics API."
+        ],
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-004"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": [
+      {
+        "concern": "The catalog lacks a requirement that explicitly covers authentication and authorization for internal service-to-service calls, such as the Product service writing to the internal Metrics API, so a threat where a compromised internal service or other process on the application subnet forges or overwrites records is not clearly mapped to any requirement despite being central to the described attack path.",
+        "suggested_category": "service_to_service_authentication",
+        "nearest_requirements": [
+          {
+            "requirement_id": "req-AUTHZ-001",
+            "why_not": "req-AUTHZ-001 focuses on tenant-aware authorization for systems serving multiple customer organizations and on constraining each request to its tenant context. The applicability conditions require multi-tenant customer data in shared storage, whereas the concern here is about authenticating and authorizing internal service-to-service writes on an internal metrics API regardless of whether the metrics are multi-tenant."
+          },
+          {
+            "requirement_id": "req-NET-001",
+            "why_not": "req-NET-001 addresses network-level reachability of internal components from untrusted networks. In this threat, the Metrics API and metrics database are already on an internal subnet and not internet-exposed (evd-001, evd-002, evd-005, evd-006), so network segmentation can be satisfied while still allowing a compromised internal service to forge authenticated-looking write requests; the missing control is application-level authentication and authorization between internal services, not additional network boundarying."
+          }
+        ],
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-004"
+        ]
+      }
+    ]
+  }
+}
