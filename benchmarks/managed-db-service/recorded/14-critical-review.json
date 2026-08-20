@@ -1,0 +1,31 @@
+{
+  "schema": "CriticalReviewProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 8993,
+    "output_tokens": 11464,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.12588125",
+    "duration_seconds": 147.49486354191322
+  },
+  "response": {
+    "critiques": [
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-049",
+        "critique_type": "unsupported_claim",
+        "description": "Mapping map-049 asserts that req-NET-001 is satisfied for thr-004, but the cited evidence only demonstrates that the Metrics API and database are internal and not publicly accessible, not that they are reachable exclusively from the specific workloads that use them as req-NET-001 requires.",
+        "rationale": "Req-NET-001 is described (in eas-066) as requiring internal components to be reachable only from the workloads that use them, and not from untrusted networks. The mapping sets satisfaction_status to \"satisfied\" and relies on ctl-002, which in turn is supported by evd-001, evd-002, evd-005, and evd-006. Those passages document that the metrics store is an internal service reachable only from the application subnet and that the Metrics API and database are not reachable from the internet and are not publicly accessible [evd-001][evd-002][evd-005][evd-006]. They do not, however, specify which instances or subnets within the application environment can connect, or whether access is limited to only the intended workloads. As eas-066 already notes, this supports that public/untrusted network access is constrained but does not fully establish exclusive reachability from only the using workloads, especially for a threat (thr-004) driven by high-volume writes from internal clients. Therefore, the mapping\u2019s claim of full satisfaction overstates what the evidence shows and should be revised (for example, to reflect partial satisfaction or an associated documentation gap).",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-005",
+          "evd-006"
+        ],
+        "recommended_action": "revise",
+        "confidence": "high"
+      }
+    ]
+  }
+}

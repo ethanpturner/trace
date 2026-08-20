@@ -1,0 +1,1240 @@
+{
+  "schema": "EvidenceValidationProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 14054,
+    "output_tokens": 28716,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.3047275",
+    "duration_seconds": 353.93493874999695
+  },
+  "response": {
+    "assessments": [
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-020",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The evidence establishes that users submit invoice JSON files, that the `submitter` field is taken from the uploaded document and only checked against an approved list, and that submitters are not otherwise authenticated to the workflow (evd-002, evd-004, evd-005). This supports the description of thr-001 as a threat about spoofing the submitter identity via an unauthenticated field. However, there is no evidence in the supplied material describing the contents, purpose, or applicability conditions of req-TPI-001, nor any documentation tying that requirement to this system. As a result, while the characterization of the threat is supported, the conclusion that req-TPI-001 is not applicable to thr-001 cannot be validated from the available documents.",
+        "missing_evidence": [
+          "Authoritative specification of req-TPI-001, including its purpose and applicability conditions.",
+          "Documentation, if any, describing how req-TPI-001 is implemented or considered for the Invoice Agent workflow."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "documentation_gap",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-005",
+            "text": "## 4. Data handling\n\nThe invoice file's contents are parsed and returned to the model as the invoice details.\nThe submitter field is a value in the uploaded document; submitters are not otherwise\nauthenticated to the workflow. Validation failures stop processing and report which\nfields failed."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-021",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The evidence shows that each user-submitted invoice JSON file is processed by the agent via an invoice-processing tool, which returns validated invoice details, and that submitters are not otherwise authenticated (evd-002, evd-004, evd-005). This supports the description of thr-001 as a threat about spoofing the submitter and fraudulent approval, not about resource exhaustion or unbounded work. However, the documentation provided does not define req-TPI-002 or its applicability criteria, nor does it state how it is implemented for this system. Therefore, the claim that req-TPI-002 is not applicable to thr-001 is not fully supported by the available evidence, even though the threat characterization is.",
+        "missing_evidence": [
+          "Definition and scope of req-TPI-002, including what kinds of external-triggered work it governs.",
+          "Any documentation indicating whether req-TPI-002 has been evaluated or implemented for the Invoice Agent."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "documentation_gap",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Workflow\n\nUsers submit an invoice as a text file containing a JSON document. The agent is prompted\nwith the path to the submitted file, reads it through its invoice-processing tool, and\nresponds with the invoice details, an approve or deny decision, and the reasoning behind\nit.\n\nIf an invoice is denied, the submission workflow follows up in the same conversation with\na note that the invoice is urgent and should be approved, asking the agent to reconsider\nits criteria. The agent's prior messages are carried into that follow-up."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-022",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The workflow documentation states that users submit invoices as text files containing JSON, which the agent processes directly (evd-002). This supports the characterization of thr-001 as arising from direct user submissions rather than webhook-style events from an external platform. However, there is no evidence describing req-WEBHOOK-001 itself or showing how it is scoped, so the conclusion that this webhook-origin-verification requirement is not applicable to thr-001 cannot be fully validated; only the threat description is supported.",
+        "missing_evidence": [
+          "Authoritative description of req-WEBHOOK-001, including when it applies.",
+          "Architecture or API documentation confirming whether any webhook endpoints exist for the invoice submission path."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "documentation_gap",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Workflow\n\nUsers submit an invoice as a text file containing a JSON document. The agent is prompted\nwith the path to the submitted file, reads it through its invoice-processing tool, and\nresponds with the invoice details, an approve or deny decision, and the reasoning behind\nit.\n\nIf an invoice is denied, the submission workflow follows up in the same conversation with\na note that the invoice is urgent and should be approved, asking the agent to reconsider\nits criteria. The agent's prior messages are carried into that follow-up."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-023",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The evidence shows that invoices are processed individually based on the contents of the submitted JSON file (evd-002, evd-004, evd-005), and the described spoofing threat (thr-001) concerns crafting a fresh invoice with a spoofed `submitter` field. This supports the idea that the modeled threat is not about replaying prior valid events. However, the supplied material does not define req-WEBHOOK-002 or its exact focus on replay/duplicate delivery, nor does it tie that requirement to this workflow. Consequently, the part of the conclusion asserting that req-WEBHOOK-002 is not applicable to thr-001 is not established, even though the nature of the threat is.",
+        "missing_evidence": [
+          "Specification of req-WEBHOOK-002, particularly its replay/duplicate-delivery conditions.",
+          "Any documentation describing protections against event replay for this workflow, if present."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-024",
+        "evidence_ids": [
+          "evd-001",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The system overview and data-handling sections establish that the Invoice Agent is backed by a hosted model provider and that invoice file contents are parsed and sent to the model as invoice details (evd-001, evd-005). This supports the characterization of thr-002 as a threat focused on the data flow between the agent and the hosted model provider. The documents, however, say nothing about administrative or operator interfaces, nor do they define req-ADMIN-001 or its scope. Therefore, while the focus of thr-002 is supported, the claim that an administrative-access requirement is not applicable to this threat is not itself established by the available evidence.",
+        "missing_evidence": [
+          "Definition of req-ADMIN-001, including what constitutes an administrative or privileged interface.",
+          "Documentation describing any administrative or operator interfaces for the Invoice Agent and how they relate, if at all, to data flow to the hosted model provider."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "documentation_gap",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Invoice Agent \u2014 System Overview\n\nThe invoice agent is an LLM-based finance assistant that processes submitted invoices and\neither approves or denies them. It is built on an agent framework with tool calling,\nbacked by a hosted model provider, with tracing sent to an observability service."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-025",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The evidence confirms that users submit invoice JSON files, that the `process_invoice` tool parses them into invoice details, and that those details are returned to the model (evd-002, evd-004, evd-005). This supports the statement that user-provided content flows through to the model. Thr-002, however, is explicitly framed as a threat about interception or tampering with invoice details in transit, not about adversarial instructions within the content. The supplied material does not define req-AI-001 or its exact focus on prompt injection, nor does it document any specific anti\u2013prompt-injection controls. As a result, the architectural description behind the threat is supported, but the conclusion that req-AI-001 is not applicable to thr-002 cannot be fully validated.",
+        "missing_evidence": [
+          "Specification of req-AI-001, including its definition of prompt injection and scope of applicability.",
+          "Documentation of any prompt-injection controls or analyses for the Invoice Agent, to verify whether req-AI-001 is considered in this context."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-026",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The overview and workflow descriptions establish that the Invoice Agent processes submitted invoices and returns an approve or deny decision with reasoning in the same conversation (evd-001, evd-002). Thr-002 is described as a threat to confidentiality and integrity of invoice details between the agent and the hosted model provider, and the documentation does not describe any automatic publication of model output to external systems. However, the supplied material does not define req-AI-002 or its requirements around output publication, so the determination that it is not applicable to thr-002 cannot be fully verified from the evidence, even though the threat\u2019s scope is clearly focused on in-transit data between agent and model.",
+        "missing_evidence": [
+          "Authoritative definition of req-AI-002, including what forms of automatic publication it covers.",
+          "Documentation of how and where the Invoice Agent\u2019s outputs are delivered or published, beyond the conversational response."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-027",
+        "evidence_ids": [
+          "evd-001",
+          "evd-004",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The documents state that the agent is backed by a hosted model provider (evd-001), that `process_invoice` parses invoice JSON into an object with amount, submitter, category, and due date (evd-004), and that the invoice file's contents are parsed and returned to the model as the invoice details (evd-005). This directly supports the claim that customer content crosses a model-provider boundary and that what is sent (parsed invoice details) is documented. However, there is no evidence here describing the text of req-AI-003, its full documentation requirements, or any discussion of why the chosen scope of data sent to the model is necessary. Thus, while applicability and the \"what is sent\" portion are supported, the judgment that req-AI-003 is only partially satisfied is not fully established.",
+        "missing_evidence": [
+          "Full specification of req-AI-003, including requirements to justify the necessity of data shared with model providers.",
+          "Any design or data-protection documentation explaining why the chosen invoice fields sent to the model are necessary for the task."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "documentation_gap",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-004",
+            "text": "## 3. Tools\n\n### process_invoice\n\nTakes a file path, reads the file, parses the contents as JSON, and returns a validated\ninvoice object with amount, submitter, category, and due date. Validation enforces that\nthe submitter and category are drawn from the approved lists, case-insensitively. The\n$20,000 ceiling is applied by the agent from its instructions; the schema does not\nenforce a maximum amount.\n\n### get_todays_date\n\nReturns today's date, so the agent can compare it to the invoice due date. The\ninstructions tell the agent to always check the date when processing an invoice."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-028",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The provided documentation describes the Invoice Agent as returning an approve or deny decision with reasoning to the user (evd-002) and being backed by a hosted model provider (evd-001), but does not describe rendering model output into external markup or user interfaces beyond this conversation. This supports the characterization of thr-002 as stopping at the agent\u2013model interaction rather than involving output encoding in downstream systems. However, req-AI-004 is not defined in the evidence, so the assertion that it does not apply cannot be conclusively validated.",
+        "missing_evidence": [
+          "Specification of req-AI-004 and the situations it is intended to cover.",
+          "Documentation of any further processing or rendering of model output beyond the described conversational response."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-029",
+        "evidence_ids": [
+          "evd-001",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The evidence confirms a data flow from the Invoice Agent to a hosted model provider (evd-001, evd-005). Thr-002 is about confidentiality and integrity risks on this outbound flow. The documents say nothing about how end users authenticate, nor do they define req-AUTH-001 or whether authentication is delegated. While it is reasonable that user authentication mechanisms do not directly address on-path attacks on df-002, the specific claim that req-AUTH-001 is not applicable to thr-002 cannot be fully validated without the requirement text or authentication design documentation.",
+        "missing_evidence": [
+          "Definition of req-AUTH-001, including its focus on delegated versus local authentication.",
+          "Authentication design for the invoice submission interface, to clarify how (or whether) user authentication interacts with this threat."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-030",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The overview and workflow describe normal invoice processing by the Invoice Agent and interactions with a hosted model provider (evd-001, evd-002, evd-005). There is no mention of an administrative or privileged interface in this material, which is consistent with thr-002 being about routine agent\u2013provider traffic. However, the absence of mention does not prove such interfaces do not exist, and req-AUTH-002 is not defined in the evidence. Thus, while the focus of the threat is supported, the claim that a multi-factor authentication requirement for administrative access is not applicable to thr-002 is not fully established.",
+        "missing_evidence": [
+          "Text of req-AUTH-002, including its scope over administrative or privileged interfaces.",
+          "Architecture or operational documentation describing any administrative access paths to the Invoice Agent or its hosting environment."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-031",
+        "evidence_ids": [
+          "evd-001",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The documentation shows a single Invoice Agent sending parsed invoice details to a hosted model provider (evd-001, evd-005), and thr-002 is framed as a threat to the confidentiality and integrity of those details in transit. There is no mention of multi-tenant storage or cross-tenant authorisation concerns in the provided excerpts. However, req-AUTHZ-001 is not defined, and the architecture here does not explicitly rule out multi-tenant scenarios or tenant-aware controls elsewhere. Therefore, the threat characterization is supported, but the determination that tenant-aware authorization requirements are not applicable to this threat is not fully validated.",
+        "missing_evidence": [
+          "Definition of req-AUTHZ-001, including what tenant-aware authorization guarantees it expects.",
+          "Documentation describing whether the Invoice Agent or associated storage is multi-tenant and how tenant boundaries are enforced."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-032",
+        "evidence_ids": [
+          "evd-001",
+          "evd-005",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The deployment section states that the agent runs with credentials for the model provider and the observability service, and that traces including HTTP request and response bodies are captured for debugging (evd-006). The overview and data-handling sections confirm that invoice details are sent from the agent to the hosted model provider (evd-001, evd-005). This supports the premise that the agent holds integration credentials and that thr-002 focuses on exposure/tampering of invoice data in transit. However, req-AUTHZ-002 is not defined in the evidence, and there is no documentation of the scopes or privileges associated with those credentials. Thus, the conclusion that integration-scope limiting is not applicable to this threat path is not fully supported by the available documents.",
+        "missing_evidence": [
+          "Specification of req-AUTHZ-002, including expectations on delegated scopes.",
+          "Configuration or design documentation describing the scopes/permissions of the model provider credentials used by the Invoice Agent."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "documentation_gap",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-006",
+            "text": "## 5. Deployment\n\nThe agent runs with credentials for the model provider and the observability service.\nRequest and tool-call traces, including HTTP request and response bodies, are captured for\ndebugging."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-033",
+        "evidence_ids": [
+          "evd-001",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The overview and data-handling sections describe a running Invoice Agent that exchanges invoice details with a hosted model provider (evd-001, evd-005), which aligns with thr-002 being a runtime data-in-transit threat. However, there is no information in the supplied evidence about the build or deployment pipeline, nor is req-CICD-001 defined. While it is reasonable to say that pipeline authentication and dependency management do not directly affect on-path interception of df-002 at runtime, the conclusion that req-CICD-001 is not applicable to thr-002 cannot be fully validated without documentation of that requirement and the pipeline.",
+        "missing_evidence": [
+          "Definition of req-CICD-001 and the controls it requires in build/deploy pipelines.",
+          "Documentation of the Invoice Agent's CI/CD pipeline and any security controls applied there."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-034",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-004",
+          "evd-005",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The evidence shows that users submit invoice JSON documents (evd-002), which are parsed into invoice objects with amount, submitter, category, and due date (evd-004); the invoice file contents are parsed and returned to the model as invoice details (evd-005); the system is backed by a hosted model provider (evd-001); and HTTP request and response bodies are captured for debugging (evd-006). Together, this supports the claim that confidential customer invoice data crosses a boundary to an external provider, so a data-in-transit protection requirement like req-DATA-001 is plausibly applicable. However, there is no description of req-DATA-001\u2019s exact conditions or of any encryption/authentication configuration on df-002. The judgment that satisfaction is \"unverified\" reflects a lack of documentation rather than a documented fact, and cannot itself be confirmed from a single architecture document. Thus applicability is supported, but the satisfaction classification remains unvalidated.",
+        "missing_evidence": [
+          "Full text of req-DATA-001, including required protections for data crossing external network boundaries.",
+          "Network or service configuration documentation showing whether and how traffic between the Invoice Agent and the hosted model provider is encrypted and authenticated."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-035",
+        "evidence_ids": [
+          "evd-001",
+          "evd-005",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The overview, data-handling, and deployment sections support that thr-002 is concerned with invoice details transmitted between the Invoice Agent and a hosted model provider (evd-001, evd-005), and that traces including HTTP bodies are captured separately for debugging (evd-006). This aligns with a modeling choice that thr-002 focuses on in-transit exposure/tampering, not on retention of debug traces. However, req-DATA-002 is not defined in the supplied evidence, and no retention policies are documented, so the assertion that this retention-focused requirement is not applicable to thr-002 cannot be fully validated.",
+        "missing_evidence": [
+          "Specification of req-DATA-002 and what forms of retention it governs.",
+          "Documentation of logging and trace retention policies for the observability service and any relation to thr-002."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "documentation_gap",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-006",
+            "text": "## 5. Deployment\n\nThe agent runs with credentials for the model provider and the observability service.\nRequest and tool-call traces, including HTTP request and response bodies, are captured for\ndebugging."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-036",
+        "evidence_ids": [
+          "evd-001",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The documentation indicates an internet-facing style interaction between the Invoice Agent and an external hosted model provider (evd-001, evd-005), which is the focus of thr-002. There is no discussion of internal data stores, queues, or network segmentation. However, req-DATA-003 is not defined here, and the internal network architecture is not described, so the determination that tenant-separation or internal-segmentation requirements do not apply to this threat cannot be completely validated from the available evidence.",
+        "missing_evidence": [
+          "Definition of req-DATA-003, including any expectations about tenant separation in storage.",
+          "Network and storage architecture documentation for internal components supporting the Invoice Agent."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-037",
+        "evidence_ids": [
+          "evd-001",
+          "evd-005",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The provided documentation focuses on invoice processing, data sent to the model provider, and capture of HTTP bodies for debugging (evd-001, evd-005, evd-006). Thr-002 is scoped to exposure and tampering during transmission to the hosted model provider. There is no mention of customer-initiated or operator-initiated deletion paths for stored invoice data. However, req-DATA-004 is not defined here, and the absence of deletion documentation does not by itself establish non-applicability. Thus the threat scope is supported, but the mapping\u2019s claim that req-DATA-004 is not applicable to thr-002 is not fully evidenced.",
+        "missing_evidence": [
+          "Specification of req-DATA-004 and the data-deletion scenarios it covers.",
+          "System documentation describing where invoice data is stored and how deletion requests are handled, if at all."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-038",
+        "evidence_ids": [
+          "evd-001",
+          "evd-005",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "It is documented that request and tool-call traces, including HTTP request and response bodies, are captured for debugging by an observability service (evd-006), and that invoice details are sent between the Invoice Agent and the hosted model provider (evd-001, evd-005). Thr-002 is modeled around risks on that in-transit path, whereas thr-003 explicitly concerns observability traces. This supports the idea that logging-content concerns are modeled under a different threat. However, req-LOG-001 is not defined in the evidence, and the assertion that it is not applicable to thr-002 is a modeling choice that cannot be independently validated from these documents alone.",
+        "missing_evidence": [
+          "Definition of req-LOG-001 and which logging or observability channels it covers.",
+          "Threat-model documentation clarifying how logging-related requirements are allocated between thr-002 and thr-003."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "documentation_gap",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-006",
+            "text": "## 5. Deployment\n\nThe agent runs with credentials for the model provider and the observability service.\nRequest and tool-call traces, including HTTP request and response bodies, are captured for\ndebugging."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-039",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The overview and workflow describe the system in terms of normal invoice processing with user-submitted JSON and agent approve/deny decisions (evd-001, evd-002). No administrative or operator interface is mentioned, which is consistent with thr-002 focusing on automated processing paths. Req-LOG-002, however, is not defined, and there is no explicit statement that administrative actions do or do not exist or are out of scope. Therefore, the mapping\u2019s assertion that administrative auditing requirements do not apply to thr-002 is not fully supported, even though the threat path as described does not reference administrative actions.",
+        "missing_evidence": [
+          "Specification of req-LOG-002, including what constitutes a security-relevant administrative action.",
+          "Documentation of any administrative/operations interfaces for the Invoice Agent and their auditing."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-040",
+        "evidence_ids": [
+          "evd-001",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The evidence shows that the critical data path for thr-002 is the traffic from the Invoice Agent to a hosted model provider carrying parsed invoice details (evd-001, evd-005). The internal placement of data stores or caches is not discussed. While this supports the statement that the modeled threat is about an external outbound flow, req-NET-001 is not defined, and the absence of internal network-segmentation discussion does not on its own establish that the requirement is irrelevant to this threat. Thus, threat scope is supported but the non-applicability conclusion is not fully validated.",
+        "missing_evidence": [
+          "Definition of req-NET-001 and what kinds of internal network segmentation it requires.",
+          "Network topology documentation for internal services and stores used by the Invoice Agent."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-041",
+        "evidence_ids": [
+          "evd-001",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "It is explicitly documented that the agent runs with credentials for the model provider and the observability service (evd-006), and that the system is backed by a hosted model provider (evd-001). Thr-002 focuses on risks to invoice details in transit. However, req-SECRET-001 is not defined, and there is no documentation here about how or where those credentials are stored. The mapping\u2019s statement that secret-storage concerns are outside the scope of this threat is a modeling decision that cannot be fully validated from the provided evidence alone.",
+        "missing_evidence": [
+          "Specification of req-SECRET-001, including expectations for long-term credential storage.",
+          "Documentation of how model provider and observability credentials are stored and managed for the Invoice Agent."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "documentation_gap",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-006",
+            "text": "## 5. Deployment\n\nThe agent runs with credentials for the model provider and the observability service.\nRequest and tool-call traces, including HTTP request and response bodies, are captured for\ndebugging."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-042",
+        "evidence_ids": [
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-006",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The deployment documentation states that the agent runs with credentials for the model provider and observability service (evd-006), but does not specify whether these credentials are long-lived or short-lived. Thr-002 is modeled as an on-path data-in-transit threat, and the relationship between credential lifetime and that threat is a matter of design interpretation. Req-SECRET-002 is not defined in the evidence, so the conclusion that it is not applicable to thr-002 cannot be fully validated, even though the immediate focus of the threat is not on credential lifetime.",
+        "missing_evidence": [
+          "Definition of req-SECRET-002, including its requirements on credential lifetime and rotation.",
+          "Operational documentation specifying the lifetime and rotation strategy for the model provider credentials."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "documentation_gap",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-006",
+            "text": "## 5. Deployment\n\nThe agent runs with credentials for the model provider and the observability service.\nRequest and tool-call traces, including HTTP request and response bodies, are captured for\ndebugging."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-043",
+        "evidence_ids": [
+          "evd-001",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The overview and data-handling sections establish that invoice details derived from customer-submitted invoices are sent from the Invoice Agent to a hosted model provider (evd-001, evd-005), so customer data clearly crosses to an external processor. This supports the applicability of a third-party integration requirement like req-TPI-001 to thr-002. However, req-TPI-001\u2019s specific demands around documenting provider retention and usage terms are not provided, and there is no evidence here about the provider\u2019s data-retention practices. Therefore, while applicability is supported, the assertion that satisfaction is \"unverified\" requires knowledge of the wider documentation set and cannot be fully validated from this single architecture document.",
+        "missing_evidence": [
+          "Full text of req-TPI-001, especially its requirements regarding third-party data retention and usage documentation.",
+          "Any contracts or data-protection documentation describing the hosted model provider\u2019s retention and use of customer invoice data."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "documentation_gap",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-005",
+            "text": "## 4. Data handling\n\nThe invoice file's contents are parsed and returned to the model as the invoice details.\nThe submitter field is a value in the uploaded document; submitters are not otherwise\nauthenticated to the workflow. Validation failures stop processing and report which\nfields failed."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-044",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The evidence shows that users submit invoices that are processed by an LLM-based agent backed by a hosted model provider, with tracing sent to an observability service (evd-001, evd-002, evd-006). Thr-002, however, is explicitly described as a threat to confidentiality and integrity of invoice details in transit, not to availability or unbounded resource consumption. Req-TPI-002 is not defined in the evidence, so the judgment that this external-work-bounding requirement does not apply to thr-002 is a modeling decision that cannot be fully checked against requirement text or broader design documentation.",
+        "missing_evidence": [
+          "Specification of req-TPI-002 and the kinds of external work or metered services it addresses.",
+          "Threat-model documentation clarifying which threats (e.g., thr-005) are intended to cover resource-exhaustion aspects."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-045",
+        "evidence_ids": [
+          "evd-001",
+          "evd-005",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The overview and data-handling/deployment sections together show that the Invoice Agent initiates requests to a hosted model provider and sends traces to an observability service (evd-001, evd-005, evd-006). The documentation does not describe inbound callbacks or webhook endpoints for this threat path, supporting the description of thr-002 as an outbound interaction. However, req-WEBHOOK-001 is not defined in the evidence, and no API-level documentation is provided to conclusively rule out webhook-style integrations. Thus, the outbound nature of the threat is supported, but the non-applicability of webhook-origin verification cannot be fully validated.",
+        "missing_evidence": [
+          "Definition of req-WEBHOOK-001 and the specific scenarios it covers.",
+          "API documentation confirming whether the Invoice Agent exposes any webhook endpoints related to this workflow."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-046",
+        "evidence_ids": [
+          "evd-001",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The provided evidence documents only outbound traffic from the Invoice Agent to a hosted model provider carrying invoice details (evd-001, evd-005), which supports the description of thr-002 as involving agent-initiated requests rather than inbound state-changing events. Req-WEBHOOK-002, however, is not defined here, and the absence of a detailed API description means we cannot conclusively state that replay-handling requirements for inbound events never apply. Therefore, the outbound character of the threat is supported, but the mapping\u2019s non-applicability conclusion is not fully evidenced.",
+        "missing_evidence": [
+          "Specification of req-WEBHOOK-002 and the event types it covers.",
+          "Architecture/API documentation confirming that the Invoice Agent does not process state-changing inbound events via webhooks on this path."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-047",
+        "evidence_ids": [
+          "evd-001",
+          "evd-005",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The overview and data-handling/deployment sections show that invoice data flows from the Invoice Agent to a hosted model provider (evd-001, evd-005) and that request and tool-call traces, including HTTP request and response bodies, are captured for debugging by an observability service (evd-006). This directly supports thr-003\u2019s characterization of invoice data appearing in observability traces and thus implicates logging-content controls. However, req-LOG-001 is not defined here, and there is no documentation establishing whether the observability service is treated as a distinct logging platform or how invoice data is classified for logging purposes. The mapping\u2019s \"conditionally_applicable\" and \"unverified\" judgments therefore depend on assumptions noted in the mapping rather than on source evidence.",
+        "missing_evidence": [
+          "Full specification of req-LOG-001, including data-classification and logging-platform scope.",
+          "Documentation of the observability service\u2019s role (separate platform vs. embedded) and policies for logging invoice data."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "documentation_gap",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-006",
+            "text": "## 5. Deployment\n\nThe agent runs with credentials for the model provider and the observability service.\nRequest and tool-call traces, including HTTP request and response bodies, are captured for\ndebugging."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-048",
+        "evidence_ids": [
+          "evd-001",
+          "evd-005",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The documentation clearly indicates that request and tool-call traces with full HTTP request and response bodies are captured for debugging (evd-006), and that these HTTP bodies carry invoice details sent between the Invoice Agent and the hosted model provider (evd-001, evd-005). This supports thr-003\u2019s claim that working copies of invoice data are retained in a logging/observability system. However, req-DATA-002 is not defined here, and there is no explicit retention-duration or deletion policy for those traces. The statement that req-DATA-002 is applicable and unverified is therefore only partly supported: the existence of retained working copies is documented, but the requirement\u2019s criteria and verification status are not.",
+        "missing_evidence": [
+          "Specification of req-DATA-002, including required limits on retention of intermediate artifacts.",
+          "Logging/observability retention and deletion policies for captured HTTP request and response bodies."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-049",
+        "evidence_ids": [
+          "evd-001",
+          "evd-005",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The system overview and data-handling sections show that invoice data is processed by the Invoice Agent and sent to a hosted model provider (evd-001, evd-005). The deployment section adds that HTTP request and response bodies are captured in an observability service (evd-006). This supports thr-003\u2019s statement that invoice data appears both in primary processing and in observability traces, implying multiple storage locations. Req-DATA-004 is not defined in the evidence, and there is no description of coordinated deletion mechanisms across these locations. As a result, applicability to thr-003 is supported, but the claim that satisfaction is unverified is not fully established by the provided material alone.",
+        "missing_evidence": [
+          "Definition of req-DATA-004, including expectations for deletion across multiple data stores.",
+          "Documentation of where invoice data is stored in primary systems and in observability, and how deletions are propagated."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-050",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-005",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The evidence shows that users submit invoices which the agent processes (evd-002), that submitters are not otherwise authenticated (evd-005), that the agent is backed by a hosted model provider (evd-001), and that request and tool-call traces are captured for debugging (evd-006). This supports thr-005\u2019s characterization of external, unauthenticated invoice submissions driving work through an external model provider and observability service, making a work-bounding requirement like req-TPI-002 plausibly applicable. However, req-TPI-002 is not defined here, and there is no documentation on existing rate-limiting or quota mechanisms. The assertion that the requirement is applicable and currently unverified therefore goes beyond what the supplied evidence alone establishes.",
+        "missing_evidence": [
+          "Specification of req-TPI-002, including required controls for bounding externally triggered work.",
+          "Documentation (or configuration) of rate limiting, quotas, or admission controls on the invoice submission interface and model-provider usage."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-001",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The workflow states that users submit invoices as JSON files that the agent reads and processes (evd-002). The decision policy denies invoices if the submitter is not one of three approved submitters (evd-003), and the `process_invoice` tool validates that the submitter field is drawn from the approved list (evd-004). The data-handling section further clarifies that the submitter field is a value in the uploaded document and that submitters are not otherwise authenticated to the workflow (evd-005). Taken together, these passages directly support the threat description: any external user can choose a `submitter` value matching an approved name in the JSON, and the system will treat that invoice as coming from an approved submitter because there is no independent authentication of the human submitter. The stated impact and preconditions follow directly from these documented behaviors.",
+        "missing_evidence": [
+          "If needed for risk evaluation rather than threat existence: logs or tests demonstrating whether any downstream process double-checks submitter identity outside this workflow."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "## 2. Decision policy\n\nThe agent's instructions define two sets of rules.\n\nDeny an invoice if:\n\n- the amount is over $20,000;\n- the category is not one of the four approved categories (camera equipment, microphones,\n  guest fee, recording software);\n- the submitter is not one of the three approved submitters.\n\nApprove an invoice if:\n\n- the due date is within the next week \u2014 approvals are prioritized for speed when payment\n  is coming due.\n\nThe instructions direct the agent to use its best discretion between the deny rules and\nthe approve rules."
+          },
+          {
+            "evidence_id": "evd-005",
+            "text": "## 4. Data handling\n\nThe invoice file's contents are parsed and returned to the model as the invoice details.\nThe submitter field is a value in the uploaded document; submitters are not otherwise\nauthenticated to the workflow. Validation failures stop processing and report which\nfields failed."
+          }
+        ]
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-002",
+        "evidence_ids": [
+          "evd-001",
+          "evd-005",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The overview notes that the Invoice Agent is backed by a hosted model provider and sends tracing to an observability service (evd-001). The data-handling section states that the invoice file's contents are parsed and returned to the model as the invoice details (evd-005), establishing a data flow from the agent to the model provider carrying parsed invoice data. The deployment section further states that request and tool-call traces, including HTTP request and response bodies, are captured for debugging (evd-006), which implies the use of HTTP-based communication between the agent and external services. None of the supplied documentation specifies encryption or authentication properties for this traffic. The threat description is conditional\u2014\"If this traffic is not adequately protected\"\u2014and the preconditions explicitly state that inadequate protection and attacker access to the path are assumptions. Given the documented existence of this external data flow and the absence of stated protections in the material, modeling the risk of interception or tampering on this path is well supported by the evidence.",
+        "missing_evidence": [
+          "Network and API configuration showing TLS settings, certificate validation, and any mutual authentication between the Invoice Agent and the hosted model provider.",
+          "Any security review or design documentation explicitly describing protection of df-002."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Invoice Agent \u2014 System Overview\n\nThe invoice agent is an LLM-based finance assistant that processes submitted invoices and\neither approves or denies them. It is built on an agent framework with tool calling,\nbacked by a hosted model provider, with tracing sent to an observability service."
+          },
+          {
+            "evidence_id": "evd-005",
+            "text": "## 4. Data handling\n\nThe invoice file's contents are parsed and returned to the model as the invoice details.\nThe submitter field is a value in the uploaded document; submitters are not otherwise\nauthenticated to the workflow. Validation failures stop processing and report which\nfields failed."
+          }
+        ]
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-003",
+        "evidence_ids": [
+          "evd-001",
+          "evd-005",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The overview notes tracing to an observability service (evd-001). The data-handling section documents that the invoice file contents are parsed and returned to the model as invoice details (evd-005), indicating that HTTP requests to the model provider contain invoice details. The deployment section then states that request and tool-call traces, including HTTP request and response bodies, are captured for debugging (evd-006). Together, these passages directly support the threat assertion that invoice details and related context are copied into observability traces as full HTTP bodies. If the observability service or its storage were misconfigured or compromised, those traces could expose invoice data beyond its intended audience, matching the described impact and preconditions.",
+        "missing_evidence": [
+          "Access-control and network-exposure documentation for the observability service (cmp-004).",
+          "Logging/tracing retention policies and redaction rules for HTTP bodies containing invoice data."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-006",
+            "text": "## 5. Deployment\n\nThe agent runs with credentials for the model provider and the observability service.\nRequest and tool-call traces, including HTTP request and response bodies, are captured for\ndebugging."
+          }
+        ]
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-004",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The decision policy explicitly defines deny rules (amount over $20,000; unapproved category; unapproved submitter) and a separate approve rule for invoices whose due date is within the next week, and instructs the agent to use its \"best discretion\" between these rules (evd-003). The workflow further states that if an invoice is denied, the submission workflow follows up in the same conversation with a message saying the invoice is urgent and should be approved, asking the agent to reconsider (evd-002). These passages directly support the structural aspects of the threat: the model is given potentially conflicting instructions (hard denies vs. urgency and discretion) and receives an urgent follow-up that could influence its reasoning. However, the assertion that \"the Invoice Agent\u2019s final approve/deny outcome is taken directly from the hosted model\u2019s response, without a separate deterministic enforcement layer\" and that the model in practice returns approvals inconsistent with the deny rules are not documented; they are reasonable but unverified assumptions about implementation and model behavior. Therefore the threat is partially supported: the risky decision structure is documented, but the absence of deterministic post-checks and the empirical behavior of the model are not.",
+        "missing_evidence": [
+          "Design or code-level documentation showing whether any deterministic layer re-applies deny rules after receiving the model\u2019s response.",
+          "Testing or evaluation results demonstrating how often, if at all, the model outputs approvals that conflict with the stated deny conditions under urgent follow-up."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Workflow\n\nUsers submit an invoice as a text file containing a JSON document. The agent is prompted\nwith the path to the submitted file, reads it through its invoice-processing tool, and\nresponds with the invoice details, an approve or deny decision, and the reasoning behind\nit.\n\nIf an invoice is denied, the submission workflow follows up in the same conversation with\na note that the invoice is urgent and should be approved, asking the agent to reconsider\nits criteria. The agent's prior messages are carried into that follow-up."
+          },
+          {
+            "evidence_id": "evd-003",
+            "text": "## 2. Decision policy\n\nThe agent's instructions define two sets of rules.\n\nDeny an invoice if:\n\n- the amount is over $20,000;\n- the category is not one of the four approved categories (camera equipment, microphones,\n  guest fee, recording software);\n- the submitter is not one of the three approved submitters.\n\nApprove an invoice if:\n\n- the due date is within the next week \u2014 approvals are prioritized for speed when payment\n  is coming due.\n\nThe instructions direct the agent to use its best discretion between the deny rules and\nthe approve rules."
+          }
+        ]
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-005",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-005",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The workflow shows that users submit invoices as JSON files, which the agent processes to produce approve or deny decisions (evd-002). The data-handling section states that the submitter field is taken from the uploaded document and that submitters are not otherwise authenticated to the workflow (evd-005), supporting the precondition that invoice submitters are unauthenticated external users. The overview states that the agent is LLM-based and backed by a hosted model provider (evd-001), making it reasonable to infer that each invoice submission drives model-provider work. The deployment section notes that request and tool-call traces, including HTTP request and response bodies, are captured for debugging (evd-006), which implies per-request overhead in both the agent and observability stack. While the presence or absence of rate limits is not documented, the threat is explicitly conditional on their ineffectiveness. Given a publicly reachable, unauthenticated submission path that triggers LLM-backed processing, modeling a risk that high-volume submissions could exhaust agent and model capacity is supported by the documented architecture and stated preconditions.",
+        "missing_evidence": [
+          "Documentation or configuration of rate limiting, quotas, or other admission controls on the invoice submission interface.",
+          "Capacity and scaling characteristics for the Invoice Agent, the hosted model provider usage, and the observability service under high load."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-005",
+            "text": "## 4. Data handling\n\nThe invoice file's contents are parsed and returned to the model as the invoice details.\nThe submitter field is a value in the uploaded document; submitters are not otherwise\nauthenticated to the workflow. Validation failures stop processing and report which\nfields failed."
+          }
+        ]
+      }
+    ]
+  }
+}

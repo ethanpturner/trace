@@ -1,3 +1,18 @@
+# Checkpoint-2 finding decisions for the managed-db-service live capture.
+# Authored per capture (DEC-091); the reviewer of record for a capture is the capture protocol.
 assessment_id: asm-001
-reviewer: recorded-reviewer
-findings: []
+findings:
+  - id: fnd-001
+    decision: reject
+    rationale: >
+      The claimed flow has two legs and neither supports a finding. The metrics-API-to-database
+      leg is documented as encrypted: the platform's transport encryption terminates at the
+      managed endpoint, so the requirement is satisfied by an inherited control there, and an
+      interception finding on that leg asserts an absence the document contradicts — the
+      common_false_positives entry req-DATA-001 names for managed services. The
+      product-service-to-API and dashboard-to-API legs are silent on transport encryption:
+      "internal HTTP service" names the interface, and no passage states those flows are
+      unencrypted. Under DEC-009 that silence is a question or a gap, never a finding, and the
+      open questions on network reachability (qst-007) and API-to-database credentials
+      (qst-008) already hold the unresolved substance. The evidence cited establishes that the
+      data is confidential and the requirement applies — applying is not failing.

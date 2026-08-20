@@ -1,0 +1,1433 @@
+{
+  "schema": "EvidenceValidationProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 12981,
+    "output_tokens": 26159,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.27781625",
+    "duration_seconds": 286.4541889579268
+  },
+  "response": {
+    "assessments": [
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-001",
+        "evidence_ids": [
+          "evd-001",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "Both the architecture overview and the operations guide explicitly name the system as the \"Export Service,\" supporting the claim about its name.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Export Service \u2014 Architecture Overview\n\nThe export service produces data exports for customers on request. A customer requests an\nexport, the service assembles it from the customer's records, and the customer downloads\nthe result."
+          },
+          {
+            "evidence_id": "evd-005",
+            "text": "# Export Service \u2014 Operations Guide\n\nThis guide covers how the export service is operated day to day."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-002",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The architecture overview states that the export service \"produces data exports for customers on request,\" directly supporting the described purpose.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "The export service produces data exports for customers on request. A customer requests an\nexport, the service assembles it from the customer's records, and the customer downloads\nthe result."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-003",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The data handling section explicitly states that export requests name a customer and a date range, matching the claim about export request parameters.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "Export requests name a customer and a date range. The assembled export contains the\ncustomer's records for that range and is written to a managed object store. The export\nfile is temporary working data: it is deleted immediately once the customer has downloaded\nit."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-004",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The Export API is described as \"A public HTTPS service,\" which directly supports the claim that component cmp-001 is a public HTTPS service.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "A public HTTPS service that accepts export requests and returns a download link when the\nexport is ready."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-005",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The Export API description states that it \"returns a download link when the export is ready,\" directly supporting the claim that it returns a download link when the export is ready.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "A public HTTPS service that accepts export requests and returns a download link when the\nexport is ready."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-006",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The Export Worker is described as assembling the requested export from customer records, and the data handling section reiterates that the assembled export contains the customer's records, directly supporting the claim about cmp-002 assembling exports from customer records.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "An internal worker that assembles the requested export from customer records and writes the\nresult to object storage."
+          },
+          {
+            "evidence_id": "evd-003",
+            "text": "The assembled export contains the\ncustomer's records for that range and is written to a managed object store."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-007",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The Export Worker is said to write the result to object storage, and both architecture and operations documents state that completed exports are written to a managed object store, directly supporting the claim that cmp-002 writes completed exports to the object store.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "An internal worker that assembles the requested export from customer records and writes the\nresult to object storage."
+          },
+          {
+            "evidence_id": "evd-003",
+            "text": "The assembled export contains the\ncustomer's records for that range and is written to a managed object store."
+          },
+          {
+            "evidence_id": "evd-006",
+            "text": "Completed export files are written to the managed object store. A storage lifecycle policy\nretains export objects for 30 days and expires them after that. Operators can retrieve a\nrecent export from the store if a customer reports a failed download within that window."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-008",
+        "evidence_ids": [
+          "evd-003",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "indirect"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "Both documents describe completed exports being written to and retained in a managed object store, which reasonably supports modelling that store as component cmp-003 that stores completed export files, even though the component name does not appear in the text.",
+        "missing_evidence": [
+          "Explicit architecture diagram or component list naming the managed object store as a component corresponding to cmp-003."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "The assembled export contains the\ncustomer's records for that range and is written to a managed object store."
+          },
+          {
+            "evidence_id": "evd-006",
+            "text": "Completed export files are written to the managed object store. A storage lifecycle policy\nretains export objects for 30 days and expires them after that. Operators can retrieve a\nrecent export from the store if a customer reports a failed download within that window."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-009",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The data handling section explicitly calls the export file \"temporary working data,\" directly supporting the claim that ast-002 is described that way.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "The export\nfile is temporary working data: it is deleted immediately once the customer has downloaded\nit."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-010",
+        "evidence_ids": [
+          "evd-003",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contradictory"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "contradicted",
+        "rationale": "evd-006 states that a storage lifecycle policy retains export objects for 30 days and then expires them, supporting the 30-day retention part of the claim, but evd-003 states that the export file is deleted immediately once the customer has downloaded it. These passages directly disagree about the retention behaviour of export files, so the conclusion that exports are retained for 30 days and that the architecture overview's deletion statement does not describe the configured behaviour cannot be accepted as established by the documents alone.",
+        "missing_evidence": [
+          "Authoritative configuration or implementation documentation for the managed object store and deletion logic, stating whether exports are deleted immediately on download, retained for 30 days, or both.",
+          "An explicit statement clarifying which document (architecture overview or operations guide) is authoritative for export-file retention."
+        ],
+        "contradictions": [
+          "obs-001"
+        ],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "The export\nfile is temporary working data: it is deleted immediately once the customer has downloaded\nit."
+          },
+          {
+            "evidence_id": "evd-006",
+            "text": "A storage lifecycle policy\nretains export objects for 30 days and expires them after that."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-011",
+        "evidence_ids": [
+          "evd-003",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-006",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contradictory"
+          }
+        ],
+        "validation_status": "contradicted",
+        "rationale": "The operations guide directly states that a storage lifecycle policy retains export objects for 30 days and expires them after that, but the architecture overview states that the export file is deleted immediately once the customer has downloaded it. These conflicting descriptions of retention mean the documents do not jointly establish that export objects are in fact retained for 30 days or that the architecture statement fails to describe the configured behaviour.",
+        "missing_evidence": [
+          "Definitive system behaviour documentation or configuration showing actual export-file retention and deletion behaviour.",
+          "Clarification from system owners on whether operations or architecture documentation is authoritative for export retention."
+        ],
+        "contradictions": [
+          "obs-001"
+        ],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-006",
+            "text": "A storage lifecycle policy\nretains export objects for 30 days and expires them after that."
+          },
+          {
+            "evidence_id": "evd-003",
+            "text": "The export\nfile is temporary working data: it is deleted immediately once the customer has downloaded\nit."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-012",
+        "evidence_ids": [
+          "evd-003",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-006",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contradictory"
+          }
+        ],
+        "validation_status": "contradicted",
+        "rationale": "The effective retention period for export objects is disputed: evd-006 describes a 30-day lifecycle policy, while evd-003 states immediate deletion after download. With no additional evidence resolving which behaviour is implemented, the claim that exports are retained for 30 days and that the architecture statement does not describe the configured behaviour is contradicted by the available documentation.",
+        "missing_evidence": [
+          "Concrete runtime configuration of the managed object store and any application-level deletion jobs for export files.",
+          "Tests, runbooks, or operator procedures that clearly demonstrate the actual retention period of export files."
+        ],
+        "contradictions": [
+          "obs-001"
+        ],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-006",
+            "text": "A storage lifecycle policy\nretains export objects for 30 days and expires them after that."
+          },
+          {
+            "evidence_id": "evd-003",
+            "text": "The export\nfile is temporary working data: it is deleted immediately once the customer has downloaded\nit."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-013",
+        "evidence_ids": [
+          "evd-003",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-006",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contradictory"
+          }
+        ],
+        "validation_status": "contradicted",
+        "rationale": "The operations guide directly states that a storage lifecycle policy retains export objects for 30 days and expires them after that, but the architecture overview states that export files are deleted immediately once downloaded. These two descriptions cannot both be true for the same stored exports, so the claim that cmp-003's lifecycle policy retains exports for 30 days is contradicted by the architecture description.",
+        "missing_evidence": [
+          "Documentation or configuration confirming whether export files remain in the managed object store after download and for how long.",
+          "Clarification on how the lifecycle policy interacts with any application-level deletion of export files."
+        ],
+        "contradictions": [
+          "obs-001"
+        ],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-006",
+            "text": "A storage lifecycle policy\nretains export objects for 30 days and expires them after that."
+          },
+          {
+            "evidence_id": "evd-003",
+            "text": "The export\nfile is temporary working data: it is deleted immediately once the customer has downloaded\nit."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-014",
+        "evidence_ids": [
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-006",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The operations guide explicitly states that operators can retrieve a recent export from the store if a customer reports a failed download within the retention window, directly supporting the claim about operators being able to retrieve recent exports for failed downloads.",
+        "missing_evidence": [],
+        "contradictions": [
+          "obs-001"
+        ],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-006",
+            "text": "Operators can retrieve a\nrecent export from the store if a customer reports a failed download within that window."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-015",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The actors section describes the Customer as \"the authenticated requester and downloader of an export,\" directly supporting the claim about act-001.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-004",
+            "text": "- **Customer** \u2014 the authenticated requester and downloader of an export.\n- **Export worker** \u2014 the internal assembler of exports."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-016",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The actors section defines the Export worker as \"the internal assembler of exports,\" directly supporting the claim about act-002.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-004",
+            "text": "- **Customer** \u2014 the authenticated requester and downloader of an export.\n- **Export worker** \u2014 the internal assembler of exports."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-017",
+        "evidence_ids": [
+          "evd-007"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-007",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The monitoring section states that export throughput and failure rates are reported to the operations dashboard and that a failed export raises an alert, directly matching the claim about exports being monitored in this way.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-007",
+            "text": "Export throughput and failure rates are reported to the operations dashboard. A failed\nexport raises an alert."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-018",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "indirect"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "indirect"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The documentation describes a customer requesting an export and downloading the result via a public HTTPS service, which necessarily implies the existence of some customer-operated client (such as a browser or app) communicating with the Export API. Modelling that client as component cmp-004 is a reasonable inference from the described interaction.",
+        "missing_evidence": [
+          "An architecture diagram or component description that explicitly identifies the customer client or user agent as a component."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "A customer requests an\nexport, the service assembles it from the customer's records, and the customer downloads\nthe result."
+          },
+          {
+            "evidence_id": "evd-002",
+            "text": "A public HTTPS service that accepts export requests and returns a download link when the\nexport is ready."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-019",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The Export API is described as \"A public HTTPS service,\" which suggests but does not explicitly state that it is accessible from the public internet. The documents do not clearly specify network placement, firewalling, or exposure, so the claim that cmp-001 is internet-accessible cannot be fully established from the provided evidence.",
+        "missing_evidence": [
+          "Network or deployment diagrams showing where the Export API is deployed and whether it is reachable from the public internet.",
+          "Firewall or load balancer configuration, or textual documentation, explicitly stating whether the Export API is internet-accessible."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "A public HTTPS service that accepts export requests and returns a download link when the\nexport is ready."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-020",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "indirect"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The Export Worker is described as an \"internal worker\" and as \"the internal assembler of exports,\" which together reasonably support the inference that cmp-002 is not directly accessible from the internet.",
+        "missing_evidence": [
+          "Network topology or deployment documentation explicitly stating that the Export Worker is reachable only from internal networks or services."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "An internal worker that assembles the requested export from customer records and writes the\nresult to object storage."
+          },
+          {
+            "evidence_id": "evd-004",
+            "text": "- **Export worker** \u2014 the internal assembler of exports."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-021",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "indirect"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "indirect"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The system is described as serving customers via a public HTTPS Export API, with the Customer actor distinct from the service. This supports modelling a trust boundary between external customers and the Export API, even though the term \"trust boundary\" is not used explicitly.",
+        "missing_evidence": [
+          "Threat model or architecture documentation that explicitly identifies network or trust boundaries around the Export API."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "The export service produces data exports for customers on request."
+          },
+          {
+            "evidence_id": "evd-002",
+            "text": "A public HTTPS service that accepts export requests and returns a download link when the\nexport is ready."
+          },
+          {
+            "evidence_id": "evd-004",
+            "text": "- **Customer** \u2014 the authenticated requester and downloader of an export."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-022",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "indirect"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "indirect"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The documents jointly describe a flow where a customer requests an export, the Export API accepts export requests and returns a download link, and the Export Worker assembles the requested export from customer records and writes it to storage. This supports the inferred claim that the API triggers the worker to assemble exports, even though the triggering mechanism is not described explicitly.",
+        "missing_evidence": [
+          "Detailed data-flow or sequence diagrams explicitly showing how the Export API triggers the Export Worker to process export requests."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "A customer requests an\nexport, the service assembles it from the customer's records, and the customer downloads\nthe result."
+          },
+          {
+            "evidence_id": "evd-002",
+            "text": "A public HTTPS service that accepts export requests and returns a download link when the\nexport is ready."
+          },
+          {
+            "evidence_id": "evd-002",
+            "text": "An internal worker that assembles the requested export from customer records and writes the\nresult to object storage."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-023",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "All three passages consistently state that the export result or completed export files are written to a managed object store, directly supporting the claim that the worker writes completed exports to the object store.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "An internal worker that assembles the requested export from customer records and writes the\nresult to object storage."
+          },
+          {
+            "evidence_id": "evd-003",
+            "text": "The assembled export contains the\ncustomer's records for that range and is written to a managed object store."
+          },
+          {
+            "evidence_id": "evd-006",
+            "text": "Completed export files are written to the managed object store."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-024",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "indirect"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The architecture overview explains that a customer requests an export and downloads the result, and the Export API is described as a public HTTPS service that accepts export requests and returns a download link. Together these passages support the claim that the customer requests exports and receives a download link over HTTPS, even though the exact protocol used for the file download is not spelled out.",
+        "missing_evidence": [
+          "Explicit statement that export file downloads themselves occur over HTTPS (for example, via the same Export API or HTTPS object-store URLs)."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "A customer requests an\nexport, the service assembles it from the customer's records, and the customer downloads\nthe result."
+          },
+          {
+            "evidence_id": "evd-002",
+            "text": "A public HTTPS service that accepts export requests and returns a download link when the\nexport is ready."
+          }
+        ]
+      },
+      {
+        "subject_type": "control",
+        "subject_id": "ctl-001",
+        "evidence_ids": [
+          "evd-002",
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-002 describes the Export API as a public HTTPS service that accepts export requests and returns download links, which implies TLS encryption in transit for those interactions. Combined with the description of customers requesting and downloading exports, this supports the control that HTTPS protects export requests, download links, and likely the export file transfers, although the latter is inferred.",
+        "missing_evidence": [
+          "Explicit documentation that export file downloads occur over HTTPS (for example, that download links are HTTPS URLs and not downgraded to HTTP).",
+          "Transport security configuration for the Export API (TLS versions, ciphers) to substantiate the HTTPS claim."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "A public HTTPS service that accepts export requests and returns a download link when the\nexport is ready."
+          },
+          {
+            "evidence_id": "evd-001",
+            "text": "A customer requests an\nexport, the service assembles it from the customer's records, and the customer downloads\nthe result."
+          }
+        ]
+      },
+      {
+        "subject_type": "control",
+        "subject_id": "ctl-002",
+        "evidence_ids": [
+          "evd-006",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-006",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contradictory"
+          }
+        ],
+        "validation_status": "contradicted",
+        "rationale": "The operations guide directly documents a storage lifecycle policy that retains export objects for 30 days and then expires them, allowing operators to retrieve recent exports within that window. However, the architecture overview states that the export file is deleted immediately once the customer has downloaded it. These descriptions of retention cannot both hold for the same export files, so the control as implemented in practice is contradicted by the available evidence.",
+        "missing_evidence": [
+          "Definitive configuration of the managed object store's lifecycle policy and any application-level deletion jobs for export files.",
+          "Clarification from system owners or architects on the intended and actual retention period for export files after successful download."
+        ],
+        "contradictions": [
+          "obs-001"
+        ],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-006",
+            "text": "Completed export files are written to the managed object store. A storage lifecycle policy\nretains export objects for 30 days and expires them after that. Operators can retrieve a\nrecent export from the store if a customer reports a failed download within that window."
+          },
+          {
+            "evidence_id": "evd-003",
+            "text": "The export\nfile is temporary working data: it is deleted immediately once the customer has downloaded\nit."
+          }
+        ]
+      },
+      {
+        "subject_type": "control",
+        "subject_id": "ctl-003",
+        "evidence_ids": [
+          "evd-004",
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The actors section explicitly describes the Customer as \"the authenticated requester and downloader of an export,\" directly supporting the claim that export operations require an authenticated customer identity. The broader description of customers requesting and downloading exports provides additional context.",
+        "missing_evidence": [
+          "Authentication design or configuration documentation describing how customer authentication is implemented and enforced on both export requests and download link redemption."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-004",
+            "text": "- **Customer** \u2014 the authenticated requester and downloader of an export."
+          }
+        ]
+      },
+      {
+        "subject_type": "control",
+        "subject_id": "ctl-004",
+        "evidence_ids": [
+          "evd-003",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-003 states that the export file is temporary working data and is deleted immediately once the customer has downloaded it, directly supporting the assertion that the architecture documentation specifies immediate deletion after customer download. evd-006 provides context by documenting a differing 30-day retention policy in operations documentation, which is already recorded as a contradiction but does not change the fact that the architecture document makes the stated claim.",
+        "missing_evidence": [
+          "Clarification of which document (architecture overview vs. operations guide) is authoritative for implemented retention behaviour.",
+          "Evidence (such as code or configuration) showing whether immediate deletion on download is actually implemented."
+        ],
+        "contradictions": [
+          "obs-001"
+        ],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "The export\nfile is temporary working data: it is deleted immediately once the customer has downloaded\nit."
+          }
+        ]
+      },
+      {
+        "subject_type": "control",
+        "subject_id": "ctl-005",
+        "evidence_ids": [
+          "evd-007"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-007",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The operations guide directly states that export throughput and failure rates are reported to the operations dashboard and that a failed export raises an alert, matching the described monitoring and alerting control.",
+        "missing_evidence": [
+          "Monitoring configuration or runbooks that confirm the specific metrics collected and alert thresholds for export failures."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-007",
+            "text": "Export throughput and failure rates are reported to the operations dashboard. A failed\nexport raises an alert."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-001",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The provided documentation describes only the customer-facing Export API, Export Worker, and managed object store for exports, and does not mention any administrative or operator interface in the export flow. This context supports the idea that the main described flow is customer-facing, but it does not prove that there is no administrative interface relevant to thr-001 or to requirement req-ADMIN-001. The non-applicability of an administrative-interface requirement to a specific threat scenario therefore cannot be fully validated from the supplied passages alone.",
+        "missing_evidence": [
+          "The full description of threat thr-001, including all interfaces used in the attack path.",
+          "The text of requirement req-ADMIN-001, to confirm its scope and triggering conditions.",
+          "Architecture or operations documentation explicitly describing any administrative or operator interfaces for the export service, or stating that none exist."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "The export service produces data exports for customers on request."
+          },
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Components\n\n### Export API\n\nA public HTTPS service that accepts export requests and returns a download link when the\nexport is ready.\n\n### Export Worker\n\nAn internal worker that assembles the requested export from customer records and writes the\nresult to object storage."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-002",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The architecture and data-handling descriptions show a traditional export pipeline (Export API, Export Worker, managed object store) and do not mention any model invocation or AI processing. This supports that the documented flow does not involve a model, but absence of mention is not definitive evidence that AI is never involved in thr-001. Without the text of req-AI-001 and the full threat description, the conclusion that the requirement is not applicable cannot be fully validated.",
+        "missing_evidence": [
+          "The text of requirement req-AI-001, clarifying exactly when it applies.",
+          "The complete threat description for thr-001, to confirm that no model or AI processing is involved in the described attack path.",
+          "Any additional architecture documents that would mention model or AI components if they existed in the export flow."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "The export service produces data exports for customers on request. A customer requests an\nexport, the service assembles it from the customer's records, and the customer downloads\nthe result."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-003",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The documents describe only data export of existing customer records, with no mention of model outputs being generated or published. This suggests that a requirement about model output publication may not apply, but the mapping from this architectural context to req-AI-002's applicability is not fully checkable without the requirement text and full threat description.",
+        "missing_evidence": [
+          "The full text of req-AI-002 to understand its applicability conditions.",
+          "The detailed threat scenario for thr-001, confirming that no model output is generated or exposed.",
+          "Any system design documents that would list model components or output channels if they existed."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "The assembled export contains the\ncustomer's records for that range and is written to a managed object store."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-004",
+        "evidence_ids": [
+          "evd-001",
+          "evd-003",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The architecture describes assembling and storing customer data exports in a managed object store, with no indication of sending data to an external model provider. This supports the idea that a requirement about minimizing data sent to an external model provider may not apply here, but the non-applicability of req-AI-003 cannot be fully validated without seeing that requirement's scope and the complete threat description.",
+        "missing_evidence": [
+          "The text of req-AI-003, including its triggers and scope.",
+          "Clarification of whether any part of the export pipeline integrates with external analysis or model providers outside what is shown in the current documents."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "The assembled export contains the\ncustomer's records for that range and is written to a managed object store."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-005",
+        "evidence_ids": [
+          "evd-001",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The documentation shows the system assembling and serving export files of existing customer records, with no mention of model output being rendered into user interfaces or markup. This supports that a requirement about encoding model output for rendering may be irrelevant, but without the text of req-AI-004 and the detailed threat scenario, the non-applicability conclusion cannot be fully validated.",
+        "missing_evidence": [
+          "The full text of req-AI-004 and its applicability criteria.",
+          "Any UI or presentation-layer documentation that would reveal whether model outputs are ever rendered in the export flows."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "The export service produces data exports for customers on request."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-006",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-004 confirms that the Customer is an authenticated actor but does not say whether authentication is delegated to an external identity provider or how that relates to requirement req-AUTH-001. Nor do the provided passages describe thr-001 in enough detail to confirm that delegated authentication considerations are irrelevant. As a result, the classification of req-AUTH-001 as not applicable to thr-001 remains unconfirmed by the available documentation.",
+        "missing_evidence": [
+          "The text of req-AUTH-001 and its conditions for applicability.",
+          "Threat description for thr-001, including any delegated authentication steps or identity-provider integrations.",
+          "Authentication architecture documents stating whether and how authentication is delegated."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-004",
+            "text": "- **Customer** \u2014 the authenticated requester and downloader of an export."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-007",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The documents describe a standard Customer interacting with the Export API but do not explicitly rule out administrative or privileged interfaces, nor do they present the full threat description for thr-001. Consequently, while it is plausible that req-AUTH-002 (about multi-factor authentication on administrative or privileged access) is not applicable, that non-applicability is not firmly established by the evidence alone.",
+        "missing_evidence": [
+          "The text of req-AUTH-002 defining what constitutes administrative or privileged access.",
+          "A full inventory of interfaces for the export service, indicating which are administrative.",
+          "Threat model details for thr-001 confirming that only non-privileged customer access is used."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "### Export API\n\nA public HTTPS service that accepts export requests and returns a download link when the\nexport is ready."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-008",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 refers to \"customers\" in the plural and describes the service producing exports for customers on request, and evd-003 states that export requests name a customer and that the assembled export contains that customer's records and is written to a managed object store. Together these passages support the inference that the service is multi-tenant and that exports for different customers share the same managed object store, making a tenant-isolation and authorization requirement like req-AUTHZ-001 applicable to threats where one customer might obtain another's export.",
+        "missing_evidence": [
+          "Explicit statement that the export service is multi-tenant and that multiple customers share the same managed object store or bucket.",
+          "Documentation of any existing tenant-isolation mechanisms on export-file access or download links."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "The export service produces data exports for customers on request."
+          },
+          {
+            "evidence_id": "evd-003",
+            "text": "Export requests name a customer and a date range. The assembled export contains the\ncustomer's records for that range and is written to a managed object store."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-009",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The architecture describes exports of this system's own customer records via the Export API and object store, with no mention of delegated access to an external platform on behalf of customers. This suggests that a requirement about limiting integration privileges for external delegated access might not apply, but without the text of req-AUTHZ-002 and a full view of integrations, the non-applicability conclusion cannot be fully validated.",
+        "missing_evidence": [
+          "The text of req-AUTHZ-002 to understand what kinds of external delegated access it covers.",
+          "Documentation of any third-party or external platform integrations used by the export service, if any."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "The export service produces data exports for customers on request."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-010",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The supplied passages focus on runtime behaviour of the Export API, Export Worker, and managed object store, and do not discuss build or deployment pipelines or third-party components entering the build. This context suggests the threat under discussion is not about the deployment path or dependencies, but the decision that req-CICD-001 is not applicable to thr-001 cannot be fully validated without seeing the requirement text and the full threat description.",
+        "missing_evidence": [
+          "The text of req-CICD-001 specifying its scope.",
+          "Threat description for thr-001, confirming that it does not involve compromise of the build or deployment pipeline.",
+          "Any CI/CD or supply chain documentation that might reveal dependencies relevant to the threat."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Components\n\n### Export API\n\nA public HTTPS service that accepts export requests and returns a download link when the\nexport is ready.\n\n### Export Worker\n\nAn internal worker that assembles the requested export from customer records and writes the\nresult to object storage."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-011",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The documents establish that exports contain a customer's records for a requested date range and are written to a managed object store, and that customers request and download exports via a public HTTPS service. This shows that potentially sensitive customer data is both stored in a distinct storage system and transmitted across a network boundary to customers, supporting the applicability of a data-protection requirement like req-DATA-001 to thr-001.",
+        "missing_evidence": [
+          "The text of req-DATA-001 to confirm its exact applicability conditions.",
+          "Any existing documentation on encryption at rest and in transit for the managed object store that would address req-DATA-001 once applied."
+        ],
+        "contradictions": [
+          "obs-001"
+        ],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "Export requests name a customer and a date range. The assembled export contains the\ncustomer's records for that range and is written to a managed object store."
+          },
+          {
+            "evidence_id": "evd-002",
+            "text": "A public HTTPS service that accepts export requests and returns a download link when the\nexport is ready."
+          }
+        ]
+      }
+    ]
+  }
+}

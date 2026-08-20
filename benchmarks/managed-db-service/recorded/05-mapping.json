@@ -1,0 +1,491 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 11224,
+    "output_tokens": 21337,
+    "cache_read_tokens": 10880,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.22876",
+    "duration_seconds": 235.90630162495654
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-ADMIN-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This threat involves the Metrics API and Dashboard internal services reading and serving metrics data; these components are described as internal producer/consumer services, not as administrative or operator interfaces (evd-001, evd-002, evd-004), so req-ADMIN-001\u2019s condition that an administrative or operator interface be in scope is not met for this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-AI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The components and data flows involved in this threat (Metrics API, Dashboard, metrics database, and metrics records) are ordinary HTTP services and a relational database (evd-001, evd-002, evd-003, evd-004); no machine-learning model or prompt construction is described for this path, so req-AI-001 does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-AI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat concerns direct reads of metrics via an internal HTTP API backed by a relational database (evd-001, evd-002, evd-003, evd-004) and does not involve publishing model output externally, so req-AI-002 is not engaged.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-AI-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The system elements in this threat store and query metrics in a managed relational database via an internal HTTP API (evd-001, evd-002, evd-006); they do not send customer content to an external model provider, so req-AI-003 does not apply to this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-006"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-AI-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No model output is rendered in a user interface in this threat path; it concerns internal metrics queries between services (evd-001, evd-002, evd-004), so req-AI-004 is not relevant to this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-AUTH-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The Metrics API is described as an internal HTTP service not reachable from the internet that accepts writes from product services and queries from the Dashboard (evd-002); end-user authentication and delegated login to an external identity provider are not in scope for this internal service-to-service threat path, so req-AUTH-001 does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-AUTH-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This threat involves only internal services (product service, Metrics API, Dashboard) acting on metrics data (evd-001, evd-002, evd-004) and does not involve a privileged administrative interface exposed over an untrusted network, so multi-factor authentication for administrative or externally reachable access under req-AUTH-002 is not engaged.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-AUTHZ-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "Metrics records associate a product account with usage counters and are treated as confidential business data (evd-003), and the threat scenario describes an internal client querying metrics for many or all product accounts. If these product accounts correspond to multiple customers or organizations sharing the same metrics store, then data for distinct organizations resides in shared storage and tenant-aware authorization is directly relevant to preventing cross-tenant reads in this threat. However, the tenancy model (how product accounts map to customers or organizations) is not explicitly documented.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-004"
+        ],
+        "assumptions": [
+          "Assume the metrics store serves multiple product accounts corresponding to distinct customers or organizations, based on the description of metrics records as keyed by product account and treated as confidential business data (evd-003)."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-AUTHZ-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The components and data flows in this threat involve only an internal Dashboard, Metrics API, and managed metrics database (evd-001, evd-002, evd-004, evd-006); there is no evidence that the system holds delegated access to an external platform to act on customer resources, so req-AUTHZ-002 does not apply to this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-004",
+          "evd-006"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-CICD-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat models an attacker abusing the Metrics API read path from a compromised internal client at runtime; it does not involve compromise of the build or deployment pipeline. Controls over pipeline authentication and dependency management under req-CICD-001 therefore do not bear directly on whether the Metrics API enforces proper read authorization for this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-001"
+        ],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Metrics records are confidential business data stored in a managed metrics database with platform-provided encryption at rest and transport encryption between the Metrics API and the database (evd-002, evd-003, evd-005, evd-006). However, this threat assumes an attacker who can issue read queries via the Metrics API and receive decrypted metrics; the presence or absence of storage or transport encryption does not change whether those authorized reads return data. For this specific unauthorized-read threat, req-DATA-001 (encryption in transit and at rest) is treated as out of scope, even though the underlying encryption control exists.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-005",
+          "evd-006"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-DATA-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The metrics store is described as recording product usage metrics and serving them to an internal dashboard (evd-001, evd-002), and metrics records are defined as confidential business data keyed by product account (evd-003). This implies the system retains customer-related metrics after processing, so the defined and enforced retention period affects how much data could be exposed if an attacker enumerates metrics via the Metrics API, bringing req-DATA-002 into scope for this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-DATA-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Metrics data is held in a managed relational database accessed through the Metrics API (evd-002, evd-006), not as discrete artifacts in a shared object storage namespace addressable by predictable paths. The threat path retrieves metrics through API queries rather than direct path-based access to shared stored artifacts, so the specific concern in req-DATA-003 about cross-tenant access to artifacts in shared storage does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-006"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-DATA-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Although metrics records are customer-related data (evd-003), this threat concerns an attacker reading whatever metrics currently exist via the Metrics API. Whether and how customer data can be deleted on request across primary and derived stores affects long-term data handling but does not change an attacker\u2019s ability to query existing metrics during the window before deletion, so req-DATA-004 is not applied to this specific unauthorized-read threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-LOG-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The described attack path involves direct querying of metrics via the Metrics API and exfiltration of the returned records; logs are not part of the data path the attacker relies on. Controls on excluding sensitive data from logs and documenting log destinations under req-LOG-001 therefore do not bear directly on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-LOG-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No administrative or operator interface is described for the metrics subsystem; the actors in scope are internal product services and the Dashboard reading metrics (evd-001, evd-002, evd-004). The threat does not involve privileged administrative actions affecting customer data or security configuration, so req-LOG-002 is not engaged.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-NET-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-002"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The managed metrics database and the Metrics API are internal components that hold confidential metrics data on behalf of the system (evd-001, evd-002, evd-003). They are reachable only from inside the application subnet and the database is configured as not publicly accessible (evd-001, evd-005, evd-006), so req-NET-001\u2019s concern about internal data stores and services being reachable only from trusted workloads rather than from an untrusted network is directly relevant to how exposed these components are in this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-005",
+          "evd-006"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-SECRET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "The metrics database is a managed relational database provided by a cloud platform and is accessed by the Metrics API (evd-002, evd-006). If that access uses a long-lived database credential or other provider API key held by the system, then req-SECRET-001\u2019s condition about credentials that authenticate the system to an external platform would apply, because compromise of such a secret could allow direct querying of metrics. The documentation does not describe how any such credentials are stored, so applicability is conditional.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-002",
+          "evd-006"
+        ],
+        "assumptions": [
+          "Assume the Metrics API authenticates to the managed metrics database using some form of credential (for example, a username/password or connection string), as is typical for relational databases, although this is not documented."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-SECRET-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat scenario and available documentation describe only internal access to a managed metrics database and do not show the system accessing customer resources on external platforms using delegated credentials (evd-001, evd-002, evd-004, evd-006). Therefore req-SECRET-002, which concerns using short-lived credentials for customer resources on external platforms, does not apply to this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-004",
+          "evd-006"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-TPI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "In this threat, customer-related metrics are stored in a managed database that forms part of the hosting platform (evd-002, evd-006); there is no separate external processor described that receives customer data for additional processing with distinct retention or usage terms. As modelled here, req-TPI-001 about documenting external processor data handling does not bear on the unauthorized metrics reads threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-006"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-TPI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat does not involve work triggered by external events that consume a metered external service; it concerns internal metrics queries against a local managed database (evd-001, evd-002, evd-006). Bounding externally triggered or metered work under req-TPI-002 therefore does not apply to this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-006"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-WEBHOOK-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The Metrics API is described as accepting metric writes from internal product services and answering queries from the internal Dashboard (evd-002, evd-004); there is no endpoint in this threat that accepts events from an external platform over the public internet. As a result, webhook authenticity verification under req-WEBHOOK-001 is not engaged for this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-WEBHOOK-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Because there is no inbound webhook or external event receiver in the described components or data flows (evd-001, evd-002, evd-004), and the threat concerns direct metrics queries rather than event delivery, replay or duplicate handling for webhooks under req-WEBHOOK-002 does not apply to this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Metrics API read authorization and tenant/account scoping are undocumented",
+        "description": "The documentation describes the Metrics API as an internal HTTP service that accepts writes from product services and answers metric queries from the Dashboard (evd-002), with metrics records holding confidential business data keyed by product account (evd-003), and identifies the Dashboard as an internal reader of metrics (evd-004). However, there is no description of how read requests to the Metrics API are authenticated or authorized, how they are scoped to the caller\u2019s permitted product accounts or tenants, or whether any per-account or per-tenant filters are enforced. As a result, it is not possible to determine from the available material whether controls exist to prevent a compromised internal client from enumerating metrics for arbitrary accounts as described in threat thr-002.",
+        "importance": "Understanding the Metrics API\u2019s read authorization model and any tenant or account scoping is critical to assessing threat thr-002, because weak or absent scoping would allow an internal client such as the Dashboard to retrieve metrics for many or all product accounts if compromised.",
+        "related_object_ids": [
+          "thr-002",
+          "cmp-002",
+          "cmp-004",
+          "ast-001",
+          "df-002"
+        ],
+        "requested_evidence": [
+          "Architecture or design documentation describing how the Metrics API authenticates and authorizes read requests, including what identities it recognizes (services, users, or operators), how those identities are mapped to allowed product accounts or tenants, and how queries are constrained to the caller\u2019s permitted scope.",
+          "Any description of tenant or account boundaries for metrics data and how those boundaries are enforced in the Metrics API or underlying data access layer."
+        ],
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-004"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Internal reachability of the Metrics API and metrics database from other workloads is not documented",
+        "description": "The system overview states that the metrics store is reachable only from inside the application subnet (evd-001), and that the Metrics API is an internal HTTP service not reachable from the internet with a managed metrics database behind it (evd-002). Terraform configuration for the database sets \"publicly_accessible\" to false (evd-005, evd-006), confirming it is not exposed on a public network interface. However, the documentation does not state whether additional network or security-group policies restrict which internal workloads within the application subnet can connect to the Metrics API or directly to the metrics database. For threat thr-002, this missing detail means it is unclear whether compromise of any internal service on the subnet would permit querying metrics, or whether only a small set of components is allowed to reach these endpoints.",
+        "importance": "Knowing which internal workloads can reach the Metrics API and metrics database affects how broadly an internal compromise could be leveraged to enumerate metrics across accounts in threat thr-002, and is necessary to evaluate whether internal components are reachable only from the workloads that need them, as expected by req-NET-001.",
+        "related_object_ids": [
+          "thr-002",
+          "cmp-001",
+          "cmp-002",
+          "df-002"
+        ],
+        "requested_evidence": [
+          "Network, firewall, or security-group configuration (or equivalent documentation) showing which internal services or subnets are permitted to connect to the Metrics API and to the managed metrics database.",
+          "Any service mesh or access-control policy documentation that constrains service-to-service calls to the Metrics API."
+        ],
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-005",
+          "evd-006"
+        ],
+        "severity": "low"
+      }
+    ],
+    "catalog_gap_candidates": []
+  }
+}

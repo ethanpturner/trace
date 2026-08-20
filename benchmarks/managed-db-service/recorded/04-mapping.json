@@ -1,0 +1,154 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 225,
+    "output_tokens": 14520,
+    "cache_read_tokens": 21248,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.14813725",
+    "duration_seconds": 188.27194408304058
+  },
+  "response": {
+    "controls": [
+      {
+        "key": "ctrl-metrics-encryption",
+        "name": "Metrics database encryption in transit and at rest via cloud platform",
+        "description": "The managed metrics database instance for metrics records is configured with storage encryption enabled and not publicly accessible in Terraform [evd-005][evd-006], and the system overview states that the cloud platform encrypts the database at rest by default, provides transport encryption for connections from the Metrics API, and manages encryption keys via the platform key management service [evd-002]. This provides encryption in transit and at rest for metrics records stored in the metrics database.",
+        "control_type": "inherited",
+        "provider_component_id": "cmp-001",
+        "protected_component_ids": [
+          "cmp-001",
+          "cmp-002"
+        ],
+        "protected_asset_ids": [
+          "ast-001"
+        ],
+        "implementation_status": "implemented",
+        "evidence_ids": [
+          "evd-002",
+          "evd-005",
+          "evd-006"
+        ],
+        "owner": null,
+        "limitations": []
+      },
+      {
+        "key": "ctrl-metrics-private-network",
+        "name": "Metrics API and database restricted to internal application network",
+        "description": "The system overview describes the metrics store as reachable only from inside the application subnet [evd-001], and the Metrics API as an internal HTTP service that is not reachable from the internet [evd-002]. The Terraform configuration for the metrics database sets \"publicly_accessible\" to false [evd-005][evd-006], ensuring the database is not exposed on a public network interface. Together, these establish that the Metrics API and metrics database are reachable only from within the internal application network, not directly from the public internet.",
+        "control_type": "implemented",
+        "provider_component_id": null,
+        "protected_component_ids": [
+          "cmp-001",
+          "cmp-002"
+        ],
+        "protected_asset_ids": [
+          "ast-001"
+        ],
+        "implementation_status": "implemented",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-005",
+          "evd-006"
+        ],
+        "owner": null,
+        "limitations": [
+          "Documentation does not state whether additional network policies restrict which internal workloads within the application subnet can reach the Metrics API or metrics database."
+        ]
+      }
+    ],
+    "mappings": [
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [
+          "ctrl-metrics-encryption"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The metrics records asset (ast-001) is described as confidential business data [evd-003] and is stored in a managed relational database provided by the cloud platform [evd-002], so the system both stores and transmits confidential data across a provider-managed network boundary, matching req-DATA-001's applicable conditions.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "satisfied",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-005",
+          "evd-006"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-NET-001",
+        "control_keys": [
+          "ctrl-metrics-private-network"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The Metrics API is described as an internal HTTP service that is not reachable from the internet [evd-002], and the metrics store as reachable only from inside the application subnet [evd-001]. The metrics database is a managed instance with public access disabled in Terraform [evd-005][evd-006]. These components are internal services and data stores that hold metrics data on behalf of the system and are explicitly kept off public networks, so req-NET-001's applicable conditions about internal components and network placement hold for this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "satisfied",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-005",
+          "evd-006"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Metrics API write authentication and internal caller restrictions are undocumented",
+        "description": "The system overview describes the Metrics API as an internal HTTP service that accepts metric writes from product services and is not reachable from the internet [evd-002], and states that the metrics store is reachable only from inside the application subnet [evd-001]. However, the documentation does not state what authentication or authorization is required for write requests from internal services, nor which internal workloads are permitted to reach the Metrics API. This prevents verifying whether forged or unauthorized metrics writes from within the application subnet (thr-001) are constrained by service-level access controls or finer-grained network policies.",
+        "importance": "Clarifying how internal callers authenticate to and are authorized for the Metrics API write endpoints, and which internal components can reach it, is necessary to determine whether threat thr-001 is effectively mitigated by existing controls.",
+        "related_object_ids": [
+          "thr-001",
+          "cmp-002",
+          "ast-001",
+          "df-001"
+        ],
+        "requested_evidence": [
+          "Architecture or API documentation describing authentication and authorization requirements for Metrics API write operations.",
+          "Network or security-group configuration showing which internal workloads or subnets are allowed to connect to the Metrics API."
+        ],
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": [
+      {
+        "concern": "The catalog has no requirement that internal service-to-service APIs, such as the Metrics API write interface, authenticate and authorize calling services independently of their network location, even when they are only reachable on an internal subnet. Threat thr-001 shows that relying solely on being inside the application subnet allows a compromised internal service or other internal process to submit forged metrics writes and corrupt metrics records.",
+        "suggested_category": "service_to_service_authentication",
+        "nearest_requirements": [
+          {
+            "requirement_id": "req-NET-001",
+            "why_not": "req-NET-001 focuses on ensuring internal components are not reachable from untrusted networks (for example by placing them on private segments or restricting public access). In thr-001 the Metrics API and metrics database are already internal-only [evd-001][evd-002][evd-006]; the remaining risk is lack of strong authentication/authorization between internal services sharing that network, which req-NET-001 does not require."
+          },
+          {
+            "requirement_id": "req-AUTHZ-001",
+            "why_not": "req-AUTHZ-001 concerns tenant-aware authorization boundaries between different customer organizations. Thr-001 involves forged metrics writes for accounts within a single system, not cross-tenant data access, so its focus does not match the service-to-service write authorization problem on the Metrics API."
+          },
+          {
+            "requirement_id": "req-ADMIN-001",
+            "why_not": "req-ADMIN-001 applies to privileged administrative or operator interfaces used by human operators. The Metrics API write endpoints are a machine-to-machine interface for product services [evd-002], not an operator UI, so this requirement does not cover authentication and authorization of internal service callers."
+          }
+        ],
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003"
+        ]
+      }
+    ]
+  }
+}
