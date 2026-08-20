@@ -30,7 +30,7 @@ from typing import TYPE_CHECKING, Final
 from trace_ai.config import PROJECT_ROOT
 from trace_ai.domain.base import now
 from trace_ai.domain.enums import Severity
-from trace_ai.services.evidence.staleness import stale_evidence_ids
+from trace_ai.services.evidence.staleness import stale_citations
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -234,14 +234,17 @@ def _findings_block(
         if finding.limitations:
             lines.append(f"- Limitations: {'; '.join(finding.limitations)}")
         if stale_threshold_days is not None and as_of is not None:
-            stale = stale_evidence_ids(
+            stale = stale_citations(
                 finding, references, threshold_days=stale_threshold_days, as_of=as_of
             )
             if stale:
+                named = ", ".join(f"{c.evidence_id} ({c.basis})" for c in stale)
                 lines.append(
-                    f"- Stale evidence: {', '.join(stale)} captured more than "
-                    f"{stale_threshold_days} days before this report was generated; re-verify "
-                    f"before relying on this finding. The flag changes nothing else (DEC-118)."
+                    f"- Stale evidence: {named} more than {stale_threshold_days} days old "
+                    f"when this report was generated — each citation names its age basis: "
+                    f"observed is the source's own last-modified record, captured is when "
+                    f"the passage entered this assessment (DEC-118, DEC-140). Re-verify "
+                    f"before relying on this finding. The flag changes nothing else."
                 )
         lines.append("")
         lines.append("Evidence:")

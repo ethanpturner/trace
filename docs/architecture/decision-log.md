@@ -9158,3 +9158,67 @@ Tradeoffs:
 - An entry with no `call_sha256` (a hand-assembled envelope) matches on schema alone: the
   operator who assembled it asserted the looser contract, and the loud per-entry replay line
   names what was served.
+
+## DEC-140: `observed_at` arrives with an honest population story, and staleness names its basis
+
+Date: 2026-08-20
+
+Status: Accepted
+
+Decision:
+
+**DEC-118's exit condition is met, and the field it named lands.** DEC-118 rejected an
+`observed_at` field on `EvidenceReference` on exactly one ground — no ingestion path supplied
+it, so it would have been a fabricated measurement wearing a schema field's authority — and
+stated the exit: add it when a future ingestion source carries real observation dates.
+Repository ingestion (DEC-132, #597) is that source. The field is optional; absence is the
+honest record.
+
+**Only repository ingestion populates it, from the history the pin names.** `ingest_repository`
+records, per selected file, the committer date of the last commit touching that path at the
+pinned commit (`git log -1 --format=%cI <pin> -- <path>`), into the document's metadata; the
+indexing node carries it onto every reference minted from that document. The committer date is
+when the change entered the pinned history — the only "last modified" the repository itself
+asserts. Local file ingestion continues to record nothing: a copied file's mtime is an artifact
+of the operator's filesystem, not an observation the source asserts, so populating it would be
+the fabrication DEC-118 refused. A present-but-unparseable `observed_at` in document metadata
+fails indexing rather than being dropped — whoever wrote it asserted a measurement, and
+silently discarding it would change the citations' meaning with no record.
+
+**The staleness flag prefers `observed_at` and names which basis it used.** Where a reference
+carries an observation date, age is measured from it; otherwise from capture time, exactly as
+DEC-118 decided. Every flag — the report line and the view column — labels each citation
+`(observed)` or `(captured)`, because a flag that silently switched meaning between the two
+would be worse than the capture-age proxy alone. Everything else in DEC-118 stands unchanged:
+the flag changes nothing, no default threshold, per-assessment opt-in, render-stamp anchoring,
+and replays of configurations that set no threshold render byte-identical.
+
+Why:
+
+- A repository file untouched for three years is three years stale on the day it is captured;
+  under capture-age alone it rendered as fresh evidence for ninety more days. The proxy
+  understated exactly where a real date existed to say so.
+- Future-features 6.6 (expiration policies) stays Research; this is its prerequisite slice —
+  a real observation date to build on — not its delivery.
+
+Alternatives Considered:
+
+- The author date (`%aI`) instead of the committer date (rejected: an author date predates the
+  history the pin names; the committer date is when the pinned tree actually acquired the
+  change).
+- Populating `observed_at` from filesystem mtimes for local ingestion (rejected: a clone or
+  copy resets mtimes, so the value would measure the operator's disk activity and call it the
+  document's age).
+- Dropping an unparseable metadata date and indexing without it (rejected: a silent downgrade
+  of an asserted measurement, invisible in the record).
+
+Tradeoffs:
+
+- One `git log` invocation per selected file at ingestion time; a single-pass history walk is
+  an optimization left until a real repository's size demands it, stated here rather than
+  built speculatively (DEC-132's shallow-clone posture applied to dates).
+- The committer date is only as honest as the history: a rebase rewrites it. The pin names
+  that history, so the recorded date is the pinned tree's own assertion, stated for what it
+  is.
+- Preferring `observed_at` can flag a citation stale on the day of a fresh capture. Deliberate:
+  that is the correction, not a regression — the fact was old; only the copy was new.

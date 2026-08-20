@@ -27,6 +27,7 @@ both states nothing downstream should have to consider.
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import TYPE_CHECKING, Final
 
 from trace_ai.domain.base import now
@@ -71,6 +72,35 @@ def index_document(
         return references
 
 
+def _document_observed_at(document: SourceDocument) -> datetime | None:
+    """The document's real observation date, when its ingestion path recorded one (DEC-140).
+
+    Repository ingestion writes `observed_at` into document metadata from git history; every
+    reference minted from that document carries it. Absence is the honest default. A value
+    that is present but unparseable is refused rather than dropped: whoever wrote it asserted
+    a measurement, and silently discarding it would change the citations' meaning with no
+    record that it happened.
+    """
+    raw = document.metadata.get("observed_at")
+    if raw is None:
+        return None
+    if isinstance(raw, datetime):
+        return raw
+    if isinstance(raw, str):
+        try:
+            return datetime.fromisoformat(raw)
+        except ValueError as error:
+            raise IndexingError(
+                f"{document.id} carries observed_at metadata that is not an ISO 8601 "
+                f"datetime; refusing to index rather than dropping an asserted measurement"
+            ) from error
+    raise IndexingError(
+        f"{document.id} carries observed_at metadata of type {type(raw).__name__}, not a "
+        f"datetime or ISO 8601 string; refusing to index rather than dropping an asserted "
+        f"measurement"
+    )
+
+
 def _index(handle: AssessmentHandle, document: SourceDocument) -> list[EvidenceReference]:
     if document.assessment_id != handle.assessment_id:
         raise IndexingError(
@@ -110,6 +140,7 @@ def _index(handle: AssessmentHandle, document: SourceDocument) -> list[EvidenceR
         raise IndexingError(f"{document.filename!r} produced no addressable content")
 
     stamp = now()
+    observed_at = _document_observed_at(document)
     repository = handle.objects
     references: list[EvidenceReference] = []
 
@@ -136,6 +167,7 @@ def _index(handle: AssessmentHandle, document: SourceDocument) -> list[EvidenceR
                     content_hash=content_hash(unit.text.encode("utf-8")),
                     source_origin=document.origin,
                     created_at=stamp,
+                    observed_at=observed_at,
                     metadata=metadata,
                 )
             )

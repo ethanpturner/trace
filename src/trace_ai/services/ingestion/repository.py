@@ -32,6 +32,14 @@ untrusted and stores flat, so `docs/auth/overview.md` registers as `docs__auth__
 while `repository_path` in the document's metadata records the true in-repo path, beside
 `repository` (the credential-free URL) and `commit`.
 
+**The repository carries a real observation date, and this is the path that records it**
+(DEC-140). `observed_at` in the document's metadata is the committer date of the last commit
+touching the file at the pinned commit — the moment the change entered the history the pin
+names. It is read from `git log`, never from filesystem mtimes: a clone's mtimes are artifacts
+of the checkout, not observations the source asserts. Local file ingestion records nothing here,
+which is DEC-118's honesty rule holding: absence of a date is the truth about a path that
+carries none.
+
 **A token never surfaces.** A configured `github_token` (`Settings`, `SecretStr`) is injected
 into the clone URL for the subprocess only; the URL recorded in metadata is the clean one, and
 any error text this module raises has the token replaced before it can reach a message or a log.
@@ -172,6 +180,29 @@ def _flattened(relative: Path) -> str:
     return "__".join(relative.parts)
 
 
+def _observed_at(checkout: Path, commit: str, relative: Path, *, token: str | None) -> str:
+    """The committer date of the last commit touching `relative` at the pin, strict ISO 8601.
+
+    `%cI` is the committer date: when the change entered the history the pin names, which is
+    the only "last modified" the repository itself asserts. The clone is full (DEC-132), so a
+    file present in the tree has a reaching commit; empty output means the history did not
+    match the checkout, and refusing loudly beats registering a document whose observation
+    date silently vanished.
+    """
+    logged = _run_git(
+        ["-C", str(checkout), "log", "-1", "--format=%cI", commit, "--", relative.as_posix()],
+        token=token,
+    )
+    stamp = logged.stdout.strip()
+    if not stamp:
+        raise RepositoryIngestionError(
+            f"git log reports no commit touching {relative.as_posix()!r} at the pinned "
+            f"commit; the file is in the tree, so its history should reach it, and an "
+            f"observation date cannot be invented for it"
+        )
+    return stamp
+
+
 def ingest_repository(
     handle: AssessmentHandle,
     url: str,
@@ -211,6 +242,7 @@ def ingest_repository(
                         "repository": clean,
                         "commit": pinned,
                         "repository_path": relative.as_posix(),
+                        "observed_at": _observed_at(checkout, pinned, relative, token=token),
                     },
                 )
             )

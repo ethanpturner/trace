@@ -1,9 +1,10 @@
-"""Stale-evidence detection (#571, DEC-118): capture age, per-assessment threshold, flags only.
+"""Stale-evidence detection (#571, DEC-118, DEC-140): real dates preferred, flags only.
 
-The properties that carry the file: the age anchor is the citation's capture time measured
-against a caller-supplied stamp, never a wall clock read inside the computation; no configured
-threshold means no flags anywhere, because absence of a policy is not a policy; and a flag
-changes nothing — the finding renders with every field it had, plus one line.
+The properties that carry the file: the age anchor is the citation's observation date when its
+ingestion path recorded one and its capture time otherwise, measured against a caller-supplied
+stamp, never a wall clock read inside the computation; every flag names which basis it used; no
+configured threshold means no flags anywhere, because absence of a policy is not a policy; and
+a flag changes nothing — the finding renders with every field it had, plus one line.
 """
 
 from __future__ import annotations
@@ -26,13 +27,15 @@ from trace_ai.domain.enums import (
 from trace_ai.domain.evidence import EvidenceReference
 from trace_ai.domain.finding import Finding
 from trace_ai.domain.hashing import content_hash
-from trace_ai.services.evidence.staleness import stale_evidence_ids
+from trace_ai.services.evidence.staleness import StaleCitation, stale_citations
 
 PASSAGE = "The receiver accepts and processes any well-formed delivery."
 STAMP = datetime(2026, 8, 18, 12, 0, 0, tzinfo=UTC)
 
 
-def a_reference(evidence_id: str, created_at: datetime) -> EvidenceReference:
+def a_reference(
+    evidence_id: str, created_at: datetime, observed_at: datetime | None = None
+) -> EvidenceReference:
     return EvidenceReference.model_validate(
         {
             "id": evidence_id,
@@ -44,6 +47,7 @@ def a_reference(evidence_id: str, created_at: datetime) -> EvidenceReference:
             "content_hash": content_hash(PASSAGE.encode()),
             "source_origin": SourceOrigin.UPLOADED_DOCUMENT,
             "created_at": created_at,
+            "observed_at": observed_at,
         }
     )
 
@@ -83,8 +87,8 @@ def a_finding(*evidence_ids: str) -> Finding:
 
 def test_a_citation_older_than_the_threshold_is_named() -> None:
     references = {"evd-001": a_reference("evd-001", STAMP - timedelta(days=91))}
-    stale = stale_evidence_ids(a_finding("evd-001"), references, threshold_days=90, as_of=STAMP)
-    assert stale == ("evd-001",)
+    stale = stale_citations(a_finding("evd-001"), references, threshold_days=90, as_of=STAMP)
+    assert stale == (StaleCitation("evd-001", "captured"),)
 
 
 def test_a_citation_at_or_inside_the_threshold_is_not_stale() -> None:
@@ -92,7 +96,7 @@ def test_a_citation_at_or_inside_the_threshold_is_not_stale() -> None:
         "evd-001": a_reference("evd-001", STAMP - timedelta(days=90)),
         "evd-002": a_reference("evd-002", STAMP - timedelta(days=1)),
     }
-    stale = stale_evidence_ids(
+    stale = stale_citations(
         a_finding("evd-001", "evd-002"), references, threshold_days=90, as_of=STAMP
     )
     assert stale == ()
@@ -103,15 +107,37 @@ def test_stale_ids_keep_the_findings_citation_order() -> None:
         "evd-002": a_reference("evd-002", STAMP - timedelta(days=400)),
         "evd-001": a_reference("evd-001", STAMP - timedelta(days=200)),
     }
-    stale = stale_evidence_ids(
+    stale = stale_citations(
         a_finding("evd-002", "evd-001"), references, threshold_days=90, as_of=STAMP
     )
-    assert stale == ("evd-002", "evd-001")
+    assert tuple(citation.evidence_id for citation in stale) == ("evd-002", "evd-001")
 
 
 def test_an_unresolvable_citation_is_not_called_stale() -> None:
     """A missing passage is its own, louder problem; calling it old would dress it up."""
-    stale = stale_evidence_ids(a_finding("evd-404"), {}, threshold_days=1, as_of=STAMP)
+    stale = stale_citations(a_finding("evd-404"), {}, threshold_days=1, as_of=STAMP)
+    assert stale == ()
+
+
+def test_an_old_observation_makes_a_fresh_capture_stale() -> None:
+    """A file untouched for a year is a year stale on the day it is captured (DEC-140)."""
+    references = {
+        "evd-001": a_reference(
+            "evd-001", STAMP - timedelta(days=1), observed_at=STAMP - timedelta(days=365)
+        )
+    }
+    stale = stale_citations(a_finding("evd-001"), references, threshold_days=90, as_of=STAMP)
+    assert stale == (StaleCitation("evd-001", "observed"),)
+
+
+def test_a_fresh_observation_outranks_an_old_capture() -> None:
+    """The observation date is the better fact in both directions, not a one-way ratchet."""
+    references = {
+        "evd-001": a_reference(
+            "evd-001", STAMP - timedelta(days=365), observed_at=STAMP - timedelta(days=1)
+        )
+    }
+    stale = stale_citations(a_finding("evd-001"), references, threshold_days=90, as_of=STAMP)
     assert stale == ()
 
 
