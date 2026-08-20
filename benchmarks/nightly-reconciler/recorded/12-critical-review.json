@@ -1,0 +1,31 @@
+{
+  "schema": "CriticalReviewProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 10001,
+    "output_tokens": 14476,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.15726125",
+    "duration_seconds": 203.90154245798476
+  },
+  "response": {
+    "critiques": [
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-001",
+        "critique_type": "documentation_gap_only",
+        "description": "thr-001 treats the absence of any independent validation channel for settlement reports as a documented fact, even though the source material only establishes the basic HTTPS interaction and gap-001 explicitly classifies additional authenticity controls as unknown.",
+        "rationale": "Precondition 3 for thr-001 states that \"the reconciler does not have an independent channel to validate the correctness of the settlement report contents beyond trusting the HTTPS connection.\" None of the cited architecture excerpts about the reconciler and payment processor (evd-001, evd-002, evd-003, evd-005) describe whether such an independent validation or secondary channel exists; they only establish that the reconciler pulls a settlement report over HTTPS from an external API and processes it. Documentation gap gap-001 correctly observes that the presence or absence of additional authenticity/validation controls beyond HTTPS cannot be determined from the available documentation. As written, precondition 3 converts this documentation silence into a definitive absence of control, which is exactly the kind of undocumented weakness the evidence policy warns against. This condition should be treated as an assumption or left explicitly unknown, not as a documented fact about the system.",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-005"
+        ],
+        "recommended_action": "revise",
+        "confidence": "high"
+      }
+    ]
+  }
+}

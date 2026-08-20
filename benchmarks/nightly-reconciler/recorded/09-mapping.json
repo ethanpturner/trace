@@ -1,0 +1,84 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 11669,
+    "output_tokens": 8954,
+    "cache_read_tokens": 20096,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.10663825",
+    "duration_seconds": 136.08054287498817
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-002"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "This threat concerns eavesdropping on and tampering with billing records and discrepancy summaries in transit between the Reconciler Job and the Billing Database (df-002 and df-003), which are customer billing data described in the system documentation (evd-002, evd-004). This matches req-DATA-001\u2019s condition that the system stores or transmits confidential or restricted data.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "partially_satisfied",
+        "evidence_ids": [
+          "evd-002",
+          "evd-006",
+          "evd-007"
+        ],
+        "assumptions": [
+          "Billing records and discrepancy summaries are treated as confidential/restricted data given their per-customer billing content, even though no formal classification label is recorded on the assets.",
+          "The organizational 'managed-db-encryption' control asserted in evd-006/evd-007 applies to the managed Billing Database instance described in evd-002, so data at rest there is encrypted by the platform; encryption in transit between the Reconciler Job and the Billing Database remains undocumented."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-NET-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-005"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The Billing Database is a managed relational database used as an internal data store, not a public interface, and is described as reachable only from the Reconciler Job inside the application subnet (evd-002). This satisfies req-NET-001\u2019s applicable condition that the system uses a data store that is not itself a public interface.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "satisfied",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Encryption and integrity protection for internal Reconciler\u2013Billing Database traffic are undocumented",
+        "description": "The documentation describes the Reconciler Job and the Billing Database and notes that the reconciler reads billing records and writes discrepancy summaries over internal flows (evd-002, evd-004), but it does not state whether those database connections enforce encryption in transit (e.g., TLS) or provide integrity protection for df-002 and df-003. As a result, for threat thr-006 we cannot determine from documentation whether billing records and discrepancy summaries are protected on the wire between the Reconciler Job and the Billing Database.",
+        "importance": "Without evidence of encryption and integrity protection on df-002 and df-003, it is not possible to verify whether the threat of internal interception and tampering of reconciliation data is mitigated or whether req-DATA-001\u2019s in-transit expectation is met.",
+        "related_object_ids": [
+          "thr-006",
+          "cmp-001",
+          "cmp-002",
+          "df-002",
+          "df-003",
+          "ast-001",
+          "ast-003"
+        ],
+        "requested_evidence": [
+          "Database or cloud-platform configuration showing whether connections from the Reconciler Job to the Billing Database require TLS or equivalent encryption and integrity protection for df-002 and df-003.",
+          "Architecture or operations documentation describing how database client connections from the Reconciler Job are configured (e.g., \"require SSL\" settings, connection string options) and where responsibility for enforcing encryption in transit is located."
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": []
+  }
+}

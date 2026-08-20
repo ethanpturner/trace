@@ -1,0 +1,1147 @@
+{
+  "schema": "EvidenceValidationProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 14394,
+    "output_tokens": 22325,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.2412425",
+    "duration_seconds": 179.1691561670741
+  },
+  "response": {
+    "assessments": [
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-021",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-001 and evd-002 describe the nightly reconciler as an internal batch job that pulls a settlement report, reads billing records from a database, and writes discrepancy summaries. They do not mention req-OPS-002, cost anomalies, alerting, or any applicability decision for this requirement to thr-005. The conclusion that req-OPS-002 is not applicable to thr-005 is therefore not established by the cited documentation and rests on unstated requirement semantics.",
+        "missing_evidence": [
+          "Authoritative specification of req-OPS-002, including its applicability conditions.",
+          "Architecture or requirements documentation that explicitly maps req-OPS-002 to (or away from) thr-005."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-022",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-002 describes the Reconciler Job and Billing Database, including that the database is reachable only from the reconciler job inside the application subnet. It does not mention req-OPS-003, environment separation requirements, or any statement about whether that requirement applies to thr-005. The claim that req-OPS-003 is not applicable to thr-005 is not documented.",
+        "missing_evidence": [
+          "Specification of req-OPS-003 and its applicability criteria.",
+          "A mapping document or design rationale stating whether and why req-OPS-003 applies or does not apply to thr-005."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-023",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-002 notes that the Reconciler Job is a scheduled batch workload and exposes no inbound interface, but does not describe any deployment pipeline behavior, out-of-band deployments, or reference req-OPS-004. There is no documented analysis linking req-OPS-004 to thr-005. The assertion that req-OPS-004 is not applicable to thr-005 is therefore not established by the available evidence.",
+        "missing_evidence": [
+          "Definition of req-OPS-004 and any conditions under which it applies.",
+          "Threat-to-requirement mapping or design notes that explicitly discuss whether req-OPS-004 bears on thr-005."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-024",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-002 and evd-004 describe the reconciler\u2019s data flows and the contents of billing records, settlement reports, and discrepancy summaries. They do not mention alerting, monitoring, or req-OPS-005. The conclusion that req-OPS-005 does not apply to thr-005 is not grounded in any explicit requirement mapping in the documentation.",
+        "missing_evidence": [
+          "Specification of req-OPS-005 and its triggering conditions.",
+          "Documented reasoning or a mapping table stating that req-OPS-005 is out of scope for thr-005 and why."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-025",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-002 and evd-004 show that the Billing Database stores billing records and discrepancy summaries containing per-customer charge information. They say nothing about req-DATA-001, encryption requirements, or whether that requirement is considered applicable or in scope for thr-005. The statement that req-DATA-001 is not applicable to thr-005 is therefore not supported by the cited passages.",
+        "missing_evidence": [
+          "Authoritative description of req-DATA-001 and its applicability (for example, when confidential data is stored or transmitted).",
+          "A documented mapping or design decision explaining whether and why req-DATA-001 is considered out of scope for thr-005."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-004",
+            "text": "Billing records contain per-customer charge entries. Settlement reports contain the\nprocessor's record of captured payments for the day. Discrepancy summaries name the affected\nrecord, the two amounts, and the day they diverged."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-026",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The available evidence describes what data the Billing Database holds, but does not discuss data retention policies for intermediate or working copies, nor does it reference req-DATA-002 or any applicability assessment to thr-005. As a result, the claim that req-DATA-002 is not applicable to thr-005 is not documented.",
+        "missing_evidence": [
+          "Text of req-DATA-002, especially its scope regarding working data retention.",
+          "Architecture or governance documents that state whether req-DATA-002 is evaluated against the reconciler\u2019s billing data and threat thr-005."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-027",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-002 and evd-004 describe the Billing Database contents but do not address tenant boundaries, predictable-path artifact access, or any requirement labeled req-DATA-003. There is no documented link from this requirement to thr-005 in the supplied material. Therefore the assertion that req-DATA-003 is not applicable to thr-005 is not established.",
+        "missing_evidence": [
+          "Formal definition of req-DATA-003 and when it applies (for example, multi-tenant or shared-storage contexts).",
+          "A written threat-to-requirement mapping that states whether req-DATA-003 is relevant to the Billing Database and thr-005."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-028",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The documentation describes what billing records and discrepancy summaries contain, but says nothing about procedures for intentional customer-initiated deletion or req-DATA-004. No passage links that requirement to thr-005. The classification of req-DATA-004 as not applicable to thr-005 is therefore not supported by the evidence.",
+        "missing_evidence": [
+          "Specification of req-DATA-004 and its applicability conditions (e.g., any system storing customer data).",
+          "A mapping or design note explicitly evaluating req-DATA-004 against the Billing Database and thr-005."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-029",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-001 and evd-002 show that the reconciler is an internal batch job that exposes no inbound interface and communicates with a payment processor API over HTTPS. They do not mention any OIDC or delegated sign-in flows, nor do they reference req-OIDC-001 or an applicability analysis. While the architecture as described makes OIDC usage unlikely, the explicit statement that req-OIDC-001 is not applicable to thr-005 is not documented.",
+        "missing_evidence": [
+          "Definition of req-OIDC-001 and how its scope is determined.",
+          "A design or requirements document that states that no OIDC-style delegated sign-in is used in this system and that req-OIDC-001 is therefore out of scope for thr-005."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "A scheduled batch workload. Each night it pulls the day's settlement report from the payment\nprocessor's reporting API, reads the day's billing records from the billing database, compares\nthe two, and writes a discrepancy summary back to the billing database. It exposes no inbound\ninterface."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-030",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-002 and evd-003 document that the reconciler authenticates to the payment processor\u2019s reporting API using a service credential provisioned through the standard workload deployment. They do not discuss identity-provider-issued tokens, token validation, or req-OIDC-002. Thus the assertion that req-OIDC-002 does not apply to thr-005 is not established in the source material.",
+        "missing_evidence": [
+          "Formal definition of req-OIDC-002 and its scope (e.g., validation of external IdP tokens).",
+          "Documented confirmation that no IdP tokens are consumed in this integration and that req-OIDC-002 is considered out of scope for thr-005."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "The reconciler authenticates to the payment processor's reporting API with a service\ncredential issued by the processor for this integration. The credential is provisioned through\nthe standard workload deployment."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-031",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The system overview shows an internal batch reconciler without user-facing sessions, but it does not reference browser-based sessions, relying parties, or req-OIDC-003. There is no explicit applicability statement tying or excluding this requirement from thr-005. Therefore the conclusion that req-OIDC-003 is not applicable is not documented.",
+        "missing_evidence": [
+          "Specification of req-OIDC-003, including when it applies to a system.",
+          "Requirements or threat-model documentation explicitly stating that no delegated sign-in sessions exist in this context and that req-OIDC-003 is not in scope for thr-005."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-032",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The evidence describes an internal batch job calling an external reporting API over HTTPS with a service credential, but does not mention OAuth/OIDC authorization codes, code-to-token exchange, or req-OIDC-004. The statement that no authorization-code grant is involved and that req-OIDC-004 is not applicable to thr-005 is not explicitly supported by the documents.",
+        "missing_evidence": [
+          "Definition of req-OIDC-004 and its expected trigger conditions.",
+          "Design documentation clearly stating that no authorization-code-based flows are used in this system and that req-OIDC-004 is not evaluated for thr-005."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-033",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-001 and evd-002 describe deterministic data processing between a reconciler job, a billing database, and an external payment processor, and do not mention any model training pipeline, training corpus, or req-TRAIN-001. While it is reasonable to infer that no model training occurs here, the explicit classification of req-TRAIN-001 as not applicable to thr-005 is not documented.",
+        "missing_evidence": [
+          "Definition of req-TRAIN-001 and when it applies.",
+          "Architecture or AI-governance documentation explicitly stating that no model training pipeline is present in this system and that req-TRAIN-001 is out of scope for thr-005."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-034",
+        "evidence_ids": [
+          "evd-001",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The supplied evidence describes billing-related data but does not mention any use of that data for model training or any requirement named req-TRAIN-002. There is no documented mapping stating that req-TRAIN-002 is not applicable to thr-005. Thus the conclusion is not supported by the evidence.",
+        "missing_evidence": [
+          "Specification of req-TRAIN-002 and its scope regarding use of production data for training.",
+          "Documentation confirming whether customer/billing data is or is not used for training, and any resulting applicability decision for req-TRAIN-002 relative to thr-005."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-035",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-001 and evd-002 make no reference to tuned model artifacts, a model registry, or any requirement identified as req-TRAIN-003. They only describe a batch reconciling job, a database, and a payment processor API. The assertion that req-TRAIN-003 is not applicable to thr-005 is therefore not established by the documentation.",
+        "missing_evidence": [
+          "Definition and scope of req-TRAIN-003.",
+          "Architecture or ML-governance documentation confirming the absence of tuned model artifacts and the resulting applicability decision for req-TRAIN-003 with respect to thr-005."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-036",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-004 describes the content of billing records, settlement reports, and discrepancy summaries, but contains no discussion of logging practices, exclusion of sensitive data from logs, or any requirement tagged req-LOG-001. As a result, the claim that req-LOG-001 is not applicable to thr-005 is not supported by the cited evidence.",
+        "missing_evidence": [
+          "Specification of req-LOG-001 and when it applies (e.g., any system logging sensitive data).",
+          "Logging or observability design showing whether sensitive billing data can appear in logs and documenting any applicability decision for req-LOG-001 in the context of thr-005."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-004",
+            "text": "Billing records contain per-customer charge entries. Settlement reports contain the\nprocessor's record of captured payments for the day. Discrepancy summaries name the affected\nrecord, the two amounts, and the day they diverged."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-037",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The system overview identifies only a batch reconciler job, a billing database, and a payment processor; it does not mention any administrative interface or audit logging of admin actions, nor req-LOG-002. Nothing in the evidence explicitly states that req-LOG-002 is out of scope for this system or for thr-005. Therefore the mapping is not supported.",
+        "missing_evidence": [
+          "Definition of req-LOG-002 and the kinds of administrative actions it covers.",
+          "System or security documentation stating whether operators have administrative interfaces in this context and whether req-LOG-002 is applicable to thr-005."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-038",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-001 and evd-002 describe a conventional batch reconciler implemented as a scheduled workload, but do not discuss model-generated code, isolation boundaries for such code, or req-CODEGEN-001. There is no explicit applicability analysis tying or excluding this requirement for thr-005 in the supplied documentation.",
+        "missing_evidence": [
+          "Specification of req-CODEGEN-001 and what it covers.",
+          "Architecture or development-process documentation confirming whether any model-generated code or queries execute in this system and whether req-CODEGEN-001 is evaluated for thr-005."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-039",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The documentation does not mention any model-generated code, configuration, or infrastructure definitions, nor any gating controls associated with them, and it never references req-CODEGEN-002. While the architecture suggests hand-authored code, the explicit claim that req-CODEGEN-002 is not applicable to thr-005 is not documented.",
+        "missing_evidence": [
+          "Definition of req-CODEGEN-002 and when it is triggered.",
+          "Documentation describing whether model-generated artifacts are used in this project and the resulting applicability decision for req-CODEGEN-002 regarding thr-005."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-040",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-002 directly documents that the Billing Database is \"a managed relational database provided by the cloud platform\" that \"is reachable only from the reconciler job inside the application subnet,\" establishing that it is a non-public internal data store with restricted network reachability. This supports the architectural part of the mapping used to argue that a network-restriction requirement is relevant. However, the evidence does not mention req-NET-001 by name, define its conditions, or state that it is satisfied for thr-005; linking this documented network topology to req-NET-001\u2019s satisfaction is an inference and not explicitly recorded.",
+        "missing_evidence": [
+          "Text of req-NET-001, including what constitutes satisfaction for internal data stores.",
+          "A mapping or control description explicitly stating that the documented Billing Database reachability is the implementation of req-NET-001 for thr-005."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "### Billing Database\n\nA managed relational database provided by the cloud platform. It holds billing records and the\nreconciler's discrepancy summaries, and it is reachable only from the reconciler job inside\nthe application subnet."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-041",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The system overview describes direct reads from the Billing Database and an external settlement report API; it does not mention retrieval-augmented generation, retrieval corpora, or req-RAG-001. No document explicitly states that req-RAG-001 is inapplicable to thr-005. The mapping is therefore not established by the available evidence.",
+        "missing_evidence": [
+          "Definition of req-RAG-001 and what architectures it covers.",
+          "Architecture or AI documentation explicitly confirming that no retrieval corpus or RAG pipeline exists here and stating the applicability decision for req-RAG-001 with respect to thr-005."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-042",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-002 and evd-004 describe a single Billing Database and its contents but do not discuss retrieval indices, multi-tenant retrieval corpora, or filtering of retrieval results, nor do they reference req-RAG-002. Thus, the assertion that req-RAG-002 is not applicable to thr-005 is not supported by the documentation.",
+        "missing_evidence": [
+          "Text of req-RAG-002 and its applicability criteria.",
+          "System or AI design documentation stating whether any retrieval corpus serves multiple principals and whether req-RAG-002 is considered in scope for thr-005."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-043",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The documents describe primary billing data being stored in a relational database but do not mention any retrieval indices, embeddings, or lifecycle coupling between such indices and source data, nor req-RAG-003. Therefore the conclusion that req-RAG-003 does not bear on thr-005 is not documented.",
+        "missing_evidence": [
+          "Definition of req-RAG-003 and its scope (e.g., retrieval index lifecycle).",
+          "Evidence that no retrieval indices or embeddings are used for this data, and an explicit applicability decision for req-RAG-003 regarding thr-005."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-044",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-003 states that the reconciler authenticates to the payment processor\u2019s API with a service credential provisioned through the standard workload deployment, but it does not describe how or where that credential is stored (for example, a managed secrets vault) or reference req-SECRET-001. There is also no explicit statement that req-SECRET-001 is inapplicable to thr-005. Thus the mapping is not supported by the evidence.",
+        "missing_evidence": [
+          "Specification of req-SECRET-001 and what qualifies as a managed secret store.",
+          "Credential-management documentation describing where the payment processor service credential and database credentials are stored and any applicability decision for req-SECRET-001 relative to thr-005."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "The reconciler authenticates to the payment processor's reporting API with a service\ncredential issued by the processor for this integration. The credential is provisioned through\nthe standard workload deployment."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-045",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The system overview confirms that the reconciler uses credentials to access an external payment processor and an internal Billing Database, but it does not describe credential lifetimes, token scoping, or any requirement named req-SECRET-002. There is no documented determination that req-SECRET-002 does not bear on thr-005. Therefore the mapping is unsupported.",
+        "missing_evidence": [
+          "Definition of req-SECRET-002, including expectations for short-lived external access credentials.",
+          "Design or security documentation describing the lifetime and scope of external access credentials and evaluating req-SECRET-002 for thr-005."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-046",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-001, evd-002, and evd-003 show that the reconciler consumes settlement reports from an external payment processor\u2019s API using a service credential, but they do not mention third-party data-retention documentation or a requirement identified as req-TPI-001. No applicability decision tying req-TPI-001 to thr-005 is recorded in the evidence. The mapping is therefore not supported.",
+        "missing_evidence": [
+          "Specification of req-TPI-001 and what kind of third-party documentation it requires.",
+          "Third-party risk or data-processing documentation describing the payment processor\u2019s retention and usage of customer data and stating whether req-TPI-001 is considered in scope for thr-005."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-047",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The documentation states that the reconciler runs once per night on a schedule and pulls data from an external API, but it does not discuss work triggered by inbound external events, nor does it reference req-TPI-002 or an applicability decision. The claim that req-TPI-002 is not applicable to thr-005 is therefore not established by the evidence.",
+        "missing_evidence": [
+          "Text of req-TPI-002 and its applicability conditions around externally triggered work.",
+          "Architecture or operational documentation explicitly contrasting scheduled versus event-driven work and stating whether req-TPI-002 is evaluated for thr-005."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "The nightly reconciler is an internal batch service that compares the day's billing records\nagainst the settlement reports published by the payment processor and files a discrepancy\nsummary for the finance team. It runs once per night on the platform's standard workload\ndeployment."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-048",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-001 through evd-003 describe the reconciler as an internal batch job that pulls data from an external HTTPS API using a service credential. They do not mention any inbound webhook or event-receiver endpoint, verification of inbound events, or req-WEBHOOK-001. While the architecture suggests no webhooks, the explicit claim that req-WEBHOOK-001 is not applicable to thr-005 is not documented.",
+        "missing_evidence": [
+          "Definition of req-WEBHOOK-001 and when it applies to inbound endpoints.",
+          "Interface documentation confirming whether any webhook-style endpoints exist and recording the applicability decision for req-WEBHOOK-001 with respect to thr-005."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-049",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The same evidence set shows only outbound HTTPS calls from the reconciler to the payment processor\u2019s API and no inbound event processing, but it does not mention replay protection for webhook events nor req-WEBHOOK-002. There is no explicit documentation asserting that req-WEBHOOK-002 does not bear on thr-005. Hence the mapping is unsupported.",
+        "missing_evidence": [
+          "Specification of req-WEBHOOK-002 and its replay-protection expectations.",
+          "Design or interface documentation confirming the absence of webhook/event-receiver endpoints and capturing the applicability assessment for req-WEBHOOK-002 relative to thr-005."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-050",
+        "evidence_ids": [
+          "evd-002",
+          "evd-006",
+          "evd-007"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "indirect"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "indirect"
+          },
+          {
+            "evidence_id": "evd-007",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-002 documents that the Billing Database holds billing records and discrepancy summaries and is a managed relational database, supporting that customer billing data is stored and that an in-scope internal data flow for thr-006 exists. evd-006 and evd-007 show that an organizational control named \"managed-db-encryption\" is asserted from the org controls catalog, but explicitly note that whether the system actually inherits a control remains to be established. The applicability of a data-protection requirement like req-DATA-001 to thr-006 (because confidential billing data is stored and transmitted) is a reasonable inference from evd-002 but not stated outright, and the claim that the requirement is \"partially_satisfied\" relies on the undocumented assumption that the specific Billing Database instance uses the managed-db-encryption control. Thus, the threat context and presence of relevant data are supported, but the satisfaction level of req-DATA-001 is not directly documented.",
+        "missing_evidence": [
+          "Formal definition of req-DATA-001 and its triggers (e.g., storage or transmission of confidential data).",
+          "Data-classification documentation confirming that billing records and discrepancy summaries are classified as confidential or restricted.",
+          "Configuration or platform documentation explicitly stating that the Billing Database instance described in evd-002 uses the managed-db-encryption control and what protections (at rest and in transit) that entails."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "### Billing Database\n\nA managed relational database provided by the cloud platform. It holds billing records and the\nreconciler's discrepancy summaries, and it is reachable only from the reconciler job inside\nthe application subnet."
+          },
+          {
+            "evidence_id": "evd-007",
+            "text": "# The assessment's organizational-controls assertion (#568, DEC-122): the controls from the\n# central org-controls catalog asserted to bear on this system. The parser verifies each name\n# against the named catalog version and seeds one documented claim per control; whether the\n# system actually inherits a control remains the assessment's ordinary work.\n\norg_controls_catalog:\n  version: \"0.2\"\n  asserted:\n    - secrets-vault\n    - managed-db-encryption"
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-051",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-002 explicitly states that the Billing Database is a managed relational database that \"is reachable only from the reconciler job inside the application subnet,\" establishing that it is not a public interface and that network reachability is restricted. This directly supports the architectural premise that a network-restriction requirement like req-NET-001 is relevant to thr-006. However, the evidence does not name req-NET-001 or say that this configuration is the implementation of that requirement, so the conclusion that req-NET-001 is both applicable and fully satisfied for thr-006 is only partly grounded in the documentation.",
+        "missing_evidence": [
+          "Authoritative text for req-NET-001 and its satisfaction criteria.",
+          "A control description or mapping table explicitly stating that the documented Billing Database reachability pattern is how req-NET-001 is implemented and that it is considered satisfied for thr-006."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "### Billing Database\n\nA managed relational database provided by the cloud platform. It holds billing records and the\nreconciler's discrepancy summaries, and it is reachable only from the reconciler job inside\nthe application subnet."
+          }
+        ]
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-001",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 and evd-002 document that the Reconciler Job pulls a daily settlement report from the external payment processor\u2019s reporting API over HTTPS across a network boundary. evd-003 shows that this API call is authenticated with a service credential, and evd-005 confirms the payment processor as an external actor. Together these passages directly establish the data flow and trust boundary that thr-001 relies on. The additional steps of an attacker intercepting or spoofing the HTTPS connection and thereby causing forged or modified settlement reports are a reasonable threat-model inference built on this architecture, and no evidence contradicts it.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "A scheduled batch workload. Each night it pulls the day's settlement report from the payment\nprocessor's reporting API, reads the day's billing records from the billing database, compares\nthe two, and writes a discrepancy summary back to the billing database. It exposes no inbound\ninterface."
+          },
+          {
+            "evidence_id": "evd-002",
+            "text": "### Payment Processor\n\nThe external payment platform the product uses to capture payments. It publishes a daily\nsettlement report over its reporting API, served over HTTPS."
+          }
+        ]
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-002",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-003 states that the reconciler authenticates to the payment processor\u2019s reporting API with a service credential issued for this integration and that it is provisioned into the workload, implying the credential is present in the runtime environment. evd-002 provides context about the reconciler job\u2019s role in calling the API. Given a credential resident in the workload environment, the scenario in thr-002\u2014an attacker with sufficient access exfiltrating and misusing that credential\u2014is a straightforward and well-supported threat-model inference and is not contradicted by any documentation.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "The reconciler authenticates to the payment processor's reporting API with a service\ncredential issued by the processor for this integration. The credential is provisioned through\nthe standard workload deployment."
+          }
+        ]
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-003",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 and evd-002 show that the Reconciler Job runs once per night and depends on pulling the daily settlement report from the external payment processor\u2019s reporting API over HTTPS to perform its comparison and write discrepancy summaries. If that external API is unavailable or significantly degraded during the run window, the reconciler would be unable to retrieve the report and thus unable to complete reconciliation, directly matching the scenario and impact described in thr-003. No evidence suggests an alternate data source or retry process that would invalidate this threat.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "The nightly reconciler is an internal batch service that compares the day's billing records\nagainst the settlement reports published by the payment processor and files a discrepancy\nsummary for the finance team. It runs once per night on the platform's standard workload\ndeployment."
+          }
+        ]
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-004",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-002 states that the Billing Database holds billing records and the reconciler\u2019s discrepancy summaries and that the reconciler reads from and writes to this database as part of its nightly run; evd-001 confirms the nightly scheduling. If the Billing Database is unavailable, slow, or misconfigured during that window, the reconciler cannot perform its reads and writes, which aligns directly with the outage scenario and impact described in thr-004. The threat rests on standard availability considerations for this documented single data store.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "### Billing Database\n\nA managed relational database provided by the cloud platform. It holds billing records and the\nreconciler's discrepancy summaries, and it is reachable only from the reconciler job inside\nthe application subnet."
+          }
+        ]
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-005",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-002 documents that the Reconciler Job reads billing records from and writes discrepancy summaries to the Billing Database, and that the same database holds both data types. evd-004 describes the contents and business importance of billing records and discrepancy summaries, supporting the potential impact on data integrity. However, no evidence states what database privileges the reconciler\u2019s role actually has on the billing records tables; the precondition that it can modify or delete billing records is explicitly marked as assumed in thr-005 and is not documented. As a result, the architectural context and impact are supported, but the existence of over-privileged access as a concrete system property requires confirmation.",
+        "missing_evidence": [
+          "Database role or user configuration for the reconciler job, including specific privileges on billing-record and discrepancy-summary tables.",
+          "Security or design documentation describing the intended access pattern (e.g., read-only vs. read-write) of the reconciler to billing records."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "A scheduled batch workload. Each night it pulls the day's settlement report from the payment\nprocessor's reporting API, reads the day's billing records from the billing database, compares\nthe two, and writes a discrepancy summary back to the billing database. It exposes no inbound\ninterface."
+          },
+          {
+            "evidence_id": "evd-002",
+            "text": "### Billing Database\n\nA managed relational database provided by the cloud platform. It holds billing records and the\nreconciler's discrepancy summaries, and it is reachable only from the reconciler job inside\nthe application subnet."
+          }
+        ]
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-006",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-002 establishes that the Reconciler Job reads billing records from and writes discrepancy summaries to the Billing Database over internal data flows within the application subnet, and that this database is an internal component. evd-004 shows that billing records and discrepancy summaries contain per-customer financial information, making confidentiality and integrity materially important. Given these documented internal flows carrying sensitive data, the scenario in thr-006\u2014an attacker with network access in the subnet intercepting or tampering with unprotected database traffic\u2014is a well-founded threat-model inference. The documentation is silent on whether encryption or mutual authentication is enabled for this traffic, so the threat remains relevant and is not contradicted.",
+        "missing_evidence": [
+          "Configuration or platform documentation stating whether connections between the reconciler and the Billing Database are encrypted and mutually authenticated.",
+          "Network security design for the application subnet, including how lateral attacker access is constrained."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "A scheduled batch workload. Each night it pulls the day's settlement report from the payment\nprocessor's reporting API, reads the day's billing records from the billing database, compares\nthe two, and writes a discrepancy summary back to the billing database. It exposes no inbound\ninterface."
+          },
+          {
+            "evidence_id": "evd-004",
+            "text": "Billing records contain per-customer charge entries. Settlement reports contain the\nprocessor's record of captured payments for the day. Discrepancy summaries name the affected\nrecord, the two amounts, and the day they diverged."
+          }
+        ]
+      }
+    ]
+  }
+}
