@@ -9075,3 +9075,86 @@ Tradeoffs:
 - `runs status` reports what the row says, and a killed process leaves the row saying `running`
   until the operator asserts otherwise; DEC-137's `trace runs repair` is that assertion — a
   status read reports the row, it never repairs it.
+
+## DEC-139: Every live run journals its responses, and replaying the journal is an operator's assertion
+
+Date: 2026-08-19
+
+Status: Accepted
+
+Decision:
+
+**An ordinary live `run` or `resume` writes every model response it consumes into the
+assessment's own `traces/journal/` area, and a later resume re-drives from that journal only
+when the operator names it.** State persists at phase boundaries (DEC-017), so an interruption
+between phases loses nothing; an interruption inside a phase lost every call the phase had
+already paid for, because the recording wrapper existed only behind `trace capture` and only
+for registered benchmark scenarios. The #484 pilots hit this at measured prices. The journal
+closes it: `JournalingModel` wraps the live model for every model-reaching run command and
+writes each consumed response as a numbered envelope — the recording envelope, exactly as
+`load_recorded_responses` reads it, plus a `call_sha256` over the system and user prompts that
+every other reader ignores.
+
+**Replay is asserted with `--replay-journal`, never automatic.** A resume that silently
+replayed a stale journal against edited inputs would answer a new question with an old
+response. The flag mirrors `--response`: files in order, a directory standing for its numbered
+entries. Two guards make the assertion safe to make:
+
+- **An entry answers only the call that recorded it.** A journal entry is served when the
+  requested schema and the request hash both match. Entries a resumed run never re-asks — a
+  completed phase's — are skipped aloud and left unspent; the first same-schema entry whose
+  request differs sets the remaining journal aside and the run continues live. Divergence
+  costs money, never a wrong answer.
+- **A served entry is marked spent**, with a sidecar beside the envelope, and a spent entry is
+  never served again: the directory form skips it aloud, and naming it explicitly is refused.
+  Section 26's rule — retry the attempt, never the conclusion — survives replay, because a
+  fresh attempt the orchestrator asks for cannot silently receive the response it meant to
+  re-request.
+
+**A replayed call records zero usage under the original model's name.** The money was spent by
+the run that journaled the entry and is recorded there; the replaying run consumed nothing,
+and its execution record says so, with the entry's filename in the call metadata. The journal
+inherits `traces/`'s retention and privacy posture (section 26/27 already put failed-attempt
+raw output there) and invents no new surface.
+
+**The fake provider journals nothing.** A journal of the deterministic substitute would hold
+responses no model gave — the artifact the rehearsal marker (#534) exists to refuse.
+`--replay-journal` with an offline profile is refused and points at `--response`.
+
+Why:
+
+- The remaining #484 captures run at roughly $5.25 each, driven from a laptop that sleeps.
+  Each mid-phase interruption re-spent the phase; with the journal it re-drives free.
+- A disputed conclusion gains a re-drive path months later without a provider key: the journal
+  entries are recording-envelope files and replay through the machinery that already exists.
+- DEC-137 gives an orphaned run a sanctioned repair into `failed`, and DEC-017's resume
+  restarts a failed run from the phase it stopped in — the journal is the piece that makes
+  that restart free, so the three land together as the run-operability set.
+
+Alternatives Considered:
+
+- Automatic replay on resume (rejected: a stale journal must not silently answer an edited
+  input; the operator asserts currency by naming the journal).
+- Journaling through the capture wrapper by generalizing `trace capture` (rejected: capture is
+  scenario-registry machinery with staging, promotion, and refusal semantics an ordinary
+  assessment has no use for; the envelope format is shared instead, which is the part that
+  matters).
+- Failing the run on a same-schema hash mismatch (rejected: a resumed phase that legitimately
+  re-batches or skips already-persisted work diverges harmlessly, and the honest response to
+  "this is not the call the journal recorded" is to go live, not to stop a run the operator
+  is trying to finish).
+- Serving on schema match alone (rejected: two calls of one agent are indistinguishable by
+  schema, and a stale entry would answer the wrong subject with a clean validation record).
+
+Tradeoffs:
+
+- The journal duplicates response content already reflected in persisted domain objects; it
+  buys a re-drive path for the span between a phase's start and its commit, which is exactly
+  the span DEC-017's boundary persistence cannot cover. Entries accumulate per assessment and
+  leave with it (`assessment purge`).
+- The hash guard binds an entry to byte-identical prompts. A prompt-file edit, a catalog
+  change, or partial phase persistence invalidates the tail of a journal by construction —
+  the guard erring toward spending is the design, not a limitation to fix.
+- An entry with no `call_sha256` (a hand-assembled envelope) matches on schema alone: the
+  operator who assembled it asserted the looser contract, and the loud per-entry replay line
+  names what was served.

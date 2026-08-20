@@ -44,7 +44,7 @@ prompts, the requirements catalog, the report template, and the scenario registr
 files. From an installed wheel, `trace` and `trace --help` still work; every command past the
 banner exits 1 with `SourceCheckoutRequiredError`.
 
-**Shared model flags.** `run`, `resume`, and `context extract` take the same four flags:
+**Shared model flags.** `run`, `resume`, and `context extract` take the same five flags:
 
 - `--model-profile MODEL_PROFILE` — the provider, model, and settings bundle. Five profiles
   exist: `primary-development` (Anthropic, claude-opus-5, the default), `economy` (Anthropic,
@@ -55,6 +55,13 @@ banner exits 1 with `SourceCheckoutRequiredError`.
 - `--response PATH` — a recorded model response to replay. Repeatable; files are consumed in the
   order given, one per model call the run makes. A directory stands for its numbered recordings
   in sorted order, so `--response demo/forgeflow/recorded/extraction` replays that whole slice.
+- `--replay-journal PATH` — replay a live run's journaled responses before spending (DEC-139).
+  Repeatable; a directory stands for its unspent numbered entries in order. Every live run
+  journals each response it consumes into the assessment's `traces/journal/` area, and a resume
+  that names the journal re-drives an interrupted phase without re-spending its calls. An entry
+  answers only the call that recorded it — schema and request hash both match — exactly once;
+  it is marked spent when served, and anything the journal cannot answer runs live. Refused
+  with `offline-fake`, which journals nothing: replay a recording with `--response` instead.
 - `--max-model-calls N` — stop the run before exceeding this many model calls.
 - `--max-cost COST` — stop the run before exceeding this estimated cost.
 
