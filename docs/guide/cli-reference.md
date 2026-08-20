@@ -575,6 +575,20 @@ would go with each run's recorded spend, removes nothing, and exits 3; with `--f
 and prints what went, including the spend removed with it. With no abandoned runs it exits 0.
 Omitting `assessment_id` examines the whole data root.
 
+```
+trace runs repair <assessment_id> <run_id> [--reason TEXT] [--force]
+```
+
+Marks an orphaned `running` run failed, on the operator's assertion that its process is gone
+(DEC-137). A killed process leaves its run at `running`; `resume` refuses it — neither paused nor
+failed — and prune covers paused runs only. Repair closes the row through the ledger's own
+completion, spend rolled up from the run's execution records, with an error summary naming the
+external kill; `--reason` puts the operator's own account of what happened in that summary. After
+repair, `trace resume` restarts the failed phase. Nothing is detected automatically — no
+heartbeat, no age rule — because a running run that looks stale may be a slow provider call.
+Without `--force` it shows the run, changes nothing, and exits 3. A run in any other status is
+refused (exit 3) with the verb that already covers it.
+
 ## reset
 
 ```
