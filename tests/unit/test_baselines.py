@@ -30,7 +30,7 @@ def _recorded(slug: str, baseline: str) -> BaselineFindings:
 
 @pytest.mark.parametrize(
     ("slug", "spurious_expected"),
-    [("oidc-portal", 2), ("managed-db-service", 2)],
+    [("oidc-portal", 17), ("managed-db-service", 2)],
 )
 def test_the_generic_baseline_invents_the_false_positives_trace_avoids(
     tmp_path: Path, slug: str, spurious_expected: int

@@ -3,16 +3,121 @@
     {
       "requirement_id": "req-AUTH-001",
       "affected_component": "Portal Web Application",
-      "title": "No password complexity policy is enforced",
-      "rationale": "The portal does not describe a password policy.",
-      "evidence_quote": "The portal maintains no password store of its own."
+      "title": "Authentication is delegated to the enterprise OpenID Connect identity provider and documented",
+      "rationale": "The documentation clearly states that the portal does not maintain its own user store and delegates authentication to the enterprise IdP via OpenID Connect, satisfying the requirement to document authentication delegation.",
+      "evidence_quote": "\"All access to the portal is authenticated through the company's enterprise identity\nprovider using OpenID Connect. A user reaching the portal is redirected to the identity\nprovider, authenticates there, and returns with an ID token the portal validates. The\nportal maintains no password store of its own and issues no credentials; identity is the\nidentity provider's responsibility\""
     },
     {
       "requirement_id": "req-AUTH-002",
+      "affected_component": "Identity provider / Portal Web Application",
+      "title": "Responsibility for multi-factor authentication is explicitly assigned to the enterprise identity provider",
+      "rationale": "The system description states that MFA enrolment and factor policy are managed at the identity provider organization level, which establishes where MFA responsibility lies.",
+      "evidence_quote": "\"identity is the\nidentity provider's responsibility, and multi-factor enrolment and factor policy are set\nat the identity provider organization level.\""
+    },
+    {
+      "requirement_id": "req-OIDC-002",
       "affected_component": "Portal Web Application",
-      "title": "Multi-factor authentication is not implemented",
-      "rationale": "The application does not implement MFA.",
-      "evidence_quote": "identity is the identity provider's responsibility"
+      "title": "ID tokens from the OpenID Connect identity provider are validated before use",
+      "rationale": "The portal is described as validating the ID token received from the IdP, which meets the requirement to validate tokens before using them.",
+      "evidence_quote": "\"A user reaching the portal is redirected to the identity\nprovider, authenticates there, and returns with an ID token the portal validates.\""
+    },
+    {
+      "requirement_id": "req-DATA-001",
+      "affected_component": "Portal Web Application",
+      "title": "External access to the support portal is limited to HTTPS, protecting data in transit from employees to the portal",
+      "rationale": "The documentation states that the support portal is served over HTTPS, which provides encryption in transit for employee access over the corporate network or VPN.",
+      "evidence_quote": "\"The support portal is an internal web application that lets employees view and comment on\ncustomer support tickets. It is served over HTTPS and reachable only from the corporate\nnetwork and the company VPN.\""
+    },
+    {
+      "requirement_id": "req-NET-001",
+      "affected_component": "Ticket Service",
+      "title": "Network access to the Ticket Service is restricted to the portal web application within the application subnet",
+      "rationale": "The ticket service is described as only reachable from the portal inside the application subnet, which is consistent with limiting internal component reachability to the workloads that use them.",
+      "evidence_quote": "\"### Ticket Service\n\nAn internal HTTP service that stores and retrieves tickets. It is reachable only from the\nportal web application inside the application subnet.\""
+    },
+    {
+      "requirement_id": "req-DATA-001",
+      "affected_component": "Portal Web Application ↔ Ticket Service",
+      "title": "Encryption in transit between the portal and the internal Ticket Service is not documented and the service is described only as HTTP",
+      "rationale": "While external access to the portal is over HTTPS, the internal ticket service is only described as an \"internal HTTP service\" with no mention of TLS or HTTPS. This leaves a gap in documented in-transit encryption for traffic between the portal and the ticket service.",
+      "evidence_quote": "\"### Ticket Service\n\nAn internal HTTP service that stores and retrieves tickets. It is reachable only from the\nportal web application inside the application subnet.\""
+    },
+    {
+      "requirement_id": "req-DATA-001",
+      "affected_component": "Ticket Service database",
+      "title": "Encryption at rest for ticket data in the managed relational database is not documented",
+      "rationale": "The documentation notes that tickets are stored in a managed relational database but does not state whether encryption at rest is enabled, leaving a gap with respect to documenting protection of sensitive data at rest.",
+      "evidence_quote": "\"Tickets contain customer support correspondence. The ticket service persists them in a\nmanaged relational database provided by the cloud platform.\""
+    },
+    {
+      "requirement_id": "req-DATA-002",
+      "affected_component": "Ticket data",
+      "title": "No documented retention policy for stored customer support tickets",
+      "rationale": "Customer support correspondence is stored in the ticket service, but there is no description of how long tickets are retained or how retention is managed, so alignment with any declared retention promises cannot be verified from the documentation.",
+      "evidence_quote": "\"Tickets contain customer support correspondence. The ticket service persists them in a\nmanaged relational database provided by the cloud platform.\""
+    },
+    {
+      "requirement_id": "req-DATA-004",
+      "affected_component": "Ticket Service",
+      "title": "Ability to delete customer ticket data on request is not described",
+      "rationale": "The system persists customer support correspondence but the documentation does not describe any capability or process to delete a specific customer’s data on request, leaving compliance with deletion requirements unclear.",
+      "evidence_quote": "\"Tickets contain customer support correspondence. The ticket service persists them in a\nmanaged relational database provided by the cloud platform.\""
+    },
+    {
+      "requirement_id": "req-AUTHZ-001",
+      "affected_component": "Portal Web Application",
+      "title": "Authorization model for which employees can access which tickets is not documented",
+      "rationale": "The portal is described as allowing employees to view and comment on tickets, but there is no explanation of any role-based or tenant-aware authorization controls (e.g., limiting which employees can access which customers’ tickets). This makes it unclear whether tenant-aware authorization is enforced or how broadly tickets are exposed internally.",
+      "evidence_quote": "\"The support portal is an internal web application that lets employees view and comment on\ncustomer support tickets.\"\n\n\"- **Employee** — an authenticated internal user viewing and commenting on tickets.\""
+    },
+    {
+      "requirement_id": "req-ADMIN-001",
+      "affected_component": "Support Portal system (Portal Web Application, Ticket Service, database)",
+      "title": "Privileged administrative access paths and their scope are not documented",
+      "rationale": "The documentation defines only \"Employee\" and the identity provider as actors, with no description of administrative roles or how privileged access to the portal, ticket service, or database is restricted and audited. This leaves the administrative access model undocumented.",
+      "evidence_quote": "\"## 4. Actors\n\n- **Employee** — an authenticated internal user viewing and commenting on tickets.\n- **Identity provider** — the enterprise OpenID Connect provider that authenticates\n  employees and enforces the factor policy.\""
+    },
+    {
+      "requirement_id": "req-OIDC-001",
+      "affected_component": "Portal Web Application",
+      "title": "OpenID Connect redirect URI and post-login destinations are not documented as being restricted to registered values",
+      "rationale": "Although the portal uses OpenID Connect with the enterprise IdP, the documentation does not describe how redirect URIs or post-authentication destinations are configured or restricted, so compliance with the requirement to redirect only to registered destinations cannot be confirmed.",
+      "evidence_quote": "\"All access to the portal is authenticated through the company's enterprise identity\nprovider using OpenID Connect. A user reaching the portal is redirected to the identity\nprovider, authenticates there, and returns with an ID token the portal validates.\""
+    },
+    {
+      "requirement_id": "req-OIDC-003",
+      "affected_component": "Portal Web Application",
+      "title": "Session bounds (duration, idle timeout, revocation behavior) after OIDC sign-in are not documented",
+      "rationale": "The portal is described as validating the ID token from the IdP, but there is no information on how the relying party session it mints is bounded (e.g., expiry, idle timeout, handling of IdP logout or revocation), leaving this control undocumented.",
+      "evidence_quote": "\"A user reaching the portal is redirected to the identity\nprovider, authenticates there, and returns with an ID token the portal validates. The\nportal maintains no password store of its own and issues no credentials; identity is the\nidentity provider's responsibility\""
+    },
+    {
+      "requirement_id": "req-LOG-001",
+      "affected_component": "Support Portal system",
+      "title": "Controls to keep sensitive ticket content out of application logs are not documented",
+      "rationale": "Tickets contain customer support correspondence, which can be sensitive, but the documentation does not mention any logging strategy or safeguards to avoid logging ticket contents or other sensitive data, leaving this requirement unaddressed in the design description.",
+      "evidence_quote": "\"Tickets contain customer support correspondence. The ticket service persists them in a\nmanaged relational database provided by the cloud platform.\""
+    },
+    {
+      "requirement_id": "req-LOG-002",
+      "affected_component": "Support Portal system",
+      "title": "Recording of security-relevant administrative actions is not described",
+      "rationale": "There is no mention of logging for administrative or security-relevant actions (e.g., changes to access, configuration, or data), so it is unclear whether such actions would be recorded for audit purposes.",
+      "evidence_quote": "\"## 4. Actors\n\n- **Employee** — an authenticated internal user viewing and commenting on tickets.\n- **Identity provider** — the enterprise OpenID Connect provider that authenticates\n  employees and enforces the factor policy.\""
+    },
+    {
+      "requirement_id": "req-SECRET-001",
+      "affected_component": "Support Portal system",
+      "title": "Use of a managed secret store for long-lived credentials (e.g., IdP client secrets, database credentials) is not documented",
+      "rationale": "The system integrates with an enterprise OIDC IdP and a managed relational database, both of which typically require long-lived credentials or configuration secrets, but there is no description of how such secrets are stored or whether a managed secret store is used.",
+      "evidence_quote": "\"All access to the portal is authenticated through the company's enterprise identity\nprovider using OpenID Connect.\"\n\n\"The ticket service persists them in a\nmanaged relational database provided by the cloud platform.\""
+    },
+    {
+      "requirement_id": "req-TPI-001",
+      "affected_component": "Identity provider and cloud database provider",
+      "title": "Data handling expectations for external providers (enterprise IdP and cloud database) are not documented",
+      "rationale": "The system relies on an external enterprise identity provider and a cloud-managed relational database, but the documentation does not describe what data is shared, applicable protections, or contractual/compliance assumptions for these third-party processors, leaving external processor data handling undocumented.",
+      "evidence_quote": "\"All access to the portal is authenticated through the company's enterprise identity\nprovider using OpenID Connect.\"\n\n\"Tickets contain customer support correspondence. The ticket service persists them in a\nmanaged relational database provided by the cloud platform.\""
     }
   ]
 }

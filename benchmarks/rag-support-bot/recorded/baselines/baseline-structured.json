@@ -2,17 +2,24 @@
   "findings": [
     {
       "requirement_id": "req-RAG-002",
-      "affected_component": "Retrieval index",
-      "title": "Shared index serves all workspaces without entitlement filtering",
-      "rationale": "The overview states relevance alone selects passages from one shared index.",
-      "evidence_quote": "all workspaces are served from one shared index; relevance alone selects the passages"
+      "affected_component": "Retrieval index / Answer service",
+      "title": "Retrieval uses only similarity ranking on a shared index, without tenant-based filtering",
+      "rationale": "The documentation states that all workspaces share a single retrieval index and that \"relevance alone\" selects which passages are returned. Because resolved support tickets from all workspaces are stored in this index and no workspace/authorization filter is applied at retrieval time, a user's query can retrieve support-history passages originating from other workspaces. This is an inferred weakness from the described design and violates the requirement that retrieval be filtered by the requester's authorization.",
+      "evidence_quote": "\"**Retrieval index** — a managed vector database holding embeddings of the help-center articles and of resolved support tickets. All workspaces are served from one shared index; a query returns the top eight passages ranked by embedding similarity, and relevance alone selects the passages that reach the prompt.\" (architecture-overview.md)"
     },
     {
-      "requirement_id": "req-RAG-003",
+      "requirement_id": "req-AUTHZ-001",
+      "affected_component": "Answer service / Retrieval index",
+      "title": "Tenant-aware authorization is not enforced for retrieval over shared support-history corpus",
+      "rationale": "Workspace-scoped tokens identify the caller's workspace at the API layer, but the retrieval layer is documented to use a shared index for all workspaces and to select passages solely by embedding similarity. This implies that authorization context (the caller’s workspace) is not enforced when accessing stored support-ticket content, so tenant-aware authorization is not applied to this data access path.",
+      "evidence_quote": "\"The in-product surface the help panel calls. One operation asks a question; the workspace token identifies the caller's workspace.\" (openapi.yaml)\n\n\"**Retrieval index** — a managed vector database holding embeddings of the help-center articles and of resolved support tickets. All workspaces are served from one shared index; a query returns the top eight passages ranked by embedding similarity, and relevance alone selects the passages that reach the prompt.\" (architecture-overview.md)"
+    },
+    {
+      "requirement_id": "req-DATA-003",
       "affected_component": "Retrieval index",
-      "title": "Ticket deletions do not propagate to the index",
-      "rationale": "The retention schedule is stated for the source only; index deletion is unstated.",
-      "evidence_quote": "resolved support tickets are retained on the support platform for two years"
+      "title": "Embeddings of support tickets from all workspaces are co-mingled without effective tenant separation",
+      "rationale": "The ingestion pipeline embeds resolved support tickets into a single managed vector database that serves all workspaces, and retrieval over this index is based only on embedding similarity. This design co-mingles stored artifacts (ticket embeddings) from all tenants and does not maintain effective tenant-level separation, especially since retrieval is not constrained by workspace. This is inferred from the explicit description of the shared index and selection mechanism.",
+      "evidence_quote": "\"**Ingestion pipeline** — the only writer to the retrieval index. It runs nightly, reads two named sources — the published help-center repository and the support platform's resolved tickets export — chunks and embeds them, and records the source and timestamp on every indexed item.\" (architecture-overview.md)\n\n\"All workspaces are served from one shared index; a query returns the top eight passages ranked by embedding similarity, and relevance alone selects the passages that reach the prompt.\" (architecture-overview.md)"
     }
   ]
 }
