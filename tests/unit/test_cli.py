@@ -2351,6 +2351,93 @@ def test_evaluate_json_carries_the_envelope_and_the_pin_state(
     assert isinstance(metrics, dict) and "false_negative_rate" in metrics
 
 
+def test_runs_status_with_no_runs_is_a_message_and_a_nonzero_exit(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    identifier = created(data_root, capsys)
+    assert invoke(data_root, "runs", "status", identifier) == 1
+    assert "no workflow runs" in capsys.readouterr().err
+
+
+def test_runs_status_names_an_unknown_run(
+    data_root: Path, capsys: pytest.CaptureFixture[str], tmp_path: Path
+) -> None:
+    identifier = _paused_at_checkpoint_one(data_root, capsys, tmp_path)
+    assert invoke(data_root, "runs", "status", identifier, "--run", "run-999") == 1
+    assert "run-999" in capsys.readouterr().err
+
+
+def _paused_at_checkpoint_one(
+    data_root: Path, capsys: pytest.CaptureFixture[str], tmp_path: Path
+) -> str:
+    """Create, add one source, and run offline to the checkpoint-1 pause."""
+    identifier = created(data_root, capsys)
+    assert (
+        invoke(
+            data_root,
+            "source",
+            "add",
+            identifier,
+            str(FORGEFLOW_INPUT / "architecture-overview.md"),
+        )
+        == 0
+    )
+    recordings = _pipeline_recordings(tmp_path)
+    capsys.readouterr()
+    assert (
+        invoke(
+            data_root,
+            "run",
+            identifier,
+            "--model-profile",
+            "offline-fake",
+            "--response",
+            recordings["extraction"],
+        )
+        == 0
+    )
+    return identifier
+
+
+def test_a_run_narrates_each_phase_to_stderr(
+    data_root: Path, capsys: pytest.CaptureFixture[str], tmp_path: Path
+) -> None:
+    """DEC-138: one stderr line per phase entered, numbered against the fourteen-phase table.
+    Stdout keeps its documented contract -- the outcome block only."""
+    _paused_at_checkpoint_one(data_root, capsys, tmp_path)
+    captured = capsys.readouterr()
+    assert "assessment_initialization (1/14)" in captured.err
+    assert "human_context_review (5/14)" in captured.err
+    assert "model call(s) so far" in captured.err
+    assert "assessment_initialization" not in captured.out
+    assert FAKE_KEY not in captured.err
+
+
+def test_runs_status_reports_the_paused_checkpoint(
+    data_root: Path, capsys: pytest.CaptureFixture[str], tmp_path: Path
+) -> None:
+    """The derived read (DEC-138): run row status, state-file phase, record-computed counters."""
+    identifier = _paused_at_checkpoint_one(data_root, capsys, tmp_path)
+    capsys.readouterr()
+
+    assert invoke(data_root, "runs", "status", identifier) == 0
+    output = capsys.readouterr().out
+    assert "status:         paused" in output
+    assert "phase:          human_context_review (5/14)" in output
+    assert "model calls:    " in output
+    assert "awaiting:" in output
+    assert FAKE_KEY not in output
+
+    assert invoke(data_root, "runs", "status", identifier, "--json") == 0
+    document = _parsed_json(capsys.readouterr().out)
+    assert document["kind"] == "run-status"
+    assert document["run_status"] == "paused"
+    assert document["phase"] == "human_context_review"
+    assert document["phase_number"] == 5
+    assert document["phase_total"] == 14
+    assert isinstance(document["awaiting_review"], int) and document["awaiting_review"] >= 1
+
+
 def _seed_abandoned_run(data_root: Path, identifier: str) -> None:
     from trace_ai.infrastructure.database.store import AssessmentStore
     from trace_ai.services.assessment import AssessmentService

@@ -52,6 +52,7 @@ from trace_ai.workflow import (
     NodeResult,
     Orchestrator,
     Phase,
+    PhaseProgress,
     TransitionError,
     check_transition,
     successor,
@@ -499,6 +500,57 @@ def test_a_run_reaching_completion_closes_the_run(ledger: ExecutionLedger) -> No
     outcome = orchestrator(ledger, node).run(state_for(ledger, Phase.EVALUATION))
     assert outcome.completed
     assert ledger.run.status is RunStatus.COMPLETED
+
+
+# ------------------------------------------------------------------------------------------
+# The phase observer: the run narrates itself, and the narration cannot touch the run (DEC-138)
+# ------------------------------------------------------------------------------------------
+
+
+def test_the_observer_hears_each_phase_entered_in_table_order(ledger: ExecutionLedger) -> None:
+    """One notification per phase entered, numbered against the fourteen-phase table."""
+    heard: list[PhaseProgress] = []
+    node = ScriptedNode("evaluation", Phase.EVALUATION)
+    outcome = Orchestrator(ledger.handle, ledger=ledger, nodes=[node], on_phase=heard.append).run(
+        state_for(ledger, Phase.EVALUATION)
+    )
+
+    assert outcome.completed
+    assert [progress.phase for progress in heard] == [
+        Phase.EVALUATION,
+        Phase.ASSESSMENT_COMPLETION,
+    ]
+    assert [(progress.phase_number, progress.phase_total) for progress in heard] == [
+        (13, 14),
+        (14, 14),
+    ]
+    assert all(progress.workflow_run_id == ledger.run.id for progress in heard)
+    # A deterministic run: the counters the observer is handed say zero calls, no cost.
+    assert heard[0].model_calls == 0
+    assert heard[0].estimated_cost is None
+
+
+def test_an_observer_failure_never_stops_the_run(ledger: ExecutionLedger) -> None:
+    """Notify-only means notify-only: an observer that raises changes nothing about the run --
+    a progress line must never be what stops a pipeline."""
+
+    def explode(progress: PhaseProgress) -> None:
+        raise RuntimeError("the progress line broke")
+
+    node = ScriptedNode("evaluation", Phase.EVALUATION)
+    outcome = Orchestrator(ledger.handle, ledger=ledger, nodes=[node], on_phase=explode).run(
+        state_for(ledger, Phase.EVALUATION)
+    )
+
+    assert outcome.completed
+    assert ledger.run.status is RunStatus.COMPLETED
+
+
+def test_a_run_without_an_observer_is_unchanged(ledger: ExecutionLedger) -> None:
+    """The seam defaults closed: no observer, no notification path, same outcome."""
+    node = ScriptedNode("evaluation", Phase.EVALUATION)
+    outcome = orchestrator(ledger, node).run(state_for(ledger, Phase.EVALUATION))
+    assert outcome.completed
 
 
 # ------------------------------------------------------------------------------------------

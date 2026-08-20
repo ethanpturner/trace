@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import contextlib
 from dataclasses import dataclass
+from decimal import Decimal
 from typing import TYPE_CHECKING
 
 from trace_ai.domain.base import now
@@ -46,7 +47,28 @@ if TYPE_CHECKING:
     from trace_ai.services.execution_ledger import ExecutionLedger
     from trace_ai.workflow.nodes import Node, NodeResult
 
-__all__ = ["Orchestrator", "RunOutcome"]
+__all__ = ["Orchestrator", "PhaseProgress", "RunOutcome"]
+
+
+@dataclass(frozen=True, slots=True)
+class PhaseProgress:
+    """What the phase observer is told when the run enters a phase (DEC-138).
+
+    A snapshot of facts the state and the ledger already record — identifiers, a phase name, and
+    counters — assembled for notification rather than stored anywhere. It carries no
+    source-derived content by construction: everything here is safe for a progress line under the
+    observability rules.
+    """
+
+    workflow_run_id: str
+    phase: Phase
+    phase_number: int
+    """1-based position in the fourteen-phase table, for `(6/14)`-style rendering."""
+    phase_total: int
+    model_calls: int
+    """Model calls recorded so far this run, computed from the execution records."""
+    estimated_cost: Decimal | None
+    """Summed estimated cost of those calls, or None when no record reported one."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -78,12 +100,14 @@ class Orchestrator:
         budget: Budget | None = None,
         model: StructuredModel | None = None,
         on_pause: Callable[[AssessmentState], None] | None = None,
+        on_phase: Callable[[PhaseProgress], None] | None = None,
     ) -> None:
         self.handle = handle
         self.ledger = ledger
         self.budget = budget if budget is not None else Budget()
         self.model = model
         self._on_pause = on_pause
+        self._on_phase = on_phase
         self._nodes: dict[Phase, dict[str, Node]] = {}
         for node in nodes:
             self.register(node)
@@ -139,6 +163,7 @@ class Orchestrator:
         try:
             while True:
                 phase = current.current_phase
+                self._notify_phase(current)
 
                 if phase is Phase.ASSESSMENT_COMPLETION:
                     completed = self._complete(current)
@@ -194,6 +219,34 @@ class Orchestrator:
                 current,
                 safe_message(error),
                 kind=ErrorClass.UNEXPECTED_APPLICATION_FAILURE.value,
+            )
+
+    # -- narration -------------------------------------------------------------------------
+
+    def _notify_phase(self, state: AssessmentState) -> None:
+        """Tell the observer the run entered a phase (DEC-138). Notify-only, and guarded.
+
+        The observer is given a snapshot and no way back in: it cannot route, spend, or stop
+        anything, and an exception it raises — or a ledger read failing underneath the snapshot —
+        is suppressed, because a progress line must never be what stops a run. Routing and
+        ceilings stay exactly where DEC-016 put them.
+        """
+        if self._on_phase is None:
+            return
+        with contextlib.suppress(Exception):
+            counters = self.ledger.counters()
+            calls = counters.get("total_model_calls")
+            cost = counters.get("estimated_cost")
+            order = list(Phase)
+            self._on_phase(
+                PhaseProgress(
+                    workflow_run_id=state.workflow_run_id,
+                    phase=state.current_phase,
+                    phase_number=order.index(state.current_phase) + 1,
+                    phase_total=len(order),
+                    model_calls=calls if isinstance(calls, int) else 0,
+                    estimated_cost=cost if isinstance(cost, Decimal) else None,
+                )
             )
 
     # -- one node --------------------------------------------------------------------------

@@ -123,6 +123,7 @@ if TYPE_CHECKING:
 
     from trace_ai.services.assessment import AssessmentHandle
     from trace_ai.workflow.context_review import ContextReviewPackage
+    from trace_ai.workflow.orchestrator import PhaseProgress
     from trace_ai.workflow.state import PendingHumanReview
 
 __all__ = ["build_parser", "main", "run"]
@@ -935,6 +936,27 @@ def build_parser() -> argparse.ArgumentParser:
         "runs",
         help="workflow-run housekeeping",
     ).add_subparsers(dest="command", required=True)
+    run_status = runs_commands.add_parser(
+        "status",
+        help="where a run is right now: status, phase, model calls, estimated cost (DEC-138)",
+        description=(
+            "Reports where a workflow run is from what the run already persists: the run row, "
+            "the state file under traces/, and the execution records. A derived read for "
+            "polling a run from outside the process driving it -- it writes nothing and holds "
+            "no state of its own. The phase comes from the state file, which is written on "
+            "every transition; a run still in its first phase has not written one yet, and the "
+            "command says so rather than guessing."
+        ),
+    )
+    run_status.add_argument("assessment_id", help="the assessment whose run to report")
+    run_status.add_argument(
+        "--run",
+        dest="workflow_run_id",
+        default=None,
+        metavar="RUN_ID",
+        help="a specific run's identifier; omitted, the latest run",
+    )
+    _json_flag(run_status)
     prune = runs_commands.add_parser(
         "prune",
         help="remove abandoned paused runs: superseded, or paused past a stated age "
@@ -1149,6 +1171,7 @@ def run(argv: Sequence[str] | None = None) -> int:
         ("catalog", "show"): _catalog_show,
         ("catalog", "validate"): _catalog_validate,
         ("diff", None): _diff,
+        ("runs", "status"): _runs_status,
         ("runs", "prune"): _runs_prune,
         ("runs", "repair"): _runs_repair,
     }
@@ -1257,6 +1280,7 @@ def _capture(args: argparse.Namespace) -> int:
             from_recorded=args.from_recorded,
             live=rehearsal_model,
             rehearsal=args.rehearse,
+            on_phase=_print_phase_progress,
         )
     elif args.stage == "reason":
         capture_service.stage_reason(
@@ -1265,6 +1289,7 @@ def _capture(args: argparse.Namespace) -> int:
             from_recorded=args.from_recorded,
             live=rehearsal_model,
             rehearsal=args.rehearse,
+            on_phase=_print_phase_progress,
         )
     elif args.stage == "report":
         capture_service.stage_report(
@@ -1272,6 +1297,7 @@ def _capture(args: argparse.Namespace) -> int:
             profile_name=args.model_profile,
             live=rehearsal_model,
             rehearsal=args.rehearse,
+            on_phase=_print_phase_progress,
         )
     else:
         capture_service.stage_baseline(
@@ -1873,6 +1899,87 @@ def _assessment_archive(args: argparse.Namespace, service: AssessmentService) ->
     """The only status transition a person performs (DEC-031)."""
     archived = service.archive(args.assessment_id)
     print(f"{archived.id} {archived.status}")
+    return 0
+
+
+def _runs_status(args: argparse.Namespace, service: AssessmentService) -> int:
+    """Report where a run is, from what the run already persists (DEC-138).
+
+    Three sources, every one written by the run itself: the run row (status, timestamps, error
+    summary), the state file under `traces/` (the phase, rewritten on every transition), and the
+    execution records (model calls and estimated cost, computed exactly as the ledger computes
+    them). The command stores nothing, so polling it cannot disagree with the run.
+    """
+    from trace_ai.services.execution_ledger import ExecutionLedger
+
+    handle = service.handle(args.assessment_id)
+    runs = handle.objects.list(WorkflowRun)
+    if not runs:
+        print(f"{args.assessment_id} has no workflow runs", file=sys.stderr)
+        return 1
+    if args.workflow_run_id is None:
+        run = runs[-1]
+    else:
+        matches = [candidate for candidate in runs if candidate.id == args.workflow_run_id]
+        if not matches:
+            print(f"{args.assessment_id} has no run {args.workflow_run_id}", file=sys.stderr)
+            return 1
+        run = matches[0]
+
+    counters = ExecutionLedger(handle, run).counters()
+    order = list(Phase)
+    phase = None
+    awaiting = 0
+    try:
+        state = load_state(handle, run.id)
+    except FileNotFoundError:
+        # The state file is written on the first transition; a run still in its first phase has
+        # not written one, and saying so beats inventing a phase the run never recorded.
+        state = None
+    if state is not None:
+        phase = state.current_phase
+        if state.pending_human_review is not None:
+            awaiting = len(state.pending_human_review.object_ids)
+
+    if args.as_json:
+        return _print_json(
+            "run-status",
+            {
+                "assessment_id": args.assessment_id,
+                "workflow_run_id": run.id,
+                "run_status": run.status.value,
+                "started_at": run.started_at,
+                "completed_at": run.completed_at,
+                "phase": phase.value if phase is not None else None,
+                "phase_number": order.index(phase) + 1 if phase is not None else None,
+                "phase_total": len(order),
+                "model_calls": counters["total_model_calls"],
+                "estimated_cost": counters["estimated_cost"],
+                "awaiting_review": awaiting,
+                "error_summary": run.error_summary,
+            },
+        )
+
+    print(f"workflow run:   {run.id} (of {len(runs)} on {args.assessment_id})")
+    print(f"status:         {run.status.value}")
+    if run.started_at is not None:
+        print(f"started:        {run.started_at.isoformat()}")
+    if run.completed_at is not None:
+        print(f"ended:          {run.completed_at.isoformat()}")
+    if phase is not None:
+        print(f"phase:          {phase.value} ({order.index(phase) + 1}/{len(order)})")
+    else:
+        print("phase:          not yet recorded (the run has not completed its first phase)")
+    print(f"model calls:    {counters['total_model_calls']}")
+    cost = counters["estimated_cost"]
+    if cost is not None:
+        print(f"estimated cost: ${cost}")
+    else:
+        print("estimated cost: none recorded")
+    if awaiting:
+        print(f"awaiting:       {awaiting} subject(s)")
+    if run.error_summary:
+        print(f"error:          {run.error_summary}")
     return 0
 
 
@@ -2634,6 +2741,26 @@ def _budget_from(args: argparse.Namespace) -> Any:
     )
 
 
+def _print_phase_progress(progress: PhaseProgress) -> None:
+    """One stderr line as the run enters each phase (DEC-138).
+
+    Stderr, not stdout: the run's documented output contract stays what `_print_run_outcome`
+    prints, and a script capturing stdout sees nothing new. Everything on the line is an
+    identifier, a phase name, or a counter — never source-derived content.
+    """
+    cost = (
+        f", estimated cost ${progress.estimated_cost}"
+        if progress.estimated_cost is not None
+        else ""
+    )
+    print(
+        f"{progress.workflow_run_id}: {progress.phase.value} "
+        f"({progress.phase_number}/{progress.phase_total}), "
+        f"{progress.model_calls} model call(s) so far{cost}",
+        file=sys.stderr,
+    )
+
+
 def _run(args: argparse.Namespace, service: AssessmentService) -> int:
     """Run the pipeline from initialization until it pauses, completes, or stops.
 
@@ -2648,6 +2775,7 @@ def _run(args: argparse.Namespace, service: AssessmentService) -> int:
         model=build_model(profile, responses=_recorded_responses(args)),
         profile=profile,
         budget=_budget_from(args),
+        on_phase=_print_phase_progress,
     )
     return _print_run_outcome(outcome)
 
@@ -2714,6 +2842,7 @@ def _resume(args: argparse.Namespace, service: AssessmentService) -> int:
         profile=profile,
         workflow_run_id=args.workflow_run_id,
         budget=_budget_from(args),
+        on_phase=_print_phase_progress,
     )
     return _print_run_outcome(outcome)
 

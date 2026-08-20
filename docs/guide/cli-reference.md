@@ -279,6 +279,11 @@ checkpoint (exit 0 — the run is paused and waiting for a person), at completio
 classified error (exit 1). Pausing is stopping: the process exits, and `trace resume` continues
 in a new one. There is no daemon.
 
+The run narrates itself to stderr (DEC-138): one line per phase entered, with the phase's
+position in the fourteen-phase table, the model calls recorded so far, and their estimated cost.
+Stdout keeps the outcome block alone, so a script capturing it sees nothing new; from another
+terminal, `trace runs status` reads the same facts.
+
 ```console
 $ uv run trace run asm-001 --model-profile offline-fake \
     --response demo/forgeflow/recorded/extraction
@@ -560,6 +565,21 @@ reported.
 diff.
 
 ## runs
+
+```
+trace runs status <assessment_id> [--run RUN_ID] [--json]
+```
+
+Reports where a run is, from what the run already persists (DEC-138): the run row (status,
+timestamps, error summary), the `traces/` state file (the phase, rewritten on every transition),
+and the execution records (model calls and estimated cost, computed as the ledger computes
+them). A derived read for polling a run from outside the process driving it — it writes nothing,
+so what it reports cannot disagree with the run. `--run` names a specific run; omitted, the
+latest run is reported. A run still inside its first phase has not written a state file yet, and
+the phase line says so rather than guessing. An assessment with no runs exits 1. `--json` prints
+the same information as one DEC-096 envelope. Note the row of a run whose process was killed
+still says `running` — a status read reports the row and never repairs it; asserting the kill
+is `trace runs repair` (DEC-137).
 
 ```
 trace runs prune [assessment_id] [--older-than DAYS] [--force]

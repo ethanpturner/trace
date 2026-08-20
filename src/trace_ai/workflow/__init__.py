@@ -53,7 +53,7 @@ from trace_ai.workflow.errors import (
 )
 from trace_ai.workflow.limits import Budget, LimitExceededError, LimitKind
 from trace_ai.workflow.nodes import Node, NodeContext, NodeResult
-from trace_ai.workflow.orchestrator import Orchestrator, RunOutcome
+from trace_ai.workflow.orchestrator import Orchestrator, PhaseProgress, RunOutcome
 from trace_ai.workflow.phases import (
     NODES_BY_PHASE,
     PAUSE_PHASES,
@@ -118,6 +118,7 @@ __all__ = [
     "Orchestrator",
     "PendingHumanReview",
     "Phase",
+    "PhaseProgress",
     "QuotedExcerpt",
     "RemainingLimits",
     "RetryPolicy",
