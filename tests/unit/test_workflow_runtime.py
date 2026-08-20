@@ -503,7 +503,7 @@ def test_a_run_reaching_completion_closes_the_run(ledger: ExecutionLedger) -> No
 
 
 # ------------------------------------------------------------------------------------------
-# The phase observer: the run narrates itself, and the narration cannot touch the run (DEC-137)
+# The phase observer: the run narrates itself, and the narration cannot touch the run (DEC-138)
 # ------------------------------------------------------------------------------------------
 
 

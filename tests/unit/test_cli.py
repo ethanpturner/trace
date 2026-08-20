@@ -2402,7 +2402,7 @@ def _paused_at_checkpoint_one(
 def test_a_run_narrates_each_phase_to_stderr(
     data_root: Path, capsys: pytest.CaptureFixture[str], tmp_path: Path
 ) -> None:
-    """DEC-137: one stderr line per phase entered, numbered against the fourteen-phase table.
+    """DEC-138: one stderr line per phase entered, numbered against the fourteen-phase table.
     Stdout keeps its documented contract -- the outcome block only."""
     _paused_at_checkpoint_one(data_root, capsys, tmp_path)
     captured = capsys.readouterr()
@@ -2416,7 +2416,7 @@ def test_a_run_narrates_each_phase_to_stderr(
 def test_runs_status_reports_the_paused_checkpoint(
     data_root: Path, capsys: pytest.CaptureFixture[str], tmp_path: Path
 ) -> None:
-    """The derived read (DEC-137): run row status, state-file phase, record-computed counters."""
+    """The derived read (DEC-138): run row status, state-file phase, record-computed counters."""
     identifier = _paused_at_checkpoint_one(data_root, capsys, tmp_path)
     capsys.readouterr()
 
@@ -2478,3 +2478,68 @@ def test_runs_prune_with_force_removes_the_abandoned_run(
     # Zero abandoned runs after prune: the acceptance criterion from #602.
     assert invoke(data_root, "runs", "prune") == 0
     assert "no abandoned runs" in capsys.readouterr().out
+
+
+def _seed_orphaned_run(data_root: Path, identifier: str) -> str:
+    from trace_ai.infrastructure.database.store import AssessmentStore
+    from trace_ai.services.assessment import AssessmentService
+    from trace_ai.services.execution_ledger import start_run
+
+    with AssessmentStore.at_root(data_root) as store:
+        service = AssessmentService(store, artifact_root=data_root)
+        handle = service.handle(identifier)
+        orphan = start_run(handle, workflow_version="0.1", model_profile="primary-development")
+        return orphan.id
+
+
+def test_runs_repair_dry_run_shows_the_run_and_changes_nothing(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Repair asserts a fact, so without --force it shows and refuses (DEC-137)."""
+    identifier = created(data_root, capsys)
+    run_id = _seed_orphaned_run(data_root, identifier)
+
+    assert invoke(data_root, "runs", "repair", identifier, run_id) == 3
+    captured = capsys.readouterr()
+    assert "running" in captured.out
+    assert "pass --force" in captured.err
+    # Nothing was changed: the same dry run still shows a running run.
+    assert invoke(data_root, "runs", "repair", identifier, run_id) == 3
+
+
+def test_runs_repair_with_force_marks_the_orphan_failed(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    identifier = created(data_root, capsys)
+    run_id = _seed_orphaned_run(data_root, identifier)
+
+    assert invoke(data_root, "runs", "repair", identifier, run_id, "--force") == 0
+    captured = capsys.readouterr()
+    assert f"marked {run_id} failed" in captured.out
+    assert "trace resume" in captured.out, "the recovery is named at the moment it applies"
+
+    # The assertion is spent: a repaired run refuses a second repair.
+    assert invoke(data_root, "runs", "repair", identifier, run_id, "--force") == 3
+    assert "already failed" in capsys.readouterr().err
+
+
+def test_runs_repair_reason_reaches_the_error_summary(
+    data_root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    identifier = created(data_root, capsys)
+    run_id = _seed_orphaned_run(data_root, identifier)
+
+    assert (
+        invoke(
+            data_root,
+            "runs",
+            "repair",
+            identifier,
+            run_id,
+            "--reason",
+            "killed by a sleeping laptop",
+            "--force",
+        )
+        == 0
+    )
+    assert "killed by a sleeping laptop" in capsys.readouterr().out

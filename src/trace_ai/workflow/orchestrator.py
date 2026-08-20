@@ -52,7 +52,7 @@ __all__ = ["Orchestrator", "PhaseProgress", "RunOutcome"]
 
 @dataclass(frozen=True, slots=True)
 class PhaseProgress:
-    """What the phase observer is told when the run enters a phase (DEC-137).
+    """What the phase observer is told when the run enters a phase (DEC-138).
 
     A snapshot of facts the state and the ledger already record — identifiers, a phase name, and
     counters — assembled for notification rather than stored anywhere. It carries no
@@ -224,7 +224,7 @@ class Orchestrator:
     # -- narration -------------------------------------------------------------------------
 
     def _notify_phase(self, state: AssessmentState) -> None:
-        """Tell the observer the run entered a phase (DEC-137). Notify-only, and guarded.
+        """Tell the observer the run entered a phase (DEC-138). Notify-only, and guarded.
 
         The observer is given a snapshot and no way back in: it cannot route, spend, or stop
         anything, and an exception it raises — or a ledger read failing underneath the snapshot —
