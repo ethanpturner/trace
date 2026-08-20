@@ -1,0 +1,488 @@
+# ForgeFlow context review
+#
+# Fill in `decision:` with `approve` or `reject`, edit any field listed under `editable:`, answer a
+# question by writing under `answer:`, and set `confirm: true` on a claim you can vouch for. Leave
+# anything you have no view on exactly as it is: an unchanged entry applies nothing.
+#
+# List evidence identifiers under an entry's `attach_evidence:` to link existing references to it.
+# Settle a contradiction by filling both `resolution:` and `rationale:` under `contradictions:`.
+# Add an object the extractor missed under `additions:`, as
+#   - type: components            # or actors, assets, data_flows, trust_boundaries
+#     fields: {name: ..., ...}    # the object's own fields; the identifier is allocated for you
+#
+# Identifiers, statuses, and timestamps are the application's and are shown for reference.
+# Changing one here has no effect.
+
+assessment_id: asm-001
+system_context_version: 1
+reviewer: null
+components:
+- id: cmp-001
+  decision: null
+  attach_evidence: []
+  editable:
+    name: Invoice Agent
+    description: LLM-based finance assistant built on an agent framework with tool calling that processes
+      invoices and makes approve or deny decisions.
+    component_type: ai_agent
+    technology:
+    - llm
+    - agent_framework
+    ownership: null
+    deployment_zone: null
+    internet_accessible: null
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+- id: cmp-002
+  decision: null
+  attach_evidence: []
+  editable:
+    name: Invoice file storage
+    description: Storage location holding submitted invoice text files that are referenced by file path
+      and read by the process_invoice tool.
+    component_type: file_storage
+    technology: []
+    ownership: null
+    deployment_zone: null
+    internet_accessible: null
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+- id: cmp-003
+  decision: null
+  attach_evidence: []
+  editable:
+    name: Hosted model provider
+    description: Hosted model provider backing the agent's LLM-based processing of invoices.
+    component_type: model_service
+    technology:
+    - hosted_model_provider
+    ownership: null
+    deployment_zone: null
+    internet_accessible: null
+    externally_managed: true
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+- id: cmp-004
+  decision: null
+  attach_evidence: []
+  editable:
+    name: Observability service
+    description: Service that receives request and tool-call traces, including HTTP request and response
+      bodies, for debugging.
+    component_type: observability_service
+    technology:
+    - tracing
+    ownership: null
+    deployment_zone: null
+    internet_accessible: null
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+actors:
+- id: act-001
+  decision: null
+  attach_evidence: []
+  editable:
+    name: Invoice submitter
+    actor_type: end_user
+    trust_level: external
+    capabilities: []
+    authentication_method: none
+assets:
+- id: ast-001
+  decision: null
+  attach_evidence: []
+  editable:
+    name: Invoice data
+    asset_type: business_record
+    description: Invoice JSON documents containing amount, submitter, category, and due date, derived
+      from submitted invoice files.
+    confidentiality_impact: null
+    integrity_impact: null
+    availability_impact: null
+    data_classification: null
+    owner: null
+- id: ast-002
+  decision: null
+  attach_evidence: []
+  editable:
+    name: Model provider credentials
+    asset_type: credential
+    description: Credentials used by the agent to authenticate to the hosted model provider.
+    confidentiality_impact: null
+    integrity_impact: null
+    availability_impact: null
+    data_classification: null
+    owner: null
+- id: ast-003
+  decision: null
+  attach_evidence: []
+  editable:
+    name: Observability service credentials
+    asset_type: credential
+    description: Credentials used by the agent to send traces to the observability service.
+    confidentiality_impact: null
+    integrity_impact: null
+    availability_impact: null
+    data_classification: null
+    owner: null
+- id: ast-004
+  decision: null
+  attach_evidence: []
+  editable:
+    name: Request and tool-call traces
+    asset_type: log_data
+    description: Captured traces of requests and tool calls, including HTTP request and response bodies,
+      used for debugging.
+    confidentiality_impact: null
+    integrity_impact: null
+    availability_impact: null
+    data_classification: null
+    owner: null
+data_flows:
+- id: df-001
+  decision: null
+  attach_evidence: []
+  editable:
+    name: Invoice file contents read into agent via process_invoice
+    direction: one_way
+    protocol: null
+    data_types:
+    - invoice_json
+    authentication: unknown
+    encryption_in_transit: unknown
+    internet_exposed: null
+    source_component_id: cmp-002
+    destination_component_id: cmp-001
+- id: df-002
+  decision: null
+  attach_evidence: []
+  editable:
+    name: Invoice details sent from agent to hosted model provider
+    direction: one_way
+    protocol: null
+    data_types:
+    - invoice_details
+    authentication: unknown
+    encryption_in_transit: unknown
+    internet_exposed: null
+    source_component_id: cmp-001
+    destination_component_id: cmp-003
+- id: df-003
+  decision: null
+  attach_evidence: []
+  editable:
+    name: Request and tool-call traces sent to observability service
+    direction: one_way
+    protocol: null
+    data_types:
+    - request_traces
+    - tool_call_traces
+    - http_bodies
+    authentication: unknown
+    encryption_in_transit: unknown
+    internet_exposed: null
+    source_component_id: cmp-001
+    destination_component_id: cmp-004
+trust_boundaries:
+- id: tb-001
+  decision: null
+  attach_evidence: []
+  editable:
+    name: Hosted model provider boundary
+    boundary_type: external_service_boundary
+    description: Separates internally managed components from the hosted model provider used to run the
+      LLM.
+    controls: []
+claims:
+- id: ctx-001
+  status: documented
+  confidence: high
+  decision: null
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-001
+  editable:
+    predicate: name
+    value: Invoice Agent
+    rationale: null
+- id: ctx-002
+  status: documented
+  confidence: high
+  decision: null
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-001
+  - evd-002
+  editable:
+    predicate: purpose
+    value: LLM-based finance assistant that processes submitted invoices and either approves or denies
+      them.
+    rationale: null
+- id: ctx-003
+  status: documented
+  confidence: high
+  decision: null
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-001
+  editable:
+    predicate: architecture_overview
+    value: Built on an agent framework with tool calling, backed by a hosted model provider, with tracing
+      sent to an observability service.
+    rationale: null
+- id: ctx-004
+  status: documented
+  confidence: high
+  decision: null
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-002
+  editable:
+    predicate: invoice_submission_format
+    value: Users submit an invoice as a text file containing a JSON document.
+    rationale: null
+- id: ctx-005
+  status: documented
+  confidence: high
+  decision: null
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-002
+  editable:
+    predicate: agent_invoice_processing_flow
+    value: The agent is prompted with the path to the submitted file, reads it through its invoice-processing
+      tool, and responds with the invoice details, an approve or deny decision, and the reasoning behind
+      it.
+    rationale: null
+- id: ctx-006
+  status: documented
+  confidence: high
+  decision: null
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-002
+  editable:
+    predicate: urgent_followup_flow
+    value: If an invoice is denied, the workflow follows up in the same conversation with a note that
+      the invoice is urgent and should be approved, asking the agent to reconsider its criteria, with
+      prior messages carried into that follow-up.
+    rationale: null
+- id: ctx-007
+  status: documented
+  confidence: high
+  decision: null
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-003
+  editable:
+    predicate: deny_rules
+    value:
+    - Deny if the amount is over $20,000.
+    - 'Deny if the category is not one of: camera equipment, microphones, guest fee, recording software.'
+    - Deny if the submitter is not one of the three approved submitters.
+    rationale: null
+- id: ctx-008
+  status: documented
+  confidence: high
+  decision: null
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-003
+  editable:
+    predicate: approve_rules
+    value:
+    - Approve an invoice if the due date is within the next week; approvals are prioritized for speed
+      when payment is coming due.
+    rationale: null
+- id: ctx-009
+  status: documented
+  confidence: high
+  decision: null
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-003
+  editable:
+    predicate: discretion_between_rules
+    value: The instructions direct the agent to use its best discretion between the deny rules and the
+      approve rules.
+    rationale: null
+- id: ctx-010
+  status: documented
+  confidence: high
+  decision: null
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-004
+  editable:
+    predicate: tools_exposed
+    value:
+    - process_invoice
+    - get_todays_date
+    rationale: null
+- id: ctx-011
+  status: documented
+  confidence: high
+  decision: null
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-004
+  editable:
+    predicate: process_invoice_behavior
+    value: The process_invoice tool takes a file path, reads the file, parses the contents as JSON, and
+      returns a validated invoice object with amount, submitter, category, and due date. Validation enforces
+      that the submitter and category are drawn from the approved lists, case-insensitively. The $20,000
+      ceiling is applied by the agent from its instructions; the schema does not enforce a maximum amount.
+    rationale: null
+- id: ctx-012
+  status: documented
+  confidence: high
+  decision: null
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-004
+  editable:
+    predicate: get_todays_date_behavior
+    value: The get_todays_date tool returns today's date, and the instructions tell the agent to always
+      check the date when processing an invoice.
+    rationale: null
+- id: ctx-013
+  status: documented
+  confidence: high
+  decision: null
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-005
+  editable:
+    predicate: submitter_field_source
+    value: The submitter field is a value in the uploaded invoice document; submitters are not otherwise
+      authenticated to the workflow.
+    rationale: null
+- id: ctx-014
+  status: documented
+  confidence: high
+  decision: null
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-005
+  editable:
+    predicate: validation_failure_behavior
+    value: Validation failures stop processing and report which fields failed.
+    rationale: null
+- id: ctx-015
+  status: documented
+  confidence: high
+  decision: null
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-005
+  editable:
+    predicate: invoice_details_to_model
+    value: The invoice file's contents are parsed and returned to the model as the invoice details.
+    rationale: null
+- id: ctx-016
+  status: documented
+  confidence: high
+  decision: null
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-006
+  editable:
+    predicate: service_credentials
+    value: The agent runs with credentials for the model provider and the observability service.
+    rationale: null
+- id: ctx-017
+  status: documented
+  confidence: high
+  decision: null
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-006
+  editable:
+    predicate: tracing_contents
+    value: Request and tool-call traces, including HTTP request and response bodies, are captured for
+      debugging.
+    rationale: null
+- id: ctx-018
+  status: inferred
+  confidence: high
+  decision: null
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-001
+  editable:
+    predicate: externally_managed
+    value: true
+    rationale: The model service is described as a 'hosted model provider', which ordinarily indicates
+      a third-party hosted service managed outside the core system.
+- id: ctx-019
+  status: inferred
+  confidence: high
+  decision: null
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-002
+  - evd-004
+  editable:
+    predicate: exists
+    value: true
+    rationale: Users submit invoices as text files, and the agent is prompted with a file path and reads
+      the file via the process_invoice tool, implying a storage location for submitted invoice files.
+contradictions: []
+additions: []
+questions:
+- id: qst-001
+  question: Are submitted invoice files stored persistently after processing, and if so, in which system(s)
+    and for how long?
+  priority: high
+  blocking: true
+  answer: null
+- id: qst-002
+  question: Is there any authentication or access control in front of the invoice submission workflow
+    beyond the submitter field inside the uploaded document?
+  priority: high
+  blocking: true
+  answer: null
+- id: qst-003
+  question: What observability service is used to capture request and tool-call traces, and what are its
+    data retention and access control policies for HTTP request and response bodies?
+  priority: high
+  blocking: true
+  answer: null
+- id: qst-004
+  question: In what environment and deployment model does the Invoice Agent run (for example, production
+    vs. test, and which cloud or on-premises platform)?
+  priority: medium
+  blocking: false
+  answer: null
+- id: qst-005
+  question: No actor in the context is administrative or privileged. Who operates and configures the system,
+    and through what?
+  priority: medium
+  blocking: false
+  answer: null
