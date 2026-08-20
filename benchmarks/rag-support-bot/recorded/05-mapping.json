@@ -1,0 +1,202 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 14653,
+    "output_tokens": 12539,
+    "cache_read_tokens": 17152,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.14585025",
+    "duration_seconds": 121.33069137495477
+  },
+  "response": {
+    "controls": [
+      {
+        "key": "c1_prompt_context_block",
+        "name": "Prompt uses delimited context block marked as reference material",
+        "description": "The answer service assembles prompts so that retrieved passages are placed inside a delimited context block, and the system instructions state that content inside this block is reference material rather than instructions to the model.",
+        "control_type": "implemented",
+        "provider_component_id": "cmp-001",
+        "protected_component_ids": [
+          "cmp-001",
+          "cmp-002"
+        ],
+        "protected_asset_ids": [
+          "ast-002",
+          "ast-003"
+        ],
+        "implementation_status": "implemented",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "owner": null,
+        "limitations": [
+          "This control relies on the model following system instructions; the documentation does not describe additional enforcement mechanisms or output validation that would prevent prompt-injection content in support tickets from altering the model's task."
+        ]
+      }
+    ],
+    "mappings": [
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-AI-001",
+        "control_keys": [
+          "c1_prompt_context_block"
+        ],
+        "existing_control_ids": [
+          "ctl-003"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The system passes content it did not author\u2014resolved support tickets submitted by workspace users\u2014from the support platform through the ingestion pipeline into the retrieval index, and then into model context at answer time; these tickets are authored by end users of many workspaces, so the content source is open to untrusted contributors (evd-001, evd-002, evd-012, evd-013).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-012",
+          "evd-013"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-RAG-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-003"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "Stored content from multiple sources (the help-center repository and the support platform\u2019s resolved-tickets export) is retrieved from a managed index and placed into model context at answer time, and the corpus accepts content originating from more than one source and many authors (evd-001, evd-002, evd-012, evd-013).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "satisfied",
+        "evidence_ids": [
+          "evd-002",
+          "evd-012",
+          "evd-013"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-RAG-002",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-001",
+          "ctl-003"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The retrieval corpus holds help-center content and workspace-specific resolved support tickets for many workspaces in a single shared index (evd-002), and retrievals are served to many signed-in users across workspaces through the help panel and Relay Answers API (evd-001, evd-006, evd-008, evd-009).",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-006",
+          "evd-008",
+          "evd-009",
+          "evd-012"
+        ],
+        "assumptions": [
+          "Assume that within a given workspace, any signed-in user is entitled to read that workspace\u2019s support history; the key unanswered question is how the retrieval index prevents one workspace\u2019s content from appearing in another\u2019s retrievals."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-RAG-003",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-003"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "Indexed content derives from sources that can be updated or deleted\u2014resolved support tickets are retained on the support platform for two years under a documented retention schedule (evd-004), and the ingestion job replaces changed chunks by source reference (evd-012)\u2014so how deletions and corrections propagate to the retrieval index affects how long any poisoned ticket remains retrievable for this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-004",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Handling of adversarial support-ticket content as untrusted model input is not fully documented",
+        "description": "Documentation establishes that resolved support tickets authored by customers are ingested into a shared retrieval index and later placed into a delimited context block in the model prompt, with system instructions stating that this block is reference material rather than instructions (evd-001, evd-002, evd-003, evd-012, evd-013). It does not describe whether this content is explicitly treated as untrusted input nor what concrete mechanisms beyond prompt wording (such as output validation, restricted capabilities, or secondary checks) prevent instructions embedded in support tickets from altering the model\u2019s task, as expected by req-AI-001.",
+        "importance": "Without a clear description of how untrusted support-ticket content is handled, it is not possible to verify whether controls exist that mitigate prompt-injection attempts originating from the retrieval corpus for this threat.",
+        "related_object_ids": [
+          "thr-003",
+          "req-AI-001",
+          "cmp-003",
+          "ast-002",
+          "ast-003"
+        ],
+        "requested_evidence": [
+          "Architecture or design documentation that states explicitly how retrieved support tickets are treated as untrusted data in prompt construction, and what mechanisms (for example, output validation, restricted actions, or additional checks) prevent embedded instructions in that content from steering the model\u2019s behaviour."
+        ],
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-012",
+          "evd-013"
+        ],
+        "severity": "high"
+      },
+      {
+        "title": "Workspace scoping and authorization of retrieval index results is unclear",
+        "description": "The retrieval index is a single managed vector database serving all workspaces, with queries returning the top eight passages ranked by embedding similarity and documentation stating that relevance alone selects the passages that reach the prompt (evd-002). The Relay Answers API requires a workspace-scoped bearer token (evd-006, evd-008, evd-009), but the documentation and existing controls note that it is unclear how this workspace identity is enforced when accessing shared stores such as the retrieval index. There is no documented description of how retrieval results are restricted to the requesting workspace or principal, as required by req-RAG-002.",
+        "importance": "Without documentation of workspace-level scoping or entitlement filtering on retrievals from the shared index, it is not possible to verify that users or workspaces cannot retrieve and be influenced by other tenants\u2019 support history, which affects both data-leakage and cross-tenant prompt-injection variants of this threat.",
+        "related_object_ids": [
+          "thr-003",
+          "req-RAG-002",
+          "cmp-001",
+          "cmp-003",
+          "ast-002",
+          "ast-003"
+        ],
+        "requested_evidence": [
+          "Documentation of how the retrieval index query path uses the caller\u2019s workspace (and any finer-grained entitlements) to constrain which indexed items are eligible for retrieval, including how one workspace\u2019s tickets are kept out of another\u2019s results."
+        ],
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-006",
+          "evd-008",
+          "evd-009",
+          "evd-012"
+        ],
+        "severity": "high"
+      },
+      {
+        "title": "Propagation of source deletions and corrections to the retrieval index is not described",
+        "description": "Resolved support tickets are retained on the support platform for two years and then deleted under a documented retention schedule (evd-004). The ingestion job replaces changed chunks by source reference and is the only writer to the retrieval index (evd-012), but the documentation does not state how deletions or corrections at the support platform or help-center repository propagate to the index and embeddings, or within what time window, as required by req-RAG-003.",
+        "importance": "For this threat, the duration over which a poisoned or incorrect support ticket remains retrievable depends on how promptly deletions or corrections at the source are reflected in the retrieval index. Without documentation of that lifecycle, it is not possible to verify whether the index honours source retention and correction commitments.",
+        "related_object_ids": [
+          "thr-003",
+          "req-RAG-003",
+          "cmp-004",
+          "cmp-003",
+          "ast-002",
+          "ast-003"
+        ],
+        "requested_evidence": [
+          "Documentation describing how the ingestion pipeline detects and handles deleted or corrected items from the support platform and help-center repository, including whether it removes corresponding entries from the retrieval index and the expected lag between a source change and its reflection in the index."
+        ],
+        "evidence_ids": [
+          "evd-004",
+          "evd-012"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": []
+  }
+}

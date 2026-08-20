@@ -1,0 +1,364 @@
+{
+  "components": [
+    {
+      "name": "Electrum Wallet GUI",
+      "component_type": "desktop wallet GUI"
+    },
+    {
+      "name": "Electrum Wallet Daemon",
+      "component_type": "local wallet backend / JSON-RPC service"
+    },
+    {
+      "name": "ElectrumX Server",
+      "component_type": "third-party SPV blockchain server"
+    },
+    {
+      "name": "Web Browser and Mobile App",
+      "component_type": "user client applications"
+    },
+    {
+      "name": "Exchange Website",
+      "component_type": "web front-end"
+    },
+    {
+      "name": "Exchange Backend",
+      "component_type": "backend service"
+    },
+    {
+      "name": "Exchange API",
+      "component_type": "API server (Node.js, WebSocket)"
+    },
+    {
+      "name": "Blockchain Integration Module",
+      "component_type": "blockchain integration service"
+    },
+    {
+      "name": "Wallet file",
+      "component_type": "local key store"
+    },
+    {
+      "name": "MySQL",
+      "component_type": "relational database"
+    },
+    {
+      "name": "MongoDB",
+      "component_type": "NoSQL database / log and metadata store"
+    },
+    {
+      "name": "Load balancer",
+      "component_type": "TLS-terminating load balancer"
+    }
+  ],
+  "threats": [
+    {
+      "title": "Unencrypted wallet keys on user devices",
+      "affected_components": [
+        "Wallet file",
+        "Electrum Wallet GUI",
+        "Electrum Wallet Daemon"
+      ],
+      "rationale": "The wallet file holds wallet data and keys, and the document states: \"It should be encrypted at rest; encryption is a wallet option.\" This means encryption is not enforced by design, so loss or compromise of a user device could expose private keys if the user does not enable encryption."
+    },
+    {
+      "title": "Malicious or compromised ElectrumX servers affecting wallet behavior",
+      "affected_components": [
+        "Electrum Wallet Daemon",
+        "ElectrumX Server"
+      ],
+      "rationale": "The Electrum Wallet Daemon connects to third-party ElectrumX servers for blockchain data, and these servers are \"Operated by third parties, not by the exchange.\" A malicious or compromised server could feed incorrect balances or transaction data, impacting user funds or causing fraudulent transactions."
+    },
+    {
+      "title": "Compromise of user-run trading bots and exchange API keys",
+      "affected_components": [
+        "Exchange API"
+      ],
+      "rationale": "\"A user-run trading bot holds exchange API keys and trades against the exchange API over a secure WebSocket.\" These keys reside on user-controlled systems, which may be insecure, creating a threat of key theft and unauthorized trading or data access via the Exchange API."
+    },
+    {
+      "title": "Sensitive information exposure in MongoDB logs and metadata",
+      "affected_components": [
+        "MongoDB",
+        "Exchange API",
+        "Exchange Backend"
+      ],
+      "rationale": "MongoDB is described as storing \"trading data, logs, and operational metadata used by the exchange API.\" Without documented controls over log content, there is a threat that sensitive data (credentials, personal data, secrets) may be written to logs and exposed if MongoDB is accessed by an attacker or over-privileged staff."
+    },
+    {
+      "title": "Unverified TLS protection between front-end, load balancer, and backend",
+      "affected_components": [
+        "Exchange Website",
+        "Exchange Backend",
+        "Exchange API",
+        "Load balancer"
+      ],
+      "rationale": "The document states: \"TLS is expected to terminate at the load balancer, with all front-end to backend communication over HTTPS. This has not been re-verified for the current deployment.\" This creates a threat that misconfiguration or drift could leave some paths unencrypted without being noticed."
+    },
+    {
+      "title": "Lateral movement within the exchange internal zone",
+      "affected_components": [
+        "Exchange Backend",
+        "Exchange API",
+        "Blockchain Integration Module",
+        "MySQL",
+        "MongoDB"
+      ],
+      "rationale": "The \"Exchange internal\" zone groups backend, API, blockchain integration, and databases but does not describe internal network segmentation. If one internal service is compromised, an attacker may be able to move laterally to other internal components, including databases holding user accounts and trading data."
+    },
+    {
+      "title": "Database compromise impacting all users and tenants",
+      "affected_components": [
+        "MySQL",
+        "MongoDB"
+      ],
+      "rationale": "MySQL holds \"user accounts and configuration\" and MongoDB holds \"trading data, logs, and operational metadata.\" There is no documentation of tenant-level separation or row-level security. A successful compromise of these databases could expose or corrupt data for all users, not just a single tenant."
+    }
+  ],
+  "findings": [
+    {
+      "requirement_id": "req-DATA-001",
+      "affected_component": "Wallet file",
+      "title": "Wallet encryption at rest is optional rather than enforced",
+      "rationale": "The documentation explicitly states that encryption of the wallet file is an option, not a mandatory control. This means some deployments or users may operate with an unencrypted wallet file containing private keys, which does not meet the requirement that sensitive data be encrypted at rest.",
+      "evidence_quote": "\"Wallet file (user device) — the local wallet at rest, holding the wallet data and keys. It should be encrypted at rest; encryption is a wallet option.\""
+    }
+  ],
+  "documentation_gaps": [
+    {
+      "requirement_id": "req-ADMIN-001",
+      "affected_component": "Exchange Backend",
+      "what_cannot_be_determined": "How privileged administrative access to the Exchange Backend is authenticated, restricted, and documented is not described."
+    },
+    {
+      "requirement_id": "req-ADMIN-001",
+      "affected_component": "Exchange API",
+      "what_cannot_be_determined": "Whether there are separate administrative interfaces or roles for the Exchange API and how access to them is restricted and audited is not documented."
+    },
+    {
+      "requirement_id": "req-AUTH-001",
+      "affected_component": "Exchange Website",
+      "what_cannot_be_determined": "The authentication mechanism for end users of the Exchange Website (local accounts, SSO, OAuth, etc.) and any delegation to identity providers are not described."
+    },
+    {
+      "requirement_id": "req-AUTH-001",
+      "affected_component": "Exchange API",
+      "what_cannot_be_determined": "Aside from the existence of API keys, the authentication and key management model for the Exchange API (issuance, rotation, revocation, binding to users/tenants) is not documented."
+    },
+    {
+      "requirement_id": "req-AUTH-002",
+      "affected_component": "Exchange Website",
+      "what_cannot_be_determined": "Whether multi-factor authentication is supported or required for user access to the Exchange Website is not stated."
+    },
+    {
+      "requirement_id": "req-AUTH-002",
+      "affected_component": "Exchange API",
+      "what_cannot_be_determined": "Whether API key use is supplemented with any form of multi-factor or out-of-band confirmation for sensitive operations is not described."
+    },
+    {
+      "requirement_id": "req-AUTHZ-001",
+      "affected_component": "Exchange Backend",
+      "what_cannot_be_determined": "The model for tenant-aware authorization (e.g., per-account or per-organization isolation and role-based access) within the Exchange Backend is not documented."
+    },
+    {
+      "requirement_id": "req-AUTHZ-001",
+      "affected_component": "Exchange API",
+      "what_cannot_be_determined": "How the Exchange API enforces tenant context and ensures that API clients can only act on resources belonging to their tenant is not described."
+    },
+    {
+      "requirement_id": "req-AUTHZ-002",
+      "affected_component": "Exchange API",
+      "what_cannot_be_determined": "The granularity and limitations of Exchange API key privileges (scopes, per-action permissions, read/write separation) are not documented."
+    },
+    {
+      "requirement_id": "req-CICD-001",
+      "affected_component": "Exchange Backend",
+      "what_cannot_be_determined": "The deployment pipeline, trust of build artifacts, configuration management, and how the deployment path for the Exchange Backend is secured and validated are not described."
+    },
+    {
+      "requirement_id": "req-CICD-001",
+      "affected_component": "Exchange API",
+      "what_cannot_be_determined": "How Exchange API artifacts are built, tested, signed, and deployed, and how dependencies are trusted, is not documented."
+    },
+    {
+      "requirement_id": "req-DATA-001",
+      "affected_component": "Exchange Website",
+      "what_cannot_be_determined": "While HTTPS is implied, the documentation only says TLS is \"expected\" and has not been re-verified; it is unclear whether all user-to-website and website-to-backend communications are in fact encrypted in the current deployment."
+    },
+    {
+      "requirement_id": "req-DATA-001",
+      "affected_component": "Exchange API",
+      "what_cannot_be_determined": "The Exchange API is said to use a \"secure WebSocket,\" but there is no explicit confirmation that this is always wss:// with strong TLS settings in the current environment."
+    },
+    {
+      "requirement_id": "req-DATA-001",
+      "affected_component": "MySQL",
+      "what_cannot_be_determined": "Whether the MySQL database encrypts user account and configuration data at rest (e.g., disk encryption, TDE) and uses encrypted connections from application servers is not documented."
+    },
+    {
+      "requirement_id": "req-DATA-001",
+      "affected_component": "MongoDB",
+      "what_cannot_be_determined": "Whether MongoDB data (trading data, logs, and operational metadata) is encrypted at rest and whether all application connections use TLS is not described."
+    },
+    {
+      "requirement_id": "req-DATA-002",
+      "affected_component": "MySQL",
+      "what_cannot_be_determined": "Data retention policies for user account and configuration data in MySQL, and whether they align with what customers are told, are not documented."
+    },
+    {
+      "requirement_id": "req-DATA-002",
+      "affected_component": "MongoDB",
+      "what_cannot_be_determined": "Retention periods and deletion practices for trading data, logs, and operational metadata in MongoDB are not described."
+    },
+    {
+      "requirement_id": "req-DATA-003",
+      "affected_component": "MySQL",
+      "what_cannot_be_determined": "How user accounts and configuration data are separated by tenant (e.g., schema design, row-level security, separate databases) is not documented."
+    },
+    {
+      "requirement_id": "req-DATA-003",
+      "affected_component": "MongoDB",
+      "what_cannot_be_determined": "Whether trading data and logs in MongoDB are partitioned or logically separated by tenant is not described."
+    },
+    {
+      "requirement_id": "req-DATA-004",
+      "affected_component": "Exchange Backend",
+      "what_cannot_be_determined": "Whether and how customer data (account information, trading history, associated records) can be deleted on user request, including propagation to MySQL, MongoDB, and backups, is not documented."
+    },
+    {
+      "requirement_id": "req-LOG-001",
+      "affected_component": "MongoDB",
+      "what_cannot_be_determined": "Controls to prevent sensitive data (credentials, personal data, keys) from being stored in logs and operational metadata in MongoDB are not described."
+    },
+    {
+      "requirement_id": "req-LOG-002",
+      "affected_component": "Exchange Backend",
+      "what_cannot_be_determined": "Whether security-relevant administrative actions within the Exchange Backend are logged, and at what level of detail, is not documented."
+    },
+    {
+      "requirement_id": "req-LOG-002",
+      "affected_component": "Exchange API",
+      "what_cannot_be_determined": "Whether administrative or high-privilege API operations (e.g., account changes, key management) are logged in a way that supports security auditing is not described."
+    },
+    {
+      "requirement_id": "req-NET-001",
+      "affected_component": "MySQL",
+      "what_cannot_be_determined": "Network-level restrictions limiting access to the MySQL database to only the Exchange Backend (and any necessary services) are not documented."
+    },
+    {
+      "requirement_id": "req-NET-001",
+      "affected_component": "MongoDB",
+      "what_cannot_be_determined": "Whether MongoDB is reachable only from the Exchange API/Backend or other tightly controlled workloads is not described."
+    },
+    {
+      "requirement_id": "req-NET-001",
+      "affected_component": "Blockchain Integration Module",
+      "what_cannot_be_determined": "The network exposure of the Blockchain Integration Module and whether it is reachable only from the Exchange Backend is not documented."
+    },
+    {
+      "requirement_id": "req-SECRET-001",
+      "affected_component": "Exchange Backend",
+      "what_cannot_be_determined": "Where long-lived secrets used by the Exchange Backend (e.g., database credentials, signing keys) are stored and whether a managed secret store is used are not described."
+    },
+    {
+      "requirement_id": "req-SECRET-001",
+      "affected_component": "Exchange API",
+      "what_cannot_be_determined": "Storage and management of long-lived credentials or keys used by the Exchange API (including any keys for signing tokens or securing WebSocket connections) are not documented."
+    },
+    {
+      "requirement_id": "req-SECRET-001",
+      "affected_component": "Blockchain Integration Module",
+      "what_cannot_be_determined": "How blockchain-related private keys or credentials managed by the Blockchain Integration Module are stored and protected (e.g., HSM, managed secret store) is not described."
+    },
+    {
+      "requirement_id": "req-TPI-001",
+      "affected_component": "ElectrumX Server",
+      "what_cannot_be_determined": "Beyond stating that ElectrumX servers are third-party and not operated by the exchange, the data handling practices, security assurances, and contractual controls for these external processors are not documented."
+    },
+    {
+      "requirement_id": "req-TPI-002",
+      "affected_component": "Exchange API",
+      "what_cannot_be_determined": "Work triggered by external clients (e.g., user trading bots) via the Exchange API—such as order placement, data queries, or other actions—is not described in terms of rate limiting, resource caps, or other bounds to prevent abuse or exhaustion."
+    }
+  ],
+  "questions": [
+    {
+      "question": "How is privileged administrative access to the Exchange Backend authenticated, restricted (e.g., roles, network controls), and documented, and are admin actions subject to additional protections?",
+      "requirement_id": "req-ADMIN-001"
+    },
+    {
+      "question": "Are there separate administrative interfaces or roles for the Exchange API, and if so, how is access to them controlled and audited?",
+      "requirement_id": "req-ADMIN-001"
+    },
+    {
+      "question": "What authentication mechanisms are used for end users of the Exchange Website (e.g., local accounts, SSO, OAuth), and is any authentication delegated to external identity providers?",
+      "requirement_id": "req-AUTH-001"
+    },
+    {
+      "question": "How are Exchange API keys issued, associated with users or tenants, rotated, and revoked, and is the authentication model documented and enforced consistently?",
+      "requirement_id": "req-AUTH-001"
+    },
+    {
+      "question": "Is multi-factor authentication supported and required for user access to the Exchange Website, especially for sensitive operations such as withdrawals or API key management?",
+      "requirement_id": "req-AUTH-002"
+    },
+    {
+      "question": "Do Exchange API operations involving high risk (e.g., withdrawals, key management) require any form of multi-factor or out-of-band confirmation beyond possession of an API key?",
+      "requirement_id": "req-AUTH-002"
+    },
+    {
+      "question": "How is tenant context represented and enforced in the Exchange Backend and Exchange API to ensure users and integrations can only access their own accounts and data?",
+      "requirement_id": "req-AUTHZ-001"
+    },
+    {
+      "question": "What limitations and scopes are available for Exchange API keys (e.g., read-only, trade-only, withdrawal-disabled), and are keys constrained to the minimum privileges required by each integration?",
+      "requirement_id": "req-AUTHZ-002"
+    },
+    {
+      "question": "What is the deployment pipeline for the Exchange Backend and Exchange API (build, test, signing, deploy), and how is the integrity and trust of artifacts and dependencies assured?",
+      "requirement_id": "req-CICD-001"
+    },
+    {
+      "question": "Has TLS termination at the load balancer and HTTPS between front-end and backend components been explicitly verified in the current deployment, and are there any non-TLS paths?",
+      "requirement_id": "req-DATA-001"
+    },
+    {
+      "question": "Are MySQL and MongoDB encrypted at rest (e.g., disk encryption, TDE) and are all application connections to these databases enforced to use TLS?",
+      "requirement_id": "req-DATA-001"
+    },
+    {
+      "question": "What are the defined retention periods for user account data in MySQL and trading data, logs, and metadata in MongoDB, and how do these align with what customers are told?",
+      "requirement_id": "req-DATA-002"
+    },
+    {
+      "question": "How is tenant-level data isolation implemented for MySQL and MongoDB (e.g., separate schemas, databases, access controls), and how is cross-tenant data access prevented?",
+      "requirement_id": "req-DATA-003"
+    },
+    {
+      "question": "Can customer data, including account information and trading history, be deleted on user request across MySQL, MongoDB, logs, and backups, and what is the process to do so?",
+      "requirement_id": "req-DATA-004"
+    },
+    {
+      "question": "What logging strategy is used for the Exchange Backend and Exchange API to ensure sensitive data (passwords, keys, personal data) is not written to logs stored in MongoDB?",
+      "requirement_id": "req-LOG-001"
+    },
+    {
+      "question": "Which security-relevant administrative and high-privilege actions are logged for the Exchange Backend and Exchange API, and are these logs protected against tampering and regularly reviewed?",
+      "requirement_id": "req-LOG-002"
+    },
+    {
+      "question": "What network segmentation and firewall rules restrict access to MySQL, MongoDB, and the Blockchain Integration Module so that only the necessary internal services can reach them?",
+      "requirement_id": "req-NET-001"
+    },
+    {
+      "question": "Where are long-lived secrets (database credentials, API secrets, blockchain keys, signing keys) stored for the Exchange Backend, Exchange API, and Blockchain Integration Module, and is a managed secret store or HSM used?",
+      "requirement_id": "req-SECRET-001"
+    },
+    {
+      "question": "What security and data-handling assurances exist for the third-party ElectrumX servers (e.g., TLS, certificate pinning, trusted operators, contractual controls), and how are untrusted or malicious servers mitigated?",
+      "requirement_id": "req-TPI-001"
+    },
+    {
+      "question": "How is work triggered by external clients via the Exchange API (such as order placement or data retrieval) bounded—for example, through rate limits, quotas, or resource caps—to prevent abuse or denial of service?",
+      "requirement_id": "req-TPI-002"
+    }
+  ]
+}

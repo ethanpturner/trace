@@ -1,0 +1,11 @@
+{
+  "findings": [
+    {
+      "requirement_id": "req-DATA-001",
+      "affected_component": "Wallet file (user device)",
+      "title": "Wallet file encryption at rest is optional and not enforced",
+      "rationale": "Requirement req-DATA-001 expects sensitive data to be encrypted at rest. The documentation states that encryption of the wallet file (which holds wallet data and keys) is merely an option rather than enforced, so there is no guarantee that these sensitive keys are actually encrypted at rest on user devices. This constitutes a documented weakness relative to the requirement.",
+      "evidence_quote": "\"Wallet file (user device) — the local wallet at rest, holding the wallet data and\n  keys. It should be encrypted at rest; encryption is a wallet option.\""
+    }
+  ]
+}

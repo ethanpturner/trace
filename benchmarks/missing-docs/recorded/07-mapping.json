@@ -1,0 +1,427 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 10073,
+    "output_tokens": 12163,
+    "cache_read_tokens": 11008,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.13559725",
+    "duration_seconds": 115.42125858308282
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-ADMIN-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Thr-005 describes a denial-of-service attack against the customer order submission path between field kiosks (cmp-002) and the Kiosk Sync Service (cmp-001), with the fulfillment system (cmp-003) polling for orders (evd-001). It does not involve any administrative or operator interface, so req-ADMIN-001\u2019s conditions about privileged administrative access do not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-AI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The components and data flows in thr-005 (field kiosks submitting order records to the Kiosk Sync Service, and the fulfillment system polling those records, per evd-001) do not include any model or AI processing, so the conditions about passing untrusted content to a model do not hold for this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-AI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Thr-005 does not involve publishing model output externally; it concerns direct order submissions from kiosks to the Kiosk Sync Service and subsequent polling by the fulfillment system (evd-001). Therefore req-AI-002\u2019s conditions about publishing model output do not apply to this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-AI-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No external model provider is involved in the described architecture: kiosks submit order records directly to the Kiosk Sync Service, which stores them for the fulfillment system (evd-001). Req-AI-003\u2019s conditions about sending customer content to an external model provider therefore do not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-AI-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat scenario involves order records being submitted and stored, not model-generated output rendered into a UI or markup-aware destination (evd-001). Req-AI-004, which concerns encoding of model output, does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-AUTH-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Thr-005 focuses on kiosks calling a first-party Kiosk Sync Service over the store network (evd-001); it does not involve delegated user authentication through an external identity provider or social/federated identity. Req-AUTH-001\u2019s conditions about documenting authentication delegation therefore do not bear on this denial-of-service threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [
+          "Assuming the kiosk-to-service interaction in scope for thr-005 does not rely on an external identity provider; if it did, that documentation would affect authentication analysis but would still be largely orthogonal to the volumetric DoS described."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-AUTH-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat path involves customer order submissions from kiosks, not privileged administrative access (evd-001). Req-AUTH-002 concerns multi-factor authentication for administrative or externally reachable privileged access, which does not bear on this kiosk-originated denial-of-service scenario.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-AUTHZ-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Req-AUTHZ-001 addresses tenant-aware authorization and separation between multiple organizational customers. Thr-005 concerns volumetric abuse of the order submission path from kiosks to the Kiosk Sync Service and its impact on overall service availability (evd-001), not cross-tenant data access. Tenant authorization does not materially affect this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [
+          "Assuming for this threat that the primary concern is service capacity and not unauthorized cross-organization data access; tenant isolation would be evaluated under different threats."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-AUTHZ-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Thr-005 does not involve delegated access to an external platform or acting on external customer resources; it is limited to kiosks, the Kiosk Sync Service, and the fulfillment system within the same environment (evd-001). Req-AUTHZ-002\u2019s conditions about limiting external integration privileges therefore do not apply to this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-CICD-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Req-CICD-001 concerns trust in the build and deployment pipeline and third-party components entering builds. Thr-005 is a runtime denial-of-service via high-volume order submissions from kiosks to the Kiosk Sync Service (evd-001); it does not involve pipeline authentication or supply chain controls, so this requirement does not bear on the threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "While the system does handle customer order records containing personal information (evd-001), thr-005 is specifically about loss of availability due to bogus or oversized order submissions saturating the Kiosk Sync Service. Req-DATA-001 focuses on encryption of sensitive data in transit and at rest, which primarily addresses confidentiality and is orthogonal to this availability-focused threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [
+          "Assuming that whether data is encrypted or not does not materially change the feasibility or impact of the described denial-of-service against processing capacity."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-DATA-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Req-DATA-002 addresses retention periods for stored customer data and their enforcement. Thr-005 focuses on immediate processing and storage saturation from a flood of incoming kiosk orders (evd-001), not on long-term retention after processing, so this requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-DATA-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Req-DATA-003 concerns separation of stored artifacts by tenant in shared storage. Thr-005 is about overloading the Kiosk Sync Service with bogus or oversized order submissions, leading to degraded availability for all orders (evd-001), rather than about unauthorized cross-tenant access to stored artifacts. Therefore it does not bear directly on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [
+          "Assuming the primary impact of thr-005 is service-wide degradation rather than tenant-specific storage isolation failures."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-DATA-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Thr-005 does not involve customer-initiated or operator-initiated deletion of customer data; it concerns the Kiosk Sync Service\u2019s ability to accept and store orders under load (evd-001). Req-DATA-004\u2019s focus on deletion paths for customer data therefore does not bear on this denial-of-service scenario.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-LOG-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Req-LOG-001 addresses exclusion of sensitive data from logs and documentation of log destinations. Thr-005 is about saturation of the Kiosk Sync Service by bogus or oversized order submissions (evd-001); logging practice might affect disk usage under load but the requirement\u2019s primary concern is data classification in logs, not bounding or mitigating this type of denial-of-service.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [
+          "Assuming that, for this threat, whether sensitive data is present in logs does not significantly change the availability impact described."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-LOG-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Req-LOG-002 concerns recording security-relevant administrative actions. Thr-005 involves automated order submissions from kiosks to the Kiosk Sync Service and does not involve operators taking privileged actions through an administrative interface (evd-001), so this requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-NET-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-001"
+        ],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Req-NET-001 targets internal data stores, queues, caches, or internal services that should not be directly reachable from untrusted networks. In thr-005, the Kiosk Sync Service itself is the network endpoint intentionally called by kiosks over the store network (evd-001); no separate internal data store, queue, or cache component appears in the threat path. Thus the requirement\u2019s applicable conditions about internal components do not hold for this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [
+          "Assuming that any underlying data store or queue used by the Kiosk Sync Service is out of scope for this specific threat description, which focuses on the service interface itself being flooded."
+        ],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-SECRET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Thr-005 does not involve credentials that authenticate the system to an external platform or signing keys; it is about kiosks sending orders to a first-party service (evd-001). Req-SECRET-001\u2019s conditions about storage of long-lived external credentials therefore do not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-SECRET-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Req-SECRET-002 concerns short-lived versus long-lived credentials used to access customer resources on external platforms. Thr-005 is about direct kiosk submissions to the Kiosk Sync Service and internal polling by the fulfillment system (evd-001), with no external platform access in the threat path, so the requirement does not apply here.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-TPI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Thr-005 does not describe customer data being sent to an external provider; all processing occurs between kiosks, the Kiosk Sync Service, and the fulfillment system on internal networks (evd-001). Req-TPI-001\u2019s conditions about documenting external processor data handling therefore do not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-TPI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "In thr-005, work on the Kiosk Sync Service (cmp-001) is triggered by events the system does not originate: order submissions from field kiosks or a rogue client on the store network (cmp-002), over the same interface used by legitimate kiosks (evd-001). This matches req-TPI-002\u2019s applicable condition that work is triggered by external events, and the threat explicitly concerns unbounded processing and storage under such repeated triggers.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [
+          "Assuming that any effective mitigation for thr-005 would involve some form of bounding (e.g., rate limits, quotas, queue limits, or validation on request size/volume), but the available documentation (evd-001) is too high-level to confirm whether such controls exist."
+        ],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-WEBHOOK-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Req-WEBHOOK-001 targets endpoints that accept events from external platforms and must verify their authenticity cryptographically. Thr-005 describes kiosks on the store network submitting orders directly to the Kiosk Sync Service, not an integration receiving signed webhooks from an external platform (evd-001), so this requirement does not bear on the threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-WEBHOOK-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Req-WEBHOOK-002 concerns replay or duplicate handling for inbound events from external platforms. Thr-005 involves high-volume order submissions from kiosks or a rogue client to a first-party service (evd-001), not replay of previously valid platform events, so the requirement does not bear directly on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Bounding of kiosk-triggered work on the Kiosk Sync Service is not documented",
+        "description": "Thr-005 describes an attacker using compromised or rogue kiosks on the store network to send a continuous stream of bogus or oversized order submissions to the Kiosk Sync Service (cmp-001), potentially exhausting CPU, memory, storage, or internal queues and degrading availability of legitimate orders. The available documentation (evd-001) states only that kiosks call the service over the store network and that it stores orders for the fulfillment system to poll; it does not state whether any bounding mechanisms exist on this path, such as rate limits per kiosk or store, maximum request sizes, authentication tied to kiosk identity, quotas, queue depth limits, or rejection of malformed/oversized submissions. Because req-TPI-002 expects processing triggered by external events to be bounded so repeated triggers cannot drive unbounded consumption, the absence of this information leaves it impossible to determine from documentation whether the requirement is satisfied.",
+        "importance": "Whether and how the Kiosk Sync Service bounds work triggered by kiosk submissions directly affects the feasibility and impact of thr-005: documented limits on request volume, size, or queue depth could substantially mitigate or invalidate the described denial-of-service scenario. Clarifying these controls is therefore important for assessing the system\u2019s resilience to kiosk-originated overload.",
+        "related_object_ids": [
+          "thr-005",
+          "cmp-001",
+          "cmp-002",
+          "cmp-003",
+          "df-001",
+          "ast-001"
+        ],
+        "requested_evidence": [
+          "Architecture or operations documentation describing any rate limiting, quota enforcement, or per-kiosk/store throttling applied to order submissions to the Kiosk Sync Service.",
+          "Documentation of maximum accepted request size, validation of order payloads, or protections against oversized submissions on df-001.",
+          "Design or configuration details for any queues, worker pools, or storage backing the Kiosk Sync Service, including queue depth limits and behavior when limits are reached (e.g., shedding load, rejecting requests).",
+          "Any monitoring or alerting thresholds related to kiosk submission volume or resource usage of the Kiosk Sync Service that indicate intended bounds on processing."
+        ],
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": []
+  }
+}

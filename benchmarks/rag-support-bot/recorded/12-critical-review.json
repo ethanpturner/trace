@@ -1,0 +1,29 @@
+{
+  "schema": "CriticalReviewProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 11702,
+    "output_tokens": 12607,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.1406975",
+    "duration_seconds": 164.71832399989944
+  },
+  "response": {
+    "critiques": [
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-001",
+        "critique_type": "unsupported_claim",
+        "description": "thr-001\u2019s stated impact includes disclosure of \"derived embeddings\" to both the unauthorized workspace user and the external model provider, but the documented design only shows textual passages being surfaced to the user and sent to the provider. The attack path also describes leakage of ticket content, not of embedding vectors themselves.",
+        "rationale": "evd-002 describes the retrieval index as a managed vector database holding embeddings, and the ingestion pipeline that creates those embeddings, but the interaction with the model provider is documented as: \"The answer service sends the user's question and the retrieved passages; workspace identifiers and user identifiers are stripped from the request first.\" It does not state that embedding vectors are included in responses to the user or transmitted to the model provider. evd-001 likewise describes the assistant answering from documentation and the workspace\u2019s support history and citing the passages it used, again referring to textual passages, not vectors. The threat\u2019s attack path steps are consistent with cross-workspace disclosure of ticket content via retrieved passages, but do not involve exposure of the embeddings themselves. As written, the impact statement about leakage of \"derived embeddings\" overreaches what the cited evidence establishes and should either be explicitly marked as an assumption or narrowed to the documented content-level leakage scenario.",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "recommended_action": "revise",
+        "confidence": "medium"
+      }
+    ]
+  }
+}

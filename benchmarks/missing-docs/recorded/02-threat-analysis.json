@@ -1,44 +1,19 @@
 {
   "schema": "ThreatAnalysisProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 8151,
+    "output_tokens": 9102,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.10120875",
+    "duration_seconds": 80.60524470801465
+  },
   "response": {
     "threats": [
       {
-        "title": "Order records intercepted between kiosk and sync service",
-        "description": "Customer order records \u2014 name, delivery address, and order contents \u2014 travel from the kiosks over the store network to the sync service. Nothing in the note describes protection of that traffic.",
-        "methodology": "stride-scenario-based",
-        "category": [
-          "information_disclosure"
-        ],
-        "threat_actor_ids": [],
-        "affected_component_ids": [
-          "cmp-001"
-        ],
-        "affected_asset_ids": [
-          "ast-001"
-        ],
-        "related_data_flow_ids": [
-          "df-001"
-        ],
-        "preconditions": [
-          "an attacker can observe store-network traffic",
-          "the kiosk-to-service traffic is unprotected"
-        ],
-        "attack_path": [
-          "observe the store network",
-          "capture order submissions in transit"
-        ],
-        "impact": "Customer names, delivery addresses, and order contents are disclosed.",
-        "likelihood": null,
-        "confidence": "low",
-        "evidence_ids": [
-          "evd-001"
-        ],
-        "assumption_ids": [],
-        "open_question_ids": []
-      },
-      {
-        "title": "Forged order records submitted to the sync service",
-        "description": "The note says the kiosks call the service over the store network and nothing about how callers are identified. A device on that network that can reach the service could submit records the fulfillment system would then act on.",
+        "title": "Compromised or rogue kiosk submits fraudulent orders",
+        "description": "An attacker who compromises a field kiosk or connects a rogue device to the store network uses the same network path as legitimate kiosks to submit crafted order records to the Kiosk Sync Service. The service stores these records as if they were genuine, and the fulfillment system later retrieves and acts on them, resulting in incorrect or fraudulent orders being fulfilled.",
         "methodology": "stride-scenario-based",
         "category": [
           "spoofing",
@@ -46,6 +21,48 @@
         ],
         "threat_actor_ids": [],
         "affected_component_ids": [
+          "cmp-002",
+          "cmp-001",
+          "cmp-003"
+        ],
+        "affected_asset_ids": [
+          "ast-001"
+        ],
+        "related_data_flow_ids": [
+          "df-001",
+          "df-002"
+        ],
+        "preconditions": [
+          "Field kiosks are able to submit customer order records over the store network to the Kiosk Sync Service running on a VM in the operations subnet.",
+          "An attacker gains control of a field kiosk, or can attach an unauthorized device to the store network that can reach the Kiosk Sync Service endpoint used by kiosks.",
+          "The Kiosk Sync Service accepts order submissions from any device that can reach this endpoint, or a compromised kiosk can still satisfy whatever authentication the service enforces."
+        ],
+        "attack_path": [
+          "The attacker compromises a kiosk or attaches a rogue device to the store network segment used by kiosks.",
+          "Using the compromised or rogue device, the attacker constructs fraudulent or manipulated order records (for example, changing delivery addresses or order contents) and sends them to the Kiosk Sync Service over the kiosk submission interface.",
+          "The Kiosk Sync Service stores these attacker-supplied order records alongside legitimate ones.",
+          "The fulfillment system polls the Kiosk Sync Service and retrieves the mixed set of legitimate and fraudulent orders, causing incorrect or unauthorized fulfillment actions."
+        ],
+        "impact": "Integrity of customer order records (ast-001) is compromised: stored orders may not reflect genuine customer intent, leading to shipments to incorrect addresses, unauthorized shipments, inventory misallocation, and potential financial and reputational impact.",
+        "likelihood": null,
+        "confidence": "medium",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Network attacker intercepts or alters order records between kiosks and Kiosk Sync Service",
+        "description": "An attacker with access to the network path between field kiosks and the Kiosk Sync Service positions themselves to observe or modify traffic on that link. If transport encryption or message integrity checks are absent, weak, or bypassed, the attacker can read customers\u2019 personal data in transit and tamper with order contents before they are stored and later used for fulfillment.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "information_disclosure",
+          "tampering"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-002",
           "cmp-001"
         ],
         "affected_asset_ids": [
@@ -55,13 +72,17 @@
           "df-001"
         ],
         "preconditions": [
-          "the service accepts submissions without establishing the caller"
+          "Customer order records are transmitted from field kiosks on the store network to the Kiosk Sync Service on a VM in the operations subnet.",
+          "An attacker gains access to the network segment or intermediate infrastructure carrying this traffic (for example, a compromised switch, wireless access point, or router on the path).",
+          "Transport-layer encryption and/or application-layer integrity protection for these order submissions is absent, misconfigured, or compromised such that the attacker can read and modify message contents."
         ],
         "attack_path": [
-          "reach the service from the store network",
-          "submit fabricated order records"
+          "The attacker obtains a man-in-the-middle position on the network path between field kiosks and the Kiosk Sync Service.",
+          "They passively capture order submission traffic, obtaining customers\u2019 names, delivery addresses, and order contents as they traverse the network.",
+          "The attacker optionally edits captured requests (for example, changing delivery addresses, quantities, or items) and forwards the modified traffic to the Kiosk Sync Service.",
+          "The Kiosk Sync Service stores the intercepted or altered order records, which are later retrieved and acted upon by the fulfillment system."
         ],
-        "impact": "The fulfillment system acts on orders no customer placed.",
+        "impact": "Confidentiality and integrity of customer order records (ast-001) are compromised: an attacker can learn customers\u2019 personal details and alter orders before they are stored, potentially leading to privacy breaches and incorrect or malicious fulfillments.",
         "likelihood": null,
         "confidence": "low",
         "evidence_ids": [
@@ -71,37 +92,123 @@
         "open_question_ids": []
       },
       {
-        "title": "Stored order records accumulate and are exposed",
-        "description": "The service stores order records for fulfillment to read; nothing describes how long they are kept or how the store is protected. The longer records accumulate, the more a later compromise discloses.",
+        "title": "Compromised fulfillment system mass-exfiltrates customer order records",
+        "description": "Because the fulfillment system is designed to poll the Kiosk Sync Service and read stored customer order records, an attacker who compromises the fulfillment system or its integration credentials can use that legitimate interface to retrieve large volumes of order data and exfiltrate it outside the environment.",
         "methodology": "stride-scenario-based",
         "category": [
           "information_disclosure"
         ],
         "threat_actor_ids": [],
         "affected_component_ids": [
+          "cmp-003",
           "cmp-001"
         ],
         "affected_asset_ids": [
           "ast-001"
         ],
-        "related_data_flow_ids": [],
+        "related_data_flow_ids": [
+          "df-002"
+        ],
         "preconditions": [
-          "records are retained without a bound",
-          "an attacker reaches the stored records"
+          "The fulfillment system is able to poll the Kiosk Sync Service and read stored customer order records for fulfillment purposes.",
+          "An attacker gains control of the fulfillment system or of the credentials or configuration it uses to access the Kiosk Sync Service.",
+          "The Kiosk Sync Service provides the fulfillment system with access to the stored order records without additional independent review for bulk or unusual access patterns."
         ],
         "attack_path": [
-          "compromise the service or its virtual machine",
-          "read the accumulated order records"
+          "The attacker compromises the fulfillment system or the account/configuration it uses to communicate with the Kiosk Sync Service.",
+          "Using the compromised fulfillment integration, the attacker issues repeated or broad queries/polls to the Kiosk Sync Service to retrieve as many stored customer order records as its interface allows.",
+          "The attacker aggregates the retrieved order data, including customer names, delivery addresses, and order contents.",
+          "The attacker exfiltrates this aggregated data to an external location under their control."
         ],
-        "impact": "The accumulated history of customer orders is disclosed.",
+        "impact": "Confidentiality of customer order records (ast-001) is compromised at scale: an attacker can obtain bulk historical and current order data, enabling privacy violations, targeted fraud, or regulatory exposure.",
         "likelihood": null,
-        "confidence": "low",
+        "confidence": "medium",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Attacker with access to Kiosk Sync Service VM tampers with or steals stored orders",
+        "description": "The Kiosk Sync Service runs on a virtual machine in the operations subnet and stores customer order records for later retrieval. An attacker who gains operating-system\u2013level or equivalent access to this VM or its attached storage can directly read, modify, or delete the stored order data, independent of the service\u2019s normal API.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "information_disclosure",
+          "tampering",
+          "denial_of_service"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-001",
+          "cmp-003"
+        ],
+        "affected_asset_ids": [
+          "ast-001"
+        ],
+        "related_data_flow_ids": [
+          "df-002"
+        ],
+        "preconditions": [
+          "Customer order records are stored by the Kiosk Sync Service on storage accessible from its virtual machine in the operations subnet.",
+          "An attacker obtains administrative or code-execution access on the Kiosk Sync Service VM or underlying storage platform (for example, via a platform compromise or malicious insider)."
+        ],
+        "attack_path": [
+          "The attacker uses their privileged access on the Kiosk Sync Service VM or storage to locate the files or database holding customer order records.",
+          "They copy the stored records for offline use, gaining access to customers\u2019 names, delivery addresses, and order contents.",
+          "The attacker optionally edits or deletes some or all stored orders (for example, changing addresses, changing items, or removing records).",
+          "The fulfillment system later polls the Kiosk Sync Service and receives manipulated, incomplete, or empty order sets, while the attacker retains a copy of the original data."
+        ],
+        "impact": "Confidentiality, integrity, and availability of customer order records (ast-001) are compromised: an attacker can steal all stored orders, alter them prior to fulfillment, or delete them so that legitimate orders are never processed.",
+        "likelihood": null,
+        "confidence": "medium",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Flood of bogus order submissions degrades or denies service",
+        "description": "Because the Kiosk Sync Service accepts order submissions from field kiosks over the store network and stores them for later polling by the fulfillment system, an attacker who controls multiple kiosks or a rogue client on the store network can flood the service with a high volume of bogus or oversized order requests. This can exhaust processing, storage, or network capacity, causing delays or failures for legitimate orders.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "denial_of_service"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-002",
+          "cmp-001",
+          "cmp-003"
+        ],
+        "affected_asset_ids": [
+          "ast-001"
+        ],
+        "related_data_flow_ids": [
+          "df-001",
+          "df-002"
+        ],
+        "preconditions": [
+          "Field kiosks can reach the Kiosk Sync Service over the store network to submit orders, and the service processes and stores incoming order data.",
+          "An attacker can control one or more kiosks or introduce a rogue client on the store network capable of sending requests to the Kiosk Sync Service endpoint.",
+          "The Kiosk Sync Service and surrounding infrastructure have finite capacity for processing, storing, and responding to order submissions, and protections such as rate limiting or strict quotas are absent, ineffective, or can be bypassed."
+        ],
+        "attack_path": [
+          "The attacker compromises multiple kiosks or deploys a rogue client on the store network.",
+          "They script the compromised/rogue devices to send a continuous stream of bogus or oversized order submissions to the Kiosk Sync Service over the same interface used by legitimate kiosks.",
+          "The Kiosk Sync Service\u2019s CPU, memory, storage, or network capacity becomes saturated handling the flood of submissions, or internal queues of pending orders grow excessively.",
+          "Legitimate customer orders from unaffected kiosks experience high latency, errors, or outright failures, and the fulfillment system subsequently retrieves an incomplete or delayed set of orders."
+        ],
+        "impact": "Availability of customer order processing is reduced: legitimate customer order records (ast-001) may not be accepted, stored, or made available in a timely manner to the fulfillment system, leading to delayed or lost fulfillments and business disruption.",
+        "likelihood": null,
+        "confidence": "medium",
         "evidence_ids": [
           "evd-001"
         ],
         "assumption_ids": [],
         "open_question_ids": []
       }
-    ]
+    ],
+    "catalog_gap_candidates": []
   }
 }

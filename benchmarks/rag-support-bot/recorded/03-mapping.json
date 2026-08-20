@@ -1,0 +1,225 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 29829,
+    "output_tokens": 15746,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.19474625",
+    "duration_seconds": 175.06541408295743
+  },
+  "response": {
+    "controls": [
+      {
+        "key": "ctrl-workspace-token-auth",
+        "name": "Workspace token authenticates Relay Answers API requests",
+        "description": "The Relay Answers API requires a workspaceToken HTTP bearer credential that represents the signed-in user's workspace-scoped session, and this scheme is applied as the default security requirement for the API.",
+        "control_type": "implemented",
+        "provider_component_id": "cmp-001",
+        "protected_component_ids": [
+          "cmp-001"
+        ],
+        "protected_asset_ids": [
+          "ast-002",
+          "ast-003"
+        ],
+        "implementation_status": "implemented",
+        "evidence_ids": [
+          "evd-006",
+          "evd-008",
+          "evd-009",
+          "evd-014",
+          "evd-016",
+          "evd-017"
+        ],
+        "owner": null,
+        "limitations": [
+          "Documentation does not state how the workspace identified by the token is enforced when accessing shared stores such as the retrieval index, so tenant scoping of underlying data remains unclear."
+        ]
+      },
+      {
+        "key": "ctrl-retrieval-index-network-isolation",
+        "name": "Retrieval index reachable only from answer service network segment",
+        "description": "The managed vector database that holds embeddings for the retrieval index is described as the only copy of the embeddings and as reachable only from the answer service's network segment, not from the public internet.",
+        "control_type": "implemented",
+        "provider_component_id": "cmp-003",
+        "protected_component_ids": [
+          "cmp-003"
+        ],
+        "protected_asset_ids": [
+          "ast-003"
+        ],
+        "implementation_status": "implemented",
+        "evidence_ids": [
+          "evd-012"
+        ],
+        "owner": null,
+        "limitations": [
+          "Network isolation restricts which workloads can reach the retrieval index but does not by itself enforce per-workspace authorization or prevent one tenant's data from being returned in another tenant's queries."
+        ]
+      },
+      {
+        "key": "ctrl-governed-ingestion-pipeline",
+        "name": "Ingestion pipeline as sole writer to retrieval index from named sources",
+        "description": "A nightly ingestion pipeline is the only writer to the retrieval index, reading from two named sources (the published help-center repository and the support platform's resolved-tickets export), chunking and embedding them, and recording source and timestamp per indexed item. Help-center content passes through the documentation team's review process before ingestion, and the support platform masks customer email addresses in tickets before export.",
+        "control_type": "implemented",
+        "provider_component_id": null,
+        "protected_component_ids": [
+          "cmp-003"
+        ],
+        "protected_asset_ids": [
+          "ast-002",
+          "ast-003"
+        ],
+        "implementation_status": "implemented",
+        "evidence_ids": [
+          "evd-002",
+          "evd-012",
+          "evd-013"
+        ],
+        "owner": null,
+        "limitations": [
+          "This control governs who and what can write into the retrieval corpus but does not describe any per-workspace separation or authorization on read from the shared index."
+        ]
+      },
+      {
+        "key": "ctrl-per-workspace-answer-quota",
+        "name": "Per-workspace daily answer quota and feature-flag disable",
+        "description": "The answer service enforces a per-workspace daily answer quota to bound model spend, and the assistant can be disabled per workspace using a feature flag.",
+        "control_type": "implemented",
+        "provider_component_id": "cmp-001",
+        "protected_component_ids": [
+          "cmp-001"
+        ],
+        "protected_asset_ids": [
+          "ast-002",
+          "ast-003"
+        ],
+        "implementation_status": "implemented",
+        "evidence_ids": [
+          "evd-011"
+        ],
+        "owner": null,
+        "limitations": [
+          "The quota and feature flag bound and control usage per workspace but do not constrain which workspaces' support history may be retrieved when the assistant is enabled."
+        ]
+      },
+      {
+        "key": "ctrl-model-provider-no-training-tls",
+        "name": "Model provider excludes training on assistant traffic and uses TLS",
+        "description": "Requests from the answer service to the hosted large-language-model API are sent over TLS, and the model provider's terms for the assistant's traffic exclude training on submitted content.",
+        "control_type": "inherited",
+        "provider_component_id": "cmp-005",
+        "protected_component_ids": [],
+        "protected_asset_ids": [
+          "ast-002",
+          "ast-003"
+        ],
+        "implementation_status": "implemented",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "owner": null,
+        "limitations": [
+          "These provider terms and transport protections address confidentiality at the provider boundary but do not control which workspaces' content is sent or prevent cross-workspace passages from entering prompts if retrieval is not tenant-scoped."
+        ]
+      }
+    ],
+    "mappings": [
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AUTHZ-001",
+        "control_keys": [
+          "ctrl-workspace-token-auth"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Relay Answers serves multiple customer workspaces via the help panel, which is available to every signed-in user of any workspace (evd-001, evd-002). Resolved support tickets for different workspaces are ingested into a shared retrieval index and stored as embeddings in a single managed vector database (evd-002, evd-012), so data belonging to distinct organizations is held in shared storage. This matches req-AUTHZ-001's applicable conditions about multi-tenant service and shared tenant-scoped data.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-006",
+          "evd-008",
+          "evd-009",
+          "evd-012"
+        ],
+        "assumptions": [
+          "Assume each Relay workspace corresponds to a distinct customer or organization whose support history should not be readable from other workspaces."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-DATA-003",
+        "control_keys": [
+          "ctrl-retrieval-index-network-isolation",
+          "ctrl-governed-ingestion-pipeline"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The retrieval index is a managed vector database that stores embeddings of help-center articles and resolved support tickets for all workspaces in one shared index (evd-002, evd-012). These embeddings are artifacts derived from multiple customers' data and share a single storage system, and the threat concerns one workspace's user learning about other workspaces' support history via these artifacts. This aligns with req-DATA-003's conditions about artifacts from multiple customers sharing a storage system.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-002",
+          "evd-012"
+        ],
+        "assumptions": [
+          "Assume that embeddings derived from each workspace's support tickets are intended to be logically separated so that one workspace's users cannot access another workspace's artifacts."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-RAG-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "When a signed-in user asks a question in the help panel, the answer service retrieves passages from a shared retrieval index and places them in the model's context to generate an answer (evd-001, evd-002). The corpus includes both public help-center content and per-workspace resolved support tickets from many workspaces stored together (evd-002, evd-012), and retrievals are served to users from different workspaces. Because support tickets for one workspace are not intended to be readable by others, the corpus holds content with differing read entitlements and spans tenants, matching req-RAG-002's applicability conditions.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-012"
+        ],
+        "assumptions": [
+          "Assume that a workspace's resolved support tickets are intended to be visible only to that workspace's users and support staff, not to other customer workspaces."
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Workspace-level scoping of retrieval index queries is not documented",
+        "description": "The architecture describes a shared retrieval index where all workspaces are served from one managed vector database and queries return the top passages ranked by embedding similarity (evd-002), and operations notes state that this index is the only copy of the embeddings (evd-012). However, there is no documentation stating whether and how queries to this index are restricted to the caller's workspace or otherwise filtered by tenant, nor how the workspace token\u2019s identity is applied at the data-access layer. Without this information, it is not possible to determine whether a user in one workspace can retrieve content derived from other workspaces' resolved support tickets or embeddings, or whether retrieval respects per-workspace entitlements.",
+        "importance": "This gap prevents verification of tenant separation for the shared retrieval index and of how the workspace context derived from authentication is enforced on retrieval. It directly affects assessment of cross-workspace information disclosure in this threat and whether req-AUTHZ-001, req-DATA-003, and req-RAG-002 are satisfied.",
+        "related_object_ids": [
+          "thr-001",
+          "cmp-001",
+          "cmp-003",
+          "ast-002",
+          "ast-003"
+        ],
+        "requested_evidence": [
+          "Documentation of how the workspace token or other tenant context is applied when querying the retrieval index (for example, per-workspace filters, namespaces, or metadata constraints on similarity search).",
+          "Retrieval service or vector-database configuration showing any enforced per-workspace or per-tenant scoping of queries and results.",
+          "Tests or guarantees that ensure a query initiated from one workspace cannot return passages or embeddings derived from other workspaces' support tickets."
+        ],
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-012"
+        ],
+        "severity": "high"
+      }
+    ],
+    "catalog_gap_candidates": []
+  }
+}

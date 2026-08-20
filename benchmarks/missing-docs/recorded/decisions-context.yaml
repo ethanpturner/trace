@@ -4,10 +4,11 @@ reviewer: recorded-reviewer
 components:
 - id: cmp-001
   decision: approve
+  attach_evidence: []
   editable:
     name: Kiosk Sync Service
-    description: receives customer order records from the field kiosks and stores them for the fulfillment
-      system to read
+    description: Service that receives customer order records from field kiosks, stores them, and makes
+      them available for the fulfillment system to read.
     component_type: service
     technology: []
     ownership: null
@@ -19,10 +20,12 @@ components:
     authorization_mechanisms: []
 - id: cmp-002
   decision: approve
+  attach_evidence: []
   editable:
-    name: Field Kiosks
-    description: submit customer order records over the store network
-    component_type: edge_device
+    name: Field kiosks
+    description: In-store kiosks that send customer order records to the kiosk sync service over the store
+      network.
+    component_type: device
     technology: []
     ownership: null
     deployment_zone: store_network
@@ -33,10 +36,12 @@ components:
     authorization_mechanisms: []
 - id: cmp-003
   decision: approve
+  attach_evidence: []
   editable:
-    name: Fulfillment System
-    description: polls the sync service hourly for stored order records
-    component_type: service
+    name: Fulfillment system
+    description: System that polls the kiosk sync service hourly to read stored customer order records
+      for fulfillment.
+    component_type: system
     technology: []
     ownership: null
     deployment_zone: null
@@ -45,22 +50,16 @@ components:
     data_classifications: []
     authentication_mechanisms: []
     authorization_mechanisms: []
-actors:
-- id: act-001
-  decision: approve
-  editable:
-    name: Store kiosk
-    actor_type: internal_service
-    trust_level: null
-    capabilities: []
-    authentication_method: null
+actors: []
 assets:
 - id: ast-001
   decision: approve
+  attach_evidence: []
   editable:
     name: Customer order records
-    asset_type: customer_data
-    description: customer name, delivery address, and order contents
+    asset_type: data
+    description: Order records from field kiosks containing customer name, delivery address, and order
+      contents, stored for the fulfillment system to read.
     confidentiality_impact: null
     integrity_impact: null
     availability_impact: null
@@ -69,11 +68,13 @@ assets:
 data_flows:
 - id: df-001
   decision: approve
+  attach_evidence: []
   editable:
-    name: Kiosk order submission
+    name: Field kiosks submit order records to kiosk sync service
     direction: one_way
     protocol: null
-    data_types: []
+    data_types:
+    - order_records
     authentication: unknown
     encryption_in_transit: unknown
     internet_exposed: null
@@ -81,46 +82,171 @@ data_flows:
     destination_component_id: cmp-001
 - id: df-002
   decision: approve
+  attach_evidence: []
   editable:
-    name: Fulfillment polling
-    direction: bidirectional
+    name: Kiosk sync service provides stored order records to fulfillment system
+    direction: one_way
     protocol: null
-    data_types: []
+    data_types:
+    - order_records
     authentication: unknown
     encryption_in_transit: unknown
     internet_exposed: null
-    source_component_id: cmp-003
-    destination_component_id: cmp-001
-trust_boundaries:
-- id: tb-001
-  decision: approve
-  editable:
-    name: Store network to operations subnet boundary
-    boundary_type: network_perimeter
-    description: null
-    controls: []
+    source_component_id: cmp-001
+    destination_component_id: cmp-003
+trust_boundaries: []
 claims:
 - id: ctx-001
   status: documented
   confidence: high
   decision: approve
   confirm: false
+  attach_evidence: []
   evidence:
   - evd-001
   editable:
-    predicate: data_sensitivity
-    value: order records carry the customer's name, delivery address, and order contents
+    predicate: purpose
+    value: Receives customer order records from field kiosks, stores them, and makes them available for
+      the fulfillment system to read.
     rationale: null
 - id: ctx-002
   status: documented
   confidence: high
   decision: approve
   confirm: false
+  attach_evidence: []
   evidence:
   - evd-001
   editable:
-    predicate: deployment_placement
-    value: the service runs on a virtual machine in the operations subnet; kiosks call it over the store
-      network and the fulfillment system polls it hourly
+    predicate: fields
+    value:
+    - customer_name
+    - delivery_address
+    - order_contents
     rationale: null
-questions: []
+- id: ctx-003
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-001
+  editable:
+    predicate: sends_data_to
+    value: kiosk_sync_service
+    rationale: null
+- id: ctx-004
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-001
+  editable:
+    predicate: reads_orders_from
+    value: kiosk_sync_service
+    rationale: null
+- id: ctx-005
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-001
+  editable:
+    predicate: deployment_zone
+    value: operations_subnet
+    rationale: null
+- id: ctx-006
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-001
+  editable:
+    predicate: network
+    value: store_network
+    rationale: null
+- id: ctx-007
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-001
+  editable:
+    predicate: data_moved
+    value: Customer order records move from field kiosks to the kiosk sync service.
+    rationale: null
+- id: ctx-008
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-001
+  editable:
+    predicate: data_moved
+    value: Customer order records are provided by the kiosk sync service to the fulfillment system when
+      it polls the service.
+    rationale: null
+- id: ctx-009
+  status: inferred
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-001
+  editable:
+    predicate: contains_personal_data
+    value: true
+    rationale: Order records include customer name and delivery address, which are personal identifying
+      information.
+- id: ctx-010
+  status: inferred
+  confidence: medium
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-001
+  editable:
+    predicate: entry_point_type
+    value: api
+    rationale: The document states that kiosks call the service and that the fulfillment system polls
+      it, implying it exposes a network API.
+contradictions: []
+additions: []
+questions:
+- id: qst-001
+  question: How are communications between field kiosks and the kiosk sync service authenticated and encrypted,
+    if at all?
+  priority: high
+  blocking: false
+  answer: null
+- id: qst-002
+  question: Where is the fulfillment system deployed relative to the operations subnet and store network
+    (for example, same subnet, different internal network, or external service)?
+  priority: medium
+  blocking: false
+  answer: null
+- id: qst-003
+  question: No actor in the context is anonymous or external. If the system is reachable from outside,
+    who reaches it? If it is not, what establishes that?
+  priority: medium
+  blocking: false
+  answer: null
+- id: qst-004
+  question: No actor in the context is administrative or privileged. Who operates and configures the system,
+    and through what?
+  priority: medium
+  blocking: false
+  answer: null

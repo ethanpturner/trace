@@ -1,0 +1,59 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 11416,
+    "output_tokens": 7766,
+    "cache_read_tokens": 20096,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.094442",
+    "duration_seconds": 81.07970000000205
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-003",
+        "requirement_id": "req-NET-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-003"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The Ticket Service and Ticket Database are internal components that hold customer support tickets for multiple customers [evd-002, evd-004], and the threat describes untrusted internal code reaching the Ticket Service because it relies on network position rather than strong caller authentication. This matches req-NET-001\u2019s conditions for an internal component holding multi-tenant data and authenticating callers weakly or by network position.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "satisfied",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [
+          "\"Reachable only from the portal web application inside the application subnet\" [evd-002] is interpreted as enforced network access controls that permit only the portal workloads to reach the Ticket Service, not arbitrary hosts in the subnet."
+        ],
+        "confidence": "medium"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Caller authentication between the portal and Ticket Service is undocumented",
+        "description": "The system overview describes the Ticket Service as an internal HTTP service reachable only from the portal web application inside the application subnet [evd-002], but it does not state whether the Ticket Service authenticates or authorizes its callers at the application layer (for example via mTLS, a shared secret, or an identity-aware proxy) or relies solely on network location. For threat thr-003, which involves untrusted internal code impersonating the portal, this missing detail prevents assessing how effectively the Ticket Service distinguishes legitimate portal calls from other code running with network reach.",
+        "importance": "Clarifying whether and how the Ticket Service authenticates and authorizes its callers directly affects the likelihood of spoofing, tampering, and information disclosure described in thr-003, and determines whether network placement is the only barrier between untrusted internal code and support tickets.",
+        "related_object_ids": [
+          "thr-003",
+          "cmp-002",
+          "df-002",
+          "ast-001"
+        ],
+        "requested_evidence": [
+          "Architecture or design documentation describing any authentication and authorization mechanism the Ticket Service applies to incoming HTTP requests from the portal (e.g., mutual TLS, signed tokens, or an identity-aware proxy header).",
+          "Network or security group configuration, or equivalent documentation, showing which hosts or workloads are permitted to reach the Ticket Service endpoint and how that restriction is enforced."
+        ],
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": []
+  }
+}

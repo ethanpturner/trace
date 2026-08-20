@@ -4,162 +4,441 @@ reviewer: recorded-reviewer
 components:
 - id: cmp-001
   decision: approve
+  attach_evidence: []
   editable:
     name: Portal Web Application
-    description: server-rendered web application that presents tickets, accepts comments, and calls the ticket service for data; it holds no local user accounts
+    description: Internal server-rendered web application that presents support tickets to employees,
+      accepts comments, calls the ticket service for data, and holds no local user accounts.
     component_type: web_application
     technology: []
     ownership: null
-    deployment_zone: null
+    deployment_zone: application_subnet
     internet_accessible: false
     externally_managed: null
-    data_classifications: []
+    data_classifications:
+    - customer_support_correspondence
     authentication_mechanisms:
     - openid_connect
     authorization_mechanisms: []
 - id: cmp-002
   decision: approve
+  attach_evidence: []
   editable:
     name: Ticket Service
-    description: internal HTTP service that stores and retrieves tickets
-    component_type: service
-    technology: []
+    description: Internal HTTP service that stores and retrieves support tickets and is reachable only
+      from the portal web application inside the application subnet.
+    component_type: http_service
+    technology:
+    - http
     ownership: null
-    deployment_zone: null
+    deployment_zone: application_subnet
     internet_accessible: false
     externally_managed: null
-    data_classifications: []
+    data_classifications:
+    - customer_support_correspondence
     authentication_mechanisms: []
     authorization_mechanisms: []
 - id: cmp-003
   decision: approve
+  attach_evidence: []
   editable:
-    name: Identity Provider
-    description: the enterprise OpenID Connect provider that authenticates employees and enforces the factor policy
-    component_type: external_service
-    technology: []
+    name: Ticket Database
+    description: Managed relational database provided by the cloud platform where support tickets are
+      persisted.
+    component_type: database
+    technology:
+    - relational_database
+    - managed_service
+    - cloud_platform
+    ownership: null
+    deployment_zone: cloud_platform
+    internet_accessible: null
+    externally_managed: true
+    data_classifications:
+    - customer_support_correspondence
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+- id: cmp-004
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Enterprise Identity Provider
+    description: Enterprise OpenID Connect identity provider that authenticates employees and enforces
+      multi-factor factor policy at the organization level.
+    component_type: identity_provider
+    technology:
+    - openid_connect
     ownership: null
     deployment_zone: null
     internet_accessible: null
-    externally_managed: true
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+- id: cmp-005
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Employee Web Browser
+    description: Employee client (typically a web browser) used to access the internal support portal
+      over HTTPS from the corporate network or company VPN.
+    component_type: client
+    technology: []
+    ownership: null
+    deployment_zone: corporate_network_or_vpn
+    internet_accessible: null
+    externally_managed: null
     data_classifications: []
     authentication_mechanisms: []
     authorization_mechanisms: []
 actors:
 - id: act-001
   decision: approve
+  attach_evidence: []
   editable:
     name: Employee
-    actor_type: internal_user
+    actor_type: employee
     trust_level: null
-    capabilities: []
-    authentication_method: openid_connect
+    capabilities:
+    - view_tickets
+    - comment_on_tickets
+    authentication_method: enterprise_idp_openid_connect
+- id: act-002
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Identity provider
+    actor_type: identity_provider
+    trust_level: null
+    capabilities:
+    - authenticate_employees
+    - enforce_mfa_policy
+    authentication_method: null
 assets:
 - id: ast-001
   decision: approve
+  attach_evidence: []
   editable:
     name: Support tickets
-    asset_type: customer_data
-    description: customer support correspondence, persisted in a managed relational database
+    asset_type: data
+    description: Customer support tickets and associated correspondence viewed, commented on, and stored
+      by the system.
     confidentiality_impact: null
     integrity_impact: null
     availability_impact: null
-    data_classification: null
+    data_classification: customer_support_correspondence
+    owner: null
+- id: ast-002
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: OpenID Connect ID tokens
+    asset_type: credential
+    description: OpenID Connect ID tokens issued by the enterprise identity provider and presented to
+      the portal to establish authenticated user identity.
+    confidentiality_impact: null
+    integrity_impact: null
+    availability_impact: null
+    data_classification: authentication_tokens
     owner: null
 data_flows:
 - id: df-001
   decision: approve
+  attach_evidence: []
   editable:
-    name: Ticket reads and comments
+    name: Employee browser to Portal Web Application
     direction: bidirectional
-    protocol: null
-    data_types: []
+    protocol: https
+    data_types:
+    - ticket_views
+    - ticket_comments
+    authentication: openid_connect
+    encryption_in_transit: tls
+    internet_exposed: false
+    source_component_id: cmp-005
+    destination_component_id: cmp-001
+- id: df-002
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Portal Web Application to Ticket Service
+    direction: bidirectional
+    protocol: http
+    data_types:
+    - ticket_content
+    - ticket_comments
     authentication: unknown
     encryption_in_transit: unknown
     internet_exposed: false
     source_component_id: cmp-001
     destination_component_id: cmp-002
-- id: df-002
+- id: df-003
   decision: approve
+  attach_evidence: []
   editable:
-    name: OpenID Connect authentication
+    name: Ticket Service to Ticket Database
     direction: bidirectional
     protocol: null
-    data_types: []
-    authentication: openid_connect
+    data_types:
+    - ticket_content
+    - ticket_comments
+    authentication: unknown
+    encryption_in_transit: unknown
+    internet_exposed: null
+    source_component_id: cmp-002
+    destination_component_id: cmp-003
+- id: df-004
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Portal Web Application to Enterprise Identity Provider
+    direction: bidirectional
+    protocol: openid_connect
+    data_types:
+    - authentication_requests
+    - id_tokens
+    authentication: unknown
     encryption_in_transit: unknown
     internet_exposed: null
     source_component_id: cmp-001
-    destination_component_id: cmp-003
-trust_boundaries:
-- id: tb-001
+    destination_component_id: cmp-004
+- id: df-005
   decision: approve
+  attach_evidence: []
   editable:
-    name: Corporate network boundary
-    boundary_type: network_perimeter
-    description: the portal is reachable only from the corporate network and the company VPN
-    controls: []
-- id: tb-002
-  decision: approve
-  editable:
-    name: Identity provider boundary
-    boundary_type: application_to_external_service
-    description: null
-    controls: []
+    name: Employee browser to Enterprise Identity Provider
+    direction: bidirectional
+    protocol: openid_connect
+    data_types:
+    - authentication_credentials
+    - id_tokens
+    authentication: unknown
+    encryption_in_transit: unknown
+    internet_exposed: null
+    source_component_id: cmp-005
+    destination_component_id: cmp-004
+trust_boundaries: []
 claims:
 - id: ctx-001
   status: documented
   confidence: high
   decision: approve
   confirm: false
+  attach_evidence: []
   evidence:
   - evd-007
   editable:
     predicate: organizational_control
-    value: "enterprise-idp-mfa (org-controls catalog 0.1): Enterprise identity provider enforces multi-factor authentication. Workforce authentication is delegated to the enterprise identity provider, and multi-factor enrolment and factor policy are set and enforced at the identity provider organization level for all workforce identities. Mechanism: enterprise identity provider factor policy."
+    value: 'enterprise-idp-mfa (org-controls catalog 0.1): Enterprise identity provider enforces multi-factor
+      authentication. Workforce authentication is delegated to the enterprise identity provider, and multi-factor
+      enrolment and factor policy are set and enforced at the identity provider organization level for
+      all workforce identities. Mechanism: enterprise identity provider factor policy.'
     rationale: null
 - id: ctx-002
   status: documented
   confidence: high
   decision: approve
   confirm: false
+  attach_evidence: []
   evidence:
-  - evd-003
+  - evd-001
   editable:
-    predicate: authentication_delegation
-    value: all access is authenticated through the enterprise identity provider using OpenID Connect; the portal maintains no password store of its own and issues no credentials
+    predicate: system_purpose
+    value: Internal web application that lets employees view and comment on customer support tickets.
     rationale: null
 - id: ctx-003
   status: documented
   confidence: high
   decision: approve
   confirm: false
+  attach_evidence: []
   evidence:
-  - evd-003
+  - evd-001
   editable:
-    predicate: mfa_responsibility
-    value: multi-factor enrolment and factor policy are set at the identity provider organization level
+    predicate: network_exposure
+    value: Served over HTTPS and reachable only from the corporate network and the company VPN.
     rationale: null
 - id: ctx-004
   status: documented
   confidence: high
   decision: approve
   confirm: false
+  attach_evidence: []
   evidence:
-  - evd-002
+  - evd-001
   editable:
-    predicate: network_reachability
-    value: the ticket service is reachable only from the portal web application inside the application subnet
-    rationale: null
+    predicate: transport_security
+    value: https
+    rationale: The system overview states that the support portal is served over HTTPS.
 - id: ctx-005
   status: documented
   confidence: high
   decision: approve
   confirm: false
+  attach_evidence: []
   evidence:
-  - evd-001
+  - evd-002
   editable:
-    predicate: network_exposure
-    value: the portal is served over HTTPS and reachable only from the corporate network and the company VPN
+    predicate: stores_local_user_accounts
+    value: false
     rationale: null
-questions: []
+- id: ctx-006
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-002
+  editable:
+    predicate: depends_on
+    value:
+    - ticket-service
+    rationale: null
+- id: ctx-007
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-002
+  editable:
+    predicate: reachable_only_from
+    value: portal-web-app_inside_application_subnet
+    rationale: null
+- id: ctx-008
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-003
+  editable:
+    predicate: authentication_mechanism
+    value: enterprise_identity_provider_openid_connect
+    rationale: All access to the portal is authenticated through the company's enterprise identity provider
+      using OpenID Connect.
+- id: ctx-009
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-003
+  editable:
+    predicate: issues_credentials
+    value: false
+    rationale: null
+- id: ctx-010
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-003
+  - evd-005
+  editable:
+    predicate: responsibilities
+    value:
+    - authenticate_employees
+    - manage_multi_factor_enrolment_and_policy
+    rationale: null
+- id: ctx-011
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-004
+  editable:
+    predicate: data_contents
+    value: customer_support_correspondence
+    rationale: null
+- id: ctx-012
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-002
+  - evd-004
+  editable:
+    predicate: stored_in
+    value:
+    - ticket-database
+    rationale: null
+- id: ctx-013
+  status: unknown
+  confidence: low
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence: []
+  editable:
+    predicate: access_model
+    value: unknown
+    rationale: The documentation does not describe the authorization model (for example, which employees
+      can access which tickets or actions).
+- id: ctx-014
+  status: inferred
+  confidence: medium
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-003
+  editable:
+    predicate: inherits_mfa_from_idp
+    value: true
+    rationale: The portal authenticates exclusively via the enterprise identity provider, and multi-factor
+      enrolment and factor policy are set at the identity provider organization level, suggesting that
+      the portal inherits whatever MFA policies the identity provider enforces.
+contradictions: []
+additions: []
+questions:
+- id: qst-001
+  question: What authorization model governs which support tickets an authenticated employee can view
+    and comment on (for example, role-based access, team-based scoping, or unrestricted access to all
+    tickets)?
+  priority: high
+  blocking: true
+  answer: 'The documentation covers authentication thoroughly — OpenID Connect against the enterprise
+    identity provider, no local accounts, factor policy at the provider — and states nothing about per-ticket
+    authorization: whether every authenticated employee can view every ticket is not documented. The authorization
+    model is undetermined, and that gap is analysis input rather than a resolved fact.'
+- id: qst-002
+  question: Where are the portal web application and ticket service hosted relative to the corporate network
+    and VPN (for example, on-premises, in a cloud VPC peered to the corporate network, or another arrangement)?
+  priority: medium
+  blocking: false
+  answer: null
+- id: qst-003
+  question: Is encryption at rest enabled for the managed relational database that stores support tickets,
+    and if so is it provided by the cloud platform or configured by the application team?
+  priority: medium
+  blocking: false
+  answer: null
+- id: qst-004
+  question: Is multi-factor authentication required for all employees who access the support portal through
+    the enterprise identity provider, or are any exemptions or weaker policies in place for this application?
+  priority: medium
+  blocking: false
+  answer: null
+- id: qst-005
+  question: No actor in the context is anonymous or external. If the system is reachable from outside,
+    who reaches it? If it is not, what establishes that?
+  priority: medium
+  blocking: false
+  answer: null
+- id: qst-006
+  question: No actor in the context is administrative or privileged. Who operates and configures the system,
+    and through what?
+  priority: medium
+  blocking: false
+  answer: null

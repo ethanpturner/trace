@@ -1,0 +1,29 @@
+{
+  "schema": "CriticalReviewProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 7884,
+    "output_tokens": 4219,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.052045",
+    "duration_seconds": 44.04456883308012
+  },
+  "response": {
+    "critiques": [
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-007",
+        "critique_type": "unsupported_claim",
+        "description": "Mapping map-007 concludes that req-NET-001 is satisfied based on ctl-003, but the cited evidence only establishes network placement and HTTPS access, not the strong caller authentication or equivalent controls that req-NET-001 appears to require.",
+        "rationale": "The mapping sets satisfaction_status to \"satisfied\" for req-NET-001 using ctl-003 and cites evd-002. evd-002 describes the Ticket Service as an internal HTTP service reachable only from the portal web application inside the application subnet, and evd-001 describes the portal as internal-only over HTTPS. Neither passage documents any authentication or authorization performed by the Ticket Service on its callers beyond this network placement. Evidence assessment eas-024 already notes that the mapping asserts satisfaction of req-NET-001 without evidence of strong caller authentication and recommends downgrading the mapping. Documentation gap gap-003 also records that caller authentication between the portal and Ticket Service is undocumented. Together, these show that the satisfaction conclusion rests on controls not established in the evidence, so the mapping\u2019s current \"satisfied\" status is unsupported and should be revised (for example, to reflect that satisfaction is unknown pending additional evidence).",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "recommended_action": "revise",
+        "confidence": "high"
+      }
+    ]
+  }
+}

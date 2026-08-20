@@ -1,0 +1,1123 @@
+{
+  "schema": "EvidenceValidationProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 12117,
+    "output_tokens": 32342,
+    "cache_read_tokens": 1024,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.33869425",
+    "duration_seconds": 285.8792629169766
+  },
+  "response": {
+    "assessments": [
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-030",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-001 shows the Kiosk Sync Service exchanging and storing structured order records between kiosks and the fulfillment system, but it does not state whether any AI model or model-generated output is involved in threat thr-003. The mapping treats the absence of model-related description as sufficient to conclude that a requirement about encoding model output (req-AI-004) is not applicable, which is an inference from silence. Additional documentation is needed to confirm whether any model output is in the attack path before the non_applicable classification can be accepted.",
+        "missing_evidence": [
+          "Threat description or architecture documentation stating explicitly whether any AI/model components or model-generated outputs participate in thr-003 or in the Kiosk Sync Service data flow."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Kiosk Sync Service \u2014 Note\n\nThe sync service receives customer order records from the field kiosks and stores them for\nthe fulfillment system to read. Order records carry the customer's name, delivery address,\nand order contents.\n\n## Deployment\n\nThe service runs on a virtual machine in the operations subnet. The kiosks call it over the\nstore network. The fulfillment system polls it hourly."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-031",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-001 describes the Kiosk Sync Service, kiosks, and the fulfillment system, but says nothing about end-user authentication flows or delegation to an external identity provider. The mapping concludes that req-AUTH-001 is not applicable to thr-003 because the threat does not involve delegated end-user authentication, which cannot be verified from the available documentation. Confirmation of the authentication architecture and the thr-003 attack path is needed to justify the non_applicable status.",
+        "missing_evidence": [
+          "Documentation of how end users authenticate in this system and whether authentication is delegated to an external identity provider.",
+          "A detailed description of thr-003 clarifying whether delegated end-user authentication is involved anywhere in the threat path."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Kiosk Sync Service \u2014 Note\n\nThe sync service receives customer order records from the field kiosks and stores them for\nthe fulfillment system to read. Order records carry the customer's name, delivery address,\nand order contents.\n\n## Deployment\n\nThe service runs on a virtual machine in the operations subnet. The kiosks call it over the\nstore network. The fulfillment system polls it hourly."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-032",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The note in evd-001 describes only that the fulfillment system polls the Kiosk Sync Service to read stored orders; it does not discuss administrative access patterns, MFA, or how an attacker compromises the fulfillment system. The mapping argues that req-AUTH-002 (MFA for administrative or externally reachable access) is not applicable to thr-003 because the threat assumes a compromised system or stored integration credential, but that is based on the threat narrative rather than documented architecture. Whether MFA materially bears on this threat needs to be confirmed with more detailed threat and access-path documentation.",
+        "missing_evidence": [
+          "Threat documentation for thr-003 clarifying how the attacker obtains control of the fulfillment system or its credentials.",
+          "Architecture or access-control documentation describing which administrative or externally reachable interfaces exist for the fulfillment system and whether MFA is enforced on them."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Kiosk Sync Service \u2014 Note\n\nThe sync service receives customer order records from the field kiosks and stores them for\nthe fulfillment system to read. Order records carry the customer's name, delivery address,\nand order contents.\n\n## Deployment\n\nThe service runs on a virtual machine in the operations subnet. The kiosks call it over the\nstore network. The fulfillment system polls it hourly."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-033",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-001 shows that kiosks send order records to the Kiosk Sync Service and that a fulfillment system reads them, but it does not state whether the deployment is single-tenant or multi-tenant. The mapping\u2019s claim that there is no indication of multiple organizational tenants and thus req-AUTHZ-001 (tenant-aware authorization) is not applicable to thr-003 rests on an assumption about tenancy that is not documented here. Clarification of the tenancy model is required before treating this requirement as not applicable.",
+        "missing_evidence": [
+          "Architecture or deployment documentation explicitly describing whether the kiosks, Kiosk Sync Service, and fulfillment system serve a single organization or multiple independent tenant organizations.",
+          "Any design documentation for authorization boundaries or tenant scoping in shared services or storage."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Kiosk Sync Service \u2014 Note\n\nThe sync service receives customer order records from the field kiosks and stores them for\nthe fulfillment system to read. Order records carry the customer's name, delivery address,\nand order contents.\n\n## Deployment\n\nThe service runs on a virtual machine in the operations subnet. The kiosks call it over the\nstore network. The fulfillment system polls it hourly."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-034",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "From evd-001 we can see that kiosks, the Kiosk Sync Service, and the fulfillment system interact, but there is no explicit statement about whether the system holds delegated access to any third-party external platform. The mapping concludes that req-AUTHZ-002 (limiting and documenting external integration privileges) is not applicable to thr-003 because the integration is internal, which assumes there are no relevant external delegated integrations in the threat path. Evidence describing external integrations is needed to confirm this non_applicable classification.",
+        "missing_evidence": [
+          "An integration inventory or architecture diagram listing any third-party external platforms that the kiosks, Kiosk Sync Service, or fulfillment system integrate with and whether customer data or delegated access is involved.",
+          "Threat documentation for thr-003 making clear whether any such external integrations are in the attack path."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Kiosk Sync Service \u2014 Note\n\nThe sync service receives customer order records from the field kiosks and stores them for\nthe fulfillment system to read. Order records carry the customer's name, delivery address,\nand order contents.\n\n## Deployment\n\nThe service runs on a virtual machine in the operations subnet. The kiosos call it over the\nstore network. The fulfillment system polls it hourly."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-035",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 establishes that the Kiosk Sync Service is a deployed component running on a virtual machine in an operations subnet, but it does not describe how that VM or the fulfillment system are built or deployed. The mapping for req-CICD-001 correctly treats build and deployment pipeline controls as conditionally applicable to thr-003\u2014relevant if these components are deployed via an automated pipeline\u2014and marks them unverified because the documentation is silent on pipelines and dependency management. That conditional and unverified status matches the available evidence and the documented gap.",
+        "missing_evidence": [
+          "Documentation of build and deployment processes for the Kiosk Sync Service and fulfillment system, including whether an automated CI/CD pipeline is used.",
+          "Documentation of how third-party dependencies are managed and validated in any such pipeline."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Kiosk Sync Service \u2014 Note\n\nThe sync service receives customer order records from the field kiosks and stores them for\nthe fulfillment system to read. Order records carry the customer's name, delivery address,\nand order contents.\n\n## Deployment\n\nThe service runs on a virtual machine in the operations subnet. The kiosks call it over the\nstore network. The fulfillment system polls it hourly."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-036",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 directly documents that customer order records include names, delivery addresses, and order contents and that these are sent from kiosks to the Kiosk Sync Service and read by the fulfillment system over the network, implying confidential data in transit and at rest. Given that thr-003 concerns large-scale compromise of the confidentiality of these records, a requirement like req-DATA-001 (encrypting such data in transit and at rest, including documenting inherited protections) is clearly applicable. No encryption mechanisms are described, so it is appropriate to classify this mapping as applicable and unverified.",
+        "missing_evidence": [
+          "Design or configuration documentation describing encryption in transit between kiosks, the Kiosk Sync Service, and the fulfillment system.",
+          "Documentation or configuration evidence for encryption at rest of order data on the Kiosk Sync Service VM and any fulfillment storage."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Kiosk Sync Service \u2014 Note\n\nThe sync service receives customer order records from the field kiosks and stores them for\nthe fulfillment system to read. Order records carry the customer's name, delivery address,\nand order contents.\n\n## Deployment\n\nThe service runs on a virtual machine in the operations subnet. The kiosks call it over the\nstore network. The fulfillment system polls it hourly."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-037",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 states that the Kiosk Sync Service receives order records from kiosks and stores them so the fulfillment system can read them later, which means the system retains customer data as working data. For a threat like thr-003 that exfiltrates order records via the fulfillment integration, the amount of data available to an attacker depends on how long such records are retained and when they are expired. Since no retention or purge behavior is documented, treating req-DATA-002 as applicable and unverified is consistent with the evidence.",
+        "missing_evidence": [
+          "Documented retention and deletion policies for customer order records on kiosks, the Kiosk Sync Service, and the fulfillment system.",
+          "Implementation or configuration evidence that such retention policies are enforced."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Kiosk Sync Service \u2014 Note\n\nThe sync service receives customer order records from the field kiosks and stores them for\nthe fulfillment system to read. Order records carry the customer's name, delivery address,\nand order contents.\n\n## Deployment\n\nThe service runs on a virtual machine in the operations subnet. The kiosks call it over the\nstore network. The fulfillment system polls it hourly."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-038",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The service note in evd-001 does not state whether the environment is single-tenant or multi-tenant; it merely names kiosks, the Kiosk Sync Service, and the fulfillment system. The mapping\u2019s assertion that req-DATA-003 (tenant-aware separation of stored artifacts) is not applicable to thr-003 because the data belong to a single retailer is therefore an assumption about tenancy, not something documented in the evidence. Clarification of the tenancy model is needed before confirming that tenant separation controls are out of scope for this threat.",
+        "missing_evidence": [
+          "Documentation specifying whether the Kiosk Sync Service and related storage are used by one organization or by multiple independent tenants.",
+          "Any storage design or configuration describing tenant-level segregation, if the system is multi-tenant."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Kiosk Sync Service \u2014 Note\n\nThe sync service receives customer order records from the field kiosks and stores them for\nthe fulfillment system to read. Order records carry the customer's name, delivery address,\nand order contents.\n\n## Deployment\n\nThe service runs on a virtual machine in the operations subnet. The kiosks call it over the\nstore network. The fulfillment system polls it hourly."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-039",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 shows that customer order records are generated at kiosks, sent to the Kiosk Sync Service, and then read by the fulfillment system, so the same data exists in multiple components at different times. For a threat in which a compromised fulfillment integration can read stored orders, the impact is influenced by whether there are mechanisms to delete customer data across all primary and derived stores. Since no deletion or cross-store erasure behavior is described, it is well supported to treat req-DATA-004 as applicable to thr-003 and currently unverified.",
+        "missing_evidence": [
+          "Documentation of customer data deletion processes across kiosks, the Kiosk Sync Service, and the fulfillment system, including how deletions propagate to all stores.",
+          "Evidence (such as runbooks or configuration) demonstrating that complete deletion can be performed when required."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Kiosk Sync Service \u2014 Note\n\nThe sync service receives customer order records from the field kiosks and stores them for\nthe fulfillment system to read. Order records carry the customer's name, delivery address,\nand order contents.\n\n## Deployment\n\nThe service runs on a virtual machine in the operations subnet. The kiosks call it over the\nstore network. The fulfillment system polls it hourly."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-040",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 describes thr-003\u2019s technical path as the fulfillment system polling the Kiosk Sync Service to read stored order records; it does not mention any role for logs in mediating access to those records. req-LOG-001 concerns limiting sensitive data in logs and controlling log destinations, which would address log-leakage risks but does not change an attacker\u2019s ability to use the legitimate polling interface to exfiltrate data once they control the fulfillment integration. On that basis, the mapping\u2019s conclusion that req-LOG-001 does not bear on this specific bulk-read threat is consistent with the documented architecture.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Kiosk Sync Service \u2014 Note\n\nThe sync service receives customer order records from the field kiosks and stores them for\nthe fulfillment system to read. Order records carry the customer's name, delivery address,\nand order contents.\n\n## Deployment\n\nThe service runs on a virtual machine in the operations subnet. The kiosks call it over the\nstore network. The fulfillment system polls it hourly."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-041",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "According to evd-001, the interaction relevant to thr-003 is an automated polling integration in which the fulfillment system reads order records from the Kiosk Sync Service; there is no mention of a privileged administrative interface in this path. req-LOG-002 concerns logging security-relevant actions through privileged administrative or operator-facing interfaces, which would not address an attacker abusing the existing automated polling interface. Therefore, treating req-LOG-002 as not applicable to thr-003 is supported by the way the threat path is documented.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Kiosk Sync Service \u2014 Note\n\nThe sync service receives customer order records from the field kiosks and stores them for\nthe fulfillment system to read. Order records carry the customer's name, delivery address,\nand order contents.\n\n## Deployment\n\nThe service runs on a virtual machine in the operations subnet. The kiosks call it over the\nstore network. The fulfillment system polls it hourly."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-042",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 makes clear that the Kiosk Sync Service runs on a VM in an operations subnet and is accessed over the store network by kiosks and by the fulfillment system polling it hourly, so it is a network-reachable internal component holding customer order data. If this VM or its storage were reachable from untrusted networks beyond the workloads that need it, an attacker could bypass or expand on the thr-003 integration path. On that basis, the applicability of a requirement like req-NET-001, which constrains network reachability of internal components, and its current unverified status are well supported by the documentation.",
+        "missing_evidence": [
+          "Network architecture and firewall/ACL documentation showing which networks and workloads can reach the Kiosk Sync Service VM and its backing storage.",
+          "Evidence of controls that restrict access to the Kiosk Sync Service to kiosks and the fulfillment system only."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Kiosk Sync Service \u2014 Note\n\nThe sync service receives customer order records from the field kiosks and stores them for\nthe fulfillment system to read. Order records carry the customer's name, delivery address,\nand order contents.\n\n## Deployment\n\nThe service runs on a virtual machine in the operations subnet. The kiosks call it over the\nstore network. The fulfillment system polls it hourly."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-043",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-001 shows that the fulfillment system polls the Kiosk Sync Service, but it does not describe what credentials are used, whether any long-lived credentials or signing keys exist, or whether they are associated with external platforms. The mapping asserts that req-SECRET-001, which governs long-lived provider credentials and signing keys, is not applicable to thr-003 because such credentials are not part of the described attack path; that cannot be verified from the available documentation. Details of credential use and any external provider integrations are needed to decide whether this requirement is out of scope for this threat.",
+        "missing_evidence": [
+          "Documentation of the credentials and keys used by the fulfillment system and Kiosk Sync Service, including whether any long-lived credentials or signing keys authenticate to external providers.",
+          "Threat analysis for thr-003 indicating whether compromise or misuse of such credentials is part of the attack path."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Kiosk Sync Service \u2014 Note\n\nThe sync service receives customer order records from the field kiosks and stores them for\nthe fulfillment system to read. Order records carry the customer's name, delivery address,\nand order contents.\n\n## Deployment\n\nThe service runs on a virtual machine in the operations subnet. The kiosks call it over the\nstore network. The fulfillment system polls it hourly."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-044",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The service note in evd-001 limits itself to kiosks, the Kiosk Sync Service, and the fulfillment system and does not state whether the system accesses customer resources on external platforms using short-lived tokens or installation-scoped credentials. The mapping\u2019s conclusion that req-SECRET-002 is not applicable to thr-003 because the threat does not involve such external access is therefore based on an unstated assumption. Clarifying whether any external customer-resource access exists, and whether it is involved in thr-003, is necessary to validate the non_applicable classification.",
+        "missing_evidence": [
+          "Architecture or integration documentation describing any access to customer resources on external platforms using tokens or installation-scoped credentials.",
+          "Threat documentation for thr-003 indicating whether such external access plays any role in the described attack path."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Kiosk Sync Service \u2014 Note\n\nThe sync service receives customer order records from the field kiosks and stores them for\nthe fulfillment system to read. Order records carry the customer's name, delivery address,\nand order contents.\n\n## Deployment\n\nThe service runs on a virtual machine in the operations subnet. The kiosks call it over the\nstore network. The fulfillment system polls it hourly."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-045",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-001 documents only internal components\u2014the kiosks, Kiosk Sync Service, and fulfillment system\u2014and is silent on whether any external provider processes customer data on the system\u2019s behalf. The mapping treats req-TPI-001 (documenting external processor data handling) as not applicable to thr-003 because no such provider is described, but that relies on interpreting silence as proof that no external processors exist in this flow. Additional evidence about third-party data processors is required to confirm that this requirement is truly out of scope for this threat.",
+        "missing_evidence": [
+          "A list or inventory of external processors or sub-processors that handle or store customer order data for this system, if any.",
+          "Data flow or contractual documentation describing what data, if any, are sent to such external processors."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Kiosk Sync Service \u2014 Note\n\nThe sync service receives customer order records from the field kiosks and stores them for\nthe fulfillment system to read. Order records carry the customer's name, delivery address,\nand order contents.\n\n## Deployment\n\nThe service runs on a virtual machine in the operations subnet. The kiosks call it over the\nstore network. The fulfillment system polls it hourly."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-046",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The documentation in evd-001 only shows internal work\u2014kiosks sending orders to the Kiosk Sync Service and the fulfillment system polling it\u2014but does not address whether any of this processing consumes metered external services. The mapping concludes that req-TPI-002, which concerns bounding work that consumes metered external services, is not applicable to thr-003 because no such services are involved, which cannot be verified from the snippet alone. Confirmation of whether any metered external services are used in this processing path is needed.",
+        "missing_evidence": [
+          "Architecture or billing documentation specifying whether processing of kiosk orders or operation of the Kiosk Sync Service and fulfillment system relies on metered external services (for example, third-party APIs or compute platforms billed per use).",
+          "Threat documentation clarifying whether such services, if present, are relevant to thr-003."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Kiosk Sync Service \u2014 Note\n\nThe sync service receives customer order records from the field kiosks and stores them for\nthe fulfillment system to read. Order records carry the customer's name, delivery address,\nand order contents.\n\n## Deployment\n\nThe service runs on a virtual machine in the operations subnet. The kiosks call it over the\nstore network. The fulfillment system polls it hourly."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-047",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 explicitly states that \"The fulfillment system polls [the Kiosk Sync Service] hourly,\" which shows that the integration relevant to thr-003 is a polling pattern initiated by the fulfillment system, not inbound asynchronous events from an external platform. req-WEBHOOK-001 is concerned with cryptographically verifying inbound webhooks or event deliveries, which are not part of this documented interaction. Therefore, the mapping that treats req-WEBHOOK-001 as not applicable to thr-003 is supported by the evidence.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Kiosk Sync Service \u2014 Note\n\nThe sync service receives customer order records from the field kiosks and stores them for\nthe fulfillment system to read. Order records carry the customer's name, delivery address,\nand order contents.\n\n## Deployment\n\nThe service runs on a virtual machine in the operations subnet. The kiosks call it over the\nstore network. The fulfillment system polls it hourly."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-048",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The same polling behavior documented in evd-001\u2014\"The fulfillment system polls it hourly\"\u2014shows that, in thr-003, the Kiosk Sync Service is not passively receiving externally delivered events that might be replayed; rather, the fulfillment system actively pulls data. req-WEBHOOK-002 focuses on preventing or mitigating replay of inbound events or webhooks, which does not bear on the described polling-based interaction. The mapping\u2019s not_applicable classification for req-WEBHOOK-002 with respect to thr-003 is therefore well supported.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Kiosk Sync Service \u2014 Note\n\nThe sync service receives customer order records from the field kiosks and stores them for\nthe fulfillment system to read. Order records carry the customer's name, delivery address,\nand order contents.\n\n## Deployment\n\nThe service runs on a virtual machine in the operations subnet. The kiosks call it over the\nstore network. The fulfillment system polls it hourly."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-049",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 describes the Kiosk Sync Service only as a VM-based service receiving and storing customer orders; it does not mention any application-level administrative or operator interface or how privileged actions are performed. The mapping for req-ADMIN-001 correctly treats the requirement as conditionally applicable to thr-004\u2014relevant if such a privileged interface exists\u2014and unverified because its existence and controls are undocumented. That conditional, unverified status accurately reflects the documentation gap.",
+        "missing_evidence": [
+          "Documentation describing any administrative or operator interface for the Kiosk Sync Service (beyond OS/platform access), including available operations and access controls.",
+          "Audit or logging design describing how privileged actions on stored orders are recorded, if such an interface exists."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Kiosk Sync Service \u2014 Note\n\nThe sync service receives customer order records from the field kiosks and stores them for\nthe fulfillment system to read. Order records carry the customer's name, delivery address,\nand order contents.\n\n## Deployment\n\nThe service runs on a virtual machine in the operations subnet. The kiosks call it over the\nstore network. The fulfillment system polls it hourly."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-050",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-001 describes storage and retrieval of customer order records but does not state whether any data is passed to an AI model, which is the basis for the non_applicable condition cited for req-AI-001. The mapping assumes that because no model is described, the system passes no content to a model in the context of thr-004, which treats silence as evidence. Explicit confirmation about the presence or absence of AI/model components is needed to validate this non_applicable conclusion.",
+        "missing_evidence": [
+          "Architecture documentation explicitly stating whether the Kiosk Sync Service or fulfillment system passes any customer order data to AI or ML models in the context of thr-004.",
+          "If AI models exist, documentation of how their inputs relate to the Kiosk Sync Service\u2019s stored orders."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Kiosk Sync Service \u2014 Note\n\nThe sync service receives customer order records from the field kiosks and stores them for\nthe fulfillment system to read. Order records carry the customer's name, delivery address,\nand order contents.\n\n## Deployment\n\nThe service runs on a virtual machine in the operations subnet. The kiosks call it over the\nstore network. The fulfillment system polls it hourly."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-051",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The service note in evd-001 focuses on order capture and storage and does not mention any model inference or model-generated outputs being published externally. The mapping therefore infers that req-AI-002, which applies where model outputs are published, is not applicable to thr-004. Because this relies on the absence of AI-related description rather than an explicit statement that no such outputs exist, further documentation is required to be confident in the non_applicable status.",
+        "missing_evidence": [
+          "Documentation clarifying whether any model-generated outputs derived from customer order data are published to external consumers or user interfaces.",
+          "An explicit statement of whether any AI models are part of the architecture involving the Kiosk Sync Service or fulfillment system."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Kiosk Sync Service \u2014 Note\n\nThe sync service receives customer order records from the field kiosks and stores them for\nthe fulfillment system to read. Order records carry the customer's name, delivery address,\nand order contents.\n\n## Deployment\n\nThe service runs on a virtual machine in the operations subnet. The kiosks call it over the\nstore network. The fulfillment system polls it hourly."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-052",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-001 states that order records are stored on the Kiosk Sync Service VM and read by the fulfillment system but does not address whether those records are ever sent to an external model provider. The mapping asserts that req-AI-003 is not applicable because no content is sent to a model, which extends beyond what is documented. To validate this non_applicable classification for thr-004, explicit confirmation about whether any external model providers are used with this data is needed.",
+        "missing_evidence": [
+          "Design or integration documentation indicating whether customer order records are sent to any external AI/ML model providers.",
+          "If such providers exist, data flow diagrams showing how data leave the Kiosk Sync Service or fulfillment system for model processing."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Kiosk Sync Service \u2014 Note\n\nThe sync service receives customer order records from the field kiosks and stores them for\nthe fulfillment system to read. Order records carry the customer's name, delivery address,\nand order contents.\n\n## Deployment\n\nThe service runs on a virtual machine in the operations subnet. The kiosks call it over the\nstore network. The fulfillment system polls it hourly."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-053",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The architecture note in evd-001 does not mention any model output being produced or rendered; it only describes storage of structured order data. The mapping uses this silence to conclude that req-AI-004, which covers encoding model output for UI or markup contexts, is not applicable to thr-004. Because the absence of mention is not evidence that such model outputs do not exist elsewhere in the relevant components, confirmation is needed before accepting this non_applicable status.",
+        "missing_evidence": [
+          "Architecture documentation describing whether any AI model outputs are rendered in user interfaces or external markup in components interacting with the Kiosk Sync Service.",
+          "If such outputs exist, documentation of how they are encoded and where they are rendered."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Kiosk Sync Service \u2014 Note\n\nThe sync service receives customer order records from the field kiosks and stores them for\nthe fulfillment system to read. Order records carry the customer's name, delivery address,\nand order contents.\n\n## Deployment\n\nThe service runs on a virtual machine in the operations subnet. The kiosks call it over the\nstore network. The fulfillment system polls it hourly."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-054",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-001 shows that kiosks call the Kiosk Sync Service over the store network and that the fulfillment system polls it, but it does not explicitly say whether end users can reach the Kiosk Sync Service directly or whether any delegated end-user authentication is involved. The mapping infers that req-AUTH-001 is not applicable to thr-004 because the component is not reachable by end users, which goes beyond what is stated. Additional architectural detail is needed to confirm whether end users ever directly interact with this service.",
+        "missing_evidence": [
+          "Network and application architecture diagrams clarifying whether the Kiosk Sync Service is ever directly reachable from end-user devices or only via kiosk software and internal services.",
+          "Documentation on how end-user authentication is handled relative to the Kiosk Sync Service (for example, whether any user tokens are presented to it)."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Kiosk Sync Service \u2014 Note\n\nThe sync service receives customer order records from the field kiosks and stores them for\nthe fulfillment system to read. Order records carry the customer's name, delivery address,\nand order contents.\n\n## Deployment\n\nThe service runs on a virtual machine in the operations subnet. The kiosks call it over the\nstore network. The fulfillment system polls it hourly."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-055",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 confirms that the Kiosk Sync Service runs on a VM and handles customer orders, but it does not describe how administrators gain OS-level or platform access to that VM or whether such access crosses untrusted networks or uses MFA. The mapping for req-AUTH-002 correctly treats MFA for privileged access as conditionally applicable to thr-004\u2014because the threat assumes administrative or OS-level access\u2014and unverified because the administrative access path is undocumented. This conditional, unverified classification is consistent with what the documentation does and does not say.",
+        "missing_evidence": [
+          "Documentation of normal administrative access paths to the Kiosk Sync Service VM (for example, SSH, RDP, or cloud console) and which networks they traverse.",
+          "Documentation or configuration showing whether MFA is enforced for such privileged access."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Kiosk Sync Service \u2014 Note\n\nThe sync service receives customer order records from the field kiosks and stores them for\nthe fulfillment system to read. Order records carry the customer's name, delivery address,\nand order contents.\n\n## Deployment\n\nThe service runs on a virtual machine in the operations subnet. The kiosks call it over the\nstore network. The fulfillment system polls it hourly."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-056",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "As with thr-003, evd-001 does not specify whether the kiosk and fulfillment environment is operated for a single retailer or shared by multiple tenant organizations. The mapping takes req-AUTHZ-001 to be not applicable to thr-004 on the assumption that the system is single-tenant, which is not established in the documentation. Tenancy characteristics need to be clarified before concluding that tenant-aware authorization requirements do not apply.",
+        "missing_evidence": [
+          "Deployment or product documentation describing whether the kiosks, Kiosk Sync Service, and fulfillment system are used by one organization or multiple external tenants.",
+          "Any design documentation on tenant scoping and authorization, if multi-tenancy is supported."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Kiosk Sync Service \u2014 Note\n\nThe sync service receives customer order records from the field kiosks and stores them for\nthe fulfillment system to read. Order records carry the customer's name, delivery address,\nand order contents.\n\n## Deployment\n\nThe service runs on a virtual machine in the operations subnet. The kiosks call it over the\nstore network. The fulfillment system polls it hourly."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-057",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The note in evd-001 describes only kiosks, the Kiosk Sync Service, and the fulfillment system, and it does not say whether the system maintains delegated access to any third-party external platforms. The mapping asserts that req-AUTHZ-002 is not applicable to thr-004 because the system holds no external delegated access, which goes beyond what is written. Evidence about external platform integrations and delegated access, if any, is needed to confirm or revise this non_applicable classification.",
+        "missing_evidence": [
+          "Integration documentation listing any external platforms the system integrates with using delegated access on behalf of customers.",
+          "Clarification of whether such integrations, if they exist, are relevant to the assets and attack path considered in thr-004."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Kiosk Sync Service \u2014 Note\n\nThe sync service receives customer order records from the field kiosks and stores them for\nthe fulfillment system to read. Order records carry the customer's name, delivery address,\nand order contents.\n\n## Deployment\n\nThe service runs on a virtual machine in the operations subnet. The kiosks call it over the\nstore network. The fulfillment system polls it hourly."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-058",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 confirms that the Kiosk Sync Service is a VM-based component whose compromise could expose or corrupt stored orders, but it does not describe how that VM is built or deployed. The mapping for req-CICD-001 reasonably states that CICD and dependency controls would apply to thr-004 if the service is deployed by an automated pipeline, and marks them unverified because no pipeline information is provided. This conditional, unverified applicability is consistent with the available documentation.",
+        "missing_evidence": [
+          "Documentation of how the Kiosk Sync Service is built and deployed (manual deployment versus automated CI/CD pipeline).",
+          "Documentation of dependency management and verification steps in any such pipeline, including controls to prevent compromised components from being deployed."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Kiosk Sync Service \u2014 Note\n\nThe sync service receives customer order records from the field kiosks and stores them for\nthe fulfillment system to read. Order records carry the customer's name, delivery address,\nand order contents.\n\n## Deployment\n\nThe service runs on a virtual machine in the operations subnet. The kiosks call it over the\nstore network. The fulfillment system polls it hourly."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-059",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 specifies that the Kiosk Sync Service stores customer order records containing names, delivery addresses, and order contents on a VM, and that thr-004 concerns compromise of that stored data. Given this, a requirement like req-DATA-001, which governs encryption of sensitive data at rest (and in transit, where applicable), is clearly relevant to mitigating confidentiality impact in thr-004. Because no encryption controls are described for the VM or its storage, treating this requirement as applicable and unverified is well supported.",
+        "missing_evidence": [
+          "Configuration or platform documentation showing whether storage attached to the Kiosk Sync Service VM is encrypted at rest and by whom.",
+          "Documentation of encryption in transit for access to the Kiosk Sync Service from kiosks and the fulfillment system in the context of thr-004."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Kiosk Sync Service \u2014 Note\n\nThe sync service receives customer order records from the field kiosks and stores them for\nthe fulfillment system to read. Order records carry the customer's name, delivery address,\nand order contents.\n\n## Deployment\n\nThe service runs on a virtual machine in the operations subnet. The kiosks call it over the\nstore network. The fulfillment system polls it hourly."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-060",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 shows that the Kiosk Sync Service persists customer order records received from kiosks so the fulfillment system can read them later, which is exactly the kind of working data retention addressed by req-DATA-002. In thr-004, where an attacker with OS-level access could read or tamper with these retained records, defined and enforced retention policies directly influence how much data is exposed over time. Because the documentation does not state any retention behavior, it is appropriate and supported to classify req-DATA-002 as applicable and unverified for this threat.",
+        "missing_evidence": [
+          "Documented retention and deletion policy for order records stored on the Kiosk Sync Service VM, including any time-based or state-based purging.",
+          "Evidence that the implemented system enforces the documented retention policy (for example, configuration, jobs, or database settings)."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Kiosk Sync Service \u2014 Note\n\nThe sync service receives customer order records from the field kiosks and stores them for\nthe fulfillment system to read. Order records carry the customer's name, delivery address,\nand order contents.\n\n## Deployment\n\nThe service runs on a virtual machine in the operations subnet. The kiosks call it over the\nstore network. The fulfillment system polls it hourly."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-061",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-001 does not indicate whether customer order records on the Kiosk Sync Service VM are associated with a single retailer or multiple tenants; it merely states that kiosks send orders and the fulfillment system reads them. The mapping concludes that req-DATA-003, concerning tenant separation in shared storage, is not applicable to thr-004 by assuming a single-tenant environment. Without explicit tenancy information, this non_applicable conclusion requires confirmation.",
+        "missing_evidence": [
+          "Storage and tenancy design documentation specifying whether the Kiosk Sync Service VM and its storage are shared across multiple tenants or dedicated to a single organization.",
+          "If multi-tenant, documentation of mechanisms used to separate stored artifacts by tenant."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Kiosk Sync Service \u2014 Note\n\nThe sync service receives customer order records from the field kiosks and stores them for\nthe fulfillment system to read. Order records carry the customer's name, delivery address,\nand order contents.\n\n## Deployment\n\nThe service runs on a virtual machine in the operations subnet. The kiosks call it over the\nstore network. The fulfillment system polls it hourly."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-062",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 (together with referenced assets in other documents) establishes that customer order data exists in multiple components: kiosks, the Kiosk Sync Service VM, and the fulfillment system. In thr-004, compromise of the Kiosk Sync Service store exposes at least one of these copies, and the overall risk is influenced by whether there is a documented and effective way to delete customer data across all stores. Since no cross-store deletion behavior is described, treating req-DATA-004 as applicable and unverified for this threat is supported by the evidence.",
+        "missing_evidence": [
+          "End-to-end data lifecycle documentation showing how customer order records are deleted or anonymized across kiosks, the Kiosk Sync Service, fulfillment, and any derived stores.",
+          "Operational procedures or tooling that implement such cross-store deletions when required (for example, account deletion or data subject requests)."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Kiosk Sync Service \u2014 Note\n\nThe sync service receives customer order records from the field kiosks and stores them for\nthe fulfillment system to read. Order records carry the customer's name, delivery address,\nand order contents.\n\n## Deployment\n\nThe service runs on a virtual machine in the operations subnet. The kiosks call it over the\nstore network. The fulfillment system polls it hourly."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-063",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 confirms that the system handles confidential customer order data on the Kiosk Sync Service VM and in the fulfillment system, which makes log handling of such data potentially relevant to thr-004. The mapping for req-LOG-001 correctly notes that applicability depends on whether logs containing restricted data are produced and forwarded outside the component\u2019s trust boundary\u2014information not present in the documentation\u2014and therefore classifies the requirement as conditionally applicable and unverified. This conditional, unverified status accurately reflects the documented handling of data and the absence of logging details.",
+        "missing_evidence": [
+          "Logging configuration and architecture for the Kiosk Sync Service and fulfillment system, including what data are logged and where logs are stored or forwarded.",
+          "Any policies or controls that prevent sensitive customer data from being written to logs or from leaving defined trust boundaries."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Kiosk Sync Service \u2014 Note\n\nThe sync service receives customer order records from the field kiosks and stores them for\nthe fulfillment system to read. Order records carry the customer's name, delivery address,\nand order contents.\n\n## Deployment\n\nThe service runs on a virtual machine in the operations subnet. The kiosks call it over the\nstore network. The fulfillment system polls it hourly."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-064",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 documents that the Kiosk Sync Service VM stores and serves customer orders, so privileged actions on that VM or any application-level administrative interface would be security-relevant in thr-004. The mapping for req-LOG-002 appropriately states that this requirement would apply if privileged actions occur through an interface whose operations can be audited, but that the documentation does not describe such an interface or any audit logging, leading to a conditionally applicable and unverified status. This classification aligns with the presence of sensitive data and the lack of detailed admin/audit information in the evidence.",
+        "missing_evidence": [
+          "Documentation of any privileged administrative or operator-facing interfaces that can modify or delete orders on the Kiosk Sync Service.",
+          "Audit logging design and configuration showing whether and how such privileged actions are logged and retained."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Kiosk Sync Service \u2014 Note\n\nThe sync service receives customer order records from the field kiosks and stores them for\nthe fulfillment system to read. Order records carry the customer's name, delivery address,\nand order contents.\n\n## Deployment\n\nThe service runs on a virtual machine in the operations subnet. The kiosks call it over the\nstore network. The fulfillment system polls it hourly."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-065",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 clearly states that the Kiosk Sync Service runs on a VM in an operations subnet and that kiosks and the fulfillment system reach it over the store network, so it is an internal network-exposed component holding customer order data. In thr-004, compromise of this VM or its backing store is the core of the threat, and restricting its network reachability to only the necessary workloads is therefore directly relevant, matching the intent of req-NET-001. Since no network-segmentation or access-control details are documented, the mapping\u2019s classification of this requirement as applicable and unverified is well supported.",
+        "missing_evidence": [
+          "Network topology and firewall/ACL rules governing access to the Kiosk Sync Service VM and associated storage.",
+          "Evidence that only kiosks and the fulfillment system can reach the service and that it is not exposed to untrusted networks."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Kiosk Sync Service \u2014 Note\n\nThe sync service receives customer order records from the field kiosks and stores them for\nthe fulfillment system to read. Order records carry the customer's name, delivery address,\nand order contents.\n\n## Deployment\n\nThe service runs on a virtual machine in the operations subnet. The kiosks call it over the\nstore network. The fulfillment system polls it hourly."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-066",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 shows that the Kiosk Sync Service runs on a VM that stores customer orders, so OS-level compromise would expose any long-lived provider credentials or signing keys present on that VM. The mapping for req-SECRET-001 correctly states that the requirement would apply if the service uses such credentials to reach external platforms, but notes that the documentation does not describe any outbound integrations or signing operations, leading to a conditionally applicable and unverified status. This reflects the sensitive nature of the component and the lack of information about secrets usage.",
+        "missing_evidence": [
+          "Documentation of any long-lived provider credentials or signing keys used by the Kiosk Sync Service, including where they are stored (for example, on the VM, in a secrets manager).",
+          "Integration documentation showing whether the service authenticates to external platforms using such credentials and how those credentials are protected."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Kiosk Sync Service \u2014 Note\n\nThe sync service receives customer order records from the field kiosks and stores them for\nthe fulfillment system to read. Order records carry the customer's name, delivery address,\nand order contents.\n\n## Deployment\n\nThe service runs on a virtual machine in the operations subnet. The kiosks call it over the\nstore network. The fulfillment system polls it hourly."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-067",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-001 describes interactions among kiosks, the Kiosk Sync Service, and the fulfillment system but does not say whether these components access customer resources on external platforms using tokens or installation-scoped credentials. The mapping\u2019s assertion that req-SECRET-002 is not applicable to thr-004 because the system accesses no such external resources is therefore an inference, not a documented fact. Clarification of any external customer-resource access is needed to determine the applicability of this requirement.",
+        "missing_evidence": [
+          "Architecture or integration documentation indicating whether any part of the system accesses customer resources on external platforms using OAuth tokens, installation-scoped credentials, or similar mechanisms.",
+          "Threat documentation clarifying whether such external access is in scope for thr-004, if it exists."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Kiosk Sync Service \u2014 Note\n\nThe sync service receives customer order records from the field kiosks and stores them for\nthe fulfillment system to read. Order records carry the customer's name, delivery address,\nand order contents.\n\n## Deployment\n\nThe service runs on a virtual machine in the operations subnet. The kiosks call it over the\nstore network. The fulfillment system polls it hourly."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-068",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The service note in evd-001 indicates that customer order data flows between kiosks, the Kiosk Sync Service, and the fulfillment system, but it does not state whether any external provider processes this data as a processor on the system\u2019s behalf. The mapping concludes that req-TPI-001 is not applicable to thr-004 because no customer data leave the system\u2019s trust boundary, which cannot be substantiated from this snippet alone. Evidence about external data processors and trust boundaries is required to validate this non_applicable classification.",
+        "missing_evidence": [
+          "A data flow or vendor inventory identifying any external providers that receive or process customer order data, if any.",
+          "Definitions of the system\u2019s trust boundary relative to these providers, including whether data transfers occur under processor agreements."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Kiosk Sync Service \u2014 Note\n\nThe sync service receives customer order records from the field kiosks and stores them for\nthe fulfillment system to read. Order records carry the customer's name, delivery address,\nand order contents.\n\n## Deployment\n\nThe service runs on a virtual machine in the operations subnet. The kiosks call it over the\nstore network. The fulfillment system polls it hourly."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-069",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-001 shows internal processing among kiosks, the Kiosk Sync Service, and the fulfillment system but does not address whether any of this work consumes metered external services (for example, third-party APIs billed per request). The mapping asserts that req-TPI-002 is not applicable to thr-004 because no metered external service is involved, which is not established in the evidence. Clarification of any such external service use is needed to confirm or revise this non_applicable classification.",
+        "missing_evidence": [
+          "Architecture or billing documentation describing whether processing of customer orders uses any metered external services (such as third-party APIs or cloud services with per-use billing).",
+          "Threat analysis specifying whether such metered services, if present, are part of the thr-004 attack path."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Kiosk Sync Service \u2014 Note\n\nThe sync service receives customer order records from the field kiosks and stores them for\nthe fulfillment system to read. Order records carry the customer's name, delivery address,\nand order contents.\n\n## Deployment\n\nThe service runs on a virtual machine in the operations subnet. The kiosks call it over the\nstore network. The fulfillment system polls it hourly."
+          }
+        ]
+      }
+    ]
+  }
+}

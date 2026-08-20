@@ -4,11 +4,14 @@ reviewer: recorded-reviewer
 components:
 - id: cmp-001
   decision: approve
+  attach_evidence: []
   editable:
     name: Event Receiver
-    description: null
-    component_type: service
-    technology: []
+    description: Public HTTPS endpoint that the external CI platform calls with a deployment event; it
+      parses the event and hands it to the notifier.
+    component_type: web_service
+    technology:
+    - https
     ownership: null
     deployment_zone: null
     internet_accessible: true
@@ -18,9 +21,41 @@ components:
     authorization_mechanisms: []
 - id: cmp-002
   decision: approve
+  attach_evidence: []
   editable:
     name: Chat Notifier
-    description: null
+    description: Formats the deployment event and posts it to the internal chat channel over the chat
+      platform's API.
+    component_type: service
+    technology: []
+    ownership: null
+    deployment_zone: null
+    internet_accessible: null
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+- id: cmp-003
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: CI platform
+    description: External continuous-integration service that sends deployment events to the Deploy Notifier.
+    component_type: external_service
+    technology: []
+    ownership: null
+    deployment_zone: null
+    internet_accessible: null
+    externally_managed: true
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+- id: cmp-004
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Chat platform
+    description: Chat platform whose internal channel receives deployment notifications via its API.
     component_type: service
     technology: []
     ownership: null
@@ -33,19 +68,44 @@ components:
 actors:
 - id: act-001
   decision: approve
+  attach_evidence: []
   editable:
     name: CI platform
     actor_type: external_service
     trust_level: null
     capabilities: []
     authentication_method: null
+- id: act-002
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Engineer
+    actor_type: human_user
+    trust_level: null
+    capabilities: []
+    authentication_method: null
 assets:
 - id: ast-001
   decision: approve
+  attach_evidence: []
   editable:
     name: Deployment events
-    asset_type: operational_data
-    description: null
+    asset_type: data
+    description: Deployment event payloads containing repository names, environments, and commit identifiers,
+      delivered from the CI platform to the notifier.
+    confidentiality_impact: null
+    integrity_impact: null
+    availability_impact: null
+    data_classification: null
+    owner: null
+- id: ast-002
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Deployment notifications
+    asset_type: data
+    description: Formatted chat messages about deployments, naming the repository, environment, and commit,
+      posted into the internal chat channel.
     confidentiality_impact: null
     integrity_impact: null
     availability_impact: null
@@ -54,23 +114,54 @@ assets:
 data_flows:
 - id: df-001
   decision: approve
+  attach_evidence: []
   editable:
-    name: Deploy event delivery
+    name: CI platform to Event Receiver
+    direction: one_way
+    protocol: https
+    data_types:
+    - deployment_event
+    authentication: unknown
+    encryption_in_transit: tls
+    internet_exposed: true
+    source_component_id: cmp-003
+    destination_component_id: cmp-001
+- id: df-002
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Event Receiver to Chat Notifier
     direction: one_way
     protocol: null
-    data_types: []
+    data_types:
+    - deployment_event
     authentication: unknown
     encryption_in_transit: unknown
     internet_exposed: null
     source_component_id: cmp-001
     destination_component_id: cmp-002
+- id: df-003
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Chat Notifier to Chat platform
+    direction: one_way
+    protocol: api
+    data_types:
+    - notification_message
+    authentication: unknown
+    encryption_in_transit: unknown
+    internet_exposed: null
+    source_component_id: cmp-002
+    destination_component_id: cmp-004
 trust_boundaries:
 - id: tb-001
   decision: approve
+  attach_evidence: []
   editable:
-    name: Public internet boundary
-    boundary_type: internet_to_application
-    description: null
+    name: CI platform to Deploy Notifier boundary
+    boundary_type: network
+    description: Boundary between the external CI platform and the Deploy Notifier's public HTTPS endpoint.
     controls: []
 claims:
 - id: ctx-001
@@ -78,10 +169,188 @@ claims:
   confidence: high
   decision: approve
   confirm: false
+  attach_evidence: []
   evidence:
   - evd-001
   editable:
-    predicate: event_authenticity
-    value: processes any well-formed delivery, no signature checked
+    predicate: name
+    value: Deploy Notifier
     rationale: null
-questions: []
+- id: ctx-002
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-001
+  editable:
+    predicate: purpose
+    value: Receives deployment events from an external CI platform and posts them to an internal chat
+      channel so engineers can see deploys without watching the CI dashboard.
+    rationale: null
+- id: ctx-003
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-001
+  - evd-003
+  - evd-005
+  editable:
+    predicate: deployment_event_source
+    value: external_ci_platform
+    rationale: null
+- id: ctx-004
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-001
+  - evd-002
+  editable:
+    predicate: notification_target
+    value: internal_chat_channel
+    rationale: null
+- id: ctx-005
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-004
+  editable:
+    predicate: customer_data_processed
+    value: false
+    rationale: null
+- id: ctx-006
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-003
+  editable:
+    predicate: fields
+    value:
+    - repository_name
+    - environment
+    - commit_identifier
+    rationale: null
+- id: ctx-007
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-004
+  editable:
+    predicate: contains_customer_data
+    value: false
+    rationale: null
+- id: ctx-008
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-002
+  editable:
+    predicate: internet_exposed
+    value: true
+    rationale: null
+- id: ctx-009
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-002
+  editable:
+    predicate: protocol
+    value: https
+    rationale: null
+- id: ctx-010
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-003
+  editable:
+    predicate: ci_signature_verification
+    value: false
+    rationale: null
+- id: ctx-011
+  status: inferred
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-002
+  editable:
+    predicate: encryption_in_transit
+    value: tls
+    rationale: The Event Receiver is described as a public HTTPS endpoint, which implies TLS is used for
+      transport encryption.
+- id: ctx-012
+  status: unknown
+  confidence: low
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence: []
+  editable:
+    predicate: stored_persistently
+    value: null
+    rationale: The documentation describes receiving and forwarding deployment events but does not state
+      whether they are stored or logged persistently.
+contradictions: []
+additions: []
+questions:
+- id: qst-001
+  question: Does the Event Receiver perform any authentication or source validation for incoming deployment
+    events beyond accepting any well-formed delivery (for example, verifying CI signatures, validating
+    source IPs, or requiring a shared secret)?
+  priority: high
+  blocking: true
+  answer: 'The documentation answers this directly: the CI platform supports signing deliveries with a
+    shared secret so a receiver can verify origin, and the receiver accepts and processes any well-formed
+    delivery without checking a signature. No authentication or source validation is performed on incoming
+    deployment events; that is a documented posture, not an absence of documentation.'
+- id: qst-002
+  question: Are deployment events or the resulting chat notifications stored or logged persistently anywhere
+    (for example, in databases, log stores, or message queues), and if so, where and for how long?
+  priority: medium
+  blocking: false
+  answer: null
+- id: qst-003
+  question: Is the chat platform that receives deployment notifications an externally hosted service or
+    an internally hosted system, and how is the connection from the Deploy Notifier to this platform secured
+    and authenticated?
+  priority: medium
+  blocking: false
+  answer: null
+- id: qst-004
+  question: No actor in the context is anonymous or external. If the system is reachable from outside,
+    who reaches it? If it is not, what establishes that?
+  priority: medium
+  blocking: false
+  answer: null
+- id: qst-005
+  question: No actor in the context is administrative or privileged. Who operates and configures the system,
+    and through what?
+  priority: medium
+  blocking: false
+  answer: null

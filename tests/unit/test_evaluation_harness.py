@@ -151,7 +151,7 @@ def test_forgeflow_replays_through_the_harness_offline(
 @pytest.mark.parametrize(
     ("slug", "expected_key", "expected_requirement"),
     [
-        ("unsigned-webhooks", "FND-UW-01", "req-WEBHOOK-001"),
+        ("order-notifier", "FND-ON-01", "req-WEBHOOK-001"),
         ("contradictory-docs", "FND-CD-01", "req-DATA-002"),
     ],
 )
@@ -354,7 +354,9 @@ def test_model_call_count_matches_the_responses_the_recording_supplies(tmp_path:
     itself so authoring a scenario cannot silently diverge from this test."""
     entry = next(item for item in load_registry() if item.slug == "oidc-portal")
     supplied = len(list(entry.recorded_dir_for("clean").glob("*.json")))
-    assert supplied == 8, "the scenario's recording changed; re-derive this test's expectation"
+    # The 2026-08-19 live capture (openai/gpt-5.1, workflow 0.2) replaced the 8-envelope
+    # authored recording; the shape still holds — zero findings, one unpaused final segment.
+    assert supplied == 14, "the scenario's recording changed; re-derive this test's expectation"
 
     outcome = run_scenario(
         "oidc-portal",
@@ -479,7 +481,7 @@ def test_a_scenario_without_a_pin_reports_none_not_a_pass(tmp_path: Path) -> Non
     from trace_ai.services.evaluation.harness import run_scenario
 
     outcome = run_scenario(
-        "unsigned-webhooks",
+        "invoice-agent",
         data_root=tmp_path / "work",
         label="pin-test",
         results_root=tmp_path / "feeds",
@@ -521,3 +523,15 @@ def test_a_wrong_pin_reports_drift(tmp_path: Path) -> None:
     )
     assert outcome.completed
     assert outcome.report_hash_verified is False
+
+
+def test_a_condition_recording_replays_under_its_own_pin() -> None:
+    """DEC-134, amended: the pin belongs to the recording. Promoting a 0.2 clean capture must
+    not re-shape the replay of an authored 0.1 condition recording beside it — the registry's
+    per-condition override carries the condition's own shape, and an undeclared condition
+    inherits the entry's pin."""
+    entry = next(item for item in load_registry() if item.slug == "unsigned-webhooks")
+    assert entry.workflow_version == "0.2"
+    assert entry.workflow_version_for("adversarial") == "0.1"
+    assert entry.workflow_version_for("clean") == "0.2"
+    assert entry.workflow_version_for() == "0.2"

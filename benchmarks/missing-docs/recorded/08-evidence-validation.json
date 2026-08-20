@@ -1,0 +1,848 @@
+{
+  "schema": "EvidenceValidationProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 11801,
+    "output_tokens": 18528,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.20003125",
+    "duration_seconds": 133.03399937495124
+  },
+  "response": {
+    "assessments": [
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-001",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 explicitly states that the sync service receives customer order records from the field kiosks, stores them, and makes them available for the fulfillment system to read, which matches the stated purpose.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "The sync service receives customer order records from the field kiosks and stores them for\nthe fulfillment system to read."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-002",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 directly states that order records carry the customer's name, delivery address, and order contents, matching the listed fields.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "Order records carry the customer's name, delivery address,\nand order contents."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-003",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 states that the sync service receives customer order records from the field kiosks, which directly supports that the kiosks (cmp-002) send data to the Kiosk Sync Service.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "The sync service receives customer order records from the field kiosks and stores them for\nthe fulfillment system to read."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-004",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 says the sync service stores customer order records for the fulfillment system to read and that the fulfillment system polls it hourly, which together establish that the fulfillment system (cmp-003) reads orders from the Kiosk Sync Service.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "The sync service receives customer order records from the field kiosks and stores them for\nthe fulfillment system to read."
+          },
+          {
+            "evidence_id": "evd-001",
+            "text": "The fulfillment system polls it hourly."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-005",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 directly states that the service runs on a virtual machine in the operations subnet, supporting the deployment_zone value.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "The service runs on a virtual machine in the operations subnet."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-006",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 states that the kiosks call the service over the store network, which supports by inference that the kiosks (cmp-002) are connected via the store_network.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "The kiosks call it over the\nstore network."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-007",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 explicitly says the sync service receives customer order records from the field kiosks, which directly supports that customer order records move from field kiosks to the kiosk sync service.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "The sync service receives customer order records from the field kiosks and stores them for\nthe fulfillment system to read."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-008",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-001 establishes that customer order records are stored by the Kiosk Sync Service for the fulfillment system to read and that the fulfillment system polls the service hourly. This directly supports that the fulfillment system obtains order records from the service, but the specific phrasing \"are provided ... when it polls the service\" is an inference from those two statements rather than something the document states outright.",
+        "missing_evidence": [
+          "More detailed interface or sequencing documentation that explicitly states that the fulfillment system retrieves customer order records as part of its polling of the Kiosk Sync Service."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "The sync service receives customer order records from the field kiosks and stores them for\nthe fulfillment system to read."
+          },
+          {
+            "evidence_id": "evd-001",
+            "text": "The fulfillment system polls it hourly."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-009",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 states that order records carry the customer's name and delivery address; by ordinary security and privacy definitions, these fields constitute personal data, so the claim that the asset contains personal data is well supported as an inference.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "Order records carry the customer's name, delivery address,\nand order contents."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-010",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 notes that the kiosks call the service over the store network and that the fulfillment system polls it hourly, which implies that the Kiosk Sync Service exposes a network-accessible interface that clients invoke, consistent with classifying its entry_point_type as an API.",
+        "missing_evidence": [
+          "Explicit interface documentation for the Kiosk Sync Service identifying the entry point type (for example, HTTP API, RPC service, or message queue)."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "The kiosks call it over the\nstore network. The fulfillment system polls it hourly."
+          }
+        ]
+      },
+      {
+        "subject_type": "control",
+        "subject_id": "ctl-001",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 directly documents that the service runs on a virtual machine in the operations subnet, that kiosks access it over the store network, and that the Fulfillment system polls it, matching the described deployment and access pattern.",
+        "missing_evidence": [
+          "Network architecture documentation describing what networks can reach the operations subnet and how it is segmented from untrusted networks, to assess the strength of this deployment control."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "The service runs on a virtual machine in the operations subnet. The kiosks call it over the\nstore network. The fulfillment system polls it hourly."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-001",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "No provided evidence mentions req-ADMIN-001, thr-001, or any administrative or operator interfaces for the kiosks or Kiosk Sync Service, so the claim that req-ADMIN-001 is not applicable to thr-001 is not established by the documentation in this batch.",
+        "missing_evidence": [
+          "Threat modeling or requirements documentation that explicitly states whether req-ADMIN-001 applies to thr-001, including any description of administrative or operator interfaces for the involved components."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-002",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "The available evidence does not mention AI or ML models, req-AI-001, or thr-001, so the conclusion that req-AI-001 is not applicable to thr-001 cannot be validated from evd-001 alone.",
+        "missing_evidence": [
+          "Architecture or design documentation that identifies any AI/ML usage in the kiosk\u2013sync\u2013fulfillment flow and explicitly states whether req-AI-001 applies to thr-001."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-003",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "There is no evidence in evd-001 about req-AI-002, model output publication, or the specifics of thr-001, so the mapping that req-AI-002 is not applicable to thr-001 is not established by the supplied documentation.",
+        "missing_evidence": [
+          "Threat modeling or requirements documentation explaining whether any model outputs are published externally in the context of thr-001 and explicitly stating the applicability of req-AI-002."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-004",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "evd-001 does not address req-AI-003, use of external model providers, or the detailed definition of thr-001, so the statement that req-AI-003 is not applicable to thr-001 is unsupported by the current evidence.",
+        "missing_evidence": [
+          "Documentation of any external model providers used in the system and an explicit statement of whether req-AI-003 applies to thr-001."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-005",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "No evidence in this batch discusses model output, UI rendering, or req-AI-004, so the claim that req-AI-004 is not applicable to thr-001 is not supported by the provided documentation.",
+        "missing_evidence": [
+          "Design or threat documentation describing any model outputs rendered into UIs or markup for thr-001, and an explicit decision on whether req-AI-004 applies."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-006",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "evd-001 does not describe any authentication surfaces, delegated identity providers, or req-AUTH-001, so the mapping that req-AUTH-001 is not applicable to thr-001 is not established by the available evidence.",
+        "missing_evidence": [
+          "Architecture or threat modeling documentation that specifies any user or service authentication mechanisms on the kiosk, sync service, or fulfillment system, and how req-AUTH-001 applies to thr-001."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-007",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "There is no information in evd-001 about privileged administrative access, external operator logins, or req-AUTH-002, so the conclusion that req-AUTH-002 is not applicable to thr-001 cannot be validated from the supplied documentation.",
+        "missing_evidence": [
+          "Documentation of any administrative or operator interfaces and associated multi-factor authentication requirements, and an explicit statement on the applicability of req-AUTH-002 to thr-001."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-008",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "evd-001 does not address tenant boundaries, multi-tenant operation, or req-AUTHZ-001, so the assertion that req-AUTHZ-001 is not applicable to thr-001 is not established by the current evidence.",
+        "missing_evidence": [
+          "Architecture documentation that clarifies whether the kiosk\u2013sync\u2013fulfillment system is single-tenant or multi-tenant and how req-AUTHZ-001 is applied or ruled out for thr-001."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-009",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "The provided evidence does not mention external platforms, delegated access, or req-AUTHZ-002, so the claim that req-AUTHZ-002 is not applicable to thr-001 is unsupported by this batch of documentation.",
+        "missing_evidence": [
+          "Design or integration documentation that identifies any external platforms used and explicitly states whether req-AUTHZ-002 applies to thr-001."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-010",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "evd-001 describes only runtime behavior of the sync service and does not mention CI/CD pipelines, deployment-path trust, or req-CICD-001, so the mapping that req-CICD-001 is not applicable to thr-001 is not established by the supplied evidence.",
+        "missing_evidence": [
+          "Documentation of the CI/CD and deployment pipeline for the components involved in thr-001 and an explicit applicability decision for req-CICD-001."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-011",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-001 confirms that customer order records contain personal data and traverse a network link, but it does not mention req-DATA-001, encryption, or the specific focus of thr-001. Therefore, the conclusion that req-DATA-001 is not applicable to thr-001 is not established by the available documentation.",
+        "missing_evidence": [
+          "Threat modeling and requirements documentation that explains how req-DATA-001 is scoped, how it applies to traffic between kiosks and the Kiosk Sync Service for thr-001, and why it is considered not applicable if that is the intended decision."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "Order records carry the customer's name, delivery address,\nand order contents."
+          },
+          {
+            "evidence_id": "evd-001",
+            "text": "The kiosks call it over the\nstore network."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-012",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "The evidence does not discuss data retention behavior, working copies, or req-DATA-002, so the mapping that req-DATA-002 is not applicable to thr-001 is not supported by the documentation in this batch.",
+        "missing_evidence": [
+          "Documentation of data retention and deletion behaviors for order records and intermediate artifacts, and an explicit applicability decision for req-DATA-002 with respect to thr-001."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-013",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "evd-001 does not address shared artifact storage, multi-customer separation, or req-DATA-003, so the conclusion that req-DATA-003 is not applicable to thr-001 cannot be validated from the supplied documentation.",
+        "missing_evidence": [
+          "Architecture documentation describing any shared storage for multiple customer organizations and stating whether req-DATA-003 applies to thr-001."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-014",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "No evidence is provided about deletion-on-request behavior, customer or operator-initiated deletion, or req-DATA-004, so the mapping that req-DATA-004 is not applicable to thr-001 is unsupported by this batch.",
+        "missing_evidence": [
+          "Policy or design documentation covering deletion-on-request capabilities for customer data in the kiosk\u2013sync\u2013fulfillment flow and explicitly stating whether req-DATA-004 applies to thr-001."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-015",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "evd-001 does not mention logging, log content, or req-LOG-001, so the assertion that req-LOG-001 is not applicable to thr-001 is not established by the documentation provided.",
+        "missing_evidence": [
+          "Logging design or configuration documentation for the components in thr-001 and an explicit applicability decision for req-LOG-001."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-016",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "There is no information in evd-001 about administrative actions, audit logging, or req-LOG-002, so the claim that req-LOG-002 is not applicable to thr-001 is unsupported by the current evidence.",
+        "missing_evidence": [
+          "Documentation describing administrative interfaces and audit logging for security-relevant administrative actions, and an explicit statement on whether req-LOG-002 applies to thr-001."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-017",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-001 shows that the Kiosk Sync Service is a service that stores customer order records and is reached over the store network, which is relevant context, but the document does not mention req-NET-001, thr-001, or any statement that this requirement is applicable and unverified. The mapping conclusion itself is therefore not established by the available evidence.",
+        "missing_evidence": [
+          "Requirements and threat modeling documentation explicitly linking req-NET-001 to thr-001, explaining why it is applicable, and recording its verification status."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "The sync service receives customer order records from the field kiosks and stores them for\nthe fulfillment system to read."
+          },
+          {
+            "evidence_id": "evd-001",
+            "text": "The service runs on a virtual machine in the operations subnet. The kiosks call it over the\nstore network."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-018",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "The evidence does not describe any secrets, long-lived credentials, or key management related to thr-001 or req-SECRET-001, so the mapping that req-SECRET-001 is not applicable to thr-001 is not supported by the provided documentation.",
+        "missing_evidence": [
+          "Documentation of secrets and key handling for the kiosk, sync service, and fulfillment system, and an explicit determination of whether req-SECRET-001 applies to thr-001."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-019",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "evd-001 does not mention tokens used to access external customer resources or req-SECRET-002, so the conclusion that req-SECRET-002 is not applicable to thr-001 cannot be validated from the available evidence.",
+        "missing_evidence": [
+          "Design documentation describing any access to external customer resources using tokens and whether req-SECRET-002 is applicable to thr-001."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-020",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "No evidence is provided about external data processors or providers, data processor relationships, or req-TPI-001, so the statement that req-TPI-001 is not applicable to thr-001 is unsupported by this batch of documentation.",
+        "missing_evidence": [
+          "Documentation of any external data processors or providers used for the kiosk\u2013sync\u2013fulfillment flow and an explicit applicability decision for req-TPI-001 with respect to thr-001."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-021",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "evd-001 does not discuss consumption of metered external APIs, capacity-limited third-party services, or req-TPI-002, so the mapping that req-TPI-002 is not applicable to thr-001 is not supported by the current evidence.",
+        "missing_evidence": [
+          "Design or operational documentation describing any metered or capacity-limited external services used and explicitly stating whether req-TPI-002 is applicable to thr-001."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-022",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "The provided evidence does not mention webhook-style events, external SaaS platforms, or req-WEBHOOK-001, so the assertion that req-WEBHOOK-001 is not applicable to thr-001 cannot be validated from evd-001.",
+        "missing_evidence": [
+          "Integration documentation describing any inbound events from external platforms and explicitly stating whether req-WEBHOOK-001 applies to thr-001."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-023",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "evd-001 does not address replay of inbound platform events, webhook delivery identifiers, or req-WEBHOOK-002, so the mapping that req-WEBHOOK-002 is not applicable to thr-001 is not supported by the supplied documentation.",
+        "missing_evidence": [
+          "Threat modeling and integration documentation describing any webhook or external event delivery for this system and clarifying whether req-WEBHOOK-002 applies to thr-001."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-024",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-001 shows that field kiosks send customer order records containing names, delivery addresses, and order contents over a network link to the Kiosk Sync Service, which is relevant to req-DATA-001, but the document does not mention req-DATA-001, thr-002, or the verification status of any encryption controls. Thus the mapping that req-DATA-001 is applicable to thr-002 and unverified is not established by the evidence provided.",
+        "missing_evidence": [
+          "Requirements and threat modeling documentation that explicitly links req-DATA-001 to thr-002, confirms its applicability, and records the verification status of encryption and integrity protection on the kiosk-to-service link."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "The sync service receives customer order records from the field kiosks and stores them for\nthe fulfillment system to read. Order records carry the customer's name, delivery address,\nand order contents."
+          },
+          {
+            "evidence_id": "evd-001",
+            "text": "The kiosks call it over the\nstore network."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-025",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-001 confirms that the Kiosk Sync Service is called by kiosks over the store network and polled by the fulfillment system, but it does not discuss req-NET-001, whether the service is considered a public interface by design, or the definition of thr-002. Therefore, the conclusion that req-NET-001 is not applicable to thr-002 is not established by the evidence.",
+        "missing_evidence": [
+          "Requirements documentation defining the scope of req-NET-001 and threat modeling or design material that explicitly explains why the Kiosk Sync Service is or is not in scope for req-NET-001 in thr-002."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "The service runs on a virtual machine in the operations subnet. The kiosks call it over the\nstore network. The fulfillment system polls it hourly."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-026",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-001 notes that the fulfillment system polls the Kiosk Sync Service hourly but does not describe administrative interfaces, req-ADMIN-001, or the exact content of thr-003. As a result, the statement that req-ADMIN-001 is not applicable to thr-003 is not established by the available documentation.",
+        "missing_evidence": [
+          "Threat modeling documentation for thr-003 and architecture or requirements documents that describe any administrative or operator interfaces for the Fulfillment system and explicitly state whether req-ADMIN-001 applies."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "The fulfillment system polls it hourly."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-027",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-001 describes syncing of customer order records but does not mention any AI/ML models, req-AI-001, or thr-003, so the conclusion that req-AI-001 is not applicable to thr-003 is not established by this evidence alone.",
+        "missing_evidence": [
+          "Architecture and threat documentation confirming whether any AI/ML components participate in thr-003 and explicitly documenting the applicability decision for req-AI-001."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "The sync service receives customer order records from the field kiosks and stores them for\nthe fulfillment system to read."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-028",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The evidence shows only that the fulfillment system polls the Kiosk Sync Service for order records; it does not mention model outputs, external publication, or req-AI-002. Therefore, the mapping that req-AI-002 is not applicable to thr-003 is not supported by the provided documentation.",
+        "missing_evidence": [
+          "System and threat documentation describing any model-generated content in thr-003 and whether req-AI-002 applies to such outputs."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "The fulfillment system polls it hourly."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-029",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "evd-001 indicates that the kiosk, sync service, and fulfillment system are internal components exchanging customer order records, but it does not mention external model providers or req-AI-003. Thus, the assertion that req-AI-003 is not applicable to thr-003 is not established by the evidence in this batch.",
+        "missing_evidence": [
+          "Design documentation clarifying whether any external model providers are involved in thr-003 and explicitly documenting the applicability of req-AI-003."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "The sync service receives customer order records from the field kiosks and stores them for\nthe fulfillment system to read."
+          }
+        ]
+      }
+    ]
+  }
+}

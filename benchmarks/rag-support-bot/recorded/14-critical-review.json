@@ -1,0 +1,31 @@
+{
+  "schema": "CriticalReviewProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 13454,
+    "output_tokens": 11152,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.1283375",
+    "duration_seconds": 122.50056916591711
+  },
+  "response": {
+    "critiques": [
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-003",
+        "critique_type": "unsupported_claim",
+        "description": "thr-003\u2019s preconditions assert specific absences of controls (no scrubbing/review of ticket bodies beyond email masking, and a non-robust model) as documented facts, but the cited evidence only describes what is done (email masking, ingestion, prompt assembly) and is silent on whether additional filtering or robustness measures exist.",
+        "rationale": "Precondition 1 states that support ticket bodies \"beyond email addresses are not systematically scrubbed or reviewed for prompt-injection content\" before export and ingestion. evd-002 and evd-012 describe the ingestion pipeline\u2019s role and that tickets arrive with email addresses masked by the support platform, and evd-013 clarifies that this masking covers email addresses only. None of these passages state that no further scrubbing or review occurs; they simply do not mention any. Under the stated evidence policy, silence about additional filtering is a documentation gap or an assumption, not proof that scrubbing/review is absent. \n\nSimilarly, precondition 2 (\u201cThe model is not perfectly robust against malicious instructions embedded within retrieved context passages\u2026\u201d) describes a property of the external model provider that is not established in the cited documentation. evd-003 is the only prompt-/model-related passage and it describes the use of a delimited context block and system instructions but says nothing about model robustness or additional prompt-injection mitigations. That makes this precondition an assumption about model behaviour, not a documented fact about this system.\n\nthr-003 should treat these as assumptions or unknowns (or narrow them to what the documents actually say) rather than as documented properties of the deployment.",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-012",
+          "evd-013"
+        ],
+        "recommended_action": "revise",
+        "confidence": "high"
+      }
+    ]
+  }
+}

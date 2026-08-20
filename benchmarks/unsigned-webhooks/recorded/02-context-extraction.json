@@ -1,0 +1,452 @@
+{
+  "schema": "ContextExtractionProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 303,
+    "output_tokens": 9913,
+    "cache_read_tokens": 12544,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.10107675",
+    "duration_seconds": 125.14917158300523
+  },
+  "response": {
+    "system": {
+      "system_name": "Deploy Notifier",
+      "system_purpose": "Service that receives deployment events from an external continuous-integration platform and posts them to an internal chat channel so engineers can see deploys without watching the CI dashboard.",
+      "business_criticality": null,
+      "environment": [],
+      "deployment_model": null,
+      "data_classifications": [],
+      "access_model": "unknown"
+    },
+    "claims": [
+      {
+        "key": "clm-system-name",
+        "subject_type": "system",
+        "subject_key": null,
+        "predicate": "name",
+        "value": "Deploy Notifier",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-001"
+        ]
+      },
+      {
+        "key": "clm-system-purpose",
+        "subject_type": "system",
+        "subject_key": null,
+        "predicate": "purpose",
+        "value": "Receives deployment events from an external CI platform and posts them to an internal chat channel so engineers can see deploys without watching the CI dashboard.",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-001"
+        ]
+      },
+      {
+        "key": "clm-system-deploy-event-source",
+        "subject_type": "system",
+        "subject_key": null,
+        "predicate": "deployment_event_source",
+        "value": "external_ci_platform",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-001",
+          "evd-003",
+          "evd-005"
+        ]
+      },
+      {
+        "key": "clm-system-chat-target",
+        "subject_type": "system",
+        "subject_key": null,
+        "predicate": "notification_target",
+        "value": "internal_chat_channel",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ]
+      },
+      {
+        "key": "clm-system-no-customer-data",
+        "subject_type": "system",
+        "subject_key": null,
+        "predicate": "customer_data_processed",
+        "value": false,
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-004"
+        ]
+      },
+      {
+        "key": "clm-asset-deployment-event-fields",
+        "subject_type": "asset",
+        "subject_key": "deployment-events",
+        "predicate": "fields",
+        "value": [
+          "repository_name",
+          "environment",
+          "commit_identifier"
+        ],
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-003"
+        ]
+      },
+      {
+        "key": "clm-asset-deployment-events-no-customer-data",
+        "subject_type": "asset",
+        "subject_key": "deployment-events",
+        "predicate": "contains_customer_data",
+        "value": false,
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-004"
+        ]
+      },
+      {
+        "key": "clm-event-receiver-public",
+        "subject_type": "component",
+        "subject_key": "event-receiver",
+        "predicate": "internet_exposed",
+        "value": true,
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-002"
+        ]
+      },
+      {
+        "key": "clm-event-receiver-https-endpoint",
+        "subject_type": "component",
+        "subject_key": "event-receiver",
+        "predicate": "protocol",
+        "value": "https",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-002"
+        ]
+      },
+      {
+        "key": "clm-event-receiver-no-ci-signature-check",
+        "subject_type": "component",
+        "subject_key": "event-receiver",
+        "predicate": "ci_signature_verification",
+        "value": false,
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-003"
+        ]
+      },
+      {
+        "key": "clm-flow-ci-to-receiver-encryption",
+        "subject_type": "data_flow",
+        "subject_key": "flow-ci-to-receiver",
+        "predicate": "encryption_in_transit",
+        "value": "tls",
+        "status": "inferred",
+        "confidence": "high",
+        "rationale": "The Event Receiver is described as a public HTTPS endpoint, which implies TLS is used for transport encryption.",
+        "evidence_ids": [
+          "evd-002"
+        ]
+      },
+      {
+        "key": "clm-asset-deployment-events-storage-unknown",
+        "subject_type": "asset",
+        "subject_key": "deployment-events",
+        "predicate": "stored_persistently",
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "rationale": "The documentation describes receiving and forwarding deployment events but does not state whether they are stored or logged persistently.",
+        "evidence_ids": []
+      }
+    ],
+    "components": [
+      {
+        "key": "event-receiver",
+        "name": "Event Receiver",
+        "component_type": "web_service",
+        "description": "Public HTTPS endpoint that the external CI platform calls with a deployment event; it parses the event and hands it to the notifier.",
+        "technology": [
+          "https"
+        ],
+        "ownership": null,
+        "deployment_zone": null,
+        "internet_accessible": true,
+        "externally_managed": null,
+        "entry_point_types": [
+          "webhook"
+        ],
+        "data_classifications": [],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ]
+      },
+      {
+        "key": "chat-notifier",
+        "name": "Chat Notifier",
+        "component_type": "service",
+        "description": "Formats the deployment event and posts it to the internal chat channel over the chat platform's API.",
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": null,
+        "internet_accessible": null,
+        "externally_managed": null,
+        "entry_point_types": [],
+        "data_classifications": [],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-002"
+        ]
+      },
+      {
+        "key": "ci-platform",
+        "name": "CI platform",
+        "component_type": "external_service",
+        "description": "External continuous-integration service that sends deployment events to the Deploy Notifier.",
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": null,
+        "internet_accessible": null,
+        "externally_managed": true,
+        "entry_point_types": [],
+        "data_classifications": [],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-005"
+        ]
+      },
+      {
+        "key": "chat-platform",
+        "name": "Chat platform",
+        "component_type": "service",
+        "description": "Chat platform whose internal channel receives deployment notifications via its API.",
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": null,
+        "internet_accessible": null,
+        "externally_managed": null,
+        "entry_point_types": [],
+        "data_classifications": [],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ]
+      }
+    ],
+    "actors": [
+      {
+        "key": "actor-ci-platform",
+        "name": "CI platform",
+        "actor_type": "external_service",
+        "trust_level": null,
+        "skill_level": null,
+        "access_level": null,
+        "capabilities": [],
+        "authentication_method": null,
+        "evidence_ids": [
+          "evd-005",
+          "evd-001",
+          "evd-002",
+          "evd-003"
+        ]
+      },
+      {
+        "key": "actor-engineer",
+        "name": "Engineer",
+        "actor_type": "human_user",
+        "trust_level": null,
+        "skill_level": null,
+        "access_level": null,
+        "capabilities": [],
+        "authentication_method": null,
+        "evidence_ids": [
+          "evd-005"
+        ]
+      }
+    ],
+    "assets": [
+      {
+        "key": "deployment-events",
+        "name": "Deployment events",
+        "asset_type": "data",
+        "description": "Deployment event payloads containing repository names, environments, and commit identifiers, delivered from the CI platform to the notifier.",
+        "confidentiality_impact": null,
+        "integrity_impact": null,
+        "availability_impact": null,
+        "data_classification": null,
+        "owner": null,
+        "component_keys": [
+          "ci-platform",
+          "event-receiver",
+          "chat-notifier",
+          "chat-platform"
+        ],
+        "stored_in_component_keys": [],
+        "evidence_ids": [
+          "evd-003",
+          "evd-004"
+        ]
+      },
+      {
+        "key": "deploy-notifications",
+        "name": "Deployment notifications",
+        "asset_type": "data",
+        "description": "Formatted chat messages about deployments, naming the repository, environment, and commit, posted into the internal chat channel.",
+        "confidentiality_impact": null,
+        "integrity_impact": null,
+        "availability_impact": null,
+        "data_classification": null,
+        "owner": null,
+        "component_keys": [
+          "chat-notifier",
+          "chat-platform"
+        ],
+        "stored_in_component_keys": [],
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ]
+      }
+    ],
+    "data_flows": [
+      {
+        "key": "flow-ci-to-receiver",
+        "name": "CI platform to Event Receiver",
+        "source_component_key": "ci-platform",
+        "destination_component_key": "event-receiver",
+        "direction": "one_way",
+        "protocol": "https",
+        "data_types": [
+          "deployment_event"
+        ],
+        "authentication": "none",
+        "encryption_in_transit": "tls",
+        "crosses_trust_boundary_keys": [
+          "boundary-ci-to-notifier"
+        ],
+        "internet_exposed": true,
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ]
+      },
+      {
+        "key": "flow-receiver-to-notifier",
+        "name": "Event Receiver to Chat Notifier",
+        "source_component_key": "event-receiver",
+        "destination_component_key": "chat-notifier",
+        "direction": "one_way",
+        "protocol": null,
+        "data_types": [
+          "deployment_event"
+        ],
+        "authentication": "unknown",
+        "encryption_in_transit": "unknown",
+        "crosses_trust_boundary_keys": [],
+        "internet_exposed": null,
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ]
+      },
+      {
+        "key": "flow-notifier-to-chat",
+        "name": "Chat Notifier to Chat platform",
+        "source_component_key": "chat-notifier",
+        "destination_component_key": "chat-platform",
+        "direction": "one_way",
+        "protocol": "api",
+        "data_types": [
+          "notification_message"
+        ],
+        "authentication": "unknown",
+        "encryption_in_transit": "unknown",
+        "crosses_trust_boundary_keys": [],
+        "internet_exposed": null,
+        "evidence_ids": [
+          "evd-002"
+        ]
+      }
+    ],
+    "trust_boundaries": [
+      {
+        "key": "boundary-ci-to-notifier",
+        "name": "CI platform to Deploy Notifier boundary",
+        "boundary_type": "network",
+        "description": "Boundary between the external CI platform and the Deploy Notifier's public HTTPS endpoint.",
+        "inside_component_keys": [
+          "event-receiver",
+          "chat-notifier"
+        ],
+        "outside_component_keys": [
+          "ci-platform"
+        ],
+        "controls": [],
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-005"
+        ]
+      }
+    ],
+    "questions": [
+      {
+        "key": "q-webhook-auth",
+        "question": "Does the Event Receiver perform any authentication or source validation for incoming deployment events beyond accepting any well-formed delivery (for example, verifying CI signatures, validating source IPs, or requiring a shared secret)?",
+        "rationale": "The documentation states that the CI platform supports signing deliveries but that the receiver \"accepts and processes any well-formed delivery and does not check a signature\" (evd-003). Clarifying whether any other authentication or validation is in place affects how strongly the system can trust incoming deployment events and the placement and strength of the trust boundary on the public endpoint.",
+        "related_object_key": "event-receiver",
+        "priority": "high",
+        "blocking": true
+      },
+      {
+        "key": "q-data-storage",
+        "question": "Are deployment events or the resulting chat notifications stored or logged persistently anywhere (for example, in databases, log stores, or message queues), and if so, where and for how long?",
+        "rationale": "The documentation describes events being received and forwarded but does not state whether they are stored or logged. Storage locations and retention would affect which components store the deployment event asset, what data-at-rest protections apply, and the overall data retention profile of the system.",
+        "related_object_key": "deployment-events",
+        "priority": "medium",
+        "blocking": false
+      },
+      {
+        "key": "q-chat-platform",
+        "question": "Is the chat platform that receives deployment notifications an externally hosted service or an internally hosted system, and how is the connection from the Deploy Notifier to this platform secured and authenticated?",
+        "rationale": "The documentation refers to posting to an internal chat channel over the chat platform's API (evd-001, evd-002) but does not describe whether the chat platform is external or internal or how the API is secured. This affects the placement of trust boundaries, the classification of the chat platform component, and the assessment of data-in-transit protections and dependencies on third-party services.",
+        "related_object_key": "chat-platform",
+        "priority": "medium",
+        "blocking": false
+      }
+    ],
+    "observations": []
+  }
+}

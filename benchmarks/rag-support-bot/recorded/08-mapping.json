@@ -1,0 +1,81 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 14163,
+    "output_tokens": 6052,
+    "cache_read_tokens": 17152,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.08036775",
+    "duration_seconds": 53.67363062500954
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The ingestion pipeline sends embeddings and source metadata derived from customer support tickets and help-center content from Relay-controlled infrastructure to a managed vector database over a network data flow (df-003), so sensitive customer-related data is transmitted across a network boundary the system does not control, matching the requirement\u2019s applicable conditions.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-002",
+          "evd-012"
+        ],
+        "assumptions": [
+          "Assume that embeddings of resolved support tickets and their associated source metadata are treated as confidential or restricted customer data for the purposes of applying this requirement."
+        ],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-NET-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-002"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The retrieval index is a managed vector database that holds embeddings for many workspaces in a shared index and is described as an internal component reachable only from the answer service\u2019s network segment (evd-002, evd-012), so it is an internal data store holding multi-tenant data and relying on network placement, matching the requirement\u2019s applicable conditions.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "satisfied",
+        "evidence_ids": [
+          "evd-002",
+          "evd-012"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Transport protection between ingestion pipeline and retrieval index is undocumented",
+        "description": "Documentation describes a nightly ingestion pipeline that writes embeddings and source metadata to a managed vector database used as the retrieval index, and notes that the vector database is a standard-tier managed offering reachable only from the answer service\u2019s network segment (evd-002, evd-012). However, it does not state whether the connection from the ingestion pipeline to the retrieval index uses TLS (and with what validation requirements) or how the client authenticates to the managed vector database. As a result, it is not possible to determine from the available material whether embeddings and metadata are protected against interception or tampering in transit along data flow df-003.",
+        "importance": "Without explicit documentation of encryption and authentication for the ingestion-to-index connection, the assessment cannot verify whether the confidentiality and integrity of embeddings and source metadata are protected against a network attacker with access to the answer service\u2019s network segment, which is the core precondition of threat thr-006.",
+        "related_object_ids": [
+          "thr-006",
+          "df-003",
+          "cmp-003",
+          "cmp-004",
+          "ast-001",
+          "ast-002",
+          "ast-003"
+        ],
+        "requested_evidence": [
+          "Architecture or operations documentation, or provider configuration, stating whether the connection from the ingestion pipeline to the managed vector database uses TLS, how server certificates are validated, and whether client authentication (for example, API keys or mutual TLS) is enforced.",
+          "Any configuration or runbook describing how credentials for accessing the managed vector database are provisioned and stored, and how access from hosts other than the ingestion pipeline and answer service is prevented."
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-012"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": []
+  }
+}

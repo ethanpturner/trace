@@ -1,0 +1,73 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 13977,
+    "output_tokens": 6423,
+    "cache_read_tokens": 17152,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.08384525",
+    "duration_seconds": 60.86543999996502
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-RAG-002",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-001",
+          "ctl-002",
+          "ctl-003"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The retrieval index holds content from multiple Relay workspaces in a single shared corpus, and the help panel is available to every signed-in user in any workspace, so retrievals are served to many principals across tenants. Whether retrieval results are filtered to what the requesting principal (workspace and user) is entitled to read directly affects this threat, where a lower-privileged workspace user may see sensitive support-ticket content via the assistant.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-006",
+          "evd-008",
+          "evd-012",
+          "evd-013"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Retrieval authorization and tenant scoping for support history are undocumented",
+        "description": "The documentation describes a single shared retrieval index serving all workspaces and selecting passages purely by embedding similarity, and it documents the workspace-scoped token used to call the Relay Answers API, but it does not state how retrieval queries are constrained by workspace or by per-user entitlements. In particular, there is no description of:\n- how the calling workspace is applied when querying the shared index (e.g., workspace-level filtering or namespaces), and\n- whether the assistant enforces the same per-user visibility rules over support tickets that the support platform itself applies.\nWithout this, it is not possible to determine whether retrieval results are limited to the requesting principal\u2019s authorized subset of support history, which is the core question for threat thr-002 and for requirement req-RAG-002.",
+        "importance": "This threat is specifically about a lower-privileged workspace user using the assistant to access sensitive support-ticket content they might not otherwise see. Whether retrieval from the shared index is filtered by workspace and per-user authorization decides if that broadening can occur, and the current documentation is silent on this point. Clarifying the retrieval authorization model is therefore critical to assessing both intra-workspace overreach and any potential cross-workspace leakage.",
+        "related_object_ids": [
+          "thr-002",
+          "cmp-001",
+          "cmp-003",
+          "cmp-006",
+          "ast-002",
+          "ast-003",
+          "ast-004"
+        ],
+        "requested_evidence": [
+          "Architecture or design documentation describing how retrieval queries to the shared index are scoped by workspace (e.g., index namespaces, workspace identifiers on embeddings, or query filters) so that one workspace\u2019s content cannot be retrieved in another\u2019s answers.",
+          "Documentation describing whether and how the assistant enforces per-user visibility rules from the support platform when using resolved tickets for retrieval (for example, only including tickets or passages the signed-in user could view directly in the support platform).",
+          "Any retrieval or index schema documentation that shows the access-control metadata stored with each embedding (such as workspace ID or visibility level) and how that metadata is used at retrieval time."
+        ],
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-006",
+          "evd-008",
+          "evd-012",
+          "evd-013"
+        ],
+        "severity": "high"
+      }
+    ],
+    "catalog_gap_candidates": []
+  }
+}

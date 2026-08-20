@@ -1,0 +1,88 @@
+{
+  "components": [
+    {
+      "name": "Event Receiver",
+      "component_type": "public HTTPS endpoint / webhook handler"
+    },
+    {
+      "name": "Chat Notifier",
+      "component_type": "internal service / chat API client"
+    },
+    {
+      "name": "CI platform",
+      "component_type": "external continuous-integration service"
+    },
+    {
+      "name": "chat platform API",
+      "component_type": "external chat service API"
+    }
+  ],
+  "threats": [
+    {
+      "title": "Spoofed deployment events and chat spam",
+      "affected_components": [
+        "Event Receiver",
+        "Chat Notifier"
+      ],
+      "rationale": "The Event Receiver is a public HTTPS endpoint that \"the external CI platform calls with a deployment event\" and it \"accepts and processes any well-formed delivery and does not check a signature.\" This allows any Internet client to submit syntactically valid JSON that will be treated as a real deployment and forwarded to the internal chat channel, enabling forged deployment notices, misleading engineers, and spamming internal chat."
+    },
+    {
+      "title": "Denial-of-service via untrusted webhook traffic",
+      "affected_components": [
+        "Event Receiver",
+        "Chat Notifier",
+        "chat platform API"
+      ],
+      "rationale": "Because the Event Receiver is public and processes any well-formed JSON without authenticating the sender, an attacker could continuously send events to force the service to parse JSON and post to the chat platform's API. The documentation does not describe any rate limiting or bounding of this work, so large volumes of traffic could consume resources on the notifier or the chat platform, degrading availability."
+    }
+  ],
+  "findings": [
+    {
+      "requirement_id": "req-WEBHOOK-001",
+      "affected_component": "Event Receiver",
+      "title": "Inbound deployment events are not authenticated; webhook signatures are not verified",
+      "rationale": "The documentation explicitly states that although the CI platform supports signing deliveries with a shared secret, the Event Receiver does not verify these signatures and instead processes any well-formed delivery. This fails the requirement that inbound event authenticity be verified before processing.",
+      "evidence_quote": "\"The CI platform supports signing deliveries with a shared secret so a receiver can verify that an event came from the platform; the receiver accepts and processes any well-formed delivery and does not check a signature.\""
+    }
+  ],
+  "documentation_gaps": [
+    {
+      "requirement_id": "req-WEBHOOK-002",
+      "affected_component": "Event Receiver",
+      "what_cannot_be_determined": "Whether the receiver includes any mechanism (e.g., unique IDs, timestamps, or idempotency checks) to detect and prevent replay of previously delivered deployment events or to make such replays harmless."
+    },
+    {
+      "requirement_id": "req-TPI-002",
+      "affected_component": "Event Receiver",
+      "what_cannot_be_determined": "Whether work triggered by external HTTP calls is bounded through authentication, rate limiting, payload size limits, or other controls on the public endpoint beyond simply requiring well-formed JSON."
+    },
+    {
+      "requirement_id": "req-SECRET-001",
+      "affected_component": "Chat Notifier",
+      "what_cannot_be_determined": "How credentials or tokens used to call the chat platform's API are stored and managed, and whether a managed secret store is used for any long-lived keys or provider credentials."
+    },
+    {
+      "requirement_id": "req-DATA-001",
+      "affected_component": "Chat Notifier",
+      "what_cannot_be_determined": "Whether communication between the Chat Notifier and the chat platform's API is protected with TLS/HTTPS and whether the notifier stores any data at rest and, if so, whether such data is encrypted."
+    }
+  ],
+  "questions": [
+    {
+      "question": "How does the Event Receiver prevent replay of old deployment events (for example, via unique event IDs, timestamps with expiry checks, or idempotency mechanisms), or otherwise ensure that replayed events are harmless?",
+      "requirement_id": "req-WEBHOOK-002"
+    },
+    {
+      "question": "Are there any authentication, rate limits, payload size limits, or other controls on the public Event Receiver endpoint to bound the amount of work triggered by external callers?",
+      "requirement_id": "req-TPI-002"
+    },
+    {
+      "question": "What credentials or tokens are used by the Chat Notifier to call the chat platform's API, and where are these stored (e.g., environment variables, configuration files, managed secret store)?",
+      "requirement_id": "req-SECRET-001"
+    },
+    {
+      "question": "Does the Chat Notifier use HTTPS/TLS for all calls to the chat platform's API, and does the notifier store any deployment event data at rest that would need to be encrypted?",
+      "requirement_id": "req-DATA-001"
+    }
+  ]
+}

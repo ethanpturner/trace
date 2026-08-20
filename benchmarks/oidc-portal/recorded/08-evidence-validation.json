@@ -1,0 +1,1181 @@
+{
+  "schema": "EvidenceValidationProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 13793,
+    "output_tokens": 25259,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.26983125",
+    "duration_seconds": 199.22016720904503
+  },
+  "response": {
+    "assessments": [
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-001",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005",
+          "evd-006",
+          "evd-007"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-007",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-003 states that all access to the portal is authenticated through the enterprise identity provider using OpenID Connect and that multi-factor enrolment and factor policy are set at the identity provider organization level. evd-005 describes the identity provider as authenticating employees and enforcing the factor policy. Together these directly support the claim that workforce authentication is delegated to the enterprise identity provider and that multi-factor policies are enforced there. evd-006 and evd-007 show that an organizational control named enterprise-idp-mfa is asserted from the org-controls catalog, which contextually supports modelling this as an organizational control.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "## 2. Authentication\n\nAll access to the portal is authenticated through the company's enterprise identity\nprovider using OpenID Connect. A user reaching the portal is redirected to the identity\nprovider, authenticates there, and returns with an ID token the portal validates. The\nportal maintains no password store of its own and issues no credentials; identity is the\nidentity provider's responsibility, and multi-factor enrolment and factor policy are set\nat the identity provider organization level."
+          },
+          {
+            "evidence_id": "evd-005",
+            "text": "## 4. Actors\n\n- **Employee** \u2014 an authenticated internal user viewing and commenting on tickets.\n- **Identity provider** \u2014 the enterprise OpenID Connect provider that authenticates\n  employees and enforces the factor policy."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-002",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 explicitly describes the support portal as an internal web application that lets employees view and comment on customer support tickets, which directly matches the claimed system purpose.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Support Portal \u2014 System Overview\n\nThe support portal is an internal web application that lets employees view and comment on\ncustomer support tickets. It is served over HTTPS and reachable only from the corporate\nnetwork and the company VPN."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-003",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 states that the support portal is served over HTTPS and reachable only from the corporate network and the company VPN, directly supporting the claimed network_exposure.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Support Portal \u2014 System Overview\n\nThe support portal is an internal web application that lets employees view and comment on\ncustomer support tickets. It is served over HTTPS and reachable only from the corporate\nnetwork and the company VPN."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-004",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The claim that cmp-001 uses HTTPS for transport security is directly supported by evd-001, which says the support portal is served over HTTPS.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Support Portal \u2014 System Overview\n\nThe support portal is an internal web application that lets employees view and comment on\ncustomer support tickets. It is served over HTTPS and reachable only from the corporate\nnetwork and the company VPN."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-005",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-002 states that the portal web application \"holds no local user accounts,\" directly supporting the claim that cmp-001 does not store local user accounts.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Components\n\n### Portal Web Application\n\nA server-rendered web application. It presents tickets, accepts comments, and calls the\nticket service for data. It holds no local user accounts.\n\n### Ticket Service\n\nAn internal HTTP service that stores and retrieves tickets. It is reachable only from the\nportal web application inside the application subnet."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-006",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-002 describes the portal web application as calling the ticket service for data, which directly supports modelling cmp-001 as depending on the ticket service.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Components\n\n### Portal Web Application\n\nA server-rendered web application. It presents tickets, accepts comments, and calls the\nticket service for data. It holds no local user accounts.\n\n### Ticket Service\n\nAn internal HTTP service that stores and retrieves tickets. It is reachable only from the\nportal web application inside the application subnet."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-007",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-002 explicitly states that the ticket service is reachable only from the portal web application inside the application subnet, directly supporting the claimed reachability constraint for cmp-002.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Components\n\n### Portal Web Application\n\nA server-rendered web application. It presents tickets, accepts comments, and calls the\nticket service for data. It holds no local user accounts.\n\n### Ticket Service\n\nAn internal HTTP service that stores and retrieves tickets. It is reachable only from the\nportal web application inside the application subnet."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-008",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-003 states that all access to the portal is authenticated through the company's enterprise identity provider using OpenID Connect, which directly supports modelling cmp-001's authentication mechanism as an enterprise identity provider via OpenID Connect.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "## 2. Authentication\n\nAll access to the portal is authenticated through the company's enterprise identity\nprovider using OpenID Connect. A user reaching the portal is redirected to the identity\nprovider, authenticates there, and returns with an ID token the portal validates. The\nportal maintains no password store of its own and issues no credentials; identity is the\nidentity provider's responsibility, and multi-factor enrolment and factor policy are set\nat the identity provider organization level."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-009",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-003 notes that the portal maintains no password store of its own and issues no credentials, directly supporting the claim that cmp-001 does not issue credentials.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "## 2. Authentication\n\nAll access to the portal is authenticated through the company's enterprise identity\nprovider using OpenID Connect. A user reaching the portal is redirected to the identity\nprovider, authenticates there, and returns with an ID token the portal validates. The\nportal maintains no password store of its own and issues no credentials; identity is the\nidentity provider's responsibility, and multi-factor enrolment and factor policy are set\nat the identity provider organization level."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-010",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-003 assigns responsibility for identity, including multi-factor enrolment and factor policy, to the identity provider, and evd-005 describes the identity provider as authenticating employees and enforcing the factor policy. These passages directly support modelling cmp-004 as responsible for authenticating employees and managing MFA enrolment and policy.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-005",
+            "text": "## 4. Actors\n\n- **Employee** \u2014 an authenticated internal user viewing and commenting on tickets.\n- **Identity provider** \u2014 the enterprise OpenID Connect provider that authenticates\n  employees and enforces the factor policy."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-011",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-004 states that tickets contain customer support correspondence, directly supporting the claim about ast-001's data contents.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-004",
+            "text": "## 3. Data\n\nTickets contain customer support correspondence. The ticket service persists them in a\nmanaged relational database provided by the cloud platform."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-012",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-004 explains that the ticket service persists tickets in a managed relational database provided by the cloud platform. Modelling that database as the 'ticket-database' asset which stores ast-001 is a straightforward naming choice, so the claim that ast-001 is stored in the ticket database is supported.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-004",
+            "text": "## 3. Data\n\nTickets contain customer support correspondence. The ticket service persists them in a\nmanaged relational database provided by the cloud platform."
+          }
+        ]
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-013",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "The claim is that the authorization/access model is unknown because the documentation does not describe it. None of the provided evidence excerpts mention which employees can access which tickets or actions. However, absence of a passage is not evidence in itself, so there is no positive passage establishing that the access model is unknown; the claim reflects a documentation gap rather than a documented fact.",
+        "missing_evidence": [
+          "Architecture or design documentation describing the portal's authorization model: which employees or roles can access which tickets and actions, and how those rules are enforced."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-014",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-003 states that all access to the portal is authenticated through the enterprise identity provider and that multi-factor enrolment and factor policy are set at the identity provider organization level. Given that every portal authentication is mediated by this identity provider, the portal necessarily inherits whatever MFA policies the identity provider enforces, so the claim that cmp-001 inherits MFA from the IdP is supported.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "## 2. Authentication\n\nAll access to the portal is authenticated through the company's enterprise identity\nprovider using OpenID Connect. A user reaching the portal is redirected to the identity\nprovider, authenticates there, and returns with an ID token the portal validates. The\nportal maintains no password store of its own and issues no credentials; identity is the\nidentity provider's responsibility, and multi-factor enrolment and factor policy are set\nat the identity provider organization level."
+          }
+        ]
+      },
+      {
+        "subject_type": "control",
+        "subject_id": "ctl-001",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-003 directly describes that all access to the portal is authenticated via the company's enterprise identity provider using an OpenID Connect redirect flow, that users are redirected to the identity provider and return with an ID token the portal validates, and that the portal maintains no password store and issues no credentials. This matches the control's description of delegated employee authentication via an enterprise OIDC identity provider.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "## 2. Authentication\n\nAll access to the portal is authenticated through the company's enterprise identity\nprovider using OpenID Connect. A user reaching the portal is redirected to the identity\nprovider, authenticates there, and returns with an ID token the portal validates. The\nportal maintains no password store of its own and issues no credentials; identity is the\nidentity provider's responsibility, and multi-factor enrolment and factor policy are set\nat the identity provider organization level."
+          }
+        ]
+      },
+      {
+        "subject_type": "control",
+        "subject_id": "ctl-002",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005",
+          "evd-006",
+          "evd-007"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-007",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-003 says that multi-factor enrolment and factor policy are set at the identity provider organization level, and evd-005 describes the identity provider as enforcing the factor policy, supporting the existence of an enterprise-level MFA policy at the IdP for employees who authenticate to the portal. evd-006 and evd-007 show that the organizational controls catalog for version 0.1 asserts an enterprise-idp-mfa control. Together, these passages support the control's description of an enterprise identity provider MFA policy and its representation as an asserted organizational control.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-006",
+            "text": "org_controls_catalog:\n  version: \"0.1\"\n  asserted:\n    - enterprise-idp-mfa"
+          }
+        ]
+      },
+      {
+        "subject_type": "control",
+        "subject_id": "ctl-003",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 states that the support portal is served over HTTPS and reachable only from the corporate network and company VPN. evd-002 states that the internal ticket service is reachable only from the portal web application inside the application subnet. These passages directly support the control's claim that portal access is internal-only over HTTPS and that the ticket service is reachable only from the portal within the application subnet.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Support Portal \u2014 System Overview\n\nThe support portal is an internal web application that lets employees view and comment on\ncustomer support tickets. It is served over HTTPS and reachable only from the corporate\nnetwork and the company VPN."
+          },
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Components\n\n### Portal Web Application\n\nA server-rendered web application. It presents tickets, accepts comments, and calls the\nticket service for data. It holds no local user accounts.\n\n### Ticket Service\n\nAn internal HTTP service that stores and retrieves tickets. It is reachable only from the\nportal web application inside the application subnet."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-001",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-003 directly supports that authentication for the portal is delegated to an external enterprise identity provider using OpenID Connect and that the portal validates an ID token and does not store passwords or issue credentials. This is strong evidence that a requirement concerned with delegated authentication to an external identity provider (req-AUTH-001) is applicable. However, without the text of req-AUTH-001, the evidence does not fully establish that all of its satisfaction criteria are met; it only shows that the high-level delegation pattern matches. The mapping's assertion that the requirement is satisfied is therefore only partially supported.",
+        "missing_evidence": [
+          "The normative text of req-AUTH-001 and documentation or configuration showing how the portal meets each of its specific conditions (e.g., token validation details, handling of identity lifecycle)."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "## 2. Authentication\n\nAll access to the portal is authenticated through the company's enterprise identity\nprovider using OpenID Connect. A user reaching the portal is redirected to the identity\nprovider, authenticates there, and returns with an ID token the portal validates. The\nportal maintains no password store of its own and issues no credentials; identity is the\nidentity provider's responsibility, and multi-factor enrolment and factor policy are set\nat the identity provider organization level."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-002",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-001 and evd-002 establish that employees use the portal to view and comment on customer support tickets, and evd-004 shows that tickets are stored in a managed relational database. These support the idea that authorization over access to ticket data is a relevant concern, which makes it plausible that an authorization requirement like req-AUTHZ-001 is applicable. However, the documentation does not describe the authorization model (for example, which employees can access which tickets or tenants), and it does not mention req-AUTHZ-001. As a result, the mapping's conclusion that req-AUTHZ-001 is applicable and currently unverified cannot be fully established from the available passages and requires confirmation.",
+        "missing_evidence": [
+          "Documentation of the portal's authorization model (e.g., roles and which tickets they may access, tenant scoping) and an explicit statement mapping that model to req-AUTHZ-001, including whether the requirement has been verified."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-004",
+            "text": "## 3. Data\n\nTickets contain customer support correspondence. The ticket service persists them in a\nmanaged relational database provided by the cloud platform."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-003",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-001 and evd-002 show that the portal is an internal interface through which employees view and comment on customer support tickets, and evd-005 identifies employees and the identity provider as actors. This directly supports treating the portal as an operator or administrative interface for customer data, so applicability of an administrative-interface requirement like req-ADMIN-001 is well supported. However, the evidence does not describe specific administrative controls (such as approval workflows, separation of duties, or operator safeguards) or mention req-ADMIN-001, so the assertion that the requirement is satisfied is not established and remains only partially supported.",
+        "missing_evidence": [
+          "The text of req-ADMIN-001 and documentation of the portal's administrative/operator safeguards mapped explicitly to that requirement (for example, role separation, approval flows, or other controls intended to satisfy it)."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Support Portal \u2014 System Overview\n\nThe support portal is an internal web application that lets employees view and comment on\ncustomer support tickets. It is served over HTTPS and reachable only from the corporate\nnetwork and the company VPN."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-004",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "As in map-001, evd-003 directly supports that user authentication for the portal is delegated to an external enterprise identity provider using OpenID Connect, which strongly supports applicability of a delegated-authentication requirement such as req-AUTH-001 to thr-002. However, without the requirement text or further detail on how all its conditions are met, the claim that it is satisfied for this threat scenario is only partially supported by the available documentation.",
+        "missing_evidence": [
+          "Detailed mapping of the portal's delegated authentication implementation to req-AUTH-001, including any additional controls the requirement demands (e.g., token validation parameters, error handling, or trust configuration)."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "## 2. Authentication\n\nAll access to the portal is authenticated through the company's enterprise identity\nprovider using OpenID Connect. A user reaching the portal is redirected to the identity\nprovider, authenticates there, and returns with an ID token the portal validates. The\nportal maintains no password store of its own and issues no credentials; identity is the\nidentity provider's responsibility, and multi-factor enrolment and factor policy are set\nat the identity provider organization level."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-005",
+        "evidence_ids": [
+          "evd-003",
+          "evd-006",
+          "evd-007"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "indirect"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "indirect"
+          },
+          {
+            "evidence_id": "evd-007",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-003 shows that all portal access is authenticated via the enterprise identity provider and that MFA enrolment and factor policy are set at the IdP organization level, suggesting MFA is available. evd-006 and evd-007 indicate an organizational control enterprise-idp-mfa is asserted. This makes it plausible that a requirement about strong or multi-factor authentication for privileged access over untrusted networks (req-AUTH-002) applies and may be satisfied via the IdP. However, the documentation does not state that MFA is enforced for all privileged portal access or describe the specific configuration for employees reaching the portal over VPN, so full satisfaction of req-AUTH-002 is not established and the mapping is only partially supported.",
+        "missing_evidence": [
+          "Identity provider configuration or policy documentation stating that multi-factor authentication is required for all employee sign-ins to the support portal, and a mapping of those controls to req-AUTH-002."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-007",
+            "text": "# The assessment's organizational-controls assertion (#528, DEC-115): the controls from the\n# central org-controls catalog asserted to bear on this system. The parser verifies each name\n# against the named catalog version and seeds one documented claim per control; whether the\n# system actually inherits a control remains the assessment's ordinary work.\n\norg_controls_catalog:\n  version: \"0.1\"\n  asserted:\n    - enterprise-idp-mfa"
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-006",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-001 and evd-002 show that the portal is an internal interface employees use to view and modify customer support tickets, and evd-005 identifies employees as authenticated internal users. This directly supports applicability of a logging requirement such as req-LOG-002 to thr-002, since employee actions on customer data via an operator interface are in scope. However, there is no documentation in the provided evidence about audit logging of these actions or about req-LOG-002 itself, so the statement that the requirement is unverified can only be read as reflecting a current assessment state, not as a documented fact about controls. The mapping is therefore only partially supported on applicability, with the unverified status remaining a documentation gap.",
+        "missing_evidence": [
+          "Documentation of audit logging for portal and ticket service actions (what is logged, where, and how it is protected) and an explicit statement of how this logging is evaluated against req-LOG-002."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "documentation_gap",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Components\n\n### Portal Web Application\n\nA server-rendered web application. It presents tickets, accepts comments, and calls the\nticket service for data. It holds no local user accounts.\n\n### Ticket Service\n\nAn internal HTTP service that stores and retrieves tickets. It is reachable only from the\nportal web application inside the application subnet."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-007",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-002 confirms that the ticket service is an internal HTTP service reachable only from the portal web application inside the application subnet, which supports applicability of a network/authentication requirement like req-NET-001 to thr-003. However, the documentation does not describe how the ticket service authenticates or authorizes its callers beyond this network placement. The mapping asserts that req-NET-001 is satisfied, but no evidence is provided that any specific strong caller authentication or other controls required by req-NET-001 are implemented. This mapping therefore requires confirmation.",
+        "missing_evidence": [
+          "Design or configuration documentation for the ticket service describing how it authenticates and authorizes callers (e.g., service identities, mutual TLS, tokens) and how this satisfies req-NET-001."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Components\n\n### Portal Web Application\n\nA server-rendered web application. It presents tickets, accepts comments, and calls the\nticket service for data. It holds no local user accounts.\n\n### Ticket Service\n\nAn internal HTTP service that stores and retrieves tickets. It is reachable only from the\nportal web application inside the application subnet."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-008",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-004 directly shows that tickets containing customer support correspondence are persisted in a managed relational database, implying sensitive data stored in a cloud-managed service and a network flow between the ticket service and the database; evd-002 provides context about the ticket service. This supports applicability of a data-in-transit protection requirement such as req-DATA-001 to thr-004. However, the documentation does not describe the transport security or mutual authentication settings for this connection, so the statement that the requirement is unverified cannot be substantiated further and remains a documentation gap. Thus, applicability is supported but the overall mapping is only partially supported.",
+        "missing_evidence": [
+          "Configuration or documentation for the connection between the ticket service and the managed database (e.g., TLS usage, certificate validation, mutual authentication) and an explicit evaluation of these controls against req-DATA-001."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "documentation_gap",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-004",
+            "text": "## 3. Data\n\nTickets contain customer support correspondence. The ticket service persists them in a\nmanaged relational database provided by the cloud platform."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-009",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-004 supports that there is a managed relational database used as an internal data store for tickets. The mapping asserts that req-NET-001 is conditionally applicable to thr-004 and unverified, based on assumptions about multi-tenancy and reliance on network placement for the database. Those multi-tenancy and trust-model details are not present in the evidence, so even the conditional applicability of req-NET-001 depends on unstated facts. This mapping therefore requires confirmation.",
+        "missing_evidence": [
+          "Documentation describing whether the managed ticket database is multi-tenant across customers and how access to it is controlled (e.g., network controls, authentication mechanisms), and an explicit analysis of how req-NET-001 would apply under those conditions."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-004",
+            "text": "## 3. Data\n\nTickets contain customer support correspondence. The ticket service persists them in a\nmanaged relational database provided by the cloud platform."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-010",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "For thr-005, which concerns compromise of the identity provider, evd-003 clearly shows that the portal delegates authentication to the enterprise identity provider using OpenID Connect and validates an ID token. This strongly supports applicability of a delegated-authentication requirement like req-AUTH-001. As with other mappings to this requirement, the evidence does not show in detail how all of req-AUTH-001's satisfaction criteria are met, so the assertion that it is satisfied is only partially supported.",
+        "missing_evidence": [
+          "A detailed mapping of the portal's OIDC integration and trust configuration to the specific conditions of req-AUTH-001, including any additional protections required when the IdP is a critical trust anchor."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "## 2. Authentication\n\nAll access to the portal is authenticated through the company's enterprise identity\nprovider using OpenID Connect. A user reaching the portal is redirected to the identity\nprovider, authenticates there, and returns with an ID token the portal validates. The\nportal maintains no password store of its own and issues no credentials; identity is the\nidentity provider's responsibility, and multi-factor enrolment and factor policy are set\nat the identity provider organization level."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-011",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005",
+          "evd-006",
+          "evd-007"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "indirect"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "indirect"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "indirect"
+          },
+          {
+            "evidence_id": "evd-007",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-003 and evd-005 show that employees authenticate to the portal via the enterprise identity provider, which enforces a factor policy set at the organization level. evd-006 and evd-007 indicate an asserted organizational control for enterprise-idp-mfa. These support the idea that a requirement around multi-factor or strong authentication for privileged access over untrusted networks (req-AUTH-002) is applicable and that MFA capabilities exist. However, the documentation does not explicitly say that all privileged portal access over VPN or untrusted networks is protected by enforced MFA in a way that satisfies all of req-AUTH-002's conditions. Thus the mapping is only partially supported.",
+        "missing_evidence": [
+          "Identity provider policies and configuration demonstrating that MFA is enforced for all employee access paths to the portal covered by req-AUTH-002, and an explicit mapping of those controls to each clause of the requirement."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-005",
+            "text": "## 4. Actors\n\n- **Employee** \u2014 an authenticated internal user viewing and commenting on tickets.\n- **Identity provider** \u2014 the enterprise OpenID Connect provider that authenticates\n  employees and enforces the factor policy."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-012",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-003 describes a redirect-based OpenID Connect flow where a user is redirected to the identity provider, authenticates, and returns with an ID token that the portal validates. This supports applicability of an OIDC redirect-flow requirement such as req-OIDC-001 to thr-005. However, no details are provided about the specific OIDC parameters, response types, or CSRF protections that req-OIDC-001 might require, and there is no mention of that requirement by name. Thus the mapping's applicability is supported, but the statement that it is unverified reflects a lack of detail and remains only partially supported as a mapping.",
+        "missing_evidence": [
+          "Documentation or configuration of the portal's OpenID Connect redirect flow (authorization endpoint parameters, response types, CSRF/nonce handling) and an explicit evaluation of these details against req-OIDC-001."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "documentation_gap",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "## 2. Authentication\n\nAll access to the portal is authenticated through the company's enterprise identity\nprovider using OpenID Connect. A user reaching the portal is redirected to the identity\nprovider, authenticates there, and returns with an ID token the portal validates. The\nportal maintains no password store of its own and issues no credentials; identity is the\nidentity provider's responsibility, and multi-factor enrolment and factor policy are set\nat the identity provider organization level."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-013",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-003 explicitly states that the user returns from the identity provider with an ID token that the portal validates. This directly supports that the portal performs some form of ID token validation, which is central to an OIDC relying-party requirement such as req-OIDC-002, so applicability is well supported. However, the evidence does not describe which validation steps are performed (e.g., signature verification, issuer/audience checks, expiry, nonce), so full satisfaction of req-OIDC-002 cannot be established and the mapping is only partially supported.",
+        "missing_evidence": [
+          "Implementation or configuration details of ID token validation (libraries used, which claims are checked, how keys and issuers are configured) and a mapping of those checks to the specific conditions of req-OIDC-002."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "## 2. Authentication\n\nAll access to the portal is authenticated through the company's enterprise identity\nprovider using OpenID Connect. A user reaching the portal is redirected to the identity\nprovider, authenticates there, and returns with an ID token the portal validates. The\nportal maintains no password store of its own and issues no credentials; identity is the\nidentity provider's responsibility, and multi-factor enrolment and factor policy are set\nat the identity provider organization level."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-014",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "requires_confirmation",
+        "rationale": "The mapping asserts that req-OIDC-003, concerning how the relying party bounds its own session, is applicable to thr-005 and unverified. None of the provided evidence excerpts describe session establishment, session lifetimes, or logout behaviour at the portal, nor do they mention req-OIDC-003. As a result, neither the applicability nor the unverified status can be grounded in a specific passage, and confirmation from design documentation is required.",
+        "missing_evidence": [
+          "Documentation of how the portal establishes, maintains, and terminates authenticated sessions after ID token validation (e.g., session cookies, lifetimes, revocation handling) and an explicit analysis against the conditions in req-OIDC-003."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-015",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-003 confirms that the portal uses an OpenID Connect redirect flow but does not say whether it uses an authorization code exchange or some other response type. The mapping asserts that req-OIDC-004 is conditionally applicable if an authorization code grant is used and currently unverified. Because the actual grant type and token retrieval mechanism are not documented, both the conditional applicability and the unverified status remain assumptions that require confirmation.",
+        "missing_evidence": [
+          "Details of the OpenID Connect flow used by the portal, including response_type, whether an authorization code is exchanged for tokens, and any use of PKCE, together with a mapping to req-OIDC-004's conditions."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "## 2. Authentication\n\nAll access to the portal is authenticated through the company's enterprise identity\nprovider using OpenID Connect. A user reaching the portal is redirected to the identity\nprovider, authenticates there, and returns with an ID token the portal validates. The\nportal maintains no password store of its own and issues no credentials; identity is the\nidentity provider's responsibility, and multi-factor enrolment and factor policy are set\nat the identity provider organization level."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-016",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-001 and evd-002 show that the portal is an internal interface that employees use to view and modify customer support tickets, and evd-005 identifies employees as authenticated internal users. This directly supports viewing the portal as an operator/administrative interface over customer data, so applicability of req-ADMIN-001 to thr-005 is well supported. However, there is no documentation of the specific administrative safeguards or a mapping to req-ADMIN-001, so the statement that the requirement is unverified is only partially supported as a description of the assessment state rather than a documented fact about controls.",
+        "missing_evidence": [
+          "Documentation of administrative/operator controls for the portal (e.g., least-privilege roles, approval mechanisms, change tracking) and an explicit assessment of these controls against req-ADMIN-001."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "documentation_gap",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Support Portal \u2014 System Overview\n\nThe support portal is an internal web application that lets employees view and comment on\ncustomer support tickets. It is served over HTTPS and reachable only from the corporate\nnetwork and the company VPN."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-017",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-001 and evd-002 establish that employees use the portal to view and modify customer support tickets via an internal web interface, which meets the conditions for an operator interface affecting customer data. This supports applicability of an audit-logging requirement like req-LOG-002 to thr-005. The evidence set, however, does not describe any logging of portal or ticket-service actions, so the claim that the requirement is unverified reflects a lack of documentation rather than a documented state of controls. The mapping is thus only partially supported.",
+        "missing_evidence": [
+          "Design or operational documentation describing logging of employee actions in the portal and ticket service, retention and protection of those logs, and how these controls are evaluated against req-LOG-002."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "documentation_gap",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Components\n\n### Portal Web Application\n\nA server-rendered web application. It presents tickets, accepts comments, and calls the\nticket service for data. It holds no local user accounts.\n\n### Ticket Service\n\nAn internal HTTP service that stores and retrieves tickets. It is reachable only from the\nportal web application inside the application subnet."
+          }
+        ]
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-001",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-001 and evd-002 show that employees use the internal support portal to view and comment on support tickets, with the portal presenting tickets and calling the ticket service. evd-004 shows that those tickets contain customer support correspondence stored in a managed database. evd-003 shows that portal access is authenticated via the enterprise identity provider. These passages directly support the existence of an internal portal through which an authenticated employee can access ticket data, making the described exfiltration path plausible. The additional assumption that the authorization model allows broad browsing across many tickets is explicitly called out as a precondition and is not documented, so the threat description is partially, but not fully, grounded in the evidence.",
+        "missing_evidence": [
+          "Documentation of the portal's authorization model, including how employee access to tickets is scoped (e.g., by customer, team, or role) and any limits on bulk access or export."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Support Portal \u2014 System Overview\n\nThe support portal is an internal web application that lets employees view and comment on\ncustomer support tickets. It is served over HTTPS and reachable only from the corporate\nnetwork and the company VPN."
+          }
+        ]
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-002",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-001 states that the portal lets employees view and comment on customer support tickets, and evd-002 states that the portal presents tickets, accepts comments, and is a server-rendered web application that calls the ticket service. Together, these passages support the parts of the threat that describe employees entering comments on tickets, those comments being stored via the ticket service, and rendered back in browsers. The threat's core exploit condition\u2014that input validation, sanitization, or output encoding are insufficient to prevent script execution\u2014is explicitly introduced as a precondition and is not described in the documentation, so that part is not documented. Overall, the threat scenario is partially supported: the architecture that enables cross-user display of comments is documented, while the lack of adequate sanitization is an assumption.",
+        "missing_evidence": [
+          "Specifications or implementation details for how ticket and comment content are validated, sanitized, and encoded before rendering, including any templating or HTML-encoding libraries used."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Components\n\n### Portal Web Application\n\nA server-rendered web application. It presents tickets, accepts comments, and calls the\nticket service for data. It holds no local user accounts.\n\n### Ticket Service\n\nAn internal HTTP service that stores and retrieves tickets. It is reachable only from the\nportal web application inside the application subnet."
+          }
+        ]
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-003",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-002 documents that the ticket service is an internal HTTP service reachable only from the portal web application inside the application subnet, and that it stores and retrieves tickets. evd-004 shows that those tickets contain customer support correspondence persisted in a managed database. These passages support the existence of an internal ticket service holding sensitive data and relying on network placement for reachability, which underpins the described threat path. The further precondition that the ticket service does not strongly authenticate callers and relies only on network-based controls is explicitly stated as an assumption and is not documented, so the impersonation vulnerability itself is not established. The threat is therefore partially supported.",
+        "missing_evidence": [
+          "Design or configuration details of the ticket service's caller authentication and authorization mechanisms (e.g., service identities, mutual TLS, API keys) to determine whether network position alone is relied upon."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "## 1. Components\n\n### Portal Web Application\n\nA server-rendered web application. It presents tickets, accepts comments, and calls the\nticket service for data. It holds no local user accounts.\n\n### Ticket Service\n\nAn internal HTTP service that stores and retrieves tickets. It is reachable only from the\nportal web application inside the application subnet."
+          }
+        ]
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-004",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-004 establishes that the ticket service persists tickets containing customer support correspondence in a managed relational database provided by the cloud platform, implying a network connection between the service and the database carrying sensitive data. This directly supports the parts of the threat describing a network data flow between the ticket service and the managed database. The precondition that transport security and mutual authentication for this connection are absent or insufficient is explicitly assumed and not described in the documentation, so the interception or tampering risk is not fully documented. The threat is therefore partially supported.",
+        "missing_evidence": [
+          "Documentation or configuration describing the network connection between the ticket service and the managed database, including whether TLS is enforced, how certificates are validated, and whether mutual authentication is used."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-004",
+            "text": "## 3. Data\n\nTickets contain customer support correspondence. The ticket service persists them in a\nmanaged relational database provided by the cloud platform."
+          }
+        ]
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-005",
+        "evidence_ids": [
+          "evd-001",
+          "evd-003",
+          "evd-007"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-007",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-003 directly documents that all access to the portal is authenticated through the enterprise identity provider using OpenID Connect, that the user is redirected there and returns with an ID token the portal validates, and that the portal does not maintain its own password store or credentials. This supports the threat's premise that the portal fully relies on tokens issued by the identity provider for employee access. evd-001 provides context about where the portal is reachable, and evd-007 shows that an enterprise identity provider MFA control is asserted. The further precondition that the identity provider or its administrative interfaces are compromised or misconfigured to allow minting tokens for arbitrary employees is an explicit assumption, not a documented event, so the compromise itself is not supported by the evidence. Overall, the threat scenario that compromise of the IdP would enable unauthorized portal access is partially supported by the documented trust relationship.",
+        "missing_evidence": [
+          "Documentation of the portal's trust configuration for the identity provider (e.g., which IdP tenants and applications it trusts) and any compensating controls for IdP compromise, as well as incident-response or hardening guidance for the IdP itself."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "## 2. Authentication\n\nAll access to the portal is authenticated through the company's enterprise identity\nprovider using OpenID Connect. A user reaching the portal is redirected to the identity\nprovider, authenticates there, and returns with an ID token the portal validates. The\nportal maintains no password store of its own and issues no credentials; identity is the\nidentity provider's responsibility, and multi-factor enrolment and factor policy are set\nat the identity provider organization level."
+          }
+        ]
+      }
+    ]
+  }
+}

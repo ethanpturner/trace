@@ -1,0 +1,4 @@
+# False positives, pinned by fingerprint (path:rule:line). Each entry says why.
+# A mapping proposal's local key naming a control ("control 2: MFA at the enterprise IdP") --
+# the generic-api-key rule matched a JSON field literally named "key" holding a slug.
+benchmarks/oidc-portal/recorded/03-mapping.json:generic-api-key:36

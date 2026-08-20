@@ -1,0 +1,28 @@
+{
+  "schema": "CriticalReviewProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 8955,
+    "output_tokens": 13153,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.14272375",
+    "duration_seconds": 171.15716545900796
+  },
+  "response": {
+    "critiques": [
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-001",
+        "critique_type": "unsupported_claim",
+        "description": "The mapping for req-AUTH-001 asserts that the requirement is satisfied based solely on the high-level description of delegated OIDC authentication, without evidence that all of the requirement\u2019s specific conditions are met.",
+        "rationale": "Mapping map-001 cites evd-003 and concludes that req-AUTH-001 is satisfied. evd-003 documents that the portal delegates authentication to the enterprise OIDC identity provider, validates an ID token, and does not store local passwords or issue credentials. This directly supports the existence of delegated authentication, but it does not show that all detailed conditions of req-AUTH-001 are met (for example, how tokens are validated, how identity lifecycle and deprovisioning are handled, or any other requirement-specific criteria). The corresponding evidence assessment already notes that additional documentation\u2014such as the normative text of req-AUTH-001 and configuration or design evidence showing how each of its conditions is satisfied\u2014is missing. Given the absence of that evidence in the provided material, treating req-AUTH-001 as definitively \u201csatisfied\u201d is not supported; the mapping should instead be treated as a question or unverified until the missing evidence is provided or the conclusion is adjusted.",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "recommended_action": "revise",
+        "confidence": "high"
+      }
+    ]
+  }
+}

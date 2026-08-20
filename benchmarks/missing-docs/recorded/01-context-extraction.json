@@ -1,21 +1,31 @@
 {
   "schema": "ContextExtractionProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 12132,
+    "output_tokens": 6020,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.075365",
+    "duration_seconds": 59.72939795907587
+  },
   "response": {
     "system": {
       "system_name": "Kiosk Sync Service",
-      "system_purpose": "receive customer order records from field kiosks and store them for the fulfillment system",
+      "system_purpose": "Receives customer order records from field kiosks, stores them, and makes them available for the fulfillment system to read.",
       "business_criticality": null,
       "environment": [],
       "deployment_model": null,
-      "data_classifications": []
+      "data_classifications": [],
+      "access_model": "unknown"
     },
     "claims": [
       {
-        "key": "order-contents",
-        "subject_type": "component",
-        "subject_key": "sync",
-        "predicate": "data_sensitivity",
-        "value": "order records carry the customer's name, delivery address, and order contents",
+        "key": "claim-system-purpose",
+        "subject_type": "system",
+        "subject_key": null,
+        "predicate": "purpose",
+        "value": "Receives customer order records from field kiosks, stores them, and makes them available for the fulfillment system to read.",
         "status": "documented",
         "confidence": "high",
         "rationale": null,
@@ -24,14 +34,122 @@
         ]
       },
       {
-        "key": "topology",
-        "subject_type": "component",
-        "subject_key": "sync",
-        "predicate": "deployment_placement",
-        "value": "the service runs on a virtual machine in the operations subnet; kiosks call it over the store network and the fulfillment system polls it hourly",
+        "key": "claim-order-record-fields",
+        "subject_type": "asset",
+        "subject_key": "customer_order_records",
+        "predicate": "fields",
+        "value": [
+          "customer_name",
+          "delivery_address",
+          "order_contents"
+        ],
         "status": "documented",
         "confidence": "high",
         "rationale": null,
+        "evidence_ids": [
+          "evd-001"
+        ]
+      },
+      {
+        "key": "claim-kiosks-send-orders",
+        "subject_type": "component",
+        "subject_key": "field_kiosks",
+        "predicate": "sends_data_to",
+        "value": "kiosk_sync_service",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-001"
+        ]
+      },
+      {
+        "key": "claim-fulfillment-reads-orders",
+        "subject_type": "component",
+        "subject_key": "fulfillment_system",
+        "predicate": "reads_orders_from",
+        "value": "kiosk_sync_service",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-001"
+        ]
+      },
+      {
+        "key": "claim-sync-service-deployment",
+        "subject_type": "component",
+        "subject_key": "kiosk_sync_service",
+        "predicate": "deployment_zone",
+        "value": "operations_subnet",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-001"
+        ]
+      },
+      {
+        "key": "claim-kiosks-network",
+        "subject_type": "component",
+        "subject_key": "field_kiosks",
+        "predicate": "network",
+        "value": "store_network",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-001"
+        ]
+      },
+      {
+        "key": "claim-flow-kiosks-to-service",
+        "subject_type": "data_flow",
+        "subject_key": "kiosks_to_sync_service",
+        "predicate": "data_moved",
+        "value": "Customer order records move from field kiosks to the kiosk sync service.",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-001"
+        ]
+      },
+      {
+        "key": "claim-flow-service-to-fulfillment",
+        "subject_type": "data_flow",
+        "subject_key": "sync_service_to_fulfillment",
+        "predicate": "data_moved",
+        "value": "Customer order records are provided by the kiosk sync service to the fulfillment system when it polls the service.",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-001"
+        ]
+      },
+      {
+        "key": "claim-order-records-personal-data",
+        "subject_type": "asset",
+        "subject_key": "customer_order_records",
+        "predicate": "contains_personal_data",
+        "value": true,
+        "status": "inferred",
+        "confidence": "high",
+        "rationale": "Order records include customer name and delivery address, which are personal identifying information.",
+        "evidence_ids": [
+          "evd-001"
+        ]
+      },
+      {
+        "key": "claim-sync-service-entry-api",
+        "subject_type": "component",
+        "subject_key": "kiosk_sync_service",
+        "predicate": "entry_point_type",
+        "value": "api",
+        "status": "inferred",
+        "confidence": "medium",
+        "rationale": "The document states that kiosks call the service and that the fulfillment system polls it, implying it exposes a network API.",
         "evidence_ids": [
           "evd-001"
         ]
@@ -39,15 +157,18 @@
     ],
     "components": [
       {
-        "key": "sync",
+        "key": "kiosk_sync_service",
         "name": "Kiosk Sync Service",
         "component_type": "service",
-        "description": "receives customer order records from the field kiosks and stores them for the fulfillment system to read",
+        "description": "Service that receives customer order records from field kiosks, stores them, and makes them available for the fulfillment system to read.",
         "technology": [],
         "ownership": null,
         "deployment_zone": "operations_subnet",
         "internet_accessible": null,
         "externally_managed": null,
+        "entry_point_types": [
+          "api"
+        ],
         "data_classifications": [],
         "authentication_mechanisms": [],
         "authorization_mechanisms": [],
@@ -56,15 +177,16 @@
         ]
       },
       {
-        "key": "kiosks",
-        "name": "Field Kiosks",
-        "component_type": "edge_device",
-        "description": "submit customer order records over the store network",
+        "key": "field_kiosks",
+        "name": "Field kiosks",
+        "component_type": "device",
+        "description": "In-store kiosks that send customer order records to the kiosk sync service over the store network.",
         "technology": [],
         "ownership": null,
         "deployment_zone": "store_network",
         "internet_accessible": null,
         "externally_managed": null,
+        "entry_point_types": [],
         "data_classifications": [],
         "authentication_mechanisms": [],
         "authorization_mechanisms": [],
@@ -73,15 +195,16 @@
         ]
       },
       {
-        "key": "fulfillment",
-        "name": "Fulfillment System",
-        "component_type": "service",
-        "description": "polls the sync service hourly for stored order records",
+        "key": "fulfillment_system",
+        "name": "Fulfillment system",
+        "component_type": "system",
+        "description": "System that polls the kiosk sync service hourly to read stored customer order records for fulfillment.",
         "technology": [],
         "ownership": null,
         "deployment_zone": null,
         "internet_accessible": null,
         "externally_managed": null,
+        "entry_point_types": [],
         "data_classifications": [],
         "authentication_mechanisms": [],
         "authorization_mechanisms": [],
@@ -90,32 +213,25 @@
         ]
       }
     ],
-    "actors": [
-      {
-        "key": "kiosk-operator",
-        "name": "Store kiosk",
-        "actor_type": "internal_service",
-        "trust_level": null,
-        "capabilities": [],
-        "authentication_method": null,
-        "evidence_ids": [
-          "evd-001"
-        ]
-      }
-    ],
+    "actors": [],
     "assets": [
       {
-        "key": "orders",
+        "key": "customer_order_records",
         "name": "Customer order records",
-        "asset_type": "customer_data",
-        "description": "customer name, delivery address, and order contents",
+        "asset_type": "data",
+        "description": "Order records from field kiosks containing customer name, delivery address, and order contents, stored for the fulfillment system to read.",
         "confidentiality_impact": null,
         "integrity_impact": null,
         "availability_impact": null,
         "data_classification": null,
         "owner": null,
         "component_keys": [
-          "sync"
+          "field_kiosks",
+          "kiosk_sync_service",
+          "fulfillment_system"
+        ],
+        "stored_in_component_keys": [
+          "kiosk_sync_service"
         ],
         "evidence_ids": [
           "evd-001"
@@ -124,13 +240,15 @@
     ],
     "data_flows": [
       {
-        "key": "kiosk-submit",
-        "name": "Kiosk order submission",
-        "source_component_key": "kiosks",
-        "destination_component_key": "sync",
+        "key": "kiosks_to_sync_service",
+        "name": "Field kiosks submit order records to kiosk sync service",
+        "source_component_key": "field_kiosks",
+        "destination_component_key": "kiosk_sync_service",
         "direction": "one_way",
         "protocol": null,
-        "data_types": [],
+        "data_types": [
+          "order_records"
+        ],
         "authentication": "unknown",
         "encryption_in_transit": "unknown",
         "crosses_trust_boundary_keys": [],
@@ -140,13 +258,15 @@
         ]
       },
       {
-        "key": "fulfillment-poll",
-        "name": "Fulfillment polling",
-        "source_component_key": "fulfillment",
-        "destination_component_key": "sync",
-        "direction": "bidirectional",
+        "key": "sync_service_to_fulfillment",
+        "name": "Kiosk sync service provides stored order records to fulfillment system",
+        "source_component_key": "kiosk_sync_service",
+        "destination_component_key": "fulfillment_system",
+        "direction": "one_way",
         "protocol": null,
-        "data_types": [],
+        "data_types": [
+          "order_records"
+        ],
         "authentication": "unknown",
         "encryption_in_transit": "unknown",
         "crosses_trust_boundary_keys": [],
@@ -156,25 +276,25 @@
         ]
       }
     ],
-    "trust_boundaries": [
+    "trust_boundaries": [],
+    "questions": [
       {
-        "key": "store-ops",
-        "name": "Store network to operations subnet boundary",
-        "boundary_type": "network_perimeter",
-        "description": null,
-        "inside_component_keys": [
-          "sync"
-        ],
-        "outside_component_keys": [
-          "kiosks"
-        ],
-        "controls": [],
-        "evidence_ids": [
-          "evd-001"
-        ]
+        "key": "q1-auth-enc-kiosk-links",
+        "question": "How are communications between field kiosks and the kiosk sync service authenticated and encrypted, if at all?",
+        "rationale": "This affects the exposure of customer order records in transit and whether unauthorized kiosks or clients could submit or read orders.",
+        "related_object_key": "kiosks_to_sync_service",
+        "priority": "high",
+        "blocking": false
+      },
+      {
+        "key": "q2-fulfillment-location",
+        "question": "Where is the fulfillment system deployed relative to the operations subnet and store network (for example, same subnet, different internal network, or external service)?",
+        "rationale": "Knowing the fulfillment system's deployment context is needed to understand network trust boundaries and which networks customer order data traverses.",
+        "related_object_key": "fulfillment_system",
+        "priority": "medium",
+        "blocking": false
       }
     ],
-    "questions": [],
     "observations": []
   }
 }

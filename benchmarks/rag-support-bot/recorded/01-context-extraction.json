@@ -1,278 +1,778 @@
 {
   "schema": "ContextExtractionProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 14766,
+    "output_tokens": 16190,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.1803575",
+    "duration_seconds": 159.1929538330296
+  },
   "response": {
     "system": {
       "system_name": "Relay Answers",
-      "system_purpose": "answer support questions inside the Relay platform from help-center articles and the workspace's support history, with citations",
+      "system_purpose": "In-product support assistant for the Relay project-management platform, answering signed-in users' questions in the help panel from Relay's documentation and the workspace's support history with citations.",
       "business_criticality": null,
       "environment": [],
       "deployment_model": null,
-      "data_classifications": []
+      "data_classifications": [],
+      "access_model": "unknown"
     },
     "claims": [
       {
-        "key": "clm_shared_index",
-        "subject_type": "component",
-        "subject_key": "cmp_index",
-        "predicate": "retrieval_authorization",
-        "value": "all workspaces are served from one shared index; a query returns the top eight passages ranked by embedding similarity, and relevance alone selects the passages that reach the prompt",
+        "key": "claim-system-purpose",
+        "subject_type": "system",
+        "subject_key": null,
+        "predicate": "purpose",
+        "value": "Provide in-product support assistance within Relay, answering signed-in users' questions from Relay documentation and each workspace's support history with cited passages.",
         "status": "documented",
         "confidence": "high",
         "rationale": null,
-        "evidence_ids": ["evd-002"]
+        "evidence_ids": [
+          "evd-001"
+        ]
       },
       {
-        "key": "clm_write_path",
-        "subject_type": "component",
-        "subject_key": "cmp_ingestion",
-        "predicate": "corpus_write_path",
-        "value": "the ingestion pipeline is the only writer to the index; it reads two named sources nightly, records source and timestamp per indexed item, and help-center content passes the documentation team's review before the pipeline sees it",
+        "key": "claim-answer-sources",
+        "subject_type": "system",
+        "subject_key": null,
+        "predicate": "answer_sources",
+        "value": [
+          "relay_documentation",
+          "workspace_support_history"
+        ],
         "status": "documented",
         "confidence": "high",
         "rationale": null,
-        "evidence_ids": ["evd-002"]
+        "evidence_ids": [
+          "evd-001"
+        ]
       },
       {
-        "key": "clm_prompt_fence",
-        "subject_type": "component",
-        "subject_key": "cmp_answer",
-        "predicate": "untrusted_content_handling",
-        "value": "retrieved passages are placed in a delimited context block described to the model as reference material rather than instructions, and the help panel renders answers as plain text without executing model output",
+        "key": "claim-answers-cited",
+        "subject_type": "system",
+        "subject_key": null,
+        "predicate": "answers_include_citations",
+        "value": true,
         "status": "documented",
         "confidence": "high",
         "rationale": null,
-        "evidence_ids": ["evd-003"]
+        "evidence_ids": [
+          "evd-001",
+          "evd-003"
+        ]
       },
       {
-        "key": "clm_provider_handling",
+        "key": "claim-help-panel-availability",
         "subject_type": "component",
-        "subject_key": "cmp_provider",
-        "predicate": "provider_data_handling",
-        "value": "workspace and user identifiers are stripped before requests; the provider's terms for this traffic exclude training on submitted content; requests are sent over TLS",
+        "subject_key": "help-panel",
+        "predicate": "availability_scope",
+        "value": "Available to every signed-in user of any workspace on any plan, including trials.",
         "status": "documented",
         "confidence": "high",
         "rationale": null,
-        "evidence_ids": ["evd-002", "evd-004"]
+        "evidence_ids": [
+          "evd-002",
+          "evd-013"
+        ]
       },
       {
-        "key": "clm_source_retention",
+        "key": "claim-retrieval-index-shared",
+        "subject_type": "component",
+        "subject_key": "retrieval-index",
+        "predicate": "multi_tenant_shared",
+        "value": true,
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-002"
+        ]
+      },
+      {
+        "key": "claim-retrieval-index-topk",
+        "subject_type": "component",
+        "subject_key": "retrieval-index",
+        "predicate": "top_k_passages",
+        "value": 8,
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-002"
+        ]
+      },
+      {
+        "key": "claim-retrieval-index-selection-criteria",
+        "subject_type": "component",
+        "subject_key": "retrieval-index",
+        "predicate": "selection_criteria",
+        "value": "relevance_only",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-002"
+        ]
+      },
+      {
+        "key": "claim-ingestion-only-writer",
+        "subject_type": "component",
+        "subject_key": "ingestion-pipeline",
+        "predicate": "only_writer_to_index",
+        "value": true,
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-002"
+        ]
+      },
+      {
+        "key": "claim-ingestion-schedule",
+        "subject_type": "component",
+        "subject_key": "ingestion-pipeline",
+        "predicate": "schedule",
+        "value": "nightly",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-002"
+        ]
+      },
+      {
+        "key": "claim-ingestion-sources",
+        "subject_type": "component",
+        "subject_key": "ingestion-pipeline",
+        "predicate": "input_sources",
+        "value": [
+          "help_center_repository",
+          "resolved_tickets_export"
+        ],
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-002"
+        ]
+      },
+      {
+        "key": "claim-index-records-source-timestamp",
+        "subject_type": "component",
+        "subject_key": "retrieval-index",
+        "predicate": "stores_source_and_timestamp",
+        "value": true,
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-002"
+        ]
+      },
+      {
+        "key": "claim-help-center-review-process",
+        "subject_type": "process",
+        "subject_key": null,
+        "predicate": "help_center_content_reviewed_before_ingestion",
+        "value": true,
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-002"
+        ]
+      },
+      {
+        "key": "claim-prompt-delimited-context",
+        "subject_type": "system",
+        "subject_key": null,
+        "predicate": "prompt_uses_delimited_context_block",
+        "value": true,
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-003"
+        ]
+      },
+      {
+        "key": "claim-help-panel-plain-text",
+        "subject_type": "component",
+        "subject_key": "help-panel",
+        "predicate": "renders_plain_text_only",
+        "value": true,
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-003"
+        ]
+      },
+      {
+        "key": "claim-support-tickets-retention",
         "subject_type": "asset",
-        "subject_key": "ast_tickets",
-        "predicate": "source_retention",
-        "value": "resolved tickets are retained on the support platform for two years and then deleted under a schedule agreed with customers; the index is the only copy of the embeddings and the nightly run replaces changed chunks by source reference",
+        "subject_key": "support-ticket-history",
+        "predicate": "retention_period",
+        "value": "2_years",
         "status": "documented",
         "confidence": "high",
         "rationale": null,
-        "evidence_ids": ["evd-004", "evd-012"]
+        "evidence_ids": [
+          "evd-004"
+        ]
       },
       {
-        "key": "clm_ticket_content",
+        "key": "claim-help-center-public",
         "subject_type": "asset",
-        "subject_key": "ast_tickets",
-        "predicate": "content_sensitivity",
-        "value": "ticket text sometimes quotes configuration snippets customers pasted into support conversations, and the export's masking step covers email addresses only",
+        "subject_key": "help-center-content",
+        "predicate": "is_public",
+        "value": true,
         "status": "documented",
         "confidence": "high",
         "rationale": null,
-        "evidence_ids": ["evd-013"]
+        "evidence_ids": [
+          "evd-004"
+        ]
+      },
+      {
+        "key": "claim-model-provider-no-training",
+        "subject_type": "component",
+        "subject_key": "model-provider",
+        "predicate": "no_training_on_submitted_content",
+        "value": true,
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-004"
+        ]
+      },
+      {
+        "key": "claim-model-provider-tls",
+        "subject_type": "system",
+        "subject_key": null,
+        "predicate": "model_provider_requests_tls",
+        "value": true,
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-004"
+        ]
+      },
+      {
+        "key": "claim-answer-flow",
+        "subject_type": "system",
+        "subject_key": null,
+        "predicate": "answer_flow",
+        "value": "The answer service receives the user's question, runs retrieval, assembles the prompt with retrieved passages, calls the model provider, and returns an answer with citations.",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-002"
+        ]
+      },
+      {
+        "key": "claim-runtime-characteristics",
+        "subject_type": "system",
+        "subject_key": null,
+        "predicate": "runtime_characteristics",
+        "value": "The answer service runs as a single deployment beside the main Relay API; each answer makes one model call; there is no multi-step agent loop and the assistant takes no actions beyond returning text; a per-workspace daily answer quota bounds spend; the service can be disabled per workspace with a feature flag.",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-011"
+        ]
+      },
+      {
+        "key": "claim-ingestion-update-strategy",
+        "subject_type": "component",
+        "subject_key": "ingestion-pipeline",
+        "predicate": "update_strategy",
+        "value": "replace_changed_chunks_by_source_reference",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-012"
+        ]
+      },
+      {
+        "key": "claim-email-masking",
+        "subject_type": "asset",
+        "subject_key": "support-ticket-history",
+        "predicate": "email_addresses_masked_before_export",
+        "value": true,
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-012"
+        ]
+      },
+      {
+        "key": "claim-embeddings-only-copy",
+        "subject_type": "asset",
+        "subject_key": "retrieval-embeddings",
+        "predicate": "only_copy_location",
+        "value": "retrieval_index",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-012"
+        ]
+      },
+      {
+        "key": "claim-index-network-reachability",
+        "subject_type": "component",
+        "subject_key": "retrieval-index",
+        "predicate": "network_reachability",
+        "value": "reachable_only_from_answer_service_network_segment",
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-012"
+        ]
+      },
+      {
+        "key": "claim-tickets-may-contain-config-snippets",
+        "subject_type": "asset",
+        "subject_key": "support-ticket-history",
+        "predicate": "may_contain_configuration_snippets",
+        "value": true,
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-013"
+        ]
+      },
+      {
+        "key": "claim-support-team-reviews-answers",
+        "subject_type": "actor",
+        "subject_key": "support-team",
+        "predicate": "reviews_answer_quality_weekly",
+        "value": true,
+        "status": "documented",
+        "confidence": "high",
+        "rationale": null,
+        "evidence_ids": [
+          "evd-013"
+        ]
+      },
+      {
+        "key": "claim-retrieval-index-workspace-isolation-unknown",
+        "subject_type": "component",
+        "subject_key": "retrieval-index",
+        "predicate": "workspace_level_isolation_mechanism",
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "rationale": "Documentation describes a single shared index where relevance alone selects passages (evd-002) but does not specify any workspace-level scoping or filtering mechanism.",
+        "evidence_ids": []
+      },
+      {
+        "key": "claim-embeddings-encryption-at-rest-unknown",
+        "subject_type": "component",
+        "subject_key": "retrieval-index",
+        "predicate": "encryption_at_rest",
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "rationale": "The documents state that the retrieval index uses a managed vector-database offering (evd-002, evd-012) but do not describe whether embeddings are encrypted at rest.",
+        "evidence_ids": []
       }
     ],
     "components": [
       {
-        "key": "cmp_panel",
+        "key": "help-panel",
         "name": "Help panel",
-        "component_type": "user_interface",
-        "description": "the in-product chat surface, available to every signed-in user of any workspace on any plan",
+        "component_type": "client_ui",
+        "description": "In-product chat surface in the Relay application, used by signed-in workspace users to interact with the assistant.",
         "technology": [],
         "ownership": null,
         "deployment_zone": null,
         "internet_accessible": null,
         "externally_managed": null,
+        "entry_point_types": [],
         "data_classifications": [],
         "authentication_mechanisms": [],
         "authorization_mechanisms": [],
-        "evidence_ids": ["evd-002", "evd-013"]
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-013"
+        ]
       },
       {
-        "key": "cmp_answer",
-        "name": "Answer service",
-        "component_type": "service",
-        "description": "receives the question, runs retrieval, assembles the prompt, calls the model provider, and returns the cited answer; single deployment beside the main Relay API",
-        "technology": [],
-        "ownership": null,
-        "deployment_zone": null,
-        "internet_accessible": null,
-        "externally_managed": null,
-        "data_classifications": [],
-        "authentication_mechanisms": [],
-        "authorization_mechanisms": [],
-        "evidence_ids": ["evd-002", "evd-011"]
-      },
-      {
-        "key": "cmp_index",
+        "key": "retrieval-index",
         "name": "Retrieval index",
-        "component_type": "data_store",
-        "description": "a managed vector database holding embeddings of help-center articles and resolved support tickets, reachable only from the answer service's network segment",
-        "technology": [],
+        "component_type": "vector_database",
+        "description": "Managed vector database holding embeddings of help-center articles and resolved support tickets for all workspaces in a single shared index.",
+        "technology": [
+          "managed_vector_database",
+          "standard_tier"
+        ],
         "ownership": null,
         "deployment_zone": null,
         "internet_accessible": false,
         "externally_managed": true,
+        "entry_point_types": [],
         "data_classifications": [],
         "authentication_mechanisms": [],
         "authorization_mechanisms": [],
-        "evidence_ids": ["evd-002", "evd-012"]
+        "evidence_ids": [
+          "evd-002",
+          "evd-012"
+        ]
       },
       {
-        "key": "cmp_ingestion",
+        "key": "ingestion-pipeline",
         "name": "Ingestion pipeline",
-        "component_type": "service",
-        "description": "the only writer to the retrieval index; runs nightly over the help-center repository and the resolved-tickets export, chunking and embedding both",
+        "component_type": "data_pipeline",
+        "description": "Nightly job that reads the published help-center repository and the support platform's resolved-tickets export, chunks and embeds content, and writes it to the retrieval index with source and timestamp metadata.",
         "technology": [],
         "ownership": null,
         "deployment_zone": null,
         "internet_accessible": null,
         "externally_managed": null,
+        "entry_point_types": [],
         "data_classifications": [],
         "authentication_mechanisms": [],
         "authorization_mechanisms": [],
-        "evidence_ids": ["evd-002"]
+        "evidence_ids": [
+          "evd-002",
+          "evd-012"
+        ]
       },
       {
-        "key": "cmp_provider",
+        "key": "model-provider",
         "name": "Model provider",
         "component_type": "external_service",
-        "description": "a hosted large-language-model API receiving the question and the retrieved passages",
+        "description": "Hosted large-language-model API that receives user questions and retrieved passages from the answer service and returns generated answers.",
+        "technology": [
+          "hosted_llm_api"
+        ],
+        "ownership": null,
+        "deployment_zone": null,
+        "internet_accessible": true,
+        "externally_managed": true,
+        "entry_point_types": [
+          "api"
+        ],
+        "data_classifications": [],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ]
+      },
+      {
+        "key": "support-platform",
+        "name": "Support platform",
+        "component_type": "support_platform",
+        "description": "Support ticketing platform that retains resolved tickets for two years, masks customer email addresses before export, and provides the resolved-tickets export used by the ingestion pipeline.",
         "technology": [],
         "ownership": null,
         "deployment_zone": null,
         "internet_accessible": null,
-        "externally_managed": true,
+        "externally_managed": null,
+        "entry_point_types": [],
         "data_classifications": [],
         "authentication_mechanisms": [],
         "authorization_mechanisms": [],
-        "evidence_ids": ["evd-002"]
+        "evidence_ids": [
+          "evd-004",
+          "evd-012",
+          "evd-013"
+        ]
+      },
+      {
+        "key": "help-center-repository",
+        "name": "Help-center repository",
+        "component_type": "content_repository",
+        "description": "Published help-center documentation repository used as a source for the ingestion pipeline and described as public documentation.",
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": null,
+        "internet_accessible": null,
+        "externally_managed": null,
+        "entry_point_types": [],
+        "data_classifications": [],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ]
+      },
+      {
+        "key": "relay-main-api",
+        "name": "Relay main API",
+        "component_type": "api_service",
+        "description": "Main Relay API; the answer service runs as a single deployment beside this API.",
+        "technology": [],
+        "ownership": null,
+        "deployment_zone": null,
+        "internet_accessible": null,
+        "externally_managed": null,
+        "entry_point_types": [
+          "api"
+        ],
+        "data_classifications": [],
+        "authentication_mechanisms": [],
+        "authorization_mechanisms": [],
+        "evidence_ids": [
+          "evd-011"
+        ]
       }
     ],
     "actors": [
       {
-        "key": "act_user",
-        "name": "Workspace user",
+        "key": "signed-in-user",
+        "name": "Signed-in Relay workspace user",
         "actor_type": "end_user",
         "trust_level": null,
-        "capabilities": [],
+        "skill_level": null,
+        "access_level": "authenticated",
+        "capabilities": [
+          "ask_questions_in_help_panel"
+        ],
         "authentication_method": null,
-        "evidence_ids": ["evd-002"]
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ]
       },
       {
-        "key": "act_customer",
-        "name": "Support customer",
-        "actor_type": "end_user",
+        "key": "support-team",
+        "name": "Support team",
+        "actor_type": "internal_staff",
         "trust_level": null,
-        "capabilities": ["authors the ticket text that the nightly export indexes, including pasted configuration snippets"],
+        "skill_level": null,
+        "access_level": null,
+        "capabilities": [
+          "review_answer_quality"
+        ],
         "authentication_method": null,
-        "evidence_ids": ["evd-012", "evd-013"]
+        "evidence_ids": [
+          "evd-013"
+        ]
+      },
+      {
+        "key": "documentation-team",
+        "name": "Documentation team",
+        "actor_type": "internal_staff",
+        "trust_level": null,
+        "skill_level": null,
+        "access_level": null,
+        "capabilities": [
+          "review_help_center_content"
+        ],
+        "authentication_method": null,
+        "evidence_ids": [
+          "evd-002"
+        ]
       }
     ],
     "assets": [
       {
-        "key": "ast_tickets",
-        "name": "Resolved support tickets",
-        "asset_type": "customer_data",
-        "description": "resolved ticket text from all workspaces, including configuration snippets customers pasted; email addresses masked before export",
+        "key": "help-center-content",
+        "name": "Help-center documentation",
+        "asset_type": "documentation",
+        "description": "Published help-center repository content used as a source for the assistant's answers.",
         "confidentiality_impact": null,
         "integrity_impact": null,
         "availability_impact": null,
         "data_classification": null,
         "owner": null,
-        "component_keys": ["cmp_index"],
-        "evidence_ids": ["evd-012", "evd-013"]
+        "component_keys": [
+          "help-center-repository"
+        ],
+        "stored_in_component_keys": [
+          "help-center-repository"
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ]
       },
       {
-        "key": "ast_articles",
-        "name": "Help-center articles",
-        "asset_type": "documentation",
-        "description": "public documentation published through the documentation team's review process",
+        "key": "support-ticket-history",
+        "name": "Workspace support history (resolved support tickets)",
+        "asset_type": "customer_support_data",
+        "description": "Resolved support tickets for Relay workspaces, retained on the support platform for two years, with email addresses masked before export, and used as a retrieval source.",
         "confidentiality_impact": null,
         "integrity_impact": null,
         "availability_impact": null,
         "data_classification": null,
         "owner": null,
-        "component_keys": ["cmp_index"],
-        "evidence_ids": ["evd-002"]
+        "component_keys": [
+          "support-platform"
+        ],
+        "stored_in_component_keys": [
+          "support-platform"
+        ],
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-004",
+          "evd-012",
+          "evd-013"
+        ]
+      },
+      {
+        "key": "retrieval-embeddings",
+        "name": "Retrieval index embeddings",
+        "asset_type": "derived_embeddings",
+        "description": "Embeddings of help-center articles and resolved support tickets, each with source and timestamp metadata, stored in the managed retrieval index as the only copy of the embeddings.",
+        "confidentiality_impact": null,
+        "integrity_impact": null,
+        "availability_impact": null,
+        "data_classification": null,
+        "owner": null,
+        "component_keys": [
+          "retrieval-index"
+        ],
+        "stored_in_component_keys": [
+          "retrieval-index"
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-012"
+        ]
+      },
+      {
+        "key": "workspace-session-token",
+        "name": "Workspace session token",
+        "asset_type": "credential",
+        "description": "Workspace-scoped bearer token representing the signed-in user's session, used to identify the caller's workspace when invoking the Relay Answers API.",
+        "confidentiality_impact": null,
+        "integrity_impact": null,
+        "availability_impact": null,
+        "data_classification": null,
+        "owner": null,
+        "component_keys": [],
+        "stored_in_component_keys": [],
+        "evidence_ids": [
+          "evd-006",
+          "evd-008",
+          "evd-014",
+          "evd-016"
+        ]
       }
     ],
     "data_flows": [
       {
-        "key": "flw_ask",
-        "name": "Question and answer",
-        "source_component_key": "cmp_panel",
-        "destination_component_key": "cmp_answer",
-        "direction": "bidirectional",
-        "protocol": null,
-        "data_types": [],
-        "authentication": "unknown",
-        "encryption_in_transit": "unknown",
-        "crosses_trust_boundary_keys": [],
-        "internet_exposed": null,
-        "evidence_ids": ["evd-002"]
-      },
-      {
-        "key": "flw_retrieve",
-        "name": "Retrieval query",
-        "source_component_key": "cmp_answer",
-        "destination_component_key": "cmp_index",
-        "direction": "bidirectional",
-        "protocol": null,
-        "data_types": [],
-        "authentication": "unknown",
-        "encryption_in_transit": "unknown",
-        "crosses_trust_boundary_keys": ["bnd_tenant"],
-        "internet_exposed": null,
-        "evidence_ids": ["evd-002"]
-      },
-      {
-        "key": "flw_model",
-        "name": "Model request",
-        "source_component_key": "cmp_answer",
-        "destination_component_key": "cmp_provider",
-        "direction": "bidirectional",
-        "protocol": null,
-        "data_types": [],
-        "authentication": "unknown",
-        "encryption_in_transit": "tls",
-        "crosses_trust_boundary_keys": [],
-        "internet_exposed": null,
-        "evidence_ids": ["evd-002", "evd-004"]
-      },
-      {
-        "key": "flw_ingest",
-        "name": "Nightly ingestion",
-        "source_component_key": "cmp_ingestion",
-        "destination_component_key": "cmp_index",
+        "key": "helpcenter-to-ingestion",
+        "name": "Ingestion reads help-center repository",
+        "source_component_key": "help-center-repository",
+        "destination_component_key": "ingestion-pipeline",
         "direction": "one_way",
         "protocol": null,
-        "data_types": [],
+        "data_types": [
+          "help_center_articles"
+        ],
         "authentication": "unknown",
         "encryption_in_transit": "unknown",
         "crosses_trust_boundary_keys": [],
         "internet_exposed": null,
-        "evidence_ids": ["evd-002"]
+        "evidence_ids": [
+          "evd-002"
+        ]
+      },
+      {
+        "key": "supportexport-to-ingestion",
+        "name": "Ingestion reads resolved-tickets export",
+        "source_component_key": "support-platform",
+        "destination_component_key": "ingestion-pipeline",
+        "direction": "one_way",
+        "protocol": null,
+        "data_types": [
+          "resolved_tickets_export"
+        ],
+        "authentication": "unknown",
+        "encryption_in_transit": "unknown",
+        "crosses_trust_boundary_keys": [],
+        "internet_exposed": null,
+        "evidence_ids": [
+          "evd-002",
+          "evd-012"
+        ]
+      },
+      {
+        "key": "ingestion-to-retrievalindex",
+        "name": "Ingestion writes embeddings to retrieval index",
+        "source_component_key": "ingestion-pipeline",
+        "destination_component_key": "retrieval-index",
+        "direction": "one_way",
+        "protocol": null,
+        "data_types": [
+          "embeddings",
+          "source_metadata"
+        ],
+        "authentication": "unknown",
+        "encryption_in_transit": "unknown",
+        "crosses_trust_boundary_keys": [],
+        "internet_exposed": null,
+        "evidence_ids": [
+          "evd-002",
+          "evd-012"
+        ]
       }
     ],
     "trust_boundaries": [
       {
-        "key": "bnd_tenant",
-        "name": "Workspace isolation boundary",
-        "boundary_type": "tenant_isolation",
-        "description": "every workspace's questions are answered from one shared index holding every workspace's ticket embeddings",
-        "inside_component_keys": ["cmp_index"],
-        "outside_component_keys": ["cmp_panel"],
-        "controls": [],
-        "evidence_ids": ["evd-002"]
+        "key": "model-provider-boundary",
+        "name": "Model provider third-party boundary",
+        "boundary_type": "third_party_service",
+        "description": "Boundary between Relay-controlled components and the hosted large-language-model API operated by the external model provider.",
+        "inside_component_keys": [
+          "help-panel",
+          "retrieval-index",
+          "ingestion-pipeline",
+          "support-platform",
+          "help-center-repository",
+          "relay-main-api"
+        ],
+        "outside_component_keys": [
+          "model-provider"
+        ],
+        "controls": [
+          "contract_terms_no_training",
+          "tls"
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ]
       }
     ],
-    "questions": [],
+    "questions": [
+      {
+        "key": "q-shared-index-isolation",
+        "question": "How does the shared retrieval index enforce workspace-level isolation beyond relevance-based retrieval, if at all?",
+        "rationale": "The documentation says that all workspaces share a single retrieval index and that relevance alone selects passages for the prompt (evd-002), but it does not describe any workspace-based scoping or filtering. The answer affects the risk of one workspace retrieving content derived from another workspace's support history.",
+        "related_object_key": "retrieval-index",
+        "priority": "high",
+        "blocking": false
+      },
+      {
+        "key": "q-sensitive-data-classification",
+        "question": "How are resolved support tickets and their embeddings formally classified in your data-classification scheme (for example, customer confidential or restricted)?",
+        "rationale": "Ticket text may include configuration snippets pasted by customers (evd-013), and embeddings of those tickets are stored in the managed retrieval index (evd-002, evd-012). Knowing the formal classification informs which technical and process controls are expected for these assets.",
+        "related_object_key": "support-ticket-history",
+        "priority": "medium",
+        "blocking": false
+      }
+    ],
     "observations": []
   }
 }
