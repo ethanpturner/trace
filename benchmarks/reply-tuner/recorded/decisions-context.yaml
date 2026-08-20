@@ -4,171 +4,129 @@ reviewer: recorded-reviewer
 components:
 - id: cmp-001
   decision: approve
-  editable:
-    name: Transcript Exporter
-    description: nightly job exporting closed-ticket transcripts from the helpdesk into the training store
-    component_type: service
-    technology: []
-    ownership: null
-    deployment_zone: null
-    internet_accessible: false
-    externally_managed: null
-    data_classifications: []
-    authentication_mechanisms: []
-    authorization_mechanisms: []
 - id: cmp-002
   decision: approve
-  editable:
-    name: Training Store
-    description: cloud storage bucket holding the exported transcripts, organized by export date
-    component_type: object_storage
-    technology: []
-    ownership: null
-    deployment_zone: null
-    internet_accessible: false
-    externally_managed: true
-    data_classifications: []
-    authentication_mechanisms: []
-    authorization_mechanisms: []
 - id: cmp-003
   decision: approve
-  editable:
-    name: Tuning Job
-    description: weekly job fine-tuning the vendor's base reply model on the training store's current contents
-    component_type: service
-    technology: []
-    ownership: null
-    deployment_zone: null
-    internet_accessible: false
-    externally_managed: null
-    data_classifications: []
-    authentication_mechanisms: []
-    authorization_mechanisms: []
 - id: cmp-004
   decision: approve
-  editable:
-    name: Reply Service
-    description: serves the most recent tuned model to the agent console, one suggested reply per open ticket
-    component_type: service
-    technology: []
-    ownership: null
-    deployment_zone: null
-    internet_accessible: false
-    externally_managed: null
-    data_classifications: []
-    authentication_mechanisms: []
-    authorization_mechanisms: []
+- id: cmp-005
+  decision: approve
+- id: cmp-006
+  decision: approve
+- id: cmp-007
+  decision: approve
 actors:
 - id: act-001
   decision: approve
-  editable:
-    name: Support agent
-    actor_type: internal_user
-    trust_level: null
-    capabilities: []
-    authentication_method: null
 - id: act-002
   decision: approve
-  editable:
-    name: Customer
-    actor_type: external_user
-    trust_level: null
-    capabilities: []
-    authentication_method: null
+- id: act-003
+  decision: approve
 assets:
 - id: ast-001
   decision: approve
-  editable:
-    name: Ticket transcripts
-    asset_type: personal_data
-    description: full closed-ticket transcripts including customer names, email addresses, and message bodies
-    confidentiality_impact: null
-    integrity_impact: null
-    availability_impact: null
-    data_classification: null
-    owner: null
 - id: ast-002
   decision: approve
-  editable:
-    name: Tuned reply model
-    asset_type: model_artifact
-    description: the weekly fine-tuned artifact the reply service serves
-    confidentiality_impact: null
-    integrity_impact: null
-    availability_impact: null
-    data_classification: null
-    owner: null
+- id: ast-003
+  decision: approve
+- id: ast-004
+  decision: approve
 data_flows:
 - id: df-001
   decision: approve
   editable:
-    name: Transcript export
+    name: Transcript Exporter writes closed-ticket transcripts to training store
     direction: one_way
     protocol: null
-    data_types: []
-    authentication: unknown
+    data_types:
+    - ticket_transcripts
+    authentication: exporter_job_identity_via_platform_access_policy
     encryption_in_transit: unknown
     internet_exposed: null
     source_component_id: cmp-001
     destination_component_id: cmp-002
 - id: df-002
   decision: approve
-  editable:
-    name: Training read
-    direction: one_way
-    protocol: null
-    data_types: []
-    authentication: unknown
-    encryption_in_transit: unknown
-    internet_exposed: null
-    source_component_id: cmp-002
-    destination_component_id: cmp-003
 - id: df-003
   decision: approve
-  editable:
-    name: Suggested-reply serving
-    direction: one_way
-    protocol: null
-    data_types: []
-    authentication: unknown
-    encryption_in_transit: unknown
-    internet_exposed: null
-    source_component_id: cmp-003
-    destination_component_id: cmp-004
+- id: df-004
+  decision: approve
+- id: df-005
+  decision: approve
 trust_boundaries: []
 claims:
 - id: ctx-001
-  status: documented
-  confidence: high
   decision: approve
-  confirm: false
-  evidence:
-  - evd-002
-  editable:
-    predicate: training_store_write_path
-    value: the exporter's job identity is the only principal with write access to the training store, granted through the platform's access policy
-    rationale: null
 - id: ctx-002
-  status: documented
-  confidence: high
   decision: approve
-  confirm: false
-  evidence:
-  - evd-002
-  - evd-003
-  editable:
-    predicate: training_data_content
-    value: transcripts are exported in full, including customer names, email addresses, and complete message bodies, with no redaction or filtering step between the helpdesk and the training store
-    rationale: null
 - id: ctx-003
-  status: documented
-  confidence: high
   decision: approve
-  confirm: false
-  evidence:
-  - evd-004
-  editable:
-    predicate: artifact_versioning
-    value: each week's tuned artifact is written to the artifact bucket named by date, and agents are served whichever artifact is most recent
-    rationale: null
-questions: []
+- id: ctx-004
+  decision: approve
+- id: ctx-005
+  decision: approve
+- id: ctx-006
+  decision: approve
+- id: ctx-007
+  decision: approve
+- id: ctx-008
+  decision: approve
+- id: ctx-009
+  decision: approve
+- id: ctx-010
+  decision: approve
+- id: ctx-011
+  decision: approve
+- id: ctx-012
+  decision: approve
+- id: ctx-013
+  decision: approve
+- id: ctx-014
+  decision: approve
+- id: ctx-015
+  decision: approve
+- id: ctx-016
+  decision: approve
+- id: ctx-017
+  decision: approve
+contradictions: []
+additions:
+- type: data_flows
+  fields:
+    name: Transcript Exporter reads closed-ticket transcripts from helpdesk
+    direction: one_way
+    protocol: null
+    data_types:
+    - ticket_transcripts
+    authentication: unknown
+    encryption_in_transit: unknown
+    internet_exposed: null
+    source_component_id: cmp-005
+    destination_component_id: cmp-001
+questions:
+- id: qst-001
+  answer: >-
+    Not documented. The access policy names the Transcript Exporter's job identity as the
+    only principal with write access to the training store bucket; read access is not
+    addressed anywhere in the supplied material, and no reader principals are named beyond
+    the Tuning Job's described weekly read. Treat read access control as undetermined, not
+    absent; this stands as analysis input.
+- id: qst-002
+  answer: >-
+    Not documented. The document states that each week's artifact is written to the
+    artifact bucket named by date and that the most recent is served; no retention period,
+    lifecycle expiry, or deletion policy for older artifacts appears anywhere in the
+    supplied material. Undetermined.
+- id: qst-003
+  answer: >-
+    The document describes an internal pipeline: the only human user of this system is the
+    internal support agent working in the agent console, and the batch jobs run on
+    internal schedules. Customers write ticket messages in the helpdesk, which is outside
+    this system's boundary; nothing in the supplied material documents any external
+    reachability of the training store, tuning job, reply service, or agent console.
+- id: qst-004
+  answer: >-
+    Not documented. The supplied material names no administrative or operating actor for
+    the exporter, tuning job, or reply service, and no configuration path. Undetermined;
+    no assumption is recorded either way.

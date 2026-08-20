@@ -1,7 +1,39 @@
 assessment_id: asm-001
-reviewer: recorded-reviewer
 findings:
 - id: fnd-001
-  severity: high
   decision: approve
-  rationale: The documents state directly that unminimized customer content trains the model; memorized content surfacing in another customer's thread is a disclosure the pipeline's own description supports.
+  severity: high
+  editable:
+    title: Model is fine-tuned on unminimized customer transcripts with no stated justification
+      (req-TRAIN-002)
+    affected_component_ids:
+    - cmp-003
+    - cmp-002
+    - cmp-001
+  rationale: 'Evidence-supported on the document''s own text, not on silence: transcripts
+    are exported in full — names, email addresses, complete message bodies [evd-002] — with
+    no redaction or filtering step between the helpdesk and the training store [evd-003],
+    and the weekly tuning run trains the served reply model on that corpus [evd-002].
+    req-TRAIN-002''s escape hatch — a stated, justified decision to train on full content —
+    appears nowhere, so the requirement is unmet on affirmative documentation, the DEC-009
+    other-way case: a documented negative is evidence. High severity, not critical:
+    memorized customer content surfaces one suggested reply at a time to authenticated
+    agents and, through them, in other customers'' threads — a real disclosure with a
+    bounded channel, not a bulk exfiltration path. Title edited (DEC-023): the exported
+    "poisons fine-tuning" framing asserts adversarial manipulation no evidence establishes;
+    the approved title claims only the evidenced deficiency. Affected components narrowed
+    (DEC-023) from the exported seven to the data path where unminimized content becomes
+    and remains training material — the Tuning Job as the point of transformation, the
+    Training Store holding the corpus, and the Transcript Exporter whose unredacted export
+    creates it; the serving components carry the consequence, not the deficiency.'
+- id: fnd-002
+  decision: reject
+  rationale: 'Rejected on DEC-009 grounds: the finding is premised on a compromised
+    Transcript Exporter job identity that no evidence shows. The write path this candidate
+    attacks is the document''s own governed mechanism — the exporter''s job identity is the
+    only principal with write access to the training store, granted through the platform
+    access policy [evd-002] — which is the satisfied req-TRAIN-001 mapping''s suppressed
+    conclusion, not an evidenced deficiency. A hypothetical credential compromise with no
+    documented weakness in the credential''s handling is threat-model speculation; the
+    open secret-handling questions (qst-012, qst-013) are where that verification gap
+    already lives, and a question is what DEC-009 makes of it.'

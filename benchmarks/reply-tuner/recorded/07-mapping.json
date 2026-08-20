@@ -1,0 +1,61 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 10897,
+    "output_tokens": 4478,
+    "cache_read_tokens": 20096,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.06091325",
+    "duration_seconds": 54.53794274991378
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "req-DATA-001 applies because the system transmits confidential customer support ticket transcripts (including names, email addresses, and full message bodies) between the Helpdesk, Transcript Exporter, and Training Store [evd-002][evd-003], and this threat concerns interception of that data in transit. However, the documentation does not state whether these flows are encrypted in transit, so satisfaction is unverified.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Encryption in transit for transcript export data flows is undocumented",
+        "description": "The documentation describes nightly export of full closed-ticket transcripts, including PII, from the Helpdesk to the Training Store via the Transcript Exporter [evd-002][evd-003], but does not state whether the data flows df-006 (Helpdesk \u2192 Transcript Exporter) and df-001 (Transcript Exporter \u2192 Training Store) are protected by encryption in transit or by private network-only connectivity. Because the threat thr-005 is specifically about interception of these transcripts on the network, the absence of any statement about transport protection prevents determining whether req-DATA-001 is satisfied for this threat.",
+        "importance": "Without documented encryption in transit or equivalent network protection for these flows, it is not possible to assess whether sensitive ticket transcripts are protected against interception while moving between components, which is central to threat thr-005.",
+        "related_object_ids": [
+          "thr-005",
+          "df-001",
+          "df-006",
+          "cmp-001",
+          "cmp-002",
+          "cmp-005",
+          "ast-001"
+        ],
+        "requested_evidence": [
+          "Architecture or network documentation stating whether traffic for df-006 (Helpdesk \u2192 Transcript Exporter) and df-001 (Transcript Exporter \u2192 Training Store) is encrypted in transit (for example, TLS, HTTPS, or secure RPC) and/or confined to private network paths.",
+          "Cloud or infrastructure configuration (e.g., load balancer, VPC, or storage endpoint settings) showing the transport encryption or private connectivity configuration for the Training Store and the path from the Helpdesk to the Transcript Exporter.",
+          "Any statement from the hosting platform or provider documentation, referenced from system docs, that establishes encryption in transit for these flows or describes how it is inherited."
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "severity": "high"
+      }
+    ],
+    "catalog_gap_candidates": []
+  }
+}

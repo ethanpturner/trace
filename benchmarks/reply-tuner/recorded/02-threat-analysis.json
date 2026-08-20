@@ -1,70 +1,264 @@
 {
   "schema": "ThreatAnalysisProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 11528,
+    "output_tokens": 12742,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.14183",
+    "duration_seconds": 153.34043062501587
+  },
   "response": {
     "threats": [
       {
-        "title": "Customer content memorized by the tuned model surfaces in suggested replies",
-        "description": "The model is fine-tuned on full transcripts including customer names, email addresses, and message bodies, with no redaction or filtering before training. A tuned model can memorize such content and emit it in a suggested reply for an unrelated ticket, disclosing one customer's content in another customer's context.",
+        "title": "Customer-crafted ticket content poisons fine-tuning and suggested replies",
+        "description": "Because closed-ticket transcripts are exported in full and used directly as training data, a malicious customer can embed adversarial instructions or harmful content in their ticket messages. Those transcripts are copied by the Transcript Exporter into the Training Store and then used by the Tuning Job to fine-tune the vendor base reply model. The tuned artifacts are served by the Reply Service to support agents as suggested replies. Over time, this can shift model behaviour toward attacker-chosen patterns, causing suggested replies that encourage policy violations, expose internal procedures, or otherwise mislead agents.",
         "methodology": "stride-scenario-based",
         "category": [
-          "information_disclosure"
+          "tampering",
+          "training_data_poisoning",
+          "prompt_injection"
+        ],
+        "threat_actor_ids": [
+          "act-002"
+        ],
+        "affected_component_ids": [
+          "cmp-005",
+          "cmp-001",
+          "cmp-002",
+          "cmp-003",
+          "cmp-006",
+          "cmp-004",
+          "cmp-007"
+        ],
+        "affected_asset_ids": [
+          "ast-001",
+          "ast-002",
+          "ast-003"
+        ],
+        "related_data_flow_ids": [
+          "df-006",
+          "df-001",
+          "df-002",
+          "df-003",
+          "df-004",
+          "df-005"
+        ],
+        "preconditions": [
+          "Customer ticket messages become part of closed-ticket transcripts that are later exported and used as training data.",
+          "Closed-ticket transcripts are exported in full, with no redaction or filtering between the helpdesk and the Training Store.",
+          "The fine-tuning process does not robustly distinguish or neutralise adversarial instructions embedded in ticket text.",
+          "Support agents may rely on suggested replies as a starting point for their responses."
+        ],
+        "attack_path": [
+          "A malicious customer (act-002) submits a support ticket containing carefully crafted instructions or harmful content in the message body.",
+          "The Helpdesk (cmp-005) stores the ticket; once closed, its full transcript (including the malicious content and PII) is eligible for export.",
+          "The Transcript Exporter (cmp-001) runs nightly and exports full, unredacted closed-ticket transcripts from the Helpdesk into the Training Store bucket (cmp-002) over data flows df-006 and df-001, including attacker-supplied content. [evd-002]",
+          "The Tuning Job (cmp-003) runs weekly, reads the current contents of the Training Store (df-002), and fine-tunes the vendor base reply model on that data, learning patterns from the attacker\u2019s content alongside ordinary tickets. [evd-002][evd-003]",
+          "The Tuning Job writes the tuned model artifact to the Artifact Bucket (cmp-006) (df-003), from which the Reply Service (cmp-004) later loads the most recent artifact (df-004). [evd-004]",
+          "For each open ticket, the Reply Service uses the tuned model to generate a suggested reply and sends it to the Agent Console (cmp-007) over df-005. [evd-002][evd-005]",
+          "Agents see and may adopt suggestions whose tone, structure, or explicit instructions have been biased by the poisoned training data, propagating attacker-influenced behaviour to customers or internal processes."
+        ],
+        "impact": "Integrity of the training data transcripts (ast-001) as a trustworthy representation of real customer interactions is degraded, causing tuned reply model artifacts (ast-002) to encode attacker-influenced behaviour. Suggested replies (ast-003) can systematically encourage policy violations, disclose internal details, or otherwise mislead agents, undermining support quality and potentially leading to privacy or compliance issues if agents follow harmful guidance.",
+        "likelihood": null,
+        "confidence": "high",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Model regurgitates PII from training transcripts into suggested replies",
+        "description": "Full, unredacted closed-ticket transcripts with customer names, email addresses, and message bodies are used directly to fine-tune the reply model. A tuned model of sufficient capacity may memorise rare or unique strings from this dataset, such as specific customers\u2019 personal details or sensitive phrases. When generating suggestions for new tickets, the Reply Service may prompt the tuned model in ways that trigger this memorised content, causing suggested replies to include PII or sensitive text from unrelated past tickets.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "information_disclosure",
+          "privacy",
+          "model_memorization"
         ],
         "threat_actor_ids": [],
         "affected_component_ids": [
-          "cmp-003"
+          "cmp-002",
+          "cmp-003",
+          "cmp-006",
+          "cmp-004",
+          "cmp-007"
+        ],
+        "affected_asset_ids": [
+          "ast-001",
+          "ast-002",
+          "ast-003"
+        ],
+        "related_data_flow_ids": [
+          "df-001",
+          "df-002",
+          "df-003",
+          "df-004",
+          "df-005"
+        ],
+        "preconditions": [
+          "Closed-ticket transcripts, including PII, are stored in the Training Store without redaction or filtering and used for fine-tuning. [evd-002][evd-003]",
+          "The tuned model architecture and training procedure allow memorisation of specific training examples rather than only generalising from them.",
+          "There is no additional privacy-preserving mechanism (such as differential privacy, PII scrubbing, or output leak-checking) that prevents memorised PII from appearing in generated text.",
+          "Support agents may reuse suggested replies in responses to customers."
+        ],
+        "attack_path": [
+          "Closed support ticket transcripts containing customer names, email addresses, and full message bodies are exported by the Transcript Exporter (cmp-001) into the Training Store bucket (cmp-002). [evd-002]",
+          "The Training Store (cmp-002) retains these full transcripts with no redaction or filtering, so all PII is present in the training dataset (ast-001). [evd-003]",
+          "On a weekly schedule, the Tuning Job (cmp-003) reads the Training Store (df-002) and fine-tunes the vendor base reply model on these transcripts, causing the tuned model artifacts (ast-002) written to the Artifact Bucket (cmp-006) to encode patterns that may include memorised PII. [evd-002][evd-004]",
+          "The Reply Service (cmp-004) loads the most recent tuned model artifact from the Artifact Bucket (df-004) and uses it to generate suggested replies for new open tickets, sending them to the Agent Console (cmp-007) via df-005. [evd-002][evd-004][evd-005]",
+          "For some prompts, the tuned model reproduces or closely paraphrases segments of historical transcripts, including another customer\u2019s PII or sensitive content, into the suggested reply for the current ticket.",
+          "The support agent sees this suggestion in the Agent Console and may copy or adapt it in a response, exposing one customer\u2019s data in the context of another customer or more broadly within internal systems."
+        ],
+        "impact": "Confidential information embedded in training data transcripts (ast-001) can be unintentionally surfaced through tuned model artifacts (ast-002) into suggested replies (ast-003). This enables cross-customer PII leakage via the agent workflow and undermines assurances that training data derived from customer tickets will remain internal to the model rather than reappearing verbatim or near-verbatim in outputs.",
+        "likelihood": null,
+        "confidence": "medium",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Unauthorized reader gains bulk access to training transcripts in the Training Store",
+        "description": "The Training Store is a cloud storage bucket that holds exported closed-ticket transcripts, including names, email addresses, and full message bodies. The Transcript Exporter\u2019s job identity is documented as the only writer, but the documentation does not state who can read from the bucket. If bucket read permissions are broader than intended or an internal account with read access is compromised, an adversary could list and download all stored transcripts, obtaining bulk access to sensitive customer communications.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "information_disclosure",
+          "data_at_rest_exposure"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-002"
         ],
         "affected_asset_ids": [
           "ast-001"
         ],
-        "related_data_flow_ids": [
-          "df-002"
-        ],
+        "related_data_flow_ids": [],
         "preconditions": [
-          "sensitive content enters the training corpus unminimized"
+          "The Training Store bucket (cmp-002) grants read access to additional principals beyond the tightly scoped jobs that require it, or one of those principals is compromised.",
+          "An adversary can authenticate as or otherwise abuse a principal with read access to the Training Store."
         ],
         "attack_path": [
-          "customer content trains the weekly model",
-          "the tuned model emits memorized content in an unrelated suggested reply"
+          "Closed-ticket transcripts, including customer names, email addresses, and full message bodies, are exported by the Transcript Exporter into the Training Store bucket (cmp-002), which is described as a cloud storage bucket. [evd-002]",
+          "The Training Store retains these full transcripts without redaction or filtering, making it a concentrated repository of sensitive training data (ast-001). [evd-003]",
+          "Due to misconfiguration or broad internal access, a principal with permission to read from the Training Store exists beyond the intended training pipeline components.",
+          "An adversary obtains or abuses this principal\u2019s credentials or access path and uses it to list objects in the Training Store and download transcript files in bulk.",
+          "The adversary exfiltrates the downloaded transcripts outside the environment, gaining large-scale access to historical customer communications and associated identifiers."
         ],
-        "impact": "Disclosure of one customer's identity or message content to another customer's thread",
+        "impact": "Confidentiality of the training data transcripts (ast-001) is compromised at scale: an attacker can obtain complete historical customer conversations with associated PII directly from storage, independent of the model. This bulk exposure increases potential harm compared to individual ticket compromise and may have significant privacy, regulatory, and reputational consequences.",
         "likelihood": null,
-        "confidence": "medium",
+        "confidence": "low",
         "evidence_ids": [
+          "evd-002",
           "evd-003"
         ],
         "assumption_ids": [],
         "open_question_ids": []
       },
       {
-        "title": "Poisoned transcripts steer the tuned model's suggested replies",
-        "description": "Whatever reaches the training store trains the next weekly model. A customer who writes crafted content into tickets, or anything else that can influence transcripts, is writing into the model's future behavior; the documented write-path restriction bounds who can write the store directly, but the transcripts themselves originate with customers.",
+        "title": "Compromised Transcript Exporter identity tampers with training data pipeline",
+        "description": "The Transcript Exporter is documented as the only writer to the Training Store, and its job identity is the only principal with write access to that bucket via the platform\u2019s access policy. If this job identity or its execution environment is compromised, an attacker gains exclusive ability to add, modify, or delete transcripts in the Training Store. Because the Tuning Job trains directly on the Training Store\u2019s contents, such tampering would propagate into tuned model artifacts and the suggested replies shown to agents.",
         "methodology": "stride-scenario-based",
         "category": [
-          "tampering"
+          "tampering",
+          "training_data_poisoning",
+          "integrity"
         ],
         "threat_actor_ids": [
-          "act-002"
+          "act-003"
         ],
         "affected_component_ids": [
+          "cmp-001",
+          "cmp-002",
+          "cmp-003",
+          "cmp-006",
+          "cmp-004",
+          "cmp-007"
+        ],
+        "affected_asset_ids": [
+          "ast-001",
+          "ast-002",
+          "ast-003"
+        ],
+        "related_data_flow_ids": [
+          "df-001",
+          "df-002",
+          "df-003",
+          "df-004",
+          "df-005"
+        ],
+        "preconditions": [
+          "The Transcript Exporter job identity (act-003) or its runtime environment can be compromised or misused by an adversary.",
+          "There is no independent integrity validation or review of the Training Store contents before they are consumed by the Tuning Job.",
+          "The Tuning Job trusts the Training Store (cmp-002) as the authoritative source of training data."
+        ],
+        "attack_path": [
+          "The Transcript Exporter (cmp-001) runs as a job identity (act-003) that is the only principal with write access to the Training Store bucket (cmp-002), granted via the platform\u2019s access policy. [evd-002]",
+          "An attacker compromises the Transcript Exporter job identity or its execution environment (for example, by stealing credentials or injecting code into its runtime).",
+          "Using this identity\u2019s exclusive write access, the attacker overwrites existing transcript objects, injects new fabricated transcripts, or deletes selected transcripts in the Training Store (ast-001), altering the dataset that downstream components will treat as truth. [evd-002]",
+          "On its next run, the Tuning Job (cmp-003) reads the manipulated Training Store contents (df-002) and fine-tunes the vendor base reply model accordingly, producing tuned reply model artifacts (ast-002) that encode the attacker\u2019s injected patterns. [evd-002][evd-003]",
+          "The Tuning Job writes these tuned artifacts to the Artifact Bucket (cmp-006) (df-003), and the Reply Service (cmp-004) loads the latest artifact (df-004) to generate suggested replies, sending them to the Agent Console (cmp-007) over df-005. [evd-002][evd-004][evd-005]",
+          "Support agents see suggestions that now systematically reflect the attacker\u2019s tampering\u2014for example, recommending inappropriate actions, embedding misleading links, or otherwise degrading the reliability of the system\u2019s assistance."
+        ],
+        "impact": "Integrity of the training data transcripts (ast-001) is compromised at the only documented write point, causing all subsequent tuned reply model artifacts (ast-002) and suggested replies (ast-003) to be derived from attacker-controlled or selectively altered data. This can result in widespread, hard-to-detect manipulation of support behaviour, loss of trust in the suggestion system, and potentially harmful actions taken by agents based on corrupted model outputs.",
+        "likelihood": null,
+        "confidence": "medium",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Interception of closed-ticket transcripts in transit between Helpdesk and Training Store",
+        "description": "Closed-ticket transcripts, including full customer communications and PII, are exported from the Helpdesk into a cloud-based Training Store bucket via the Transcript Exporter. The documentation does not state whether these transfers are protected by encryption in transit. If network traffic on the paths used by the Transcript Exporter is not strongly encrypted and an attacker can observe those network segments, they could capture transcripts as they move between systems, gaining access to sensitive data even if storage-layer access is well controlled.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "information_disclosure",
+          "network_eavesdropping"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-005",
+          "cmp-001",
           "cmp-002"
         ],
         "affected_asset_ids": [
-          "ast-002"
+          "ast-001"
         ],
         "related_data_flow_ids": [
+          "df-006",
           "df-001"
         ],
         "preconditions": [
-          "crafted content survives export into the training store"
+          "Data flows carrying ticket transcripts between the Helpdesk (cmp-005), Transcript Exporter (cmp-001), and Training Store (cmp-002) are not adequately protected by strong, correctly configured encryption in transit.",
+          "An attacker has the capability to observe or intercept network traffic on the internal paths used for these exports (for example, via a compromised host or network position)."
         ],
         "attack_path": [
-          "write crafted ticket messages",
-          "the nightly export carries them into the training store",
-          "the weekly tuning run learns them"
+          "Closed-ticket transcripts including names, email addresses, and full message bodies are exported from the Helpdesk into the Training Store by the Transcript Exporter. [evd-002]",
+          "These exports traverse network paths between the Helpdesk (cmp-005), the Transcript Exporter job (cmp-001), and the cloud storage bucket used as the Training Store (cmp-002) over df-006 and df-001.",
+          "Because encryption in transit is not documented for these flows, we assume a scenario where it is absent or misconfigured, leaving transcript contents visible to anyone with access to the underlying network.",
+          "An attacker with a vantage point on the relevant network segment captures traffic for the export jobs and reconstructs the transcript payloads from observed packets.",
+          "The attacker aggregates and exfiltrates these captured transcripts, obtaining sensitive customer communications without needing access to the Training Store or helpdesk systems themselves."
         ],
-        "impact": "Suggested replies steered by attacker-authored training content",
+        "impact": "Confidentiality of training data transcripts (ast-001) is compromised during transit from the Helpdesk to the Training Store: an attacker can obtain copies of closed-ticket transcripts containing PII even if storage permissions and application-layer controls remain intact. This creates an additional avenue for large-scale data exposure beyond direct compromise of storage or application components.",
         "likelihood": null,
-        "confidence": "medium",
+        "confidence": "low",
         "evidence_ids": [
           "evd-002",
           "evd-003"
@@ -72,6 +266,7 @@
         "assumption_ids": [],
         "open_question_ids": []
       }
-    ]
+    ],
+    "catalog_gap_candidates": []
   }
 }

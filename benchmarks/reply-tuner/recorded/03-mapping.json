@@ -1,0 +1,857 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 32568,
+    "output_tokens": 22163,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.26234",
+    "duration_seconds": 285.6253886669874
+  },
+  "response": {
+    "controls": [
+      {
+        "key": "c-training-store-write-restriction",
+        "name": "Training Store write access limited to exporter job identity",
+        "description": "The Transcript Exporter is the only writer to the Training Store bucket, and its job identity is the only principal with write access, enforced through the cloud platform's access policy.",
+        "control_type": "implemented",
+        "provider_component_id": null,
+        "protected_component_ids": [
+          "cmp-002"
+        ],
+        "protected_asset_ids": [
+          "ast-001"
+        ],
+        "implementation_status": "implemented",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "owner": null,
+        "limitations": []
+      },
+      {
+        "key": "c-human-review-suggested-replies",
+        "name": "Suggested replies require human review before sending",
+        "description": "The Reply Service generates suggested replies that are shown in the Agent Console, where support agents may edit or discard them; model outputs are drafts and are not sent to customers without an agent's intervention.",
+        "control_type": "implemented",
+        "provider_component_id": null,
+        "protected_component_ids": [
+          "cmp-004",
+          "cmp-007"
+        ],
+        "protected_asset_ids": [
+          "ast-003"
+        ],
+        "implementation_status": "implemented",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-005"
+        ],
+        "owner": null,
+        "limitations": [
+          "Agents can still choose to follow harmful suggestions despite the human-review step."
+        ]
+      }
+    ],
+    "mappings": [
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-ADMIN-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This requirement concerns privileged administrative or operator interfaces. The described threat path involves untrusted customer ticket content flowing into the training pipeline and influencing model behaviour, not actions taken through an administrative interface, so this requirement does not bear on the threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AGENT-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat involves a model generating single-step suggested replies for agents [evd-001][evd-002], not an automated multi-step or recursive agent loop where model outputs directly trigger actions, so the applicable conditions for bounded agent execution do not hold.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AGENT-002",
+        "control_keys": [
+          "c-human-review-suggested-replies"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This requirement targets high-impact actions executed by an agent without human publishing, but here model outputs are suggestions shown to support agents, who may edit or discard them before sending responses [evd-001][evd-002][evd-005]. All outputs are drafts a person publishes manually, so the non-applicable condition holds for this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AGENT-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No tools or external services are described as being invoked autonomously by the model; the pipeline fine-tunes a reply model and generates text suggestions only [evd-001][evd-002]. Therefore, conditions about model-driven tool invocation do not apply to this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AGENT-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The system description shows no external tool servers or tool protocols; the model is fine-tuned and served internally via the Tuning Job, Artifact Bucket, and Reply Service [evd-002][evd-004]. Thus, conditions about connecting models to external tool servers do not hold for this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Customer ticket messages are authored by external customers [evd-005], stored as closed-ticket transcripts [evd-002], and used directly as training data for the model [evd-003], so the system passes content it did not author from untrusted contributors into a model, matching the applicable conditions.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unmet",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AI-002",
+        "control_keys": [
+          "c-human-review-suggested-replies"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Model output consists of suggested replies shown to support agents, who may edit or discard them before responding [evd-001][evd-002][evd-005]. Each publication to a customer is mediated by a human, so the non-applicable condition where a human approves each publication holds for this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AI-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The training data flows stay within internal components: the Transcript Exporter writes transcripts to the Training Store and the Tuning Job reads from there [evd-002][evd-003], with no external model provider component or outbound data flow described, so the condition of sending customer content to an external model provider does not hold for this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AI-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Although suggested replies are rendered in the Agent Console UI [evd-001][evd-002], the threat concerns semantic poisoning of reply content, not active content or markup-based attacks; encoding for UI contexts would not mitigate the model-behaviour shift described, so this requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AUTH-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The poisoning scenario relies on a malicious but otherwise ordinary customer writing ticket messages [evd-005]; how user authentication is delegated or documented does not affect their ability to submit such content, so this requirement does not meaningfully engage with the threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AUTH-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Multi-factor authentication for administrative or externally reachable privileged access would not change the customer's ability to poison training data via ticket content [evd-005], so this requirement does not bear on the described threat path.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AUTHZ-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat arises because content from each customer's own tickets is used as training data and influences model behaviour for all agents [evd-002][evd-003], not because of runtime tenant mis-scoping in request handling. Tenant-aware authorization on requests would not prevent a customer from poisoning their own ticket content, so this requirement is not engaged by this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-AUTHZ-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The scenario does not involve the system acting on customer resources on an external platform via delegated permissions; it focuses on internal handling of support tickets and training data [evd-001][evd-002], so limitations on external integration privileges do not address this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-CICD-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The poisoning attack uses the normal data path (helpdesk \u2192 Transcript Exporter \u2192 Training Store \u2192 Tuning Job) [evd-002][evd-003], not a compromise of the build or deployment pipeline, so controls on CI/CD trust do not bear directly on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-OPS-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Backup deletion versus creation affects recoverability from data loss or ransomware, not whether malicious customer content can enter the training corpus through normal ticketing and export [evd-002][evd-003], so this requirement is not engaged by the described threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-OPS-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "While the system likely runs on metered cloud infrastructure (e.g., cloud storage buckets [evd-002]), the threat concerns subtle integrity degradation of the model from poisoned training data, not anomalous spend or resource exhaustion, so spend alerting does not meaningfully address it.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-OPS-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Production versus non-production environment separation affects lateral movement paths between environments, whereas this threat uses in-production ticket content and the normal training pipeline [evd-001][evd-002][evd-003]; environment boundaries do not mitigate the poisoning described.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-OPS-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Visibility into deployment pipeline definition changes and out-of-band deployments protects against unauthorized code or config reaching production, but the threat path involves legitimate jobs (Transcript Exporter, Tuning Job) operating on malicious customer content [evd-002][evd-003], so this requirement is not directly engaged.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-OPS-005",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Alert design and routing affect operator response to operational incidents, but the described threat is a gradual shift in model behaviour due to poisoned training data [evd-003][evd-004], not an acute alert-driven condition, so this requirement does not bear directly on it.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Encryption in transit or at rest protects confidentiality of transcripts and model artifacts, but the threat is that a malicious customer influences training data content through legitimate writes [evd-002][evd-003]; encryption does not affect that integrity risk, so this requirement is not engaged for this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-DATA-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Defined retention periods for stored customer data affect how long data persists, but the poisoning threat arises from the fact that closed-ticket transcripts are exported in full and used for training at all [evd-002][evd-003], not specifically from their retention duration, so this requirement does not directly address the threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-DATA-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This requirement addresses access-enforced separation of stored artifacts by tenant. The poisoning threat stems from training the model on each customer's own ticket content [evd-002][evd-003], not from unauthorized cross-tenant reads of stored transcripts, so tenant-level storage separation does not mitigate the described behaviour shift.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-DATA-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Customer-initiated deletion procedures concern removal of stored data across primary and derived stores, whereas the threat is that normal ticket content, once written, is used to fine-tune the model [evd-002][evd-003]. Whether a later deletion path exists does not change the initial poisoning avenue described here.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-OIDC-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The described components and data flows do not involve browser-based delegated sign-in or redirect URIs; the threat is about ticket content and training jobs [evd-001][evd-002], so redirect registration with an identity provider does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-OIDC-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No externally issued ID or access tokens are described in the threat path; the scenario focuses on data export and fine-tuning [evd-002][evd-003], so token validation from an identity provider is not engaged by this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-OIDC-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The scenario does not describe any local sessions minted from delegated sign-in; it instead concerns batch export and training jobs [evd-001][evd-002], so session lifetime and termination for delegated auth are not relevant to this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-OIDC-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "There is no authorization-code grant or code-to-token exchange described in the training pipeline or agent workflow [evd-001][evd-002]; the threat is independent of how any sign-in flows might be bound to clients, so this requirement does not bear on it.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-TRAIN-001",
+        "control_keys": [
+          "c-training-store-write-restriction"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The system fine-tunes a vendor base reply model weekly on data from the Training Store [evd-002][evd-003], and the corpus consists of transcripts authored by many customers [evd-002][evd-005], so the model is fine-tuned on collected data from multiple authors, matching the applicable conditions.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "satisfied",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-TRAIN-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Training data is derived directly from customer support transcripts [evd-002][evd-003][evd-005], which include names, email addresses, and full message bodies [evd-002], so the corpus contains user and potentially sensitive content, satisfying the applicable conditions.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "partially_satisfied",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-TRAIN-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The Tuning Job produces weekly tuned model artifacts written to the Artifact Bucket and served to agents as the most recent version [evd-004], so tuned artifacts are both produced and served, meeting the applicable conditions.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-LOG-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "While the system handles restricted data in transcripts [evd-002], the threat concerns that this content is used for training and poisons the model [evd-003], not that it leaks via logs or crosses a new boundary through logging, so log-content controls are not directly engaged by this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-LOG-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat path involves standard user and agent interactions with tickets and model suggestions [evd-001][evd-005], not security-relevant administrative actions taken through a privileged interface, so administrative auditing does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-CODEGEN-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The system generates natural-language suggested replies [evd-001][evd-002], not code, queries, or commands that the system executes, so controls on isolation for model-generated code are not relevant to this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-CODEGEN-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Model-generated artifacts here are suggested replies that agents may send to customers [evd-001][evd-002], not configuration or code merged into repositories or pipelines, so requirements about review gates for generated changes do not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-NET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The poisoning occurs via legitimate access through the helpdesk and internal jobs [evd-002][evd-003]; even if internal components like the Training Store are network-restricted, that would not prevent a customer's content, once in the helpdesk, from flowing into training, so this network-segmentation requirement does not directly address the threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-RAG-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "There is no retrieval-augmented generation corpus or retrieval pipeline described; the model is fine-tuned on stored transcripts and then used directly for suggestions [evd-002][evd-003][evd-004], so requirements about governing a retrieval corpus's write path do not apply.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-RAG-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No retrieval corpus or per-request retrieval is used; suggestions are generated by a tuned model without a retrieval step [evd-002][evd-004], so authorization filtering of retrieval results is not relevant to this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-RAG-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Because there is no retrieval index or embeddings layer described\u2014only direct fine-tuning on transcripts [evd-002][evd-003]\u2014there is no separate retrieval index lifecycle to follow source deletions or corrections, so this requirement does not apply to the threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-SECRET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The poisoning threat leverages normal customer content entering the training corpus [evd-002][evd-003], not compromise of long-lived provider credentials or signing keys, so secret storage for such credentials does not directly bear on this scenario.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-SECRET-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Use of short-lived versus long-lived tokens to reach customer resources on external platforms would influence impact of credential compromise, but the described threat path does not involve the system holding such tokens; it operates on internally held ticket transcripts [evd-002][evd-003], so this requirement is not engaged.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-TPI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Although the Helpdesk itself is an external system [cmp-005][evd-002], the threat focuses on internal export of closed-ticket transcripts into the Training Store and local fine-tuning [evd-002][evd-003], with no customer data sent to an external processor for additional handling, so this requirement does not bear on the threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-TPI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The work described (nightly exports and weekly tuning runs) is scheduled batch processing over internal storage [evd-002][evd-003], not unbounded work triggered by external events against a metered external service, so bounding externally-triggered work does not address this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-WEBHOOK-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The scenario does not involve inbound webhooks or event endpoints; data enters via the Helpdesk and is read by a batch Transcript Exporter [evd-002], so authenticity verification of inbound events from external platforms is not relevant to this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-001",
+        "requirement_id": "req-WEBHOOK-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Because there are no webhook-style inbound events in the described path\u2014only batch jobs over stored tickets [evd-002][evd-003]\u2014there is no event replay surface to manage, so this requirement does not apply to the threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Basis for training on full, unredacted transcripts is not described",
+        "description": "System documentation states that closed-ticket transcripts, including customer names, email addresses, and full message bodies, are exported in full to the Training Store with no redaction or filtering, and that what the customer wrote is what the model trains on [evd-002][evd-003]. It does not state the rationale or decision basis for training on this full set of sensitive fields rather than a minimized subset, so the justification part of the minimization requirement cannot be evaluated from the available material.",
+        "importance": "Understanding why full transcripts (including PII) are required for tuning is important for assessing both data-protection posture and whether the organization has consciously accepted the associated training and leakage risks.",
+        "related_object_ids": [
+          "thr-001",
+          "ast-001",
+          "ast-002",
+          "cmp-001",
+          "cmp-002",
+          "cmp-003",
+          "req-TRAIN-002"
+        ],
+        "requested_evidence": [
+          "Documentation explaining why full ticket transcripts, including identified sensitive fields, are necessary for the tuning objective, or describing any planned or existing minimization/redaction step before training."
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Lineage of tuned reply model artifacts is not documented",
+        "description": "The documentation describes that the Tuning Job writes each week's tuned model artifact to the Artifact Bucket, named by date, and that agents are served the most recent artifact [evd-004]. It does not identify any model registry or artifact metadata that records, per artifact, the base model and the specific training data version or snapshot used, so it is unclear how a served artifact could be traced back to its training inputs.",
+        "importance": "Without documented lineage for tuned artifacts, it is difficult to assess which artifacts are affected if training data is found poisoned or incorrect, which matters directly for responding to training-data poisoning threats like thr-001.",
+        "related_object_ids": [
+          "thr-001",
+          "ast-002",
+          "cmp-003",
+          "cmp-004",
+          "cmp-006",
+          "req-TRAIN-003"
+        ],
+        "requested_evidence": [
+          "Documentation or configuration describing the model registry or artifact metadata scheme that records, for each tuned reply model artifact, its base model version and the training-data snapshot or version it was trained from."
+        ],
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": []
+  }
+}

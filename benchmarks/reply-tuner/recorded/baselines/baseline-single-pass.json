@@ -1,0 +1,231 @@
+{
+  "components": [
+    {
+      "name": "Transcript Exporter",
+      "component_type": "batch job"
+    },
+    {
+      "name": "Training Store",
+      "component_type": "storage bucket"
+    },
+    {
+      "name": "Tuning Job",
+      "component_type": "batch job"
+    },
+    {
+      "name": "Artifact Bucket",
+      "component_type": "storage bucket"
+    },
+    {
+      "name": "Reply Service",
+      "component_type": "application service"
+    },
+    {
+      "name": "Agent Console",
+      "component_type": "user interface"
+    },
+    {
+      "name": "Helpdesk",
+      "component_type": "ticketing system"
+    },
+    {
+      "name": "Vendor base reply model",
+      "component_type": "ML model"
+    }
+  ],
+  "threats": [
+    {
+      "title": "Unredacted PII stored and used for training",
+      "affected_components": [
+        "Transcript Exporter",
+        "Training Store",
+        "Tuning Job",
+        "Artifact Bucket"
+      ],
+      "rationale": "The documentation states that closed-ticket transcripts are exported \"in full, including customer names, email addresses, and complete message bodies\" to the Training Store, and that \"there is no redaction or filtering step between the helpdesk and the training store; what the customer wrote is what the model trains on.\" This means large volumes of sensitive customer data are accumulated in storage and used directly for training, increasing the impact of any compromise of the Training Store, Tuning Job environment, or Artifact Bucket."
+    },
+    {
+      "title": "Model suggestions may leak memorized customer data",
+      "affected_components": [
+        "Tuning Job",
+        "Reply Service",
+        "Vendor base reply model",
+        "Agent Console"
+      ],
+      "rationale": "The Tuning Job \"fine-tunes the vendor's base reply model on the training store's current contents\" and the Reply Service then serves this tuned model to agents to generate suggested replies for each open ticket. Because the training data consists of unredacted transcripts with names, email addresses, and full message bodies, there is a realistic risk that the tuned model could memorize and regurgitate sensitive details from past tickets in suggestions for other tickets, exposing one customer's data to others."
+    },
+    {
+      "title": "Indefinite retention of sensitive transcripts and model artifacts",
+      "affected_components": [
+        "Training Store",
+        "Artifact Bucket"
+      ],
+      "rationale": "The Training Store is described as a bucket \"holding the exported transcripts, organized by export date,\" and the Tuning Job \"writes each week's artifact to the artifact bucket named by date. Agents are served whichever artifact is most recent.\" There is no mention of any retention limit, archival policy, or deletion process for old transcripts or model artifacts. This suggests sensitive data may be retained indefinitely, increasing exposure time and making it harder to honor data-subject or customer deletion expectations."
+    },
+    {
+      "title": "Untrusted ticket content incorporated into training data",
+      "affected_components": [
+        "Helpdesk",
+        "Transcript Exporter",
+        "Training Store",
+        "Tuning Job"
+      ],
+      "rationale": "Customers \"write the ticket messages that become training data,\" and the system exports closed-ticket transcripts in full to the Training Store with \"no redaction or filtering step\" before training. Ticket content can include arbitrary or adversarial input (e.g., attempts at prompt injection, malicious payloads, or abusive content). Incorporating this directly into training without controls can affect model behavior and potentially embed unwanted or unsafe patterns in the tuned model."
+    },
+    {
+      "title": "Insufficiently documented access controls and protection for training data and artifacts",
+      "affected_components": [
+        "Training Store",
+        "Artifact Bucket",
+        "Tuning Job",
+        "Reply Service"
+      ],
+      "rationale": "The only explicit control described is that the Transcript Exporter is \"the only writer to the training store\" and that its job identity is the only principal with write access. There is no documentation of who can read from the Training Store, who can read the Artifact Bucket, how the Tuning Job and Reply Service are authorized, or whether encryption and network restrictions are enforced. Given that these locations hold unredacted sensitive customer transcripts or models trained on them, the absence of documented controls represents a significant area of uncertainty and potential risk."
+    }
+  ],
+  "findings": [
+    {
+      "requirement_id": "req-TRAIN-002",
+      "affected_component": "Training Store",
+      "title": "Sensitive ticket content is not minimized before training",
+      "rationale": "The system explicitly exports closed-ticket transcripts in full, including personally identifiable information, and confirms that there is no redaction or filtering before the data is used to fine-tune the model. This directly violates the requirement to minimize sensitive content before training, because all available sensitive data is retained and used without any minimization step.",
+      "evidence_quote": "\"A nightly job that exports closed-ticket transcripts from the helpdesk into the training store. The exporter is the only writer to the training store; its job identity is the only principal with write access to the bucket, granted through the platform's access policy. Transcripts are exported in full, including customer names, email addresses, and complete message bodies.\"\n\n\"The training store holds the full transcripts as exported. There is no redaction or filtering step between the helpdesk and the training store; what the customer wrote is what the model trains on.\""
+    }
+  ],
+  "documentation_gaps": [
+    {
+      "requirement_id": "req-DATA-001",
+      "affected_component": "Training Store",
+      "what_cannot_be_determined": "Whether the sensitive transcripts stored in the Training Store are encrypted at rest and accessed only over encrypted channels, and which platform mechanisms (if any) enforce this."
+    },
+    {
+      "requirement_id": "req-DATA-001",
+      "affected_component": "Artifact Bucket",
+      "what_cannot_be_determined": "Whether tuned model artifacts in the Artifact Bucket are encrypted in transit and at rest, and whether access to the bucket is restricted using platform encryption and access-control features."
+    },
+    {
+      "requirement_id": "req-DATA-002",
+      "affected_component": "Training Store",
+      "what_cannot_be_determined": "What retention period applies to exported closed-ticket transcripts in the Training Store, and whether that retention is documented to customers or data subjects and followed in practice."
+    },
+    {
+      "requirement_id": "req-DATA-002",
+      "affected_component": "Artifact Bucket",
+      "what_cannot_be_determined": "Whether there is a defined lifecycle or retention policy for weekly tuned model artifacts in the Artifact Bucket, including eventual deletion or archival, and how that compares to what customers are told about data use."
+    },
+    {
+      "requirement_id": "req-DATA-003",
+      "affected_component": "Training Store",
+      "what_cannot_be_determined": "Whether transcripts from different customers or tenants are stored and managed in a segregated way (e.g., per-tenant buckets, prefixes, or access controls) or aggregated into a single shared corpus."
+    },
+    {
+      "requirement_id": "req-DATA-004",
+      "affected_component": "Training Store",
+      "what_cannot_be_determined": "How, if at all, a specific customer's data can be located and deleted from the Training Store when a deletion request is received."
+    },
+    {
+      "requirement_id": "req-DATA-004",
+      "affected_component": "Artifact Bucket",
+      "what_cannot_be_determined": "Whether there is any capability to remove or retrain tuned model artifacts to eliminate a specific customer's data after it has been used for training."
+    },
+    {
+      "requirement_id": "req-TRAIN-003",
+      "affected_component": "Artifact Bucket",
+      "what_cannot_be_determined": "Whether tuned model artifacts carry lineage metadata (e.g., which export dates or datasets were used, configuration, and code versions) sufficient to trace back to their training data for auditing or targeted retraining/deletion."
+    },
+    {
+      "requirement_id": "req-AI-001",
+      "affected_component": "Reply Service",
+      "what_cannot_be_determined": "What, if any, validation, normalization, or size/format checks are applied to open-ticket content before it is passed as input to the model for generating suggested replies."
+    },
+    {
+      "requirement_id": "req-AI-004",
+      "affected_component": "Agent Console",
+      "what_cannot_be_determined": "How suggested replies are encoded or escaped when rendered in the agent console or transferred into outbound messages, and whether protections exist against injection into downstream channels (e.g., HTML or email headers)."
+    },
+    {
+      "requirement_id": "req-ADMIN-001",
+      "affected_component": "Training Store",
+      "what_cannot_be_determined": "Which administrative roles can manage the Training Store and its access policies, how those privileges are restricted, and how the scope of their access is documented."
+    },
+    {
+      "requirement_id": "req-SECRET-001",
+      "affected_component": "Transcript Exporter",
+      "what_cannot_be_determined": "Where and how the credentials or identities used by the Transcript Exporter to access the helpdesk and the Training Store bucket are stored (e.g., managed identity, secret manager, or static credentials in configuration)."
+    },
+    {
+      "requirement_id": "req-LOG-001",
+      "affected_component": "Transcript Exporter",
+      "what_cannot_be_determined": "What log data the Transcript Exporter emits and whether logs are configured to exclude raw ticket content, customer identifiers, and other sensitive data."
+    },
+    {
+      "requirement_id": "req-LOG-001",
+      "affected_component": "Tuning Job",
+      "what_cannot_be_determined": "Whether the Tuning Job's logs avoid including raw training examples or other sensitive content from transcripts."
+    },
+    {
+      "requirement_id": "req-TPI-001",
+      "affected_component": "Vendor base reply model",
+      "what_cannot_be_determined": "Whether any customer transcripts or derived data are sent to or processed within the vendor's own infrastructure or APIs during tuning or serving, and if so, what documented data-handling and protection commitments apply."
+    },
+    {
+      "requirement_id": "req-OPS-003",
+      "affected_component": "Training Store",
+      "what_cannot_be_determined": "How production data in the Training Store is separated from non-production environments (e.g., dev/test), including whether real transcripts are ever copied outside production for testing or experimentation."
+    }
+  ],
+  "questions": [
+    {
+      "question": "What encryption mechanisms are used to protect the Training Store (at rest and in transit), and are there any circumstances where transcripts can be accessed without transport encryption?",
+      "requirement_id": "req-DATA-001"
+    },
+    {
+      "question": "Are tuned model artifacts in the Artifact Bucket encrypted at rest and accessed only over encrypted connections, and which platform features enforce this?",
+      "requirement_id": "req-DATA-001"
+    },
+    {
+      "question": "What are the defined retention periods and deletion processes for exported transcripts in the Training Store and for weekly tuned model artifacts in the Artifact Bucket, and how do these align with customer-facing privacy or data-retention statements?",
+      "requirement_id": "req-DATA-002"
+    },
+    {
+      "question": "How is a specific customer's data located and removed from the Training Store and from any tuned model artifacts when that customer requests deletion or exercises a right-to-be-forgotten request?",
+      "requirement_id": "req-DATA-004"
+    },
+    {
+      "question": "Are transcripts and model artifacts segregated by tenant or customer (e.g., through separate buckets, prefixes, or access controls), or are all customers' data and the resulting models shared across tenants?",
+      "requirement_id": "req-DATA-003"
+    },
+    {
+      "question": "Do tuned model artifacts carry lineage metadata (such as the set of export dates, datasets, configuration, and code versions used for training) so that you can audit which data influenced a given model and selectively retrain or retire affected models?",
+      "requirement_id": "req-TRAIN-003"
+    },
+    {
+      "question": "What validation, sanitization, or size/format checks are performed on ticket content before it is used as input to the model at training and inference time, given that ticket text comes directly from untrusted customers?",
+      "requirement_id": "req-AI-001"
+    },
+    {
+      "question": "How are suggested replies encoded or escaped before being rendered in the agent console UI or inserted into outbound messages (e.g., HTML email), and what measures prevent injection vulnerabilities via model output?",
+      "requirement_id": "req-AI-004"
+    },
+    {
+      "question": "Which administrative roles or identities can manage access policies, encryption settings, and configuration for the Training Store, and how is their privileged access documented and restricted?",
+      "requirement_id": "req-ADMIN-001"
+    },
+    {
+      "question": "Where are the credentials or identities used by the Transcript Exporter and Tuning Job stored and managed (for example, are you using platform-managed identities, a managed secret store, or static keys in configuration files)?",
+      "requirement_id": "req-SECRET-001"
+    },
+    {
+      "question": "What logging is enabled for the Transcript Exporter, Tuning Job, and Reply Service, and how do you ensure that logs do not contain raw ticket content, customer identifiers, or other sensitive data?",
+      "requirement_id": "req-LOG-001"
+    },
+    {
+      "question": "Does the tuning process execute entirely within your own cloud environment, or is any customer ticket data sent to a model vendor's hosted service or API, and if so, what documented data-handling terms govern that processing?",
+      "requirement_id": "req-TPI-001"
+    },
+    {
+      "question": "How is the production environment for the Training Store and related jobs separated from development and testing environments, and are real customer transcripts ever copied into non-production environments?",
+      "requirement_id": "req-OPS-003"
+    }
+  ]
+}
