@@ -1,0 +1,18 @@
+{
+  "findings": [
+    {
+      "requirement_id": "req-LOG-001",
+      "affected_component": "Notification Service / shared application log",
+      "title": "Customer PII is written in full to shared application logs",
+      "rationale": "The Notification Service logs full rendered notification bodies, including names and delivery addresses, to a shared application log. This is an affirmative statement that sensitive customer data is present in logs, violating the requirement to keep sensitive data out of application logs.",
+      "evidence_quote": "\"For debugging, the notification templates log the full rendered message body — including the recipient's name, delivery address, and delivery window — to the shared application log.\""
+    },
+    {
+      "requirement_id": "req-DATA-002",
+      "affected_component": "Data Warehouse",
+      "title": "Retention period for analytics copies of customer data is not documented",
+      "rationale": "The documentation explicitly states that the team has not written down how long the Data Warehouse keeps nightly copies of the Orders Database, which include customer names and full delivery addresses. This means retention of sensitive working data is undefined and undocumented, so it cannot be assured to align with what customers are told.",
+      "evidence_quote": "\"Receives a nightly copy of the Orders Database — including customer names and full delivery addresses — for analytics. How long the copies are kept has not been written down anywhere the team could point to.\""
+    }
+  ]
+}

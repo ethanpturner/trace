@@ -1,0 +1,132 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 12443,
+    "output_tokens": 10103,
+    "cache_read_tokens": 10880,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.11794375",
+    "duration_seconds": 98.68782837502658
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Object Storage (cmp-016) is a managed object store holding shipping label PDFs and proof-of-delivery photos (ast-003, ast-004) that contain customer and shipment details [evd-003, evd-004]. Because the threat concerns compromise of this store and the system stores confidential customer data, req-DATA-001 (encryption of sensitive data in transit and at rest) applies.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-DATA-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Label Service (cmp-010) stores shipping label PDFs in a single Object Storage bucket keyed by shipment, and the same bucket holds proof-of-delivery photos [evd-003, evd-004], so artifacts for many customers share one storage system. The threat scenario is bulk access to those stored objects, so req-DATA-003 (tenant separation and enforced access to stored artifacts) applies.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-NET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Object Storage (cmp-016) is a data-store component holding customer-related artifacts (label PDFs and proof-of-delivery photos) [evd-003, evd-004] and is not described as a public interface. The threat explicitly involves an attacker gaining access to this store, so req-NET-001 (internal components reachable only from workloads that use them) applies.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Encryption for Object Storage holding labels and delivery photos is undocumented",
+        "description": "The documentation states that Label Service (cmp-010) renders shipping labels as PDFs and stores them in Object Storage (cmp-016), and that the same managed object store holds proof-of-delivery photos [evd-003, evd-004]. However, there is no description of whether data sent between services and Object Storage is encrypted in transit, nor whether the bucket is encrypted at rest. Without this, it is not possible to determine whether req-DATA-001 is satisfied for the label PDFs (ast-003) and proof-of-delivery photos (ast-004) implicated in thr-006.",
+        "importance": "Without documented encryption in transit and at rest for label PDFs and proof-of-delivery photos, a compromise of the Object Storage bucket could expose plaintext customer and delivery data, and it is unclear whether any inherited platform encryption controls exist or are relied upon.",
+        "related_object_ids": [
+          "thr-006",
+          "cmp-010",
+          "cmp-016",
+          "ast-003",
+          "ast-004",
+          "df-011"
+        ],
+        "requested_evidence": [
+          "Architecture or platform documentation describing encryption in transit between services (such as Label Service and any readers) and Object Storage, and encryption at rest configuration for the Object Storage bucket holding labels and proof-of-delivery photos."
+        ],
+        "evidence_ids": [
+          "evd-003",
+          "evd-004"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Tenant separation and access enforcement for Object Storage artifacts is undocumented",
+        "description": "Label Service stores shipping label PDFs in Object Storage keyed by shipment, and the same managed object store holds proof-of-delivery photos [evd-003, evd-004]. The documentation does not state how artifacts belonging to different customers are separated (for example, per-tenant buckets, prefixes, or keys) or how that separation is enforced on access. This prevents verifying whether req-DATA-003 is met for the objects targeted in thr-006.",
+        "importance": "Without documentation of how customer artifacts in Object Storage are separated and how that separation is enforced on access, it is not possible to assess the extent of cross-customer exposure if the bucket or its access path is misconfigured or compromised.",
+        "related_object_ids": [
+          "thr-006",
+          "cmp-010",
+          "cmp-016",
+          "ast-003",
+          "ast-004"
+        ],
+        "requested_evidence": [
+          "Architecture or storage documentation describing the layout of objects in Object Storage (including any per-tenant buckets, prefixes, or keys) and the mechanisms used to enforce tenant or customer separation on read and write access."
+        ],
+        "evidence_ids": [
+          "evd-003",
+          "evd-004"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Network placement and reachability of Object Storage is undocumented",
+        "description": "The data-zone documentation specifies that Orders Database and Tracking Store are \"reachable only from the core zone\" [evd-004], but the Object Storage entry only notes that it is a managed object store holding label PDFs and proof-of-delivery photos, with no statement of which components can reach it or how access from untrusted networks is prevented. Given thr-006\u2019s focus on compromise or misconfiguration of this bucket, this omission prevents verification of req-NET-001 for Object Storage (cmp-016).",
+        "importance": "Without clear documentation of Object Storage\u2019s network placement and which workloads can reach it, it is unclear whether an attacker could reach the bucket directly from an untrusted network in the event of misconfiguration, and whether network boundaries are being relied on to protect sensitive labels and delivery photos.",
+        "related_object_ids": [
+          "thr-006",
+          "cmp-016",
+          "cmp-010",
+          "cmp-002",
+          "cmp-025",
+          "ast-003",
+          "ast-004"
+        ],
+        "requested_evidence": [
+          "Deployment or network documentation stating which components or network segments can reach Object Storage, and what mechanisms (such as private endpoints, security groups, or service mesh policies) prevent access from untrusted networks."
+        ],
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": []
+  }
+}

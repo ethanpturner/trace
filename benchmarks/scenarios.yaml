@@ -196,6 +196,7 @@ scenarios:
     # count.
     status: authored
     category: large-architecture-input
+    workflow_version: "0.2"
 
   - slug: nightly-reconciler
     name: Nightly Reconciler

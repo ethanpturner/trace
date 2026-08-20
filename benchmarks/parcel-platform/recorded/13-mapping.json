@@ -1,0 +1,441 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 12925,
+    "output_tokens": 22113,
+    "cache_read_tokens": 10880,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.23864625",
+    "duration_seconds": 237.26570758293383
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-010",
+        "requirement_id": "req-ADMIN-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "thr-010 is a volumetric denial-of-service attack on the public API Gateway that prevents customer and driver booking and tracking traffic [evd-002]; it does not involve use or misuse of any administrative or operator interface, so this requirement about privileged administrative access does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-010",
+        "requirement_id": "req-AI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "thr-010 describes a volumetric HTTPS flood against the API Gateway disrupting booking and tracking [evd-001, evd-002]; it does not involve passing untrusted content into an AI model, so this requirement on treating model input as untrusted does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-010",
+        "requirement_id": "req-AI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat scenario concerns availability loss at the API Gateway due to high traffic volume [evd-002] and does not involve publishing model-generated output externally, so this requirement about validating model output before external publication is not engaged.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-010",
+        "requirement_id": "req-AI-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "thr-010 does not involve sending customer content to an external model provider; it instead describes direct HTTPS traffic between clients and the API Gateway [evd-002], so this data-minimisation requirement for external model providers does not bear on the threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-010",
+        "requirement_id": "req-AI-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat concerns volumetric traffic saturating the API Gateway [evd-002]; it does not involve rendering model output into user interfaces or external markup, so the requirement on encoding model output for its rendering context is not engaged.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-010",
+        "requirement_id": "req-AUTH-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Although the system delegates interactive sign-in to the company SSO provider over OpenID Connect [evd-003], thr-010\u2019s denial-of-service scenario depends on raw request volume at the API Gateway [evd-002], not on whether authentication delegation is documented, so this requirement does not bear on the threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-010",
+        "requirement_id": "req-AUTH-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat is an unauthorised volumetric HTTPS flood against the API Gateway [evd-002]; multi-factor authentication for privileged or administrative access would not materially change this availability-focused scenario, so this requirement is not engaged by thr-010.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-010",
+        "requirement_id": "req-AUTHZ-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "thr-010 affects the availability of orders and tracking data by overwhelming the API Gateway [evd-002, evd-004]; it does not involve cross-tenant data access or bypassing tenant-aware authorization, so this multi-tenancy authorization requirement does not bear on the described denial-of-service threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-010",
+        "requirement_id": "req-AUTHZ-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat path involves customers and drivers calling the Parcelworks APIs through the API Gateway [evd-001, evd-002]; it does not involve the system acting on customer resources via delegated access to an external platform, so the requirement limiting integration privileges is not engaged.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-010",
+        "requirement_id": "req-CICD-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "thr-010 is about runtime availability of the API Gateway under high traffic volume [evd-002]; it does not involve the deployment pipeline or introduction of third-party components through CI/CD [evd-005], so this requirement about trust in the deployment path is not engaged.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-010",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The impact of thr-010 is loss of availability of orders and tracking data from the users\u2019 perspective when the API Gateway is overwhelmed [evd-002, evd-004]; it does not concern confidentiality or encryption of data in transit or at rest, so this cryptographic data-protection requirement does not bear on the threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-010",
+        "requirement_id": "req-DATA-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "thr-010 describes temporary unavailability of booking and tracking functions due to API Gateway resource saturation [evd-002]; it does not involve retention or deletion of working copies of customer data, so the requirement on defining and enforcing retention for sensitive working data is not engaged.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-010",
+        "requirement_id": "req-DATA-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat scenario concerns inability to access orders and tracking data because the API Gateway is overwhelmed [evd-002, evd-004]; it does not involve unauthorized access between tenants or enforcement of tenant separation in shared storage, so this requirement is not engaged.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-010",
+        "requirement_id": "req-DATA-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "thr-010 is an availability threat where customers cannot use booking and tracking features while the API Gateway is overwhelmed [evd-002]; it does not address whether customer data can be deleted on request across primary and derived stores, so this deletion requirement does not bear on the described scenario.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-010",
+        "requirement_id": "req-LOG-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The described threat is a volumetric attack that exhausts API Gateway resources [evd-002]; it does not involve sensitive data appearing in application logs or forwarding logs to external platforms, so this requirement on excluding restricted data from logs is not engaged by thr-010.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-010",
+        "requirement_id": "req-LOG-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "thr-010 does not involve privileged actions taken through an administrative interface; it is purely about external traffic overwhelming the API Gateway [evd-002], so the requirement to record security-relevant administrative actions does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-010",
+        "requirement_id": "req-NET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This threat targets the API Gateway, which the documentation describes as the single public entry point served over HTTPS [evd-002]; this matches the requirement\u2019s non-applicable condition that the component is a public interface by design and documented as such, so the internal-component network placement requirement does not apply here.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-010",
+        "requirement_id": "req-SECRET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "thr-010 concerns denial-of-service caused by high traffic volume at the API Gateway [evd-002]; it does not involve compromise or storage of long-lived signing keys or provider credentials, so this secrets-management requirement is not engaged by the threat scenario.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-010",
+        "requirement_id": "req-SECRET-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat path does not involve the system obtaining short-lived or long-lived credentials to access customer resources on external platforms; it focuses on unauthenticated or generic HTTPS traffic saturating the API Gateway [evd-002], so this requirement about credential lifetime for external-resource access does not bear on thr-010.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-010",
+        "requirement_id": "req-TPI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "While the platform uses external providers for messaging and carrier integration [evd-003, evd-005], thr-010\u2019s denial-of-service scenario is driven by raw request volume at the API Gateway [evd-002] and does not turn on what data is sent to external processors or their retention/usage terms, so this requirement is not engaged by the threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-010",
+        "requirement_id": "req-TPI-002",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-004"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "thr-010 describes an attacker sending a large volume of HTTPS requests from many clients toward the public API Gateway [evd-002], causing it to exhaust CPU, memory, or connection resources and disrupting customer and driver operations; this is work triggered by external events that consumes significant compute, so the requirement to bound such work to prevent unbounded consumption bears directly on this availability threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [
+          "The only bounding mechanism described at the API Gateway is per-client rate limiting [evd-002]; additional global or per-tenant bounds, queue limits, or provider-enforced quotas may exist but are not documented, so whether req-TPI-002\u2019s expectation is fully met is treated as unverified rather than unmet."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-010",
+        "requirement_id": "req-WEBHOOK-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The API Gateway in thr-010 exposes general HTTPS APIs to customers and drivers [evd-002]; it is not described as an endpoint that accepts signed events from an external platform, so this webhook-origin verification requirement does not bear on the described denial-of-service attack.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-010",
+        "requirement_id": "req-WEBHOOK-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "thr-010 involves high volumes of independent HTTPS requests overwhelming the API Gateway [evd-002]; it does not describe processing of signed webhook events where replay of a previously valid event is a concern, so this replay-handling requirement is not engaged by the threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Bounding of externally triggered work at the API Gateway is not documented",
+        "description": "thr-010 shows that high volumes of HTTPS requests from untrusted clients can overwhelm the single public API Gateway [evd-002]. The only documented control is per-client rate limiting at the gateway [evd-002], and available architecture documentation does not state whether there are global, per-tenant, or per-route limits on work, connection counts, queue depths, retries, or downstream provider quotas. Without this, it is not possible to determine whether externally triggered work is bounded as expected by req-TPI-002 or how resilient the system is to volumetric attacks like thr-010.",
+        "importance": "Clarifying how work triggered via the public API Gateway is globally bounded (across clients and tenants) is necessary to assess whether req-TPI-002 is satisfied and to understand the system\u2019s resilience and cost exposure under denial-of-service conditions such as thr-010.",
+        "related_object_ids": [
+          "thr-010",
+          "req-TPI-002",
+          "cmp-003",
+          "ast-001",
+          "ast-002"
+        ],
+        "requested_evidence": [
+          "Operations or architecture documentation describing any global, per-tenant, or per-route rate and volume limits enforced at or behind the API Gateway, including connection limits and queue depth limits.",
+          "Configuration or runbooks describing retry policies for failed work initiated from API Gateway traffic and any safeguards against runaway retries.",
+          "Documentation of any provider-side quotas or spending ceilings relevant to work initiated from API Gateway requests (for example, messaging or other metered external services) and how the application respects those limits."
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "severity": "high"
+      }
+    ],
+    "catalog_gap_candidates": [
+      {
+        "concern": "The catalog does not explicitly cover denial-of-service resilience and capacity planning for a single public API gateway, such as upstream DDoS protection, global throttling across clients, or architectural measures (e.g., multi-edge deployment) to keep a volumetric HTTP flood from making core business operations unavailable, as illustrated by thr-010.",
+        "suggested_category": "availability",
+        "nearest_requirements": [
+          {
+            "requirement_id": "req-TPI-002",
+            "why_not": "req-TPI-002 focuses on bounding work triggered by external events where each unit of work consumes a metered external service or significant compute, with examples like per-tenant rate limits and provider quotas. It does not explicitly ask for DDoS resilience or capacity planning for the public API gateway itself, nor for mechanisms to absorb or shed volumetric traffic that may be rejected before back-end processing occurs."
+          },
+          {
+            "requirement_id": "req-NET-001",
+            "why_not": "req-NET-001 governs network placement of internal data stores, queues, caches, or internal services so they are not reachable from untrusted networks. The API Gateway in thr-010 is intentionally a public interface and is documented as the single public entry point [evd-002], so by its own non-applicable condition this requirement does not extend to protecting that gateway from volumetric attack."
+          }
+        ],
+        "evidence_ids": [
+          "evd-002"
+        ]
+      }
+    ]
+  }
+}

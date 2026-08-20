@@ -1,0 +1,1034 @@
+{
+  "schema": "EvidenceValidationProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 266,
+    "output_tokens": 32306,
+    "cache_read_tokens": 13824,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.3251205",
+    "duration_seconds": 321.9817732499214
+  },
+  "response": {
+    "assessments": [
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-035",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "indirect"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-003 and evd-004 document that the Tracking Service maintains per\u2011parcel tracking state in the Tracking Store and that Object Storage holds proof\u2011of\u2011delivery photos, so customer data is clearly retained after operational processing. evd-004 also notes undocumented retention for Data Warehouse copies, showing that retention controls are at least incompletely specified. However, the documents say nothing about requirement req-DATA-002, about threat thr-002, or about any retention policy for the Tracking Store or Object Storage. The architectural facts behind the applicability_reason are documented, but the conclusions that req-DATA-002 is applicable to thr-002 and that its status for this threat is unverified are not directly established.",
+        "missing_evidence": [
+          "Authoritative definition of req-DATA-002 and when it is meant to apply.",
+          "Documented description of threat thr-002 and which data stores and data types it affects.",
+          "Retention and deletion policy for Tracking Store and Object Storage, including how it is enforced and mapped to req-DATA-002."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-036",
+        "evidence_ids": [
+          "evd-001",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "indirect"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-001 establishes that the platform serves customers who book and track shipments, implying multiple customers use the same system. evd-004 shows that Object Storage holds label PDFs and proof\u2011of\u2011delivery photos and that the Orders Database stores bookings, customer accounts, and addresses, which together make it plausible that artifacts for many customers share the same storage systems. The documents, however, do not mention req-DATA-003, do not describe tenant\u2011separation controls on Object Storage, and do not describe threat thr-002. Thus the multi\u2011tenant storage context in the applicability_reason is supported, but the claim that req-DATA-003 is applicable to thr-002 and remains unverified is not itself documented.",
+        "missing_evidence": [
+          "Definition of req-DATA-003, including its conditions for applicability (e.g., tenant separation requirements).",
+          "Documentation confirming that Object Storage and related stores are shared across multiple customers and how tenant separation is or is not enforced.",
+          "Threat thr-002 description showing whether cross\u2011tenant exposure via Object Storage is part of the scenario."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-037",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "indirect"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-003 and evd-004 together show that customer data is stored in several places: the Orders Database (bookings, accounts, addresses), the Tracking Store (per\u2011parcel scan history and tracking state), Object Storage (labels and proof\u2011of\u2011delivery photos), and the Data Warehouse (nightly copies of orders including names and addresses). This supports the architectural premise that customer data exists across multiple primary and derived stores. However, nothing in the documents mentions req-DATA-004, describes deletion or erasure flows for these stores, or defines threat thr-002. The existence of multiple stores is documented, but the assertion that req-DATA-004 is applicable to thr-002 and currently unverified is not established.",
+        "missing_evidence": [
+          "Definition of req-DATA-004, particularly any expectations around deletion from primary and derived data stores.",
+          "Documented end\u2011to\u2011end data removal procedures for Orders Database, Tracking Store, Object Storage, and Data Warehouse.",
+          "Threat thr-002 description clarifying whether removal of data and derived copies would change the threat impact."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-038",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-003 documents that the Notification Service logs full rendered notification message bodies, including names, addresses, and delivery windows, to a shared application log. This supports the applicability_reason\u2019s description of how logging works in the system. However, the documents do not describe threat thr-002 at all, and they do not mention req-LOG-001 or its scope. Therefore, while the logging behaviour is documented, the conclusion that req-LOG-001 is not applicable to thr-002 cannot be verified from the available material.",
+        "missing_evidence": [
+          "Text of req-LOG-001, including what log content and flows it covers.",
+          "Threat thr-002 description showing which components and data flows are in the attack path.",
+          "Analysis or documentation explicitly stating whether logging behaviour affects thr-002\u2019s impact or likelihood."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-039",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "indirect"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "indirect"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-002 and evd-006 establish that drivers use a mobile application via the Mobile Gateway, while evd-003 describes the Admin Console as a staff interface reached with SSO accounts and able to read and edit customer data. This supports the architectural distinction between the driver mobile interface and the administrative console that the applicability_reason relies on. The documentation, however, does not describe threat thr-002 or req-LOG-002, nor does it state that thr-002 involves only driver activity and no administrative actions. Consequently, the mapping\u2019s explanation is partly grounded in the architecture, but the conclusion that req-LOG-002 is not applicable to thr-002 is not itself documented.",
+        "missing_evidence": [
+          "Definition of req-LOG-002, in particular what constitutes an administrative or operator action it requires to be logged.",
+          "Threat thr-002 description clarifying whether any admin or operator interfaces are involved.",
+          "Any threat model or mapping document that explicitly justifies treating admin\u2011action logging as out of scope for thr-002."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-040",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "indirect"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-002 shows that the API Gateway is the single public entry point and that both the Customer Portal and Mobile Gateway are served over HTTPS behind it. evd-004 shows that internal data\u2011zone components like the Orders Database and Tracking Store are reachable only from the core zone, indicating they are not directly exposed to the internet. These passages support the architectural claim that external actors interact with the system via the gateways rather than directly with internal stores. However, the documents do not mention threat thr-002 or req-NET-001, nor do they explicitly tie network segmentation controls to this threat. Thus the network architecture parts of the applicability_reason are supported, but the conclusion that req-NET-001 is not applicable to thr-002 is not established by the documentation.",
+        "missing_evidence": [
+          "Definition of req-NET-001, including which network boundaries and components it covers.",
+          "Threat thr-002 description specifying the attacker\u2019s network reach and which components are in scope.",
+          "Documentation of network segmentation and access controls for internal components, mapped explicitly to req-NET-001 and thr-002."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-041",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "indirect"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-003 documents that all interactive sign\u2011in for customers, drivers, and staff is delegated to the company\u2019s SSO provider and that the Identity Service issues short\u2011lived internal tokens. evd-002 and evd-006 confirm the existence of a driver mobile application accessed via the Mobile Gateway by the Driver actor. These establish that driver access is mediated through SSO and a mobile app, which underpins part of the applicability_reason. However, the documentation does not describe threat thr-002, does not mention req-SECRET-001, and says nothing about long\u2011lived signing keys or provider API credentials or whether they play a role in any threat. Therefore, while the SSO-based architecture is documented, the specific claim that req-SECRET-001 is not applicable to thr-002 remains unsupported by the provided evidence.",
+        "missing_evidence": [
+          "Definition of req-SECRET-001 and the types of credentials and stores it covers.",
+          "An architectural description of which long\u2011lived credentials (if any) the system holds and how they are stored.",
+          "Threat thr-002 description clarifying whether compromise of such credentials is in scope or explicitly out of scope."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-042",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "indirect"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "indirect"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-003 shows that interactive authentication uses an internal Identity Service backed by an SSO provider; evd-002 and evd-006 show that drivers interact through a mobile application via the Mobile Gateway. This supports the idea that driver workflows use first\u2011party authentication rather than delegated access to external customer resources. The documents do not define req-SECRET-002, do not describe the use (or non\u2011use) of short\u2011lived external access tokens, and do not document threat thr-002. As a result, the architectural context in the applicability_reason is supported, but the conclusion that req-SECRET-002 is not applicable to thr-002 is not established by the evidence.",
+        "missing_evidence": [
+          "Definition of req-SECRET-002, especially its scope regarding delegated access to external customer resources.",
+          "Documentation of any tokens or installation\u2011scoped credentials used to access customer resources on external platforms, or a statement that none are used.",
+          "Threat thr-002 description clarifying whether such delegated integrations are involved in the attack path."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-043",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "indirect"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-003 and evd-005 document the use of several external processors: an external messaging provider for email/SMS, carrier partners\u2019 APIs via Carrier Link, and an external payment provider. This supports the applicability_reason\u2019s statement that the platform uses external processors. However, the documents do not describe threat thr-002, do not define req-TPI-001, and do not state which, if any, external processors are involved in the thr-002 attack path. Thus the presence of external processors is documented, but the claim that req-TPI-001 is not applicable to thr-002 is not supported by the evidence.",
+        "missing_evidence": [
+          "Definition of req-TPI-001 and what \"external processor data handling\" documentation it requires.",
+          "Threat thr-002 description specifying whether any external processors are involved in or affected by the scenario.",
+          "Any mapping or threat model explicitly stating that external\u2011processor handling does or does not influence thr-002."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-044",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "No provided evidence passage discusses threat thr-002, the use of metered external services, or the amount of work performed in response to external events, nor is req-TPI-002 mentioned anywhere. The assertion that thr-002 does not involve consuming metered external services or significant compute in response to untrusted events therefore rests entirely on analysis outside the supplied documentation and is not supported by the evidence set.",
+        "missing_evidence": [
+          "Definition of req-TPI-002, including what counts as a metered external service or externally triggered work it is meant to bound.",
+          "Threat thr-002 description detailing any interactions with external services, including volume and cost characteristics.",
+          "Architectural documentation of workflows that might be triggered by external events, tied explicitly to req-TPI-002."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-045",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-002 documents that the public entry point is the API Gateway and that the Customer Portal and Mobile Gateway sit behind it over HTTPS. It does not describe any webhook or signed inbound event endpoints, which is consistent with the applicability_reason\u2019s focus on synchronous APIs. However, the documents do not define req-WEBHOOK-001 or describe threat thr-002, so they do not by themselves establish that no webhook\u2011style endpoint is relevant to this threat. The existence of the documented HTTPS APIs is supported, but the conclusion that webhook authenticity verification requirements are not applicable to thr-002 is not fully established.",
+        "missing_evidence": [
+          "Definition of req-WEBHOOK-001 and which inbound endpoints it covers.",
+          "An inventory of inbound endpoints, including any webhooks or event receivers, and how they are used in relation to thr-002.",
+          "Threat thr-002 description clarifying whether any webhook or signed event endpoints are involved."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-046",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-002 shows that driver interactions occur via the Mobile Gateway and API Gateway over HTTPS, with no mention of asynchronous signed event delivery. This supports the idea that the core documented interface is synchronous API traffic rather than inbound webhooks. However, the documentation does not define req-WEBHOOK-002, does not list all inbound event mechanisms, and does not describe threat thr-002. As a result, while the API structure described in the applicability_reason is documented, the specific claim that webhook replay protection requirements are not applicable to thr-002 is not established by the evidence.",
+        "missing_evidence": [
+          "Definition of req-WEBHOOK-002 and its expectations for replay protection.",
+          "System documentation enumerating any webhook or event ingestion endpoints and stating whether any participate in thr-002.",
+          "Threat thr-002 description confirming that only synchronous driver API calls are in scope."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-047",
+        "evidence_ids": [
+          "evd-004",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-005 documents that the Deploy Runner runs the deployment pipeline for core services, and evd-004 states that services authenticate to the Message Bus using per\u2011service credentials issued at deploy time. These passages directly support the architectural parts of the applicability_reason that tie deployment to Message Bus credentials. However, the documents do not describe threat thr-003 or define req-CICD-001, nor do they state that compromise of the deployment pipeline is the way Message Bus credentials could be stolen. Thus, while the underlying deployment and credential architecture is documented, the statement that req-CICD-001 is applicable to thr-003 and currently unverified is only partially supported.",
+        "missing_evidence": [
+          "Definition of req-CICD-001, including specific expectations for pipeline trust and dependency management.",
+          "Threat thr-003 description confirming that theft of per\u2011service Message Bus credentials via the deployment pipeline is in scope.",
+          "Documentation of the CI/CD security controls in place (authentication, access control, secret handling) mapped to req-CICD-001."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-048",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-004 directly supports the applicability_reason\u2019s architectural claims that the Message Bus is an internal event backbone connecting core services and that services authenticate with per\u2011service credentials issued at deploy time. The same passage says nothing about req-NET-001, does not classify this authentication as weak or strong, and does not describe threat thr-003 or any network\u2011level exploitation of the bus. Therefore, while the description of the Message Bus and its credentials is documented, the conditional applicability of req-NET-001 to thr-003 and the claim that this mapping is unverified are not established by the available evidence.",
+        "missing_evidence": [
+          "Definition of req-NET-001, particularly how it treats internal message buses and what counts as \"weak\" authentication.",
+          "Threat thr-003 description clarifying the role of the Message Bus and its credentials in the attack.",
+          "Documentation of any network controls or authentication hardening applied to the Message Bus, mapped to req-NET-001."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-049",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-004 describes the Orders Database and Data Warehouse as internal data\u2011zone stores for bookings, customer accounts, addresses, and analytics copies. This aligns with the applicability_reason\u2019s statement that thr-004 involves only internal data stores rather than an administrative interface. The documents, however, do not define req-ADMIN-001, do not describe threat thr-004, and do not explicitly say that no administrative interface participates in that threat path. Thus the architectural context is supported, but the conclusion that req-ADMIN-001 is not applicable to thr-004 is not fully documented.",
+        "missing_evidence": [
+          "Definition of req-ADMIN-001 and what counts as an administrative or operator interface for its purposes.",
+          "Threat thr-004 description clarifying which components are in the attack path.",
+          "Any analysis or documentation that explicitly states that no administrative interfaces are involved in thr-004."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-050",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-004 shows that thr-004\u2019s mentioned components, the Orders Database and Data Warehouse, are traditional data stores used for transactional data and analytics copies. There is no mention of any AI or machine\u2011learning model consuming this content, which is consistent with the applicability_reason\u2019s claim that thr-004 does not involve model inputs. However, the documents do not define req-AI-001 and do not describe thr-004, so they do not, by themselves, establish that no model\u2011related input handling is relevant to this threat. The data\u2011storage aspects of the rationale are supported, but the statement that req-AI-001 is not applicable is only partially grounded in the evidence.",
+        "missing_evidence": [
+          "Definition of req-AI-001 and what kinds of model input it governs.",
+          "Threat thr-004 description confirming that no components in its path provide content to a model.",
+          "Documentation of any AI or ML components in the architecture, or confirmation that none exist for this data flow."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-051",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-004 describes the Orders Database and Data Warehouse as internal data stores for transactional and analytics data, with no mention of model outputs being published externally. This is consistent with the applicability_reason\u2019s statement that thr-004 concerns offline storage rather than model output publication. Nonetheless, the evidence does not define req-AI-002 or describe threat thr-004, so it does not conclusively show that AI output validation is out of scope for this threat. The storage context is documented, but the non\u2011applicability conclusion remains partially unsupported.",
+        "missing_evidence": [
+          "Definition of req-AI-002, especially its scope regarding model output publication.",
+          "Threat thr-004 description clarifying whether any model outputs are ever derived from Orders Database or Data Warehouse data and then exposed.",
+          "Architecture or design documentation explicitly stating whether any part of thr-004\u2019s flow includes model output that must be validated."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-052",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-004 indicates that the Orders Database and Data Warehouse are internal data stores operated by the platform; there is no mention of customer data from these stores being sent to an external model provider. This supports the gist of the applicability_reason that the df-014 copy remains within the platform\u2019s own zones. However, req-AI-003 and threat thr-004 are not described in the evidence, so the conclusion that this external\u2011model data\u2011minimisation requirement is not applicable is not fully demonstrated.",
+        "missing_evidence": [
+          "Definition of req-AI-003 and what qualifies as sending customer content to an external model provider.",
+          "Documentation of any integrations where Orders Database or Data Warehouse contents are sent to external AI/ML services, or confirmation that none exist.",
+          "Threat thr-004 description confirming that no such external model calls are involved."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-053",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-004 shows that thr-004\u2019s data flow concerns a nightly copy from the Orders Database to the Data Warehouse for analytics, with no mention of rendering model output into user interfaces or markup. This matches the high\u2011level context in the applicability_reason. Still, the evidence does not define req-AI-004 or give a detailed description of thr-004, so it does not conclusively demonstrate that contextual encoding of model output is irrelevant to this threat. The data\u2011copy behaviour is documented, but the non\u2011applicability of req-AI-004 remains only partially supported.",
+        "missing_evidence": [
+          "Definition of req-AI-004 and the situations in which it must be applied.",
+          "Threat thr-004 description verifying that no model output is rendered to users within the scope of the threat.",
+          "Any documentation of UI components or reporting features that consume Data Warehouse data and whether they involve model output."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-054",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-004 characterises the Orders Database and Data Warehouse as internal data\u2011zone stores for bookings, accounts, addresses, and analytics copies, reachable only from internal zones. There is no indication that they are directly reachable by end users, which supports the architectural part of the applicability_reason. However, req-AUTH-001 is not defined, and threat thr-004 is not described, so the statement that this requirement about delegated end\u2011user authentication is not applicable to thr-004 cannot be fully validated from the evidence alone.",
+        "missing_evidence": [
+          "Definition of req-AUTH-001 and what it considers an \"end\u2011user reachable\" component.",
+          "Threat thr-004 description indicating how access to the Orders Database and Data Warehouse is obtained.",
+          "Architecture or threat model documentation explicitly stating that end\u2011user authentication delegation is not part of thr-004."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-055",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-004 shows that thr-004\u2019s named components are internal data stores in the data zone. It does not describe any externally reachable privileged interface or how privileged access is obtained, which is broadly consistent with the applicability_reason. However, req-AUTH-002 is not defined and the threat description for thr-004 is not present, so we cannot confirm that multi\u2011factor authentication responsibilities for privileged access truly fall outside the scope of this threat. The internal\u2011store context is documented, but the non\u2011applicability conclusion remains partly unsupported.",
+        "missing_evidence": [
+          "Definition of req-AUTH-002, including what counts as privileged access across an untrusted network.",
+          "Threat thr-004 description showing how privileged access to the Orders Database or Data Warehouse is achieved.",
+          "Documentation of authentication (including MFA) for any interfaces that can reach these data\u2011zone stores."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-056",
+        "evidence_ids": [
+          "evd-001",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "indirect"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-001 establishes that customers book and track shipments on the platform, implying multiple customers. evd-004 states that the Orders Database holds bookings, customer accounts, and addresses and that the Data Warehouse receives nightly copies including customer names and addresses for analytics. Together, these support the applicability_reason\u2019s claim that data for many customers is stored together in these systems and that tenant\u2011aware access paths to the Data Warehouse matter. However, the evidence does not define req-AUTHZ-001, does not describe threat thr-004, and does not document any actual tenant\u2011authorisation controls or their gaps. The multi\u2011tenant storage context is documented, but the assertion that req-AUTHZ-001 is applicable to thr-004 and unverified is only partially supported.",
+        "missing_evidence": [
+          "Definition of req-AUTHZ-001, including its expectations for tenant\u2011aware authorisation and context derivation.",
+          "Threat thr-004 description clarifying which access paths to the Data Warehouse are relevant.",
+          "Documentation of current authorisation controls for querying the Data Warehouse, including any tenant scoping and how they map to req-AUTHZ-001."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-057",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-004 depicts thr-004\u2019s assets\u2014the Orders Database and Data Warehouse\u2014as internal platform stores, with the Data Warehouse receiving a nightly copy of order data for analytics. There is no indication that this data flow involves delegated permissions to access customer resources on external platforms, which is consistent with the applicability_reason. Still, the evidence does not define req-AUTHZ-002 or describe thr-004\u2019s threat mechanics, so it does not fully establish that delegated integration privileges are irrelevant to this threat. The internal nature of the data flow is documented, but the non\u2011applicability assertion remains partially supported only.",
+        "missing_evidence": [
+          "Definition of req-AUTHZ-002 and the forms of delegated integration it is concerned with.",
+          "Threat thr-004 description confirming that no delegated access to external customer resources is used in the attack path.",
+          "Documentation of any integrations that do use delegated permissions and their relation (or lack thereof) to the Orders Database and Data Warehouse."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-058",
+        "evidence_ids": [
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-005 clearly states that the Deploy Runner runs the deployment pipeline for core services, supporting the applicability_reason\u2019s premise that a deployment pipeline exists. The evidence, however, does not define req-CICD-001, does not describe threat thr-004, and does not state that thr-004\u2019s scenario excludes build or deployment artifacts or pipeline identities. Accordingly, the existence of a deployment pipeline is documented, but the claim that req-CICD-001 is not applicable to thr-004 is not itself established.",
+        "missing_evidence": [
+          "Definition of req-CICD-001 and what aspects of the deployment path it covers.",
+          "Threat thr-004 description clarifying whether compromised deployment artifacts or pipeline identities could lead to Data Warehouse access.",
+          "Any analysis that explicitly argues the deployment pipeline is out of scope for thr-004."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-059",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-004 directly states that the Orders Database stores bookings, customer accounts, and addresses and that the Data Warehouse receives nightly copies including customer names and full delivery addresses for analytics. This supports the applicability_reason\u2019s claim that confidential personal data traverses the df-014 copy between core and data zones. However, the evidence does not define req-DATA-001, does not identify trust boundary tb-002 or asset ast-006, and does not explicitly relate encryption in transit and at rest to this flow. Thus, while the presence of sensitive data and its copying is documented, the mapping that req-DATA-001 is applicable to thr-004 and unverified is only partially supported.",
+        "missing_evidence": [
+          "Definition of req-DATA-001, including specific encryption expectations for in\u2011transit and at\u2011rest data.",
+          "Documentation of trust boundary tb-002 and asset ast-006 and how df-014 crosses that boundary.",
+          "Evidence of actual encryption controls applied to the Orders Database, Data Warehouse, and the nightly copy, or explicit acknowledgement that they are not yet documented."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-060",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-004 states that the Data Warehouse receives a nightly copy of the Orders Database, including customer names and full delivery addresses, and explicitly notes that how long these copies are kept has not been written down anywhere the team could point to. This directly supports the claims that customer data is retained in the Data Warehouse for analytics and that retention is undocumented, aligning with the applicability_reason\u2019s unverified retention concern. Nonetheless, req-DATA-002 and threat thr-004 are not defined in the evidence, so the statement that this specific retention requirement is applicable to thr-004 cannot be fully validated. The existence of analytic copies and their undocumented retention is supported; the normative applicability of req-DATA-002 is not.",
+        "missing_evidence": [
+          "Definition of req-DATA-002 and its criteria for when a retention policy is required.",
+          "Threat thr-004 description clarifying how long\u2011term retention of Data Warehouse copies affects the threat.",
+          "Any policy or design document that sets or intentionally omits a retention period for Data Warehouse copies, mapped to req-DATA-002."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-061",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-004 describes the Orders Database as the relational store for bookings, customer accounts, and addresses, and the Data Warehouse as receiving nightly copies of this data for analytics. This supports the applicability_reason\u2019s statement that data for many customers is stored together in both systems and that they share a storage system at the logical level. However, the evidence does not define req-DATA-003, does not describe any tenant\u2011separation mechanisms, and does not mention threat thr-004. As a result, the shared\u2011storage context is documented, but the assertion that req-DATA-003 is applicable to thr-004 and unverified is only partially supported.",
+        "missing_evidence": [
+          "Definition of req-DATA-003, including required documentation and enforcement of tenant separation.",
+          "Threat thr-004 description indicating whether cross\u2011tenant access via Orders Database or Data Warehouse is a concern.",
+          "Design or operational documentation describing how tenant separation (if any) is enforced for queries to these stores."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-062",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-004 shows that customer data (bookings, accounts, addresses) resides in the Orders Database and that a nightly copy, including customer names and addresses, is stored in the Data Warehouse for analytics. This directly supports the applicability_reason\u2019s claim that customer data exists in more than one store, including derived analytics copies. The documents, however, do not define req-DATA-004, do not describe data deletion capabilities for either store, and do not present threat thr-004. Hence the multi\u2011store data footprint is documented, but the statement that req-DATA-004 is applicable to thr-004 and unverified is not fully supported.",
+        "missing_evidence": [
+          "Definition of req-DATA-004, focusing on deletion from primary and derived data stores.",
+          "Documentation of deletion or erasure processes for Orders Database and Data Warehouse, including propagation between them.",
+          "Threat thr-004 description clarifying whether the ability to remove data and derived copies is part of the risk mitigation."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-063",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-004 confines thr-004\u2019s data movement to a nightly copy from the Orders Database to the Data Warehouse for analytics and describes both as internal data\u2011zone components. It does not mention application logs or log platforms, which is consistent with the applicability_reason\u2019s focus on data stores rather than logging. Yet the evidence does not define req-LOG-001 or describe the full thr-004 scenario, so it cannot by itself prove that log\u2011handling requirements are irrelevant to this threat. The internal storage focus is documented, but the non\u2011applicability conclusion is only partially supported.",
+        "missing_evidence": [
+          "Definition of req-LOG-001 and what log contents and destinations it governs.",
+          "Threat thr-004 description clarifying whether any logs are used in achieving or detecting the described compromise.",
+          "Documentation of logging for Orders Database and Data Warehouse interactions, if any, tied to thr-004\u2019s path."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-064",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-004 presents thr-004\u2019s assets as the Orders Database and Data Warehouse, both internal data stores, and does not mention any administrative or operator user interfaces for this flow. That aligns with the applicability_reason\u2019s claim that thr-004 is about compromise of stored copies, not use of an admin console. However, req-LOG-002 is not defined and thr-004 is not described in the evidence, so we cannot confirm that logging of administrative actions is irrelevant to this threat. The data\u2011store focus is documented, but the statement that req-LOG-002 is not applicable to thr-004 is only partially supported.",
+        "missing_evidence": [
+          "Definition of req-LOG-002 and which administrative or operator actions it requires to be logged.",
+          "Threat thr-004 description clarifying how access to the Data Warehouse is achieved (e.g., via tools, consoles, or direct queries).",
+          "Documentation of any administrative interfaces or query tools that can reach the Orders Database or Data Warehouse and whether they are in thr-004\u2019s scope."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-065",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-004 shows that the Orders Database and Tracking Store are reachable only from the core zone, and that the Data Warehouse is a data\u2011zone component receiving nightly copies, all of which suggests these stores are internal and not directly exposed. This supports the applicability_reason\u2019s concern that network reachability of internal stores affects how easily thr-004\u2019s preconditions can be met. However, req-NET-001 is not defined in the evidence, and threat thr-004 is not described, so the exact applicability of that requirement and the claim that its status is unverified are not fully documented.",
+        "missing_evidence": [
+          "Definition of req-NET-001 and its criteria for protecting internal data stores from untrusted networks.",
+          "Threat thr-004 description specifying the attacker\u2019s network vantage point and how they reach the Data Warehouse.",
+          "Network architecture and access\u2011control documentation for Orders Database and Data Warehouse, mapped explicitly to req-NET-001."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-066",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-004 confines thr-004\u2019s key components to internal data\u2011zone stores (Orders Database and Data Warehouse) and an internal nightly copy between them, with no mention of credentials used to access external platforms. This is consistent with the applicability_reason\u2019s claim that the threat does not involve external\u2011facing credentials. Nevertheless, req-SECRET-001 is not defined, and thr-004\u2019s threat narrative is absent from the evidence, so the conclusion that external\u2011credential storage requirements are not applicable cannot be fully validated. The internal\u2011store context is documented, but the non\u2011applicability assertion is only partially supported.",
+        "missing_evidence": [
+          "Definition of req-SECRET-001 and the classes of secrets it applies to.",
+          "Threat thr-004 description confirming that no external API keys or signing keys are relevant to the described compromise.",
+          "Inventory and storage details for any external\u2011facing credentials used by components accessing or populating the Data Warehouse."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-067",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "According to evd-004, the data flow in thr-004\u2019s area of concern is a nightly internal copy from the Orders Database to the Data Warehouse; there is no mention of obtaining tokens or installation\u2011scoped credentials to access customer resources on external platforms. This aligns with the applicability_reason. However, the evidence does not define req-SECRET-002 and does not describe threat thr-004 in detail, so it does not conclusively show that short\u2011lived external access credentials are irrelevant to this scenario. The internal copy behaviour is documented, but the non\u2011applicability conclusion remains partially supported.",
+        "missing_evidence": [
+          "Definition of req-SECRET-002 and the expected handling of short\u2011lived external access credentials.",
+          "Threat thr-004 description confirming that no such delegated external access is part of the attack path.",
+          "Documentation of any external resources accessed using delegated credentials from processes that interact with the Data Warehouse."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-068",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-004 clearly states that the Data Warehouse receives a nightly copy of the Orders Database for analytics, and that both are internal platform components. There is no mention of an external provider processing these copies, which supports the applicability_reason\u2019s focus on internal processing. Nonetheless, req-TPI-001 is not defined in the evidence and threat thr-004 is not described, so the assertion that external\u2011processor handling requirements are not applicable to thr-004 is not fully evidenced.",
+        "missing_evidence": [
+          "Definition of req-TPI-001 and what qualifies as an external processor for its purposes.",
+          "Threat thr-004 description confirming that no external processor handles the Data Warehouse copies in scope.",
+          "Documentation of any analytics or processing services outside the platform that might receive data from the Data Warehouse."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-069",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-004 describes the Data Warehouse as receiving a nightly copy of the Orders Database for analytics, indicating an internal batch process rather than an event triggered by an external platform or a clearly metered external service. This supports the core architectural statement in the applicability_reason. However, the evidence does not define req-TPI-002 or describe thr-004\u2019s threat mechanics, so it does not conclusively show that bounding work triggered by external platforms is irrelevant to this threat. The nightly internal copy is documented, but the non\u2011applicability of req-TPI-002 is only partially supported.",
+        "missing_evidence": [
+          "Definition of req-TPI-002 and its applicability criteria.",
+          "Threat thr-004 description detailing any external triggers or metered services that might influence workload.",
+          "Design documentation of the job that performs the nightly copy, including what triggers it and whether external events can affect its workload."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-070",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-004 limits thr-004\u2019s described data flow to an internal nightly copy from the Orders Database to the Data Warehouse, with no mention of endpoints that accept signed events from external platforms. This is consistent with the applicability_reason\u2019s focus on internal access rather than webhooks. Still, req-WEBHOOK-001 is not defined, and thr-004\u2019s full threat description is not present, so the evidence does not definitively show that inbound event authenticity verification is irrelevant to this threat. The internal copy context is documented, but the non\u2011applicability conclusion remains only partially supported.",
+        "missing_evidence": [
+          "Definition of req-WEBHOOK-001 and the endpoints it governs.",
+          "Threat thr-004 description confirming that no inbound webhook or signed event endpoint is involved.",
+          "Inventory of external event/webhook endpoints in the system, if any, and their relation (or lack thereof) to the df-014 data flow."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-071",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "As with map-070, evd-004 describes thr-004\u2019s relevant data flow as an internal nightly copy between the Orders Database and Data Warehouse, with no mention of inbound events or webhook\u2011style mechanisms. This aligns with the applicability_reason\u2019s claim that replay protection for inbound events is not engaged. However, req-WEBHOOK-002 is not defined and threat thr-004 is not described in the evidence, so the conclusion that webhook replay requirements are not applicable is not fully demonstrated. The internal\u2011only flow is documented, but the non\u2011applicability statement is only partially supported.",
+        "missing_evidence": [
+          "Definition of req-WEBHOOK-002 and its expectations for replay protection.",
+          "Threat thr-004 description clarifying whether any inbound events could be replayed to influence the Data Warehouse contents.",
+          "Documentation of any webhook or event ingestion endpoints and confirmation that they are unrelated to df-014."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-072",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-003 describes the Notification Service sending notifications and logging full rendered message bodies to a shared application log, and it separately describes an Admin Console as a staff interface. This directly supports the applicability_reason\u2019s architectural claim that thr-005\u2019s context involves notification logging rather than the Admin Console. However, the evidence does not define req-ADMIN-001 or describe threat thr-005, and it does not state that no administrative or operator interface is involved in the compromise of log access. The logging and component roles are documented, but the statement that req-ADMIN-001 is not applicable to thr-005 is only partially supported.",
+        "missing_evidence": [
+          "Definition of req-ADMIN-001 and which interfaces or roles it covers.",
+          "Threat thr-005 description clarifying how log\u2011reading access is compromised and whether any admin UI is involved.",
+          "Access\u2011control documentation for the Shared Application Log and any tooling used to read it."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-073",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-003 states that the Notification Service uses notification templates and an external messaging provider to send emails and SMS, and that it logs the full rendered message body. There is no mention of any AI or ML model being used to generate these messages, which supports the applicability_reason\u2019s claim that thr-005 does not involve passing untrusted content to a model. Nonetheless, req-AI-001 is not defined and thr-005 is not described in the evidence, so the conclusion that AI input\u2011handling requirements are not applicable to this threat is not fully documented. The template\u2011based notification architecture is supported, but the non\u2011applicability assertion is only partially supported.",
+        "missing_evidence": [
+          "Definition of req-AI-001 and what types of model input it is intended to regulate.",
+          "Threat thr-005 description confirming that no model consumes notification content.",
+          "Any documentation of AI or ML usage in the notification pipeline, or confirmation that none exists."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-074",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "According to evd-003, the Notification Service renders notification templates and sends them via an external messaging provider, while also logging the full rendered messages. There is no indication that model\u2011generated content is being published externally, which underpins the applicability_reason\u2019s claim that thr-005 does not involve publishing model output. However, req-AI-002 is not defined and thr-005 is not described in the evidence, so the documents do not fully establish that model\u2011output validation is irrelevant to this threat. The notification architecture is documented, but the non\u2011applicability of req-AI-002 remains only partially supported.",
+        "missing_evidence": [
+          "Definition of req-AI-002 and what kinds of model output require validation before publication.",
+          "Threat thr-005 description clarifying whether any model outputs are ever published as part of notification flows.",
+          "Design documentation indicating whether any AI/ML components influence notification content."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      }
+    ]
+  }
+}

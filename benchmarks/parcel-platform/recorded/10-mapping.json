@@ -1,0 +1,523 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 15200,
+    "output_tokens": 21921,
+    "cache_read_tokens": 10880,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.23957",
+    "duration_seconds": 201.1188825420104
+  },
+  "response": {
+    "controls": [
+      {
+        "key": "cp-net-core-data-segmentation",
+        "name": "Core-to-data zone network segmentation",
+        "description": "Orders Database and Tracking Store in the data zone are reachable only from the core zone, preventing direct access from the public internet or other zones.",
+        "control_type": "implemented",
+        "provider_component_id": null,
+        "protected_component_ids": [
+          "cmp-014",
+          "cmp-015"
+        ],
+        "protected_asset_ids": [
+          "ast-001",
+          "ast-002"
+        ],
+        "implementation_status": "implemented",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "owner": null,
+        "limitations": []
+      }
+    ],
+    "mappings": [
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-ADMIN-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-002",
+          "ctl-001",
+          "ctl-003"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The system exposes an administrative interface (the Admin Console, cmp-012) for staff operators who can read and edit any customer account, order, and address [evd-003], so both applicable conditions (administrative interface exists; operators can act on customer data) hold for threat thr-008, which explicitly includes compromise of the Admin Console.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "partially_satisfied",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-AI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Threat thr-008 concerns compromise of the Deploy Runner for conventional web and service components; the approved architecture and component list show no AI or model components and no paths where content is passed to a model, so the condition \"content the system did not author is passed to a model\" does not hold.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-AI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The Parcelworks architecture contains no model components and no flows where model output is published externally; threat thr-008 is about CI/CD compromise of core services, so the conditions for model-output publication do not hold.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-AI-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No part of the described system sends customer content to an external model provider; integrations are with messaging, payment, and carrier APIs [evd-003, evd-005], so the applicable conditions for this AI-focused requirement do not hold for thr-008.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-AI-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The architecture does not describe any model output being rendered into user interfaces or external markup; thr-008 targets build-time compromise of conventional services, not any AI rendering path, so the requirement\u2019s conditions do not hold.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-AUTH-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-001",
+          "ctl-003"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "Interactive user authentication (customers, drivers, staff) is delegated to the company\u2019s SSO provider over OpenID Connect via the Identity Service [evd-003], matching the condition that user authentication is delegated to an external identity provider.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "satisfied",
+        "evidence_ids": [
+          "evd-003",
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-AUTH-002",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-001",
+          "ctl-002",
+          "ctl-003"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The system exposes a privileged Admin Console for staff [evd-003], and admin access is reached over the same internet-facing SSO path as customers through the API Gateway [evd-002, evd-003], so privileged access crosses an untrusted network.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-AUTHZ-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-002"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "Parcelworks serves multiple customers booking shipments [evd-001]; their orders and accounts are stored together in the shared Orders Database [evd-004], so the conditions for multi-tenant data in shared storage hold, and a Deploy Runner compromise (thr-008) would give injected code broad cross-tenant reach.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001",
+          "evd-003",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-AUTHZ-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "The system integrates with external platforms (messaging provider, payment provider, carrier APIs) [evd-003, evd-005], but documentation does not state whether it holds delegated, scoped permissions to customer resources on those platforms. This requirement applies if those integrations use delegated privileges rather than simple API calls with platform-owned accounts.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [
+          "Assumes that if any external integration uses delegated, per-customer or per-resource privileges, req-AUTHZ-002 would apply to that integration."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-CICD-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The Deploy Runner (cmp-020) runs the deployment pipeline that builds and releases the core services [evd-005], so the system is deployed by an automated pipeline. Threat thr-008 is explicitly a supply-chain compromise of this pipeline, directly engaging the requirement to describe how the deployment path is trusted.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-005",
+          "evd-003",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-004"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The platform stores and transmits confidential customer data such as names, delivery addresses, and payment references [evd-003, evd-004], and communicates with external providers over networks it does not control [evd-002, evd-003, evd-005], so both applicable conditions hold.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-DATA-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Customer data is retained beyond immediate processing in several places, including nightly copies of the Orders Database in the Data Warehouse [evd-004] and full notification bodies in logs [evd-003], so the system retains working copies of customer data after processing completes.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unmet",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-DATA-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Artifacts from multiple customers (shipping label PDFs and proof-of-delivery photos) are stored together in the managed Object Storage bucket [evd-003, evd-004], so artifacts from different customers share a storage system and are addressable by object keys.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-DATA-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The system stores customer data in multiple locations, including the Orders Database, Data Warehouse, Object Storage, and logs [evd-003, evd-004], so the conditions for data existing in more than one store hold.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-LOG-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Parcelworks handles restricted personal data (names, delivery addresses, delivery windows) [evd-003, evd-004], and the Notification Service logs full rendered message bodies including that data to the Shared Application Log [evd-003], so logging of restricted data is in scope for thr-008\u2019s impact on confidential data.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unmet",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-LOG-002",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-002"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "There is an administrative interface (Admin Console) through which staff operators can perform refunds, address corrections, and account management on any customer account, order, or address [evd-003], so privileged actions affecting customer data exist and should be auditable.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-NET-001",
+        "control_keys": [
+          "cp-net-core-data-segmentation"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The system uses internal data stores (Orders Database, Tracking Store, Message Bus) that are not public interfaces and hold data and work for many customers [evd-003, evd-004], so the conditions for internal components requiring network restriction hold for thr-008.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "satisfied",
+        "evidence_ids": [
+          "evd-004",
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-SECRET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "The system integrates with external platforms (messaging provider, payment provider, carriers) [evd-003, evd-005], which typically require credentials or API keys, but the documentation does not state whether Parcelworks itself holds such long-lived credentials or where they are stored. This requirement applies if Parcelworks holds any long-lived credentials authenticating it to those external platforms.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [
+          "Assumes that integrations with external providers may use stored credentials even though the documentation does not describe them."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-SECRET-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "Parcelworks accesses external services on behalf of customers, notably the payment provider and carriers [evd-003, evd-005], but the documentation does not state whether this access uses short-lived, per-operation credentials or long-lived tokens, nor whether the providers offer short-lived credentials. The requirement applies if customer resources on those platforms are accessed and short-lived credentials are available.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [
+          "Assumes external platforms might support short-lived or installation-scoped credentials, but this is not documented."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-TPI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Customer data is sent to external providers: notification messages including recipient names and addresses go to a messaging provider, manifests and status updates to carriers, and payment details to an external payment provider [evd-003, evd-005], so external processors handle customer data on the system\u2019s behalf.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-TPI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "Some processing consumes metered external services (email/SMS via a messaging provider, carrier APIs, payment processing) [evd-003, evd-005], but the documentation does not state whether this work is triggered by untrusted external events or how retries and rate limits are configured. The requirement applies where externally triggered or retried work can drive unbounded consumption.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [
+          "Assumes that if any metered external work is driven by external events with automatic retry, bounding controls would be required."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-WEBHOOK-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "Carrier Link exchanges manifests and status updates with carrier partners over their HTTPS APIs [evd-005], but the documentation does not say whether Parcelworks exposes inbound webhook endpoints or instead polls carrier APIs. This requirement applies if Parcelworks accepts inbound events from external platforms that trigger processing.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-005"
+        ],
+        "assumptions": [
+          "Assumes that carrier integrations might use inbound webhooks, though this is not stated."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-WEBHOOK-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "If any inbound events from external platforms are state-changing or costly and are processed via webhooks, replay handling would matter, but the documentation does not describe webhook usage, idempotency, or replay controls. Therefore this requirement applies only if such inbound, state-changing events exist.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [],
+        "assumptions": [
+          "Assumes the possibility of inbound, state-changing events from external platforms, though none are explicitly documented."
+        ],
+        "confidence": "low"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Deployment pipeline authentication and dependency controls are undocumented",
+        "description": "The Deploy Runner (cmp-020) runs the deployment pipeline that builds and releases the core services [evd-005], but available documentation does not describe how this pipeline authenticates to the core and data zones, what privileges it holds over components like Orders Database, Tracking Store, Object Storage, and Message Bus [evd-003, evd-004], or how third-party components in builds are identified and controlled. This prevents verifying req-CICD-001 for threat thr-008, where compromise of the Deploy Runner would be a primary attack path.",
+        "importance": "Without documentation of pipeline authentication and dependency management, it is impossible to assess how difficult it would be for an attacker who compromises the Deploy Runner to push malicious artifacts or introduce hostile third-party components into core services, and whether any controls would detect or prevent this.",
+        "related_object_ids": [
+          "cmp-020",
+          "thr-008",
+          "cmp-005",
+          "cmp-006",
+          "cmp-007",
+          "cmp-008",
+          "cmp-009",
+          "cmp-010",
+          "cmp-011",
+          "cmp-012",
+          "cmp-013",
+          "cmp-014",
+          "cmp-015",
+          "cmp-016",
+          "cmp-017",
+          "cmp-018"
+        ],
+        "requested_evidence": [
+          "Deployment documentation describing how the Deploy Runner authenticates to each environment it deploys to (identity type, scope of permissions, and where those credentials are held).",
+          "Pipeline configuration or documentation showing how build artifacts are promoted to production (e.g., approval steps, artifact signing, or environment-specific release gates).",
+          "Documentation of dependency management for core services, including how third-party components are identified, approved, and kept under control over time."
+        ],
+        "evidence_ids": [
+          "evd-005",
+          "evd-003",
+          "evd-004"
+        ],
+        "severity": "high"
+      },
+      {
+        "title": "Custody of message bus service credentials is not described",
+        "description": "Core services authenticate to the Message Bus using per-service credentials issued at deploy time [evd-004], and an asset records these as Message Bus service credentials [ast-008], but neither the architecture description nor control ctl-005 explains where those credentials are stored, how they are rotated, or which parties or systems can retrieve them. This prevents assessing how exposed these high-value internal credentials would be in a Deploy Runner compromise (thr-008).",
+        "importance": "Per-service Message Bus credentials enable publishing and consuming events across the platform; if they are long-lived or poorly protected, a supply-chain compromise could exfiltrate or misuse them to inject or alter events even outside the deployment pipeline. Understanding their storage and lifecycle is necessary to evaluate this risk.",
+        "related_object_ids": [
+          "cmp-013",
+          "ast-008",
+          "thr-008"
+        ],
+        "requested_evidence": [
+          "Documentation naming the secret store or mechanism used to hold Message Bus service credentials for each core service.",
+          "Rotation policy and procedure for Message Bus service credentials, including how frequently they are changed and by what process.",
+          "Documentation of the scope of each Message Bus credential (e.g., which topics it can publish to or subscribe from, and any environment scoping)."
+        ],
+        "evidence_ids": [
+          "evd-004",
+          "evd-003"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": [
+      {
+        "concern": "Management of long-lived internal service credentials, such as per-service Message Bus credentials used between core services and the Message Bus, is not explicitly covered by any existing requirement, even though compromise of these secrets would allow broad tampering and exfiltration inside the system and would be a key concern in a Deploy Runner compromise like thr-008.",
+        "suggested_category": "secrets_management",
+        "nearest_requirements": [
+          {
+            "requirement_id": "req-SECRET-001",
+            "why_not": "req-SECRET-001 addresses credentials that authenticate the system to external platforms, including signing keys and provider API keys, whereas the documented per-service Message Bus credentials authenticate internal services to an internal bus [evd-004] and therefore fall outside its stated scope."
+          },
+          {
+            "requirement_id": "req-CICD-001",
+            "why_not": "req-CICD-001 focuses on how the deployment pipeline authenticates to environments and how third-party components are identified and controlled, but it does not require specific controls or documentation for storage and rotation of internal runtime service credentials such as Message Bus credentials."
+          }
+        ],
+        "evidence_ids": [
+          "evd-004"
+        ]
+      }
+    ]
+  }
+}

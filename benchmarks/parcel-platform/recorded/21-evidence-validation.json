@@ -1,0 +1,1518 @@
+{
+  "schema": "EvidenceValidationProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 14413,
+    "output_tokens": 30233,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.32034625",
+    "duration_seconds": 228.41773454193026
+  },
+  "response": {
+    "assessments": [
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-115",
+        "evidence_ids": [
+          "evd-005",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The conclusion is that req-SECRET-001 (about storing long-lived signing keys and provider credentials in a managed secret store) is not applicable to threat thr-007 because thr-007 is said to concern only compromise of a carrier partner\u2019s API or credentials. The cited evidence establishes that Parcelworks has a Carrier Link component that exchanges manifests and status updates with carrier partners over their HTTPS APIs [evd-005, evd-006], but it does not describe thr-007, nor does it describe the scope or intent of req-SECRET-001. The documents also show that the platform uses credentials in at least one place (per-service credentials for the Message Bus [evd-004], though that evidence is not cited here). From the available passages, we cannot confirm that controls on Parcelworks\u2019 own long-lived credentials are irrelevant to thr-007, nor that the requirement\u2019s preconditions fail. A human reviewer would need to consult the formal definition of thr-007 and req-SECRET-001 to confirm this mapping.",
+        "missing_evidence": [
+          "Authoritative description of threat thr-007, including which credentials or trust boundaries it involves.",
+          "Text of req-SECRET-001 describing exactly when it applies and what assets it is meant to protect.",
+          "Risk-trace or rationale explaining why securing Parcelworks-held long-lived credentials would not affect thr-007."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-005",
+            "text": "### Carrier Link\n\nThe connector to carrier partners' APIs for line-haul handoff: manifests out, status\nupdates in, over the carriers' HTTPS APIs."
+          },
+          {
+            "evidence_id": "evd-006",
+            "text": "- **Carrier partner** \u2014 receives manifests and returns status through Carrier Link."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-116",
+        "evidence_ids": [
+          "evd-005",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The mapping asserts that req-SECRET-002 (about using short-lived credentials to access customer resources on external platforms) is not applicable to thr-007 because that threat is described as a compromise of a carrier partner\u2019s own API or credentials. The evidence shows only that Parcelworks exchanges manifests and status updates with carrier partners\u2019 HTTPS APIs [evd-005, evd-006]; it does not describe whether Parcelworks uses long-lived or short-lived credentials, nor does it describe thr-007\u2019s exact assumptions. From the platform overview alone, we cannot determine whether the way Parcelworks authenticates to carrier APIs or other external platforms could influence thr-007, so the strong \u201cnot applicable\u201d conclusion is not established.",
+        "missing_evidence": [
+          "Formal definition of threat thr-007, including which parties\u2019 credentials are in scope.",
+          "Specification of req-SECRET-002 including the exact preconditions for applicability.",
+          "Documentation of how Parcelworks authenticates to carrier and other external APIs (credential types, lifetimes, and scope)."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-005",
+            "text": "### Carrier Link\n\nThe connector to carrier partners' APIs for line-haul handoff: manifests out, status\nupdates in, over the carriers' HTTPS APIs."
+          },
+          {
+            "evidence_id": "evd-006",
+            "text": "- **Carrier partner** \u2014 receives manifests and returns status through Carrier Link."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-117",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The mapping claims req-TPI-001 (documenting customer data sent to external processors and their retention/usage terms) is not applicable to thr-007 because thr-007 is characterised as a pure integrity threat involving falsified tracking status data from carriers. The cited passages establish that Parcelworks uses several external processors, including a messaging provider, a payment provider, and carrier partners that receive manifests and return status updates [evd-003, evd-005, evd-006]. They do not describe thr-007\u2019s detailed scenario or req-TPI-001\u2019s scope (e.g., whether it is limited to confidentiality/regulatory concerns or is also considered relevant to integrity risks). Based on the documentation alone, we can see that the conditions for req-TPI-001 (use of external processors handling customer data) do hold somewhere in the system, but we cannot verify the decision that this requirement does not bear on thr-007.",
+        "missing_evidence": [
+          "Definition of req-TPI-001, including whether it is scoped only to confidentiality/compliance or also to integrity-related threats.",
+          "Detailed description of thr-007 clarifying whether external processor contracts and data-handling obligations are considered relevant mitigations.",
+          "Any risk-trace or rationale explicitly excluding req-TPI-001 from thr-007 despite carriers acting as external processors."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "### Notification Service\n\nSends booking confirmations, delivery windows, and delivery notices by email and SMS\nthrough an external messaging provider. For debugging, the notification templates log the\nfull rendered message body \u2014 including the recipient's name, delivery address, and delivery\nwindow \u2014 to the shared application log.\n\n### Billing Service\n\nPrices shipments, raises invoices, and records payments. Card payments are processed\nentirely by an external payment provider; the platform stores only the provider's payment\nreference."
+          },
+          {
+            "evidence_id": "evd-005",
+            "text": "### Carrier Link\n\nThe connector to carrier partners' APIs for line-haul handoff: manifests out, status\nupdates in, over the carriers' HTTPS APIs."
+          },
+          {
+            "evidence_id": "evd-006",
+            "text": "- **Carrier partner** \u2014 receives manifests and returns status through Carrier Link."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-118",
+        "evidence_ids": [
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The conclusion is that req-TPI-002 (bounding work triggered by external events to control cost and availability impact) is not applicable to thr-007 because the threat is described as harm from incorrect statuses being believed, not from unbounded consumption of metered services. The evidence shows that Carrier Link connects to carrier partners\u2019 APIs for manifests and status updates over HTTPS [evd-005], but does not describe how work is triggered (polling vs. inbound events), what retry policies exist, or thr-007\u2019s precise impact dimensions. Without those details, we cannot determine whether unbounded consumption of carrier APIs or associated downstream work is out of scope for thr-007, so the firm \u201cnot applicable\u201d judgement is not established by the documentation.",
+        "missing_evidence": [
+          "Formal description of thr-007, including whether resource exhaustion or cost/availability impact from carrier API usage is considered.",
+          "Full text of req-TPI-002 describing trigger conditions (e.g., external events, retries) and scope.",
+          "Operational documentation for Carrier Link\u2019s polling, retry, and rate-limit behaviour to show whether unbounded work is possible."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-005",
+            "text": "### Carrier Link\n\nThe connector to carrier partners' APIs for line-haul handoff: manifests out, status\nupdates in, over the carriers' HTTPS APIs."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-119",
+        "evidence_ids": [
+          "evd-005",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-005",
+            "strength": "indirect"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The mapping states that req-WEBHOOK-001 (cryptographic verification of inbound webhook events) is not applicable to thr-007 because Carrier Link is a client-initiated integration and Parcelworks does not expose an inbound webhook endpoint in this flow. The evidence shows that Carrier Link is \u201cthe connector to carrier partners\u2019 APIs\u201d and that manifests and status updates are exchanged over the carriers\u2019 HTTPS APIs [evd-005, evd-006]. This supports an inference that Parcelworks calls carrier-hosted APIs, but it does not explicitly state that Parcelworks has no inbound webhook endpoints for this or other flows. Nor do we see the definition of thr-007 or req-WEBHOOK-001. Thus, while the evidence suggests a client-initiated pattern, it does not definitively establish that no inbound webhook exists in the relevant flow or that the requirement is wholly inapplicable.",
+        "missing_evidence": [
+          "Detailed integration documentation or a data-flow diagram for Carrier Link explicitly stating whether Parcelworks exposes any inbound HTTP endpoints for carriers or other external platforms.",
+          "Formal text of req-WEBHOOK-001 specifying its preconditions.",
+          "Threat description for thr-007 clarifying whether webhook-style integrations are in or out of scope."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-005",
+            "text": "### Carrier Link\n\nThe connector to carrier partners' APIs for line-haul handoff: manifests out, status\nupdates in, over the carriers' HTTPS APIs."
+          },
+          {
+            "evidence_id": "evd-006",
+            "text": "- **Carrier partner** \u2014 receives manifests and returns status through Carrier Link."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-120",
+        "evidence_ids": [
+          "evd-005",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-005",
+            "strength": "indirect"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The mapping asserts that req-WEBHOOK-002 (preventing or making harmless replay of inbound events) is not applicable to thr-007 because Carrier Link does not run an inbound event receiver and so there is no webhook-style endpoint whose replay behaviour this requirement would govern. The evidence shows Carrier Link connecting to carrier partners\u2019 APIs over HTTPS [evd-005, evd-006], which supports a client-initiated API pattern but does not explicitly rule out inbound webhooks or any state-changing inbound events. Without documentation explicitly describing the absence of webhook endpoints or the event-processing pattern, and without the formal definition of req-WEBHOOK-002, the conclusion that the requirement cannot apply is not fully supported.",
+        "missing_evidence": [
+          "Explicit description of whether Parcelworks exposes any inbound HTTP/webhook endpoints to carriers or other external platforms and what events they process.",
+          "Definition of req-WEBHOOK-002, including its applicability conditions.",
+          "Threat specification for thr-007 indicating whether replay of externally triggered events is considered."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-005",
+            "text": "### Carrier Link\n\nThe connector to carrier partners' APIs for line-haul handoff: manifests out, status\nupdates in, over the carriers' HTTPS APIs."
+          },
+          {
+            "evidence_id": "evd-006",
+            "text": "- **Messaging provider** \u2014 the external email and SMS service."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-121",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The mapping claims that req-ADMIN-001 is applicable to thr-008 and that it is partially satisfied. The evidence clearly shows that there is an administrative interface, the Admin Console, and that staff can read and edit any customer account, order, and address via that console [evd-003]. This directly supports the applicability portion: a privileged admin interface exists and is in scope for threats involving its compromise. However, the platform overview provides only minimal information about how administrative access is controlled (SSO plus an `is_admin` flag) and nothing about other safeguards req-ADMIN-001 might require (such as documentation of admin roles, segregation of duties, or audit controls). Therefore, while applicability is established, the statement that the requirement is \"partially_satisfied\" goes beyond what the documentation substantiates.",
+        "missing_evidence": [
+          "Definition of req-ADMIN-001 and its specific control obligations.",
+          "Documentation of admin role management, access control policies, and any compensating controls that justify the \"partially_satisfied\" status.",
+          "Any security design or runbook describing how Admin Console access is restricted, reviewed, and monitored."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "### Admin Console\n\nThe staff interface for refunds, address corrections, and account management. Staff reach\nthe console with the same SSO accounts and the same sign-in path customers use; an\n`is_admin` flag on the user record enables the console's functions. The console can read\nand edit any customer account, order, and address."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-122",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The mapping states that req-AI-001 is not applicable to thr-008 because the \"approved architecture and component list show no AI or model components and no paths where content is passed to a model.\" The platform overview describes the platform\u2019s zones and components in some detail [evd-001\u2013evd-005], but nowhere does it explicitly state that there are no AI or model-using components, nor does it claim the listed components are exhaustive. The absence of any mention of models is a lack of documentation, not positive evidence that such components do not exist. On that basis, the strong \"not_applicable\" conclusion for req-AI-001 is not established by the evidence presented.",
+        "missing_evidence": [
+          "An explicit statement in the architecture or component inventory confirming whether any AI/model components exist or are planned.",
+          "If no models exist, a brief note documenting that AI-related requirements are out of scope for the current system.",
+          "If models do exist, documentation of where untrusted content can reach them, so req-AI-001 can be reassessed."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "# Parcelworks \u2014 Platform Overview\n\nParcelworks is a parcel-logistics platform: customers book and track shipments, drivers\ncollect and deliver them, and carrier partners handle line-haul between depots. This\ndocument describes the platform as deployed across its four zones: edge, core, data, and\noperations."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-123",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The mapping asserts that req-AI-002 is not applicable to thr-008 because the architecture contains no model components and no flows where model output is published externally. The platform overview enumerates many components and data flows [evd-001\u2013evd-005] but never explicitly states that no model components exist or that no model outputs are published. This is an inference from silence, which the evidence policy does not permit to be treated as a documented fact. Therefore, the claim that req-AI-002 is definitively not applicable is not established by the cited material.",
+        "missing_evidence": [
+          "Explicit confirmation in architecture or design documentation of whether any model-based components exist and whether their outputs are ever published externally without review.",
+          "If such components exist, documentation of their output paths so applicability of req-AI-002 can be evaluated."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "## 2. Core zone\n\n### Identity Service\n\nAuthenticates customers, drivers, and staff. All interactive sign-in is delegated to the\ncompany's SSO provider over OpenID Connect; the service issues short-lived internal tokens\nthat the core services verify."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-124",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The mapping concludes that req-AI-003 is not applicable to thr-008 because no part of the described system sends customer content to an external model provider; instead, integrations are with a messaging provider, a payment provider, and carrier APIs [evd-003, evd-005]. The evidence directly supports the statement about the documented integrations: they are explicitly described and none is an external model provider. However, the documents do not explicitly assert that *no* external model provider is used anywhere, nor that the listed integrations are exhaustive. Thus, the evidence supports that the known integrations are non-AI, but does not fully justify the stronger claim that the AI requirement is categorically not applicable.",
+        "missing_evidence": [
+          "A clear statement of whether any external model providers are used for customer content, beyond the messaging, payment, and carrier integrations.",
+          "If external models are not used, documentation explicitly marking AI/ML integrations as out of scope.",
+          "If they are used, a description of what customer content is sent where, to reassess req-AI-003."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "### Notification Service\n\nSends booking confirmations, delivery windows, and delivery notices by email and SMS\nthrough an external messaging provider."
+          },
+          {
+            "evidence_id": "evd-005",
+            "text": "### Carrier Link\n\nThe connector to carrier partners' APIs for line-haul handoff: manifests out, status\nupdates in, over the carriers' HTTPS APIs.\n\n### Deploy Runner\n\nRuns the deployment pipeline that builds and releases the core services."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-125",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "unsupported",
+        "rationale": "The mapping states that req-AI-004 is not applicable to thr-008 because no model output is rendered into user interfaces or external markup and no AI rendering path exists. The platform overview describes several user interfaces (Customer Portal, Mobile Gateway, Admin Console) and services [evd-002, evd-003] but does not say anything about model outputs or explicitly deny their presence. As with other AI-related mappings for thr-008, this is an inference from the absence of AI references, not from a documented claim. The evidence therefore does not establish that req-AI-004 is definitively out of scope.",
+        "missing_evidence": [
+          "Design documentation stating whether any model outputs are rendered into UIs, templates, or markup.",
+          "If no such rendering exists, an explicit note marking AI-rendering concerns as out of scope for the current system."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "### Customer Portal\n\nThe public web application where customers book shipments, print labels, and track parcels.\nServed over HTTPS behind the API Gateway."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-126",
+        "evidence_ids": [
+          "evd-003",
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The mapping claims that req-AUTH-001 is applicable to thr-008 and satisfied because interactive user authentication is delegated to an external SSO provider. The Identity Service description explicitly states that \"All interactive sign-in is delegated to the company's SSO provider over OpenID Connect\" [evd-003], which directly establishes that authentication is delegated to an external identity provider. The API Gateway description supports that all public traffic is authenticated via the Identity Service [evd-002]. While we do not see the exact text of req-AUTH-001, the mapping\u2019s applicability condition (\u201cuser authentication is delegated to an external identity provider\u201d) is directly met, and the platform overview itself serves as documentation of this delegation, consistent with the \"satisfied\" status.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "### Identity Service\n\nAuthenticates customers, drivers, and staff. All interactive sign-in is delegated to the\ncompany's SSO provider over OpenID Connect; the service issues short-lived internal tokens\nthat the core services verify."
+          },
+          {
+            "evidence_id": "evd-002",
+            "text": "### API Gateway\n\nThe single public entry point. It terminates TLS, authenticates every request against the\nIdentity Service, applies per-client rate limits, and routes to the core services."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-127",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The mapping states that req-AUTH-002 is applicable to thr-008 and unverified. The Admin Console is a privileged administrative interface that staff reach using the same internet-facing SSO sign-in path as customers [evd-003], and that path goes through the public API Gateway [evd-002]. This directly supports the applicability condition that privileged administrative access crosses an untrusted network. The \"unverified\" status reflects that the platform overview does not describe multi-factor authentication enforcement or policy; there is no mention of MFA in the provided text. Thus, both the applicability and the lack of verification are consistent with the evidence.",
+        "missing_evidence": [
+          "Documentation of MFA policy and enforcement for SSO accounts, including whether it is required for Admin Console access and who enforces it (IdP vs. application)."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "### Admin Console\n\nThe staff interface for refunds, address corrections, and account management. Staff reach\nthe console with the same SSO accounts and the same sign-in path customers use; an\n`is_admin` flag on the user record enables the console's functions."
+          },
+          {
+            "evidence_id": "evd-002",
+            "text": "### API Gateway\n\nThe single public entry point. It terminates TLS, authenticates every request against the\nIdentity Service, applies per-client rate limits, and routes to the core services."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-128",
+        "evidence_ids": [
+          "evd-001",
+          "evd-003",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The mapping asserts that req-AUTHZ-001 is applicable to thr-008 and unverified because Parcelworks serves multiple customers and stores their data together in a shared Orders Database. The overview states that Parcelworks is a parcel-logistics platform where \"customers book and track shipments\" [evd-001], and that the Orders Database is the relational store for bookings, customer accounts, and addresses [evd-004]. This supports the presence of multi-customer data in a shared store. The documentation does not describe any tenant-aware authorization scheme within the Orders Database or surrounding services, so treating the requirement as applicable but implementation as unverified matches the available information.",
+        "missing_evidence": [
+          "Authorization design for accessing Orders Database data, including how access is constrained per customer or tenant.",
+          "Any policies or mechanisms preventing cross-customer data access by compromised components as in thr-008."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "Parcelworks is a parcel-logistics platform: customers book and track shipments, drivers\ncollect and deliver them, and carrier partners handle line-haul between depots."
+          },
+          {
+            "evidence_id": "evd-004",
+            "text": "### Orders Database\n\nThe relational store for bookings, customer accounts, and addresses. Reachable only from\nthe core zone."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-129",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The mapping concludes that req-AUTHZ-002 is conditionally applicable to thr-008 and unverified, on the basis that the system integrates with several external platforms but the documentation does not say whether it holds delegated, scoped permissions to customer resources. The overview clearly documents integrations with an external messaging provider and an external payment provider [evd-003], and Carrier Link\u2019s use of carrier partners\u2019 APIs [evd-005]. It does not describe the permission or token models used with these platforms. Treating the requirement as potentially applicable if delegated per-customer or per-resource privileges are used, and as unverified due to lack of detail, accurately reflects what is and is not stated.",
+        "missing_evidence": [
+          "Integration documentation for messaging, payment, and carrier APIs describing whether access is via platform-owned credentials or delegated per-customer permissions.",
+          "Any scope or permission configuration (e.g., OAuth scopes, API keys) that would show how privileges are limited."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "### Notification Service\n\nSends booking confirmations, delivery windows, and delivery notices by email and SMS\nthrough an external messaging provider.\n\n### Billing Service\n\nPrices shipments, raises invoices, and records payments. Card payments are processed\nentirely by an external payment provider; the platform stores only the provider's payment\nreference."
+          },
+          {
+            "evidence_id": "evd-005",
+            "text": "### Carrier Link\n\nThe connector to carrier partners' APIs for line-haul handoff: manifests out, status\nupdates in, over the carriers' HTTPS APIs."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-130",
+        "evidence_ids": [
+          "evd-005",
+          "evd-003",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The mapping states that req-CICD-001 is applicable to thr-008 and unverified because the Deploy Runner runs the automated deployment pipeline that builds and releases the core services. The overview explicitly describes the Deploy Runner as running the deployment pipeline for core services [evd-005], which directly supports applicability of a requirement governing trust in the deployment path, especially given thr-008 is defined as a supply-chain compromise of this pipeline. The documentation does not describe any controls or trust mechanisms for the pipeline, so treating the requirement as unverified is consistent with the evidence.",
+        "missing_evidence": [
+          "CI/CD design or security documentation describing how source, build artifacts, and deployments are authenticated, authorised, and validated.",
+          "Any controls on the Deploy Runner\u2019s environment (e.g., hardening, access controls) relevant to thr-008."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-005",
+            "text": "### Deploy Runner\n\nRuns the deployment pipeline that builds and releases the core services."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-131",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The mapping asserts that req-DATA-001 is applicable to thr-008 and unverified because the platform stores and transmits confidential customer data and communicates with external providers over networks it does not control. The overview states that customer names, delivery addresses, and other personal data are stored in the Orders Database and Data Warehouse [evd-003, evd-004], that payment information is processed via an external payment provider [evd-003], and that communication with customers and external providers uses HTTPS over the public internet [evd-002, evd-005]. This directly establishes the applicability conditions for a requirement on protecting data in transit and at rest. The documentation does not detail encryption or key management for internal flows and stores, so classifying the requirement as unverified accords with the evidence.",
+        "missing_evidence": [
+          "Documentation of encryption in transit for internal service-to-service and service-to-data-store connections.",
+          "Documentation of encryption at rest and key management for Orders Database, Tracking Store, Object Storage, and Data Warehouse."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "### Billing Service\n\nPrices shipments, raises invoices, and records payments. Card payments are processed\nentirely by an external payment provider; the platform stores only the provider's payment\nreference."
+          },
+          {
+            "evidence_id": "evd-004",
+            "text": "### Data Warehouse\n\nReceives a nightly copy of the Orders Database \u2014 including customer names and full delivery\naddresses \u2014 for analytics. How long the copies are kept has not been written down anywhere\nthe team could point to."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-132",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The mapping states that req-DATA-002 is applicable to thr-008 and unverified because the system retains working copies of customer data after processing completes. The Data Warehouse is documented as receiving nightly copies of the Orders Database, including customer names and full delivery addresses, with retention not documented [evd-004]. The Notification Service logs full rendered message bodies including personal data to a shared application log [evd-003]. Both passages directly show data retained beyond immediate transactional use. There is no description of retention policies or deletion processes, supporting the \"unverified\" satisfaction status.",
+        "missing_evidence": [
+          "Retention and deletion policies for Data Warehouse copies of the Orders Database.",
+          "Policies and mechanisms for log data retention and sanitisation, especially where full message bodies with personal data are logged."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-004",
+            "text": "### Data Warehouse\n\nReceives a nightly copy of the Orders Database \u2014 including customer names and full delivery\naddresses \u2014 for analytics. How long the copies are kept has not been written down anywhere\nthe team could point to."
+          },
+          {
+            "evidence_id": "evd-003",
+            "text": "### Notification Service\n\nSends booking confirmations, delivery windows, and delivery notices by email and SMS\nthrough an external messaging provider. For debugging, the notification templates log the\nfull rendered message body \u2014 including the recipient's name, delivery address, and delivery\nwindow \u2014 to the shared application log."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-133",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The mapping asserts that req-DATA-003 is applicable to thr-008 and unverified because artifacts from multiple customers share a storage system and are addressable by object keys. The Label Service renders shipping labels as PDFs and stores them in the Object Storage bucket, keyed by shipment [evd-003], and the Object Storage description confirms it holds label PDFs and proof-of-delivery photos [evd-004]. Given Parcelworks serves many customers [evd-001], these passages directly support the claim that artifacts from different customers reside in the same object store. The documentation does not describe access control on object keys or bucket configuration, so treating the requirement as unverified is consistent with the available evidence.",
+        "missing_evidence": [
+          "Access control and naming scheme for Object Storage keys, including any tenant or customer isolation mechanisms.",
+          "Configuration of the managed Object Storage bucket (e.g., public access settings, encryption, policies)."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "### Label Service\n\nRenders shipping labels as PDFs and stores them in the Object Storage bucket, keyed by\nshipment."
+          },
+          {
+            "evidence_id": "evd-004",
+            "text": "### Object Storage\n\nThe managed object store holding label PDFs and proof-of-delivery photos."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-134",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The mapping says that req-DATA-004 is applicable to thr-008 and unverified because customer data exists in more than one store. The overview describes customer data in multiple locations: Orders Database (bookings, accounts, addresses) [evd-004], the Data Warehouse\u2019s nightly copies including customer names and addresses [evd-004], Object Storage holding label PDFs and proof-of-delivery photos [evd-004], and logs containing full rendered notification bodies with personal data [evd-003]. This directly confirms that data is duplicated across several stores. The documentation does not cover data cataloguing, mapping, or coordinated deletion across these stores, so marking the requirement as unverified is consistent with the evidence.",
+        "missing_evidence": [
+          "Documentation of where specific categories of customer data are stored (database, warehouse, logs, object storage) and how those locations are tracked.",
+          "Design for propagating erasure or correction requests across all relevant data stores."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-004",
+            "text": "### Orders Database\n\nThe relational store for bookings, customer accounts, and addresses. Reachable only from\nthe core zone.\n\n### Object Storage\n\nThe managed object store holding label PDFs and proof-of-delivery photos.\n\n### Data Warehouse\n\nReceives a nightly copy of the Orders Database \u2014 including customer names and full delivery\naddresses \u2014 for analytics."
+          },
+          {
+            "evidence_id": "evd-003",
+            "text": "For debugging, the notification templates log the\nfull rendered message body \u2014 including the recipient's name, delivery address, and delivery\nwindow \u2014 to the shared application log."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-135",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The mapping concludes that req-LOG-001 is applicable to thr-008 and unverified because restricted personal data is being logged. The Notification Service explicitly logs full rendered message bodies, including the recipient's name, delivery address, and delivery window, to a shared application log [evd-003]. This directly establishes that logging of restricted personal data occurs. The documentation provides no detail on log access controls, redaction, or retention, so treating the requirement as unverified appropriately reflects that the implementation of safe logging practices is not documented.",
+        "missing_evidence": [
+          "Logging policy and configuration for the shared application log (access controls, retention, redaction).",
+          "Any controls limiting who can view logs containing full message bodies with personal data."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "### Notification Service\n\nSends booking confirmations, delivery windows, and delivery notices by email and SMS\nthrough an external messaging provider. For debugging, the notification templates log the\nfull rendered message body \u2014 including the recipient's name, delivery address, and delivery\nwindow \u2014 to the shared application log."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-136",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The mapping states that req-LOG-002 is applicable to thr-008 and unverified because there are privileged administrative actions that should be auditable. The Admin Console is documented as allowing staff to perform refunds, address corrections, and account management on any customer account, order, or address [evd-003]. These are clearly privileged, state-changing operations. The overview does not describe any auditing or logging of admin actions, making it appropriate to treat the requirement as applicable but unverified.",
+        "missing_evidence": [
+          "Audit logging design for the Admin Console, including what admin actions are logged and how logs are protected and reviewed."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "### Admin Console\n\nThe staff interface for refunds, address corrections, and account management. Staff reach\nthe console with the same SSO accounts and the same sign-in path customers use; an\n`is_admin` flag on the user record enables the console's functions. The console can read\nand edit any customer account, order, and address."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-137",
+        "evidence_ids": [
+          "evd-004",
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The mapping claims that req-NET-001 is applicable to thr-008 and satisfied. Applicability is clearly supported: the Orders Database and Tracking Store are described as reachable only from the core zone [evd-004], and the API Gateway is the single public entry point, fronting the Customer Portal and Mobile Gateway [evd-002]. This shows internal components holding data and work for many customers and being separated from the public edge. However, \"satisfied\" implies that all applicable internal components are appropriately network-restricted in line with req-NET-001. The platform overview does not describe the full network topology, firewall rules, or restrictions for every internal service, so we cannot verify complete satisfaction of the requirement\u2014only that significant parts of the architecture follow the intended pattern.",
+        "missing_evidence": [
+          "Network architecture or firewall/security group documentation showing which components are reachable from where, beyond the summarized statements in the overview.",
+          "Definition of req-NET-001 and a mapping showing how each internal component meets its conditions."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-004",
+            "text": "### Orders Database\n\nThe relational store for bookings, customer accounts, and addresses. Reachable only from\nthe core zone.\n\n### Tracking Store\n\nThe store for per-parcel scan history and tracking state. Reachable only from the core\nzone."
+          },
+          {
+            "evidence_id": "evd-002",
+            "text": "### API Gateway\n\nThe single public entry point. It terminates TLS, authenticates every request against the\nIdentity Service, applies per-client rate limits, and routes to the core services."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-138",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The mapping concludes that req-SECRET-001 is conditionally applicable to thr-008 and unverified. The platform overview documents integrations with an external messaging provider and payment provider [evd-003] and with carrier partners\u2019 APIs [evd-005], all of which typically require credentials or API keys held by Parcelworks. The documentation does not state what form these credentials take or where they are stored. The mapping explicitly treats applicability as conditional on Parcelworks holding long-lived credentials and marks satisfaction as unverified due to lack of detail, which accurately reflects what is and is not documented.",
+        "missing_evidence": [
+          "Details of credentials or keys held for messaging, payment, and carrier integrations (type, scope, lifetime).",
+          "Documentation of how such long-lived credentials are stored and rotated (e.g., use of a managed secret store)."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "### Notification Service\n\nSends booking confirmations, delivery windows, and delivery notices by email and SMS\nthrough an external messaging provider.\n\n### Billing Service\n\nPrices shipments, raises invoices, and records payments. Card payments are processed\nentirely by an external payment provider; the platform stores only the provider's payment\nreference."
+          },
+          {
+            "evidence_id": "evd-005",
+            "text": "### Carrier Link\n\nThe connector to carrier partners' APIs for line-haul handoff: manifests out, status\nupdates in, over the carriers' HTTPS APIs."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-139",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The mapping states that req-SECRET-002 is conditionally applicable to thr-008 and unverified, based on Parcelworks accessing external services (payment provider, carriers) on behalf of customers while documentation is silent on whether short-lived credentials are used. The overview confirms that card payments are processed entirely by an external payment provider and that the platform interacts with carrier partners\u2019 APIs [evd-003, evd-005]. It does not describe credential lifetimes or mechanisms for delegated access. The conditional applicability and unverified status therefore correctly express that the preconditions might hold but are undocumented.",
+        "missing_evidence": [
+          "Description of how access to external payment and carrier APIs is authenticated (e.g., OAuth tokens, API keys) and whether those credentials are short-lived and per-operation or long-lived.",
+          "Any provider documentation or integration design confirming support for short-lived or installation-scoped credentials."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "### Billing Service\n\nPrices shipments, raises invoices, and records payments. Card payments are processed\nentirely by an external payment provider; the platform stores only the provider's payment\nreference."
+          },
+          {
+            "evidence_id": "evd-005",
+            "text": "### Carrier Link\n\nThe connector to carrier partners' APIs for line-haul handoff: manifests out, status\nupdates in, over the carriers' HTTPS APIs."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-140",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The mapping asserts that req-TPI-001 is applicable to thr-008 and unverified because customer data is sent to external processors. The overview clearly states that notification messages including recipient names and addresses go to an external messaging provider, and that card payments are processed entirely by an external payment provider [evd-003], and that manifests and status updates are exchanged with carriers\u2019 APIs [evd-005]. These passages directly establish that external processors handle customer data on Parcelworks\u2019 behalf. However, the documentation does not describe what has been documented about those processors\u2019 retention and usage of data, justifying the \"unverified\" status.",
+        "missing_evidence": [
+          "Data processing agreements or integration documentation describing what customer data is sent to each external processor and their retention/usage terms.",
+          "Any internal records or risk assessments that demonstrate compliance with req-TPI-001."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "### Notification Service\n\nSends booking confirmations, delivery windows, and delivery notices by email and SMS\nthrough an external messaging provider.\n\n### Billing Service\n\nPrices shipments, raises invoices, and records payments. Card payments are processed\nentirely by an external payment provider; the platform stores only the provider's payment\nreference."
+          },
+          {
+            "evidence_id": "evd-005",
+            "text": "### Carrier Link\n\nThe connector to carrier partners' APIs for line-haul handoff: manifests out, status\nupdates in, over the carriers' HTTPS APIs."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-141",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The mapping states that req-TPI-002 is conditionally applicable to thr-008 and unverified. The evidence shows that Parcelworks performs metered external work via an email/SMS messaging provider, carrier APIs, and payment processing [evd-003, evd-005]. It does not specify whether this work is triggered by untrusted external events, how retries are handled, or whether consumption is bounded, all of which matter to req-TPI-002. The mapping explicitly captures this uncertainty by making applicability conditional on such patterns and marking implementation as unverified, which aligns with the available documentation.",
+        "missing_evidence": [
+          "Detailed processing flows for interactions with messaging, carrier, and payment providers, including triggers (internal vs. external events) and retry/backoff policies.",
+          "Any rate-limiting or quota protections that bound externally-triggered or retried work."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "### Notification Service\n\nSends booking confirmations, delivery windows, and delivery notices by email and SMS\nthrough an external messaging provider."
+          },
+          {
+            "evidence_id": "evd-005",
+            "text": "### Carrier Link\n\nThe connector to carrier partners' APIs for line-haul handoff: manifests out, status\nupdates in, over the carriers' HTTPS APIs."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-142",
+        "evidence_ids": [
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The mapping concludes that req-WEBHOOK-001 is conditionally applicable to thr-008 and unverified because Carrier Link exchanges manifests and status updates with carriers over HTTPS APIs, but the documentation does not specify whether Parcelworks exposes inbound webhook endpoints or instead polls. The Carrier Link description [evd-005] confirms the existence of API-based integrations but says nothing about the directionality of HTTP connections or any webhook endpoints. The mapping appropriately reflects this by stating that applicability depends on whether inbound webhooks exist and marking the requirement as unverified.",
+        "missing_evidence": [
+          "Integration design or data flow diagrams indicating whether Parcelworks exposes inbound HTTP/webhook endpoints for carriers or other external platforms.",
+          "Configuration or code references showing how incoming events (if any) are authenticated and verified."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-005",
+            "text": "### Carrier Link\n\nThe connector to carrier partners' APIs for line-haul handoff: manifests out, status\nupdates in, over the carriers' HTTPS APIs."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-143",
+        "evidence_ids": [
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The mapping states that req-WEBHOOK-002 is conditionally applicable to thr-008 and unverified, on the basis that the documentation does not describe webhook usage, idempotency, or replay controls, so the requirement would apply only if inbound, state-changing events exist. The platform overview confirms only that Carrier Link uses carriers\u2019 HTTPS APIs [evd-005] and is silent on webhook patterns or replay handling. The mapping\u2019s conditional applicability and unverified status accurately describe this gap rather than assuming presence or absence of webhook-style events.",
+        "missing_evidence": [
+          "Documentation of any inbound event or webhook endpoints, including which events they process and whether they are state-changing or costly.",
+          "Replay protection and idempotency mechanisms, if such inbound events exist."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-005",
+            "text": "### Carrier Link\n\nThe connector to carrier partners' APIs for line-haul handoff: manifests out, status\nupdates in, over the carriers' HTTPS APIs."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-144",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "The mapping claims that req-ADMIN-001 is applicable to thr-009 and partially satisfied because there is an Admin Console through which staff can modify billing-related records. The Admin Console is documented as a staff interface for refunds, address corrections, and account management, with the ability to read and edit any customer account, order, and address [evd-003]. This directly supports applicability: privileged administrative access exists and is clearly relevant to threats involving modification of billing records. However, the \"partially_satisfied\" designation implies knowledge of how far the implementation goes toward req-ADMIN-001\u2019s requirements (e.g., restrictions, documentation, monitoring) beyond what is stated. The overview gives only limited detail (SSO and an `is_admin` flag) and does not describe broader administrative controls, so the satisfaction level cannot be fully validated.",
+        "missing_evidence": [
+          "Definition of req-ADMIN-001 and a mapping of its specific control points to implemented features.",
+          "Documentation of admin access restrictions, role management, and any auditing or monitoring applied to Admin Console use."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "### Admin Console\n\nThe staff interface for refunds, address corrections, and account management. Staff reach\nthe console with the same SSO accounts and the same sign-in path customers use; an\n`is_admin` flag on the user record enables the console's functions. The console can read\nand edit any customer account, order, and address."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-145",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The mapping treats req-AI-001 as conditionally applicable to thr-009 and unverified, based on the fact that the architecture description does not mention any AI or model-using component. The platform overview thoroughly describes the platform\u2019s zones and components [evd-001\u2013evd-005] and does not reference any model or AI functionality. The mapping does not claim that no models exist; instead, it explicitly notes that applicability would arise only if an undocumented model integration exists and records that as an assumption. This conditional and unverified stance accurately represents the absence of AI-related documentation without turning that absence into a factual claim.",
+        "missing_evidence": [
+          "A component inventory or architectural statement confirming whether any AI/model components exist or are planned.",
+          "If such components exist, documentation of where untrusted content may be passed to them, to reassess req-AI-001."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "This\ndocument describes the platform as deployed across its four zones: edge, core, data, and\noperations."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-146",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The mapping for req-AI-002 under thr-009 mirrors req-AI-001: it notes that no model components are described in the architecture and therefore treats the requirement as conditionally applicable and unverified, applying only if an undocumented model whose output is auto-published exists. The platform overview\u2019s component descriptions [evd-001\u2013evd-005] contain no references to models or AI, and the mapping explicitly frames applicability as contingent on additional, currently undocumented features. This is a faithful reflection of the current documentation state.",
+        "missing_evidence": [
+          "Confirmation of whether any model components generate output that is published externally without human review.",
+          "If such components exist, documentation of their output publication paths to evaluate req-AI-002."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "## 2. Core zone"
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-147",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The mapping treats req-AI-003 as conditionally applicable to thr-009 and unverified, noting that the architecture does not mention any external model provider and that the requirement would apply only if such a provider is used but not documented. The platform overview lists external providers for messaging, payments, and carriers [evd-003, evd-005] but not for model inference, and the mapping explicitly marks the absence of model providers as an assumption rather than a fact. This conditional and unverified status correctly captures the situation where documentation is silent but does not claim that AI integrations cannot exist.",
+        "missing_evidence": [
+          "Explicit statement on whether any external model providers are used with customer content.",
+          "If they are used, integration documentation showing what content is sent and under what terms."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-005",
+            "text": "## 4. Operations zone"
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-148",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The mapping for req-AI-004 under thr-009 again treats the requirement as conditionally applicable and unverified, on the grounds that no part of the architecture is described as using a model and any such requirement would apply only if an undocumented model-driven feature existed whose output is rendered. The platform overview describes UI rendering components (Customer Portal, Mobile Gateway, Admin Console) [evd-002, evd-003] but does not mention any model outputs, and the mapping presents the lack of AI documentation as an assumption rather than a fact. This conditional/unverified classification is consistent with the evidence.",
+        "missing_evidence": [
+          "Documentation stating whether any UI or markup rendering incorporates model-generated output.",
+          "If so, details of those paths to assess req-AI-004."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-002",
+            "text": "### Customer Portal\n\nThe public web application where customers book shipments, print labels, and track parcels.\nServed over HTTPS behind the API Gateway."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-149",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The mapping states that req-AUTH-001 is applicable to thr-009 and satisfied because interactive sign-in is delegated to the company\u2019s SSO provider. The Identity Service description explicitly notes that \"All interactive sign-in is delegated to the company's SSO provider over OpenID Connect\" and that the service authenticates customers, drivers, and staff [evd-003]. This directly establishes the condition that authentication is delegated to an external identity provider, supporting applicability. As with thr-008, the platform overview itself provides the necessary documentation of this delegation, so treating the requirement as satisfied is supported.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "### Identity Service\n\nAuthenticates customers, drivers, and staff. All interactive sign-in is delegated to the\ncompany's SSO provider over OpenID Connect; the service issues short-lived internal tokens\nthat the core services verify."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-150",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The mapping asserts that req-AUTH-002 is applicable to thr-009 and unverified because the Admin Console is a privileged interface reached over the same SSO-backed web sign-in path as customers, crossing an untrusted network. The Admin Console description confirms that staff reach the console with the same SSO accounts and sign-in path customers use [evd-003], and that the console can perform highly privileged operations. This supports applicability of a requirement governing secure authentication (e.g., MFA) for privileged access over the internet. The documentation does not mention MFA or specific authentication strength, so \"unverified\" is appropriate.",
+        "missing_evidence": [
+          "Details of MFA or equivalent strong authentication policies for SSO accounts, particularly for those with Admin Console access."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "### Admin Console\n\nThe staff interface for refunds, address corrections, and account management. Staff reach\nthe console with the same SSO accounts and the same sign-in path customers use; an\n`is_admin` flag on the user record enables the console's functions."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-151",
+        "evidence_ids": [
+          "evd-001",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The mapping concludes that req-AUTHZ-001 is applicable to thr-009 and unverified because Parcelworks is multi-customer and uses a shared Orders Database. The overview describes Parcelworks as a platform where customers book and track shipments [evd-001] and identifies the Orders Database as the relational store for bookings, customer accounts, and addresses [evd-004], implying multiple customers\u2019 data coexist in the same store. This directly supports applicability of tenant-aware authorization controls. The documentation does not describe how authorization distinguishes between different customers or tenants, making the \"unverified\" status accurate.",
+        "missing_evidence": [
+          "Authorization model for accessing Orders Database records, including how access is constrained by customer or tenant.",
+          "Any enforcement points (e.g., in the Order Service or Admin Console) that prevent cross-tenant data access."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-001",
+            "text": "Parcelworks is a parcel-logistics platform: customers book and track shipments, drivers\ncollect and deliver them, and carrier partners handle line-haul between depots."
+          },
+          {
+            "evidence_id": "evd-004",
+            "text": "### Orders Database\n\nThe relational store for bookings, customer accounts, and addresses. Reachable only from\nthe core zone."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-152",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The mapping claims that req-AUTHZ-002 is applicable to thr-009 and unverified because the system \"holds delegated access\" to several external platforms. The documentation does show integrations with an external messaging provider and payment provider [evd-003] and carrier APIs [evd-005], but it does not state that access is delegated per customer or resource, nor describe any permission or scope model. The mapping\u2019s own assumption notes that such permission models are not described. Therefore, while external integrations clearly exist, the assertion that the system holds *delegated* access (as opposed to platform-owned or generic credentials) is not established by the evidence. Applicability of req-AUTHZ-002 depends on this distinction and requires confirmation.",
+        "missing_evidence": [
+          "Integration documentation specifying how authentication to the messaging provider, payment provider, and carrier APIs is performed (e.g., per-customer tokens vs. shared API keys).",
+          "Details of any permission or scope configuration on those external platforms indicating whether access is delegated and scoped to customer resources."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-003",
+            "text": "### Notification Service\n\nSends booking confirmations, delivery windows, and delivery notices by email and SMS\nthrough an external messaging provider.\n\n### Billing Service\n\nPrices shipments, raises invoices, and records payments. Card payments are processed\nentirely by an external payment provider; the platform stores only the provider's payment\nreference."
+          },
+          {
+            "evidence_id": "evd-005",
+            "text": "### Carrier Link\n\nThe connector to carrier partners' APIs for line-haul handoff: manifests out, status\nupdates in, over the carriers' HTTPS APIs."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-153",
+        "evidence_ids": [
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The mapping treats req-CICD-001 as conditionally applicable to thr-009 and unverified. The Deploy Runner is documented as running the deployment pipeline for the core services [evd-005], so conditions for CI/CD-related requirements clearly hold. The mapping notes that the documentation does not state whether third-party components are incorporated into builds and therefore treats applicability as conditional on such dependencies being present, with implementation unverified. This accurately reflects that the platform overview says nothing about third-party libraries or supply-chain controls.",
+        "missing_evidence": [
+          "Information about use of third-party libraries, containers, or other dependencies in the build process.",
+          "Documentation of any supply-chain security controls applied in the CI/CD pipeline (e.g., dependency scanning, signature verification)."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-005",
+            "text": "### Deploy Runner\n\nRuns the deployment pipeline that builds and releases the core services."
+          }
+        ]
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-154",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The mapping asserts that req-DATA-001 is applicable to thr-009 and unverified because the system stores and transmits sensitive data across network boundaries it does not control. Orders, customer accounts, and addresses are stored in the Orders Database and copied nightly to the Data Warehouse with full names and addresses [evd-004]; notification and payment information is sent to external messaging and payment providers [evd-003]; and external communication occurs over HTTPS via the API Gateway and Carrier Link [evd-002, evd-005]. These passages directly and contextually support the applicability of a requirement governing encryption and protection of data in transit and at rest. The documentation does not specify how internal data flows or storage are protected, so the \"unverified\" status is appropriate.",
+        "missing_evidence": [
+          "Design or configuration documentation specifying encryption in transit for internal services and encryption at rest for all data stores.",
+          "Clarification of which party (cloud provider vs. application) provides each layer of protection."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": [
+          {
+            "evidence_id": "evd-004",
+            "text": "### Data Warehouse\n\nReceives a nightly copy of the Orders Database \u2014 including customer names and full delivery\naddresses \u2014 for analytics."
+          },
+          {
+            "evidence_id": "evd-003",
+            "text": "### Billing Service\n\nPrices shipments, raises invoices, and records payments. Card payments are processed\nentirely by an external payment provider; the platform stores only the provider's payment\nreference."
+          }
+        ]
+      }
+    ]
+  }
+}

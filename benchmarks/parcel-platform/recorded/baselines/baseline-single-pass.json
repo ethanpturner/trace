@@ -1,0 +1,396 @@
+{
+  "components": [
+    {
+      "name": "Customer Portal",
+      "component_type": "public web application"
+    },
+    {
+      "name": "Mobile Gateway",
+      "component_type": "public API endpoint for mobile app"
+    },
+    {
+      "name": "API Gateway",
+      "component_type": "edge gateway"
+    },
+    {
+      "name": "Identity Service",
+      "component_type": "authentication/identity service"
+    },
+    {
+      "name": "Order Service",
+      "component_type": "business service"
+    },
+    {
+      "name": "Routing Service",
+      "component_type": "business service"
+    },
+    {
+      "name": "Dispatch Service",
+      "component_type": "business service"
+    },
+    {
+      "name": "Tracking Service",
+      "component_type": "business service"
+    },
+    {
+      "name": "Notification Service",
+      "component_type": "notification service"
+    },
+    {
+      "name": "Label Service",
+      "component_type": "document rendering service"
+    },
+    {
+      "name": "Billing Service",
+      "component_type": "billing/payments service"
+    },
+    {
+      "name": "Admin Console",
+      "component_type": "staff web application"
+    },
+    {
+      "name": "Message Bus",
+      "component_type": "message bus"
+    },
+    {
+      "name": "Orders Database",
+      "component_type": "relational database"
+    },
+    {
+      "name": "Tracking Store",
+      "component_type": "data store"
+    },
+    {
+      "name": "Object Storage",
+      "component_type": "object storage"
+    },
+    {
+      "name": "Data Warehouse",
+      "component_type": "analytics data warehouse"
+    },
+    {
+      "name": "Carrier Link",
+      "component_type": "external API connector"
+    },
+    {
+      "name": "Deploy Runner",
+      "component_type": "CI/CD runner"
+    },
+    {
+      "name": "SSO provider",
+      "component_type": "external identity provider"
+    },
+    {
+      "name": "Messaging provider",
+      "component_type": "external messaging service"
+    },
+    {
+      "name": "External payment provider",
+      "component_type": "external payment processor"
+    },
+    {
+      "name": "Carrier partner",
+      "component_type": "external carrier system"
+    }
+  ],
+  "threats": [
+    {
+      "title": "Customer PII exposed via shared application logs",
+      "affected_components": [
+        "Notification Service",
+        "Orders Database",
+        "Shared application log"
+      ],
+      "rationale": "The Notification Service logs the full rendered notification body, including recipient name, delivery address, and delivery window, to a shared application log. This creates a concentrated store of sensitive PII accessible to anyone with log access and increases impact of log compromise or over-broad log access."
+    },
+    {
+      "title": "Undefined retention for analytics Data Warehouse",
+      "affected_components": [
+        "Data Warehouse"
+      ],
+      "rationale": "The Data Warehouse holds nightly copies of the Orders Database including customer names and full delivery addresses, but the retention period for these copies is explicitly undocumented. This raises the risk of personal data being stored longer than necessary or longer than customers are told."
+    },
+    {
+      "title": "Broad administrative access to all customer data",
+      "affected_components": [
+        "Admin Console",
+        "Orders Database",
+        "Tracking Store"
+      ],
+      "rationale": "The Admin Console can \"read and edit any customer account, order, and address\" gated only by an is_admin flag. Compromise or misuse of an admin account would expose and allow modification of data for all customers, so admin access is a high-value target."
+    },
+    {
+      "title": "Potential lack of MFA for privileged SSO accounts",
+      "affected_components": [
+        "Identity Service",
+        "Admin Console",
+        "Customer Portal"
+      ],
+      "rationale": "All interactive sign-in is delegated to the company SSO provider, but the documentation does not state whether MFA is required, especially for staff using the Admin Console. If MFA is not enforced, phishing or credential theft could lead directly to compromise of high-privilege accounts."
+    },
+    {
+      "title": "Overexposure of PII to external messaging provider",
+      "affected_components": [
+        "Notification Service",
+        "Messaging provider"
+      ],
+      "rationale": "Notifications include booking confirmations and delivery information, and the rendered messages (containing name, address, delivery window) are sent through an external messaging provider. Without documented minimization or contract controls, more personal data than necessary may be shared externally and subject to third-party compromise."
+    },
+    {
+      "title": "Unclear encryption-at-rest for core data stores",
+      "affected_components": [
+        "Orders Database",
+        "Tracking Store",
+        "Object Storage",
+        "Data Warehouse"
+      ],
+      "rationale": "These components store sensitive customer data (names, addresses, parcel histories, proof-of-delivery photos), but the documentation does not state whether managed encryption-at-rest is enabled. If any store lacks encryption-at-rest, compromise of the underlying storage or backups would have high impact."
+    },
+    {
+      "title": "Potentially insufficient network segmentation around internal services",
+      "affected_components": [
+        "Message Bus",
+        "Object Storage",
+        "Data Warehouse",
+        "Carrier Link",
+        "Deploy Runner"
+      ],
+      "rationale": "Only the Orders Database and Tracking Store are explicitly described as \"reachable only from the core zone\". Network exposure of other internal components is not described; if they are broadly reachable, an attacker who compromises one workload could more easily move laterally to critical messaging, storage, analytics, or deployment infrastructure."
+    },
+    {
+      "title": "Forged or replayed carrier status updates",
+      "affected_components": [
+        "Carrier Link",
+        "Tracking Service"
+      ],
+      "rationale": "Carrier Link receives status updates over carriers' HTTPS APIs, but there is no description of how inbound updates are authenticated or protected against replay. If status messages can be forged or replayed, an attacker could manipulate parcel tracking information or flood the system with bogus events."
+    },
+    {
+      "title": "CI/CD pipeline as a privileged attack vector",
+      "affected_components": [
+        "Deploy Runner",
+        "Core services"
+      ],
+      "rationale": "The Deploy Runner \"runs the deployment pipeline that builds and releases the core services\". Its security controls, access restrictions, and integrity checks are not described. A compromise of the pipeline could allow an attacker to inject malicious code into any core service or bypass other controls."
+    }
+  ],
+  "findings": [
+    {
+      "requirement_id": "req-LOG-001",
+      "affected_component": "Notification Service",
+      "title": "Notification Service logs full PII-rich message bodies to shared application log",
+      "rationale": "The documentation states that for debugging, notification templates log the full rendered message body, including recipient name, delivery address, and delivery window, to a shared application log. This is an affirmative description of sensitive personal data being written to logs, contrary to the requirement to keep sensitive data out of application logs.",
+      "evidence_quote": "\"Sends booking confirmations, delivery windows, and delivery notices by email and SMS through an external messaging provider. For debugging, the notification templates log the full rendered message body — including the recipient's name, delivery address, and delivery window — to the shared application log.\""
+    },
+    {
+      "requirement_id": "req-DATA-002",
+      "affected_component": "Data Warehouse",
+      "title": "Retention period for analytics copies of customer data is undocumented",
+      "rationale": "The Data Warehouse holds nightly copies of the Orders Database, including customer names and full delivery addresses, and the document explicitly states that how long these copies are kept has not been written down anywhere the team could point to. This means retention is not defined or documented, and cannot be confirmed to match what customers are told.",
+      "evidence_quote": "\"Receives a nightly copy of the Orders Database — including customer names and full delivery addresses — for analytics. How long the copies are kept has not been written down anywhere the team could point to.\""
+    }
+  ],
+  "documentation_gaps": [
+    {
+      "requirement_id": "req-AUTH-002",
+      "affected_component": "Identity Service / SSO provider",
+      "what_cannot_be_determined": "Whether multi-factor authentication is enforced via the SSO provider for customers, drivers, and especially staff using the Admin Console is not described."
+    },
+    {
+      "requirement_id": "req-AUTHZ-001",
+      "affected_component": "Admin Console",
+      "what_cannot_be_determined": "Beyond an is_admin flag, it is not described whether admin access can be constrained by tenant, region, or role, or whether all admins inherently have global access to all customers."
+    },
+    {
+      "requirement_id": "req-AUTHZ-001",
+      "affected_component": "Customer Portal and core services",
+      "what_cannot_be_determined": "The documentation does not explain how tenant-aware authorization is enforced so that customers can see only their own accounts, orders, and tracking data."
+    },
+    {
+      "requirement_id": "req-AUTHZ-002",
+      "affected_component": "Notification Service / Messaging provider",
+      "what_cannot_be_determined": "It is not stated whether the integration with the external messaging provider is configured with least-privilege (e.g., limited API scopes, IP allow-lists) or whether the provider has broader access than required."
+    },
+    {
+      "requirement_id": "req-AUTHZ-002",
+      "affected_component": "Carrier Link",
+      "what_cannot_be_determined": "The documentation does not describe what authorization checks ensure carriers can access or update only shipments associated with them, nor how API credentials or scopes are limited."
+    },
+    {
+      "requirement_id": "req-CICD-001",
+      "affected_component": "Deploy Runner",
+      "what_cannot_be_determined": "How the deployment pipeline and Deploy Runner are secured (who can trigger deployments, how artifacts are validated, how the runner itself is protected) is not described."
+    },
+    {
+      "requirement_id": "req-DATA-001",
+      "affected_component": "Orders Database",
+      "what_cannot_be_determined": "Whether data in the Orders Database is encrypted at rest and whether connections from core services to the database use encryption is not documented."
+    },
+    {
+      "requirement_id": "req-DATA-001",
+      "affected_component": "Tracking Store",
+      "what_cannot_be_determined": "Whether tracking data is encrypted at rest and whether access from core services uses encrypted connections is not documented."
+    },
+    {
+      "requirement_id": "req-DATA-001",
+      "affected_component": "Object Storage",
+      "what_cannot_be_determined": "Whether the managed object storage for labels and proof-of-delivery photos uses encryption at rest and encrypted access from services is not stated."
+    },
+    {
+      "requirement_id": "req-DATA-001",
+      "affected_component": "Data Warehouse",
+      "what_cannot_be_determined": "Whether the analytics Data Warehouse uses encryption at rest and encrypted connections from ingestion processes and analysts is not specified."
+    },
+    {
+      "requirement_id": "req-DATA-002",
+      "affected_component": "Orders Database",
+      "what_cannot_be_determined": "Retention periods for bookings, customer accounts, and addresses in the Orders Database, and how these align with customer-facing privacy/retention statements, are not described."
+    },
+    {
+      "requirement_id": "req-DATA-002",
+      "affected_component": "Object Storage",
+      "what_cannot_be_determined": "How long label PDFs and proof-of-delivery photos are kept in Object Storage, and whether this matches what customers are told, is not documented."
+    },
+    {
+      "requirement_id": "req-DATA-003",
+      "affected_component": "Object Storage",
+      "what_cannot_be_determined": "Whether stored artifacts (labels, photos) are separated by tenant (e.g., per-tenant buckets, prefixes, or ACLs) is not described."
+    },
+    {
+      "requirement_id": "req-DATA-003",
+      "affected_component": "Data Warehouse",
+      "what_cannot_be_determined": "Whether analytics data is logically separated or access-controlled by tenant to prevent cross-customer access is not documented."
+    },
+    {
+      "requirement_id": "req-DATA-004",
+      "affected_component": "Orders Database",
+      "what_cannot_be_determined": "Whether the system supports deletion or anonymization of a customer's records (accounts, orders, addresses) on request, and how this is executed, is not covered."
+    },
+    {
+      "requirement_id": "req-DATA-004",
+      "affected_component": "Object Storage",
+      "what_cannot_be_determined": "Whether label PDFs and proof-of-delivery photos can be located and deleted for a specific customer or shipment on request is not described."
+    },
+    {
+      "requirement_id": "req-DATA-004",
+      "affected_component": "Data Warehouse",
+      "what_cannot_be_determined": "Whether analytics copies of customer data in the Data Warehouse are deleted or anonymized when source data is deleted or upon customer request is not documented."
+    },
+    {
+      "requirement_id": "req-LOG-001",
+      "affected_component": "Other core services / shared application log",
+      "what_cannot_be_determined": "Logging practices for other services (beyond the Notification Service) are not described, so it is unclear whether they also log sensitive data such as names, addresses, or payment-related information."
+    },
+    {
+      "requirement_id": "req-LOG-002",
+      "affected_component": "Admin Console",
+      "what_cannot_be_determined": "The documentation does not state whether security-relevant administrative actions (e.g., account changes, refunds, address corrections) performed via the Admin Console are recorded in audit logs."
+    },
+    {
+      "requirement_id": "req-NET-001",
+      "affected_component": "Message Bus",
+      "what_cannot_be_determined": "Network reachability of the Message Bus (which zones or services can connect, and whether it is exposed beyond what is necessary) is not specified."
+    },
+    {
+      "requirement_id": "req-NET-001",
+      "affected_component": "Object Storage",
+      "what_cannot_be_determined": "It is not stated which networks or services can reach the Object Storage endpoint, or whether it is restricted only to the services that require it."
+    },
+    {
+      "requirement_id": "req-NET-001",
+      "affected_component": "Data Warehouse",
+      "what_cannot_be_determined": "Network access controls around the Data Warehouse (who can connect, from where) are not described."
+    },
+    {
+      "requirement_id": "req-NET-001",
+      "affected_component": "Carrier Link",
+      "what_cannot_be_determined": "The documentation does not explain from which internal networks or services Carrier Link is reachable, or whether it is isolated from unrelated workloads."
+    },
+    {
+      "requirement_id": "req-NET-001",
+      "affected_component": "Deploy Runner",
+      "what_cannot_be_determined": "It is unclear which users or services can reach the Deploy Runner, and from which networks, and whether it is isolated from non-administrative workloads."
+    },
+    {
+      "requirement_id": "req-SECRET-001",
+      "affected_component": "Core services and integrations",
+      "what_cannot_be_determined": "Where per-service credentials for the Message Bus, API Gateway, Carrier Link, Messaging provider, and SSO integration secrets are stored, and whether a managed secret store is used with appropriate access controls and rotation, is not described."
+    },
+    {
+      "requirement_id": "req-TPI-001",
+      "affected_component": "Messaging provider",
+      "what_cannot_be_determined": "The documentation does not detail exactly what personal data is sent to the external messaging provider, how it is protected in that environment, and what contractual or technical controls govern its handling and retention."
+    },
+    {
+      "requirement_id": "req-TPI-001",
+      "affected_component": "External payment provider",
+      "what_cannot_be_determined": "Beyond stating that card payments are processed entirely by an external provider and only a payment reference is stored, there is no documentation of what customer/payment data is sent, how PCI scope is managed, or what data handling guarantees the provider offers."
+    },
+    {
+      "requirement_id": "req-TPI-001",
+      "affected_component": "Carrier partner",
+      "what_cannot_be_determined": "Details of what customer and shipment data is shared with carrier partners via Carrier Link, and how their handling and protection of that data is governed, are not described."
+    },
+    {
+      "requirement_id": "req-TPI-002",
+      "affected_component": "Carrier Link",
+      "what_cannot_be_determined": "Whether work triggered by inbound carrier status updates is bounded (e.g., via rate limiting, batching, or per-shipment constraints) to prevent resource exhaustion is not documented."
+    },
+    {
+      "requirement_id": "req-WEBHOOK-001",
+      "affected_component": "Carrier Link",
+      "what_cannot_be_determined": "How the authenticity of inbound carrier status updates is verified beyond HTTPS (e.g., API keys, mutual TLS, IP allow-lists, shared secrets) is not described."
+    },
+    {
+      "requirement_id": "req-WEBHOOK-002",
+      "affected_component": "Carrier Link",
+      "what_cannot_be_determined": "Whether replay of inbound carrier events is prevented or rendered harmless (e.g., via idempotency keys, timestamps, or nonce checking) is not documented."
+    }
+  ],
+  "questions": [
+    {
+      "question": "Is multi-factor authentication enforced by the SSO provider for customers, drivers, and especially staff using the Admin Console, and if so, is it mandatory for all privileged accounts?",
+      "requirement_id": "req-AUTH-002"
+    },
+    {
+      "question": "How is tenant-aware authorization implemented across the Customer Portal, core services, and Admin Console so that customers see only their own data and staff access can be constrained to appropriate tenants, regions, or roles?",
+      "requirement_id": "req-AUTHZ-001"
+    },
+    {
+      "question": "For external integrations such as the Messaging provider and Carrier Link, what mechanisms are used to enforce least-privilege access (e.g., limited API scopes, per-partner credentials, IP allow-lists), and how is it ensured that partners can act only on their own shipments or data?",
+      "requirement_id": "req-AUTHZ-002"
+    },
+    {
+      "question": "Are the Orders Database, Tracking Store, Object Storage, and Data Warehouse encrypted at rest using managed platform features, and are all connections to these stores (from services and analysts) encrypted in transit?",
+      "requirement_id": "req-DATA-001"
+    },
+    {
+      "question": "What are the defined retention periods for customer data in the Orders Database, Object Storage (labels and photos), and the Data Warehouse, and how are these periods communicated to customers to ensure alignment with stated policies?",
+      "requirement_id": "req-DATA-002"
+    },
+    {
+      "question": "How is per-tenant or per-customer data separation enforced in Object Storage and the Data Warehouse (e.g., separate buckets, prefixes, schemas, or row-level access controls) to prevent cross-tenant data access?",
+      "requirement_id": "req-DATA-003"
+    },
+    {
+      "question": "What technical and process mechanisms exist to delete or anonymize a customer’s data on request across all systems, including Orders Database, Tracking Store, Object Storage (labels/photos), Data Warehouse, and any derived analytics?",
+      "requirement_id": "req-DATA-004"
+    },
+    {
+      "question": "Are security-relevant administrative actions in the Admin Console (such as account changes, refunds, and address edits) logged with sufficient detail and protected from tampering, and how are these logs reviewed?",
+      "requirement_id": "req-LOG-002"
+    },
+    {
+      "question": "What are the network segmentation and access-control rules for internal components such as the Message Bus, Object Storage, Data Warehouse, Carrier Link, and Deploy Runner, and which services or networks are permitted to reach each of them?",
+      "requirement_id": "req-NET-001"
+    },
+    {
+      "question": "Where are per-service credentials and third-party API keys (for the Message Bus, Carrier Link, Messaging provider, SSO, etc.) stored, do you use a managed secrets store, and what are the rotation and access-control practices?",
+      "requirement_id": "req-SECRET-001"
+    },
+    {
+      "question": "For external processors (Messaging provider, External payment provider, Carrier partners) and inbound carrier status updates, what guarantees and controls exist for data handling (scope of data shared, protection, retention), and how are authenticity, rate limiting, and replay protection of inbound events enforced?",
+      "requirement_id": "req-TPI-001"
+    }
+  ]
+}

@@ -1,0 +1,474 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 256,
+    "output_tokens": 36146,
+    "cache_read_tokens": 22528,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.364596",
+    "duration_seconds": 353.5073626670055
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-009",
+        "requirement_id": "req-ADMIN-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-001",
+          "ctl-002"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "Parcelworks exposes an Admin Console through which staff operators can read and edit any customer account, order, and address [evd-003]. Because thr-009 involves an attacker with sufficient access modifying billing-related records, the requirement that privileged administrative access be restricted and its reach documented applies.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "partially_satisfied",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-009",
+        "requirement_id": "req-AI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "The requirement applies when content the system did not author is passed to a model from untrusted contributors. The architecture description for Parcelworks does not mention any AI or model-using component, so this requirement would apply only if an undocumented model integration exists.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [],
+        "assumptions": [
+          "Assume based on the platform overview [evd-001, evd-002, evd-003, evd-004, evd-005] that no model-based processing is in scope unless separately documented, but this is not stated explicitly."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-009",
+        "requirement_id": "req-AI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "The requirement applies where model output is published externally without human review. No component in the platform overview is described as using a model, so this would apply only if there is an undocumented model whose output is auto-published.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [],
+        "assumptions": [
+          "Same assumption as req-AI-001: no model use is described anywhere in the architecture documents [evd-001\u2013evd-005]."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-009",
+        "requirement_id": "req-AI-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "The requirement applies when customer content, including restricted data, is sent to an external model provider. The architecture does not mention any external model provider, so it would apply only if such a provider is used but not documented.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [],
+        "assumptions": [
+          "Assume no external model provider is used based on the absence of any such component in the platform overview [evd-001\u2013evd-005], but this is not stated explicitly."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-009",
+        "requirement_id": "req-AI-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "The requirement applies where model output is rendered into a UI or markup. Since no part of the architecture is described as using a model, it would apply only if an undocumented model-driven feature exists whose output is rendered.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [],
+        "assumptions": [
+          "Same assumption as other AI requirements: no model use is documented in the platform overview [evd-001\u2013evd-005]."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-009",
+        "requirement_id": "req-AUTH-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-001"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "Parcelworks delegates all interactive sign-in to the company\u2019s SSO provider over OpenID Connect via the Identity Service [evd-003], so the conditions for delegated authentication hold and the requirement about documenting that delegation applies.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "satisfied",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-009",
+        "requirement_id": "req-AUTH-002",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-001",
+          "ctl-002"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "An Admin Console exists for staff operators and is reached over the same SSO-backed web sign-in path as customers [evd-003], so the system exposes privileged administrative access crossing an untrusted network, engaging the requirement to establish who enforces multi-factor authentication and under what policy.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-009",
+        "requirement_id": "req-AUTHZ-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Parcelworks serves many customers booking and tracking shipments [evd-001], and the Orders Database stores bookings, customer accounts, and addresses in a shared relational store [evd-004], so data for multiple customers shares storage. This meets the applicable conditions for tenant-aware authorization.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001",
+          "evd-004"
+        ],
+        "assumptions": [
+          "Assume that different customers are treated as distinct tenants sharing the same Orders Database [evd-004], although the term \u201ctenant\u201d is not used explicitly."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-009",
+        "requirement_id": "req-AUTHZ-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The system holds delegated access to several external platforms: an external messaging provider [evd-003], carrier partners\u2019 APIs [evd-005], and an external payment provider used by the Billing Service [evd-003]. These integrations act on customer-related resources on the customer\u2019s behalf, so the requirement to document and limit requested privileges applies.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [
+          "Assume each external provider uses some permission or scope model for access, though specific scopes or permissions are not described in the documentation [evd-003, evd-005]."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-009",
+        "requirement_id": "req-CICD-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "A Deploy Runner runs the deployment pipeline that builds and releases the core services [evd-005], so the system is deployed by an automated pipeline. The documentation does not state whether third-party components are incorporated into builds, so the requirement applies if such dependencies are present.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-005"
+        ],
+        "assumptions": [
+          "Assume modern services are likely to use third-party libraries, but this is not documented and so cannot be treated as a documented fact."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-009",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Orders, customer accounts, and delivery addresses [ast-001] are confidential customer data stored in the Orders Database [evd-004], and customer and payment information is sent to external providers such as the messaging provider [evd-003], carriers [evd-005], and the payment provider. This means the system stores/transmits sensitive data and crosses network boundaries it does not control, engaging the encryption requirement.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "assumptions": [
+          "The use of HTTPS at the edge and for carrier APIs [evd-002, evd-005] indicates some encryption in transit, but the documentation does not state how data in the internal flows or at rest in each store is protected or who provides that protection."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-009",
+        "requirement_id": "req-DATA-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Customer data is clearly retained after processing: the Data Warehouse receives a nightly copy of the Orders Database including customer names and addresses [evd-004], and Object Storage holds labels and proof-of-delivery photos [evd-003]. These are retained working copies or intermediate artifacts, so the requirement on defining and enforcing retention applies.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unmet",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-009",
+        "requirement_id": "req-DATA-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "Label PDFs and proof-of-delivery photos for multiple customers are stored in a shared Object Storage bucket [evd-003], so artifacts from multiple customers share a storage system. The documentation does not state whether objects are addressable by predictable paths, so the requirement would apply if predictable addressing is used.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "assumptions": [
+          "Object storage systems typically use predictable keys (such as per-shipment identifiers), but the exact keying scheme and any enforced separation are not described [evd-003]."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-009",
+        "requirement_id": "req-DATA-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The system stores customer data in several places: Orders Database, Tracking Store, Object Storage, and the Data Warehouse copy of the Orders Database [evd-003, evd-004]. Because customer data exists in multiple stores, the requirement to document how it can be removed from all of them applies.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-009",
+        "requirement_id": "req-LOG-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Parcelworks handles restricted customer data such as names, delivery addresses, and delivery windows [ast-001], and the Notification Service logs full rendered message bodies including this information to a shared application log [evd-003]. This directly engages the requirement to keep sensitive data out of application logs and to state where logs go when leaving the trust boundary.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unmet",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-009",
+        "requirement_id": "req-LOG-002",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-002"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "An Admin Console is exposed for staff operators, who can read and edit any customer account, order, and address [evd-003]. These are privileged actions affecting customer data, so the requirement to record such actions with the acting operator identity applies.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-009",
+        "requirement_id": "req-NET-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-006"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The Orders Database and Tracking Store are internal data stores that are not public interfaces and hold data for many customers [evd-004]. They are documented as reachable only from the core zone and not directly from the public internet or other zones [evd-004, ctl-006], so they match the internal-component conditions the requirement addresses.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "satisfied",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-009",
+        "requirement_id": "req-SECRET-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-005"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The system integrates with several external platforms (payment provider, messaging provider, carrier APIs) [evd-003, evd-005], which in practice requires credentials such as API keys or tokens, and it holds per-service credentials for the Message Bus [evd-004]. This means the system holds credentials that authenticate it to other platforms, engaging the requirement to keep such long-lived credentials in a managed secret store.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "assumptions": [
+          "Assume the external providers (payment, messaging, carriers) require some form of credential even though the specific keys or tokens and their storage locations are not documented [evd-003, evd-005]."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-009",
+        "requirement_id": "req-SECRET-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "The Billing Service accesses customer payment resources on an external payment provider [evd-003], and other services integrate with external platforms on customers\u2019 behalf [evd-003, evd-005]. The requirement applies if those platforms support short-lived or installation-scoped credentials, which the documentation does not state.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [
+          "Assume that modern payment and messaging providers typically offer short-lived or installation-scoped credentials, but the specific mechanisms in use here are not documented."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-009",
+        "requirement_id": "req-TPI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Customer data is sent to several external providers: payment details to an external payment provider via the Billing Service [evd-003], notification content with names and addresses to an external messaging provider [evd-003], and shipment information to carrier partners [evd-005]. These providers process customer data on the system\u2019s behalf, so the requirement to document external processor data handling applies.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-009",
+        "requirement_id": "req-TPI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "conditionally_applicable",
+        "applicability_reason": "The system uses metered external services such as an external payment provider and messaging provider [evd-003], but the documentation does not describe whether work consuming these services is triggered by external events or retried automatically. The requirement would apply where such externally triggered or retried work could drive unbounded consumption.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-009",
+        "requirement_id": "req-WEBHOOK-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "unknown",
+        "applicability_reason": "The requirement applies to endpoints that accept events from external platforms and perform privileged work in response. The architecture mentions status updates from carriers arriving \"over the carriers' HTTPS APIs\" [evd-005] but does not state whether these are polled requests or inbound webhooks, and no other webhook-style receivers are described. It is therefore unclear whether any component matching this requirement exists.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-005"
+        ],
+        "assumptions": [
+          "Assume carrier status updates may be obtained by polling carrier APIs rather than via inbound webhooks, but this is not explicitly stated [evd-005]."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-009",
+        "requirement_id": "req-WEBHOOK-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "unknown",
+        "applicability_reason": "Replay-handling requirements apply where inbound events from external platforms are processed and origin authenticity is verified. Because the documentation does not clearly describe any webhook endpoints or inbound event receivers, it is unknown whether any such processing exists for Parcelworks.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [],
+        "assumptions": [
+          "Same uncertainty as req-WEBHOOK-001: the architecture does not describe webhook-style delivery or replay handling for any external events [evd-003, evd-005]."
+        ],
+        "confidence": "low"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Integrity and authorization controls for payment provider references are not described",
+        "description": "The Billing Service is documented as processing card payments entirely through an external payment provider and storing only the provider's payment reference for each transaction [evd-003]. However, the available documentation does not state which components or roles can create or modify these stored payment references, what authorization checks govern such changes, whether changes are validated against the payment provider, or how these updates are audited. Without this information, it is not possible to assess how thr-009 is mitigated, i.e., what prevents or detects tampering with payment provider references that would corrupt billing and reconciliation for ast-007 and ast-001.",
+        "importance": "Clarifying who and what can write or modify payment provider references, and how those writes are validated or audited, is essential to understanding the likelihood of tampering with billing records and the effectiveness of any existing controls around thr-009.",
+        "related_object_ids": [
+          "thr-009",
+          "cmp-011",
+          "ast-007",
+          "ast-001"
+        ],
+        "requested_evidence": [
+          "Architecture or design documentation describing how payment provider references are written, updated, and read (including which services and any administrative tools are involved).",
+          "Documentation of authorization rules for modifying payment provider references, including how operator or service identities are checked before allowing changes.",
+          "Description of any integrity checks (for example, reconciliation against the payment provider or referential constraints) and audit logging for changes to stored payment provider references."
+        ],
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": [
+      {
+        "concern": "The catalog does not appear to contain a requirement that explicitly addresses integrity protections for stored references to external payment provider transactions\u2014for example, ensuring that associations between orders and provider payment references cannot be tampered with by a compromised service instance or database user without detection or validation against the provider. Thr-009 depends directly on this kind of protection for ast-007 and ast-001.",
+        "suggested_category": "data_integrity",
+        "nearest_requirements": [
+          {
+            "requirement_id": "req-AUTHZ-001",
+            "why_not": "req-AUTHZ-001 focuses on tenant-aware authorization and deriving tenant context from server-side state for each request; it does not require specific integrity or authorization rules for updates to critical financial reference fields within a tenant, such as payment provider references on orders."
+          },
+          {
+            "requirement_id": "req-LOG-002",
+            "why_not": "req-LOG-002 ensures that privileged actions taken through administrative interfaces are recorded with an operator identity, but it does not address protecting or validating the correctness of stored payment provider references when writes occur via application services or direct database access."
+          },
+          {
+            "requirement_id": "req-NET-001",
+            "why_not": "req-NET-001 limits network reachability of internal components like data stores, which helps prevent direct access from untrusted networks, but it does not cover misbehavior or compromise of trusted workloads that legitimately hold write access to payment provider references."
+          },
+          {
+            "requirement_id": "req-SECRET-001",
+            "why_not": "req-SECRET-001 governs where long-lived credentials and signing keys are stored, reducing the risk of credential theft, but it does not require that uses of those credentials to write payment-related records be constrained, integrity-checked, or subject to cross-checks against the external payment provider."
+          }
+        ],
+        "evidence_ids": [
+          "evd-003"
+        ]
+      }
+    ]
+  }
+}

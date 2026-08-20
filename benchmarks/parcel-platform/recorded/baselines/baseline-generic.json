@@ -1,0 +1,18 @@
+{
+  "findings": [
+    {
+      "requirement_id": "req-LOG-001",
+      "affected_component": "Notification Service",
+      "title": "Notification templates log full rendered messages including sensitive personal data",
+      "rationale": "The Notification Service writes full message bodies to a shared application log, including recipient names and delivery addresses. This places sensitive personal data into logs, which are typically more widely accessible and less tightly controlled than primary data stores, violating the requirement to keep sensitive data out of application logs.",
+      "evidence_quote": "\"Notification Service\n\nSends booking confirmations, delivery windows, and delivery notices by email and SMS through an external messaging provider. For debugging, the notification templates log the full rendered message body — including the recipient's name, delivery address, and delivery window — to the shared application log.\""
+    },
+    {
+      "requirement_id": "req-DATA-002",
+      "affected_component": "Data Warehouse",
+      "title": "Retention period for warehouse copies of customer data is not defined or documented",
+      "rationale": "The Data Warehouse receives nightly copies of the Orders Database including customer names and full delivery addresses, but the documentation explicitly states that how long these copies are kept is not written down. This means retention of sensitive working data is not defined or documented, so it cannot be assured to match what customers are told (or even be known internally).",
+      "evidence_quote": "\"Data Warehouse\n\nReceives a nightly copy of the Orders Database — including customer names and full delivery addresses — for analytics. How long the copies are kept has not been written down anywhere the team could point to.\""
+    }
+  ]
+}

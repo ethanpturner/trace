@@ -1,0 +1,402 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 21653,
+    "output_tokens": 14290,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.16996625",
+    "duration_seconds": 146.889609917067
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-ADMIN-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Threat thr-005 concerns the Notification Service (cmp-009) logging full notification bodies to the Shared Application Log (cmp-018) and compromise of log-reading access [evd-003]. It does not involve any administrative or operator interface such as the Admin Console, so the requirement about restricting privileged administrative access does not bear on this threat path.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-AI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The thr-005 attack path involves static email/SMS notification templates rendered by the Notification Service and logged to the Shared Application Log [evd-003]. No part of the threat involves passing untrusted content to a model, so the requirement about treating external content as untrusted model input does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-AI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Thr-005 concerns notification messages rendered by the Notification Service and written to logs [evd-003]; there is no model output being published externally. The requirement about validating model output before external publication therefore does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-AI-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The described system behaviour in thr-005 is sending notifications via an external messaging provider and logging the rendered messages [evd-003]; it does not involve sending customer content to an external model provider. The requirement about minimising data sent to an external model is therefore not engaged by this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-AI-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Thr-005 does not involve model output rendered into a user interface or external markup; it concerns notification text rendered by templates and logged server-side [evd-003]. The requirement about encoding model output for its rendering context does not bear on this logging-focused threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-AUTH-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The affected components in thr-005 are the internal Notification Service (cmp-009) and Shared Application Log (cmp-018), which are not directly reachable by end users; they sit behind the API Gateway and Identity Service [evd-002, evd-003]. The requirement about documenting delegated end-user authentication does not affect this internal log-compromise threat path.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-AUTH-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Thr-005 involves compromise of an account or system with read access to the Shared Application Log, not access through a privileged administrative interface. While the platform has an Admin Console [evd-003], multi-factor authentication responsibility for that interface does not bear on this specific log-reading threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-AUTHZ-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat is an attacker gaining read access to a shared internal logging facility (cmp-018) and harvesting notification contents at scale [evd-003]. It does not involve tenant-scoped customer access paths where per-request tenant-aware authorization is enforced, so the requirement about tenant-aware authorization on customer-facing requests does not bear on this scenario.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-AUTHZ-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Although the platform integrates with external providers (e.g., messaging and payment providers) [evd-003], thr-005 concerns exposure of data from the Shared Application Log rather than misuse of delegated access to external customer resources. The requirement about limiting integration privileges therefore does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-CICD-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "While a deployment pipeline exists (Deploy Runner) [evd-005], thr-005\u2019s attack path is specifically about the Notification Service logging full notification bodies and an attacker with read access to the Shared Application Log harvesting them [evd-003]. Compromise or trust of the deployment pipeline is not part of this threat path, so the requirement about deployment-path trust does not bear directly on it.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Thr-005 assumes an attacker compromises an account or system with read access to the Shared Application Log and then searches and exports log entries. In that scenario, any encryption in transit or at rest protecting the log store has already been terminated or bypassed, so the requirement about encrypting sensitive data at rest and in transit does not meaningfully address this particular threat path.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-DATA-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Notification message bodies containing personal data are logged to the Shared Application Log [evd-003], creating retained working copies of customer data as a by-product of processing. Over time these log entries accumulate for many customers (as described in thr-005), so the requirement that such retained sensitive working data have a defined and enforced retention period bears on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-DATA-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Thr-005 concerns log records in a Shared Application Log, not customer artifacts such as stored label PDFs or other individually addressable objects [evd-003, evd-004]. The requirement about enforcing tenant separation for stored artifacts addressed by predictable paths (e.g., object storage layouts) does not directly bear on this log-compromise scenario.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-DATA-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Although the system stores customer data in multiple places, including orders, warehouse, and logs [evd-003, evd-004], thr-005 is specifically about an attacker reading notification contents from logs, not about the ability to delete customer data on request. The requirement about end-to-end deletion across stores does not mitigate this read-access log-compromise threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-LOG-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The platform handles restricted customer data such as names and full delivery addresses in notifications, and the Notification Service logs the full rendered message body, including the recipient\u2019s name, delivery address, and delivery window, to the Shared Application Log [evd-003]. Thr-005\u2019s impact is exactly exposure of this sensitive data via logs, so the requirement to keep sensitive data out of application logs and document log destinations directly bears on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unmet",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-LOG-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Thr-005\u2019s attack path is an attacker reading accumulated notification message contents from the Shared Application Log. It does not involve privileged administrative actions or changes to security configuration through an administrative interface [evd-003], so the requirement about recording security-relevant administrative actions does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-NET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The Shared Application Log is an internal logging component in the platform\u2019s data/core zones [evd-003, evd-004], and thr-005 assumes an attacker already has read access to it (for example via a compromised internal account or observability platform). Network reachability from untrusted networks is not the differentiating factor in this threat path, so the requirement about restricting internal components from untrusted networks does not directly bear on this scenario.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-SECRET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Thr-005 focuses on exposure of sensitive customer data from logs after an attacker gains read access to the Shared Application Log. It does not involve misuse or storage of long-lived signing keys or provider credentials, so the requirement about holding such credentials in a managed secret store does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-SECRET-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The attack path in thr-005 does not involve credentials used to access customer resources on external platforms; it is limited to reading locally stored log data. Therefore, the requirement about using short-lived credentials for access to external customer resources does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-TPI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Although the Notification Service sends emails and SMS via an external messaging provider [evd-003], thr-005\u2019s impact comes from copies of those messages stored in the Shared Application Log, not from data handled by the external provider. The requirement about documenting external processor data handling therefore does not address this log-compromise threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-TPI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Thr-005 is about an attacker reading sensitive notification contents from logs, not about unbounded triggering of work that consumes metered external services. The requirement to bound externally triggered or metered work does not bear on this specific threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-WEBHOOK-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat scenario does not involve inbound events or webhooks from external platforms; it concerns internal logging of notification messages and subsequent read access to the Shared Application Log [evd-003]. The requirement about verifying authenticity of inbound events before processing does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-005",
+        "requirement_id": "req-WEBHOOK-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Thr-005 involves a one-time read of accumulated log data by an attacker with access to the Shared Application Log, not repeated delivery or replay of inbound events. The requirement about preventing or harmlessly absorbing replays of inbound events does not bear on this logging-focused threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Retention policy for notification message logs is not established in documentation",
+        "description": "The Notification Service logs full rendered email and SMS message bodies, including recipient names, delivery addresses, and delivery windows, to the Shared Application Log [evd-003]. Thr-005 notes that these logs accumulate over time for many customers, but the available documentation does not state any retention period, lifecycle policy, or automatic deletion mechanism for this log data. Without this, it is not possible to determine whether retention of these sensitive working copies is bounded as expected by req-DATA-002, or how long compromised log access would expose historical customer data.",
+        "importance": "Retention of sensitive notification contents in logs directly affects how much customer data is exposed if log-reading access is compromised, and for how long data remains accessible after primary records might otherwise be cleaned up or deleted.",
+        "related_object_ids": [
+          "thr-005",
+          "cmp-009",
+          "cmp-018",
+          "ast-005",
+          "req-DATA-002"
+        ],
+        "requested_evidence": [
+          "Operations or platform documentation stating the retention period and lifecycle policy for the Shared Application Log, including any log aggregation platform settings that control how long notification message logs are kept and when they are deleted."
+        ],
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": []
+  }
+}
