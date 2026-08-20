@@ -59,8 +59,10 @@ scenarios:
     # GenAI Agent Security Initiative insecure invoice-agent sample (license unasserted;
     # everything authored originally, source cited by URL). The first scenario whose
     # subject is itself an LLM agent. Outcome-side truth (findings, gaps, questions,
-    # rejections) authored in #268; recording authored in #326.
+    # rejections) authored in #268; recording authored in #326, replaced by the live
+    # gateway capture in #484's final wave.
     status: authored
+    workflow_version: "0.2"
     category: ai-service-risks
 
   # Scenarios five through eight are original small architectures authored for this project

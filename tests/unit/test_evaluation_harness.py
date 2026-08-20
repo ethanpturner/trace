@@ -484,7 +484,7 @@ def test_a_scenario_without_a_pin_reports_none_not_a_pass(tmp_path: Path) -> Non
     from trace_ai.services.evaluation.harness import run_scenario
 
     outcome = run_scenario(
-        "invoice-agent",
+        "translation-gateway",
         data_root=tmp_path / "work",
         label="pin-test",
         results_root=tmp_path / "feeds",
