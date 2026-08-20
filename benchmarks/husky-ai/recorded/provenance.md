@@ -43,5 +43,11 @@ recording as missed expectations beside spurious findings, the same shape as the
 divergence is what the `evidence_assessment_coverage` metric in this recording's replay is for.
 The score is the measurement, not a defect in the recording.
 
-The `baselines/` directory retains the authored offline baseline recordings; live baselines
-remain with the keyed steps (DEC-100) and are budget-parked with the rest of the #484 sweep.
+The `baselines/` directory holds live baselines, captured 2026-08-20 from `openai/gpt-5.1`
+through OpenRouter under `openrouter-economy` as part of the #484 backfill (this recording's
+pipeline capture stays the 2026-08-18 `claude-opus-5` run above — the baselines are a later,
+cheaper capture, and the attribution difference is the recording's to disclose). Scored against
+the truth set at capture time: baseline-generic 0 matched, 2 missed, 6 spurious;
+baseline-structured 0/2/0; baseline-single-pass 0/2/0. All three miss both expected findings;
+only the generic baseline invents. The envelopes record findings, not usage — three single
+calls at economy rates, cents each.

@@ -1,0 +1,343 @@
+{
+  "components": [
+    {
+      "name": "API Gateway (production)",
+      "component_type": "API gateway"
+    },
+    {
+      "name": "Simple Python Web Server (production)",
+      "component_type": "application / web server"
+    },
+    {
+      "name": "Bastion Server (production)",
+      "component_type": "bastion host"
+    },
+    {
+      "name": "Gather Images Application (experimental)",
+      "component_type": "data collection service"
+    },
+    {
+      "name": "Jupyter Notebook (experimental)",
+      "component_type": "notebook environment"
+    },
+    {
+      "name": "Deployment Service (experimental)",
+      "component_type": "deployment service"
+    },
+    {
+      "name": "Training and Validation Images blob",
+      "component_type": "object storage"
+    },
+    {
+      "name": "API Key storage",
+      "component_type": "secret storage"
+    },
+    {
+      "name": "Source Code and Configuration storage",
+      "component_type": "source/config storage"
+    },
+    {
+      "name": "Machine Learning Model blob",
+      "component_type": "object storage"
+    },
+    {
+      "name": "Authorized Keys storage",
+      "component_type": "key store"
+    },
+    {
+      "name": "Bastion Logs storage",
+      "component_type": "log storage"
+    },
+    {
+      "name": "Azure Cache for Redis",
+      "component_type": "in-memory cache"
+    },
+    {
+      "name": "Azure Cognitive Services",
+      "component_type": "external image service"
+    },
+    {
+      "name": "Third-party tools",
+      "component_type": "external image source"
+    }
+  ],
+  "threats": [
+    {
+      "title": "Compromise of experimental environment leading to production compromise via deployment path",
+      "affected_components": [
+        "Deployment Service (experimental)",
+        "Bastion Server (production)",
+        "Machine Learning Model blob",
+        "Source Code and Configuration storage"
+      ],
+      "rationale": "The deployment service packages trained models and source/configuration from experimental storage and deploys them to production via the Bastion, and the production model blob is writable only from the experimental deployment path and the Bastion (security-notes.md; system-overview.md §2–4). This makes the experimental environment a high-value target: an attacker who gains sufficient privileges there could alter models or code and push malicious releases into production."
+    },
+    {
+      "title": "Exposure or misuse of API keys for external image providers",
+      "affected_components": [
+        "API Key storage",
+        "Gather Images Application (experimental)"
+      ],
+      "rationale": "The Gather Images application uses API keys held in the API Key storage to access Azure Cognitive Services and third-party tools (system-overview.md §2–3). The documentation does not specify that this storage is a managed secret store or how access is controlled, so compromise of the store or the application could expose long-lived keys and allow abuse of external services or enable pivot attacks."
+    },
+    {
+      "title": "Leakage or misuse of user-uploaded images",
+      "affected_components": [
+        "API Gateway (production)",
+        "Simple Python Web Server (production)",
+        "Azure Cache for Redis"
+      ],
+      "rationale": "End users upload images through the public API; the web server holds these images in Azure Cache for Redis while awaiting classification and does not write them to disk (system-overview.md §4; security-notes.md §3). While this design reduces persistence, the handling of these images in logs, backups, or monitoring is not described, so there is a risk of inadvertent retention or exposure if additional components record request contents or cache state."
+    },
+    {
+      "title": "Data poisoning or malicious training data from external sources",
+      "affected_components": [
+        "Gather Images Application (experimental)",
+        "Training and Validation Images blob",
+        "Jupyter Notebook (experimental)"
+      ],
+      "rationale": "Training images are collected from Azure Cognitive Services and third-party tools and stored in the Training and Validation Images blob for model training (system-overview.md §2–4). If these external sources are compromised or return unexpected content, an attacker could inject biased or malicious data, degrading model performance or altering classifications in ways that might be hard to detect."
+    },
+    {
+      "title": "Insufficiently constrained network access to internal services",
+      "affected_components": [
+        "Azure Cache for Redis",
+        "Machine Learning Model blob",
+        "Training and Validation Images blob",
+        "Jupyter Notebook (experimental)"
+      ],
+      "rationale": "The documentation describes two Azure VPCs (production and experimental) and states that the Jupyter Notebook environment is not exposed outside the experimental VPC (system-overview.md §1–2; security-notes.md §2). However, it does not specify security group rules or network ACLs for internal services such as Redis or the storage blobs, leaving uncertainty about whether these components are reachable only from the workloads that need them or from broader parts of the VPC."
+    }
+  ],
+  "findings": [],
+  "documentation_gaps": [
+    {
+      "requirement_id": "req-AI-001",
+      "affected_component": "Simple Python Web Server (production)",
+      "what_cannot_be_determined": "Whether uploaded images are treated explicitly as untrusted input beyond being held in Redis (e.g., limits on size/type, validation of image formats, protections against malformed or malicious files) before they are processed by the model."
+    },
+    {
+      "requirement_id": "req-AI-002",
+      "affected_component": "API Gateway (production)",
+      "what_cannot_be_determined": "Whether model outputs (classification results) are validated or sanity-checked before being returned to external clients, such as restricting responses to an allowed set of labels or handling unexpected model behavior."
+    },
+    {
+      "requirement_id": "req-AI-004",
+      "affected_component": "Simple Python Web Server (production)",
+      "what_cannot_be_determined": "How model outputs and any derived data are encoded or escaped for the contexts they may be rendered into (API responses, logs, dashboards), and whether there are controls to prevent injection via unexpected output."
+    },
+    {
+      "requirement_id": "req-AUTH-002",
+      "affected_component": "API Gateway (production)",
+      "what_cannot_be_determined": "Whether multi-factor authentication is enforced for SSO-based access from the public internet to production, and which party (platform team vs. identity provider team) owns ensuring and monitoring MFA."
+    },
+    {
+      "requirement_id": "req-AUTH-002",
+      "affected_component": "Jupyter Notebook (experimental)",
+      "what_cannot_be_determined": "Whether multi-factor authentication is used for password-authenticated access across the public-to-experimental boundary and for reaching the notebook environment, and who is responsible for managing it."
+    },
+    {
+      "requirement_id": "req-AUTH-002",
+      "affected_component": "Bastion Server (production)",
+      "what_cannot_be_determined": "Whether SSH access to the Bastion requires multi-factor authentication (e.g., key plus second factor) and how that requirement is enforced and audited."
+    },
+    {
+      "requirement_id": "req-AUTHZ-001",
+      "affected_component": "Simple Python Web Server (production)",
+      "what_cannot_be_determined": "Whether Husky AI operates as a single-tenant or multi-tenant service, and if multi-tenant, how tenant-aware authorization is implemented and documented for access to models, storage, and any per-tenant resources."
+    },
+    {
+      "requirement_id": "req-AUTHZ-002",
+      "affected_component": "Gather Images Application (experimental)",
+      "what_cannot_be_determined": "What specific permissions and scopes the API keys for Azure Cognitive Services and third-party tools have, and whether they are limited strictly to the operations and data needed for image collection."
+    },
+    {
+      "requirement_id": "req-CICD-001",
+      "affected_component": "Deployment Service (experimental)",
+      "what_cannot_be_determined": "Beyond using the Bastion and restricted blob write access, whether there are additional integrity controls on the deployment path (e.g., build provenance, code signing, approvals) and how dependencies of the deployment service itself are trusted and maintained."
+    },
+    {
+      "requirement_id": "req-DATA-001",
+      "affected_component": "Training and Validation Images blob",
+      "what_cannot_be_determined": "Whether this Azure Blob storage is encrypted at rest (e.g., using Azure-managed or customer-managed keys) and whether connections from experimental components to this blob are encrypted in transit beyond general VPC assumptions."
+    },
+    {
+      "requirement_id": "req-DATA-001",
+      "affected_component": "Machine Learning Model blob",
+      "what_cannot_be_determined": "Whether the production model storage blob is encrypted at rest and whether access from the web server, Bastion, and deployment service uses encrypted channels (e.g., HTTPS to blob endpoints) for model reads and writes."
+    },
+    {
+      "requirement_id": "req-DATA-001",
+      "affected_component": "Source Code and Configuration storage",
+      "what_cannot_be_determined": "Whether source and configuration storage in the experimental environment is encrypted at rest and accessed only over encrypted channels."
+    },
+    {
+      "requirement_id": "req-DATA-001",
+      "affected_component": "API Key storage",
+      "what_cannot_be_determined": "Whether the API Key storage providing credentials to external services is encrypted at rest and accessed via encrypted connections, and whether it relies on a managed key-management service."
+    },
+    {
+      "requirement_id": "req-DATA-001",
+      "affected_component": "Authorized Keys storage",
+      "what_cannot_be_determined": "Whether the storage holding SSH authorized keys is encrypted at rest and restricted to the Bastion, and whether access uses encrypted connections where applicable."
+    },
+    {
+      "requirement_id": "req-DATA-001",
+      "affected_component": "Bastion Logs storage",
+      "what_cannot_be_determined": "Whether Bastion SSH logs are encrypted at rest and protected in transit when collected or accessed for review."
+    },
+    {
+      "requirement_id": "req-DATA-001",
+      "affected_component": "Azure Cache for Redis",
+      "what_cannot_be_determined": "Whether connections between the web server and Redis are encrypted in transit, and whether any Redis persistence or backups (if enabled) are encrypted at rest."
+    },
+    {
+      "requirement_id": "req-DATA-002",
+      "affected_component": "Azure Cache for Redis",
+      "what_cannot_be_determined": "The exact retention behavior for uploaded images held in Redis (e.g., time-to-live, eviction guarantees) and any assurances provided to users about how long their images remain in memory."
+    },
+    {
+      "requirement_id": "req-DATA-002",
+      "affected_component": "Training and Validation Images blob",
+      "what_cannot_be_determined": "Retention policies for training and validation images, including whether and when older data is purged, and whether this is communicated to stakeholders where relevant."
+    },
+    {
+      "requirement_id": "req-DATA-002",
+      "affected_component": "Bastion Logs storage",
+      "what_cannot_be_determined": "Retention periods and deletion practices for Bastion SSH access logs, and whether these align with documented policies or commitments."
+    },
+    {
+      "requirement_id": "req-DATA-002",
+      "affected_component": "Simple Python Web Server (production)",
+      "what_cannot_be_determined": "Whether any application or access logs generated by the web server or API Gateway contain user identifiers or metadata tied to uploaded images, and how long such logs are retained."
+    },
+    {
+      "requirement_id": "req-DATA-003",
+      "affected_component": "Training and Validation Images blob",
+      "what_cannot_be_determined": "Whether this storage is partitioned or logically separated per tenant in a multi-tenant scenario, or whether the service is single-tenant, in which case tenant separation would be out of scope."
+    },
+    {
+      "requirement_id": "req-DATA-003",
+      "affected_component": "Machine Learning Model blob",
+      "what_cannot_be_determined": "If multiple tenants or customers are supported, whether their models are stored separately or share a common model blob, and what controls enforce separation."
+    },
+    {
+      "requirement_id": "req-DATA-004",
+      "affected_component": "Husky AI",
+      "what_cannot_be_determined": "If a user or customer requests deletion of their data, what concrete steps are taken across caches, storage, and logs to ensure their images and associated identifiers are removed, given that images are said not to be written to disk but other artifacts (e.g., logs) may exist."
+    },
+    {
+      "requirement_id": "req-LOG-001",
+      "affected_component": "API Gateway (production)",
+      "what_cannot_be_determined": "Whether request logging includes uploaded image data or other sensitive fields, and whether there are controls in place to prevent such data from being written to logs."
+    },
+    {
+      "requirement_id": "req-LOG-001",
+      "affected_component": "Simple Python Web Server (production)",
+      "what_cannot_be_determined": "What application-level logging the web server performs for classification requests and whether sensitive contents of uploaded images or authentication data are excluded or redacted."
+    },
+    {
+      "requirement_id": "req-LOG-002",
+      "affected_component": "Bastion Server (production)",
+      "what_cannot_be_determined": "The granularity of administrative action logging beyond SSH access attempts (e.g., whether command execution, privilege escalation, or configuration changes made via Bastion sessions are captured)."
+    },
+    {
+      "requirement_id": "req-NET-001",
+      "affected_component": "Azure Cache for Redis",
+      "what_cannot_be_determined": "Which hosts or subnets can reach the Redis cache and whether it is restricted only to the web server (and any necessary supporting services) or more broadly accessible within the production VPC."
+    },
+    {
+      "requirement_id": "req-NET-001",
+      "affected_component": "Machine Learning Model blob",
+      "what_cannot_be_determined": "Whether access to the model blob is restricted at the network level (e.g., private endpoints, firewall rules) in addition to identity-based blob access controls, and which components can connect to it."
+    },
+    {
+      "requirement_id": "req-NET-001",
+      "affected_component": "Jupyter Notebook (experimental)",
+      "what_cannot_be_determined": "Beyond stating that the notebook is not exposed outside the experimental VPC, what internal network segmentation exists within that VPC to limit access to and from the notebook environment."
+    },
+    {
+      "requirement_id": "req-SECRET-001",
+      "affected_component": "API Key storage",
+      "what_cannot_be_determined": "Whether this storage is implemented using a managed secret store (such as Azure Key Vault), how access to it is controlled, and how long-lived credentials stored there are rotated."
+    },
+    {
+      "requirement_id": "req-SECRET-001",
+      "affected_component": "Authorized Keys storage",
+      "what_cannot_be_determined": "Where SSH authorized keys are stored, whether that location is a managed secure store, and what controls protect it from unauthorized read or tampering."
+    },
+    {
+      "requirement_id": "req-TPI-001",
+      "affected_component": "Azure Cognitive Services",
+      "what_cannot_be_determined": "Whether any user- or customer-derived data is ever sent to Azure Cognitive Services beyond requests for publicly accessible images, and if so, how that data handling is documented (purpose, retention, locations)."
+    },
+    {
+      "requirement_id": "req-TPI-001",
+      "affected_component": "Third-party tools",
+      "what_cannot_be_determined": "What data, if any, about users or customers is shared with third-party tools that provide training images, and whether contractual or technical controls around that processing are documented."
+    },
+    {
+      "requirement_id": "req-TPI-002",
+      "affected_component": "API Gateway (production)",
+      "what_cannot_be_determined": "What limits exist on externally triggered work via the public API, such as rate limiting, request size limits, or concurrency controls, to bound resource consumption and mitigate denial-of-service risks."
+    }
+  ],
+  "questions": [
+    {
+      "question": "For each access path (SSO from public to production, password-authenticated access to experimental, and SSH to the Bastion), is multi-factor authentication enforced, and who is responsible for configuring and monitoring MFA on these paths?",
+      "requirement_id": "req-AUTH-002"
+    },
+    {
+      "question": "Is Husky AI operated as a single-tenant deployment or as a multi-tenant service, and if multi-tenant, how is tenant-aware authorization enforced and documented in the API Gateway and web server?",
+      "requirement_id": "req-AUTHZ-001"
+    },
+    {
+      "question": "Are all primary data stores (training and validation images blob, model blob, source/config storage, API Key storage, Authorized Keys storage, Bastion Logs storage, and any Redis persistence) encrypted at rest using managed encryption (service- or customer-managed keys)?",
+      "requirement_id": "req-DATA-001"
+    },
+    {
+      "question": "Is internal traffic between components (API Gateway and web server, web server and Redis, Bastion and production hosts, experimental services and Azure storage) protected with TLS or equivalent, and if not, what other controls ensure confidentiality and integrity of in-transit data?",
+      "requirement_id": "req-DATA-001"
+    },
+    {
+      "question": "What are the defined retention periods for uploaded images in Redis, training and validation images, models, Bastion logs, and any application or access logs, and how do these policies align with what users or customers are told about data retention?",
+      "requirement_id": "req-DATA-002"
+    },
+    {
+      "question": "If a user or customer requests deletion of their data, what is the end-to-end process to identify and delete their information across caches, storage, and logs, and are there data categories that are intentionally exempt from deletion (with justification)?",
+      "requirement_id": "req-DATA-004"
+    },
+    {
+      "question": "Do the API Gateway and web server log request bodies or image contents, and what safeguards exist to prevent sensitive image data or authentication secrets from being written to logs?",
+      "requirement_id": "req-LOG-001"
+    },
+    {
+      "question": "What technology underlies the 'API Key storage' and 'Authorized Keys storage' components (e.g., Azure Key Vault, encrypted blob storage), and how are long-lived credentials within them access-controlled and rotated?",
+      "requirement_id": "req-SECRET-001"
+    },
+    {
+      "question": "How are uploaded images validated and constrained before being processed by the model (e.g., file type allowlists, size limits, image library hardening) to ensure they are treated as untrusted input?",
+      "requirement_id": "req-AI-001"
+    },
+    {
+      "question": "What is the exact form of model output returned to clients (e.g., fixed label set, scores), and are there validation or encoding steps applied before including these outputs in API responses or logs?",
+      "requirement_id": "req-AI-002"
+    },
+    {
+      "question": "Can you confirm that no end-user or customer-provided data is sent to Azure Cognitive Services or third-party tools, and if any such data is sent, how is the external processing (purpose, scope, retention) documented and controlled?",
+      "requirement_id": "req-TPI-001"
+    },
+    {
+      "question": "Beyond separating production and experimental VPCs, what specific network controls (security groups, private endpoints, firewalls) ensure that internal services like Redis, storage blobs, and the notebook are reachable only from the components that require access?",
+      "requirement_id": "req-NET-001"
+    },
+    {
+      "question": "What permissions and scopes are granted to the API keys used for Azure Cognitive Services and third-party tools, and how is it ensured that these integrations have only the minimum privileges necessary?",
+      "requirement_id": "req-AUTHZ-002"
+    },
+    {
+      "question": "Are there rate limits, request size limits, or concurrency controls configured at the API Gateway (or elsewhere) to bound externally triggered work and reduce denial-of-service and abuse risks?",
+      "requirement_id": "req-TPI-002"
+    }
+  ]
+}

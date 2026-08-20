@@ -1,0 +1,254 @@
+{
+  "components": [
+    {
+      "name": "Help panel",
+      "component_type": "In-product chat UI surface"
+    },
+    {
+      "name": "Answer service",
+      "component_type": "Backend service / API deployment"
+    },
+    {
+      "name": "Relay Answers API",
+      "component_type": "HTTP API for /v1/answers and /v1/health"
+    },
+    {
+      "name": "Retrieval index",
+      "component_type": "Managed vector database of embeddings"
+    },
+    {
+      "name": "Ingestion pipeline",
+      "component_type": "Nightly data ingestion and embedding job"
+    },
+    {
+      "name": "Model provider",
+      "component_type": "External large-language-model API"
+    },
+    {
+      "name": "Support platform",
+      "component_type": "External support ticketing system"
+    },
+    {
+      "name": "Help-center repository",
+      "component_type": "Public documentation content store"
+    },
+    {
+      "name": "workspaceToken",
+      "component_type": "Workspace-scoped bearer session token"
+    }
+  ],
+  "threats": [
+    {
+      "title": "Cross-tenant exposure of support history via shared unfiltered retrieval index",
+      "affected_components": [
+        "Retrieval index",
+        "Answer service",
+        "Help panel"
+      ],
+      "rationale": "The retrieval index holds embeddings of help-center articles and resolved support tickets for all workspaces in a single shared index: “a managed vector database holding embeddings of the help-center articles and of resolved support tickets. All workspaces are served from one shared index; a query returns the top eight passages ranked by embedding similarity, and relevance alone selects the passages that reach the prompt.” This means support tickets from different workspaces coexist, and selection is driven only by embedding similarity, not tenant identity. Because answers are shown directly to any signed-in user of any workspace via the help panel, there is a material risk that one workspace’s support history is retrieved and displayed to users from another workspace."
+    },
+    {
+      "title": "Exposure of sensitive configuration or quasi-PII from support tickets in answers",
+      "affected_components": [
+        "Retrieval index",
+        "Answer service",
+        "Help panel"
+      ],
+      "rationale": "The ingestion pipeline indexes resolved support tickets, and operations notes state: “Ticket text sometimes quotes configuration snippets customers pasted into support conversations. The masking step covers email addresses only.” These snippets can include sensitive configuration details (hostnames, URLs, API keys in misconfigured systems, internal structure). Since answers can draw directly from these tickets and display them to all signed-in users of the (possibly wrong) workspace, there is a threat of leaking sensitive configuration or quasi-PII through assistant answers, especially given the shared, relevance-only retrieval across all tenants."
+    },
+    {
+      "title": "Prompt-injection and instruction-following attacks from retrieved content and questions",
+      "affected_components": [
+        "Answer service",
+        "Model provider",
+        "Help panel"
+      ],
+      "rationale": "The prompt “places retrieved passages inside a delimited context block, and the system instructions state that content inside the block is reference material, not instructions.” This is a mitigation, but users’ questions and historical ticket text can still contain adversarial prompts (e.g., “ignore previous instructions and …”). The model provider executes on this combined context, and there is no pre-publication validation of every answer. Thus, prompt injection remains a material threat that could lead to off-policy or data-leaking responses despite the reference-material framing."
+    },
+    {
+      "title": "Over-retention of sensitive support data in the retrieval index",
+      "affected_components": [
+        "Retrieval index",
+        "Ingestion pipeline"
+      ],
+      "rationale": "Resolved support tickets “are retained on the support platform for two years and then deleted under the retention schedule agreed with customers.” The ingestion pipeline “runs nightly” and is “the only writer to the retrieval index,” replacing “changed chunks by source reference,” but the documents do not describe how embeddings are removed when underlying tickets age out or are deleted. Without a clear deletion path, there is a threat that embeddings of ticket content persist in the retrieval index beyond the communicated two-year retention, leading to over-retention of sensitive support data."
+    },
+    {
+      "title": "Unvalidated model output can produce misleading or harmful support guidance",
+      "affected_components": [
+        "Answer service",
+        "Help panel",
+        "Model provider"
+      ],
+      "rationale": "Each question results in a single model call and the assistant “takes no actions beyond returning text.” There is no described real-time human or automated validation before answers are rendered; instead, “Answer quality review is a weekly manual sample of twenty answers by the support team.” This creates a threat that hallucinated, misleading, or insecure configuration advice is delivered directly to users without prior validation, with only delayed detection via sampling."
+    },
+    {
+      "title": "Information disclosure or abuse surface on unauthenticated health endpoint",
+      "affected_components": [
+        "Relay Answers API"
+      ],
+      "rationale": "The OpenAPI specification defines `/v1/health` as a liveness probe with `security: []`, meaning it is intentionally unauthenticated. While the response is described only as “OK,” unauthenticated endpoints can be used for service discovery and may be extended in the future. If additional diagnostic information were ever added without authentication, it could leak environment or version details useful to an attacker."
+    }
+  ],
+  "findings": [
+    {
+      "requirement_id": "req-RAG-002",
+      "affected_component": "Retrieval index",
+      "title": "Retrieval from shared index is not filtered by requester’s workspace authorization",
+      "rationale": "The documentation explicitly states that all workspaces share a single retrieval index and that relevance alone determines which passages are returned to the prompt. There is no mention of any workspace or tenant filter on retrieval results, even though the assistant is supposed to answer from “the workspace’s support history.” This establishes that retrieval is not constrained by the caller’s authorization context and can mix content across workspaces.",
+      "evidence_quote": "“Retrieval index — a managed vector database holding embeddings of the help-center articles and of resolved support tickets. All workspaces are served from one shared index; a query returns the top eight passages ranked by embedding similarity, and relevance alone selects the passages that reach the prompt.”"
+    },
+    {
+      "requirement_id": "req-AUTHZ-001",
+      "affected_component": "Retrieval index",
+      "title": "Tenant-aware authorization is not enforced when selecting support-history passages",
+      "rationale": "The system’s data architecture mixes support tickets from all workspaces in a single index, and the selection mechanism is described as purely embedding-similarity-based. There is no indication that a workspace identifier is attached to embeddings or used to filter results for a given request, despite the per-workspace nature of support history. This is an explicit design choice, not an omission, and means tenant-aware authorization is not enforced at the retrieval layer.",
+      "evidence_quote": "“All workspaces are served from one shared index; a query returns the top eight passages ranked by embedding similarity, and relevance alone selects the passages that reach the prompt.”"
+    },
+    {
+      "requirement_id": "req-DATA-003",
+      "affected_component": "Retrieval index",
+      "title": "Support-ticket embeddings from all workspaces stored in a single shared index without tenant separation",
+      "rationale": "The retrieval index stores embeddings of resolved support tickets for all workspaces and is described as “one shared index.” There is no mention of logical or physical separation by tenant within this store. Given that support tickets contain workspace-specific history and sometimes configuration snippets, this lack of tenant separation at rest is a documented aspect of the design and does not meet the requirement that stored artifacts be separated by tenant.",
+      "evidence_quote": "“Retrieval index — a managed vector database holding embeddings of the help-center articles and of resolved support tickets. All workspaces are served from one shared index…”"
+    },
+    {
+      "requirement_id": "req-AI-002",
+      "affected_component": "Answer service",
+      "title": "Model output is not validated before being shown to users; only sampled post-hoc review exists",
+      "rationale": "The flow is that the answer service calls the model provider and returns the answer directly to the help panel. The only described quality control is a weekly manual review of a small random sample of answers. There is no evidence of systematic validation (automated or human) before each answer is rendered externally, so the requirement for pre-publication validation of model output is not met.",
+      "evidence_quote": "“Each answer makes one model call; there is no multi-step agent loop, and the assistant takes no actions beyond returning text.”\n\n“Answer quality review is a weekly manual sample of twenty answers by the support team.”"
+    }
+  ],
+  "documentation_gaps": [
+    {
+      "requirement_id": "req-ADMIN-001",
+      "affected_component": "Answer service",
+      "what_cannot_be_determined": "Who can configure and change privileged operational controls such as the per-workspace daily answer quota and the per-workspace feature flag, and whether these administrative actions’ scope and reach are documented and access-restricted."
+    },
+    {
+      "requirement_id": "req-AUTH-002",
+      "affected_component": "Relay Answers API",
+      "what_cannot_be_determined": "Whether holders of the workspace-scoped session token (workspaceToken) are required to use multi-factor authentication, and which system is responsible for enforcing MFA for these tokens."
+    },
+    {
+      "requirement_id": "req-DATA-001",
+      "affected_component": "Retrieval index",
+      "what_cannot_be_determined": "Whether embeddings in the managed vector database are encrypted at rest and whether connections between the answer service and the vector database use encryption in transit beyond being on the same network segment."
+    },
+    {
+      "requirement_id": "req-DATA-001",
+      "affected_component": "Answer service",
+      "what_cannot_be_determined": "Whether traffic between the help panel and the Relay Answers API, and between the Relay Answers API and the main Relay API, is consistently protected with TLS or equivalent, and whether any data stored locally by the answer service is encrypted at rest."
+    },
+    {
+      "requirement_id": "req-RAG-003",
+      "affected_component": "Retrieval index",
+      "what_cannot_be_determined": "How embeddings are removed or expired from the index when underlying help-center articles or resolved support tickets are deleted or fall out of retention, and whether the index’s lifecycle is explicitly tied to its sources."
+    },
+    {
+      "requirement_id": "req-DATA-002",
+      "affected_component": "Retrieval index",
+      "what_cannot_be_determined": "Whether the retention period for ticket-derived embeddings in the retrieval index matches the two-year retention for resolved tickets on the support platform that has been agreed with customers."
+    },
+    {
+      "requirement_id": "req-DATA-004",
+      "affected_component": "Retrieval index",
+      "what_cannot_be_determined": "Whether there is a mechanism to delete all embeddings and derived artifacts associated with a particular customer workspace on request, including historical support tickets already ingested."
+    },
+    {
+      "requirement_id": "req-LOG-001",
+      "affected_component": "Answer service",
+      "what_cannot_be_determined": "What fields are written to application and access logs (e.g., portions of questions, retrieved passages, workspace identifiers) and whether sensitive ticket content is redacted or excluded from logs."
+    },
+    {
+      "requirement_id": "req-LOG-002",
+      "affected_component": "Answer service",
+      "what_cannot_be_determined": "Whether security-relevant administrative actions—such as enabling/disabling the assistant per workspace or adjusting per-workspace quotas—are recorded in an auditable log with actor identity and timestamp."
+    },
+    {
+      "requirement_id": "req-SECRET-001",
+      "affected_component": "Answer service",
+      "what_cannot_be_determined": "Where long-lived credentials such as API keys for the model provider and the managed vector database are stored (e.g., managed secret store vs. environment variables or config files) and how access to them is controlled."
+    },
+    {
+      "requirement_id": "req-OPS-002",
+      "affected_component": "Answer service",
+      "what_cannot_be_determined": "Beyond static per-workspace daily answer quotas, whether there is monitoring that detects and alerts humans to anomalous usage patterns or cost spikes across workspaces."
+    },
+    {
+      "requirement_id": "req-OPS-003",
+      "affected_component": "Answer service",
+      "what_cannot_be_determined": "How production deployments of the answer service and retrieval index are separated from staging or development environments, and whether any shared resources could permit cross-environment data leakage."
+    },
+    {
+      "requirement_id": "req-CICD-001",
+      "affected_component": "Answer service",
+      "what_cannot_be_determined": "What the CI/CD pipeline for deploying the answer service and ingestion pipeline looks like, which systems it trusts (artifact repositories, build agents), and how changes are authenticated and authorized before reaching production."
+    },
+    {
+      "requirement_id": "req-TPI-001",
+      "affected_component": "Model provider",
+      "what_cannot_be_determined": "Beyond the statement that the model provider’s terms exclude training on submitted content and that requests use TLS, how the provider handles data retention, access controls, and potential cross-customer data use for this integration."
+    },
+    {
+      "requirement_id": "req-TPI-001",
+      "affected_component": "Retrieval index",
+      "what_cannot_be_determined": "As the retrieval index is a managed vector database offering, what the provider’s data-handling practices are (encryption at rest, retention policies, access by provider staff) for stored embeddings."
+    }
+  ],
+  "questions": [
+    {
+      "question": "How are administrative permissions scoped and enforced for changing per-workspace daily answer quotas and disabling the assistant per workspace, and are these privileged actions documented and auditable?",
+      "requirement_id": "req-ADMIN-001"
+    },
+    {
+      "question": "Which identity provider or authentication system issues the workspaceToken, and does that system enforce multi-factor authentication for users who can access the help panel and Relay Answers API?",
+      "requirement_id": "req-AUTH-002"
+    },
+    {
+      "question": "Are all connections between the help panel, the Relay Answers API, the main Relay API, and the managed vector database protected with TLS or equivalent, and is data for the answer service and retrieval index encrypted at rest?",
+      "requirement_id": "req-DATA-001"
+    },
+    {
+      "question": "When a resolved support ticket is deleted or ages past the two-year retention on the support platform, what mechanism ensures that its corresponding embeddings are removed from the retrieval index, and on what schedule?",
+      "requirement_id": "req-RAG-003"
+    },
+    {
+      "question": "Does the organization commit to a specific retention period for embeddings derived from support tickets, and does that commitment match the two-year retention communicated for the underlying tickets?",
+      "requirement_id": "req-DATA-002"
+    },
+    {
+      "question": "If a customer requests deletion of all data for their workspace, what process is used to locate and delete all associated support-ticket embeddings and other derived artifacts from the retrieval index?",
+      "requirement_id": "req-DATA-004"
+    },
+    {
+      "question": "What data fields from user questions and retrieved passages are logged by the answer service and API gateway, and are any redaction or minimization strategies applied to keep sensitive ticket content and identifiers out of logs?",
+      "requirement_id": "req-LOG-001"
+    },
+    {
+      "question": "Are actions such as enabling or disabling Relay Answers for a workspace or modifying its daily quota recorded with user identity and timestamp in an audit log, and who can access those logs?",
+      "requirement_id": "req-LOG-002"
+    },
+    {
+      "question": "Where are API keys or credentials for the model provider and the managed vector database stored, and are they managed through a centralized secret-management system with access controls and rotation policies?",
+      "requirement_id": "req-SECRET-001"
+    },
+    {
+      "question": "Beyond static per-workspace quotas, what monitoring and alerting is in place to detect anomalous usage or cost spikes for the model provider and vector database, and who receives those alerts?",
+      "requirement_id": "req-OPS-002"
+    },
+    {
+      "question": "How are production instances of the answer service and retrieval index separated from development or staging environments at the network, data, and account levels to prevent accidental cross-environment data access?",
+      "requirement_id": "req-OPS-003"
+    },
+    {
+      "question": "What is the CI/CD flow for deploying the answer service and ingestion pipeline (build, test, review, deploy), and how are changes to this pipeline itself tracked and authorized?",
+      "requirement_id": "req-CICD-001"
+    },
+    {
+      "question": "For the external model provider and the managed vector database, what are the documented data-handling guarantees (retention duration, encryption at rest, access by provider personnel, data locality) specific to Relay Answers traffic and embeddings?",
+      "requirement_id": "req-TPI-001"
+    }
+  ]
+}

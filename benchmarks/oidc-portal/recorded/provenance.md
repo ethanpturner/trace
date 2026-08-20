@@ -19,3 +19,14 @@ input. The run completed with zero candidate findings at full evidence coverage
 0 spurious — the zero-finding path met exactly. The five threats' critiques and the
 authorization question the run raised are the assessment's real output, which is DEC-013
 working as designed.
+
+## Live baselines (2026-08-20)
+
+The `baselines/` directory holds live baselines captured from `openai/gpt-5.1` through
+OpenRouter under `openrouter-economy` as part of the #484 backfill, replacing the authored
+generic and structured files and adding the single-pass one. Scored against the truth set at
+capture time: baseline-generic 0 matched, 0 missed, 17 spurious; baseline-structured 0/0/0;
+baseline-single-pass 0/0/0. The generic baseline's seventeen inventions against a zero-finding
+truth set are the sharpest precision differential any scenario has recorded; the structured
+input alone removes all of them. The envelopes record findings, not usage — three single calls
+at economy rates, cents each.
