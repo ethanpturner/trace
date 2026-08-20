@@ -1,0 +1,88 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 11080,
+    "output_tokens": 6029,
+    "cache_read_tokens": 10880,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.0755",
+    "duration_seconds": 71.48653137497604
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-NET-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-002"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The Metrics API (cmp-002) and metrics database (cmp-001) are internal components that hold work and data on behalf of the system and are not public interfaces, matching req-NET-001\u2019s applicable conditions about internal data stores whose reachability from untrusted networks must be constrained. This threat concerns denial of service against that internal metrics store, so network placement and restriction are relevant to it.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "satisfied",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-005",
+          "evd-006"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Metrics API protections against high-volume internal write traffic are undocumented",
+        "description": "The threat scenario for thr-004 depends on a compromised or malfunctioning Product service (act-001) sending a high rate of write requests over df-001 to the internal Metrics API (cmp-002), which in turn stresses the managed metrics database (cmp-001). The available documentation and Terraform configuration describe the Metrics API and database as internal, non-internet-reachable components and show basic database settings, but do not state whether there are per-client rate limits, quotas, backpressure mechanisms, queue limits, or other controls that would prevent a single internal client from exhausting Metrics API or database capacity and denying service to other legitimate writers and readers of metrics records (ast-001). Because these controls are neither described as present nor absent, it is not possible to determine from the current material whether the system has safeguards that bound or shed excessive internal metrics write traffic.",
+        "importance": "Whether the Metrics API and metrics database enforce any rate limiting, quota, or backpressure for individual internal clients is central to assessing how realistic and severe thr-004 is: effective bounding could limit the impact of a compromised or buggy Product service, while its absence would leave the metrics store vulnerable to denial of service from inside the application network.",
+        "related_object_ids": [
+          "thr-004",
+          "cmp-001",
+          "cmp-002",
+          "ast-001",
+          "df-001",
+          "act-001"
+        ],
+        "requested_evidence": [
+          "Design or architecture documentation describing any rate limiting, quota, or throttling applied to metrics write requests to the Metrics API, including whether limits are enforced per client, per tenant, or globally.",
+          "Operations or capacity-planning documentation describing backpressure, queue limits, or load-shedding mechanisms between the Product service and the Metrics API or between the Metrics API and the metrics database, including how the system behaves under sustained high write volumes."
+        ],
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-004",
+          "evd-005",
+          "evd-006"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": [
+      {
+        "concern": "The catalog lacks a requirement ensuring that internal application services writing to shared internal stores (such as an internal Metrics API backed by a database) implement per-client rate limits, quotas, or backpressure so that a compromised or malfunctioning internal client cannot exhaust capacity and deny service to other legitimate workloads, even when network exposure to untrusted networks is already constrained.",
+        "suggested_category": "availability",
+        "nearest_requirements": [
+          {
+            "requirement_id": "req-TPI-002",
+            "why_not": "req-TPI-002 addresses bounding work that consumes a metered external service or significant provider-controlled resource and is triggered by external events; in this case, high-volume metrics writes come from an internal service to an internal database with no metered external provider, so its scope does not clearly cover internal service-to-service denial-of-service via shared infrastructure."
+          },
+          {
+            "requirement_id": "req-NET-001",
+            "why_not": "req-NET-001 focuses on ensuring that internal data stores, queues, and services are not reachable from untrusted networks; it does not address bounding the volume of traffic or work originating from already-trusted internal components that are legitimately allowed to reach the store, so it does not cover per-client rate limiting or backpressure among internal workloads."
+          }
+        ],
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-004",
+          "evd-005",
+          "evd-006"
+        ]
+      }
+    ]
+  }
+}

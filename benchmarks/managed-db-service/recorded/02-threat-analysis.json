@@ -1,17 +1,30 @@
 {
   "schema": "ThreatAnalysisProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 9813,
+    "output_tokens": 9447,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.10673625",
+    "duration_seconds": 119.93789987498894
+  },
   "response": {
     "threats": [
       {
-        "title": "Confidential metrics exposed from the stored database",
-        "description": "Metrics records associate product accounts with usage counters and are treated as confidential business data. An attacker who obtains the stored data \u2014 a stolen disk, a platform-side copy, or a captured connection \u2014 would hold confidential business data. The document states the platform encrypts the database at rest by default with platform-managed keys and that the API-to-database connection uses the platform's transport encryption.",
+        "title": "Forged or unauthorized metrics writes via internal Metrics API",
+        "description": "An attacker who can send traffic from within the internal application subnet, or who has compromised the Product service, submits forged metrics write requests to the internal Metrics API. If write authentication or authorization is weak, misconfigured, or bypassable, the API accepts these requests and persists attacker-controlled values into the managed metrics database, corrupting metrics records.",
         "methodology": "stride-scenario-based",
         "category": [
-          "information_disclosure"
+          "spoofing",
+          "tampering"
         ],
-        "threat_actor_ids": [],
+        "threat_actor_ids": [
+          "act-001"
+        ],
         "affected_component_ids": [
-          "cmp-003"
+          "cmp-002",
+          "cmp-001"
         ],
         "affected_asset_ids": [
           "ast-001"
@@ -20,53 +33,205 @@
           "df-001"
         ],
         "preconditions": [
-          "an attacker obtains stored data or captures the database connection"
+          "The Metrics API (cmp-002) exposes write endpoints for metrics to other services on the internal application subnet.",
+          "Authentication and authorization for Metrics API write operations are weak, misconfigured, absent, or can be bypassed.",
+          "An attacker has compromised the Product service (act-001) or otherwise obtained the ability to send HTTP requests from within the internal application subnet."
         ],
         "attack_path": [
-          "obtain the stored database contents or capture the connection",
-          "read account identifiers and usage counters"
+          "Attacker gains control over the Product service (cmp-003/act-001) or another process able to reach the Metrics API from inside the application subnet.",
+          "Attacker crafts HTTP requests on data flow df-001 containing forged account identifiers and arbitrary usage numbers.",
+          "The Metrics API (cmp-002) accepts and processes these requests because it trusts the internal source or lacks effective write authentication/authorization.",
+          "The Metrics API writes the attacker-controlled data into the managed metrics database (cmp-001), altering metrics records (ast-001)."
         ],
-        "impact": "Confidential business data is disclosed.",
+        "impact": "Metrics records (ast-001) are created or overwritten with attacker-chosen values, undermining the integrity of product usage metrics and any internal decisions, alerts, or analyses that rely on accurate usage data.",
         "likelihood": null,
-        "confidence": "medium",
+        "confidence": "low",
         "evidence_ids": [
+          "evd-001",
           "evd-002",
-          "evd-003"
+          "evd-003",
+          "evd-004"
         ],
         "assumption_ids": [],
         "open_question_ids": []
       },
       {
-        "title": "Confidential metrics retained beyond need",
-        "description": "Metrics are persisted and treated as confidential, but no document states how long they are retained or whether a lifecycle policy expires them. Data kept longer than needed widens the impact of any later disclosure.",
+        "title": "Unauthorized metrics reads and account enumeration via Metrics API",
+        "description": "An attacker controlling the Dashboard service or another internal client uses the Metrics API's read endpoints to retrieve metrics for arbitrary product accounts. If read authentication, authorization, or tenant scoping are weak or bypassable, the attacker can enumerate and exfiltrate confidential usage metrics for many or all accounts.",
         "methodology": "stride-scenario-based",
         "category": [
-          "information_disclosure"
+          "information_disclosure",
+          "elevation_of_privilege"
         ],
-        "threat_actor_ids": [],
+        "threat_actor_ids": [
+          "act-002"
+        ],
         "affected_component_ids": [
-          "cmp-003"
+          "cmp-002",
+          "cmp-001",
+          "cmp-004"
         ],
         "affected_asset_ids": [
           "ast-001"
         ],
-        "related_data_flow_ids": [],
+        "related_data_flow_ids": [
+          "df-002"
+        ],
         "preconditions": [
-          "metrics accumulate without a retention bound"
+          "The Metrics API (cmp-002) exposes read/query endpoints for metrics to internal clients such as the Dashboard (cmp-004).",
+          "Authentication and authorization for Metrics API read operations are weak, misconfigured, overly broad, or can be bypassed, or queries are not properly scoped to the caller's permitted accounts.",
+          "An attacker has compromised the Dashboard service (act-002) or a similar internal client, or obtained its credentials or network position."
         ],
         "attack_path": [
-          "any later compromise of the store",
-          "read the full accumulated history rather than a bounded window"
+          "Attacker gains control over the Dashboard (cmp-004/act-002) or another client able to reach the Metrics API from inside the application subnet.",
+          "Attacker sends crafted queries on data flow df-002 to the Metrics API (cmp-002), requesting metrics for many or all product accounts rather than only those it should see.",
+          "Because read authentication/authorization or tenant scoping are weak or bypassable, the Metrics API returns the requested metrics.",
+          "Attacker aggregates and exfiltrates the returned metrics records (ast-001)."
         ],
-        "impact": "A disclosure exposes the full accumulated metrics history.",
+        "impact": "Confidential business data in metrics records (ast-001), including account identifiers and usage numbers, can be enumerated and exfiltrated by a compromised internal client, exposing sensitive information about product account usage patterns.",
         "likelihood": null,
         "confidence": "low",
         "evidence_ids": [
-          "evd-003"
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-004"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Interception or tampering of metrics over internal HTTP flows",
+        "description": "If traffic on the internal HTTP flows between the Product service/Dashboard and the Metrics API is not properly encrypted and authenticated, an attacker with access to the internal network can intercept or modify metrics records in transit, observing confidential usage data or altering values before they are stored.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "information_disclosure",
+          "tampering"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-003",
+          "cmp-004",
+          "cmp-002"
+        ],
+        "affected_asset_ids": [
+          "ast-001"
+        ],
+        "related_data_flow_ids": [
+          "df-001",
+          "df-002"
+        ],
+        "preconditions": [
+          "Metrics traffic on data flows df-001 and df-002 between the Product service (cmp-003), Dashboard (cmp-004), and Metrics API (cmp-002) uses HTTP and is not protected by effective end-to-end transport encryption and integrity (for example, TLS configured and validated correctly), or such protections can be bypassed.",
+          "An attacker has obtained a position on the internal network where they can observe or modify traffic between these components (for example, through network compromise or malicious insider access)."
+        ],
+        "attack_path": [
+          "Attacker gains network-level access on the internal path between the Product service/Dashboard and the Metrics API.",
+          "Attacker intercepts HTTP requests and responses on df-001 and/or df-002.",
+          "If transport encryption and integrity are absent, weak, or terminated where the attacker can observe traffic, the attacker reads account identifiers and usage numbers in transit, learning confidential metrics.",
+          "Attacker optionally modifies metrics payloads in transit so that the Metrics API (cmp-002) receives altered values, which it then processes and may persist into metrics records (ast-001)."
+        ],
+        "impact": "Confidential metrics records (ast-001) can be exposed in transit, and their integrity can be compromised before they reach the Metrics API, leading to disclosure of business-sensitive usage data and corruption of recorded metrics.",
+        "likelihood": null,
+        "confidence": "low",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-004"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Denial of service of Metrics Store through high-volume metrics writes",
+        "description": "A compromised or malfunctioning Product service floods the internal Metrics API with a high rate of metrics write requests. This sustained load can exhaust API or managed database capacity, delaying or preventing processing of legitimate write and read requests and making metrics temporarily unavailable.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "denial_of_service"
+        ],
+        "threat_actor_ids": [
+          "act-001"
+        ],
+        "affected_component_ids": [
+          "cmp-002",
+          "cmp-001"
+        ],
+        "affected_asset_ids": [
+          "ast-001"
+        ],
+        "related_data_flow_ids": [
+          "df-001"
+        ],
+        "preconditions": [
+          "The Product service (cmp-003/act-001) or another internal client is able to send a high volume of write requests to the Metrics API (cmp-002) over df-001, for example due to a bug, misconfiguration, or compromise.",
+          "The Metrics API and its managed database instance (cmp-001) have finite capacity and either lack effective rate limiting, isolation, or backpressure for individual clients, or such protections can be bypassed."
+        ],
+        "attack_path": [
+          "Attacker compromises the Product service (cmp-003) or triggers a faulty deployment that generates an unusually high rate of metrics writes.",
+          "Large bursts of write traffic are sent to the Metrics API (cmp-002) over df-001.",
+          "The Metrics API and underlying managed database (cmp-001, a db.t3.medium Postgres instance) become CPU, memory, connection, or I/O bound.",
+          "Legitimate metrics writes and dashboard read queries are delayed, time out, or fail, reducing the availability of accurate and timely metrics (ast-001)."
+        ],
+        "impact": "The Metrics API and managed database become partially or fully unavailable for recording and serving metrics, reducing or preventing access to metrics records (ast-001) needed for internal monitoring and analysis.",
+        "likelihood": null,
+        "confidence": "medium",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-005",
+          "evd-006"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Database tampering via crafted metrics fields (SQL injection scenario)",
+        "description": "If the Metrics API constructs SQL statements for the managed Postgres database using untrusted metric fields such as account identifiers without proper parameterization or validation, a compromised Product service could send crafted inputs that cause the database to execute unintended commands, altering or deleting metrics data.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "tampering",
+          "elevation_of_privilege"
+        ],
+        "threat_actor_ids": [
+          "act-001"
+        ],
+        "affected_component_ids": [
+          "cmp-002",
+          "cmp-001"
+        ],
+        "affected_asset_ids": [
+          "ast-001"
+        ],
+        "related_data_flow_ids": [
+          "df-001",
+          "df-003"
+        ],
+        "preconditions": [
+          "The Metrics API (cmp-002) builds SQL or query strings for the managed Postgres database (cmp-001) using metric fields such as account identifiers or other client-provided data, rather than using only parameterized queries or safe ORM mechanisms.",
+          "Input validation and query construction controls intended to prevent SQL injection are absent, incomplete, or can be bypassed.",
+          "An attacker has compromised the Product service (cmp-003/act-001) or otherwise controls the metrics payloads sent over df-001."
+        ],
+        "attack_path": [
+          "Attacker gains control over the Product service (cmp-003) and crafts metrics records whose account identifier or other fields contain SQL injection payloads.",
+          "Product service sends these crafted metrics write requests to the Metrics API (cmp-002) over df-001.",
+          "The Metrics API incorporates the untrusted fields directly into SQL statements sent to the managed Postgres instance (cmp-001) over df-003 without proper parameterization.",
+          "Postgres executes the injected commands, allowing the attacker to modify, delete, or otherwise manipulate metrics records (ast-001) beyond their intended write permissions."
+        ],
+        "impact": "Metrics records (ast-001) stored in the managed database (cmp-001) can be altered or deleted, corrupting historical metrics and potentially making the metrics store unavailable or unreliable for internal use.",
+        "likelihood": null,
+        "confidence": "low",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-004",
+          "evd-005",
+          "evd-006"
         ],
         "assumption_ids": [],
         "open_question_ids": []
       }
-    ]
+    ],
+    "catalog_gap_candidates": []
   }
 }

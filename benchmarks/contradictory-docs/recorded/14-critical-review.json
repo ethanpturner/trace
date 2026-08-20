@@ -1,0 +1,42 @@
+{
+  "schema": "CriticalReviewProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 13616,
+    "output_tokens": 13426,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.15128",
+    "duration_seconds": 273.1293293329654
+  },
+  "response": {
+    "critiques": [
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-027",
+        "critique_type": "contradictory_analysis",
+        "description": "The mapping for req-DATA-002 concludes the requirement is partially satisfied despite directly relying on mutually contradictory retention descriptions (immediate deletion vs 30-day lifecycle) for the same export files.",
+        "rationale": "map-027 treats req-DATA-002 as partially satisfied by combining ctl-004 (immediate deletion after download) and ctl-002 (30-day lifecycle retention). However, evd-003 states that the export file is deleted immediately once the customer has downloaded it, while evd-006 states that completed export files are retained in the managed object store for 30 days under a lifecycle policy. These behaviours cannot both describe the same artifacts after download. Evidence assessment eas-056 already notes that this contradiction prevents a clear conclusion about actual retention and that the partial-satisfaction claim cannot be established. The mapping should be revised to treat the retention behaviour as an open question until the conflict between evd-003 and evd-006 is resolved, rather than asserting partial satisfaction.",
+        "evidence_ids": [
+          "evd-003",
+          "evd-006"
+        ],
+        "recommended_action": "revise",
+        "confidence": "high"
+      },
+      {
+        "subject_type": "documentation_gap",
+        "subject_id": "gap-010",
+        "critique_type": "unsupported_claim",
+        "description": "gap-010 assumes the managed object store is operated by an external provider, but the cited documentation does not establish that the store is external, so the gap\u2019s premise is not supported.",
+        "rationale": "gap-010 describes export files as written to and retained in a managed object store \"operated by an external provider,\" citing evd-003 and evd-006. Those passages refer only to a \"managed object store\" and a storage lifecycle policy; they do not state whether the store is run by an external cloud/storage provider or is an internally operated service. Evidence assessment eas-060 already notes that the provider status is undocumented and that applicability of req-TPI-001 therefore cannot be confirmed. Because the gap\u2019s existence depends on the store being an external processor, its current framing overreaches the evidence and should be revised to make the external-provider aspect conditional or to focus on the underlying uncertainty instead.",
+        "evidence_ids": [
+          "evd-003",
+          "evd-006"
+        ],
+        "recommended_action": "revise",
+        "confidence": "high"
+      }
+    ]
+  }
+}

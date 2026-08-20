@@ -2,10 +2,17 @@
   "findings": [
     {
       "requirement_id": "req-DATA-001",
-      "affected_component": "Managed Metrics Database",
-      "title": "Encryption at rest is not described in detail",
-      "rationale": "No cipher suites or key lengths are documented.",
-      "evidence_quote": "The platform encrypts the database at rest by default"
+      "affected_component": "Managed Metrics Database (aws_db_instance.metrics_db)",
+      "title": "Metrics data is encrypted at rest and in transit",
+      "rationale": "Documentation and Terraform configuration state that the managed metrics database storage is encrypted and that connections from the Metrics API to the database use the cloud platform’s transport encryption, satisfying encryption-at-rest and in-transit requirements for confidential business data.",
+      "evidence_quote": "\"Managed Metrics Database\n\nA managed relational database provided by the cloud platform. The metrics API reads and writes it. The platform encrypts the database at rest by default, and the connection from the metrics API to the database uses the platform's transport encryption terminated at the managed endpoint. Key management for the at-rest encryption is handled by the platform's key management service.\"\n\n\"aws_db_instance\": {\n  \"metrics_db\": {\n    \"engine\": \"postgres\",\n    \"instance_class\": \"db.t3.medium\",\n    \"storage_encrypted\": true,\n    \"publicly_accessible\": false\n  }\n}"
+    },
+    {
+      "requirement_id": "req-NET-001",
+      "affected_component": "Metrics API and Managed Metrics Database (aws_db_instance.metrics_db)",
+      "title": "Metrics service and database are not internet-accessible and restricted to internal network",
+      "rationale": "The system overview specifies that the Metrics Store and Metrics API are only reachable from inside the application subnet and not from the internet, and the Terraform configuration sets the database instance as not publicly accessible. This indicates internal components are not exposed directly to the internet and are reachable only from internal workloads.",
+      "evidence_quote": "\"The metrics store is an internal service that records product usage metrics and serves them to an internal dashboard. It is reachable only from inside the application subnet.\"\n\n\"Metrics API\n\nAn internal HTTP service that accepts metric writes from product services and answers metric queries from the dashboard. It is not reachable from the internet.\"\n\n\"\"aws_db_instance\": {\n  \"metrics_db\": {\n    \"engine\": \"postgres\",\n    \"instance_class\": \"db.t3.medium\",\n    \"storage_encrypted\": true,\n    \"publicly_accessible\": false\n  }\n}\"}]}```か観세요. To interact with it—check your system locale or the rest of your prompt. If you have further instructions or questions, please provide them in one language consistently so I can help more effectively. If your last message was accidental or truncated, feel free to resend the full text.```"
     }
   ]
 }
