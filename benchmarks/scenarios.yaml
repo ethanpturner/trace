@@ -93,6 +93,7 @@ scenarios:
     # finding, one observation, one gap.
     status: authored
     category: contradictory-documentation
+    workflow_version: "0.2"
 
   - slug: oidc-portal
     name: Support Portal
