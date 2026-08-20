@@ -41,7 +41,7 @@ from trace_ai.domain.threat import Threat
 from trace_ai.domain.trust_boundary import TrustBoundary
 from trace_ai.infrastructure.filesystem.artifact_store import ArtifactStoreError
 from trace_ai.services.evidence.index import EvidenceIndex, EvidenceNotFoundError
-from trace_ai.services.evidence.staleness import stale_evidence_ids
+from trace_ai.services.evidence.staleness import stale_citations
 from trace_ai.services.findings.lineage import finding_lineage
 
 if TYPE_CHECKING:
@@ -421,10 +421,11 @@ def render_questions(handle: AssessmentHandle, assessment: Assessment) -> str:
 def render_findings(handle: AssessmentHandle, assessment: Assessment) -> str:
     """The findings, each linking to its lineage walk.
 
-    With `evidence_age_threshold_days` configured, a stale-evidence column names how many of
-    each finding's citations were captured past the threshold as of this request — a view is a
-    point-in-time look, so the request's time is the honest anchor (DEC-118). Without the
-    threshold the column is absent rather than zero: no policy is not a policy.
+    With `evidence_age_threshold_days` configured, a stale-evidence column names each finding's
+    citations aged past the threshold as of this request, each with its age basis — observed
+    when the ingestion source recorded a real last-modified date (DEC-140), captured otherwise
+    (DEC-118). A view is a point-in-time look, so the request's time is the honest anchor.
+    Without the threshold the column is absent rather than zero: no policy is not a policy.
     """
     findings = handle.objects.list(Finding)
     threshold = assessment.configuration.evidence_age_threshold_days
@@ -447,8 +448,10 @@ def render_findings(handle: AssessmentHandle, assessment: Assessment) -> str:
                 _e(len(f.evidence_ids)),
             ]
             if threshold is not None:
-                stale = stale_evidence_ids(f, references, threshold_days=threshold, as_of=as_of)
-                row.append(", ".join(stale) if stale else "none")
+                stale = stale_citations(f, references, threshold_days=threshold, as_of=as_of)
+                row.append(
+                    ", ".join(f"{c.evidence_id} ({c.basis})" for c in stale) if stale else "none"
+                )
             rows.append(row)
         body = _table_raw(headers, rows)
     return render_page("Findings", assessment.id, "findings", body)

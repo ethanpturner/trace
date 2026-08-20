@@ -188,3 +188,47 @@ def test_github_token_is_a_secret_setting(monkeypatch: pytest.MonkeyPatch) -> No
 
     settings = Settings(github_token=SecretStr("tok-abc"))
     assert "tok-abc" not in repr(settings)
+
+
+def _dated_commit(repo: Path, message: str, stamp: str) -> str:
+    """A commit whose committer date is pinned, so per-file observation dates are decidable."""
+    command = ["git", "-C", str(repo), "commit", "--quiet", "-m", message]
+    subprocess.run(  # noqa: S603
+        command,
+        capture_output=True,
+        text=True,
+        check=True,
+        env={
+            "PATH": os.environ["PATH"],
+            "GIT_AUTHOR_NAME": "fixture",
+            "GIT_AUTHOR_EMAIL": "fixture@example.invalid",
+            "GIT_COMMITTER_NAME": "fixture",
+            "GIT_COMMITTER_EMAIL": "fixture@example.invalid",
+            "GIT_AUTHOR_DATE": stamp,
+            "GIT_COMMITTER_DATE": stamp,
+        },
+    )
+    return _git(repo, "rev-parse", "HEAD")
+
+
+def test_each_document_carries_the_date_its_file_was_last_touched(
+    fixture_repo: tuple[str, str], handle: AssessmentHandle
+) -> None:
+    """`observed_at` is per file, from the history the pin names (DEC-140): a file changed in a
+    later commit carries that commit's date, while an untouched file keeps its older one."""
+    from datetime import UTC, datetime
+
+    url, _ = fixture_repo
+    repo = Path(url.removeprefix("file://"))
+    (repo / "docs" / "auth.md").write_text("## Auth\n\nSSO everywhere, still.\n", encoding="utf-8")
+    _git(repo, "add", "-A")
+    pinned_stamp = "2026-01-02T03:04:05+00:00"
+    sha = _dated_commit(repo, "touch auth only", pinned_stamp)
+
+    documents = ingest_repository(handle, url, sha)
+    by_path = {document.metadata["repository_path"]: document for document in documents}
+
+    touched = datetime.fromisoformat(str(by_path["docs/auth.md"].metadata["observed_at"]))
+    untouched = datetime.fromisoformat(str(by_path["README.md"].metadata["observed_at"]))
+    assert touched == datetime(2026, 1, 2, 3, 4, 5, tzinfo=UTC)
+    assert untouched != touched

@@ -672,6 +672,7 @@ Represents an addressable piece of evidence from a source.
 | content_hash | string | Yes | `sha256:<hex>` over the UTF-8 bytes of `quoted_text` (DEC-019) |
 | source_origin | SourceOrigin | Yes | Evidence origin |
 | created_at | datetime | Yes | Creation timestamp |
+| observed_at | datetime | No | When the source's own record says the cited material was last modified; populated only by ingestion paths that carry a real observation date (DEC-140) |
 | metadata | map[string, any] | No | Additional location details |
 
 ## Validation rules

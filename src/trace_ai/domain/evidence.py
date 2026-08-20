@@ -102,6 +102,16 @@ class EvidenceReference(DomainModel):
     content_hash: ContentHash
     source_origin: SourceOrigin
     created_at: datetime
+    observed_at: datetime | None = None
+    """When the cited material was last modified, per the ingestion source's own record.
+
+    Populated only by an ingestion path that truly carries an observation date — repository
+    ingestion supplies the committer date of the last commit touching the file at the pinned
+    commit (DEC-140). Every other path leaves it absent: `created_at` is when the passage was
+    *captured*, and DEC-118 refuses to dress capture time as observation time. Absence is the
+    honest record, never a value to default or infer.
+    """
+
     metadata: dict[str, Any] = Field(default_factory=dict)
     """Additional location details, including `json_pointer` for a structured source (DEC-015)."""
 

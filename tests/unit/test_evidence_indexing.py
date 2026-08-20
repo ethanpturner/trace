@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import unicodedata
 from collections.abc import Iterator
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
@@ -359,6 +360,48 @@ def test_the_injection_block_is_indexed_like_any_other_content(loader: DocumentL
         assert reference.chunk_index is not None
         assert reference.content_hash == content_hash(reference.quoted_text.encode("utf-8"))
         assert JSON_POINTER_KEY not in reference.metadata
+
+
+# ------------------------------------------------------------------------------------------
+# The observation date (DEC-140)
+# ------------------------------------------------------------------------------------------
+
+
+def test_a_document_observation_date_reaches_every_reference(loader: DocumentLoader) -> None:
+    """Repository ingestion records `observed_at` in document metadata; every reference minted
+    from that document carries it, because the passages are the file and the file's history
+    is theirs."""
+    document = loader.load_document(
+        FORGEFLOW_INPUT / "architecture-overview.md",
+        origin=SourceOrigin.UPLOADED_DOCUMENT,
+        trust_level=TrustLevel.UNTRUSTED,
+        extra_metadata={"observed_at": "2026-01-02T03:04:05+00:00"},
+    )
+    references = index_document(loader.handle, document)
+    assert references
+    expected = datetime(2026, 1, 2, 3, 4, 5, tzinfo=UTC)
+    assert all(reference.observed_at == expected for reference in references)
+
+
+def test_a_document_without_an_observation_date_mints_none(loader: DocumentLoader) -> None:
+    """Local file ingestion carries no real observation date, and absence stays honest
+    (DEC-118): nothing defaults it to capture time."""
+    references = index(loader, "ai-analysis.md")
+    assert references
+    assert all(reference.observed_at is None for reference in references)
+
+
+def test_a_malformed_observation_date_refuses_indexing(loader: DocumentLoader) -> None:
+    """A present-but-unparseable date is an asserted measurement; dropping it silently would
+    change the citations' meaning with no record, so indexing refuses instead."""
+    document = loader.load_document(
+        FORGEFLOW_INPUT / "operations-guide.md",
+        origin=SourceOrigin.UPLOADED_DOCUMENT,
+        trust_level=TrustLevel.UNTRUSTED,
+        extra_metadata={"observed_at": "yesterday, roughly"},
+    )
+    with pytest.raises(IndexingError, match="ISO 8601"):
+        index_document(loader.handle, document)
 
 
 # ------------------------------------------------------------------------------------------

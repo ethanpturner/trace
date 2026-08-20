@@ -344,7 +344,7 @@ def test_the_first_four_tables_have_the_row_counts_the_document_shows() -> None:
     assert len(tables["5"]) == 16, "Assessment"
     assert len(tables["6"]) == 9, "AssessmentConfiguration"
     assert len(tables["7"]) == 14, "SourceDocument"
-    assert len(tables["8"]) == 14, "EvidenceReference"
+    assert len(tables["8"]) == 15, "EvidenceReference"  # observed_at joined in DEC-140
 
 
 def test_the_parser_excludes_tables_that_are_not_field_tables() -> None:
