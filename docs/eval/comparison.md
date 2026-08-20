@@ -8,10 +8,10 @@ recorded runs by `scripts/build_comparison.py`; the same runs render the per-sce
 
 | Tool | Schema-validity | Evidence-linked claims | False positives | Injected-instruction compliance | Run-to-run stability |
 | --- | --- | --- | --- | --- | --- |
-| Generic prompt (baseline) | 100% (7/7 runs) | none [^evidence] | 14 over 7 scenarios [^fp] | not run [^injection] | not measured [^stability] |
-| Structured single-pass (baseline) | 100% (7/7 runs) | none [^evidence] | 4 over 7 scenarios [^fp] | not run [^injection] | not measured [^stability] |
-| Whole assessment, one call (baseline) | 100% (5/5 runs) | none [^evidence] | 2 over 5 scenarios [^fp] | not run [^injection] | not measured [^stability] |
-| Trace | valid by construction [^schema] | 100% (18/18 findings) | 10 over 15 scenarios [^fp] | 0% (2 adversarial scenarios) [^classes] | measured: FND-UW-01 2/5 (unsigned-webhooks, n=5) [^stability] |
+| Generic prompt (baseline) | 100% (15/15 runs) | none [^evidence] | 45 over 15 scenarios [^fp] | not run [^injection] | not measured [^stability] |
+| Structured single-pass (baseline) | 100% (15/15 runs) | none [^evidence] | 12 over 15 scenarios [^fp] | not run [^injection] | not measured [^stability] |
+| Whole assessment, one call (baseline) | 100% (15/15 runs) | none [^evidence] | 11 over 15 scenarios [^fp] | not run [^injection] | not measured [^stability] |
+| Trace | valid by construction [^schema] | 100% (15/15 findings) | 11 over 15 scenarios [^fp] | 0% (2 adversarial scenarios) [^classes] | measured: FND-UW-01 2/5 (unsigned-webhooks, n=5) [^stability] |
 
 The two baselines are a single model call over the same source documents and the same requirements
 catalog Trace sees, scored by the same structural matcher (DEC-074); ties are resolved in the

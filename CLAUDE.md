@@ -15,12 +15,13 @@ baselines, ablations, the adversarial condition, and a CI-checked scorecard.
 
 Every model call in `src/` goes through the seam, and no default test makes one: everything runs
 against `DeterministicModel`, and `--model-profile offline-fake --response recorded.json` is a
-supported way to run the pipeline without a provider. Live measurement exists but is thin: the
-ForgeFlow and husky-ai recordings are live captures, the DEC-077 stability protocol has run once —
-five completed `claude-opus-5` runs of one scenario at $6.92 ± $3.28 each (DEC-092) — plus a
-two-run confirmation (`docs/eval/stability-confirm-564.json`). Everything else replays offline;
-the other thirteen benchmark recordings are authored, not captured, and the remaining live sweep
-(#484) is budget-parked.
+supported way to run the pipeline without a provider. All fifteen benchmark recordings are live
+captures that replay offline: ForgeFlow and husky-ai on `claude-opus-5` (pre-batching shape,
+DEC-092), the other thirteen on `openai/gpt-5.1` through the OpenRouter gateway (DEC-135; the
+2026-08 sweep, #484), each with the three live baselines recorded beside it. The DEC-077
+stability protocol has run once — five completed `claude-opus-5` runs of one scenario at
+$6.92 ± $3.28 each (DEC-092) — plus a two-run confirmation
+(`docs/eval/stability-confirm-564.json`); re-running it on the sweep model is open work.
 
 Read `README.md` for the full picture. The authoritative design lives in `docs/architecture/` and
 `docs/product/` — all plain Markdown, all marked *Proposed, version 0.1*.
@@ -83,7 +84,7 @@ demo/forgeflow/expected/   the truth set; never supplied to Trace. Fully authore
 requirements/        the requirements catalog; see Requirements catalog below
 journal/             dated session entries; see Journal below
 benchmarks/          scenarios two onward, same input/ + expected/ + recorded/ layout;
-                     all fifteen registered scenarios are fully authored and replay offline
+                     all fifteen registered scenarios carry live-captured recordings and replay offline
 benchmarks/scenarios.yaml  the scenario registry -- the authoritative list
 prompts/             prompt files; shared/ holds the blocks composed into agent prompts
 templates/           report-v1.md, the report template; see Report shape below
