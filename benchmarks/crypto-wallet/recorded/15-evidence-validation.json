@@ -1,0 +1,908 @@
+{
+  "schema": "EvidenceValidationProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 328,
+    "output_tokens": 22401,
+    "cache_read_tokens": 12800,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.22602",
+    "duration_seconds": 224.7476705829613
+  },
+  "response": {
+    "assessments": [
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-001",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 explicitly states that the document describes \"a cryptocurrency wallet and exchange integration: a desktop wallet, an exchange with web and API access, and the blockchain integration behind them\", which directly matches the stated system purpose.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-002",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 states \"The platform is business-critical\", which directly supports the business_criticality value of business_critical.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-003",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "The phrase in evd-001 \"The platform is business-critical and externally exposed\" directly supports externally_exposed: True.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-004",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 states that the platform \"handles business and credential data\", which directly supports the listed data classifications ['business_data', 'credential_data'].",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-005",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 states \"The user's operating system, hardware, and third-party dependencies not shown here are out of scope.\", which directly matches the listed out_of_scope_environment items.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-006",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "For the Electrum Wallet Daemon, evd-003 says it is a \"Local wallet backend process exposing HTTP JSON-RPC on localhost.\", which directly supports interface: http_json_rpc_localhost.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-007",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-003 describes the ElectrumX Server as \"Operated by third parties, not by the exchange.\", which directly supports marking that component as externally managed.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-008",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-003 states of the Exchange Website that \"It interacts with the exchange backend over HTTPS.\" and evd-005 further says \"with all front-end to backend communication over HTTPS\". Together they directly support that the front-end component connects to the backend over HTTPS, although evd-005 notes the configuration has not been re-verified for the current deployment.",
+        "missing_evidence": [
+          "Current deployment documentation or configuration showing that HTTPS is actually enforced between the front-end and backend in the live environment."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-009",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-003 states that the Exchange Backend \"reads and writes the MySQL and MongoDB stores\", which directly supports that it uses both datastores. evd-005 repeats that \"the backend reads and writes both databases\" and is consistent contextual support.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-010",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "Both evd-003 and evd-005 state that the Exchange Backend \"calls the blockchain integration module\", directly supporting that cmp-007 calls the blockchain_module component.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-011",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "For the wallet file, evd-004 states \"It should be encrypted at rest; encryption is a wallet option.\", which directly supports that an encryption option is available.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-012",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-004 says the wallet file \"should be encrypted at rest; encryption is a wallet option\" but does not state that encryption is enforced or enabled by default. This directly supports treating the encrypted_at_rest status as unknown rather than asserting either encrypted or unencrypted by default.",
+        "missing_evidence": [
+          "Documentation or configuration stating whether wallet file encryption is enabled by default and/or enforced for all wallets."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-013",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-004 describes MySQL as storing \"user accounts and configuration\", directly supporting the listed stored_data values.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-014",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-004 describes MongoDB as storing \"trading data, logs, and operational metadata used by the exchange API\", which directly supports the listed stored_data values.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-015",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-003 states that \"User-run trading bots connect to [the Exchange API] over a secure WebSocket using API keys.\", which directly supports that API keys are an authentication mechanism for the exchange API. evd-005 notes that a trading bot \"holds exchange API keys\", which is consistent contextual support. The claim does not assert exclusivity of API keys, only that they are used.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-016",
+        "evidence_ids": [
+          "evd-005",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-005 states that \"A user-run trading bot holds exchange API keys\", directly supporting that the trading bot client holds that asset. evd-006 adds that the end user \"may also run a trading bot with API keys they generate\", which is consistent contextual support for the same holding relationship.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-017",
+        "evidence_ids": [
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-005 explicitly states \"TLS is expected to terminate at the load balancer\", directly supporting tls_termination_expected: True for the relevant component, while also noting that this expectation has not been re-verified for the current deployment.",
+        "missing_evidence": [
+          "Current deployment documentation or configuration confirming that TLS actually terminates at the load balancer in production."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-018",
+        "evidence_ids": [
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-005 states there is \"all front-end to backend communication over HTTPS\" immediately after noting TLS termination at the load balancer, directly supporting that HTTPS is expected for front-end to backend communication, albeit with the caveat that this has not been re-verified for the current deployment.",
+        "missing_evidence": [
+          "Evidence for the current deployment (e.g., configuration, test results) confirming that all front-end to backend communication actually uses HTTPS."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-019",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "For the Blockchain Integration Module, evd-003 states that it \"Interfaces with the blockchain network to read and write blockchain state\", which directly supports interfaces_with: ['blockchain_network'].",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-020",
+        "evidence_ids": [
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-006",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-006 describes the end user as someone who \"may also run a trading bot with API keys they generate\", directly supporting may_run_trading_bot: True for the actor.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "context_claim",
+        "subject_id": "ctx-021",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "In the Web Browser and Mobile App description, evd-003 states \"The mobile app is the mobile variant for wallet and exchange interaction.\", which directly supports the stated role for cmp-005.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control",
+        "subject_id": "ctl-001",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-004 describes the wallet file as \"the local wallet at rest, holding the wallet data and keys\" and says \"It should be encrypted at rest; encryption is a wallet option.\" This directly supports that the wallet file can be encrypted at rest via a wallet option. The statement that this provides at-rest protection for stored private keys and wallet data is a reasonable security inference from encryption, not a separate documented fact about implementation strength.",
+        "missing_evidence": [
+          "Details of the encryption implementation for the wallet file (algorithms, key derivation, how the option is configured or enforced)."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control",
+        "subject_id": "ctl-002",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-003 states that the Exchange Website \"interacts with the exchange backend over HTTPS\", and evd-005 adds that \"TLS is expected to terminate at the load balancer, with all front-end to backend communication over HTTPS\". These passages directly support that TLS/HTTPS is the intended protection for traffic between the browser, website, and backend. However, evd-005 also states \"This has not been re-verified for the current deployment.\", and there is no documentation of certificate validation behaviour, downgrade protections, or enforcement of HTTPS from user browsers. Therefore the existence of a TLS-based design is supported, but the stronger claim that it currently provides end-to-end encryption in transit for all such exchanges is only partially established.",
+        "missing_evidence": [
+          "Current deployment configuration or test results confirming that browser-to-load-balancer traffic is forced over HTTPS.",
+          "Documentation of TLS settings at the load balancer and backend (protocol versions, ciphers, certificate validation, HSTS or equivalent downgrade protections)."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control",
+        "subject_id": "ctl-003",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-003 describes the Exchange API as a Node.js API server and states that \"User-run trading bots connect to it over a secure WebSocket using API keys.\" evd-005 is consistent, saying a trading bot \"trades against the exchange API over a secure WebSocket.\" These directly support that trading bots access the exchange API via a \"secure WebSocket\" connection. It is a reasonable inference that this implies TLS-secured (wss) transport and thus encryption in transit. However, the documents do not spell out TLS versions, cipher suites, certificate validation, or downgrade protections, and do not explicitly name the endpoints as \"internet\" to \"exchange internal\" within this control. As a result, the existence of a secure WebSocket path is supported, but the fuller claim about its encryption properties and robustness is only partially supported.",
+        "missing_evidence": [
+          "Documentation confirming that the \"secure WebSocket\" is implemented as wss with TLS, including protocol versions and cipher configuration.",
+          "Details on certificate validation and downgrade protections for the WebSocket connection.",
+          "Architecture or network documentation explicitly showing the bot's network location relative to the exchange-internal zone."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "revise",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control",
+        "subject_id": "ctl-004",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-003 states that the Exchange API is \"A Node.js API server providing programmatic access to exchange functions such as trading and account data\" and that \"User-run trading bots connect to it over a secure WebSocket using API keys.\" This directly supports that the API is a Node.js service exposing trading and account data, and that API keys are used when bots connect. From this, it is a reasonable and well-supported inference that the application implements API key-based authentication for API access. evd-005, noting that a trading bot \"holds exchange API keys\", is consistent contextual support.",
+        "missing_evidence": [
+          "Documentation on how API keys are generated, scoped, stored, rotated, and revoked.",
+          "Details on how API keys are bound to user accounts and permissions."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-001",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-004 describes the wallet file as \"the local wallet at rest, holding the wallet data and keys\" and notes \"It should be encrypted at rest; encryption is a wallet option.\" This directly supports that sensitive credential-like data is stored at rest and that encryption at rest is available but optional. That is consistent with req-DATA-001 being applicable to a threat involving compromise of stored wallet data and keys, and with classifying satisfaction as only partial because encryption is not enforced. However, the specific semantics of req-DATA-001 and thr-002 are not present in the cited evidence, so the exact \"partially_satisfied\" label depends on requirement definitions external to these passages. Hence the applicability is well supported but the satisfaction level is partially supported by the available documentation.",
+        "missing_evidence": [
+          "The full text of req-DATA-001 to confirm how it defines full vs partial satisfaction.",
+          "Threat documentation for thr-002 to ensure the described wallet-file compromise scenario matches the threat definition.",
+          "Documentation or configuration stating whether wallet encryption can be enforced or is enabled by default."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-002",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-004 states that the wallet file \"hold[s] the wallet data and keys\", directly supporting that long-lived private signing keys are stored locally. No passage mentions a managed secret store or equivalent mechanism for these keys. Given that, it is well supported to treat req-SECRET-001 as applicable to a threat about key compromise and to classify its satisfaction as unverified, since the required protection mechanism is neither confirmed nor ruled out by the documentation.",
+        "missing_evidence": [
+          "Design or configuration documentation describing how wallet private keys are protected (e.g., use of OS key stores, hardware wallets, or other managed secret storage).",
+          "Explicit mapping of wallet key protection to req-SECRET-001's criteria."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-003",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-004 shows that the wallet file stores wallet data and keys. evd-001 indicates the platform handles business and credential data, supporting treatment of this as confidential. evd-002 and evd-003 place the wallet daemon on the user device and ElectrumX servers on the internet, and evd-005 explains that the daemon connects to ElectrumX servers for blockchain state. Together, these passages support that confidential wallet-derived data crosses a network boundary the system does not control, making req-DATA-001 applicable to threats involving that flow. No evidence describes encryption or equivalent protection for daemon-to-ElectrumX traffic, so treating the requirement as unverified for thr-003 is consistent with the documentation.",
+        "missing_evidence": [
+          "Documentation or configuration for the protocol and security (e.g., TLS) used between the wallet daemon and ElectrumX servers.",
+          "The full text of req-DATA-001 and the definition of thr-003 to confirm that this flow matches the requirement and threat precisely."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-004",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-003 describes ElectrumX as a \"Third-party SPV server\" that wallets connect to for blockchain data and notes it is \"Operated by third parties, not by the exchange.\" evd-002 identifies ElectrumX servers as part of the internet trust zone, and evd-005 shows that the daemon connects to ElectrumX for blockchain state. This directly supports that an external provider processes customer-related data on the system's behalf, making a third-party integration requirement like req-TPI-001 applicable. The documentation contains no information about contracts, data protection controls, or due diligence for those third parties, so treating the requirement as unverified is supported.",
+        "missing_evidence": [
+          "Documentation of third-party management for ElectrumX (e.g., provider selection, data protection obligations, monitoring).",
+          "The full text of req-TPI-001 to align this mapping with the requirement's detailed expectations."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-005",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "The conclusion that req-ADMIN-001 is not applicable to thr-004 relies on the described threat scenario and requirement semantics, but no evidence excerpt is cited for this batch, and the available passages (evd-001\u2013evd-006) do not describe thr-004 or req-ADMIN-001. Therefore, the documentation provided does not establish this not_applicable mapping.",
+        "missing_evidence": [
+          "Threat model documentation defining thr-004.",
+          "The text of req-ADMIN-001 and analysis showing whether thr-004 involves privileged or administrative access paths."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-006",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "The claim that req-AI-001 is not applicable to thr-004 depends on details of the threat and on whether any model inference components are present. No evidence excerpts are cited for this mapping, and evd-001\u2013evd-006 do not describe thr-004 or any AI/model components in the threat path. As a result, the provided documentation does not establish this not_applicable classification.",
+        "missing_evidence": [
+          "Threat model documentation for thr-004 describing all components and data flows involved.",
+          "The definition of req-AI-001 and confirmation that no model inference component participates in thr-004."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-007",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "The conclusion that req-AI-002 is not applicable to thr-004 presumes that no model output is published externally in the threat scenario. No evidence snippets are cited for this mapping, and the provided passages do not describe thr-004 or req-AI-002. Consequently, the documentation in this batch does not establish that this requirement is not applicable.",
+        "missing_evidence": [
+          "Detailed description of thr-004, including any model components and outputs, if present.",
+          "The text of req-AI-002 and analysis tying or excluding it from the thr-004 data flows."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-008",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "The mapping that req-AI-003 is not applicable to thr-004 assumes there is no sending of customer content to an external model provider in the threat scenario. With no evidence excerpts cited and no description of thr-004 or req-AI-003 in evd-001\u2013evd-006, this not_applicable conclusion is not established by the available documentation.",
+        "missing_evidence": [
+          "Threat model documentation for thr-004 clarifying any use or non-use of external model providers.",
+          "The full text of req-AI-003 and analysis on whether its conditions are met in thr-004."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-009",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "The assertion that req-AI-004 is not applicable to thr-004 rests on the premise that no model output is rendered into a UI in that threat scenario. Since no evidence is cited for this mapping and the shared evidence excerpts do not define thr-004 or req-AI-004, the documents do not establish this not_applicable status.",
+        "missing_evidence": [
+          "Description of thr-004 including all UI-rendered outputs involved.",
+          "The text of req-AI-004 and reasoning about whether any model outputs fall within thr-004."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-010",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "The mapping that req-AUTH-001 is not applicable to thr-004 depends on distinctions between administrative and end-user access paths in the threat scenario. No evidence excerpts are associated with this mapping, and evd-001\u2013evd-006 do not define thr-004 or req-AUTH-001. Therefore, the not_applicable conclusion is not supported by the provided documentation.",
+        "missing_evidence": [
+          "Threat model information for thr-004 indicating whether any administrative interfaces or privileged access are in scope.",
+          "The text of req-AUTH-001 to verify its applicability criteria against thr-004."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-011",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "The conclusion that req-AUTH-002 is not applicable to thr-004 assumes the threat involves only ordinary end-user access and no administrative or privileged external access. With no cited evidence and no description of thr-004 or req-AUTH-002 in evd-001\u2013evd-006, this mapping is not established by the available documentation.",
+        "missing_evidence": [
+          "Documentation of thr-004 detailing which user roles and interfaces are involved.",
+          "The definition of req-AUTH-002 and analysis of whether any thr-004 actors fall under its scope."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-012",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "The mapping that req-AUTHZ-001 is not applicable to thr-004 depends on assumptions about tenant-aware authorization and how the threat operates (e.g., within a single compromised session). No evidence snippets are referenced, and the shared documentation does not describe thr-004 or the requirement's criteria. Thus, the documentation does not establish this not_applicable classification.",
+        "missing_evidence": [
+          "Threat model text for thr-004 describing any multi-tenant aspects or storage boundaries involved.",
+          "The full text of req-AUTHZ-001 to compare its scope to the thr-004 scenario."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-013",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "The assertion that req-AUTHZ-002 is not applicable to thr-004 hinges on whether the threat uses delegated access to external platforms. No evidence excerpts are cited, and evd-001\u2013evd-006 do not define thr-004 or req-AUTHZ-002. Consequently, the provided documentation does not support this not_applicable mapping.",
+        "missing_evidence": [
+          "Description of thr-004 specifying any delegated access to external platforms, if present.",
+          "The text of req-AUTHZ-002 and an explicit comparison to the thr-004 flow."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-014",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "unsupported",
+        "rationale": "The mapping that req-CICD-001 is not applicable to thr-004 assumes that deployment pipeline controls are out of scope for the threat. With no evidence passages cited and no description of thr-004 or req-CICD-001 in evd-001\u2013evd-006, the not_applicable conclusion is not established by the documentation available in this batch.",
+        "missing_evidence": [
+          "Threat model documentation for thr-004 clarifying whether CICD or deployment controls contribute to the risk.",
+          "The text of req-CICD-001 and an explicit rationale tying it in or out of thr-004."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-015",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "partially_supported",
+        "rationale": "evd-004 shows that MySQL stores \"user accounts and configuration\" and MongoDB stores \"trading data, logs, and operational metadata\", i.e., sensitive business and account data. evd-003 and evd-005 describe the browser\u2013website\u2013backend flow, with evd-005 stating that \"TLS is expected to terminate at the load balancer, with all front-end to backend communication over HTTPS\", directly supporting applicability of an in-transit/at-rest data protection requirement such as req-DATA-001 to thr-004. However, encryption at rest for the MySQL and MongoDB datastores is not mentioned, and evd-005 notes that the HTTPS/TLS configuration has not been re-verified for the current deployment. Thus, the characterization of req-DATA-001 as applicable is well supported, while the precise \"partially_satisfied\" status depends on requirement semantics and on unverified assumptions about current TLS and at-rest encryption, so it is only partially supported by the documentation.",
+        "missing_evidence": [
+          "The full text of req-DATA-001 to confirm that partial satisfaction is correctly judged based on the described controls.",
+          "Documentation of encryption-at-rest settings for the MySQL and MongoDB databases.",
+          "Current deployment configuration or testing evidence confirming that browser, website, and backend communications are indeed protected by TLS as designed."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      }
+    ]
+  }
+}

@@ -1,0 +1,82 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 21804,
+    "output_tokens": 5681,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.084065",
+    "duration_seconds": 67.24112866597716
+  },
+  "response": {
+    "controls": [
+      {
+        "key": "ctrl-wallet-file-encryption",
+        "name": "Wallet file encryption at rest",
+        "description": "The wallet file storing wallet data and keys can be encrypted at rest via a wallet option, providing at-rest protection for the stored private keys and wallet data.",
+        "control_type": "implemented",
+        "provider_component_id": null,
+        "protected_component_ids": [
+          "cmp-010"
+        ],
+        "protected_asset_ids": [
+          "ast-001"
+        ],
+        "implementation_status": "implemented",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "owner": null,
+        "limitations": [
+          "Encryption is optional and documentation does not state whether it is enabled by default or enforced for all wallets."
+        ]
+      }
+    ],
+    "mappings": [],
+    "documentation_gaps": [
+      {
+        "title": "Authentication and caller restrictions for the wallet daemon JSON-RPC interface are undocumented",
+        "description": "The system overview describes the Electrum wallet daemon as exposing an HTTP JSON-RPC interface on localhost for use by the GUI, but does not state whether the daemon authenticates or authorizes JSON-RPC clients, binds requests to a specific GUI process or user session, or requires any user confirmation before performing sensitive actions such as exporting keys or signing transactions. Because of this, it is not possible from the available documentation to determine whether untrusted or malicious local processes can invoke privileged wallet RPC methods against the daemon.",
+        "importance": "This gap prevents assessing whether the primary control that would mitigate the documented threat\u2014restricting or authenticating access to the localhost JSON-RPC interface\u2014is present. Without clarity on caller restrictions or authentication on this interface, the risk of unauthorized signing or key export by other local processes cannot be evaluated.",
+        "related_object_ids": [
+          "thr-001",
+          "cmp-002",
+          "cmp-010",
+          "ast-001",
+          "df-001"
+        ],
+        "requested_evidence": [
+          "Documentation describing any authentication, authorization, or process-binding applied to the Electrum wallet daemon JSON-RPC interface on localhost, including how the daemon distinguishes the legitimate GUI from other local processes.",
+          "Documentation or configuration references showing whether sensitive RPC methods (such as key export or transaction signing) require explicit user approval or additional verification beyond originating from localhost.",
+          "Any OS- or application-level mechanism (for example, local firewall rules, socket permissions, or IPC protections) that limits which local processes can connect to the wallet daemon JSON-RPC endpoint."
+        ],
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "severity": "high"
+      }
+    ],
+    "catalog_gap_candidates": [
+      {
+        "concern": "The catalog lacks a requirement ensuring that privileged localhost or other local IPC interfaces (such as the Electrum wallet daemon JSON-RPC endpoint) authenticate or otherwise constrain which local processes may invoke sensitive actions, even when those interfaces are not network-exposed or multi-tenant. In this system, a malicious process on the same user device can send crafted JSON-RPC requests to the wallet daemon over localhost and cause key export or unauthorized transaction signing if no such local caller restriction exists.",
+        "suggested_category": "local_ipc_security",
+        "nearest_requirements": [
+          {
+            "requirement_id": "req-NET-001",
+            "why_not": "req-NET-001 addresses network segmentation for internal components such as data stores, queues, caches, or internal services that hold multi-tenant data and may be reachable from untrusted networks. The Electrum wallet daemon JSON-RPC interface is a single-user localhost IPC surface on an end-user device, not a shared multi-tenant internal service, so the requirement\u2019s applicable conditions and rationale do not cleanly cover this local-process threat."
+          },
+          {
+            "requirement_id": "req-ADMIN-001",
+            "why_not": "req-ADMIN-001 concerns privileged administrative or operator interfaces that cross tenant boundaries and allow operators to act on customer data, typically in a server or service context. The wallet daemon JSON-RPC interface is a per-user backend for that user\u2019s own wallet, not an operator interface over multiple customers, so its scope and actors fall outside the requirement\u2019s intended administrative-access model."
+          }
+        ],
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ]
+      }
+    ]
+  }
+}

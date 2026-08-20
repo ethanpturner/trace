@@ -1,0 +1,1159 @@
+{
+  "schema": "EvidenceValidationProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 279,
+    "output_tokens": 25010,
+    "cache_read_tokens": 15232,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.25235275",
+    "duration_seconds": 278.8700054170331
+  },
+  "response": {
+    "assessments": [
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-056",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-003 and evd-005 document that user-run trading bots on user devices connect over a secure WebSocket to the Exchange API to perform trading and account operations. They do not mention any AI/ML model or model-generated output in this path, which is consistent with (but does not prove) the claim that req-AI-002, which concerns externally published model output, is not engaged for thr-007. However, the documents do not explicitly state that there is no model involved behind the API or elsewhere along the thr-007 path, nor do they describe thr-007 itself. The conclusion that req-AI-002 is definitively not applicable to thr-007 therefore cannot be fully established from the available evidence alone.",
+        "missing_evidence": [
+          "Threat description or design documentation for thr-007 clearly stating which components and data paths are involved.",
+          "Architecture or design documentation stating whether any AI/ML models produce output that is published externally without human review, and whether such output is involved in the thr-007 scenario."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-057",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-003 and evd-005 list the external integrations in play (ElectrumX servers and the blockchain network via the blockchain integration module) and the trading bot to Exchange API WebSocket flow. evd-004 lists the internal data stores. None of these passages mention an external AI/model provider or customer content being sent to such a provider, which is consistent with the claim that req-AI-003 (minimising customer content sent to an external model provider) is not engaged for thr-007. However, the evidence does not explicitly assert that no external model provider exists or that no customer content is ever sent to one, nor does it tie a threat labelled thr-007 to an exhaustively described set of flows. Therefore the statement that req-AI-003 is not applicable to thr-007 remains dependent on unstated assumptions and requires confirmation.",
+        "missing_evidence": [
+          "Explicit documentation of all external service providers, including whether any AI/ML model providers are used and what customer content they receive.",
+          "Threat documentation for thr-007 confirming that only the documented ElectrumX, blockchain, and Exchange API flows are in scope."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-058",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-003 and evd-005 describe the components and data flows for user-run trading bots interacting with the Exchange API over secure WebSockets. They do not mention any model output being rendered into a UI or submitted as markup, which aligns with the idea that req-AI-004 (about rendering model output) may be irrelevant to this path. However, the documentation does not explicitly state that no AI/ML model output is rendered anywhere along the thr-007 path, and the threat thr-007 itself is not documented here. The non-applicability of req-AI-004 to thr-007 therefore cannot be fully established from the provided evidence alone.",
+        "missing_evidence": [
+          "Design or UI documentation stating whether any AI/ML model outputs are rendered or submitted as markup in the parts of the system involved in thr-007.",
+          "A clear threat description for thr-007 identifying the components and interfaces in scope."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-059",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-003 states that the Exchange API is a Node.js server that user-run trading bots access using API keys over secure WebSockets, and evd-005 reiterates that bots hold exchange API keys and trade against the Exchange API. These passages directly support that the runtime flow for bots involves API keys, not user authentication delegated to an external identity provider. However, the evidence does not document thr-007 itself or all authentication flows in the system (for example, web logins), so it is not possible to confirm solely from these passages that delegated authentication requirements are entirely irrelevant to thr-007. The claim that req-AUTH-001 is not applicable to thr-007 therefore requires confirmation.",
+        "missing_evidence": [
+          "Threat documentation for thr-007 clarifying whether any part of the attack path relies on delegated user authentication to an external identity provider.",
+          "Authentication design documentation describing when and where external identity providers are used, if at all, and whether those flows are involved in thr-007."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-060",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-003 and evd-005 show that user-run trading bots use long-lived API keys over WebSockets to call the Exchange API; they do not describe any administrative or privileged operator interfaces, nor do they mention multi-factor authentication. This supports the view that the documented bot-to-API flow is not an administrative access path. However, the threat thr-007 itself is not documented here, and the evidence does not rule out administrative interfaces or MFA-protected flows that might be relevant to that threat. As a result, the conclusion that req-AUTH-002 is definitively not applicable to thr-007 goes beyond what the documentation establishes and should be confirmed.",
+        "missing_evidence": [
+          "A description of administrative and operator interfaces, including whether they are MFA-protected and whether any are involved in thr-007.",
+          "Threat documentation for thr-007 clarifying whether privileged access plays any role in the scenario."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-061",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-003 and evd-005 describe thr-007-relevant components and flows as involving user-run trading bots, the Exchange API, the backend, and internal databases. They say nothing about tenant-aware authorization logic or cross-tenant data access checks; instead they focus on connectivity and storage. From these passages alone we can infer that the described path is about accessing trading and account functions via API, but we cannot determine whether tenant boundary enforcement is or is not relevant to the way thr-007 manifests. Therefore the statement that req-AUTHZ-001 does not bear on thr-007 cannot be fully validated from the available evidence.",
+        "missing_evidence": [
+          "Authorization design documentation describing how tenant context is derived and enforced for API and backend access.",
+          "Threat documentation for thr-007 indicating whether cross-tenant access or tenant isolation failures are part of the scenario."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-062",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-003 and evd-005 show that the system\u2019s main external integrations are ElectrumX servers and a blockchain network, and that user-run trading bots call the Exchange API directly. evd-004 describes internal data stores. None of these passages mention the system holding delegated access tokens to act on customer resources on a third-party platform in the manner envisaged by req-AUTHZ-002. This is consistent with the claim that req-AUTHZ-002 may not apply to thr-007, but the documentation does not explicitly rule out such delegated access paths elsewhere or clarify whether thr-007 involves any. Thus, the non-applicability assertion requires confirmation rather than being fully established.",
+        "missing_evidence": [
+          "Documentation of any delegated-access integrations (e.g., OAuth or similar) that the system uses, and whether they are involved in thr-007.",
+          "Threat documentation for thr-007 confirming that it does not depend on misuse of delegated access on external platforms."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-063",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-003 and evd-005 describe runtime components (wallet, Exchange API, backend, blockchain integration module, databases) and client interactions. They do not mention any CI/CD pipeline, deployment tooling, or build-time dependencies. This silence supports the idea that thr-007, as far as documented here, is a runtime issue rather than a deployment-pipeline compromise. However, without threat documentation for thr-007 or any description of the CI/CD environment, we cannot conclusively state that req-CICD-001 has no bearing on this threat. The non-applicability conclusion thus requires confirmation.",
+        "missing_evidence": [
+          "Documentation of the CI/CD pipeline and how it authenticates to environments and manages third-party build-time components.",
+          "Threat description for thr-007 indicating whether any CI/CD or supply-chain vector is in scope."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-064",
+        "evidence_ids": [
+          "evd-001",
+          "evd-004",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-001 and evd-004 establish that the platform is business-critical, externally exposed, and handles business and credential data stored in MySQL and MongoDB. evd-005 notes TLS termination at the load balancer for front-end to backend communication, but explicitly says this has not been re-verified. These passages show that encryption in transit and at rest is a relevant concern for the system overall. The mapping\u2019s claim that req-DATA-001 does not bear on thr-007 rests on characterising thr-007 as a pure availability/denial-of-service threat for the Exchange API, but that threat characterisation is not present in the supplied evidence. The documents neither confirm nor refute whether encryption responsibilities could materially affect the risk considered under thr-007, so the non-applicability assertion cannot be fully supported from them alone.",
+        "missing_evidence": [
+          "Threat documentation for thr-007 clarifying the impact dimensions (availability, confidentiality, integrity) and how encryption might or might not mitigate them.",
+          "Security design documentation detailing encryption in transit and at rest for components involved in thr-007."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-065",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The architecture in evd-003 and evd-005 depicts a real-time trading flow where bots communicate with the Exchange API and backend. These passages do not discuss data retention policies or working copies of customer data, nor do they describe thr-007 itself. The assertion that req-DATA-002 (retention of working data) does not bear on thr-007 is therefore not grounded in the supplied evidence; it depends on an unstated analysis that thr-007\u2019s risks are unaffected by data retention. The documentation does not establish or contradict that analysis, so confirmation is needed.",
+        "missing_evidence": [
+          "Documentation of retention policies for working copies of sensitive customer data in components touched by thr-007.",
+          "Threat documentation for thr-007 explaining whether excessive or incorrect retention contributes to the threat or its impact."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-066",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-003 and evd-005 describe that MySQL and MongoDB are used by the backend and that bots interact with the Exchange API; they do not specify whether those data stores are multi-tenant, nor how artifacts are separated by tenant. The mapping asserts that req-DATA-003 (tenant separation of stored artifacts) does not bear on thr-007 because the threat concerns availability for other clients rather than cross-tenant access. Since thr-007 is not documented here and tenant model details are absent, this non-applicability conclusion is not directly established by the evidence and requires confirmation.",
+        "missing_evidence": [
+          "Architecture or data model documentation describing tenant structure and how data is separated in MySQL and MongoDB.",
+          "Threat documentation for thr-007 clarifying whether cross-tenant data access or corruption is in scope."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-067",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-003 and evd-005 show that the backend reads and writes MySQL and MongoDB and that trading bots use the Exchange API over WebSockets. They do not describe any data deletion mechanisms or customer-initiated deletion requests. The mapping\u2019s claim that req-DATA-004 (deletion on request) does not bear on thr-007 is a threat-analysis conclusion that is not explicitly supported or contradicted by these architecture descriptions. Without documentation of thr-007 and deletion workflows, the non-applicability conclusion remains unverified.",
+        "missing_evidence": [
+          "Documentation of customer data deletion processes across MySQL, MongoDB, and any derived stores.",
+          "Threat documentation for thr-007 explaining whether retained data or deletion capabilities affect the threat or its mitigation."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-068",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "According to evd-003 and evd-005, trading bots interact with the Exchange API and backend; logs are mentioned only indirectly as data that may be stored in MongoDB (evd-004, not cited here). The mapping argues that req-LOG-001 (excluding sensitive data from logs and documenting destinations) does not bear directly on thr-007, which is described in the mapping text as a denial-of-service scenario. Since the threat behaviour and the role of logs in its detection or impact are not described in the evidence, we cannot confirm from the documents alone that logging concerns are irrelevant to thr-007. The non-applicability conclusion therefore requires confirmation.",
+        "missing_evidence": [
+          "Logging design documentation describing what data is logged for API and backend components and where those logs are sent.",
+          "Threat documentation for thr-007 clarifying whether log content or destinations meaningfully influence the risk or its detection."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-069",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-003 and evd-005 describe user-run trading bots using API keys to access the Exchange API, but they do not describe any privileged administrative interfaces or operator consoles, nor do they address auditing requirements. The mapping claims that req-LOG-002 (auditing privileged administrative actions) is not applicable to thr-007 because the threat involves non-privileged bots. While the bot/API architecture is documented, the absence or irrelevance of privileged interfaces within the thr-007 scenario is not established in the evidence; that rests on threat analysis not shown here. Thus the non-applicability claim requires confirmation.",
+        "missing_evidence": [
+          "Documentation of administrative/operator interfaces, their privileges, and how they are audited.",
+          "Threat documentation for thr-007 clarifying whether any privileged operations are part of the attack path or mitigation."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-070",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-002 defines trust zones and shows that the Exchange API, backend, blockchain integration module, and databases reside in the \"exchange internal\" zone, while user devices and the internet are separate zones. evd-003 and evd-005 show that user-run trading bots access the Exchange API over the internet via secure WebSockets, with TLS terminating at a load balancer. These passages support that the public-facing API and front-end are exposed to untrusted networks, but they do not describe internal network segmentation or firewalling for internal components, nor do they document thr-007. The mapping\u2019s assertion that req-NET-001 (network segmentation of internal components) does not bear on thr-007 goes beyond what is explicitly documented, so confirmation is needed.",
+        "missing_evidence": [
+          "Network and segmentation diagrams or descriptions specifying which internal components are reachable from which zones.",
+          "Threat documentation for thr-007 identifying whether direct access to internal components from untrusted networks is part of the risk."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-071",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-003 and evd-005 make clear that user-run trading bots on user devices hold exchange API keys and use them over WebSockets to access the Exchange API. This directly supports that these particular secrets are client-held rather than stored by the exchange. However, req-SECRET-001 concerns long-lived credentials and signing keys held by the system itself, and the evidence does not enumerate all such system-held secrets or describe how they are stored. Nor does it document thr-007\u2019s preconditions regarding any system-held keys. As a result, while the evidence supports part of the mapping\u2019s reasoning, it does not fully establish that req-SECRET-001 has no bearing on thr-007.",
+        "missing_evidence": [
+          "Inventory of long-lived credentials and signing keys held by the system, and where they are stored (e.g., managed secret store vs. configuration files).",
+          "Threat documentation for thr-007 clarifying whether compromise or misuse of system-held secrets is in scope."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-072",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-003 and evd-005 show that external entities in this architecture are ElectrumX servers and a blockchain network, and that user-run trading bots call into the Exchange API using API keys. These passages do not describe the system using short-lived or long-lived outbound credentials to access customer resources on external platforms in the sense targeted by req-SECRET-002. However, they also do not definitively rule out such integrations or specify whether any exist that might be relevant to thr-007. Consequently, the assertion that req-SECRET-002 does not bear on thr-007 is not fully supported by the provided evidence and should be confirmed.",
+        "missing_evidence": [
+          "Documentation of all outbound integrations where the system accesses customer resources on external platforms and the types/lifetimes of credentials used.",
+          "Threat documentation for thr-007 indicating whether any such outbound access is involved."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-073",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-003 and evd-005 describe interactions with ElectrumX servers and the blockchain network as external components, and evd-004 lists internal data stores. None of these passages discuss the contractual or privacy characteristics of these third-party processors or how they handle customer data, which is the focus of req-TPI-001. The mapping asserts that req-TPI-001 does not bear on thr-007 because that threat is about API overload by trading bots, but thr-007\u2019s details are not in the evidence, and the documentation is silent on how third parties retain or use customer data. Therefore the non-applicability conclusion is not established by the available evidence and requires confirmation.",
+        "missing_evidence": [
+          "Third-party processor documentation or data protection agreements describing how ElectrumX servers and blockchain services handle customer data.",
+          "Threat documentation for thr-007 clarifying whether third-party data handling affects the likelihood or impact of the threat."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-074",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-003 describes the Exchange API as a Node.js server providing programmatic access to trading and account data, with user-run trading bots connecting over secure WebSockets using API keys. evd-005 reinforces that a user-run trading bot holds exchange API keys and trades against the Exchange API over a secure WebSocket. evd-002 classifies user devices (where bots run) as outside the \"exchange internal\" zone. Together, these passages directly support that the system performs work in response to high-rate, untrusted external events (trading commands from user-run bots), and that unbounded request volume from a small number of bots could drive unbounded resource consumption in the Exchange API and backend. That matches the applicable conditions described for req-TPI-002 (bounding work triggered by untrusted external events). The evidence does not describe any existing rate-limiting or bounding controls, so the mapping\u2019s status of \"applicable\" and still \"unverified\" with respect to control implementation is consistent with the documentation. On this basis, the assertion that req-TPI-002 is applicable to thr-007 is well supported.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-075",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-003 and evd-005 show that the Exchange API is a server that clients (including user-run trading bots) connect to directly over secure WebSockets. The architecture does not describe any webhook-style endpoints receiving signed events from named external platforms, which is the context for req-WEBHOOK-001. This supports the idea that thr-007, if it is centred on the documented bot-to-API flow, is not a webhook integration. However, the documentation neither defines thr-007 nor explicitly states that there are no webhook endpoints involved in that threat, so the non-applicability of req-WEBHOOK-001 to thr-007 cannot be fully confirmed from the evidence alone.",
+        "missing_evidence": [
+          "Inventory of inbound webhook endpoints, if any, and their role in the system.",
+          "Threat documentation for thr-007 indicating whether any inbound webhook-style integrations are part of the scenario."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-076",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The data flows in evd-003 and evd-005 show live trading commands sent from user-run bots to the Exchange API over WebSockets. There is no mention of receiving or validating replay-protected webhook events from external platforms, which is the focus of req-WEBHOOK-002. While this suggests that replay of signed webhook events is not the main concern for the documented bot/API traffic, the evidence does not define thr-007 or explicitly rule out replay-related attack vectors. Therefore the assertion that req-WEBHOOK-002 does not bear on thr-007 requires confirmation.",
+        "missing_evidence": [
+          "Documentation of any webhook-based integrations, including whether replay protection is required and implemented.",
+          "Threat documentation for thr-007 clarifying whether replay of previously valid events is in scope."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-077",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "not_evaluated",
+        "rationale": "The mapping for req-ADMIN-001 to thr-008 cites no evidence, and no passages in this batch are associated with this subject. Without any architectural or threat documentation specific to administrative/operator interfaces and their involvement (or non-involvement) in thr-008, this mapping cannot be assessed in this batch.",
+        "missing_evidence": [
+          "Threat documentation for thr-008 describing the components and interfaces involved.",
+          "Architecture or design documentation detailing administrative/operator interfaces and confirming whether they participate in thr-008."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-078",
+        "evidence_ids": [
+          "evd-001",
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-001, evd-003, evd-004, and evd-005 collectively describe the system\u2019s components (wallet GUI/daemon, ElectrumX, Exchange Website, Exchange API, backend, blockchain integration module, MySQL, MongoDB) and data flows between them. None of these passages mention any AI or ML model components. This supports the observation that no AI/ML model is described for the architecture relevant to thr-008, but it does not prove that such components are absent or irrelevant to that threat. The assumption in the mapping that the overview is complete enough to establish non-use of AI for thr-008 is not itself documented. Therefore, the conclusion that req-AI-001 is not applicable to thr-008 requires confirmation.",
+        "missing_evidence": [
+          "Explicit statement in architecture or design documents about whether any AI/ML components exist and, if so, their role in blockchain-related processing for thr-008.",
+          "Threat documentation for thr-008 clarifying which components participate in the attack path."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-079",
+        "evidence_ids": [
+          "evd-001",
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "As with map-078, evd-001, evd-003, evd-004, and evd-005 describe the system components and data flows, with no mention of AI/ML models or model output being published externally. This is consistent with the claim that req-AI-002 (externally published model output without human review) may not apply to thr-008. However, the evidence does not explicitly assert that no such model output exists or that none is involved in the thr-008 path, and thr-008\u2019s details are not documented here. Thus the non-applicability assertion cannot be fully validated solely from the available passages.",
+        "missing_evidence": [
+          "Documentation stating whether any model-generated content is published externally without human review, particularly in components or flows related to thr-008.",
+          "Threat documentation for thr-008 confirming the absence of any such model-output publication in the attack path."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-080",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-003 and evd-005 show that the external integrations in the architecture are ElectrumX servers and a blockchain network, and that data flows concern wallet, exchange, and blockchain interactions. There is no mention of sending customer content to an external AI/model provider, which aligns with the mapping\u2019s claim about req-AI-003. Nevertheless, the documentation does not explicitly rule out AI/model providers, nor does it describe thr-008\u2019s full context. Therefore the conclusion that req-AI-003 is not applicable to thr-008 needs confirmation beyond the provided evidence.",
+        "missing_evidence": [
+          "Complete list of external providers receiving customer content, including whether any AI/ML model providers are used.",
+          "Threat documentation for thr-008 clarifying all external services involved in the threat path."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-081",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-003 and evd-004 show that thr-008-related components include the backend, blockchain integration module, and databases; evd-005 describes flows between the website, backend, databases, and blockchain integration. None of these passages mention any AI/ML model output rendered into a UI or submitted as markup. This is consistent with the mapping\u2019s reasoning for req-AI-004, but the documentation does not explicitly assert that no such model output exists in the thr-008 path, nor does it fully define that threat. Thus the non-applicability of req-AI-004 to thr-008 is not fully established and requires confirmation.",
+        "missing_evidence": [
+          "UI and integration design documentation specifying whether any AI/ML model output is rendered to users or submitted as markup in flows relevant to thr-008.",
+          "Threat documentation for thr-008 identifying all UI surfaces and outputs involved."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-082",
+        "evidence_ids": [
+          "evd-001",
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-003 and evd-005 describe backend interactions with a blockchain integration module and databases, while evd-001 provides high-level system context. None of these passages describe user authentication mechanisms or whether authentication is delegated to an external identity provider. The mapping asserts that req-AUTH-001 does not apply to thr-008 because the threat arises from malicious blockchain data rather than user authentication, but that threat characterisation is not present in the evidence. As a result, the non-applicability claim is not established by the supplied documentation and requires confirmation.",
+        "missing_evidence": [
+          "Authentication architecture documentation specifying any use of external identity providers and their relation, if any, to blockchain integration flows.",
+          "Threat documentation for thr-008 explaining how the threat is realised and why user authentication is or is not relevant."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-083",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-003 and evd-005 cover the backend, blockchain integration module, and data flows but do not mention administrative or privileged authentication flows, nor multi-factor authentication. The mapping\u2019s claim that req-AUTH-002 is not applicable to thr-008 because the threat involves manipulation of blockchain data rather than administrative access is not directly supported by these passages; thr-008 itself is not documented here. Therefore, the non-applicability conclusion cannot be fully validated and requires confirmation.",
+        "missing_evidence": [
+          "Description of administrative/privileged access paths and MFA usage, and whether any play a role in blockchain-related operations.",
+          "Threat documentation for thr-008 clarifying whether administrative actions are involved in the scenario."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-084",
+        "evidence_ids": [
+          "evd-001",
+          "evd-003",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-001 and evd-004 show that the system serves multiple users and stores user accounts, configuration, and trading data in MySQL and MongoDB. evd-003 indicates the backend and blockchain integration module processes. However, the evidence does not describe the authorization model in terms of tenant boundaries or cross-tenant access prevention. The mapping asserts that req-AUTHZ-001 is not relevant to thr-008 because the threat concerns incorrect balances within a user\u2019s own account due to bad blockchain data. Since that threat characterisation and the absence of cross-tenant implications are not documented here, the non-applicability conclusion requires confirmation.",
+        "missing_evidence": [
+          "Authorization design documentation describing tenant isolation and how it applies to account and trading records.",
+          "Threat documentation for thr-008 clarifying whether cross-tenant access or data exposure is in scope."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-085",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-003 states that the blockchain integration module interfaces directly with a blockchain network; evd-005 shows the backend calling that module as part of its flows. These passages support that the external integration is a blockchain network, not an OAuth-style delegated-access platform. However, they do not describe req-AUTHZ-002\u2019s precise conditions or thr-008\u2019s detailed behaviour. While it is plausible that req-AUTHZ-002 (delegated access on external platforms) is not engaged here, the non-applicability statement is not wholly established by the evidence and should be confirmed.",
+        "missing_evidence": [
+          "Clarification of whether any external platforms accessed via the blockchain integration module use delegated access models as envisaged by req-AUTHZ-002.",
+          "Threat documentation for thr-008 confirming that no delegated-access external platform is involved."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-086",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "not_evaluated",
+        "rationale": "The mapping for req-CICD-001 to thr-008 does not cite any evidence, and no CI/CD- or deployment-related passages are present in this batch. Without documentation of the deployment pipeline or of thr-008\u2019s relationship to it, this mapping cannot be assessed here.",
+        "missing_evidence": [
+          "CI/CD and deployment pipeline documentation detailing authentication to environments and control of third-party build components.",
+          "Threat documentation for thr-008 indicating whether any pipeline or supply-chain vector is relevant."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-087",
+        "evidence_ids": [
+          "evd-001",
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-001 states that the platform is business-critical, externally exposed, and handles business and credential data, indicating the presence of confidential or restricted data. evd-004 specifies that user accounts and configuration are stored in MySQL and trading data, logs, and operational metadata are stored in MongoDB. evd-003 describes the blockchain integration module interfacing with the blockchain network on behalf of the backend, and evd-005 shows the backend calling this module as part of its data flows, with traffic crossing an uncontrolled internet segment. These passages together establish that confidential data is stored and transmitted, and that some of it crosses network boundaries the organisation does not control. That matches the conditions under which req-DATA-001 (encryption of sensitive data in transit and at rest and documentation of who provides it) is applicable to thr-008\u2019s path. The evidence does not document encryption arrangements for the blockchain integration flow or data at rest in MySQL/MongoDB, which is consistent with the mapping\u2019s status of \"applicable\" and \"unverified\" regarding control implementation. Thus, the applicability part of the assertion is well supported by the available documentation.",
+        "missing_evidence": [],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-088",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-004 confirms that user accounts, configuration, trading data, logs, and operational metadata are stored in MySQL and MongoDB, which implies that retention of working data is a concern for the system. The mapping asserts that req-DATA-002 (retention of sensitive working copies) does not bear on thr-008 because the threat is about malicious or inconsistent blockchain data at write time, not how long the data is kept. However, thr-008\u2019s detailed impact and the role of retention in detecting or limiting its effects are not described in the evidence. Therefore, the non-applicability of req-DATA-002 to thr-008 cannot be fully established from the provided documentation.",
+        "missing_evidence": [
+          "Threat documentation for thr-008 explaining how long incorrect balances or transaction histories persist and whether retention policies affect risk or remediation.",
+          "Retention policy documentation for MySQL and MongoDB working data relevant to thr-008."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-089",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-004 states that user accounts and configuration are stored in MySQL and that trading data, logs, and operational metadata are stored in MongoDB, supporting that multiple users\u2019 data share these stores. However, it does not describe how data is separated by tenant or what tenant model is used. The mapping claims that req-DATA-003 (tenant-aware separation of stored artifacts) does not bear on thr-008 because the threat concerns incorrect balances within a user\u2019s own account. Since thr-008 and tenant boundaries are not documented here, the non-applicability conclusion is not fully supported and requires confirmation.",
+        "missing_evidence": [
+          "Tenant and data-partitioning design documentation for MySQL and MongoDB.",
+          "Threat documentation for thr-008 clarifying whether cross-tenant access or contamination of data is a concern."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-090",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-004 confirms the existence of persistent customer and trading data in MySQL and MongoDB but does not describe deletion capabilities or data subject deletion requests. The mapping argues that req-DATA-004 (deletion on request) does not bear on thr-008 because the threat is about incorrect balances being recorded, not about deletion. Without explicit documentation of thr-008\u2019s lifecycle and whether deletion mechanisms could mitigate or exacerbate it, the evidence does not fully support this non-applicability claim.",
+        "missing_evidence": [
+          "Documentation of customer data deletion mechanisms across MySQL, MongoDB, and any derived stores.",
+          "Threat documentation for thr-008 indicating whether incorrect records must be correctable or removable to mitigate impact."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-091",
+        "evidence_ids": [],
+        "evidence_strengths": [],
+        "validation_status": "not_evaluated",
+        "rationale": "The mapping for req-LOG-001 to thr-008 does not cite any evidence, and no logging-specific passages related to thr-008 appear in this batch. Without documentation of log contents or log destinations for components involved in thr-008, this mapping cannot be assessed here.",
+        "missing_evidence": [
+          "Logging design documentation describing what is logged for blockchain integration and backend components and where those logs are sent.",
+          "Threat documentation for thr-008 explaining whether log content or destinations contribute to the likelihood or impact of the threat."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "documentation_gap",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-092",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-003 and evd-005 describe automated interactions between the backend, blockchain integration module, and external blockchain network, but they do not discuss administrative or operator interfaces or audit logging of privileged actions. The mapping claims req-LOG-002 (audit of privileged administrative actions) does not bear on thr-008 because the threat involves automated processing of blockchain data. Since the evidence does not document thr-008 or the existence and role of administrative interfaces, the non-applicability conclusion is not fully established and should be confirmed.",
+        "missing_evidence": [
+          "Documentation of administrative/operator interfaces, their privileges, and how actions are audited.",
+          "Threat documentation for thr-008 clarifying whether any privileged operator actions are involved in causing or mitigating the threat."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-093",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-002 defines trust zones, placing the backend, blockchain integration module, and databases in the exchange-internal zone. evd-003 and evd-005 describe the intended external integration between the blockchain integration module and the blockchain network but do not provide details on internal network segmentation, firewall rules, or whether any internal components are directly reachable from untrusted networks. The mapping asserts that req-NET-001 (restricting internal component reachability) does not bear on thr-008, but this relies on assumptions about existing segmentation and the threat\u2019s mechanics that are not documented here. Thus, the non-applicability conclusion requires confirmation.",
+        "missing_evidence": [
+          "Network architecture documentation describing segmentation and access controls for internal components such as databases and internal services.",
+          "Threat documentation for thr-008 specifying whether direct access to internal components from untrusted networks is a concern."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-094",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-003 and evd-005 discuss the blockchain integration module\u2019s communication with the blockchain network and the backend\u2019s use of internal databases, but they do not enumerate system-held long-lived credentials or signing keys, nor how those are stored. The mapping contends that req-SECRET-001 is not applicable to thr-008 because the threat arises from an attacker controlling blockchain nodes or network segments rather than compromising system-held keys. Since neither the full set of system-held secrets nor the detailed threat mechanics are documented here, the non-applicability claim cannot be fully validated and requires confirmation.",
+        "missing_evidence": [
+          "Inventory and storage details of long-lived system-held credentials and signing keys used in blockchain integration and related components.",
+          "Threat documentation for thr-008 clarifying whether compromise or misuse of such credentials is part of the scenario."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-095",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-003 and evd-005 show that the blockchain integration module communicates with a blockchain network, but they do not describe any credential lifetimes or whether the system uses short-lived access tokens to customer resources on external platforms in the sense of req-SECRET-002. The mapping asserts that req-SECRET-002 does not bear on thr-008, based on assumptions about the nature of blockchain-related credentials and the threat scenario that are not documented in the evidence. Consequently, this non-applicability conclusion requires confirmation.",
+        "missing_evidence": [
+          "Documentation of any outbound credentials used by the system to access external platforms, including blockchain nodes, and their lifetimes.",
+          "Threat documentation for thr-008 indicating whether such outbound access tokens are relevant to the threat."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      }
+    ]
+  }
+}

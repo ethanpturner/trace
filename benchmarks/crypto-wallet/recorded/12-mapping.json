@@ -1,0 +1,481 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 23123,
+    "output_tokens": 16648,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.19538375",
+    "duration_seconds": 190.5211117499275
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-ADMIN-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This threat path (thr-008) involves the exchange backend, blockchain integration module, internal databases, and the external blockchain network, with no administrative or operator interface in scope. The requirement\u2019s applicable_conditions (that the system exposes an administrative/operator interface through which operators act on customer data) are not engaged by this threat scenario, so it does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-AI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The architecture description lists only wallet, exchange, blockchain, and database components (evd-001, evd-003, evd-004, evd-005) and no AI or ML model, and this threat path (thr-008) involves only those components. Therefore the applicable_conditions for this requirement, which require that content the system did not author be passed to a model, do not hold for this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "assumptions": [
+          "Assume the system overview (evd-001, evd-003, evd-004, evd-005) is complete enough that any AI/ML model components relevant to this threat would be described."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-AI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No AI or ML model components are described in the system overview (evd-001, evd-003, evd-004, evd-005), and the threat path (thr-008) does not involve passing content to any model or publishing model output. The applicable_conditions requiring that model output be published externally without human review therefore do not hold for this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "assumptions": [
+          "Assume that if the system published model output externally along the thr-008 path, the model and publication surfaces would appear in the documented components or data flows (evd-003, evd-005)."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-AI-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The documented components and data flows (evd-003, evd-005) show no customer content being sent to an external model provider; the external integration in this threat is to a blockchain network, not to an AI service. Thus the applicable_conditions that customer content be sent to an external model provider do not hold for this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [
+          "Assume the external integrations relevant to thr-008 are limited to the blockchain network described in evd-003 and evd-005 and do not include external AI model providers."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-AI-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No model output is rendered into a user interface or markup in the threat path; thr-008 concerns blockchain state consumed by the backend and stored in databases, not AI-generated UI content. The applicable_conditions that model output be rendered into a UI or submitted as markup therefore do not hold here.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "assumptions": [
+          "Assume that any model-rendered UI surface relevant to thr-008 would be described among the documented components and data flows (evd-003, evd-005)."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-AUTH-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This threat arises from malicious or inconsistent blockchain network data influencing internal balances and transaction records, not from how end users authenticate. Whether or not user authentication is delegated to an external identity provider does not bear on the described attack path, so the requirement\u2019s applicable_conditions are not engaged for this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-AUTH-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Thr-008 does not involve administrative or privileged user authentication; the attacker manipulates blockchain nodes or network segments used by the blockchain integration module. Multi-factor authentication for administrative or externally reachable access therefore does not bear on this threat path.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-AUTHZ-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Although the system serves multiple users (evd-001, evd-004), this threat concerns incorrect balances and transaction histories resulting from malicious or inconsistent blockchain data, not from cross-tenant access or failure to derive tenant context from server-side state. Tenant-aware authorization controls would not prevent the backend from mis-crediting based on bad blockchain input, so the requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-003",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-AUTHZ-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Thr-008 involves the exchange\u2019s blockchain integration with a public blockchain network, not delegated access to a third-party platform on behalf of a customer. The applicable_conditions that the system hold delegated access to an external platform therefore do not hold for this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [
+          "Assume the blockchain network (cmp-015) is not an OAuth-like delegated-access platform in the sense envisaged by req-AUTHZ-002, but a public ledger reached directly as described in evd-003 and evd-005."
+        ],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-CICD-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat description focuses on runtime interaction between the blockchain integration module, the backend, and the external blockchain network, not on the deployment pipeline or supply-chain of components. Controls on pipeline authentication and dependency management would not address malicious or inconsistent blockchain data at runtime, so this requirement does not bear on thr-008.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The platform is described as business-critical and handling business and credential data (evd-001), with user accounts and configuration in MySQL and trading and operational data in MongoDB (evd-004). The blockchain integration module communicates with the external blockchain network over an internet-exposed flow (df-009, evd-003, evd-005), which crosses a network boundary the system does not control. These satisfy the applicable_conditions that the system store or transmit confidential or restricted data and that data cross an uncontrolled network boundary. Protecting data in transit and at rest along this path can influence the extent to which an attacker controlling the network segment can tamper with or observe the data used to update internal records in thr-008.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001",
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "assumptions": [
+          "Assume user account, configuration, and trading data (evd-001, evd-004) are treated as confidential or restricted for the purposes of this requirement.",
+          "Assume that encryption described for front-end to backend traffic (evd-005, ctl-002) does not automatically extend to the blockchain integration flow df-009 or to encryption at rest for MySQL and MongoDB, since these are not documented."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-DATA-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "While the system retains user and trading data in MySQL and MongoDB (evd-004), the threat focuses on incorrect balances and transaction histories caused by malicious or inconsistent blockchain data at the time they are written, not on how long those records are retained. Defining and enforcing retention periods for working data would not prevent the mis-credit or mis-debit described in thr-008, so this requirement does not materially bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-DATA-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "MySQL and MongoDB hold data for multiple users (evd-004), but thr-008 concerns incorrect balances and transaction histories for users within their own accounts, caused by bad blockchain input, not cross-tenant access between customers. Whether artifacts are separated by tenant at the storage layer does not prevent the backend from writing incorrect records for a given user based on malicious blockchain data, so this requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-DATA-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat describes incorrect or inconsistent balances and transaction histories being recorded, not an inability to delete customer data across stores on request. Deletion procedures for customer data, while important, do not prevent or mitigate the mis-credit/mis-debit arising from malicious blockchain data described in thr-008, so this requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-LOG-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Thr-008 is an integrity issue where internal account balances and trading records become inconsistent with the true blockchain state. Whether restricted data is excluded from application logs, and where logs are sent, does not affect the likelihood of mis-credit or mis-debit from malicious blockchain data, so this requirement does not bear on this specific threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-LOG-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat path involves automated processing of blockchain data by the backend and blockchain integration module, not actions taken through an administrative or operator interface. Audit records of privileged operator actions would not address incorrect balances resulting from malicious blockchain data ingestion, so this requirement does not bear on thr-008.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-NET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This requirement concerns ensuring that internal components such as data stores, queues, and caches are reachable only from authorized workloads and not directly from untrusted networks. In thr-008, the attacker influences the view of the blockchain via the intended external integration from the blockchain integration module to the blockchain network (df-009, evd-003, evd-005); there is no indication of direct access to internal stores from an untrusted network. Network segmentation of internal components therefore does not bear directly on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [
+          "Assume that the exchange internal zone (evd-002) is already treated as non-public, and that thr-008\u2019s attacker operates by controlling external blockchain nodes or network segments rather than by reaching internal databases directly."
+        ],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-SECRET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Thr-008\u2019s preconditions do not involve compromise of long-lived signing keys or provider API credentials; instead, they assume the attacker controls blockchain nodes or the network segment used by the blockchain integration module. Whether such credentials are stored in a managed secret store does not change the risk that the backend will trust malicious blockchain data along the described path, so this requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-SECRET-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat scenario does not involve the system obtaining credentials to access customer resources on external platforms or the lifetime of such tokens. It focuses on reading blockchain state from external nodes and using it to update internal balances. The applicable_conditions for this requirement, which concern short-lived credentials to customer resources on external platforms, therefore do not hold for thr-008.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [
+          "Assume that any blockchain-related credentials, if present, are not short-lived customer-resource access tokens in the sense targeted by req-SECRET-002."
+        ],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-TPI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Although the blockchain network is an external provider processing customer-related transactions (evd-003, evd-005), this threat is about the integrity of blockchain data used to update internal records, not about how the external provider retains or uses customer data. Documenting retention and usage terms at the provider would not prevent the backend from trusting a malicious or inconsistent blockchain view, so this requirement does not bear on thr-008.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [
+          "Assume that the main risk in thr-008 is incorrect data returned by the external blockchain network, rather than its long-term retention or secondary use of customer data."
+        ],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-TPI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Thr-008 does not describe work being triggered by external events in a way that could cause unbounded consumption of a metered service; rather, it assumes the integration module is already querying or interacting with the blockchain and that the data returned is malicious or inconsistent. Bounding work volume or cost would not address the integrity mismatch between internal records and the true blockchain state, so this requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-WEBHOOK-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The blockchain integration module initiates communication with the external blockchain network over df-009 (evd-003, evd-005); the threat does not involve a webhook-style endpoint that accepts pushed events from an external platform. The applicable_conditions requiring an endpoint that accepts events from an external platform therefore do not hold for this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [
+          "Assume that blockchain interactions occur through client-style requests or protocol sessions initiated by the integration module, not via inbound webhook callbacks."
+        ],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-008",
+        "requirement_id": "req-WEBHOOK-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Thr-008 does not describe replay of previously valid events; it concerns the backend trusting an incorrect or inconsistent current blockchain view. The requirement\u2019s applicable_conditions, which concern replay or duplication of inbound events that trigger costly or state-changing work, are therefore not engaged for this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Blockchain network data validation and finality handling are undocumented",
+        "description": "The system overview states that the blockchain integration module interfaces with the blockchain network to read and write blockchain state on behalf of the backend (evd-003), and that the backend calls this module and then updates MySQL and MongoDB over internal flows (evd-003, evd-005). However, the documentation does not describe how blockchain nodes are selected or trusted, whether multiple independent nodes are queried, how inconsistent or conflicting blockchain views are detected and reconciled, what confirmation or finality policy is used before crediting or debiting user balances in MySQL and MongoDB, or how chain reorganizations and network partitions are handled. Because thr-008 is specifically about incorrect or malicious blockchain data leading to inconsistent internal balances and transaction records, the absence of documentation on these controls prevents determining whether any mitigation exists.",
+        "importance": "This gap prevents assessing whether the system has architectural controls to mitigate the core integrity risk in thr-008: reliance on a possibly malicious or inconsistent blockchain view when updating authoritative internal records. Without understanding node selection, trust, consensus checks, and finality handling, a reviewer cannot judge how resilient the exchange is to eclipse attacks, network partitions, or malicious nodes.",
+        "related_object_ids": [
+          "thr-008",
+          "cmp-007",
+          "cmp-009",
+          "cmp-011",
+          "cmp-012",
+          "cmp-015",
+          "ast-002",
+          "ast-003",
+          "df-007",
+          "df-009"
+        ],
+        "requested_evidence": [
+          "Architecture or design documentation describing how blockchain nodes are selected, authenticated, and monitored for the blockchain integration module.",
+          "Documentation of how many independent blockchain sources are consulted, how discrepancies between them are detected, and what the backend does when views conflict.",
+          "A description of the confirmation/finality policy (for example, required number of confirmations or blocks) before updating user balances and transaction states in MySQL and MongoDB, including how chain reorganizations are handled.",
+          "Any description of safeguards against eclipse or partition attacks on the blockchain integration module\u2019s view of the network (such as diverse peers, network-level protections, or periodic resynchronization)."
+        ],
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "severity": "high"
+      }
+    ],
+    "catalog_gap_candidates": [
+      {
+        "concern": "The catalog lacks a requirement ensuring that critical external data feeds, such as blockchain network state, are validated, cross-checked, and reconciled before being used to update authoritative internal records like user balances and transaction histories.",
+        "suggested_category": "third_party_integration",
+        "nearest_requirements": [
+          {
+            "requirement_id": "req-NET-001",
+            "why_not": "req-NET-001 addresses network placement and reachability of internal components so they are not directly accessible from untrusted networks. It does not cover the correctness or consistency of data intentionally fetched from an external network, such as blockchain state returned over df-009, nor any requirement to validate or reconcile that data before use."
+          },
+          {
+            "requirement_id": "req-WEBHOOK-001",
+            "why_not": "req-WEBHOOK-001 requires cryptographic authenticity verification for inbound events from an external platform. Thr-008 involves a client-initiated integration with a blockchain network where nodes themselves may be malicious or the network view may be partitioned, and the missing control is about validating consensus and finality of the data, not simply verifying that it was sent by a particular platform using a shared secret or signature."
+          },
+          {
+            "requirement_id": "req-TPI-001",
+            "why_not": "req-TPI-001 focuses on documenting what customer data is sent to an external provider and the provider's retention and usage terms. It does not address the integrity or correctness of data returned by that provider, nor require architectural mechanisms such as multi-source validation, delayed finality, or inconsistency handling before updating internal records."
+          }
+        ],
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ]
+      }
+    ]
+  }
+}

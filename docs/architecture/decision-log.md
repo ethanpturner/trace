@@ -8855,6 +8855,25 @@ amendment keeps: the adapter, the provider table, the key handling, and the entr
 clause — still no live OpenRouter *pipeline* run measured end to end; the pilot capture that
 follows is that measurement.
 
+Amendment (2026-08-19, both pilots measured): **the sweep runs on `openai/gpt-5.1`; the cheaper
+fallback was disqualified on wall clock, not on price.** The gpt-5.1 pilot (crypto-wallet)
+completed end to end: 29 consumed responses, $4.87 staged / $5.23 with retried evidence-batch
+attempts, round trip verified byte-for-byte, promoted — the first live OpenRouter pipeline run
+and the first live run of the DEC-134 batched evidence shape. The `moonshotai/kimi-k2.6` pilot
+(managed-db-service, $0.34 spent) ran extraction, threats, mappings, and its first evidence
+batch cleanly at roughly a quarter of the gpt-5.1 rate, then spent over two hours across two
+attempts inside its second evidence-validation batch — the first attempt wedged with no
+connection and no progress, the resumed attempt exceeded the thirty-minute call timeout into
+retries — and was stopped without completing. A per-scenario saving of ~$4 does not buy back a
+stage that can absorb hours or wedge; reliability was this entry's selection criterion from the
+first probe, and the pilots priced it. The kimi bundle is not kept as a registered profile: a
+measured disqualification is a decision-log fact, not a configuration invitation. Sweep
+economics, measured rather than projected: ~$5.25 per scenario, twelve scenarios remaining plus
+baselines and the stability protocol — on the order of $70–80 total, a tenth of the rate that
+parked #484. The DEC-134 caveat that "batch size forty is a constant, not a measurement" now
+has two live datapoints on reasoning-heavy models: the evidence batches are where the retries
+and the wall clock concentrate, on both models.
+
 ## DEC-136: A scorecard row carries its model attribution, read from the recording, never from prose
 
 Date: 2026-08-19

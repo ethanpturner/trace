@@ -1,0 +1,178 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 224,
+    "output_tokens": 14578,
+    "cache_read_tokens": 22528,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.148876",
+    "duration_seconds": 130.97280370804947
+  },
+  "response": {
+    "controls": [
+      {
+        "key": "c-tls-wss-api",
+        "name": "TLS-secured WebSocket for trading bot access to exchange API",
+        "description": "User-run trading bots connect to the exchange API over a secure WebSocket using API keys, providing encrypted transport for trading and account data as well as the API keys themselves between the bot on the internet and the exchange API inside the exchange-internal zone.",
+        "control_type": "implemented",
+        "provider_component_id": null,
+        "protected_component_ids": [
+          "cmp-013",
+          "cmp-008"
+        ],
+        "protected_asset_ids": [
+          "ast-004",
+          "ast-002",
+          "ast-003"
+        ],
+        "implementation_status": "implemented",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "owner": null,
+        "limitations": [
+          "Documentation describes a secure WebSocket but does not detail certificate validation behaviour, TLS configuration, or downgrade protections."
+        ]
+      }
+    ],
+    "mappings": [
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [
+          "c-tls-wss-api"
+        ],
+        "existing_control_ids": [
+          "ctl-002"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "The trading bot to exchange API data flow (df-008) sends credential_data (exchange API keys) and business data (trading commands and account data) between a user-run trading bot on the internet and the exchange API in the exchange-internal zone over a secure WebSocket (evd-003, evd-005), so the system transmits confidential data across a network boundary it does not control, which is the situation this requirement addresses.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "partially_satisfied",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [
+          "Assume that \"secure WebSocket\" in the documentation implies a TLS-protected WebSocket (wss) providing encryption in transit between the trading bot and the exchange API.",
+          "Encryption at rest for MySQL and MongoDB, which hold user accounts, configuration, trading data, and operational logs (evd-004), is not described; the requirement is treated as partially satisfied on the basis of documented encryption in transit only, without concluding that encryption at rest is absent."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-LOG-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The exchange backend and API handle credential_data (exchange API keys) and business data (user accounts, configuration, trading data) (evd-003, evd-004), and trading data and operational metadata are stored as logs in MongoDB (evd-004). Because restricted data is handled and logged, and stolen API keys could plausibly be exposed through logging as noted in the threat description, the requirement to exclude such data from logs and to document log destinations is engaged.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004"
+        ],
+        "assumptions": [
+          "No documentation in the provided evidence states what is or is not written to application logs, or whether logs containing trading data and operational metadata are forwarded to any external logging platform; therefore no conclusion can be drawn about satisfaction of this requirement."
+        ],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-006",
+        "requirement_id": "req-TPI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The backend calls a blockchain integration module that reads and writes blockchain state on behalf of the system (evd-003), which typically consumes metered external blockchain services. That work can be triggered by inbound API requests from trading bots using API keys, as described for the exchange API (evd-003, evd-005). This aligns with the requirement\u2019s focus on bounding work that consumes metered external services when it is triggered by external events.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [
+          "Assume that writing blockchain state via the blockchain integration module incurs metered cost or constrained capacity on an external blockchain network; if instead all such operations are unmetered or purely internal, this requirement might be less relevant.",
+          "The documentation does not describe any retry limits, per-tenant rate limits, or provider-enforced quotas for blockchain or other externally metered operations, so the presence or absence of bounding controls cannot be established."
+        ],
+        "confidence": "low"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "API key lifecycle and constraints for the exchange API are not documented",
+        "description": "The documentation states that the exchange API is accessed programmatically using API keys held by user-run trading bots over a secure WebSocket (evd-003, evd-005, evd-006), but does not describe how these keys are generated, scoped (e.g., trading vs. withdrawal permissions), rotated, revoked, or otherwise constrained (such as by IP restrictions or additional factors for sensitive operations). Because threat thr-006 specifically concerns stolen or maliciously used exchange API keys, the absence of documentation on API key lifecycle and constraints prevents assessing what controls, if any, mitigate this threat.",
+        "importance": "Understanding how exchange API keys are issued, limited in privilege, rotated, revoked, and protected is necessary to evaluate both the likelihood and impact of threat thr-006 and to determine whether any compensating controls exist for stolen or misused keys.",
+        "related_object_ids": [
+          "thr-006",
+          "ast-004",
+          "cmp-008",
+          "cmp-013"
+        ],
+        "requested_evidence": [
+          "Architecture or operations documentation describing exchange API key generation, including where and how users obtain keys and any default permissions.",
+          "Documentation of API key scoping and permissions (for example, read-only vs. trading vs. withdrawal privileges) and how those scopes are enforced.",
+          "Documentation of API key rotation and revocation mechanisms, including how quickly a compromised key can be disabled.",
+          "Any controls that restrict where API keys can be used from (such as IP allowlists) or that require additional authentication for high-risk actions like withdrawals initiated via the API.",
+          "Customer-facing documentation, if any, that explains API key security expectations and limitations."
+        ],
+        "evidence_ids": [
+          "evd-003",
+          "evd-005",
+          "evd-006"
+        ],
+        "severity": "high"
+      },
+      {
+        "title": "Logging of exchange API keys and other sensitive data is not described",
+        "description": "The system overview describes trading data and operational metadata stored in MongoDB (evd-004) and identifies the exchange API and backend as handling credential_data and business_data (evd-003), but it does not state what fields are written to logs, whether exchange API keys or other restricted data appear in those logs, or whether logs are forwarded to any external platform. Given that compromise paths for API keys can include logging, the lack of logging-content and destination documentation prevents determining whether logs represent an additional exposure path relevant to threat thr-006.",
+        "importance": "Without knowing what is logged and where logs are sent, it is not possible to assess whether exchange API keys or other restricted data could be exposed via logging, which directly affects the risk that threat thr-006 materialises through key leakage rather than only through client compromise.",
+        "related_object_ids": [
+          "thr-006",
+          "ast-004",
+          "ast-003",
+          "cmp-007",
+          "cmp-008"
+        ],
+        "requested_evidence": [
+          "Operations or architecture documentation describing what information is included in application logs for the exchange API and backend, especially around authentication headers, API keys, and trading commands.",
+          "A statement of what classes of restricted or credential data are explicitly excluded from logs.",
+          "Documentation of log destinations, including whether logs are stored only within exchange-internal data stores or forwarded to any externally managed logging or monitoring platform, and who administers those platforms."
+        ],
+        "evidence_ids": [
+          "evd-003",
+          "evd-004"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": [
+      {
+        "concern": "The system exposes customer-facing API keys used by user-run trading bots to authenticate to the exchange API, but the catalog has no requirement that those non-interactive customer credentials be scoped, rotated, and constrained (for example by permissions, IP restrictions, or additional factors for high-risk actions), nor that their management be documented. Controls of this kind would directly mitigate the impact of stolen or misused exchange API keys in threat thr-006.",
+        "suggested_category": "authentication",
+        "nearest_requirements": [
+          {
+            "requirement_id": "req-SECRET-002",
+            "why_not": "req-SECRET-002 concerns short-lived credentials the system uses to access customer resources on external platforms, whereas exchange API keys are long-lived credentials that external clients use to access this system; the direction of trust and the party managing the credential differ."
+          },
+          {
+            "requirement_id": "req-AUTH-002",
+            "why_not": "req-AUTH-002 is about establishing which party enforces multi-factor authentication for administrative or externally reachable privileged access, while the concern here is the design and lifecycle of non-interactive API keys used by customers\u2019 trading bots, where MFA is typically not involved per request."
+          },
+          {
+            "requirement_id": "req-AUTHZ-002",
+            "why_not": "req-AUTHZ-002 addresses limiting the scope of delegated access that this system holds to external platforms, not the scoping of credentials that external clients hold to call this system\u2019s own API."
+          }
+        ],
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ]
+      }
+    ]
+  }
+}

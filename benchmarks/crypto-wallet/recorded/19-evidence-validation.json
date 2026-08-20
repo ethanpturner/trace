@@ -1,0 +1,1124 @@
+{
+  "schema": "EvidenceValidationProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 303,
+    "output_tokens": 19698,
+    "cache_read_tokens": 15488,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.19929475",
+    "duration_seconds": 198.29420537489932
+  },
+  "response": {
+    "assessments": [
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-096",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-003 and evd-005 document that there is a blockchain integration module inside the exchange which interfaces with an external blockchain network on behalf of the backend, and that the backend uses this module when reading and writing its own databases. They do not mention threat thr-008, requirement req-TPI-001, or any reasoning about whether third-party data-retention/usage requirements bear on this threat scenario. The conclusion that req-TPI-001 is not applicable to thr-008 is therefore an analytic judgment based on unstated requirement semantics and threat modeling, not something the documents themselves establish. Applicability needs human confirmation against the actual requirement text and threat model.",
+        "missing_evidence": [
+          "Documentation that defines req-TPI-001 and explicitly maps its applicability (or non-applicability) to thr-008.",
+          "Threat-model or requirements-traceability documentation explaining which third-party integration requirements are considered relevant for the blockchain integration module."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-097",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The system-overview passages (evd-003, evd-005) show that the backend calls a blockchain integration module to talk to an external blockchain network, but they do not describe threat thr-008, requirement req-TPI-002, or any criteria for when a requirement about bounding externally triggered work should be considered in or out of scope. Concluding that req-TPI-002 is not applicable to thr-008 rests on analysis of the threat scenario and requirement semantics that is not present in the documentation itself.",
+        "missing_evidence": [
+          "Definition of req-TPI-002 and a mapping or rationale document stating whether and why it applies to thr-008.",
+          "Threat-model documentation describing how externally triggered work is handled for the blockchain integration and whether this is in scope for thr-008."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-098",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-003 and evd-005 establish that the blockchain integration module initiates communication with an external blockchain network on behalf of the backend. They say nothing about webhook-style endpoints, requirement req-WEBHOOK-001, or any conditions under which webhook authenticity requirements apply. The assertion that req-WEBHOOK-001 is not applicable to thr-008 depends on the modeled threat and on the requirement definition, not on explicit statements in the system-overview.",
+        "missing_evidence": [
+          "Specification of req-WEBHOOK-001 and its applicability conditions.",
+          "Architecture or API documentation stating whether any webhook or inbound event endpoints exist for the blockchain integration or related components, and how they relate to thr-008."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-099",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The evidence describes components and data flows between the backend, the blockchain integration module, and the external blockchain network (evd-003, evd-005), but it does not mention webhook/event replay concerns, req-WEBHOOK-002, or threat thr-008. Deciding that a replay-focused webhook requirement is not applicable to thr-008 is based on threat-model reasoning and requirement semantics that are not documented in the provided passages.",
+        "missing_evidence": [
+          "Definition of req-WEBHOOK-002 and documentation showing which threats it is intended to cover.",
+          "Threat-model or API documentation clarifying whether any replayable inbound events exist in the thr-008 scenario and whether the webhook requirements were considered."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-100",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-003 and evd-005 show that the exchange website and API are internet-reachable entry points that talk to the backend and databases, and evd-004 describes the data they store. None of the passages discuss administrative interfaces, privileged access controls, or requirement req-ADMIN-001. The claim that thr-009 does not involve any administrative or operator interface, and therefore that req-ADMIN-001 is not applicable, cannot be verified from the system-overview alone and requires confirmation against more detailed design or threat-model documentation.",
+        "missing_evidence": [
+          "Documentation describing any administrative or operator interfaces for the exchange website/API and clarifying whether they are part of thr-009.",
+          "Definition of req-ADMIN-001 and a requirements-to-threats mapping indicating its applicability to thr-009."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-101",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The components and data flows described in evd-003, evd-004, and evd-005 cover a browser, website, backend, databases, API, and trading bots. They do not mention any machine-learning or AI models, nor do they define req-AI-001. Absence of a model in this high-level overview is not sufficient evidence that no such component exists on the thr-009 path, or that an AI-input handling requirement is definitively out of scope. The not-applicable classification relies on analysis beyond what the documents state.",
+        "missing_evidence": [
+          "Design documentation explicitly listing any ML/AI components (or confirming their absence) on the exchange website/API paths relevant to thr-009.",
+          "Definition of req-AI-001 and rationale for its applicability or non-applicability to threats like thr-009."
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-102",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-003\u2013evd-005 describe conventional web and API components, databases, and data flows. They neither mention any model-generated outputs nor define req-AI-002. Concluding that a requirement about validating model output before publication is not applicable to thr-009 assumes there are no relevant ML/AI outputs on this path, which is not established by the overview alone.",
+        "missing_evidence": [
+          "Documentation stating whether any model-generated content is produced or returned by the exchange website or API.",
+          "Definition of req-AI-002 and mapping showing whether it should be considered for thr-009."
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-103",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The overview shows that customer data is processed by the exchange backend and stored in MySQL and MongoDB (evd-003, evd-004), but it does not mention any external model providers, data sent to them, or req-AI-003. Determining that a requirement about minimizing data sent to external models is not applicable to thr-009 rests on unrecorded assumptions about the absence of external models in this threat path.",
+        "missing_evidence": [
+          "Architecture or data-flow documentation stating whether customer data is ever sent to external ML/AI services from the exchange backend or API.",
+          "Definition of req-AI-003 and explicit mapping of its applicability to thr-009."
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-104",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-003\u2013evd-005 describe the exchange website responding to browsers and trading bots via the backend and databases, but they say nothing about model-generated output being rendered in user interfaces, nor do they define req-AI-004. Treating that requirement as not applicable to thr-009 assumes there is no model output involved, which the current documentation does not confirm.",
+        "missing_evidence": [
+          "Documentation indicating whether any user-facing content on the exchange website or API is generated by ML/AI models.",
+          "Definition of req-AI-004 and rationale for including or excluding it for thr-009."
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-105",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The system overview shows that users reach the exchange website and API over the internet (evd-003, evd-005), but it does not describe whether authentication is delegated to an external identity provider or handled locally, nor does it define req-AUTH-001. The assertion that there is no such delegation on the thr-009 path, and thus that req-AUTH-001 is not applicable, is not something the provided passages explicitly establish.",
+        "missing_evidence": [
+          "Authentication design documentation stating whether and how identity is delegated for the exchange website and API.",
+          "Definition of req-AUTH-001 and any existing mapping of its applicability to thr-009."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-106",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-003 and evd-005 describe ordinary user-facing website and API endpoints, but they do not distinguish between privileged administrative access and regular user access, nor do they reference req-AUTH-002. Therefore the claim that thr-009 does not involve any privileged or administrative interface, and that the MFA requirement for such access is not applicable, cannot be fully verified from these passages alone.",
+        "missing_evidence": [
+          "Documentation enumerating administrative or privileged interfaces for the exchange and indicating whether they are part of thr-009.",
+          "Definition of req-AUTH-002 and its intended scope of threats."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-107",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "indirect"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-004 states that MySQL stores user accounts and configuration and MongoDB stores trading data, logs, and operational metadata, which is direct evidence that user data for multiple accounts is held in shared databases. evd-003 and evd-005 show that the internet-reachable website and API interact with these databases via the backend. This strongly suggests that tenant-aware authorization is relevant to threats involving cross-user access (such as thr-009), so treating an authorization requirement like req-AUTHZ-001 as applicable is a reasonable inference. However, the documents do not name req-AUTHZ-001 or explicitly link it to thr-009, so the applicability decision still requires confirmation against the requirement definition and the agreed threat model.",
+        "missing_evidence": [
+          "Formal requirements or threat-model documentation explicitly mapping req-AUTHZ-001 to thr-009.",
+          "Design documentation describing how tenant-aware authorization is intended to be enforced for MySQL and MongoDB access via the website and API."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-108",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-003\u2013evd-005 show that the exchange backend and API talk directly to internal MySQL and MongoDB databases; they do not describe holding delegated access to external customer platforms or OAuth-style scopes, nor do they define req-AUTHZ-002. The statement that req-AUTHZ-002 (about delegated integration privileges) is not applicable to thr-009 is therefore an analytic conclusion rather than something the documents explicitly state.",
+        "missing_evidence": [
+          "Definition of req-AUTHZ-002 and documentation of any delegated access the exchange holds to external customer platforms.",
+          "Threat-model mapping that confirms whether thr-009 involves such delegated integrations."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-109",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The system overview focuses on runtime components\u2014the website, API, backend, blockchain integration, and databases (evd-003\u2013evd-005)\u2014and does not describe the CI/CD pipeline or how third-party components enter builds. It also does not define req-CICD-001. Concluding that this CI/CD trust requirement is not applicable to thr-009 is a reasonable hypothesis based on the high-level scope of the threat, but is not explicitly documented and should be confirmed.",
+        "missing_evidence": [
+          "CI/CD and supply-chain documentation outlining where req-CICD-001 applies and whether any of its concerns are modeled in thr-009.",
+          "Threat-model scope statement clarifying whether build and deployment pipeline threats are intentionally excluded from thr-009."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-110",
+        "evidence_ids": [
+          "evd-001",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-001",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-001 notes that the platform is business-critical, externally exposed, and handles business and credential data; evd-005 describes use of TLS between front-end and backend and notes that this has not been re-verified. Neither passage defines req-DATA-001 or indicates whether encryption in transit or at rest is considered the primary control for thr-009. The statement that this encryption requirement does not bear on thr-009 is therefore not directly supported by the documentation and should be confirmed.",
+        "missing_evidence": [
+          "Definition of req-DATA-001 (including whether it covers encryption in transit, at rest, or both) and mapping to specific threats including thr-009.",
+          "Threat-model rationale explaining which controls are considered primary mitigations for thr-009."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-111",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-004 describes the primary data stores (wallet file, MySQL, MongoDB) and what they contain, but says nothing about data-retention periods, working copies, or requirement req-DATA-002. The claim that a data-retention requirement does not bear on thr-009 is not established by the overview alone and depends on how that requirement is scoped in project documentation.",
+        "missing_evidence": [
+          "Policy or design documentation describing data-retention requirements (req-DATA-002) and which threats they are intended to mitigate.",
+          "Threat-model analysis discussing whether retention of working copies or intermediate artifacts is relevant to thr-009."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-112",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "indirect"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-004 directly establishes that MySQL holds user accounts and configuration and MongoDB holds trading data, logs, and operational metadata, which are shared stores for many users. evd-003 and evd-005 show that these stores are accessed via the exchange backend from internet-facing website and API entry points. This provides strong contextual support for a requirement about documenting and enforcing stored-artifact separation by tenant (req-DATA-003) being applicable to threats like thr-009 that involve cross-tenant access. However, the requirement is not named in the system-overview, and there is no explicit mapping from req-DATA-003 to thr-009, so the conclusion still requires confirmation.",
+        "missing_evidence": [
+          "Requirements or threat-model documentation explicitly mapping req-DATA-003 to thr-009.",
+          "Design documentation specifying how tenant separation is enforced in MySQL and MongoDB for website/API access."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-113",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The overview passages describe live user accounts, configuration, trading data, and logs stored in MySQL and MongoDB and accessed by the website/API (evd-003\u2013evd-005), but they do not address deletion-on-request capabilities or req-DATA-004. As a result, the conclusion that req-DATA-004 does not bear on thr-009 is not directly supported by the evidence and should be confirmed against privacy/data-management requirements.",
+        "missing_evidence": [
+          "Policy or design documents specifying how deletion-on-request is implemented (req-DATA-004) and which threats it is intended to mitigate.",
+          "Threat-model justification for excluding deletion-on-request considerations from thr-009."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-114",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-004 notes that MongoDB holds trading data, logs, and operational metadata but does not describe what data is written to logs, whether restricted data is excluded, or how logging is configured, nor does it define req-LOG-001. Therefore the statement that this logging requirement does not directly bear on thr-009 is an analytic judgment that is not validated by the provided documentation.",
+        "missing_evidence": [
+          "Logging design or configuration documentation indicating what data is recorded in logs and how restricted data is handled (req-LOG-001).",
+          "Threat-model discussion of whether log leakage is in scope for thr-009."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-115",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The system overview shows ordinary user-facing website and API endpoints accessed from browsers and trading bots (evd-003, evd-005), but it does not describe any distinct privileged administrative interface or auditing of administrative actions, nor does it define req-LOG-002. Concluding that this administrative-auditing requirement is not applicable to thr-009 cannot be fully justified from these passages alone.",
+        "missing_evidence": [
+          "Documentation describing administrative interfaces and logging/auditing requirements (req-LOG-002) for the exchange.",
+          "Threat-model scope indicating whether administrative misuse is part of or excluded from thr-009."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-116",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "indirect"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-003 and evd-005 indicate that the exchange backend reaches internal MySQL and MongoDB databases; evd-004 describes what those databases store. The trust-zones section (evd-002, not cited in the mapping) distinguishes the exchange-internal zone from the internet. Together, these passages support an inference that internal data stores are not directly reachable from untrusted networks. However, the documentation does not explicitly describe network controls or requirement req-NET-001, so the statement that this network-reachability requirement is not engaged by thr-009 still needs confirmation.",
+        "missing_evidence": [
+          "Network architecture and firewall documentation confirming which components are directly reachable from the internet and how req-NET-001 is applied.",
+          "Threat-model documentation explaining how network-reachability controls interact with thr-009."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-117",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The overview documents that the system likely holds sensitive secrets such as API keys (evd-003, evd-006) and operates internal databases (evd-004), but it does not describe how secrets (e.g., signing keys, provider credentials) are stored, nor does it define req-SECRET-001. The assertion that a managed secret-store requirement does not bear on thr-009 is therefore not supported directly by the evidence and should be confirmed.",
+        "missing_evidence": [
+          "Secrets-management documentation describing where and how signing keys and provider credentials are stored (including any managed secret store) and how this relates to req-SECRET-001.",
+          "Threat-model rationale indicating whether secret theft is in scope for thr-009."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-118",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-003 explicitly states that user-run trading bots connect to the exchange API over a secure WebSocket using API keys, and evd-005 reiterates that a user-run trading bot holds exchange API keys and trades over this channel. This is direct evidence that long-lived API keys exist on client systems. However, the documentation does not describe req-SECRET-002 or whether it is limited to delegated access on external platforms. As a result, the judgment that this requirement is not applicable to thr-009 still depends on requirement semantics not present in the overview.",
+        "missing_evidence": [
+          "Definition of req-SECRET-002, including whether it is restricted to delegated access to external customer resources or also covers long-lived API keys for this exchange.",
+          "Requirements-to-threats mapping clarifying whether thr-009 should consider misuse of long-lived API keys in scope for req-SECRET-002."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-119",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-003\u2013evd-005 show that the thr-009 path, as far as the overview documents it, stays within the exchange boundary\u2014from internet clients through the website/API to internal databases. They do not, however, describe all external processors the system may use, nor do they define req-TPI-001. Deciding that no external processor retention/usage requirement applies to thr-009 is therefore not established by the evidence and should be confirmed against fuller data-flow and third-party integration documentation.",
+        "missing_evidence": [
+          "Comprehensive data-flow and third-party integration documentation identifying all external processors and indicating whether any are involved in thr-009.",
+          "Definition of req-TPI-001 and mapping that explains its applicability to each modeled threat, including thr-009."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-120",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "The overview indicates that thr-009 involves an attacker exploiting vulnerabilities in web/API endpoints to access or modify stored data via the backend and databases (evd-003\u2013evd-005), but does not discuss metered external services or quota-limited resources, nor requirement req-TPI-002. As a result, the conclusion that bounding externally triggered work does not bear on thr-009 is not documented and should be validated against the actual requirement and threat model.",
+        "missing_evidence": [
+          "Definition of req-TPI-002 and documentation of which external or metered services are in scope.",
+          "Threat-model analysis describing whether any unbounded externally triggered work is part of thr-009."
+        ],
+        "contradictions": [],
+        "confidence": "medium",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-121",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "indirect"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "evd-003 and evd-005 describe clients (browsers and trading bots) initiating requests to the exchange website and API. They do not mention any inbound webhook endpoints receiving events from external platforms, nor do they define req-WEBHOOK-001. While the absence of such endpoints in this overview suggests that a webhook authenticity requirement might not apply to thr-009, this is not conclusive evidence, and applicability still needs confirmation from more detailed API documentation.",
+        "missing_evidence": [
+          "API documentation listing all inbound endpoints, including any webhook/event receivers, and clarifying whether any participate in thr-009.",
+          "Definition of req-WEBHOOK-001 and its intended scope of endpoints."
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "control_mapping",
+        "subject_id": "map-122",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "indirect"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "requires_confirmation",
+        "rationale": "As with map-121, evd-003 and evd-005 only document client-initiated interactions with the website and API. They do not mention webhook-style event deliveries or replay protections, nor do they define req-WEBHOOK-002. The judgment that replay-focused webhook requirements are not applicable to thr-009 is therefore based on assumed absence of such endpoints rather than explicit statements in the documentation.",
+        "missing_evidence": [
+          "API and integration documentation describing any webhook/event endpoints and how replay is handled, if such endpoints exist.",
+          "Definition of req-WEBHOOK-002 and mapping to threats it is meant to mitigate, including or excluding thr-009."
+        ],
+        "contradictions": [],
+        "confidence": "low",
+        "recommendation": "downgrade_to_question",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-001",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "contextual"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "indirect"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-003 states that the Electrum Wallet Daemon is a local wallet backend process exposing HTTP JSON-RPC on localhost, with the GUI talking to the daemon. This is direct evidence of a localhost-exposed RPC interface on the user device. evd-002 defines the user device trust zone as including multiple user-controlled applications (wallet GUI, browser, mobile app, user-run trading bot), which indirectly supports the possibility that other, potentially malicious, processes can reach localhost services. evd-004 establishes that the wallet file holds wallet data and keys, which contextualizes the impact of sensitive RPC methods that export keys or sign transactions. Given these facts, the threat scenario\u2014local processes abusing unauthenticated or weakly protected JSON-RPC on localhost to access wallet data or sign unauthorized transactions\u2014is a reasonable inference from the documented architecture and is well supported.",
+        "missing_evidence": [
+          "Documentation of any authentication, authorization, or access-control mechanisms enforced by the Electrum Wallet Daemon on its JSON-RPC interface.",
+          "Configuration or hardening guidance for the wallet daemon regarding exposure and protection of localhost RPC."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-002",
+        "evidence_ids": [
+          "evd-004",
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-004 directly states that the wallet file on the user device holds wallet data and keys and that it should be encrypted at rest, with encryption described as a wallet option. This supports the claim that encryption at rest is configurable rather than always enforced. evd-002 identifies the user device as a separate trust zone, emphasizing that compromise or loss of this device is in scope. From these facts, it follows that if encryption is disabled or weak for a given user and an attacker obtains a copy of the wallet file (e.g., by device theft or malware), the attacker could extract private keys offline and steal funds. The threat description matches this plausible attack on an optionally encrypted wallet file.",
+        "missing_evidence": [
+          "Documentation of default wallet encryption settings and user guidance on choosing passphrases and key-derivation parameters.",
+          "Any telemetry or incident data indicating how often users leave wallet encryption disabled or weakly configured."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-003",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005",
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-003 describes the Electrum Wallet Daemon connecting to third-party ElectrumX SPV servers on the internet for balances, headers, and transaction broadcast, and explicitly notes that these servers are operated by third parties, not by the exchange. evd-005 reiterates that the daemon connects to ElectrumX servers for blockchain state. evd-002 places these servers in the internet trust zone, separate from the user device. Together, these passages directly support that the wallet relies on untrusted, third-party servers for its view of the blockchain. From this architecture, the risk that a malicious, compromised, or intercepted ElectrumX connection could misreport balances, withhold data, or harvest wallet metadata is a straightforward and well-supported threat inference.",
+        "missing_evidence": [
+          "Documentation of any mechanisms the wallet daemon uses to validate or cross-check responses from ElectrumX servers (e.g., multiple servers, certificate pinning, consistency checks).",
+          "Policies or configuration options for selecting and trusting specific ElectrumX servers."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-004",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005",
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-003 states that the exchange website interacts with the exchange backend over HTTPS. evd-005 describes the data flow where the user's browser reaches the exchange website, which talks to the backend, and notes that TLS is expected to terminate at the load balancer with all front-end to backend communication over HTTPS, but also that this has not been re-verified for the current deployment. evd-002 identifies the internet as a separate trust zone between user devices and the exchange internal zone. These passages directly support that user-to-website and website-to-backend communications rely on TLS for protection and that there is some uncertainty about the current TLS configuration. From this, the threat of a man-in-the-middle or TLS misconfiguration exposing or altering user account data in transit is a well-supported and realistic scenario.",
+        "missing_evidence": [
+          "Current, detailed TLS configuration and network diagrams showing where termination occurs and how backend links are protected.",
+          "Any security testing or verification reports confirming correct certificate validation and encryption on user-to-load-balancer and load-balancer-to-backend paths."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-005",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-005",
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "indirect"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-003 states that the exchange backend handles business logic and user data and reads and writes the MySQL and MongoDB stores. evd-004 specifies that MySQL holds user accounts and configuration and MongoDB holds trading data, logs, and operational metadata. evd-005 shows that the backend communicates with both databases as part of processing website and API traffic. evd-002 defines an \"exchange internal\" trust zone containing the backend and databases, separate from the internet. Together, these passages directly establish that critical user and trading data flows between backend and databases within an internal network. Given this architecture, a threat where an internal attacker with access to that zone intercepts or tampers with backend\u2013database traffic or issues unauthorized queries is a well-grounded inference.",
+        "missing_evidence": [
+          "Documentation of transport security and authentication between the exchange backend and the MySQL/MongoDB instances.",
+          "Network segmentation and access-control documentation for the exchange internal zone, including how lateral movement to database hosts is constrained."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-006",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005",
+          "evd-006"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-006",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-003 describes the Exchange API as a Node.js server providing programmatic access to exchange functions such as trading and account data, and explicitly states that user-run trading bots connect to it over a secure WebSocket using API keys. evd-005 reinforces that a user-run trading bot holds exchange API keys and trades against the API over a secure WebSocket. evd-006 defines the end user as someone who may run a trading bot with API keys they generate. These passages directly support that long-lived API keys, stored on user-controlled bots, are used for authenticated access to trading and account operations over the internet. From this, the threat that stolen or misused API keys could enable an attacker to perform unauthorized trading and account actions is directly supported by the documented design.",
+        "missing_evidence": [
+          "Documentation of API key lifecycle management (generation, rotation, revocation) and any scope or permission controls on keys.",
+          "Security guidance for trading bot developers on securely storing and handling API keys."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-007",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005",
+          "evd-002"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-002",
+            "strength": "contextual"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-003 and evd-005 together describe user-run trading bots connecting from user devices over the internet to the exchange API via secure WebSockets, sending trading commands and accessing account data. evd-002 places these bots in the user-device trust zone and the exchange API in the exchange-internal zone, emphasizing that bots are outside the operator\u2019s direct control. This directly supports the existence of potentially untrusted or misbehaving clients with high-rate access to the API. While the documentation does not specify rate limiting or resource isolation, the possibility that poorly implemented or malicious bots could overload the API by sending excessive requests is a straightforward and well-supported threat inference from this client\u2013API architecture.",
+        "missing_evidence": [
+          "Design or configuration documentation for API rate limiting, connection caps, and resource-isolation mechanisms protecting the exchange API and backend.",
+          "Operational data or capacity planning analyses related to trading bot load on the API."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-008",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005",
+          "evd-004"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-003 defines a Blockchain Integration Module in the exchange-internal zone that interfaces with the blockchain network to read and write blockchain state on behalf of the backend, and it describes the backend as handling business logic and user data and reading/writing MySQL and MongoDB. evd-005 shows that the backend calls the blockchain integration module as part of its data flows and reads and writes both databases. evd-004 states that MySQL contains user accounts and configuration and MongoDB contains trading data, logs, and operational metadata. Collectively, these passages directly establish that the exchange backend relies on blockchain data, via the integration module, to update user-visible account and trading records stored in internal databases. From this architecture, the threat that incorrect or malicious blockchain network data could lead the backend to record inconsistent balances and transaction histories is a well-supported inference.",
+        "missing_evidence": [
+          "Documentation of how the blockchain integration module selects and trusts blockchain nodes (e.g., redundancy, consensus checks, or chain-quality validation).",
+          "Backend design documentation describing how blockchain data is validated or cross-checked before updating MySQL and MongoDB (e.g., confirmations, delayed finality, reconciliation)."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      },
+      {
+        "subject_type": "threat",
+        "subject_id": "thr-009",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "evidence_strengths": [
+          {
+            "evidence_id": "evd-003",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-004",
+            "strength": "direct"
+          },
+          {
+            "evidence_id": "evd-005",
+            "strength": "direct"
+          }
+        ],
+        "validation_status": "supported",
+        "rationale": "evd-003 describes the Exchange Website as the front-end served to users that interacts with the exchange backend, and the Exchange API as a server providing programmatic access to trading and account data over secure WebSockets to user-run trading bots. It further states that the backend reads and writes the MySQL and MongoDB stores. evd-004 specifies that MySQL stores user accounts and configuration and MongoDB stores trading data, logs, and operational metadata. evd-005 details the data flows: the user's browser reaches the exchange website, which talks to the backend; the backend reads and writes both databases; and trading bots trade against the exchange API over a secure WebSocket. These passages together directly establish that internet-accessible web and API endpoints process user-supplied input and drive operations on shared databases holding multiple users\u2019 account and trading data. Given this architecture, the threat that a remote client could exploit web or API vulnerabilities (e.g., injection or broken access control) to access or modify other users\u2019 data is a well-supported and standard web-application security concern.",
+        "missing_evidence": [
+          "Documentation of authentication, input validation, and authorization controls implemented on the exchange website and API endpoints.",
+          "Results of security testing (e.g., penetration tests, code reviews) focused on injection and access-control weaknesses in website/API paths to MySQL and MongoDB."
+        ],
+        "contradictions": [],
+        "confidence": "high",
+        "recommendation": "continue",
+        "quoted_text": []
+      }
+    ]
+  }
+}

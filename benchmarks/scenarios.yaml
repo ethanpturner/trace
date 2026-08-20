@@ -51,6 +51,7 @@ scenarios:
     # #327: the hedged-statement zero-finding path — a question and a gap, no findings.
     status: authored
     category: third-party-integrations
+    workflow_version: "0.2"
 
   - slug: invoice-agent
     name: Invoice Agent

@@ -1,0 +1,76 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 10755,
+    "output_tokens": 8090,
+    "cache_read_tokens": 10880,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.09570375",
+    "duration_seconds": 99.5998001670232
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-001"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "Applicable because the wallet file on the user device is a data store holding wallet data and keys classified as credential data [evd-003, evd-004], so the system stores confidential data at rest and threat thr-002 is specifically about compromise of this stored data when encryption at rest is disabled or weak. Partially satisfied because documentation states that the wallet \"should be encrypted at rest\" but that encryption is only a wallet option [evd-004], so encryption at rest is available but not enforced for all wallets and does not guarantee that all sensitive data at rest is encrypted.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "partially_satisfied",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-SECRET-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-001"
+        ],
+        "applicability_status": "applicable",
+        "applicability_reason": "Applicable because the wallet file stores private keys that are used to sign transactions on an external blockchain network [evd-003, evd-004], so the system holds long-lived private signing keys that authenticate it (on the user's behalf) to an external platform, and threat thr-002 is about compromise of those keys from the wallet file. Satisfaction is unverified because the documentation only says that the wallet file holds the keys and that encryption at rest is a wallet option [evd-004], and does not state whether the keys are protected using a managed secret store or equivalent mechanism as required by this control.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Wallet key storage and encryption defaults are not fully documented",
+        "description": "The system overview states that the wallet file on the user device holds the wallet data and keys and that it \"should be encrypted at rest; encryption is a wallet option\" [evd-004]. The documentation does not describe whether encryption is enabled by default or enforced for all wallets, what encryption and key-derivation parameters are used, or whether any OS-level secret store or hardware-backed mechanism is used to protect the private keys. This prevents verifying how strongly wallet keys are protected against offline compromise of the wallet file (thr-002) and how controls for data at rest and secret custody are implemented.",
+        "importance": "Clarifying how wallet private keys are stored and protected (default encryption behavior, cryptographic parameters, and any use of OS or hardware secret stores) is necessary to assess the effectiveness of protections against offline compromise of the wallet file and to determine satisfaction of req-DATA-001 and req-SECRET-001 for this threat.",
+        "related_object_ids": [
+          "cmp-010",
+          "ast-001",
+          "thr-002"
+        ],
+        "requested_evidence": [
+          "Detailed documentation of wallet encryption-at-rest behavior, including whether encryption is enabled by default or enforced for all wallets, the algorithms and key-derivation parameters used, and any passphrase policies.",
+          "Documentation of whether the wallet uses any OS-level keychain, secure enclave, TPM, or other managed secret store or hardware-backed mechanism to protect private keys in addition to or instead of the wallet file."
+        ],
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "severity": "high"
+      }
+    ],
+    "catalog_gap_candidates": []
+  }
+}

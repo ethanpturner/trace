@@ -1,0 +1,480 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 12814,
+    "output_tokens": 23518,
+    "cache_read_tokens": 10880,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.2525575",
+    "duration_seconds": 281.7644965420477
+  },
+  "response": {
+    "controls": [
+      {
+        "key": "c-api-key-auth-exchange-api",
+        "name": "API key authentication for exchange API",
+        "description": "The exchange API is a Node.js server that provides programmatic access to trading and account data, and user-run trading bots connect to it over a secure WebSocket using API keys, implying an application-implemented API key authentication mechanism for API access.",
+        "control_type": "implemented",
+        "provider_component_id": null,
+        "protected_component_ids": [
+          "cmp-008"
+        ],
+        "protected_asset_ids": [
+          "ast-002",
+          "ast-003"
+        ],
+        "implementation_status": "claimed",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "owner": null,
+        "limitations": [
+          "The documentation does not describe how API keys are generated, scoped, stored, rotated, or revoked, nor how they are bound to specific user accounts or permissions."
+        ]
+      }
+    ],
+    "mappings": [
+      {
+        "threat_id": "thr-009",
+        "requirement_id": "req-ADMIN-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This threat involves exploitation of internet-exposed end-user web and API endpoints for ordinary users and trading bots to reach the backend databases (cmp-006, cmp-008, cmp-007, cmp-011, cmp-012; evd-003, evd-004, evd-005), and does not involve any administrative or operator interface, so the requirement about restricting privileged administrative access does not bear on this threat path.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-009",
+        "requirement_id": "req-AI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Threat thr-009 describes conventional web and API requests from browsers and trading bots to the exchange website, API, backend, and relational/NoSQL databases (evd-003, evd-004, evd-005); no part of the described attack path sends untrusted content to a machine-learning or AI model, so this requirement about treating such model input as untrusted does not apply to this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-009",
+        "requirement_id": "req-AI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat path concerns model-free processing: HTTP/WebSocket requests reach the exchange website and API, which talk to the backend and MySQL/MongoDB (evd-003, evd-004, evd-005), with no model output being published externally, so this requirement about validating model output before external publication does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-009",
+        "requirement_id": "req-AI-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "In threat thr-009, customer data is processed by the exchange backend and stored in MySQL and MongoDB (evd-003, evd-004); the attack path does not involve sending customer content to any external model provider, so the requirement about minimizing data sent to external models does not apply here.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-009",
+        "requirement_id": "req-AI-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The described threat and architecture for thr-009 do not include any model-generated output being rendered in user interfaces or external markup; instead, the website and API return application-generated responses backed by MySQL and MongoDB (evd-003, evd-004, evd-005), so this model-output encoding requirement is not engaged.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-009",
+        "requirement_id": "req-AUTH-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Threat thr-009 involves users and trading bots authenticating directly to the exchange website and API, with the API explicitly using locally managed API keys (evd-003, evd-005); no delegation to an external identity provider is described on this path, so the requirement to document authentication delegation does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-009",
+        "requirement_id": "req-AUTH-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat targets ordinary externally reachable website and API endpoints used by end users and trading bots (evd-003, evd-005), and does not involve any explicitly privileged or administrative interface, so the requirement to document who enforces multi-factor authentication for administrative or other privileged external access is not engaged by this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-009",
+        "requirement_id": "req-AUTHZ-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The exchange serves many users whose accounts, configuration, and trading data are stored together in shared MySQL and MongoDB databases (ast-002, ast-003; evd-004), and threat thr-009 is explicitly about exploiting web/API endpoints to read or modify other users\u2019 account and trading data, which is a failure of tenant-aware authorization on shared storage, so this requirement directly applies.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-009",
+        "requirement_id": "req-AUTHZ-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "In thr-009, the exchange acts directly on its own internal MySQL and MongoDB databases via the backend (evd-003, evd-004, evd-005); the attack path does not involve holding delegated access to an external customer platform (such as via OAuth scopes), so the requirement to document and limit external delegated integration privileges does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-009",
+        "requirement_id": "req-CICD-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Threat thr-009 concerns runtime exploitation of the deployed exchange website and API to access or tamper with data in MySQL and MongoDB (evd-003, evd-004, evd-005) and does not involve the build or deployment pipeline or third-party components entering a build, so this CI/CD trust requirement does not apply to this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-009",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-002",
+          "ctl-003"
+        ],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "While the system handles confidential business and credential data and uses TLS for some flows (evd-001, evd-005; ctl-002, ctl-003), threat thr-009 is specifically about an attacker abusing input-handling or authorization flaws in the application to act as other users via legitimate HTTPS/WebSocket channels, a scenario that is not materially affected by whether data is additionally encrypted in transit or at rest, so this encryption requirement is not the control that bears on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-009",
+        "requirement_id": "req-DATA-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Thr-009 describes an attacker using web/API vulnerabilities to access or modify live user accounts, configuration, trading data, and operational logs in the primary MySQL and MongoDB stores (evd-004); it does not concern how long working copies or intermediate artifacts are retained after processing, so this data-retention requirement does not bear on the described threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-009",
+        "requirement_id": "req-DATA-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "MySQL and MongoDB hold artifacts (user accounts/configuration, trading data, logs, and operational metadata) for many users in shared storage (ast-002, ast-003; evd-004), and threat thr-009 is about an attacker using the website or API to access or modify other users\u2019 records in those stores, so the requirement to document how stored artifacts are separated by tenant and how that separation is enforced on access directly applies.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-009",
+        "requirement_id": "req-DATA-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat scenario focuses on unauthorized reading and tampering of existing user accounts, configuration, trading data, and logs via vulnerable web/API endpoints (evd-003, evd-004, evd-005), and does not concern the ability to delete customer data on request across primary and derived stores, so this deletion-on-request requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-009",
+        "requirement_id": "req-LOG-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Although MongoDB holds trading data and operational metadata (evd-004), threat thr-009 is about an attacker reading or tampering with account and trading records via application vulnerabilities, not about sensitive data leaking through application logs or log forwarding to external platforms, so this requirement on excluding restricted data from logs does not directly bear on the threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-009",
+        "requirement_id": "req-LOG-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat path involves misuse of ordinary user-facing website and API endpoints to reach other users\u2019 data (evd-003, evd-005), not actions performed through a distinct privileged administrative interface, so the requirement to audit security-relevant administrative actions with operator attribution does not apply to this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-009",
+        "requirement_id": "req-NET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "In thr-009 the attacker reaches MySQL and MongoDB only indirectly through the exchange website, API, and backend (df-003, df-004, df-005, df-006, df-008; evd-003, evd-004, evd-005); the threat does not involve those internal data stores being directly reachable from an untrusted network, so this requirement about restricting network reachability of internal components is not engaged by this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-009",
+        "requirement_id": "req-SECRET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Threat thr-009 focuses on exploiting input-handling or authorization flaws in exposed web/API endpoints to access or modify other users\u2019 data (evd-003, evd-004, evd-005); it does not involve theft or misuse of long-lived signing keys or provider credentials held by the system, so the managed secret-store requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-009",
+        "requirement_id": "req-SECRET-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Although trading bots use API keys to access the exchange API (evd-003, evd-005), threat thr-009 is about exploiting vulnerabilities in the API or website logic to cross account boundaries, not about misuse of long-lived tokens versus short-lived credentials for delegated access to customer resources on external platforms, so this requirement does not directly bear on the described threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-009",
+        "requirement_id": "req-TPI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The attack path for thr-009 stays entirely within the exchange system boundary, from internet clients through the website/API to the internal backend and databases (evd-003, evd-004, evd-005); it does not involve sending customer data to an external processor whose retention and usage terms would need to be documented, so this requirement is not engaged.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-009",
+        "requirement_id": "req-TPI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Threat thr-009 is about an attacker abusing web/API vulnerabilities to access or tamper with stored data, not about triggering unbounded work against a metered external service or quota-limited resource, so the requirement to bound externally triggered work does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-009",
+        "requirement_id": "req-WEBHOOK-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The system-overview and threat description for thr-009 show browsers and trading bots initiating requests to the exchange website and API (df-003, df-008; evd-003, evd-005); there is no inbound webhook or event endpoint receiving events from an external platform in this scenario, so the requirement to verify webhook authenticity does not apply to this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-009",
+        "requirement_id": "req-WEBHOOK-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Because thr-009 does not involve processing of inbound webhook or event deliveries from an external platform but rather direct client requests to the website and API (df-003, df-008; evd-003, evd-005), the requirement to prevent or make harmless replay of webhook events does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Tenant authorization and per-tenant data separation are not documented for web/API access to MySQL and MongoDB",
+        "description": "The system overview describes the exchange website and API invoking the backend, which reads and writes shared MySQL and MongoDB databases holding user accounts, configuration, trading data, logs, and operational metadata (ast-002, ast-003; evd-003, evd-004, evd-005). However, it does not explain how requests from a given user or API key are constrained to that user\u2019s records, how the tenant or user context is derived on each request, or how artifacts in MongoDB are separated and protected per tenant. For threat thr-009, which is explicitly about an attacker using web/API endpoints to access or modify other users\u2019 account and trading data, this omission means we cannot determine whether tenant-aware authorization or storage-level separation controls exist or how they are enforced.",
+        "importance": "Understanding the authorization model and storage-level separation for MySQL and MongoDB is essential to evaluate whether the primary control that would mitigate thr-009\u2014ensuring each web/API request can only reach data for its own tenant/user\u2014is present and effective.",
+        "related_object_ids": [
+          "thr-009",
+          "cmp-006",
+          "cmp-007",
+          "cmp-008",
+          "cmp-011",
+          "cmp-012",
+          "ast-002",
+          "ast-003",
+          "df-003",
+          "df-004",
+          "df-005",
+          "df-006",
+          "df-008"
+        ],
+        "requested_evidence": [
+          "Architecture or design documentation describing the authorization model for the exchange website and API, including how user or tenant context is derived from authenticated identity on each request and applied to data access.",
+          "Documentation of the tenant boundary for user accounts, configuration, trading data, logs, and operational metadata, and how cross-tenant access is prevented in the backend and data access layer.",
+          "Description of the MySQL and MongoDB storage layout (schemas, collections, or other structures) and how per-tenant separation is enforced on access, including any database-level access controls or application-side checks."
+        ],
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "severity": "high"
+      }
+    ],
+    "catalog_gap_candidates": []
+  }
+}

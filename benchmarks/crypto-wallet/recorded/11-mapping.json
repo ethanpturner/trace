@@ -1,0 +1,442 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 12023,
+    "output_tokens": 11509,
+    "cache_read_tokens": 10880,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.13147875",
+    "duration_seconds": 102.26753595808987
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-ADMIN-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This requirement concerns privileged administrative or operator interfaces and how their access is restricted and documented. Threat thr-007 describes denial-of-service via user-run trading bots abusing the public Exchange API (cmp-008) over WebSockets to overload the service, not use of any administrative or operator interface, so the requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-AI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "req-AI-001 applies when content the system did not author is passed to a model and the content source is open to untrusted contributors. The documented architecture and threat thr-007 describe a cryptocurrency exchange with user-run trading bots calling a conventional Node.js Exchange API (cmp-008) over secure WebSockets, with no model or AI component mentioned (evd-003, evd-005), so the applicable conditions for this AI-input-handling requirement do not hold.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-AI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "req-AI-002 applies where model output is published externally without human review. The system overview and threat thr-007 do not describe any model-generated output or publication path; instead they describe trading commands over WebSockets from user-run bots to the Exchange API (cmp-008) (evd-003, evd-005). Therefore the requirement does not apply to this denial-of-service threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-AI-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "req-AI-003 concerns minimising customer content sent to an external model provider. The documented data flows involve wallets, the Exchange API, databases, ElectrumX servers, and a blockchain integration module (evd-003, evd-004, evd-005), but no external model provider. Threat thr-007 involves trading bots over df-008 saturating the Exchange API, so this AI-model data-minimisation requirement does not bear on the threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-AI-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "req-AI-004 applies where model output is rendered into a UI or submitted as markup to an external platform. The system description and threat thr-007 do not mention any model output; the threat concerns high-rate trading commands from user-run bots over secure WebSockets to the Exchange API (cmp-008) (evd-003, evd-005). Therefore this requirement does not apply to this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-AUTH-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "req-AUTH-001 concerns documentation of delegated user authentication to an external identity provider. For thr-007, the relevant access path is user-run trading bots holding exchange API keys and connecting directly to the Exchange API (cmp-008) over a secure WebSocket (df-008) (evd-003, evd-005), which uses API keys rather than delegated identity. Whether browser logins delegate authentication does not affect this denial-of-service scenario driven by API key clients, so the requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-AUTH-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "req-AUTH-002 applies where multi-factor authentication is relied upon for administrative or externally reachable privileged access. Threat thr-007 describes misbehaving trading bots using long-lived API keys over WebSockets to drive high request rates against the Exchange API (cmp-008) (evd-003, evd-005); it does not involve administrative interfaces or privileged operator access flows governed by MFA. MFA responsibility therefore does not bear on this denial-of-service threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-AUTHZ-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "req-AUTHZ-001 concerns tenant-aware authorization and preventing cross-tenant data access in multi-tenant storage. Threat thr-007 is about a small number of user-run trading bots over df-008 overloading the Exchange API (cmp-008) and backend (cmp-007), reducing availability for other users (evd-003, evd-005). Even if the system is multi-tenant, this scenario does not involve cross-tenant data access or tenant boundary enforcement; it is purely about per-client resource consumption. Therefore the requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-AUTHZ-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "req-AUTHZ-002 applies where the system holds delegated access to an external platform and acts on customer resources there. The architecture shows connections to ElectrumX servers and a blockchain integration module (evd-003, evd-004, evd-005), but threat thr-007 concerns bots directly calling the Exchange API (cmp-008) and overloading exchange-internal compute, not misuse of delegated access on an external platform. The denial-of-service risk does not depend on requested third-party privileges, so this requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-CICD-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "req-CICD-001 is about how the deployment pipeline authenticates to environments and how third-party build-time components are controlled. Threat thr-007 describes runtime overload of the Exchange API and backend by high-rate WebSocket traffic from user-run bots (evd-003, evd-005), not any compromise or misuse of the deployment path. Thus the requirement does not bear on this denial-of-service scenario.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [
+          "ctl-003"
+        ],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "req-DATA-001 concerns encryption of sensitive data in transit and at rest and documenting who provides that protection. While the system handles business and credential data (evd-001, evd-004) and uses TLS for API communications (ctl-003, evd-005), threat thr-007 is specifically about exhaustion of API and backend capacity by high-rate trading commands from bots, affecting availability rather than confidentiality or encryption responsibilities. Encryption arrangements do not meaningfully change this denial-of-service risk, so the requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001",
+          "evd-004",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-DATA-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "req-DATA-002 addresses definition and enforcement of retention periods for sensitive working copies of customer data. Threat thr-007 involves misbehaving trading bots overloading the Exchange API and backend in real time via df-008 (evd-003, evd-005); it does not involve retained working data or discrepancies between stated and actual retention. Therefore this requirement does not bear on the described denial-of-service threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-DATA-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "req-DATA-003 concerns separation of stored artifacts by tenant in shared storage systems. The threat scenario for thr-007 is about bots overloading the Exchange API and backend, causing slow responses and timeouts for other clients (evd-003, evd-005), not about unauthorized access to stored artifacts in shared object stores. As a result, tenant separation of stored artifacts does not bear on this denial-of-service risk.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-DATA-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "req-DATA-004 addresses how customer data can be deleted on request across primary and derived stores. Threat thr-007 is concerned with runtime availability degradation due to high-rate trading bot traffic against the Exchange API (cmp-008) and backend (cmp-007) (evd-003, evd-005), not with deletion paths for stored data. Deletion capability therefore does not bear on this specific threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-LOG-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "req-LOG-001 concerns excluding restricted or confidential data from application logs and documenting log destinations. Threat thr-007 describes bots overloading the Exchange API and backend with trading commands, leading to slow responses and timeouts (evd-003, evd-005). While logs may be produced during such events, the core risk is unbounded resource consumption and loss of availability, not exposure of sensitive data in logs, so this requirement does not bear directly on the threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-LOG-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "req-LOG-002 applies where there is a privileged administrative interface whose actions affecting customer data or security configuration must be audited. Threat thr-007 involves ordinary user-run trading bots using API keys to call the Exchange API (cmp-008) at high rates (evd-003, evd-005); it does not involve privileged administrative actions. Therefore this auditing requirement does not bear on the denial-of-service scenario.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-NET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "req-NET-001 addresses network segmentation for internal components such as data stores, queues, and internal services so they are reachable only from authorized workloads. Threat thr-007 concerns saturation of the public-facing Exchange API (cmp-008), backend (cmp-007), and load balancer (cmp-014) by untrusted clients over the internet via df-008 (evd-002, evd-003, evd-005). It does not involve internal components being exposed directly to untrusted networks, so this requirement does not bear on the threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-SECRET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "req-SECRET-001 concerns custody of long-lived credentials and signing keys held by the system itself, requiring they be stored in a managed secret store. Threat thr-007 focuses on API keys held by user-run trading bots on user devices (cmp-013) and their ability to overload the Exchange API (cmp-008) over WebSockets (evd-003, evd-005). Those client-held secrets and their storage on user devices are outside the system\u2019s secret management boundary, and the denial-of-service risk arises from request volume, not compromise of system-held credentials. Thus the requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-SECRET-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "req-SECRET-002 applies where the system accesses customer resources on an external platform and must choose between short-lived and long-lived credentials for that access. Threat thr-007 does not involve the system calling external customer resources; instead, external trading bots call into the Exchange API (cmp-008) using API keys (evd-003, evd-005). The nature of outbound credentials to external platforms therefore does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-TPI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "req-TPI-001 concerns documenting how external processors handle customer data when it is sent across a trust boundary. While the broader system interacts with ElectrumX servers and blockchain networks (evd-003, evd-004, evd-005), threat thr-007 focuses on misbehaving trading bots overloading the Exchange API and backend, with impact on availability of account and trading functions, not on how external processors retain or use data. Therefore this requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-TPI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "req-TPI-002 applies where processing is triggered by events the system does not originate and must be bounded so a repeated or malicious trigger cannot drive unbounded consumption. Threat thr-007 describes user-run trading bots (cmp-013) on user devices (evd-002, evd-003) that open secure WebSocket connections (df-008) and send trading commands at aggressive rates to the Exchange API (cmp-008), causing the API server and backend (cmp-007) to consume significant CPU, memory, and I/O and potentially saturating the load balancer (cmp-014) (evd-003, evd-005). This is exactly work triggered by untrusted external events whose volume needs bounding to protect availability and cost.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [
+          "Assume each trading command sent over the WebSocket requires non-trivial processing by the Exchange API (cmp-008) and backend (cmp-007), such that unbounded request rates from a small number of bots can materially affect service capacity as described in thr-007."
+        ],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-WEBHOOK-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "req-WEBHOOK-001 concerns authenticity verification of inbound events from an external platform delivered to a receiving endpoint. In this architecture, the Exchange API (cmp-008) is the server that clients connect to directly; threat thr-007 describes user-run trading bots on user devices initiating WebSocket connections to this API (evd-003, evd-005), not events delivered from a named external platform in a webhook-style integration. Therefore this webhook authenticity requirement does not bear on the described denial-of-service threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-007",
+        "requirement_id": "req-WEBHOOK-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "req-WEBHOOK-002 applies where inbound event processing is costly, externally visible, or state-changing and must be protected against replay of previously valid events. Threat thr-007 involves live trading bots sending new trading commands at high rates over WebSockets to the Exchange API (cmp-008) (evd-003, evd-005), rather than replay of previously delivered events from an external platform. The risk is unbounded volume from active clients, not replay of signed events, so this requirement does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Bounding and rate limits for WebSocket trading API usage are not documented",
+        "description": "The documentation describes user-run trading bots on user devices holding exchange API keys and trading against the Exchange API (cmp-008) over a secure WebSocket (df-008) (evd-003, evd-005). Threat thr-007 notes that misbehaving or malicious bots can open many connections and send trading commands at aggressive rates, potentially exhausting CPU, memory, and I/O on the Exchange API and backend and saturating the load balancer, leading to timeouts and failures for other clients. However, the available material does not state whether there are per-API key, per-IP, or per-connection rate limits, connection caps, quotas, or other bounding mechanisms on this path, nor where such controls would be enforced. Because of this, the assessment cannot determine whether req-TPI-002 (bounding work triggered by external events) is satisfied for the trading bot interface.",
+        "importance": "Without documentation of rate limits and other bounding mechanisms on the WebSocket trading API, it is impossible to verify whether a small number of misbehaving bots can be prevented from consuming disproportionate capacity, which directly affects whether threat thr-007 is mitigated or remains a realistic availability risk for user accounts and trading data.",
+        "related_object_ids": [
+          "thr-007",
+          "cmp-008",
+          "cmp-013",
+          "cmp-007",
+          "cmp-014",
+          "df-008",
+          "req-TPI-002"
+        ],
+        "requested_evidence": [
+          "Operations or architecture documentation describing rate limits, quotas, and connection caps applied to WebSocket trading bot connections to the Exchange API (df-008).",
+          "Configuration or code references showing enforcement points for per-client or per-API key bounding of trading commands and connections on the Exchange API (cmp-008) and backend (cmp-007).",
+          "Any documented provider- or platform-level quota controls that limit resource consumption or cost driven by trading bot traffic."
+        ],
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": []
+  }
+}
