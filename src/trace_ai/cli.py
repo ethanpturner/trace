@@ -57,6 +57,15 @@ from trace_ai.infrastructure.database.store import AssessmentStore, StoreError
 from trace_ai.infrastructure.filesystem.artifact_store import DEFAULT_ROOT, ArtifactStoreError
 from trace_ai.infrastructure.model.factory import UnknownProviderError, build_model
 from trace_ai.infrastructure.model.fake import ResponsesExhaustedError
+from trace_ai.infrastructure.model.journal import (
+    JournalEntry,
+    JournalingModel,
+    JournalReplayModel,
+    SpentJournalEntryError,
+    journal_dir,
+    read_journal_entry,
+    spent_marker,
+)
 from trace_ai.infrastructure.model.profiles import UnknownModelProfileError, resolve_profile
 from trace_ai.infrastructure.model.recorded import load_recorded_responses
 from trace_ai.services.assessment import AssessmentService, AssessmentServiceError
@@ -121,6 +130,8 @@ if TYPE_CHECKING:
     from decimal import Decimal
     from pathlib import Path
 
+    from trace_ai.infrastructure.model.profiles import ModelProfile
+    from trace_ai.infrastructure.model.seam import StructuredModel
     from trace_ai.services.assessment import AssessmentHandle
     from trace_ai.workflow.context_review import ContextReviewPackage
     from trace_ai.workflow.state import PendingHumanReview
@@ -1023,6 +1034,19 @@ def _model_flags(parser: argparse.ArgumentParser) -> None:
             "a recorded model response to replay, repeatable; files are consumed in the order "
             "given, one per model call the run makes. A directory stands for its numbered "
             "recordings in sorted order"
+        ),
+    )
+    parser.add_argument(
+        "--replay-journal",
+        action="append",
+        dest="replay_journal",
+        default=[],
+        type=_path,
+        metavar="PATH",
+        help=(
+            "replay a live run's journaled response before spending, repeatable; a directory "
+            "stands for its unspent numbered entries in order. An entry answers only the call "
+            "that recorded it, exactly once — anything it cannot answer runs live (DEC-137)"
         ),
     )
     parser.add_argument(
@@ -2116,11 +2140,11 @@ def _context_extract(args: argparse.Namespace, service: AssessmentService) -> in
     """
     handle = service.handle(args.assessment_id)
     assessment = service.get(args.assessment_id)
-    profile = resolve_profile(args.model_profile)
+    profile, model = _run_model(args, service)
 
     outcome = run_context_slice(
         handle,
-        model=build_model(profile, responses=_recorded_responses(args)),
+        model=model,
         profile=profile,
         assessment_name=assessment.name,
         budget=_budget_from(args),
@@ -2588,11 +2612,11 @@ def _run(args: argparse.Namespace, service: AssessmentService) -> int:
     run got to. Exit codes are the documented ones: 0 for a pause or a completion (the table
     stopped the run where it says to stop), 1 for a failed run.
     """
-    profile = resolve_profile(args.model_profile)
+    profile, model = _run_model(args, service)
     outcome = run_assessment(
         service,
         args.assessment_id,
-        model=build_model(profile, responses=_recorded_responses(args)),
+        model=model,
         profile=profile,
         budget=_budget_from(args),
     )
@@ -2633,6 +2657,63 @@ def _recorded_responses(args: argparse.Namespace) -> list[Any]:
         raise CommandInputError(f"a recorded response could not be read: {error}") from None
 
 
+def _run_model(
+    args: argparse.Namespace, service: AssessmentService
+) -> tuple[ModelProfile, StructuredModel]:
+    """The model a run command drives: journaled when live, replaying what the operator names.
+
+    A live profile's model is wrapped so every response the run consumes lands in the
+    assessment's own `traces/journal/` area (DEC-137). The fake provider journals nothing:
+    a journal of the deterministic substitute would hold responses no model gave, which is
+    the exact artifact the rehearsal marker exists to refuse.
+    """
+    profile = resolve_profile(args.model_profile)
+    model: StructuredModel = build_model(profile, responses=_recorded_responses(args))
+    if profile.provider == "fake":
+        if args.replay_journal:
+            raise CommandInputError(
+                f"--replay-journal replays a live run's journal, and profile {profile.name!r} "
+                f"reaches no provider; replay a recording with --response instead"
+            )
+        return profile, model
+    artifacts = service.handle(args.assessment_id).artifacts
+    model = JournalingModel(model, journal_dir(artifacts))
+    entries = _journal_entries(args.replay_journal)
+    if entries:
+        model = JournalReplayModel(entries, model)
+    return profile, model
+
+
+def _journal_entries(supplied: list[Path]) -> list[JournalEntry]:
+    """The named journal entries, spent ones refused or skipped by how they were named.
+
+    A directory stands for its unspent numbered entries in order — a resume after a second
+    interruption should not have to name files an earlier resume already consumed — and each
+    skip says so. A file named explicitly and already spent is refused: the operator asserted
+    that exact entry, and silently serving nothing would look like serving it.
+    """
+    entries: list[JournalEntry] = []
+    try:
+        for path in supplied:
+            if path.is_dir():
+                for candidate in sorted(path.glob("[0-9]*.json")):
+                    if spent_marker(candidate).exists():
+                        print(f"skipping {candidate.name} (spent)", file=sys.stderr)
+                        continue
+                    entries.append(read_journal_entry(candidate))
+                continue
+            entries.append(read_journal_entry(path))
+    except SpentJournalEntryError as error:
+        raise CommandInputError(str(error)) from None
+    except (OSError, ValueError) as error:
+        raise CommandInputError(f"a journal entry could not be read: {error}") from None
+    if supplied and not entries:
+        raise CommandInputError(
+            "--replay-journal names no unspent entries; omit it to run the calls live"
+        )
+    return entries
+
+
 def _read_named_file(path: Path) -> str:
     """Read a file the operator named on the command line, naming an I/O failure rather than
     tracebacking. A missing `--apply` file is an operator slip, not a bug in the pipeline."""
@@ -2653,11 +2734,11 @@ def _write_named_file(path: Path, text: str) -> None:
 
 def _resume(args: argparse.Namespace, service: AssessmentService) -> int:
     """Resume a paused run: the checkpoint re-runs, and decided subjects let it advance."""
-    profile = resolve_profile(args.model_profile)
+    profile, model = _run_model(args, service)
     outcome = resume_assessment(
         service,
         args.assessment_id,
-        model=build_model(profile, responses=_recorded_responses(args)),
+        model=model,
         profile=profile,
         workflow_run_id=args.workflow_run_id,
         budget=_budget_from(args),
