@@ -1,0 +1,545 @@
+assessment_id: asm-001
+system_context_version: 1
+reviewer: recorded-reviewer
+components:
+- id: cmp-001
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Export API
+    description: Public HTTPS service that accepts export requests and returns a download link when the
+      export is ready.
+    component_type: http_api
+    technology:
+    - https
+    ownership: null
+    deployment_zone: null
+    internet_accessible: true
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+- id: cmp-002
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Export Worker
+    description: Internal worker that assembles the requested export from customer records and writes
+      the result to object storage.
+    component_type: worker
+    technology: []
+    ownership: null
+    deployment_zone: null
+    internet_accessible: false
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+- id: cmp-003
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Managed Object Store
+    description: Managed object store where completed export files are written and retained according
+      to a storage lifecycle policy.
+    component_type: object_store
+    technology:
+    - managed_object_store
+    ownership: null
+    deployment_zone: null
+    internet_accessible: null
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+- id: cmp-004
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Customer Client
+    description: Customer-operated client (such as a browser or app) that requests exports and downloads
+      results via the public HTTPS Export API.
+    component_type: client
+    technology:
+    - https_client
+    ownership: null
+    deployment_zone: null
+    internet_accessible: null
+    externally_managed: null
+    data_classifications: []
+    authentication_mechanisms: []
+    authorization_mechanisms: []
+actors:
+- id: act-001
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Customer
+    actor_type: end_user
+    trust_level: null
+    capabilities:
+    - request_exports
+    - download_exports
+    authentication_method: null
+- id: act-002
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Export worker
+    actor_type: service
+    trust_level: null
+    capabilities:
+    - assemble_exports
+    - write_exports_to_object_store
+    authentication_method: null
+assets:
+- id: ast-001
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Customer records
+    asset_type: data
+    description: Customer records for a named customer and date range that are used to assemble exports.
+    confidentiality_impact: null
+    integrity_impact: null
+    availability_impact: null
+    data_classification: null
+    owner: null
+- id: ast-002
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Export files
+    asset_type: data
+    description: Assembled export files containing a customer's records for a requested date range, written
+      to the managed object store and later downloaded by the customer.
+    confidentiality_impact: null
+    integrity_impact: null
+    availability_impact: null
+    data_classification: null
+    owner: null
+data_flows:
+- id: df-001
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Customer requests export and receives download link over HTTPS
+    direction: bidirectional
+    protocol: https
+    data_types:
+    - export_request
+    - download_link
+    authentication: unknown
+    encryption_in_transit: tls
+    internet_exposed: true
+    source_component_id: cmp-004
+    destination_component_id: cmp-001
+- id: df-002
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Export API triggers Export Worker to assemble export
+    direction: one_way
+    protocol: null
+    data_types:
+    - export_request
+    authentication: unknown
+    encryption_in_transit: unknown
+    internet_exposed: false
+    source_component_id: cmp-001
+    destination_component_id: cmp-002
+- id: df-003
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Export Worker writes completed export files to managed object store
+    direction: one_way
+    protocol: null
+    data_types:
+    - export_file
+    authentication: unknown
+    encryption_in_transit: unknown
+    internet_exposed: false
+    source_component_id: cmp-002
+    destination_component_id: cmp-003
+trust_boundaries:
+- id: tb-001
+  decision: approve
+  attach_evidence: []
+  editable:
+    name: Internet boundary between customers and Export API
+    boundary_type: network
+    description: Boundary between external customer clients and the public HTTPS Export API.
+    controls: []
+claims:
+- id: ctx-001
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-001
+  - evd-005
+  editable:
+    predicate: name
+    value: Export Service
+    rationale: null
+- id: ctx-002
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-001
+  editable:
+    predicate: purpose
+    value: Produces data exports for customers on request.
+    rationale: null
+- id: ctx-003
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-003
+  editable:
+    predicate: export_request_parameters
+    value: Export requests name a customer and a date range.
+    rationale: null
+- id: ctx-004
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-002
+  editable:
+    predicate: public_https_service
+    value: true
+    rationale: null
+- id: ctx-005
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-002
+  editable:
+    predicate: returns_download_link_when_export_ready
+    value: true
+    rationale: null
+- id: ctx-006
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-002
+  - evd-003
+  editable:
+    predicate: assembles_exports_from_customer_records
+    value: true
+    rationale: null
+- id: ctx-007
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-002
+  - evd-003
+  - evd-006
+  editable:
+    predicate: writes_completed_exports_to_object_store
+    value: true
+    rationale: null
+- id: ctx-008
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-003
+  - evd-006
+  editable:
+    predicate: stores_completed_export_files
+    value: true
+    rationale: null
+- id: ctx-009
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-003
+  editable:
+    predicate: described_as_temporary_working_data
+    value: true
+    rationale: null
+- id: ctx-010
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-003
+  editable:
+    predicate: documented_retention_architecture_overview
+    value: Deleted immediately once the customer has downloaded it.
+    rationale: null
+- id: ctx-011
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-006
+  editable:
+    predicate: documented_retention_operations_guide
+    value: Retained for 30 days in the managed object store via a storage lifecycle policy.
+    rationale: null
+- id: ctx-012
+  status: unknown
+  confidence: low
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence: []
+  editable:
+    predicate: effective_retention_period
+    value: unknown
+    rationale: Architecture overview and operations guide describe conflicting retention behaviours (immediate
+      deletion vs 30-day retention), so the actual retention period is unclear without clarification.
+- id: ctx-013
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-006
+  editable:
+    predicate: storage_lifecycle_policy_retains_exports_30_days
+    value: true
+    rationale: null
+- id: ctx-014
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-006
+  editable:
+    predicate: operators_can_retrieve_recent_exports_for_failed_downloads
+    value: true
+    rationale: null
+- id: ctx-015
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-004
+  editable:
+    predicate: authenticated_requester_and_downloader
+    value: true
+    rationale: null
+- id: ctx-016
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-004
+  editable:
+    predicate: internal_assembler_of_exports
+    value: true
+    rationale: null
+- id: ctx-017
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-007
+  editable:
+    predicate: exports_monitored
+    value: Export throughput and failure rates are reported to the operations dashboard and failed exports
+      raise alerts.
+    rationale: null
+- id: ctx-018
+  status: inferred
+  confidence: medium
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-001
+  - evd-002
+  - evd-003
+  editable:
+    predicate: represents_customer_client_over_https
+    value: true
+    rationale: Documentation states that customers request exports and download results via a public HTTPS
+      service, which implies a customer-operated client such as a browser or app.
+- id: ctx-019
+  status: inferred
+  confidence: medium
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-002
+  editable:
+    predicate: internet_accessible
+    value: true
+    rationale: The Export API is described as a public HTTPS service, which typically indicates internet
+      exposure.
+- id: ctx-020
+  status: inferred
+  confidence: medium
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-002
+  - evd-004
+  editable:
+    predicate: internet_accessible
+    value: false
+    rationale: The Export Worker is described as an internal worker, implying it is not directly reachable
+      from the internet.
+- id: ctx-021
+  status: inferred
+  confidence: medium
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-001
+  - evd-002
+  - evd-004
+  editable:
+    predicate: separates_external_customers_and_export_api
+    value: true
+    rationale: The Export API is a public HTTPS service used by authenticated customers, which implies
+      a network trust boundary between external clients and the service.
+- id: ctx-022
+  status: inferred
+  confidence: medium
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-001
+  - evd-002
+  - evd-003
+  editable:
+    predicate: api_triggers_worker_to_assemble_export
+    value: true
+    rationale: The Export API accepts export requests and returns a download link, while the Export Worker
+      assembles the requested export, implying that the API triggers the worker to process export requests.
+- id: ctx-023
+  status: documented
+  confidence: high
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-002
+  - evd-003
+  - evd-006
+  editable:
+    predicate: worker_writes_completed_exports_to_object_store
+    value: true
+    rationale: null
+- id: ctx-024
+  status: inferred
+  confidence: medium
+  decision: approve
+  confirm: false
+  attach_evidence: []
+  evidence:
+  - evd-001
+  - evd-002
+  - evd-003
+  editable:
+    predicate: customer_requests_export_and_receives_download_link_over_https
+    value: true
+    rationale: Customers request exports and download results via a public HTTPS service, which implies
+      a bidirectional HTTPS interaction between a customer client and the Export API.
+contradictions:
+- id: obs-001
+  summary: architecture-overview.md states that export files are deleted immediately once the customer
+    has downloaded them, while operations-guide.md states that completed export files are retained in
+    the managed object store for 30 days via a storage lifecycle policy.
+  claims:
+  - ctx-010
+  - ctx-011
+  - ctx-012
+  evidence:
+  - evd-003
+  - evd-006
+  resolution: Export objects are retained for 30 days in the managed object store under the storage lifecycle
+    policy, then expired. The architecture overview's statement that the export file is deleted immediately
+    once downloaded does not describe the configured behaviour.
+  rationale: 'A configured storage lifecycle policy is a statement of what the system does; the architecture
+    overview''s immediate-deletion sentence is a statement of intent about temporary working data. Where
+    the two disagree, the configuration governs: the operations guide names the policy, its 30-day window,
+    and the operator retrieval practice that depends on it. Resolved to 30-day retention; the intent claim
+    remains recorded as the contradicted side.'
+additions: []
+questions:
+- id: qst-001
+  question: What is the authoritative retention and deletion policy for completed export files in the
+    managed object store (for example, immediate deletion after customer download, 30-day lifecycle retention,
+    or another policy)?
+  priority: high
+  blocking: true
+  answer: 'The operations guide''s storage lifecycle policy is the authoritative statement: completed
+    export objects are retained for 30 days and expired after that, and operators rely on that window
+    to retrieve exports for failed downloads. The architecture overview''s immediate-deletion description
+    is contradicted by that policy and no material shows a deletion-on-download mechanism. Effective retention
+    is 30 days.'
+- id: qst-003
+  question: What authentication and authorization mechanisms protect the public Export API for requesting
+    and downloading exports, and how is access constrained to each customer’s own exports?
+  priority: high
+  blocking: true
+  answer: 'Not documented beyond the actor description: the customer is named as the authenticated requester
+    and downloader, so authentication exists, but neither document states the mechanism, session handling,
+    or how access is constrained to each customer''s own exports. Undetermined, and analysis input rather
+    than a resolved fact.'
+- id: qst-002
+  question: What security controls (such as encryption at rest and access control configuration) are applied
+    to export files stored in the managed object store?
+  priority: medium
+  blocking: false
+  answer: null
+- id: qst-004
+  question: No actor in the context is anonymous or external. If the system is reachable from outside,
+    who reaches it? If it is not, what establishes that?
+  priority: medium
+  blocking: false
+  answer: null
+- id: qst-005
+  question: No actor in the context is administrative or privileged. Who operates and configures the system,
+    and through what?
+  priority: medium
+  blocking: false
+  answer: null
