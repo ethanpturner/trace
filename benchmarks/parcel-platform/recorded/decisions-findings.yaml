@@ -4,8 +4,30 @@ findings:
 - id: fnd-001
   severity: high
   decision: approve
-  rationale: The shared sign-in path and the console's full customer-data reach are both documented; the requirement asks for a stronger path than customer access and the document states there is none.
+  rationale: The deficiency is affirmatively documented, not inferred from silence — staff reach
+    the console through the same SSO accounts and sign-in path customers use, a single is_admin
+    flag on the user record enables its functions, and the console can read and edit any customer
+    account, order, and address. High per the console's unrestricted reach over customer data.
+    Title edited (DEC-023) — the exported title asserted a compromise event no evidence
+    establishes; the approved title claims only the evidenced deficiency.
+  editable:
+    title: Admin Console privileged access uses the customer sign-in path with unrestricted
+      reach over customer data (req-ADMIN-001)
+    description: The system exposes an Admin Console used by staff operators to perform refunds,
+      address corrections, and account management, and this console can read and edit any
+      customer account, order, and address [evd-003, evd-006], so there is a privileged
+      administrative interface acting on customer data.
+    recommendation: null
 - id: fnd-002
-  severity: medium
-  decision: approve
-  rationale: Body-level logging of names, addresses, and delivery windows to the shared log is affirmatively documented.
+  decision: reject
+  rationale: The description justifies a Deploy Runner code-injection threat by the Admin
+    Console's existence — the applicability argument does not reach the component the finding
+    names. No evidence establishes a deficiency in the deployment pipeline; the document is
+    silent on pipeline controls, and silence is question territory (qst-030, qst-050 already
+    carry it), never proof of a weakness (DEC-009).
+- id: fnd-003
+  decision: reject
+  rationale: Premised on an attacker with sufficient access rather than on any documented
+    weakness. The documented billing posture is affirmative and sound — card payments are
+    processed entirely by an external provider and the platform stores only the provider's
+    payment reference. No evidenced deficiency (DEC-009).

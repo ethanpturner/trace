@@ -1,0 +1,524 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 12221,
+    "output_tokens": 25888,
+    "cache_read_tokens": 10880,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.27551625",
+    "duration_seconds": 251.4831490420038
+  },
+  "response": {
+    "controls": [
+      {
+        "key": "ctrl-delegated-sso",
+        "name": "Delegated authentication via company SSO",
+        "description": "All interactive sign-in for customers, drivers, and staff is delegated to the company's SSO provider over OpenID Connect via the Identity Service, and the API Gateway authenticates each request against that service using the delegated identity.",
+        "control_type": "inherited",
+        "provider_component_id": null,
+        "protected_component_ids": [
+          "cmp-003",
+          "cmp-002",
+          "cmp-025"
+        ],
+        "protected_asset_ids": [
+          "ast-002",
+          "ast-004"
+        ],
+        "implementation_status": "implemented",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "owner": null,
+        "limitations": [
+          "Does not prevent misuse when an attacker has already obtained a valid driver SSO session or credentials."
+        ]
+      },
+      {
+        "key": "ctrl-api-gw-tls-authz",
+        "name": "API Gateway terminates TLS and authenticates requests",
+        "description": "The API Gateway is the single public entry point; it terminates TLS, authenticates every request against the Identity Service, applies per-client rate limits, and routes traffic (including driver mobile traffic) to core services such as the Mobile Gateway.",
+        "control_type": "implemented",
+        "provider_component_id": "cmp-003",
+        "protected_component_ids": [
+          "cmp-002"
+        ],
+        "protected_asset_ids": [
+          "ast-002",
+          "ast-004"
+        ],
+        "implementation_status": "implemented",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "owner": null,
+        "limitations": [
+          "Only protects traffic up to the API Gateway; encryption and protection for downstream hops and at-rest stores are not described."
+        ]
+      }
+    ],
+    "mappings": [
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-ADMIN-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Although the platform exposes an Admin Console for staff operators [evd-003], threat thr-002 involves only the Driver Mobile Application, API Gateway, and Mobile Gateway path [evd-002] and does not use any privileged administrative or operator interface, so restrictions on administrative access do not bear on this threat scenario.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-AI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The platform overview and component descriptions describe only conventional web, mobile, messaging, and storage services [evd-001, evd-002, evd-003, evd-004] and do not mention any model-based processing, so for this assessment we proceed on the stated assumption that the system does not pass content to an AI or ML model; under that assumption, this requirement does not apply to threat thr-002.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [
+          "Assume the system does not pass any content to a machine-learning or AI model, because the platform overview and zone descriptions mention no such components."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-AI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "As for req-AI-001, the documentation describes no use of models; assuming the system does not publish model output externally or without review, this requirement does not apply to the driver scan/POD workflow in threat thr-002.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [
+          "Assume the system does not use model-generated output in any external publication path, because no model or AI components are documented."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-AI-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No components are documented that send customer content to an external model provider [evd-001, evd-002, evd-003, evd-004]; under the stated assumption that no such integration exists, requirements on minimizing data sent to external models do not apply to threat thr-002.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [
+          "Assume the system does not call any external AI/model provider with customer content, because no such integration is described."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-AI-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The documentation does not describe any model whose output is rendered into user interfaces; assuming there is no such model, this requirement does not apply to the driver scan and POD photo flows involved in threat thr-002.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-001"
+        ],
+        "assumptions": [
+          "Assume no model output is rendered into Parcelworks user interfaces, because no models are documented."
+        ],
+        "confidence": "low"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-AUTH-001",
+        "control_keys": [
+          "ctrl-delegated-sso"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "User authentication is delegated to the company SSO provider via the Identity Service using OpenID Connect [evd-003], and the API Gateway authenticates every request against that service [evd-002], so the system clearly relies on an external identity provider for user (including driver) authentication.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "satisfied",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-AUTH-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Threat thr-002 concerns misuse of an ordinary driver account via the Driver Mobile Application [evd-002, evd-006] and does not involve the Admin Console or other privileged interfaces [evd-003], so expectations about who enforces multi-factor authentication for administrative or privileged access are not engaged by this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-006"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-AUTHZ-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Parcelworks serves multiple customers [evd-001], and parcel tracking data and POD photos for many shipments are maintained in shared back-end stores such as the Tracking Store and Object Storage [evd-003, evd-004]. A compromised driver account updating scan events through the Mobile Gateway [evd-002] could cross tenant boundaries if tenant-aware authorization is not enforced, so this requirement bears directly on the threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001",
+          "evd-002",
+          "evd-003",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-AUTHZ-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "While the platform integrates with external platforms such as carrier APIs, a messaging provider, and a payment provider [evd-003, evd-005], threat thr-002 involves only first-party components (Driver Mobile Application, API Gateway, Mobile Gateway, Tracking Service, and Object Storage) and no use of delegated permissions on external customer resources, so integration privilege scoping does not affect this attack path.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-CICD-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The Deploy Runner runs the deployment pipeline that builds and releases services [evd-005], but threat thr-002 assumes compromise of a driver SSO account rather than compromise of the build or deployment path, so controls on pipeline authentication and dependency management are not engaged.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [
+          "ctrl-api-gw-tls-authz"
+        ],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Parcel tracking data and proof-of-delivery photos are sent over the public internet via the API Gateway and Mobile Gateway [evd-002] and stored in back-end stores including the Tracking Store and Object Storage [evd-003, evd-004]. Because threat thr-002 directly concerns the confidentiality and integrity of this data, expectations that it be encrypted in transit and at rest apply.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-DATA-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Per-parcel tracking state is maintained in the Tracking Store [evd-003] and proof-of-delivery photos are stored in Object Storage [evd-004], so the system retains customer data after operational processing. For threat thr-002, the duration for which corrupted tracking histories and potentially over-sensitive POD images are kept is central to the impact, making retention controls applicable.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-DATA-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Object Storage is a managed store holding label PDFs and proof-of-delivery photos [evd-004] for many customers [evd-001], so artifacts from multiple customers share a storage system. If tenant-based separation is not enforced, a compromised driver could potentially access or guess other customers\u2019 artifacts, so this requirement bears on the threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-001",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-DATA-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Customer data is stored across multiple systems, including Orders Database, Tracking Store, Object Storage, and the Data Warehouse [evd-003, evd-004]. For threat thr-002, the ability to remove fraudulent or unnecessarily sensitive POD photos and any derived copies is important, so expectations about documented deletion across stores apply.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-LOG-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The platform does log fully rendered notification messages including names, delivery addresses, and windows to a shared log [evd-003], but threat thr-002 is specifically about falsified scan events and POD photos via the driver mobile workflow, with impact on tracking data and stored images rather than log contents. Controls on excluding sensitive data from application logs therefore do not change the described attack path or impact for this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-LOG-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Threat thr-002 involves actions taken through the Driver Mobile Application and Mobile Gateway [evd-002, evd-006], not through the Admin Console or any other privileged staff interface [evd-003], so requirements about auditing administrative actions do not bear on this threat scenario.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-006"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-NET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "In threat thr-002 the attacker reaches the system only via the public API Gateway and Mobile Gateway over HTTPS [evd-002]; there is no indication that they can reach internal components such as the Message Bus, Tracking Store, or Object Storage directly over the network [evd-004]. Whether those internal components are additionally protected by network segmentation does not affect this attack path.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002",
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-SECRET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "This threat is driven by compromise of a driver\u2019s SSO account and subsequent misuse of the Driver Mobile Application, not by exposure of long-lived signing keys or provider API credentials held by the system, so expectations on storing such credentials in a managed secret store are not engaged.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-SECRET-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Threat thr-002 does not involve the system obtaining or using tokens to access customer resources on external platforms; it centers on first-party driver authentication via SSO and internal processing of scan events and POD photos, so expectations about using short-lived external access credentials do not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-TPI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Although the platform uses external processors such as the messaging provider, carrier APIs, and a payment provider [evd-003, evd-005], the attack path for threat thr-002 involves only the driver mobile workflow, API Gateway, Mobile Gateway, Message Bus, Tracking Service, and Object Storage, so documentation of external processor data handling does not affect this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-003",
+          "evd-005"
+        ],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-TPI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Threat thr-002 does not describe work that consumes a metered external service or significant compute in response to untrusted external events; it concerns logical corruption of parcel tracking data and POD photos via authenticated driver actions, so bounding work triggered by external platforms is not engaged.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-WEBHOOK-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The system\u2019s documented endpoints for threat thr-002 are the API Gateway and Mobile Gateway serving the driver mobile application over HTTPS [evd-002]; there is no inbound webhook or event endpoint receiving signed events from an external platform in this attack path, so webhook authenticity verification requirements do not apply.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-002",
+        "requirement_id": "req-WEBHOOK-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Because threat thr-002 does not involve processing of signed inbound events from an external platform, but instead uses synchronous API calls from the driver mobile application through the API Gateway and Mobile Gateway [evd-002], requirements about replay protection for webhook-style events are not engaged.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [
+          "evd-002"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Authorization for driver scan events and POD uploads is undocumented",
+        "description": "The Mobile Gateway is described as the endpoint for the driver mobile application, handling route assignments down and scan events plus proof-of-delivery photos up over HTTPS [evd-002], and the Tracking Service consumes scan events from the Message Bus to maintain tracking state [evd-003]. However, the documentation does not state how the authenticated driver identity from SSO is authorized to act on specific parcels (for example, whether actions are constrained to assigned routes, parcels, or tenants) or what prevents a compromised driver account from submitting scan events or POD photos for arbitrary shipments. This prevents assessment of how far a compromised driver account in threat thr-002 can falsify tracking data or misuse POD images.",
+        "importance": "Understanding the authorization model for driver-initiated scan events and POD uploads is essential to determine how much damage a compromised driver account can cause within and across tenants, and whether additional controls are needed to limit or detect fraudulent updates.",
+        "related_object_ids": [
+          "cmp-025",
+          "cmp-002",
+          "cmp-008",
+          "ast-002",
+          "ast-004",
+          "thr-002"
+        ],
+        "requested_evidence": [
+          "Design or architecture documentation describing authorization checks in the Mobile Gateway and Tracking Service for scan events and POD uploads, including how driver identities are mapped to allowed parcels or routes.",
+          "Any description of server-side validation of scan event sequences (e.g., expected status transitions) and constraints on which parcels a given driver may update."
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-006"
+        ],
+        "severity": "high"
+      },
+      {
+        "title": "Data lifecycle for proof-of-delivery photos is undocumented",
+        "description": "Object Storage is documented as a managed store holding label PDFs and proof-of-delivery photos [evd-004], and proof-of-delivery photos are a key asset in threat thr-002 (ast-004). The documentation does not describe how long these photos are retained, whether lifecycle policies or scheduled deletion jobs are applied, or how photos (including fraudulent or overly sensitive ones) can be removed on customer or operator request, nor does it describe handling of any derived copies (backups, analytics exports). This prevents verification of retention and deletion expectations for proof-of-delivery images.",
+        "importance": "Without clear retention and deletion documentation for POD photos, it is impossible to assess how long privacy-sensitive or fraudulent images created by a compromised driver account persist, or whether deletion on request is feasible across all stores that hold those images.",
+        "related_object_ids": [
+          "cmp-016",
+          "ast-004",
+          "thr-002"
+        ],
+        "requested_evidence": [
+          "Operations or data-handling documentation specifying the retention period and lifecycle policies for the Object Storage bucket containing POD photos.",
+          "Any documented procedures or APIs for deleting POD photos on customer or operator request, including treatment of backups and analytics copies."
+        ],
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": [
+      {
+        "concern": "There is no requirement that addresses validation, anomaly detection, or audit of business-critical scan events submitted by authenticated end users (drivers), so a compromised driver account can falsify parcel tracking histories and upload misleading or overly sensitive proof-of-delivery photos without any catalog expectation for secondary controls beyond basic authentication and tenant separation.",
+        "suggested_category": "business_logic_integrity",
+        "nearest_requirements": [
+          {
+            "requirement_id": "req-AUTHZ-001",
+            "why_not": "req-AUTHZ-001 focuses on enforcing tenant-aware authorization so that each request is constrained to the tenant it belongs to, but it does not address validation of the semantics or plausibility of business events performed by an authenticated user within a tenant (for example, whether a particular sequence of scan events or POD uploads is reasonable for a given parcel and driver)."
+          },
+          {
+            "requirement_id": "req-LOG-002",
+            "why_not": "req-LOG-002 covers recording actions taken through privileged administrative interfaces, whereas the problematic actions in threat thr-002 are routine driver scan events and POD uploads through the Mobile Gateway, which are not administrative but still business-critical and customer-visible."
+          },
+          {
+            "requirement_id": "req-LOG-001",
+            "why_not": "req-LOG-001 concerns exclusion of sensitive data from logs and identification of log destinations, not detection of fraudulent content or misuse in primary business data stores such as tracking state and proof-of-delivery photos."
+          }
+        ],
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-006"
+        ]
+      }
+    ]
+  }
+}

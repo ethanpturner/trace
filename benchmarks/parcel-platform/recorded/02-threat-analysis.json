@@ -1,143 +1,479 @@
 {
   "schema": "ThreatAnalysisProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 19480,
+    "output_tokens": 18447,
+    "cache_read_tokens": 0,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.20882",
+    "duration_seconds": 237.64250966697
+  },
   "response": {
     "threats": [
       {
-        "title": "Admin functions reached through the customer sign-in path",
-        "description": "Staff reach the admin console with the same SSO accounts and the same sign-in path customers use, with an is_admin flag on the user record enabling functions that can read and edit any customer account, order, and address. An attacker who compromises a staff account \u2014 or flips the flag \u2014 crosses from the customer path to full customer-data reach with no stronger barrier documented.",
+        "title": "Compromised staff SSO account abuses Admin Console full-access capabilities",
+        "description": "A compromised or malicious staff operator account with the `is_admin` flag set uses the Admin Console\u2019s ability to read and edit any customer account, order, and address to exfiltrate or tamper with customer and order data.",
         "methodology": "stride-scenario-based",
         "category": [
-          "elevation_of_privilege"
+          "elevation_of_privilege",
+          "information_disclosure",
+          "tampering"
         ],
         "threat_actor_ids": [
           "act-003"
         ],
         "affected_component_ids": [
-          "cmp-012"
-        ],
-        "affected_asset_ids": [
-          "ast-001"
-        ],
-        "related_data_flow_ids": [
-          "df-013"
-        ],
-        "preconditions": [
-          "a staff account is compromised through the shared customer sign-in path, or the is_admin flag is set on a compromised record"
-        ],
-        "attack_path": [
-          "compromise an account on the shared sign-in path",
-          "reach the console's functions through the is_admin flag",
-          "read or edit any customer account, order, and address"
-        ],
-        "impact": "Every customer account and address is readable and editable through the customer sign-in path.",
-        "likelihood": null,
-        "confidence": "high",
-        "evidence_ids": [
-          "evd-003"
-        ],
-        "assumption_ids": [],
-        "open_question_ids": []
-      },
-      {
-        "title": "Delivery details exposed through the shared application log",
-        "description": "The notification templates log the full rendered message body \u2014 the recipient's name, delivery address, and delivery window \u2014 to the shared application log for debugging. Everyone and everything with log access holds customer delivery details, and a delivery window plus an address is a burglary itinerary.",
-        "methodology": "stride-scenario-based",
-        "category": [
-          "information_disclosure"
-        ],
-        "threat_actor_ids": [],
-        "affected_component_ids": [
-          "cmp-009"
-        ],
-        "affected_asset_ids": [
-          "ast-004"
-        ],
-        "related_data_flow_ids": [
-          "df-008"
-        ],
-        "preconditions": [
-          "log access is broader than the set of people who should see delivery details"
-        ],
-        "attack_path": [
-          "read the shared application log",
-          "collect names, addresses, and delivery windows"
-        ],
-        "impact": "Customer names, addresses, and delivery windows are exposed to log readers.",
-        "likelihood": null,
-        "confidence": "high",
-        "evidence_ids": [
-          "evd-003"
-        ],
-        "assumption_ids": [],
-        "open_question_ids": []
-      },
-      {
-        "title": "Warehouse copies accumulate without a stated bound",
-        "description": "The warehouse receives a nightly copy of the orders database, including customer names and full delivery addresses, and how long the copies are kept has not been written down anywhere the team could point to. Every retained copy widens what a warehouse compromise discloses.",
-        "methodology": "stride-scenario-based",
-        "category": [
-          "information_disclosure"
-        ],
-        "threat_actor_ids": [],
-        "affected_component_ids": [
-          "cmp-017"
-        ],
-        "affected_asset_ids": [
-          "ast-001"
-        ],
-        "related_data_flow_ids": [
-          "df-012"
-        ],
-        "preconditions": [
-          "copies are retained without a bound",
-          "an attacker reaches the warehouse"
-        ],
-        "attack_path": [
-          "reach the data warehouse",
-          "read the accumulated nightly copies"
-        ],
-        "impact": "The accumulated history of customer addresses is disclosed at once.",
-        "likelihood": null,
-        "confidence": "medium",
-        "evidence_ids": [
-          "evd-004"
-        ],
-        "assumption_ids": [],
-        "open_question_ids": []
-      },
-      {
-        "title": "Direct access to the data zone bypassing the core services",
-        "description": "The orders database and tracking store are stated to be reachable only from the core zone; what enforces that \u2014 network policy or assumed topology \u2014 is not described. A workload elsewhere that can reach the data zone bypasses every authorization the core services apply.",
-        "methodology": "stride-scenario-based",
-        "category": [
-          "elevation_of_privilege"
-        ],
-        "threat_actor_ids": [],
-        "affected_component_ids": [
+          "cmp-012",
+          "cmp-004",
           "cmp-014"
         ],
         "affected_asset_ids": [
           "ast-001"
         ],
         "related_data_flow_ids": [
+          "df-004",
           "df-005"
         ],
         "preconditions": [
-          "the stated core-zone-only reachability is not enforced by network policy"
+          "A staff operator SSO account exists with the `is_admin` flag set on its user record [evd-003].",
+          "An attacker is able to gain control of such an account or its active session (for example via credential theft or session hijacking outside the described architecture)."
         ],
         "attack_path": [
-          "reach the data zone from outside the core services",
-          "query the orders database directly"
+          "Attacker obtains valid SSO credentials or an active session for a staff operator account whose user record has `is_admin` set [evd-003, evd-006].",
+          "Using the same SSO sign-in path as customers, the attacker authenticates through the Identity Service and gains access to the Admin Console [evd-003].",
+          "The Admin Console allows reading and editing of any customer account, order, and address [evd-003].",
+          "Attacker enumerates and exports customer and order data at scale, and/or modifies orders and addresses (for example, redirecting shipments or changing customer details)."
         ],
-        "impact": "Customer bookings and addresses are reachable without the services' authorization.",
+        "impact": "Unauthorized parties can access and exfiltrate all orders and customer records, and arbitrarily change orders and addresses, affecting both the confidentiality and integrity of ast-001 (Orders and customer records).",
         "likelihood": null,
-        "confidence": "medium",
+        "confidence": "high",
+        "evidence_ids": [
+          "evd-003",
+          "evd-006"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Compromised driver account falsifies scan events and proof-of-delivery photos",
+        "description": "An attacker controlling a driver\u2019s SSO account uses the Driver Mobile Application to submit fraudulent scan events and proof-of-delivery photos, corrupting parcel tracking data and exposing recipients\u2019 images and premises.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "spoofing",
+          "tampering",
+          "information_disclosure",
+          "repudiation"
+        ],
+        "threat_actor_ids": [
+          "act-002"
+        ],
+        "affected_component_ids": [
+          "cmp-025",
+          "cmp-002",
+          "cmp-003",
+          "cmp-008",
+          "cmp-016"
+        ],
+        "affected_asset_ids": [
+          "ast-002",
+          "ast-004"
+        ],
+        "related_data_flow_ids": [
+          "df-002",
+          "df-003",
+          "df-008",
+          "df-009"
+        ],
+        "preconditions": [
+          "A driver account exists in the SSO / Identity Service and is used to authenticate the Driver Mobile Application via the API Gateway [evd-002, evd-003, evd-006].",
+          "An attacker gains control of a driver\u2019s SSO credentials or device, allowing them to authenticate as that driver."
+        ],
+        "attack_path": [
+          "Attacker uses the Driver Mobile Application (cmp-025) to authenticate via the API Gateway (cmp-003) to the Mobile Gateway (cmp-002) as a legitimate driver [evd-002, evd-006].",
+          "The Mobile Gateway receives route assignments down and scan events plus proof-of-delivery (POD) photos up over HTTPS [evd-002].",
+          "Attacker submits bogus scan events claiming parcels were collected, in transit, or delivered, and uploads misleading or privacy-sensitive POD photos.",
+          "Mobile Gateway publishes scan events to the Message Bus (cmp-013) [df-008, evd-004], which are consumed by the Tracking Service (cmp-008) to update tracking state in the Tracking Store (cmp-015) [evd-003, df-009, df-010].",
+          "POD photos are stored in Object Storage (cmp-016) alongside other proof-of-delivery artifacts [evd-004, ast-004].",
+          "Customers and staff see incorrect parcel statuses, while sensitive photos of recipients and premises are retained in storage."
+        ],
+        "impact": "Integrity of ast-002 (Parcel tracking data) is compromised as false scan events distort parcel history, and confidentiality/integrity of ast-004 (Proof-of-delivery photos) is affected by storage of misleading or unnecessarily sensitive images controlled by an attacker.",
+        "likelihood": null,
+        "confidence": "high",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-004",
+          "evd-006"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Compromised Message Bus credentials enable forged order and tracking events",
+        "description": "An attacker who obtains a service\u2019s Message Bus credentials publishes forged order or scan events that downstream services treat as legitimate, corrupting bookings and parcel tracking data.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "spoofing",
+          "tampering",
+          "elevation_of_privilege"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-013",
+          "cmp-005",
+          "cmp-002",
+          "cmp-008"
+        ],
+        "affected_asset_ids": [
+          "ast-008",
+          "ast-001",
+          "ast-002"
+        ],
+        "related_data_flow_ids": [
+          "df-007",
+          "df-008",
+          "df-009"
+        ],
+        "preconditions": [
+          "Per-service credentials for the Message Bus are accessible to each core service at deploy time [evd-004].",
+          "An attacker is able to extract one or more of these credentials (for example, from a compromised service instance, image, or build artifact) and can reach the Message Bus endpoint on the network."
+        ],
+        "attack_path": [
+          "Core services such as the Order Service (cmp-005) and Mobile Gateway (cmp-002) authenticate to the Message Bus (cmp-013) using per-service credentials issued at deploy time [evd-003, evd-004, df-007, df-008].",
+          "An attacker gains access to one of these credentials (ast-008), for example by compromising a service container or build output.",
+          "Using the stolen credential, the attacker connects to the Message Bus (cmp-013) and publishes forged order events and/or scan events.",
+          "Downstream consumers such as the Tracking Service (cmp-008) and any order-processing consumers treat these events as legitimate and update the Orders Database (cmp-014) and Tracking Store (cmp-015) accordingly [evd-003, evd-004].",
+          "Orders, customer records, and parcel tracking states become inconsistent or maliciously manipulated while appearing internally authentic."
+        ],
+        "impact": "Compromise or misuse of ast-008 (Message bus service credentials) allows an attacker to corrupt ast-001 (Orders and customer records) and ast-002 (Parcel tracking data) by injecting or altering events that drive order lifecycle and tracking state.",
+        "likelihood": null,
+        "confidence": "high",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004",
+          "evd-002"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Data Warehouse compromise leaks large-scale historic customer and address data",
+        "description": "An attacker who gains access to the Data Warehouse can exfiltrate nightly copies of orders, customer names, and full delivery addresses accumulated over time, resulting in a large-scale privacy breach.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "information_disclosure",
+          "privacy"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-017",
+          "cmp-014"
+        ],
+        "affected_asset_ids": [
+          "ast-006"
+        ],
+        "related_data_flow_ids": [
+          "df-014"
+        ],
+        "preconditions": [
+          "The Orders Database (cmp-014) sends nightly copies of orders, including customer names and full delivery addresses, to the Data Warehouse (cmp-017) [evd-004].",
+          "An attacker gains query or export access to the Data Warehouse platform or its underlying storage (for example via a compromised analytics account or infrastructure breach)."
+        ],
+        "attack_path": [
+          "A nightly copy of the Orders Database, including customer names and full delivery addresses, is taken into the Data Warehouse (cmp-017) for analytics [evd-004, df-014].",
+          "The duration for which these copies are retained is not documented anywhere the team can point to [evd-004], so the warehouse may contain many days\u2019 or years\u2019 worth of history.",
+          "An attacker compromises an account or infrastructure component with access to the Data Warehouse.",
+          "Using this access, the attacker queries or exports the full dataset of historic orders and addresses.",
+          "The attacker exfiltrates these datasets, potentially covering a long retention period, without needing direct access to the live Orders Database."
+        ],
+        "impact": "Confidentiality of ast-006 (Data warehouse copies of orders, including customer names and full delivery addresses) is compromised, exposing large-scale historic customer identity and address information beyond what might be accessible from the live transactional store alone.",
+        "likelihood": null,
+        "confidence": "high",
         "evidence_ids": [
           "evd-004"
         ],
         "assumption_ids": [],
         "open_question_ids": []
+      },
+      {
+        "title": "Shared Application Log compromise exposes full notification message contents",
+        "description": "Because notification templates log full rendered email and SMS bodies, including recipient names, delivery addresses, and delivery windows, an attacker with access to the Shared Application Log can harvest sensitive customer data at scale.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "information_disclosure",
+          "privacy"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-009",
+          "cmp-018"
+        ],
+        "affected_asset_ids": [
+          "ast-005"
+        ],
+        "related_data_flow_ids": [],
+        "preconditions": [
+          "Notification templates log the full rendered message body, including recipient name, delivery address, and delivery window, to the Shared Application Log (cmp-018) [evd-003].",
+          "An attacker gains read access to the Shared Application Log storage or to tooling that aggregates or queries it (for example via a compromised internal account or observability platform)."
+        ],
+        "attack_path": [
+          "Notification Service (cmp-009) sends booking confirmations and delivery notices via the external messaging provider and, for debugging, logs the full rendered message body to the Shared Application Log (cmp-018) [evd-003].",
+          "Over time, the Shared Application Log accumulates entries containing personal data and delivery details for many customers [evd-003, ast-005].",
+          "An attacker compromises an account or system with read access to the Shared Application Log.",
+          "The attacker searches and exports log entries, harvesting names, delivery addresses, delivery windows, and other notification contents for a large number of customers."
+        ],
+        "impact": "Confidentiality of ast-005 (Notification message logs) is compromised, disclosing personal and delivery information for many customers via a logging channel that exists in addition to the primary data stores.",
+        "likelihood": null,
+        "confidence": "medium",
+        "evidence_ids": [
+          "evd-003",
+          "evd-004"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Object Storage compromise or misconfiguration exposes shipping labels and proof-of-delivery photos",
+        "description": "If the managed Object Storage bucket holding label PDFs and proof-of-delivery photos is compromised or misconfigured to allow broader access than intended, an attacker can exfiltrate or tamper with labels and sensitive delivery photos.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "information_disclosure",
+          "tampering",
+          "privacy"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-016",
+          "cmp-010",
+          "cmp-002",
+          "cmp-025"
+        ],
+        "affected_asset_ids": [
+          "ast-003",
+          "ast-004"
+        ],
+        "related_data_flow_ids": [
+          "df-011",
+          "df-002",
+          "df-003"
+        ],
+        "preconditions": [
+          "Label Service (cmp-010) renders shipping labels as PDFs and stores them in Object Storage (cmp-016) keyed by shipment [evd-003, evd-004].",
+          "Proof-of-delivery photos from the Driver Mobile Application flow via the Mobile Gateway and are stored in the same Object Storage [evd-002, evd-004, ast-004].",
+          "An attacker gains access to Object Storage (for example via compromised credentials or a bucket configuration that permits unintended access)."
+        ],
+        "attack_path": [
+          "Shipping labels are rendered as PDFs by Label Service (cmp-010) and stored in the managed Object Storage bucket (cmp-016) [evd-003, evd-004, df-011, ast-003].",
+          "Proof-of-delivery photos are uploaded from the Driver Mobile Application (cmp-025) via the Mobile Gateway (cmp-002) and ultimately stored in the same Object Storage [evd-002, evd-004, ast-004].",
+          "Due to credential compromise or misconfiguration, an attacker is able to list and read objects from the Object Storage bucket.",
+          "The attacker downloads label PDFs, revealing shipment and addressing details, and proof-of-delivery photos, which may include images of recipients and premises.",
+          "Optionally, the attacker may overwrite or delete stored labels and photos, undermining delivery processes and dispute resolution."
+        ],
+        "impact": "Confidentiality of ast-003 (Shipping label PDFs) and ast-004 (Proof-of-delivery photos) is compromised through bulk access to stored objects, and their integrity may be affected if an attacker can alter or delete these files.",
+        "likelihood": null,
+        "confidence": "medium",
+        "evidence_ids": [
+          "evd-002",
+          "evd-003",
+          "evd-004"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Compromised carrier partner API credentials cause fraudulent status updates",
+        "description": "If a carrier partner\u2019s API or credentials are compromised, an attacker can send fraudulent status updates that Carrier Link accepts as legitimate, leading to incorrect internal parcel tracking information and customer-visible statuses.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "tampering",
+          "spoofing",
+          "third_party"
+        ],
+        "threat_actor_ids": [
+          "act-004"
+        ],
+        "affected_component_ids": [
+          "cmp-019",
+          "cmp-024",
+          "cmp-008"
+        ],
+        "affected_asset_ids": [
+          "ast-002"
+        ],
+        "related_data_flow_ids": [
+          "df-016"
+        ],
+        "preconditions": [
+          "Carrier Link (cmp-019) exchanges manifests and status updates with carrier partners\u2019 HTTPS APIs (cmp-024) [evd-005].",
+          "Carrier status updates from partners are used as an input into Parcelworks\u2019 understanding of parcel state (for example via events that ultimately influence Tracking Service data) [evd-003, evd-005].",
+          "An attacker gains control of a carrier partner API account, its credentials, or the partner endpoint, enabling them to send arbitrary but syntactically valid status updates."
+        ],
+        "attack_path": [
+          "Carrier Link (cmp-019) connects to carrier partners\u2019 APIs over HTTPS to send manifests and receive status updates [evd-005, df-016].",
+          "A carrier partner\u2019s API or its credentials are compromised, or a malicious insider at the carrier uses valid credentials.",
+          "The attacker sends falsified status updates (for example, marking parcels as delivered, delayed, or missing) via the carrier API.",
+          "Carrier Link accepts these updates and propagates them into the internal event and tracking pipeline, which ultimately influences parcel tracking data served to customers [evd-003, evd-005].",
+          "Customers and operations staff see incorrect parcel statuses and histories, potentially leading to misrouted follow-up actions, disputes, or undetected fraud."
+        ],
+        "impact": "Integrity of ast-002 (Parcel tracking data) is compromised, as external status updates from compromised carrier APIs cause Parcelworks to record and display incorrect parcel states while appearing to originate from trusted partners.",
+        "likelihood": null,
+        "confidence": "medium",
+        "evidence_ids": [
+          "evd-005",
+          "evd-003",
+          "evd-006"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Compromised Deploy Runner injects malicious code into core services",
+        "description": "An attacker who compromises the Deploy Runner can inject malicious code into core services at build or release time, allowing persistent unauthorized access to data and functions across the platform.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "supply_chain",
+          "elevation_of_privilege",
+          "information_disclosure",
+          "tampering"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-020",
+          "cmp-004",
+          "cmp-005",
+          "cmp-006",
+          "cmp-007",
+          "cmp-008",
+          "cmp-009",
+          "cmp-010",
+          "cmp-011",
+          "cmp-012",
+          "cmp-013",
+          "cmp-014",
+          "cmp-015",
+          "cmp-016",
+          "cmp-017",
+          "cmp-018"
+        ],
+        "affected_asset_ids": [
+          "ast-001",
+          "ast-002",
+          "ast-003",
+          "ast-004",
+          "ast-005",
+          "ast-006",
+          "ast-007",
+          "ast-008"
+        ],
+        "related_data_flow_ids": [],
+        "preconditions": [
+          "Deploy Runner (cmp-020) runs the deployment pipeline that builds and releases the core services [evd-005].",
+          "The pipeline has sufficient privileges to produce artifacts or configurations that are deployed into the core and data zones [evd-003, evd-004, evd-005].",
+          "An attacker gains control over the Deploy Runner environment or its credentials (for example via CI compromise or malicious code in the pipeline configuration)."
+        ],
+        "attack_path": [
+          "Deploy Runner (cmp-020) builds and releases the core services that handle authentication, orders, routing, tracking, notifications, labels, billing, and integration with external providers [evd-003, evd-005].",
+          "An attacker compromises the Deploy Runner or associated pipeline configuration.",
+          "The attacker injects malicious logic into one or more services (such as the Order Service, Admin Console, or Billing Service) or their deployment artifacts.",
+          "Compromised services, once deployed, operate with their normal privileges, accessing Orders Database, Tracking Store, Object Storage, Message Bus, Data Warehouse, and payment references [evd-003, evd-004].",
+          "The malicious code exfiltrates data, forges events, alters orders or tracking, or weakens authentication checks while appearing as part of normal service behavior."
+        ],
+        "impact": "Through a supply-chain style compromise of cmp-020, an attacker can gain broad, long-lived access to ast-001, ast-002, ast-003, ast-004, ast-005, ast-006, ast-007, and ast-008 via the privileges of the deployed core services, enabling extensive data exfiltration and tampering.",
+        "likelihood": null,
+        "confidence": "high",
+        "evidence_ids": [
+          "evd-005",
+          "evd-003",
+          "evd-004"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Tampering with payment provider references corrupts billing and reconciliation",
+        "description": "An attacker who can modify stored payment provider references can misassociate payments with orders, causing incorrect billing, reconciliation errors, or fraud without needing direct access to card data.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "tampering",
+          "integrity",
+          "fraud"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-011"
+        ],
+        "affected_asset_ids": [
+          "ast-007",
+          "ast-001"
+        ],
+        "related_data_flow_ids": [
+          "df-013"
+        ],
+        "preconditions": [
+          "Billing Service (cmp-011) processes card payments through an external payment provider and stores only the provider\u2019s payment reference for each transaction [evd-003].",
+          "An attacker gains write access to the storage that holds these payment references (for example via a compromised Billing Service instance, database access, or privileged tool)."
+        ],
+        "attack_path": [
+          "Billing Service sends payment requests to the external Payment Provider Service (cmp-022) and receives a payment reference in return [evd-003, df-013].",
+          "The platform stores only this provider payment reference instead of full card data to associate payments with orders [evd-003, ast-007].",
+          "An attacker with sufficient access modifies the stored payment reference for selected orders (for example, pointing an order at a different transaction or an attacker-controlled reference).",
+          "Subsequent reconciliation or refund processes rely on the tampered reference, leading to misapplied refunds, unrecognized payments, or financial discrepancies tied to manipulated orders (ast-001)."
+        ],
+        "impact": "Integrity of ast-007 (Payment provider references) and associated ast-001 (Orders and customer records) is compromised, resulting in incorrect billing records, reconciliation errors, or opportunities for fraud.",
+        "likelihood": null,
+        "confidence": "medium",
+        "evidence_ids": [
+          "evd-003"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
+      },
+      {
+        "title": "Denial-of-service against API Gateway disrupts booking and tracking",
+        "description": "A volumetric or distributed denial-of-service attack against the single public API Gateway overwhelms the edge zone, preventing customers and drivers from booking, managing, or tracking shipments.",
+        "methodology": "stride-scenario-based",
+        "category": [
+          "denial_of_service",
+          "availability"
+        ],
+        "threat_actor_ids": [],
+        "affected_component_ids": [
+          "cmp-003",
+          "cmp-001",
+          "cmp-002",
+          "cmp-025"
+        ],
+        "affected_asset_ids": [
+          "ast-001",
+          "ast-002"
+        ],
+        "related_data_flow_ids": [
+          "df-001",
+          "df-002"
+        ],
+        "preconditions": [
+          "API Gateway (cmp-003) is the single public entry point, fronting the Customer Portal (cmp-001) and Mobile Gateway (cmp-002), and is reachable from the public internet over HTTPS [evd-002].",
+          "An attacker can generate or coordinate high volumes of traffic towards the API Gateway from many sources, exceeding its processing or network capacity despite per-client rate limits [evd-002]."
+        ],
+        "attack_path": [
+          "Legitimate customers and drivers access the platform via the Customer Portal and Driver Mobile Application through the API Gateway [evd-002, df-001, df-002].",
+          "An attacker sends a large volume of HTTPS requests from a distributed set of clients towards the API Gateway (cmp-003).",
+          "The API Gateway\u2019s resources (CPU, memory, network, or downstream connection pools) become saturated handling attack traffic, even if per-client rate limits apply [evd-002].",
+          "Legitimate booking requests, label print requests, and tracking queries from customers and drivers experience high latency, errors, or timeouts.",
+          "During the attack, customers cannot book or manage shipments and cannot reliably track parcel status."
+        ],
+        "impact": "Availability of ast-001 (Orders and customer records) and ast-002 (Parcel tracking data) is impaired from the users\u2019 perspective, as they are unable to create or manage bookings or view tracking information while the API Gateway is overwhelmed.",
+        "likelihood": null,
+        "confidence": "high",
+        "evidence_ids": [
+          "evd-002",
+          "evd-001"
+        ],
+        "assumption_ids": [],
+        "open_question_ids": []
       }
-    ]
+    ],
+    "catalog_gap_candidates": []
   }
 }

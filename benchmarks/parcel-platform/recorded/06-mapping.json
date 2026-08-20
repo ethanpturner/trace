@@ -1,0 +1,383 @@
+{
+  "schema": "MappingProposal",
+  "usage": {
+    "model": "openai/gpt-5.1",
+    "input_tokens": 11217,
+    "output_tokens": 28634,
+    "cache_read_tokens": 10880,
+    "cache_creation_tokens": 0,
+    "estimated_cost": "0.30172125",
+    "duration_seconds": 281.9399506659247
+  },
+  "response": {
+    "controls": [],
+    "mappings": [
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-ADMIN-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "thr-004 only involves the Orders Database (cmp-014) and Data Warehouse (cmp-017), which are internal data stores rather than administrative or operator interfaces, so within this threat\u2019s scope the non_applicable condition \u201cno administrative interface exists\u201d holds and this requirement does not bear on the threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat path for thr-004 covers only the Orders Database, the Data Warehouse, and the nightly copy between them; no component in scope passes content to a model, so the applicable conditions for AI input-handling do not hold for this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "thr-004 does not involve any model or model output being published; it concerns offline storage of order copies in the Data Warehouse, so the requirement about validating model output before external publication does not apply.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AI-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The assets and data flow in thr-004 (orders data copied from cmp-014 to cmp-017) do not involve sending customer content to an external model provider, so the data-minimisation requirement for external model calls is not engaged by this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AI-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "thr-004 does not render model output into any user interface or external markup; it covers stored copies of orders in a Data Warehouse, so the contextual encoding requirement for model output is out of scope for this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AUTH-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Within thr-004\u2019s scope, the affected components (cmp-014 Orders Database and cmp-017 Data Warehouse) are internal data-zone stores and are not directly reachable by end users, so the non_applicable condition \u201cthe component is not reachable by end users\u201d holds and the requirement about documenting delegated end-user authentication does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AUTH-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "thr-004 concerns compromise of internal data-zone components (Orders Database and Data Warehouse) rather than an externally reachable privileged interface; privileged access in the scenario does not clearly cross an untrusted network, so the conditions for the MFA-responsibility requirement are not met for this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AUTHZ-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Parcelworks serves many customers (\u201ccustomers book and track shipments\u201d [evd-001]), and the Orders Database and Data Warehouse hold bookings, customer accounts, and addresses together for analytics [evd-004], so data for multiple customers share storage; if tenant-aware authorization and tenant context derivation are weak on paths that can query the Data Warehouse, a compromise as in thr-004 could expose data across all customers, so this requirement bears on the threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-AUTHZ-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "thr-004\u2019s attack path does not involve the system acting on customer resources on an external platform under delegated permissions; it is confined to internal storage of order data in the Orders Database and Data Warehouse, so the requirement about limiting delegated integration privileges does not apply to this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-CICD-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Although a deployment pipeline exists for core services [evd-005], thr-004\u2019s scenario is about an attacker gaining query or export access to the Data Warehouse copies of orders, and the described attack path does not involve build or deployment artifacts or pipeline identities, so the requirement about trusting the deployment path and its dependencies does not bear on this specific threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-DATA-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The Orders Database and Data Warehouse store customer names and full delivery addresses [evd-004], which are confidential personal data, and the nightly copy df-014 crosses a trust boundary (tb-002) between core and data zones, so the requirement that such data be encrypted in transit and at rest applies to ast-006 for this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-DATA-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "thr-004 explicitly concerns nightly copies of the Orders Database, including customer names and full delivery addresses, retained in the Data Warehouse for analytics [evd-004]; these are working copies of customer data kept after transactional processing, so the requirement to define and enforce a retention period for such data applies directly.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unmet",
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-DATA-003",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Orders and associated customer/address data for many customers are stored together in the Orders Database and are copied into a shared Data Warehouse [evd-004], so artifacts from multiple customers share a storage system; the requirement to document how such artifacts are separated and how separation is enforced on access therefore applies to ast-006 in thr-004.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-DATA-004",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "Customer data (orders, accounts, and addresses) is stored in the Orders Database and in derived analytics copies in the Data Warehouse [evd-004], so customer data clearly exists in more than one store; the requirement to document how customer data can be removed from primary and derived stores applies to ast-006 for this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-LOG-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "thr-004\u2019s attack path is an attacker querying or exporting order copies from the Data Warehouse; it does not involve application logs or log platforms, so the requirement about excluding sensitive data from logs and documenting log destinations does not bear on this specific threat, even though the system logs some rendered messages elsewhere [evd-003].",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-LOG-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No administrative or operator interface is involved in thr-004\u2019s scenario: the threat concerns compromise of the Data Warehouse and its stored copies, not actions through a privileged UI, so the requirement to record security-relevant administrative actions does not apply to this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-NET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "applicable",
+        "applicability_reason": "The Orders Database and Data Warehouse are internal data-zone components that are not public interfaces and hold data for many customers [evd-004]; thr-004 assumes an attacker can gain access to the Data Warehouse, so the requirement that such internal stores be reachable only from the workloads that need them, rather than from an untrusted network, bears directly on how easily the threat precondition can be met.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "unverified",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "medium"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-SECRET-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "thr-004 involves internal access to the Orders Database and Data Warehouse, not credentials that authenticate the system to an external platform or signing keys; therefore the requirement that such external credentials be held in a managed secret store does not apply to this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-SECRET-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The threat scenario does not involve the system accessing customer resources on an external platform using tokens or installation-scoped credentials; it is confined to querying internal order data copies, so the requirement about using short-lived credentials for external customer resources is not engaged.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-TPI-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "thr-004\u2019s data flow (df-014) stays within the platform\u2019s own data zone, from the Orders Database into the Data Warehouse [evd-004]; no external provider processes these copies on the system\u2019s behalf, so the requirement to document external processor data handling does not apply to this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-TPI-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "The nightly copy into the Data Warehouse is an internal batch process and is not triggered by external events or consuming a metered external service; thr-004 therefore does not engage the requirement to bound work triggered by external events or metered services.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-WEBHOOK-001",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "No endpoint that accepts events from an external platform participates in thr-004; the threat is about internal access to the Data Warehouse, so the requirement to verify inbound event authenticity before processing does not apply here.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      },
+      {
+        "threat_id": "thr-004",
+        "requirement_id": "req-WEBHOOK-002",
+        "control_keys": [],
+        "existing_control_ids": [],
+        "applicability_status": "not_applicable",
+        "applicability_reason": "Since thr-004 involves no inbound events or webhooks\u2014only querying and exporting internal Data Warehouse contents\u2014the requirement to prevent or make harmless replay of inbound events does not bear on this threat.",
+        "suppressed_conclusion": null,
+        "suppressed_by": null,
+        "satisfaction_status": "not_applicable",
+        "evidence_ids": [],
+        "assumptions": [],
+        "confidence": "high"
+      }
+    ],
+    "documentation_gaps": [
+      {
+        "title": "Tenant scoping and authorization for Data Warehouse access are not documented",
+        "description": "The architecture describes Orders Database and Data Warehouse copies holding bookings, customer accounts, and full delivery addresses for many customers [evd-001, evd-004], but does not state whether analytics or query access to the Data Warehouse is constrained per tenant or per customer, how tenant context (if any) is derived, or where authorization is enforced for those queries. Without this, it is unclear whether compromise of a single analytics account or service, as assumed in thr-004, necessarily exposes all customers\u2019 historical data or only a subset, so the impact and the relevance of tenant-aware authorization controls (req-AUTHZ-001) cannot be verified.",
+        "importance": "Clarifying how access to the Data Warehouse is authorized and whether it is tenant-scoped would show whether thr-004 represents a platform-wide breach of all customers\u2019 order and address history or a more limited per-tenant exposure, and would determine how req-AUTHZ-001 should be evaluated.",
+        "related_object_ids": [
+          "thr-004",
+          "cmp-014",
+          "cmp-017",
+          "ast-006"
+        ],
+        "requested_evidence": [
+          "Architecture or operations documentation describing who can query the Data Warehouse, what roles or tenants those principals correspond to, and where authorization is enforced for analytics access.",
+          "Any description of tenant identifiers in the Orders Database and Data Warehouse schemas and how they are used to constrain queries."
+        ],
+        "evidence_ids": [
+          "evd-001",
+          "evd-004"
+        ],
+        "severity": "medium"
+      },
+      {
+        "title": "Network placement and access restrictions for the Data Warehouse are not described",
+        "description": "The data zone description names the Data Warehouse alongside other internal stores and notes that it receives nightly copies of the Orders Database [evd-004], and cmp-017 is marked as not internet-accessible, but the documentation does not state which application workloads, tools, or operators can reach the Data Warehouse, from which network zones, or what mechanism (for example security groups, firewalls, or a service mesh) enforces that restriction. As a result, it is not possible to determine whether the internal-component reachability requirement (req-NET-001) is met for ast-006 or how constrained the \"account or infrastructure component with access to the Data Warehouse\" precondition in thr-004 really is.",
+        "importance": "Knowing exactly which components and identities can reach the Data Warehouse, and how that access is limited at the network boundary, would clarify how difficult it is for an attacker to achieve the access assumed in thr-004 and whether network segmentation meaningfully mitigates this threat.",
+        "related_object_ids": [
+          "thr-004",
+          "cmp-017",
+          "ast-006",
+          "df-014"
+        ],
+        "requested_evidence": [
+          "Network or deployment diagrams showing the Data Warehouse\u2019s network segment, connectivity from core and operations zones, and any private links or service-mesh boundaries.",
+          "Configuration or policy descriptions (for example security groups, firewall rules, or mesh authorization policies) that list which workloads or operator tools are allowed to connect to the Data Warehouse."
+        ],
+        "evidence_ids": [
+          "evd-004"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "catalog_gap_candidates": []
+  }
+}
