@@ -39,10 +39,10 @@ from trace_ai.domain.control import Control
 from trace_ai.domain.control_mapping import ControlMapping
 from trace_ai.domain.evidence_assessment import SubjectType
 from trace_ai.domain.proposals.evidence_validation import EvidenceValidationProposal
-from trace_ai.domain.source_observation import ObservationKind
 from trace_ai.domain.threat import Threat
 from trace_ai.services.budget import fill_untrusted, schema_overhead
 from trace_ai.services.context.input_package import fenced_excerpt
+from trace_ai.services.context.resolutions import recorded_contradictions
 
 
 def _manifest(excerpts: Sequence[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -178,16 +178,6 @@ def _subject_entry(subject: DomainModel) -> dict[str, Any]:
     raise UnknownSubjectError(subject)
 
 
-def _contradiction_entry(observation: SourceObservation) -> dict[str, Any]:
-    """One recorded contradiction, with the passages that disagree (DEC-021, section 38 q8)."""
-    return {
-        "id": observation.id,
-        "summary": observation.summary,
-        "evidence_ids": list(observation.evidence_ids),
-        "status": observation.status.value,
-    }
-
-
 def _trusted_region(
     *,
     assessment_id: str,
@@ -238,12 +228,11 @@ def assemble_evidence_input(
     """
     entries = [_subject_entry(subject) for subject in subjects]
 
-    contradictions = [
-        observation
-        for observation in observations
-        if observation.kind is ObservationKind.CONTRADICTION
-    ]
-    contradiction_entries = [_contradiction_entry(observation) for observation in contradictions]
+    # DEC-141: the shared entry carries the reviewer's resolution beside the disagreement, so an
+    # agent asked whether an assessment addressed a contradiction is also told whether — and how —
+    # a reviewer already settled it. A rejected observation does not travel (the reviewer decided
+    # the disagreement is not real); everything else does, resolved or not.
+    contradiction_entries = recorded_contradictions(observations)
 
     cited: list[str] = []
     for source in (*entries, *contradiction_entries):
