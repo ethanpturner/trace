@@ -8946,3 +8946,67 @@ Tradeoffs:
   read with `.get`, and absent in every committed consumer's old files, which parse unchanged.
 - Rows attributed to a model list joined with ` + ` flatten the per-call breakdown; the ledger
   keeps the full detail, and the scorecard stays metrics-and-identifiers-only.
+
+## DEC-137: Repairing an orphaned run is an operator's assertion — `trace runs repair`, never a heuristic
+
+Date: 2026-08-19
+
+Status: Accepted
+
+Decision:
+
+**A `running` workflow run whose process is gone is repaired by an operator saying so.** `trace
+runs repair <assessment> <run> --force` marks the run failed through the ledger's own
+`complete(error_summary=...)` — the same close a run performs on itself, counters recomputed
+from the records it actually wrote — with a summary naming the external kill and the verb that
+asserted it. Without `--force` the command shows the run and changes nothing (the DEC-017
+amendment's dry-run grammar). Any status but `running` is refused with the verb that already
+covers it: paused and failed runs are `trace resume`'s, abandoned paused runs are `trace runs
+prune`'s, completed runs need nothing. After repair, `trace resume` restarts the failed phase in
+a fresh process, which is the recovery DEC-017 already defined for a failed run.
+
+**Detection is not automated, and no heartbeat is introduced.** Nothing inspects age, progress,
+or the process table. The #484 pilots measured why: a single evidence-validation batch held a
+run for over two hours while working correctly, so any staleness rule cheap enough to trust
+would misfire on exactly the runs that cost the most to interrupt. The honest detection rule is
+the operator's knowledge that the process was killed — DEC-127's explicitness precedent, applied
+to run state instead of store state.
+
+Why:
+
+- The gap is measured, not hypothetical: the husky-ai capture was killed mid-critique (#613),
+  its run sat at `running` with no process behind it, `resume` refused — neither paused nor
+  failed — and the DEC-017 amendment's prune is deliberately narrow, paused runs only. The
+  coordinating session closed the row through the ledger's `complete(error_summary=...)` API by
+  script: the sanctioned mechanics without the sanctioned surface. This entry supplies the
+  surface.
+- Routing through the ledger keeps the repaired row indistinguishable in shape from a run that
+  failed while its process was alive — spend rolled up from the records, `completed_at`
+  stamped — and the error summary is what says an operator asserted the kill. A raw status edit
+  would leave counters stale and no record of who decided.
+- The remaining #484 captures are driven from sessions that sleep, disconnect, and get killed;
+  every orphan otherwise costs a by-hand script against internal APIs, which is the kind of
+  unrecorded intervention the ledger exists to prevent.
+
+Alternatives Considered:
+
+- A staleness heuristic or heartbeat that detects orphans automatically (rejected: a running
+  run that looks stale may be a slow provider call, and the pilots measured two-hour batches;
+  a wrong automatic repair marks live work failed while its process still writes. A heartbeat
+  is #622's progress surface, and even with one, repair stays operator-asserted).
+- Widening `trace runs prune` to running runs (rejected: prune destroys the run's rows and
+  state file; an orphan's records are paid-for history the assessment keeps, and its state
+  file is what `resume` restarts from).
+- Letting `trace resume` accept a `running` run directly (rejected: resume would then decide
+  the process is gone, which is this entry's assertion made silently; two processes driving
+  one run is the row the ledger cannot represent).
+
+Tradeoffs:
+
+- An operator can repair a run whose process is in fact alive; the live process later
+  overwrites the row when it pauses, completes, or fails. Accepted under DEC-004 — local,
+  single user, one operator who knows what they killed — and the dry run shows the run before
+  anything moves.
+- The repaired run's `error_summary` carries operator-supplied text. It is operator input on
+  the operator's own row, the same trust as an assessment name, and section 27's safe-message
+  rule concerns source-document content, which this path never touches.

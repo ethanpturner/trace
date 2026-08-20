@@ -966,6 +966,30 @@ def build_parser() -> argparse.ArgumentParser:
     prune.add_argument(
         "--force", action="store_true", help="actually remove; without it, a dry run"
     )
+    repair = runs_commands.add_parser(
+        "repair",
+        help="mark an orphaned running run failed, on the operator's assertion (DEC-137)",
+        description=(
+            "A killed process leaves its run at `running` with no process behind it; `resume` "
+            "refuses -- the run is neither paused nor failed -- and prune covers paused runs "
+            "only. Repair marks the run failed with an error summary naming the external kill, "
+            "and `trace resume` then restarts the failed phase. The assertion is the operator's: "
+            "nothing checks a heartbeat or an age, because a running run that looks stale may be "
+            "a slow provider call. Without --force it shows the run and changes nothing."
+        ),
+    )
+    repair.add_argument("assessment_id")
+    repair.add_argument("run_id", help="the run to repair; `trace assessment status` lists runs")
+    repair.add_argument(
+        "--reason",
+        default=None,
+        metavar="TEXT",
+        help="what happened to the process, recorded in the run's error summary; "
+        "omitted, the summary states an external kill",
+    )
+    repair.add_argument(
+        "--force", action="store_true", help="actually mark it failed; without it, a dry run"
+    )
 
     reset = commands.add_parser(
         "reset",
@@ -1126,6 +1150,7 @@ def run(argv: Sequence[str] | None = None) -> int:
         ("catalog", "validate"): _catalog_validate,
         ("diff", None): _diff,
         ("runs", "prune"): _runs_prune,
+        ("runs", "repair"): _runs_repair,
     }
 
     if args.group is None:
@@ -1881,6 +1906,34 @@ def _runs_prune(args: argparse.Namespace, service: AssessmentService) -> int:
         f"record(s), {result.state_files_removed} state file(s), recorded spend "
         f"${result.estimated_cost_removed} removed with them"
     )
+    return 0
+
+
+def _runs_repair(args: argparse.Namespace, service: AssessmentService) -> int:
+    """Mark an orphaned running run failed (DEC-137). A dry run without --force refuses."""
+    from trace_ai.services.run_repair import RunRepairError, describe_run, repair_run
+
+    handle = service.handle(args.assessment_id)
+    candidate = describe_run(handle, args.run_id)
+    cost = "-" if candidate.estimated_cost is None else f"${candidate.estimated_cost}"
+    print(
+        f"{args.assessment_id}  {candidate.run_id}  {candidate.status:<10}  "
+        f"started {candidate.started_at_display}  "
+        f"{candidate.execution_record_count} execution record(s)  {cost}"
+    )
+    if not args.force:
+        print(
+            "nothing was changed; pass --force to mark it failed, asserting its process is gone",
+            file=sys.stderr,
+        )
+        return REFUSED
+    try:
+        updated = repair_run(handle, args.run_id, reason=args.reason)
+    except RunRepairError as refusal:
+        print(f"refused: {refusal}", file=sys.stderr)
+        return REFUSED
+    print(f"marked {updated.id} failed: {updated.error_summary}")
+    print(f"Restart the failed phase with `trace resume {args.assessment_id}`.")
     return 0
 
 
